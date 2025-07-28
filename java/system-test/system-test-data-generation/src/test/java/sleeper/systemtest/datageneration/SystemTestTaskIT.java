@@ -79,7 +79,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
                 .jobId("test-job")
                 .tableName(tableName)
                 .numberOfIngests(2)
-                .recordsPerIngest(12)
+                .rowsPerIngest(12)
                 .ingestMode(DIRECT)
                 .build());
 
@@ -88,7 +88,7 @@ public class SystemTestTaskIT extends LocalStackTestBase {
 
         // Then
         assertThat(sleeperClient.getStateStore(tableName).getFileReferences())
-                .extracting(FileReference::getNumberOfRecords)
+                .extracting(FileReference::getNumberOfRows)
                 .containsExactly(12L, 12L);
     }
 

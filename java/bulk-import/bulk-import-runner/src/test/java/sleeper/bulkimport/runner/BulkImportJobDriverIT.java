@@ -57,8 +57,8 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.record.ParquetRecordReader;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -256,7 +256,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                 .collect(Collectors.toList());
         sortRows(rightPartition);
         assertThat(stateStore.getFileReferences())
-                .extracting(FileReference::getNumberOfRecords,
+                .extracting(FileReference::getNumberOfRows,
                         file -> readRows(file.getFilename(), schema))
                 .containsExactlyInAnyOrder(
                         tuple(100L, leftPartition),
@@ -298,7 +298,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                     .collect(Collectors.toList());
 
             long totalRows = relevantFiles.stream()
-                    .map(FileReference::getNumberOfRecords)
+                    .map(FileReference::getNumberOfRows)
                     .reduce(Long::sum)
                     .orElseThrow();
 
@@ -307,7 +307,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
             relevantFiles.stream()
                     .map(af -> {
                         try {
-                            return new ParquetRecordReader(new Path(af.getFilename()), schema);
+                            return new ParquetRowReader(new Path(af.getFilename()), schema);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
@@ -360,7 +360,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         String expectedPartitionId = stateStore.getAllPartitions().get(0).getId();
         sortRows(rows);
         assertThat(stateStore.getFileReferences())
-                .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
+                .extracting(FileReference::getNumberOfRows, FileReference::getPartitionId,
                         file -> readRows(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, rows));
         IngestJob ingestJob = job.toIngestJob();
@@ -413,7 +413,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static List<Row> readRows(String filename, Schema schema) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(filename, schema)) {
+        try (ParquetRowReader reader = new ParquetRowReader(filename, schema)) {
             List<Row> readRows = new ArrayList<>();
             Row row = reader.read();
             while (null != row) {
@@ -533,7 +533,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static void writeRowsToFile(List<Row> rows, String file) throws IllegalArgumentException, IOException {
-        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file), getSchema());
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(file), getSchema());
         for (Row row : rows) {
             writer.write(row);
         }

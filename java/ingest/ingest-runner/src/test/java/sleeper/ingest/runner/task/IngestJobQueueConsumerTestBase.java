@@ -29,9 +29,9 @@ import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
 import sleeper.statestore.StateStoreFactory;
@@ -96,7 +96,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
     }
 
     protected List<String> writeParquetFilesForIngest(
-            RecordGenerator.RowListAndSchema rowListAndSchema,
+            RowGenerator.RowListAndSchema rowListAndSchema,
             String subDirectory,
             int numberOfFiles) {
         List<String> files = new ArrayList<>();
@@ -109,7 +109,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
             String fileWithoutSystemPrefix = String.format("%s%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
-            try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                     path, rowListAndSchema.sleeperSchema, hadoopConf)) {
                 for (Row row : rowListAndSchema.rowList) {
                     writer.write(row);

@@ -32,35 +32,35 @@ def should_send_ingest_job_with_client(queue: Queue, sleeper_client: SleeperClie
     assert [{"id": "test-job", "tableName": "test-table", "files": ["file-1.parquet"]}] == receive_messages(queue)
 
 
-def should_ingest_from_records_with_client(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
+def should_ingest_from_rows_with_client(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
     # Given
-    records = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
+    rows = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
     LocalStack.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
 
     # When
-    sleeper_client.write_single_batch("my_table", records)
+    sleeper_client.write_single_batch("my_table", rows)
 
     # Then
     job = receive_message(queue)
     file = single(job.pop("files"))
-    assert LocalStack.read_parquet_file(file) == records
+    assert LocalStack.read_parquet_file(file) == rows
     assert isinstance(job.pop("id"), str)
     assert {"tableName": "my_table"} == job
 
 
 def should_ingest_with_client_writer(queue: Queue, sleeper_client: SleeperClient, properties: InstanceProperties):
     # Given
-    records = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
+    rows = [{"key": "my_key", "value": "my_value"}, {"key": "my_key2", "value": "my_value2"}]
     LocalStack.create_bucket(properties.get(CommonCdkProperty.DATA_BUCKET))
 
     # When
     with sleeper_client.create_batch_writer("my_table", "my_job") as writer:
-        writer.write(records)
+        writer.write(rows)
 
     # Then
     job = receive_message(queue)
     file = single(job.pop("files"))
-    assert LocalStack.read_parquet_file(file) == records
+    assert LocalStack.read_parquet_file(file) == rows
     assert isinstance(job.pop("id"), str)
     assert {"tableName": "my_table"} == job
 

@@ -206,7 +206,7 @@ two ways to do this: standard ingest and bulk import.
 
 ### Standard ingest
 
-Standard ingest is performed by the `sleeper.ingest.IngestRecords` class. This performs ingest using the following
+Standard ingest is performed by the `sleeper.ingest.runner.IngestRows` class. This performs ingest using the following
 steps:
 
 - A batch of rows is read into memory.
@@ -226,10 +226,10 @@ still receive data. The fact that some of those partitions may no longer be leaf
 that matters is that the ingest process writes files of data such that each file contains data for one and only
 one partition.
 
-Users can avoid the complexity of deploying and running multiple instances of the `IngestRecords` class by
+Users can avoid the complexity of deploying and running multiple instances of the `IngestRows` class by
 writing the data that they wish to ingest into Parquet files and then sending a message to a queue telling Sleeper
 to ingest that data. This then causes ECS tasks to run to perform the ingest. These tasks are calling the
-`IngestRecords` class on an iterable of rows that simply reads the Parquet files.
+`IngestRows` class on an iterable of rows that simply reads the Parquet files.
 
 The resources that provide this functionality are deployed by the ingest stack. The user sends a message to
 the SQS queue containing details of the files to be ingested. The ingest stack consists of the SQS queue to

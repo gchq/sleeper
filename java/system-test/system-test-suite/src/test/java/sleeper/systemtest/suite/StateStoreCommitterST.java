@@ -56,7 +56,7 @@ public class StateStoreCommitterST {
                 .waitForCommitLogs();
 
         // Then
-        assertThat(sleeper.tableFiles().recordsByFilename()).isEqualTo(
+        assertThat(sleeper.tableFiles().rowsByFilename()).isEqualTo(
                 LongStream.rangeClosed(1, 1000).mapToObj(i -> i)
                         .collect(toMap(i -> "file-" + i + ".parquet", i -> i)));
     }

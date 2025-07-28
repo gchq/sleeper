@@ -156,7 +156,7 @@ public class FileReferencePrinterTest {
     class DisplayActiveFilesByPartition {
 
         @Test
-        void shouldPrintWholeFileBeforePartialFileWithSameNumberOfRecordsInSamePartition() {
+        void shouldPrintWholeFileBeforePartialFileWithSameNumberOfRowsInSamePartition() {
             // Given
             partitions.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "row-50");
@@ -173,7 +173,7 @@ public class FileReferencePrinterTest {
         }
 
         @Test // TODO this is incorrect as the order is determined by the filenames instead of the tree position
-        void shouldPrintTwoPartialFilesWithSameNumberOfRecordsWhenOneHasOtherRecordsOnADifferentPartition() {
+        void shouldPrintTwoPartialFilesWithSameNumberOfRowsWhenOneHasOtherRowsOnADifferentPartition() {
             // Given
             partitions.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "row-50")
@@ -193,8 +193,8 @@ public class FileReferencePrinterTest {
             Approvals.verify(printed);
         }
 
-        @Test // TODO this is incorrect as the order is determined by the filenames instead of the number of records
-        void shouldPrintTwoPartialFilesWithSameNumberOfRecordsWhenBothHaveADifferentNumberOfRecordsOnADifferentPartition() {
+        @Test // TODO this is incorrect as the order is determined by the filenames instead of the number of rows
+        void shouldPrintTwoPartialFilesWithSameNumberOfRowsWhenBothHaveADifferentNumberOfRowsOnADifferentPartition() {
             // Given
             partitions.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "row-50");
@@ -276,7 +276,7 @@ public class FileReferencePrinterTest {
         }
 
         @Test
-        void shouldSortFilesByNumberOfRecordsWithinPartition() {
+        void shouldSortFilesByNumberOfRowsWithinPartition() {
             // Given
             partitions.singlePartition("root");
 
@@ -293,7 +293,7 @@ public class FileReferencePrinterTest {
         }
 
         @Test
-        void shouldSortPartialFilesByNumberOfRecordsWithinPartition() {
+        void shouldSortPartialFilesByNumberOfRowsWithinPartition() {
             // Given
             partitions.singlePartition("root")
                     .splitToNewChildren("root", "L", "R", "row-50");

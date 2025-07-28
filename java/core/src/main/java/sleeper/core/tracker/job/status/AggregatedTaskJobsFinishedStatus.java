@@ -16,7 +16,7 @@
 package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -30,13 +30,13 @@ public class AggregatedTaskJobsFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
     private final Instant finishTime;
-    private final RecordsProcessed recordsProcessed;
+    private final RowsProcessed rowsProcessed;
     private final Duration timeInProcess;
 
-    private AggregatedTaskJobsFinishedStatus(Instant updateTime, Instant finishTime, RecordsProcessed recordsProcessed, Duration timeInProcess) {
+    private AggregatedTaskJobsFinishedStatus(Instant updateTime, Instant finishTime, RowsProcessed rowsProcessed, Duration timeInProcess) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
-        this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
+        this.rowsProcessed = Objects.requireNonNull(rowsProcessed, "rowsProcessed must not be null");
         this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
     }
 
@@ -44,11 +44,11 @@ public class AggregatedTaskJobsFinishedStatus implements JobRunEndUpdate {
      * Creates an instance of this class.
      *
      * @param  updateTime the update time to set
-     * @param  summary    the records processed summary to set
+     * @param  summary    the rows processed summary to set
      * @return            an instance of this class
      */
     public static AggregatedTaskJobsFinishedStatus updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return new AggregatedTaskJobsFinishedStatus(updateTime, summary.getFinishTime(), summary.getRecordsProcessed(), summary.getTimeInProcess());
+        return new AggregatedTaskJobsFinishedStatus(updateTime, summary.getFinishTime(), summary.getRowsProcessed(), summary.getTimeInProcess());
     }
 
     @Override
@@ -62,8 +62,8 @@ public class AggregatedTaskJobsFinishedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public RecordsProcessed getRecordsProcessed() {
-        return recordsProcessed;
+    public RowsProcessed getRowsProcessed() {
+        return rowsProcessed;
     }
 
     @Override
@@ -80,17 +80,17 @@ public class AggregatedTaskJobsFinishedStatus implements JobRunEndUpdate {
             return false;
         }
         AggregatedTaskJobsFinishedStatus other = (AggregatedTaskJobsFinishedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(recordsProcessed, other.recordsProcessed)
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(rowsProcessed, other.rowsProcessed)
                 && Objects.equals(timeInProcess, other.timeInProcess);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, finishTime, recordsProcessed, timeInProcess);
+        return Objects.hash(updateTime, finishTime, rowsProcessed, timeInProcess);
     }
 
     @Override
     public String toString() {
-        return "JobRunFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", recordsProcessed=" + recordsProcessed + ", timeInProcess=" + timeInProcess + "}";
+        return "JobRunFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", rowsProcessed=" + rowsProcessed + ", timeInProcess=" + timeInProcess + "}";
     }
 }

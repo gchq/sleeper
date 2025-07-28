@@ -43,8 +43,8 @@ public class StandardJobRunReporter {
     public static final TableFieldDefinition START_TIME = TableFieldDefinition.field("START_TIME");
     public static final TableFieldDefinition FINISH_TIME = TableFieldDefinition.field("FINISH_TIME");
     public static final TableFieldDefinition DURATION = TableFieldDefinition.numeric("DURATION");
-    public static final TableFieldDefinition RECORDS_READ = TableFieldDefinition.numeric("RECORDS_READ");
-    public static final TableFieldDefinition RECORDS_WRITTEN = TableFieldDefinition.numeric("RECORDS_WRITTEN");
+    public static final TableFieldDefinition ROWS_READ = TableFieldDefinition.numeric("ROWS_READ");
+    public static final TableFieldDefinition ROWS_WRITTEN = TableFieldDefinition.numeric("ROWS_WRITTEN");
     public static final TableFieldDefinition READ_RATE = TableFieldDefinition.numeric("READ_RATE (s)");
     public static final TableFieldDefinition WRITE_RATE = TableFieldDefinition.numeric("WRITE_RATE (s)");
     public static final TableFieldDefinition FAILURE_REASONS = TableFieldDefinition.field("FAILURE REASONS");
@@ -59,7 +59,7 @@ public class StandardJobRunReporter {
         this(out);
         tableBuilder.addFields(
                 TASK_ID, START_TIME, FINISH_TIME, DURATION,
-                RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE, FAILURE_REASONS);
+                ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE, FAILURE_REASONS);
     }
 
     public StandardJobRunReporter(PrintStream out) {
@@ -73,11 +73,11 @@ public class StandardJobRunReporter {
         if (run.isFinished()) {
             JobRunSummary summary = run.getFinishedSummary();
             builder.value(DURATION, getDurationString(summary))
-                    .value(RECORDS_READ, getRecordsRead(summary))
-                    .value(RECORDS_WRITTEN, getRecordsWritten(summary));
+                    .value(ROWS_READ, getRowsRead(summary))
+                    .value(ROWS_WRITTEN, getRowsWritten(summary));
             if (!summary.getDuration().isZero()) {
-                builder.value(READ_RATE, getRecordsReadPerSecond(summary))
-                        .value(WRITE_RATE, getRecordsWrittenPerSecond(summary));
+                builder.value(READ_RATE, getRowsReadPerSecond(summary))
+                        .value(WRITE_RATE, getRowsWrittenPerSecond(summary));
             }
         }
     }
@@ -145,11 +145,11 @@ public class StandardJobRunReporter {
         out.printf("Finish update time: %s%n", update.getUpdateTime());
         out.printf("Duration: %s%n", getDurationString(summary)); // Duration from job started in driver or job accepted in executor?
         if (update.isSuccessful()) {
-            out.printf("Records read: %s%n", getRecordsRead(summary));
-            out.printf("Records written: %s%n", getRecordsWritten(summary));
+            out.printf("Rows read: %s%n", getRowsRead(summary));
+            out.printf("Rows written: %s%n", getRowsWritten(summary));
             if (!summary.getDuration().isZero()) {
-                out.printf("Read rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
-                out.printf("Write rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
+                out.printf("Read rate (reads per second): %s%n", getRowsReadPerSecond(summary));
+                out.printf("Write rate (writes per second): %s%n", getRowsWrittenPerSecond(summary));
             }
         } else {
             out.println("Run failed, reasons:");
@@ -159,7 +159,7 @@ public class StandardJobRunReporter {
     }
 
     public List<TableFieldDefinition> getFinishedFields() {
-        return Arrays.asList(FINISH_TIME, DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
+        return Arrays.asList(FINISH_TIME, DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
     public List<TableFieldDefinition> getUnfinishedFields() {
@@ -170,20 +170,20 @@ public class StandardJobRunReporter {
         return formatDurationString(summary.getDuration());
     }
 
-    private static String getRecordsRead(JobRunSummary summary) {
-        return countWithCommas(summary.getRecordsRead());
+    private static String getRowsRead(JobRunSummary summary) {
+        return countWithCommas(summary.getRowsRead());
     }
 
-    private static String getRecordsWritten(JobRunSummary summary) {
-        return countWithCommas(summary.getRecordsWritten());
+    private static String getRowsWritten(JobRunSummary summary) {
+        return countWithCommas(summary.getRowsWritten());
     }
 
-    private static String getRecordsReadPerSecond(JobRunSummary summary) {
-        return formatDecimal2dp(summary.getRecordsReadPerSecond());
+    private static String getRowsReadPerSecond(JobRunSummary summary) {
+        return formatDecimal2dp(summary.getRowsReadPerSecond());
     }
 
-    private static String getRecordsWrittenPerSecond(JobRunSummary summary) {
-        return formatDecimal2dp(summary.getRecordsWrittenPerSecond());
+    private static String getRowsWrittenPerSecond(JobRunSummary summary) {
+        return formatDecimal2dp(summary.getRowsWrittenPerSecond());
     }
 
     public static String formatDurationString(Duration duration) {
@@ -213,7 +213,7 @@ public class StandardJobRunReporter {
         }
 
         public Builder addResultsFields() {
-            tableBuilder.addFields(DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE, FAILURE_REASONS);
+            tableBuilder.addFields(DURATION, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE, FAILURE_REASONS);
             return this;
         }
 

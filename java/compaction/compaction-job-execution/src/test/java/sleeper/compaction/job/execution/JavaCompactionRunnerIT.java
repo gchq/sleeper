@@ -29,7 +29,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
@@ -50,20 +50,20 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
         List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
         List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
-        FileReference file1 = ingestRecordsGetFile(data1);
-        FileReference file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRowsGetFile(data1);
+        FileReference file2 = ingestRowsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessed summary = compact(schema, compactionJob);
+        RowsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
         List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
-        assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-        assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRowsRead()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRowsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
     }
 
@@ -76,8 +76,8 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
         List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
         List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
-        FileReference file1 = ingestRecordsGetFile(data1);
-        FileReference file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRowsGetFile(data1);
+        FileReference file2 = ingestRowsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
         assignJobIdToInputFiles(stateStore, compactionJob);
@@ -125,20 +125,20 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
             List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenStrings();
             List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddStrings();
-            FileReference file1 = ingestRecordsGetFile(data1);
-            FileReference file2 = ingestRecordsGetFile(data2);
+            FileReference file1 = ingestRowsGetFile(data1);
+            FileReference file2 = ingestRowsGetFile(data2);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            RecordsProcessed summary = compact(schema, compactionJob);
+            RowsProcessed summary = compact(schema, compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
             List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
-            assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-            assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRowsRead()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRowsWritten()).isEqualTo(expectedResults.size());
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         }
     }
@@ -178,20 +178,20 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
             List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenByteArrays();
             List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddByteArrays();
-            FileReference file1 = ingestRecordsGetFile(data1);
-            FileReference file2 = ingestRecordsGetFile(data2);
+            FileReference file1 = ingestRowsGetFile(data1);
+            FileReference file2 = ingestRowsGetFile(data2);
 
             CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
             assignJobIdToInputFiles(stateStore, compactionJob);
 
             // When
-            RecordsProcessed summary = compact(schema, compactionJob);
+            RowsProcessed summary = compact(schema, compactionJob);
 
             // Then
             //  - Read output file and check that it contains the right results
             List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleByteArrayKey(data1, data2);
-            assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-            assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRowsRead()).isEqualTo(expectedResults.size());
+            assertThat(summary.getRowsWritten()).isEqualTo(expectedResults.size());
             assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         }
     }

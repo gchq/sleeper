@@ -81,7 +81,7 @@ public class JsonFileStatusReporter implements FileStatusReporter {
     private static JsonElement createFileReferenceJson(FileReference file, JsonSerializationContext context) {
         JsonObject fileObj = new JsonObject();
         fileObj.addProperty("partitionId", file.getPartitionId());
-        fileObj.addProperty("numberOfRecords", file.getNumberOfRecords());
+        fileObj.addProperty("numberOfRows", file.getNumberOfRows());
         fileObj.addProperty("jobId", file.getJobId());
         fileObj.add("lastUpdateTime", context.serialize(file.getLastStateStoreUpdateTime()));
         fileObj.addProperty("countApproximate", file.isCountApproximate());

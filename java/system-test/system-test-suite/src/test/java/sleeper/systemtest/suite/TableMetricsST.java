@@ -64,8 +64,8 @@ public class TableMetricsST {
                 .splitToNewChildren("root", "L", "R", "row-50")
                 .buildTree());
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 100))
-                .numberedRecords(LongStream.range(0, 23));
+                .numberedRows(LongStream.range(0, 100))
+                .numberedRows(LongStream.range(0, 23));
 
         // When
         TableMetrics metrics = sleeper.tableMetrics().generate().get();
@@ -73,7 +73,7 @@ public class TableMetricsST {
         // Then
         assertThat(metrics).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
-                .fileCount(2).recordCount(123)
+                .fileCount(2).rowCount(123)
                 .averageFileReferencesPerPartition(1.5)
                 .build());
     }
@@ -89,10 +89,10 @@ public class TableMetricsST {
                             .splitToNewChildren("root", "L", "R", "row-50")
                             .buildTree());
                     sleeper.ingest().direct(tempDir)
-                            .numberedRecords(LongStream.range(0, 100));
+                            .numberedRows(LongStream.range(0, 100));
                 });
         sleeper.table("A").ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 23));
+                .numberedRows(LongStream.range(0, 23));
 
         // When
         sleeper.tableMetrics().generate();
@@ -101,17 +101,17 @@ public class TableMetricsST {
         assertThat(sleeper.tables().list()).hasSize(3);
         assertThat(sleeper.table("A").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
-                .fileCount(2).recordCount(123)
+                .fileCount(2).rowCount(123)
                 .averageFileReferencesPerPartition(1.5)
                 .build());
         assertThat(sleeper.table("B").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
-                .fileCount(1).recordCount(100)
+                .fileCount(1).rowCount(100)
                 .averageFileReferencesPerPartition(1)
                 .build());
         assertThat(sleeper.table("C").tableMetrics().get()).isEqualTo(tableMetrics(sleeper)
                 .partitionCount(3).leafPartitionCount(2)
-                .fileCount(1).recordCount(100)
+                .fileCount(1).rowCount(100)
                 .averageFileReferencesPerPartition(1)
                 .build());
     }

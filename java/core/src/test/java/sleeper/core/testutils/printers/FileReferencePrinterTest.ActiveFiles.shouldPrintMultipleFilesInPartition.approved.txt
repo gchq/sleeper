@@ -2,8 +2,8 @@ Unreferenced files: 0
 Referenced files: 4
 File references: 4
 Partition at L:
-40 records in file 1
-30 records in file 2
+40 rows in file 1
+30 rows in file 2
 Partition at R:
-20 records in file 3
-10 records in file 4
+20 rows in file 3
+10 rows in file 4

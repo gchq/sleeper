@@ -32,7 +32,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  * An export query for a leaf partition. The query contains information about
  * which files should be read.
  * That query is broken down over leaf partitions into subqueries. Each
- * subquery retrieves records from a leaf partition.
+ * subquery retrieves rows from a leaf partition.
  */
 public class BulkExportLeafPartitionQuery {
 

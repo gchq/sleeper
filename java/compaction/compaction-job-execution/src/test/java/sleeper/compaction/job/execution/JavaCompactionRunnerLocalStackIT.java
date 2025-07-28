@@ -34,7 +34,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.sketches.store.SketchesStore;
@@ -86,27 +86,27 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
         List<Row> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
         List<Row> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
-        FileReference file1 = ingestRecordsGetFile(data1);
-        FileReference file2 = ingestRecordsGetFile(data2);
+        FileReference file1 = ingestRowsGetFile(data1);
+        FileReference file2 = ingestRowsGetFile(data2);
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessed summary = compact(compactionJob, configuration);
+        RowsProcessed summary = compact(compactionJob, configuration);
 
         // Then
         //  - Read output file and check that it contains the right results
         List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
-        assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
-        assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRowsRead()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRowsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
                 .isEqualTo(SketchesDeciles.from(schema, expectedResults));
     }
 
-    protected FileReference ingestRecordsGetFile(List<Row> rows) throws Exception {
-        return ingestRecordsGetFile(rows, builder -> builder
+    protected FileReference ingestRowsGetFile(List<Row> rows) throws Exception {
+        return ingestRowsGetFile(rows, builder -> builder
                 .hadoopConfiguration(configuration)
                 .s3AsyncClient(s3AsyncClient));
     }

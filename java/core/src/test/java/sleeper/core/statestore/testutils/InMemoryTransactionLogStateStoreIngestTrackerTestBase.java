@@ -39,7 +39,7 @@ public abstract class InMemoryTransactionLogStateStoreIngestTrackerTestBase exte
     protected IngestJobEvent trackJobRun(String jobId, String jobRunId, int inputFileCount, FileReference outputFile) {
         IngestJobStartedEvent job = trackedJob(jobId, jobRunId, inputFileCount);
         tracker.jobStarted(job);
-        tracker.jobFinished(ingestJobFinishedEventBuilder(job, defaultSummary(outputFile.getNumberOfRecords()))
+        tracker.jobFinished(ingestJobFinishedEventBuilder(job, defaultSummary(outputFile.getNumberOfRows()))
                 .numFilesWrittenByJob(1).committedBySeparateFileUpdates(true).build());
         return job;
     }

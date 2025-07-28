@@ -76,7 +76,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     @Test
     void shouldCommitToStateStoreDirectly() throws Exception {
         // Given
-        List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
+        List<String> filenames = ingestRowsGetFilenames(IntStream.rangeClosed(1, 100)
                 .mapToObj(i -> new Row(Map.of("key", i))));
 
         // When
@@ -98,7 +98,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
         // Given
         tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
-        List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
+        List<String> filenames = ingestRowsGetFilenames(IntStream.rangeClosed(1, 100)
                 .mapToObj(i -> new Row(Map.of("key", i))));
 
         // When
@@ -160,7 +160,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
         return new SplitPartitionLambda(instanceProperties, s3Client, dynamoClient, sqsClient, List.of(ids).iterator()::next);
     }
 
-    private List<String> ingestRecordsGetFilenames(Stream<Row> rows) throws Exception {
+    private List<String> ingestRowsGetFilenames(Stream<Row> rows) throws Exception {
         IngestResult result = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(tempDir.toString())

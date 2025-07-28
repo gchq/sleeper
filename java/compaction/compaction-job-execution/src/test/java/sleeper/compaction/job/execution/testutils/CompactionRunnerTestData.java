@@ -24,9 +24,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
@@ -79,20 +79,20 @@ public class CompactionRunnerTestData {
     }
 
     private static Stream<Row> streamKeyAndTwoValuesFromEvens(Function<Integer, Object> convert) {
-        return streamFromEvens((even, record) -> {
+        return streamFromEvens((even, row) -> {
             Object converted = convert.apply(even);
-            record.put("key", converted);
-            record.put("value1", converted);
-            record.put("value2", 987654321L);
+            row.put("key", converted);
+            row.put("value1", converted);
+            row.put("value2", 987654321L);
         });
     }
 
     private static Stream<Row> streamKeyAndTwoValuesFromOdds(Function<Integer, Object> convert) {
         Object value1 = convert.apply(1001);
-        return streamFromOdds((odd, record) -> {
-            record.put("key", convert.apply(odd));
-            record.put("value1", value1);
-            record.put("value2", 123456789L);
+        return streamFromOdds((odd, row) -> {
+            row.put("key", convert.apply(odd));
+            row.put("value1", value1);
+            row.put("value2", 123456789L);
         });
     }
 
@@ -138,23 +138,23 @@ public class CompactionRunnerTestData {
     }
 
     public static List<Row> combineSortedBySingleKey(List<Row> data1, List<Row> data2) {
-        return combineSortedBySingleKey(data1, data2, record -> record.get("key"));
+        return combineSortedBySingleKey(data1, data2, row -> row.get("key"));
     }
 
     public static List<Row> combineSortedBySingleByteArrayKey(List<Row> data1, List<Row> data2) {
-        return combineSortedBySingleKey(data1, data2, record -> ByteArray.wrap((byte[]) record.get("key")));
+        return combineSortedBySingleKey(data1, data2, row -> ByteArray.wrap((byte[]) row.get("key")));
     }
 
     public static List<Row> combineSortedBySingleKey(List<Row> data1, List<Row> data2, Function<Row, Object> getKey) {
         SortedMap<Object, Row> data = new TreeMap<>();
-        data1.forEach(record -> data.put(getKey.apply(record), record));
-        data2.forEach(record -> data.put(getKey.apply(record), record));
+        data1.forEach(row -> data.put(getKey.apply(row), row));
+        data2.forEach(row -> data.put(getKey.apply(row), row));
         return new ArrayList<>(data.values());
     }
 
     public static FileReference writeRootFile(Schema schema, StateStore stateStore, String filename, List<Row> rows) throws Exception {
         Sketches sketches = Sketches.from(schema);
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(filename), schema)) {
             for (Row row : rows) {
                 writer.write(row);
                 sketches.update(row);
@@ -168,7 +168,7 @@ public class CompactionRunnerTestData {
 
     public static List<Row> readDataFile(Schema schema, String filename) throws IOException {
         List<Row> results = new ArrayList<>();
-        try (ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRecordReader(new Path(filename), schema))) {
+        try (ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRowReader(new Path(filename), schema))) {
             while (reader.hasNext()) {
                 results.add(new Row(reader.next()));
             }

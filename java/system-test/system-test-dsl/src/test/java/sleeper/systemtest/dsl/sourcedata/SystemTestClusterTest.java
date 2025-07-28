@@ -37,11 +37,11 @@ public class SystemTestClusterTest {
     void shouldIngestDirectlyWithSystemTestCluster(SleeperSystemTest sleeper) {
         // When
         sleeper.systemTestCluster().runDataGenerationJobs(2,
-                builder -> builder.ingestMode(DIRECT).recordsPerIngest(123))
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(123))
                 .waitForTotalFileReferences(2);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .isEmpty();

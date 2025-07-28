@@ -23,7 +23,7 @@ import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.List;
@@ -128,7 +128,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
         Instant startTime2 = Instant.parse("2022-10-03T15:19:02.001Z");
         Instant finishTime2 = Instant.parse("2022-10-03T15:19:32.001Z");
         Instant commitTime2 = Instant.parse("2022-10-03T15:19:42.001Z");
-        RecordsProcessed processed = new RecordsProcessed(100L, 100L);
+        RowsProcessed processed = new RowsProcessed(100L, 100L);
         JobRunSummary summary1 = new JobRunSummary(processed, startTime1, finishTime1);
         JobRunSummary summary2 = new JobRunSummary(processed, startTime2, finishTime2);
 

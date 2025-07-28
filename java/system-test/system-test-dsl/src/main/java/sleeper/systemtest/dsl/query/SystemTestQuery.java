@@ -55,22 +55,22 @@ public class SystemTestQuery {
         return this;
     }
 
-    public List<Row> allRecordsInTable() {
-        return driver.run(queryCreator().allRecordsQuery());
+    public List<Row> allRowsInTable() {
+        return driver.run(queryCreator().allRowsQuery());
     }
 
-    public Map<String, List<Row>> allRecordsByTable() {
-        return driver.runForAllTables(QueryCreator::allRecordsQuery);
+    public Map<String, List<Row>> allRowsByTable() {
+        return driver.runForAllTables(QueryCreator::allRowsQuery);
     }
 
     public List<Row> byRowKey(String key, QueryRange... ranges) {
         return driver.run(queryCreator().byRowKey(key, List.of(ranges)));
     }
 
-    public List<Row> allRecordsWithProcessingConfig(Consumer<QueryProcessingConfig.Builder> config) {
+    public List<Row> allRowsWithProcessingConfig(Consumer<QueryProcessingConfig.Builder> config) {
         QueryProcessingConfig.Builder builder = QueryProcessingConfig.builder();
         config.accept(builder);
-        return driver.run(queryCreator().allRecordsQuery(builder.build()));
+        return driver.run(queryCreator().allRowsQuery(builder.build()));
     }
 
     public void emptyResultsBucket() {

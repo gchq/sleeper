@@ -16,7 +16,7 @@
 package sleeper.core.tracker.ingest.task;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -74,18 +74,18 @@ public class IngestTaskStatusTestData {
      * @param  finishTaskTime the finish time for the task
      * @param  startJobTime   the start time for the job
      * @param  finishJobTime  the finish time for the job
-     * @param  recordsRead    the number of records read when running the job
-     * @param  recordsWritten the number of records written when running the job
+     * @param  rowsRead       the number of rows read when running the job
+     * @param  rowsWritten    the number of rows written when running the job
      * @return                an ingest task status that finished with one job
      */
     public static IngestTaskStatus finishedOneJob(
             String taskId, Instant startTaskTime, Instant finishTaskTime,
             Instant startJobTime, Instant finishJobTime,
-            long recordsRead, long recordsWritten) {
+            long rowsRead, long rowsWritten) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
                 .finished(finishTaskTime, IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(
                         new JobRunSummary(
-                                new RecordsProcessed(recordsRead, recordsWritten),
+                                new RowsProcessed(rowsRead, rowsWritten),
                                 startJobTime, finishJobTime))))
                 .build();
     }
@@ -96,7 +96,7 @@ public class IngestTaskStatusTestData {
      * @param  taskId         the task ID
      * @param  startTaskTime  the start time for the task
      * @param  finishTaskTime the finish time for the task
-     * @param  summaries      a collection of record processed summaries from running jobs
+     * @param  summaries      a collection of summaries from running jobs
      * @return                an ingest task status that finished with multiple jobs
      */
     public static IngestTaskStatus finishedMultipleJobs(

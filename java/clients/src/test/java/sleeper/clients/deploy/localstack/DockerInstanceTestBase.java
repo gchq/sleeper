@@ -29,8 +29,8 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
@@ -55,15 +55,15 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
                 .build().deploy(instanceId);
     }
 
-    public CloseableIterator<Row> queryAllRecords(
+    public CloseableIterator<Row> queryAllRows(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), hadoopConf, tableProperties));
+                new LeafPartitionRowRetrieverImpl(Executors.newSingleThreadExecutor(), hadoopConf, tableProperties));
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
-        return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
+        return executor.execute(createQueryAllRows(tree, tableProperties.get(TABLE_NAME)));
     }
 
     protected IngestJob receiveIngestJob(String queueUrl) {
@@ -75,7 +75,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
         return new IngestJobSerDe().fromJson(json);
     }
 
-    private static Query createQueryAllRecords(PartitionTree tree, String tableName) {
+    private static Query createQueryAllRows(PartitionTree tree, String tableName) {
         return Query.builder()
                 .tableName(tableName)
                 .queryId(UUID.randomUUID().toString())

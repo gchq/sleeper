@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.RecordReadSupport;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.RowReadSupport;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 
@@ -44,9 +44,9 @@ public class AwsDataFilesDriver implements DataFilesDriver {
     @Override
     public CloseableIterator<Row> getRows(Schema schema, String filename) {
         try {
-            LOGGER.info("Reading records from file {}", filename);
+            LOGGER.info("Reading rows from file {}", filename);
             return new ParquetReaderIterator(
-                    ParquetReader.builder(new RecordReadSupport(schema), new Path(filename))
+                    ParquetReader.builder(new RowReadSupport(schema), new Path(filename))
                             .withConf(hadoopConf)
                             .build());
         } catch (IOException e) {

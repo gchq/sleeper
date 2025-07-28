@@ -330,7 +330,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
     public IngestCoordinator<Page> createIngestCoordinator(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
         try {
-            return this.sleeperRawAwsConnection.createIngestRecordsAsync(schemaTableName.getTableName());
+            return this.sleeperRawAwsConnection.createIngestRowsAsync(schemaTableName.getTableName());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

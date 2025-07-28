@@ -35,10 +35,10 @@ public interface FileReferenceStoreQueries {
 
     /**
      * Returns all references for files in any partition. This may return multiple references for a single file if it
-     * contains records in more than one partition.
+     * contains rows in more than one partition.
      * <p>
      * This must never return references for the same file on partitions where one is the ancestor of the other. This
-     * means that every record in a file must only be referenced once.
+     * means that every row in a file must only be referenced once.
      *
      * @return                     a list of all {@link FileReference}s in the Sleeper table
      * @throws StateStoreException if query fails
@@ -118,7 +118,7 @@ public interface FileReferenceStoreQueries {
      * references against Sleeper partitions. This will include all files whose reference count is tracked against the
      * Sleeper table, whether it is referenced against partitions or not.
      * <p>
-     * Files with internal references against partitions have records in the Sleeper table. Files with no internal
+     * Files with internal references against partitions have rows in the Sleeper table. Files with no internal
      * references are either in use by long-running operations, or are waiting to be garbage collected.
      *
      * @param  maxUnreferencedFiles Maximum number of files to return with no active references

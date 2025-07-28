@@ -69,7 +69,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName("system-test");
-            assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
+            assertThat(queryAllRows(instanceProperties, tableProperties)).isExhausted();
             assertTablesExist(instanceProperties,
                     TABLE_NAME_INDEX_DYNAMO_TABLENAME,
                     TABLE_ONLINE_INDEX_DYNAMO_TABLENAME,
@@ -142,14 +142,14 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             List<Row> rows = List.of(
                     new Row(Map.of("key", "test1")),
                     new Row(Map.of("key", "test2")));
-            ingestRecords(instanceProperties, tableProperties, rows);
+            ingestRows(instanceProperties, tableProperties, rows);
 
             // Then
-            assertThat(queryAllRecords(instanceProperties, tableProperties))
+            assertThat(queryAllRows(instanceProperties, tableProperties))
                     .toIterable().containsExactlyElementsOf(rows);
         }
 
-        private void ingestRecords(
+        private void ingestRows(
                 InstanceProperties instanceProperties, TableProperties tableProperties, List<Row> rows) throws Exception {
             IngestFactory.builder()
                     .instanceProperties(instanceProperties)
@@ -158,7 +158,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .hadoopConfiguration(hadoopConf)
                     .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
                     .s3AsyncClient(s3AsyncClient)
-                    .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(rows.iterator()));
+                    .build().ingestFromRowIteratorAndClose(tableProperties, new WrappedIterator<>(rows.iterator()));
         }
     }
 }

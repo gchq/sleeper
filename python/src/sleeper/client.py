@@ -83,14 +83,14 @@ class SleeperClient:
         self._dynamo_resource = dynamo_resource
         self._deserialiser = ParquetDeserialiser(use_threads=use_threads)
 
-    def write_single_batch(self, table_name: str, records_to_write: list, job_id: str = None):
+    def write_single_batch(self, table_name: str, rows_to_write: list, job_id: str = None):
         """
-        Perform a write of the given records to Sleeper.
-        These are treated as a single block of records to write. Each
-        record should be a dictionary in the list.
+        Perform a write of the given rows to Sleeper.
+        These are treated as a single block of rows to write. Each
+        row should be a dictionary in the list.
 
         :param table_name: the table name to write to
-        :param records_to_write: list of the dictionaries containing the records to write
+        :param rows_to_write: list of the dictionaries containing the rows to write
         :param job_id: the id of the ingest job, will be randomly generated if not provided
         """
         # Generate a filename to write to
@@ -98,7 +98,7 @@ class SleeperClient:
         databucket_file: str = f"{databucket}/{_make_ingest_object_key(job_id)}"
         logger.debug(f"Writing to {databucket_file}")
         # Upload it
-        _write_and_upload_parquet(self._s3_client, records_to_write, databucket_file)
+        _write_and_upload_parquet(self._s3_client, rows_to_write, databucket_file)
         # Inform Sleeper
         job = IngestJob(job_id=job_id, table_name=table_name, files=[databucket_file])
         IngestJobSender(self._sqs_resource, self._instance_properties).send(job)
@@ -112,7 +112,7 @@ class SleeperClient:
         in the format 'bucket/file'.
 
         :param table_name: the table name to write to
-        :param files: list of the files containing the records to ingest
+        :param files: list of the files containing the rows to ingest
         :param job_id: the id of the ingest job, will be randomly generated if not provided
         """
         job = IngestJob(job_id=job_id, table_name=table_name, files=files)
@@ -135,7 +135,7 @@ class SleeperClient:
         be specified in the format 'bucket/file'.
 
         :param table_name: the table name to write to
-        :param files: list of the files containing the records to ingest
+        :param files: list of the files containing the rows to ingest
         :param id: the id of the bulk import job - if one is not provided then a UUID will be assigned
         :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
         :param platform_spec: a dict containing details of the platform to use - see docs/usage/python-api.md
@@ -161,7 +161,7 @@ class SleeperClient:
         files under the directory will be ingested. Files should be specified in the format 'bucket/file'.
 
         :param table_name: the table name to write to
-        :param files: list of the files containing the records to ingest
+        :param files: list of the files containing the rows to ingest
         """
 
         request = IngestBatcherSubmitRequest(table_name=table_name, files=files)
@@ -178,7 +178,7 @@ class SleeperClient:
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """
-        Query a Sleeper table for records where the key matches a given list of query keys. This query is executed in
+        Query a Sleeper table for rows where the key matches a given list of query keys. This query is executed in
         a lambda function and the results are written to S3. Once the query has finished the results are loaded from
         S3. This means that there can be significant latency before the results are returned. Note that the first query
         will be significantly slower than subsequent ones as the lambda needs to start up, unless the KeepLambdaWarm
@@ -189,7 +189,7 @@ class SleeperClient:
         to query for, or a list of dicts where the key is a row-key field name and the value is the value to query for
         :param query_id: the query ID, will be randomly generated if not provided
 
-        :return: list of result records
+        :return: list of result rows
         """
         if not isinstance(keys, list) and not isinstance(keys, dict):
             raise Exception(
@@ -229,7 +229,7 @@ class SleeperClient:
 
     def range_key_query(self, table_name: str, regions: list, query_id: str = None) -> list:
         """
-        Query a Sleeper table for records where the key is within one of the provided list of ranges. This query is
+        Query a Sleeper table for rows where the key is within one of the provided list of ranges. This query is
         executed in a lambda function and the results are written to S3. Once the query has finished the results are
         loaded from S3. This means that there can be significant latency before the results are returned. Note that the
         first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
@@ -244,7 +244,7 @@ class SleeperClient:
             whether the maximum is inclusive.
         :param query_id: the query ID, will be randomly generated if not provided
 
-        :return: list of the result records
+        :return: list of the result rows
         """
         if query_id is None:
             query_id = str(uuid.uuid4())
@@ -301,8 +301,8 @@ class SleeperClient:
 
         logger.debug(f"Submitted query with id {query_id}")
 
-        located_records = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo_resource, self._deserialiser, query_id)
-        return located_records
+        located_rows = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo_resource, self._deserialiser, query_id)
+        return located_rows
 
     @contextmanager
     def create_batch_writer(self, table_name: str, job_id: str = None):
@@ -311,10 +311,10 @@ class SleeperClient:
         Designed to be used within a context manager ('with' statement).
         When this is used, a temporary Parquet file will be created locally
         so that events can be written to it as necessary. Once it is closed,
-        the Parquet file of records will be uploaded to S3 and ingested into
+        the Parquet file of rows will be uploaded to S3 and ingested into
         Sleeper.
 
-        The main difference between this method and write_ingest is that records
+        The main difference between this method and write_ingest is that rows
         do not have to be completely held in memory and passed in one function call,
         data can be sent in batches as it is created.
 
@@ -329,20 +329,20 @@ class SleeperClient:
             try:
                 parquet_file = ParquetSerialiser(fp)
 
-                # Return an instance of RecordWriter that is bound to this batch writer
+                # Return an instance of RowWriter that is bound to this batch writer
 
-                class RecordWriter:
+                class RowWriter:
                     def __init__(self):
-                        self.num_records: int = 0
+                        self.num_rows: int = 0
 
-                    def write(self, records: List[Dict]):
-                        for record in records:
-                            parquet_file.write_record(record)
+                    def write(self, rows: List[Dict]):
+                        for row in rows:
+                            parquet_file.write_record(row)
 
-                        # Keep num records updated
-                        self.num_records += len(records)
+                        # Keep num rows updated
+                        self.num_rows += len(rows)
 
-                writer = RecordWriter()
+                writer = RowWriter()
 
                 # Return this as the context manager object
                 yield writer
@@ -357,18 +357,18 @@ class SleeperClient:
 
                 # Perform upload
                 self._s3_client.upload_file(fp.name, bucket, key)
-                logger.debug(f"Uploaded {writer.num_records} records to S3")
+                logger.debug(f"Uploaded {writer.num_rows} rows to S3")
 
                 # Notify Sleeper
                 job = IngestJob(job_id=job_id, table_name=table_name, files=[f"{bucket}/{key}"])
                 IngestJobSender(self._sqs_resource, self._instance_properties).send(job)
 
 
-def _write_and_upload_parquet(s3_client: S3Client, records_to_write: list, s3_file: str):
+def _write_and_upload_parquet(s3_client: S3Client, rows_to_write: list, s3_file: str):
     """
-    Creates a Parquet file from the user's records and uploads to their Sleeper databucket.
+    Creates a Parquet file from the user's rows and uploads to their Sleeper databucket.
 
-    :param records_to_write: list of the dictionaries containing the records to user wants to write to the Parquet file
+    :param rows_to_write: list of the dictionaries containing the rows to user wants to write to the Parquet file
 
     :param s3_file: name of the databucket concatenated with the name of the Parquet file
     """
@@ -378,8 +378,8 @@ def _write_and_upload_parquet(s3_client: S3Client, records_to_write: list, s3_fi
 
     with tempfile.NamedTemporaryFile() as fp:
         writer = ParquetSerialiser(fp)
-        for record in records_to_write:
-            writer.write_record(record)
+        for row in rows_to_write:
+            writer.write_record(row)
         writer.write_tail()
 
         s3_client.upload_file(fp.name, databucket_name, file_name)
@@ -456,7 +456,7 @@ def _receive_messages(
     :param query_id: the id of the Sleeper query
     :param timeout: the maximum time in seconds to wait for a result
 
-    :return: a list of the records the user queried for
+    :return: a list of the rows the user queried for
     """
     # This while loop will poll the DynamoDB query tracker until the query is completed. Upon completion the
     # results will be read from S3 into a list and returned.
@@ -502,8 +502,8 @@ def _receive_messages(
                 logger.debug(f"Opening file {results_bucket_name}/{file}")
                 with s3fs.open(f"{results_bucket_name}/{file}", "rb") as f:
                     with ParquetFile(f) as po:
-                        for record in deserialiser.read(po):
-                            results.append(record)
+                        for row in deserialiser.read(po):
+                            results.append(row)
 
             logger.debug("Query has finished")
             return results

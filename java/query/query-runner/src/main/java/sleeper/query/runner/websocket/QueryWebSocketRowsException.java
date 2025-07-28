@@ -19,15 +19,15 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class QueryWebSocketRowsException extends Exception {
 
-    private final long recordsSent;
+    private final long rowsSent;
 
-    public QueryWebSocketRowsException(Exception cause, long recordsSent) {
+    public QueryWebSocketRowsException(Exception cause, long rowsSent) {
         super(cause);
-        this.recordsSent = recordsSent;
+        this.rowsSent = rowsSent;
     }
 
-    public long getRecordsSent() {
-        return recordsSent;
+    public long getRowsSent() {
+        return rowsSent;
     }
 
     @Override

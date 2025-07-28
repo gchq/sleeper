@@ -37,11 +37,11 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
@@ -93,7 +93,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
@@ -113,7 +113,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 1001);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
@@ -127,7 +127,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
@@ -143,11 +143,11 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     }
 
     @Test
-    public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws IOException {
+    public void shouldPrioritiseFilesContainingTheLargestNumberOfRows() throws IOException {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createAscendingRecordList(100, 10));
+        writeFiles(createAscendingRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
@@ -161,12 +161,12 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                     assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
                     List<FileReference> fileReferences = stateStore.getFileReferences();
-                    Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
+                    Optional<Long> numberOfRows = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
                             .filter(fi -> fi.getFilename().equals(fileName))
-                            .map(FileReference::getNumberOfRecords)).reduce(Long::sum);
+                            .map(FileReference::getNumberOfRows)).reduce(Long::sum);
 
                     // 109 + 108 + 107 + 106 + 105 = 535
-                    assertThat(numberOfRecords).contains(535L);
+                    assertThat(numberOfRows).contains(535L);
                 });
     }
 
@@ -176,11 +176,11 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
 
-    private List<List<Row>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
+    private List<List<Row>> createEvenRowList(Integer rowsPerList, Integer numberOfLists) {
         List<List<Row>> rowLists = new ArrayList<>();
         for (int i = 0; i < numberOfLists; i++) {
             List<Row> rows = new ArrayList<>();
-            for (int j = 0; j < recordsPerList; j++) {
+            for (int j = 0; j < rowsPerList; j++) {
                 Row row = new Row();
                 row.put("key", j);
                 rows.add(row);
@@ -191,9 +191,9 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         return rowLists;
     }
 
-    private List<List<Row>> createAscendingRecordList(Integer startingRecordsPerList, Integer numberOfLists) {
+    private List<List<Row>> createAscendingRowList(Integer startingRowsPerList, Integer numberOfLists) {
         List<List<Row>> rowLists = new ArrayList<>();
-        Integer rowsPerList = startingRecordsPerList;
+        Integer rowsPerList = startingRowsPerList;
         for (int i = 0; i < numberOfLists; i++) {
             List<Row> rows = new ArrayList<>();
             for (int j = 0; j < rowsPerList; j++) {
@@ -215,18 +215,18 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                 File stagingArea = createTempDirectory(tempDir, null).toFile();
                 File directory = createTempDirectory(tempDir, null).toFile();
                 try (IngestCoordinator<Row> coordinator = standardIngestCoordinator(stateStore, SCHEMA,
-                        ArrayListRecordBatchFactory.builder()
+                        ArrayListRowBatchFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
                                 .localWorkingDirectory(stagingArea.getAbsolutePath())
-                                .maxNoOfRecordsInMemory(1_000_000)
-                                .maxNoOfRecordsInLocalStore(1000L)
-                                .buildAcceptingRecords(),
+                                .maxNoOfRowsInMemory(1_000_000)
+                                .maxNoOfRowsInLocalStore(1000L)
+                                .buildAcceptingRows(),
                         DirectPartitionFileWriterFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
                                 .filePaths(TableFilePaths.fromPrefix("file://" + directory.getAbsolutePath()))
                                 .sketchesStore(new LocalFileSystemSketchesStore())
                                 .build())) {
-                    new IngestRecordsFromIterator(coordinator, list.iterator()).write();
+                    new IngestRowsFromIterator(coordinator, list.iterator()).write();
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);

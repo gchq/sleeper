@@ -32,9 +32,9 @@ public class PartitionStatus {
     private final Partition partition;
     private final int numberOfFiles;
     private final int numberOfFilesOnJobs;
-    private final long exactRecordsReferenced;
-    private final long approxRecordsReferenced;
-    private final long approxRecords;
+    private final long exactRowsReferenced;
+    private final long approxRowsReferenced;
+    private final long approxRows;
     private final boolean willBeSplit;
     private final boolean maySplitIfCompacted;
     private final Field splitField;
@@ -45,9 +45,9 @@ public class PartitionStatus {
         partition = builder.partition;
         numberOfFiles = builder.numberOfFiles;
         numberOfFilesOnJobs = builder.numberOfFilesOnJobs;
-        exactRecordsReferenced = builder.exactRecordsReferenced;
-        approxRecordsReferenced = builder.approxRecordsReferenced;
-        approxRecords = builder.approxRecords;
+        exactRowsReferenced = builder.exactRowsReferenced;
+        approxRowsReferenced = builder.approxRowsReferenced;
+        approxRows = builder.approxRows;
         willBeSplit = builder.willBeSplit;
         maySplitIfCompacted = builder.maySplitIfCompacted;
         splitField = builder.splitField;
@@ -63,9 +63,9 @@ public class PartitionStatus {
         return builder().partition(partition)
                 .numberOfFiles(partitionFiles.size())
                 .numberOfFilesOnJobs((int) partitionFiles.stream().filter(file -> file.getJobId() != null).count())
-                .exactRecordsReferenced(check.getKnownRecordsWhollyInPartition())
-                .approxRecordsReferenced(check.getEstimatedRecordsFromReferencesInPartition())
-                .approxRecords(check.getEstimatedRecordsFromReferencesInPartitionTree())
+                .exactRowsReferenced(check.getKnownRowsWhollyInPartition())
+                .approxRowsReferenced(check.getEstimatedRowsFromReferencesInPartition())
+                .approxRows(check.getEstimatedRowsFromReferencesInPartitionTree())
                 .willBeSplit(check.isNeedsSplitting())
                 .maySplitIfCompacted(check.maySplitIfCompacted())
                 .splitField(splitField(partition, schema))
@@ -98,16 +98,16 @@ public class PartitionStatus {
         return numberOfFilesOnJobs;
     }
 
-    public long getExactRecordsReferenced() {
-        return exactRecordsReferenced;
+    public long getExactRowsReferenced() {
+        return exactRowsReferenced;
     }
 
-    public long getApproxRecordsReferenced() {
-        return approxRecordsReferenced;
+    public long getApproxRowsReferenced() {
+        return approxRowsReferenced;
     }
 
-    public long getApproxRecords() {
-        return approxRecords;
+    public long getApproxRows() {
+        return approxRows;
     }
 
     public Field getSplitField() {
@@ -159,9 +159,9 @@ public class PartitionStatus {
         private Partition partition;
         private int numberOfFiles;
         private int numberOfFilesOnJobs;
-        private long exactRecordsReferenced;
-        private long approxRecordsReferenced;
-        private long approxRecords;
+        private long exactRowsReferenced;
+        private long approxRowsReferenced;
+        private long approxRows;
         private boolean willBeSplit;
         private boolean maySplitIfCompacted;
         private Field splitField;
@@ -186,18 +186,18 @@ public class PartitionStatus {
             return this;
         }
 
-        public Builder exactRecordsReferenced(long exactRecordsReferenced) {
-            this.exactRecordsReferenced = exactRecordsReferenced;
+        public Builder exactRowsReferenced(long exactRowsReferenced) {
+            this.exactRowsReferenced = exactRowsReferenced;
             return this;
         }
 
-        public Builder approxRecordsReferenced(long approxRecordsReferenced) {
-            this.approxRecordsReferenced = approxRecordsReferenced;
+        public Builder approxRowsReferenced(long approxRowsReferenced) {
+            this.approxRowsReferenced = approxRowsReferenced;
             return this;
         }
 
-        public Builder approxRecords(long approxRecords) {
-            this.approxRecords = approxRecords;
+        public Builder approxRows(long approxRows) {
+            this.approxRows = approxRows;
             return this;
         }
 

@@ -30,8 +30,8 @@ public class FileReferencesStats {
     private final Double averageReferences;
     private final Integer totalReferences;
 
-    private FileReferencesStats(Integer minRecords, Integer maxReferences, Double averageReferences, Integer totalReferences) {
-        this.minReferences = minRecords;
+    private FileReferencesStats(Integer minReferences, Integer maxReferences, Double averageReferences, Integer totalReferences) {
+        this.minReferences = minReferences;
         this.maxReferences = maxReferences;
         this.averageReferences = averageReferences;
         this.totalReferences = totalReferences;

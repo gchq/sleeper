@@ -22,7 +22,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.List;
@@ -67,8 +67,8 @@ public abstract class InMemoryTransactionLogStateStoreCompactionTrackerTestBase 
                 .build();
     }
 
-    protected JobRunSummary defaultSummary(long numberOfRecords) {
-        return summary(DEFAULT_START_TIME, DEFAULT_FINISH_TIME, numberOfRecords, numberOfRecords);
+    protected JobRunSummary defaultSummary(long numberOfRows) {
+        return summary(DEFAULT_START_TIME, DEFAULT_FINISH_TIME, numberOfRows, numberOfRows);
     }
 
     protected ReplaceFileReferencesRequest.Builder replaceJobFileReferencesBuilder(String jobId, List<String> inputFiles, FileReference newReference) {
@@ -83,14 +83,14 @@ public abstract class InMemoryTransactionLogStateStoreCompactionTrackerTestBase 
         return compactionJobCreated(job, DEFAULT_CREATE_TIME, runs);
     }
 
-    protected JobRun defaultCommittedRun(int numberOfRecords) {
-        return finishedCompactionRun(DEFAULT_TASK_ID, defaultSummary(numberOfRecords), DEFAULT_COMMIT_TIME);
+    protected JobRun defaultCommittedRun(int numberOfRows) {
+        return finishedCompactionRun(DEFAULT_TASK_ID, defaultSummary(numberOfRows), DEFAULT_COMMIT_TIME);
     }
 
-    protected JobRun defaultFailedCommitRun(int numberOfRecords, List<String> reasons) {
+    protected JobRun defaultFailedCommitRun(int numberOfRows, List<String> reasons) {
         return jobRunOnTask(DEFAULT_TASK_ID,
                 compactionStartedStatus(DEFAULT_START_TIME),
-                compactionFinishedStatus(DEFAULT_FINISH_TIME, new RecordsProcessed(numberOfRecords, numberOfRecords)),
+                compactionFinishedStatus(DEFAULT_FINISH_TIME, new RowsProcessed(numberOfRows, numberOfRows)),
                 compactionFailedStatus(DEFAULT_COMMIT_TIME, reasons));
     }
 }

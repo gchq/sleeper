@@ -33,7 +33,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.bridge.FFIBridge;
 
 import java.io.IOException;
@@ -78,12 +78,12 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RecordsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
+    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
         DataFusionCompactionParams params = createCompactionParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
 
-        RecordsProcessed result = invokeDataFusion(job, params, runtime);
+        RowsProcessed result = invokeDataFusion(job, params, runtime);
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
@@ -197,10 +197,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @param  job              the compaction job
      * @param  compactionParams the compaction input parameters
      * @param  runtime          the JNR FFI runtime object
-     * @return                  records read/written
+     * @return                  rows read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    public static RecordsProcessed invokeDataFusion(CompactionJob job,
+    public static RowsProcessed invokeDataFusion(CompactionJob job,
             DataFusionCompactionParams compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
@@ -213,13 +213,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             throw new IOException("DataFusion compaction failed with return code " + result);
         }
 
-        long totalNumberOfRecordsRead = compactionData.rows_read.get();
-        long recordsWritten = compactionData.rows_written.get();
+        long totalNumberOfRowsRead = compactionData.rows_read.get();
+        long rowsWritten = compactionData.rows_written.get();
 
-        LOGGER.info("Compaction job {}: Read {} records and wrote {} records",
-                job.getId(), totalNumberOfRecordsRead, recordsWritten);
+        LOGGER.info("Compaction job {}: Read {} rows and wrote {} rows",
+                job.getId(), totalNumberOfRowsRead, rowsWritten);
 
-        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
+        return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
     @Override

@@ -23,33 +23,33 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A summary of a run of a job, including the number of records processed over a defined time.
+ * A summary of a run of a job, including the number of rows processed over a defined time.
  */
 public class JobRunSummary {
 
-    private final RecordsProcessed recordsProcessed;
+    private final RowsProcessed rowsProcessed;
     private final JobRunTime runTime;
-    private final double recordsReadPerSecond;
-    private final double recordsWrittenPerSecond;
+    private final double rowsReadPerSecond;
+    private final double rowsWrittenPerSecond;
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Duration duration) {
-        this(recordsProcessed, startTime, startTime.plus(duration), duration);
+    public JobRunSummary(RowsProcessed rowsProcessed, Instant startTime, Duration duration) {
+        this(rowsProcessed, startTime, startTime.plus(duration), duration);
     }
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
-        this(recordsProcessed, startTime, finishTime, Duration.between(startTime, finishTime));
+    public JobRunSummary(RowsProcessed rowsProcessed, Instant startTime, Instant finishTime) {
+        this(rowsProcessed, startTime, finishTime, Duration.between(startTime, finishTime));
     }
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
-        this(recordsProcessed, new JobRunTime(startTime, finishTime, timeInProcess));
+    public JobRunSummary(RowsProcessed rowsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
+        this(rowsProcessed, new JobRunTime(startTime, finishTime, timeInProcess));
     }
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, JobRunTime runTime) {
-        this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
+    public JobRunSummary(RowsProcessed rowsProcessed, JobRunTime runTime) {
+        this.rowsProcessed = Objects.requireNonNull(rowsProcessed, "rowsProcessed must not be null");
         this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
         double secondsInProcess = runTime.getTimeInProcessInSeconds();
-        this.recordsReadPerSecond = recordsProcessed.getRecordsRead() / secondsInProcess;
-        this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / secondsInProcess;
+        this.rowsReadPerSecond = rowsProcessed.getRowsRead() / secondsInProcess;
+        this.rowsWrittenPerSecond = rowsProcessed.getRowsWritten() / secondsInProcess;
     }
 
     /**
@@ -75,41 +75,41 @@ public class JobRunSummary {
         JobRunTime runTime = finishedUpdate.getTimeInProcess()
                 .map(timeInProcess -> new JobRunTime(startTime, finishTime, timeInProcess))
                 .orElseGet(() -> new JobRunTime(startTime, finishTime));
-        return new JobRunSummary(finishedUpdate.getRecordsProcessed(), runTime);
+        return new JobRunSummary(finishedUpdate.getRowsProcessed(), runTime);
     }
 
     /**
-     * Creates an instance of this class with no records processed, and with no duration.
+     * Creates an instance of this class with no rows processed, and with no duration.
      *
      * @param  startTime the start time
      * @return           an instance of this class
      */
     public static JobRunSummary noProcessingDoneAtTime(Instant startTime) {
         return new JobRunSummary(
-                new RecordsProcessed(0, 0),
+                new RowsProcessed(0, 0),
                 startTime, Duration.ZERO);
     }
 
     /**
-     * Creates an instance of this class with no records processed, and the given run time.
+     * Creates an instance of this class with no rows processed, and the given run time.
      *
      * @param  runTime the run time
      * @return         an instance of this class
      */
-    public static JobRunSummary noRecordsProcessed(JobRunTime runTime) {
-        return new JobRunSummary(new RecordsProcessed(0, 0), runTime);
+    public static JobRunSummary noRowsProcessed(JobRunTime runTime) {
+        return new JobRunSummary(new RowsProcessed(0, 0), runTime);
     }
 
-    public long getRecordsRead() {
-        return recordsProcessed.getRecordsRead();
+    public long getRowsRead() {
+        return rowsProcessed.getRowsRead();
     }
 
-    public long getRecordsWritten() {
-        return recordsProcessed.getRecordsWritten();
+    public long getRowsWritten() {
+        return rowsProcessed.getRowsWritten();
     }
 
-    public RecordsProcessed getRecordsProcessed() {
-        return recordsProcessed;
+    public RowsProcessed getRowsProcessed() {
+        return rowsProcessed;
     }
 
     public JobRunTime getRunTime() {
@@ -136,12 +136,12 @@ public class JobRunSummary {
         return runTime.getTimeInProcess();
     }
 
-    public double getRecordsReadPerSecond() {
-        return recordsReadPerSecond;
+    public double getRowsReadPerSecond() {
+        return rowsReadPerSecond;
     }
 
-    public double getRecordsWrittenPerSecond() {
-        return recordsWrittenPerSecond;
+    public double getRowsWrittenPerSecond() {
+        return rowsWrittenPerSecond;
     }
 
     @Override
@@ -153,21 +153,21 @@ public class JobRunSummary {
             return false;
         }
         JobRunSummary that = (JobRunSummary) o;
-        return recordsProcessed.equals(that.recordsProcessed) && runTime.equals(that.runTime);
+        return rowsProcessed.equals(that.rowsProcessed) && runTime.equals(that.runTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(recordsProcessed, runTime);
+        return Objects.hash(rowsProcessed, runTime);
     }
 
     @Override
     public String toString() {
         return "JobRunSummary{" +
-                "recordsProcessed=" + recordsProcessed +
+                "rowsProcessed=" + rowsProcessed +
                 ", runTime=" + runTime +
-                ", recordsReadPerSecond=" + recordsReadPerSecond +
-                ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
+                ", rowsReadPerSecond=" + rowsReadPerSecond +
+                ", rowsWrittenPerSecond=" + rowsWrittenPerSecond +
                 '}';
     }
 }

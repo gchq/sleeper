@@ -27,7 +27,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.RowBatchFactory;
 
 import java.time.Instant;
 
@@ -49,40 +49,40 @@ public class IngestCoordinatorTestHelper {
 
     public static <T> IngestCoordinator<T> standardIngestCoordinator(
             StateStore stateStore, Schema schema,
-            RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
-        return standardIngestCoordinatorBuilder(stateStore, schema, recordBatchFactory, partitionFileWriterFactory).build();
+            RowBatchFactory<T> rowBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
+        return standardIngestCoordinatorBuilder(stateStore, schema, rowBatchFactory, partitionFileWriterFactory).build();
     }
 
     public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(
             StateStore stateStore, Schema schema,
-            RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
+            RowBatchFactory<T> rowBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return IngestCoordinator.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
                 .stateStore(stateStore)
                 .schema(schema)
-                .recordBatchFactory(recordBatchFactory)
+                .rowBatchFactory(rowBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory);
     }
 
     public static FileReference.Builder accurateFileReferenceBuilder(
-            String filename, String partitionId, long numberOfRecords, Instant updateTime) {
+            String filename, String partitionId, long numberOfRows, Instant updateTime) {
         return FileReference.builder()
                 .partitionId(partitionId)
                 .filename(filename)
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRows)
                 .countApproximate(false)
                 .lastStateStoreUpdateTime(updateTime);
     }
 
     public static FileReference accurateSplitFileReference(
-            FileReference fileReference, String partitionId, long numberOfRecords, Instant updateTime) {
-        return accurateSplitFileReference(fileReference.getFilename(), partitionId, numberOfRecords, updateTime);
+            FileReference fileReference, String partitionId, long numberOfRows, Instant updateTime) {
+        return accurateSplitFileReference(fileReference.getFilename(), partitionId, numberOfRows, updateTime);
     }
 
     public static FileReference accurateSplitFileReference(
-            String filename, String partitionId, long numberOfRecords, Instant updateTime) {
-        return accurateFileReferenceBuilder(filename, partitionId, numberOfRecords, updateTime)
+            String filename, String partitionId, long numberOfRows, Instant updateTime) {
+        return accurateFileReferenceBuilder(filename, partitionId, numberOfRows, updateTime)
                 .onlyContainsDataForThisPartition(false)
                 .build();
     }

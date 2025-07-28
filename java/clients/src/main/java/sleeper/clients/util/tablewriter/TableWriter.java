@@ -102,9 +102,9 @@ public class TableWriter {
         }
 
         public Builder row(Consumer<TableRow.Builder> config) {
-            TableRow.Builder recordBuilder = new TableRow.Builder(fields.size(), fieldIndex);
-            config.accept(recordBuilder);
-            rows.add(recordBuilder.build());
+            TableRow.Builder rowBuilder = new TableRow.Builder(fields.size(), fieldIndex);
+            config.accept(rowBuilder);
+            rows.add(rowBuilder.build());
             return this;
         }
 

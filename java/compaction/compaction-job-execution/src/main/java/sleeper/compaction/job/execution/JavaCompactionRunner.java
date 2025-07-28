@@ -34,12 +34,12 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
@@ -65,7 +65,7 @@ public class JavaCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RecordsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Partition partition) throws IOException, IteratorCreationException {
+    public RowsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Partition partition) throws IOException, IteratorCreationException {
         Schema schema = tableProperties.getSchema();
 
         // Create a reader for each file
@@ -80,21 +80,21 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Setting file writer mode to OVERWRITE so if the same job runs again after failing to
         // update the state store, it will overwrite the existing output file written
         // by the previous run
-        ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                 outputPath, tableProperties, configuration, ParquetFileWriter.Mode.OVERWRITE);
 
         LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
         Sketches sketches = Sketches.from(schema);
 
-        long recordsWritten = 0L;
+        long rowsWritten = 0L;
         while (mergingIterator.hasNext()) {
             Row row = mergingIterator.next();
             sketches.update(row);
             // Write out
             writer.write(row);
-            recordsWritten++;
-            if (0 == recordsWritten % 1_000_000) {
-                LOGGER.info("Compaction job {}: Written {} records", compactionJob.getId(), recordsWritten);
+            rowsWritten++;
+            if (0 == rowsWritten % 1_000_000) {
+                LOGGER.info("Compaction job {}: Written {} rows", compactionJob.getId(), rowsWritten);
             }
         }
         writer.close();
@@ -108,13 +108,13 @@ public class JavaCompactionRunner implements CompactionRunner {
         }
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
-        long totalNumberOfRecordsRead = 0L;
+        long totalNumberOfRowsRead = 0L;
         for (CloseableIterator<Row> iterator : inputIterators) {
-            totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRowsRead();
+            totalNumberOfRowsRead += ((ParquetReaderIterator) iterator).getNumberOfRowsRead();
         }
 
-        LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
-        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
+        LOGGER.info("Compaction job {}: Read {} rows and wrote {} rows", compactionJob.getId(), totalNumberOfRowsRead, rowsWritten);
+        return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
     private List<CloseableIterator<Row>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {
@@ -122,12 +122,12 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
-            ParquetReader<Row> reader = new ParquetRecordReader.Builder(new Path(file), schema)
+            ParquetReader<Row> reader = new ParquetRowReader.Builder(new Path(file), schema)
                     .withConf(configuration)
                     .withFilter(partitionFilter)
                     .build();
-            ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
-            inputIterators.add(recordIterator);
+            ParquetReaderIterator rowIterator = new ParquetReaderIterator(reader);
+            inputIterators.add(rowIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
             LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),
                     partition.getRegion().getRanges().toString());

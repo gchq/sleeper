@@ -13,7 +13,7 @@
             "Unit": "Count"
           },
           {
-            "Name": "RecordCount",
+            "Name": "RowCount",
             "Unit": "Count"
           },
           {
@@ -37,7 +37,7 @@
   "instanceId": "test-instance",
   "LeafPartitionCount": 1.0,
   "NumberOfFilesWithReferences": 1.0,
-  "RecordCount": 123.0,
+  "RowCount": 123.0,
   "PartitionCount": 1.0,
   "AverageFileReferencesPerPartition": 1.0,
   "tableName": "test-table"

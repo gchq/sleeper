@@ -31,7 +31,7 @@ public class WriteRandomData {
             SystemTestDataGenerationJob job, TableProperties tableProperties) {
         return Stream
                 .generate(new RandomRowSupplier(tableProperties.getSchema(), job.getRandomDataSettings()))
-                .limit(job.getRecordsPerIngest())
+                .limit(job.getRowsPerIngest())
                 .iterator();
     }
 }

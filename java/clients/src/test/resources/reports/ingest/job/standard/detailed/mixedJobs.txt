@@ -13,8 +13,8 @@ Files added to table at: 2022-09-27T13:35:07.123Z
 Finish time: 2022-09-27T13:35:12.001Z
 Finish update time: 2022-09-27T13:35:12.123Z
 Duration: 1m
-Records read: 600
-Records written: 300
+Rows read: 600
+Rows written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 ------------------------
@@ -39,8 +39,8 @@ Start update time: 2022-09-25T13:34:12.123Z
 Finish time: 2022-09-25T13:35:12.001Z
 Finish update time: 2022-09-25T13:35:12.123Z
 Duration: 1m
-Records read: 600
-Records written: 300
+Rows read: 600
+Rows written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 ------------------------
@@ -54,8 +54,8 @@ Start update time: 2022-09-24T13:34:12.123Z
 Finish time: 2022-09-24T13:35:12.001Z
 Finish update time: 2022-09-24T13:35:12.123Z
 Duration: 1m
-Records read: 600
-Records written: 300
+Rows read: 600
+Rows written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 ------------------------
@@ -78,8 +78,8 @@ Start update time: 2022-09-22T13:34:12.123Z
 Finish time: 2022-09-22T13:35:12.001Z
 Finish update time: 2022-09-22T13:35:12.123Z
 Duration: 1m
-Records read: 600
-Records written: 300
+Rows read: 600
+Rows written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 ------------------------
