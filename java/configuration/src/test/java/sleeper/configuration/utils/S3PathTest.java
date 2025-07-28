@@ -36,11 +36,56 @@ public class S3PathTest {
         assertThat(s3Path.prefix()).isEqualTo("");
     }
 
+    @ParameterizedTest
+    @CsvSource({"/", "//"})
+    public void shouldHandlePathEndingInSlashes(final String slashes) {
+        final String bucket = "justBucket";
+        final String path = bucket + slashes;
+
+        //When
+        S3Path s3Path = S3Path.parse(path);
+
+        //Then
+        assertThat(s3Path.requestedPath()).isEqualTo(path);
+        assertThat(s3Path.bucket()).isEqualTo(bucket);
+        assertThat(s3Path.prefix()).isEqualTo("");
+    }
+
     @Test
     public void shouldHandlePathWithPrefix() {
         final String bucket = "bucket";
         final String prefix = "prefix";
         final String path = bucket + '/' + prefix;
+
+        //When
+        S3Path s3Path = S3Path.parse(path);
+
+        //Then
+        assertThat(s3Path.requestedPath()).isEqualTo(path);
+        assertThat(s3Path.bucket()).isEqualTo(bucket);
+        assertThat(s3Path.prefix()).isEqualTo(prefix);
+    }
+
+    @Test
+    public void shouldHandlePathWithPrefixAndDoubleSlash() {
+        final String bucket = "bucket";
+        final String prefix = "prefix";
+        final String path = bucket + "//" + prefix;
+
+        //When
+        S3Path s3Path = S3Path.parse(path);
+
+        //Then
+        assertThat(s3Path.requestedPath()).isEqualTo(path);
+        assertThat(s3Path.bucket()).isEqualTo(bucket);
+        assertThat(s3Path.prefix()).isEqualTo(prefix);
+    }
+
+    @Test
+    public void shouldHandlePathWithPrefixAndEndSlash() {
+        final String bucket = "bucket";
+        final String prefix = "prefix";
+        final String path = bucket + '/' + prefix + '/';
 
         //When
         S3Path s3Path = S3Path.parse(path);
