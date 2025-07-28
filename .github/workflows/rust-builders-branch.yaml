@@ -1,0 +1,13 @@
+name: Rust Builders Build
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/rust-builders-branch.yaml'
+      - '.github/workflows/rust-builders.yaml'
+      - 'rust/builders/**'
+
+jobs:
+  build:
+    uses: ./.github/workflows/rust-builders.yaml
+    with:
+      pushImages: true

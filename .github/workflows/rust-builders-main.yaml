@@ -1,0 +1,11 @@
+name: Rust Builders Deployment
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    uses: ./.github/workflows/rust-builders.yaml
+    with:
+      pushImages: true
