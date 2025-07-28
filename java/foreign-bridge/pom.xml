@@ -98,9 +98,12 @@
                                 </goals>
                                 <configuration>
                                     <executable>
-                                        ${maven.multiModuleProjectDirectory}/../rust/maven-build-x86.sh</executable>
+                                        ${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
+                                    <arguments>
+                                        <argument>build-x86</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                             <execution>
@@ -111,9 +114,12 @@
                                 </goals>
                                 <configuration>
                                     <executable>
-                                        ${maven.multiModuleProjectDirectory}/../rust/maven-build-arm.sh</executable>
+                                        ${maven.multiModuleProjectDirectory}/../rust/build-for-maven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
+                                    <arguments>
+                                        <argument>build-graviton</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>

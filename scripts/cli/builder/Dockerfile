@@ -26,11 +26,8 @@ RUN apt-get update && apt-get install -y \
     jq \
     uuid-runtime \
     sudo \
-    # Rust build time dependencies including cross-compilation
-    gcc g++ \
-    g++-aarch64-linux-gnu \
-    libc6-dev-arm64-cross \
-    libssl-dev \
+    # Rust build time dependencies
+    gcc g++ libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # VS Code Java extension requires Java 21, so we install that but set the preferred version to match AWS EMR.
@@ -54,11 +51,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c
 # Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
 ENV PATH=$CARGO_HOME/bin:$PATH
 
-# Set up cross-platform builds and other tools
-RUN rustup target add x86_64-unknown-linux-gnu
-RUN rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
-RUN rustup target add aarch64-unknown-linux-gnu
-RUN rustup toolchain install stable-aarch64-unknown-linux-gnu --profile minimal --force-non-host
+# Rust build tools
 RUN rustup component add rust-src
 RUN cargo install cargo-audit --features=fix
 

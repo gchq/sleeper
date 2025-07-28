@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
-# Redirect stderr to stdout, so that Maven will log the output at INFO level instead of ERROR
-cargo build --release --target x86_64-unknown-linux-gnu --verbose "$@" 2>&1
+pushd /workspace/sleeper/rust
+cargo build --release --target x86_64-unknown-linux-gnu --verbose "$@"
+popd

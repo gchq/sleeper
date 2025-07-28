@@ -49,6 +49,7 @@ run_in_docker() {
     --add-host "host.docker.internal=host-gateway"
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
+    -v "$HOME/.ssh:$HOME_IN_IMAGE/.ssh"
     -e "IN_CLI_CONTAINER=true"
     -e AWS_ACCESS_KEY_ID
     -e AWS_SECRET_ACCESS_KEY
@@ -105,9 +106,10 @@ run_in_builder_docker() {
   mkdir -p "$HOME/.sleeper/builder"
   mkdir -p "$HOME/.m2"
   run_in_docker \
-    -v "$HOME/.sleeper/builder:/sleeper-builder" \
-    -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
+    -v "$HOME/.sleeper/builder:/sleeper-builder" \
+    -e HOST_MOUNT_PATH="$HOME/.sleeper/builder" \
+    -e CONTAINER_MOUNT_PATH=/sleeper-builder \
     "$TEMP_RUNNER_IMAGE" "$@"
   docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }

@@ -13,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
+unset CDPATH
 
-# Redirect stderr to stdout, so that Maven will log the output at INFO level instead of ERROR
-RUSTFLAGS="-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1 -Clinker=aarch64-linux-gnu-gcc" \
-    cargo build --release --target aarch64-unknown-linux-gnu --verbose "$@" 2>&1
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+
+pushd "$THIS_DIR"/builder_image
+docker build -t ghcr.io/gchq/sleeper-rust-builder:latest .
+popd
