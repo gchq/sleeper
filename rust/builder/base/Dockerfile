@@ -22,10 +22,7 @@ RUN apt-get update && apt-get install -y \
 # Install Clang 20
 RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20
 
-WORKDIR /workspace
-
 ENV CC=clang-20
 ENV CXX=clang++-20
 
-ADD build-graviton /bin/
-ADD build-x86 /bin/
+WORKDIR /workspace

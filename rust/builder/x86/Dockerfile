@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+FROM ghcr.io/gchq/sleeper-rust-builder-base:latest
 
-pushd /workspace/sleeper/rust
-rustup target add x86_64-unknown-linux-gnu
-rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
-cargo build --release --target x86_64-unknown-linux-gnu --verbose "$@"
-popd
+RUN rustup target add x86_64-unknown-linux-gnu
+RUN rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
+
+ENV CARGO_BUILD_TARGET="x86_64-unknown-linux-gnu"

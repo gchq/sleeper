@@ -102,7 +102,7 @@
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
                                     <arguments>
-                                        <argument>build-x86</argument>
+                                        <argument>x86</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -118,7 +118,7 @@
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
                                     <arguments>
-                                        <argument>build-graviton</argument>
+                                        <argument>graviton</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

@@ -18,6 +18,23 @@ unset CDPATH
 
 PROJECT_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 
+PLATFORM=$1
+shift
+if [ "$PLATFORM" = "x86" ]; then
+  BUILD_IMAGE=${RUST_BUILD_IMAGE_X86:-"ghcr.io/gchq/sleeper-rust-builder-x86:latest"}
+elif [ "$PLATFORM" = "graviton" ]; then
+  BUILD_IMAGE=${RUST_BUILD_IMAGE_GRAVITON:-"ghcr.io/gchq/sleeper-rust-builder-graviton:latest"}
+else
+  echo "Platform not recognised, expected x86 or graviton: $PLATFORM"
+  exit 1
+fi
+
+if [[ -z $1 ]]; then
+  BUILD_COMMAND=(cargo build --release --verbose)
+else
+  BUILD_COMMAND=("$@")
+fi
+
 if [ "$IN_CLI_CONTAINER" = "true" ]; then
   PATH_IN_MOUNT="${PROJECT_DIR#$CONTAINER_MOUNT_PATH}"
   MOUNT_DIR="$HOST_MOUNT_PATH/$PATH_IN_MOUNT"
@@ -31,9 +48,9 @@ if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
 fi
 RUN_PARAMS+=(
   --rm
-  -v "$MOUNT_DIR":/workspace/sleeper
-  ghcr.io/gchq/sleeper-rust-builder:latest
-  "$@"
+  -v "$MOUNT_DIR":/workspace
+  -w /workspace/rust
+  "$BUILD_IMAGE"
 )
 
-docker run "${RUN_PARAMS[@]}"
+docker run "${RUN_PARAMS[@]}" "${BUILD_COMMAND[@]}"
