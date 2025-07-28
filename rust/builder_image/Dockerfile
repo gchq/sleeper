@@ -14,18 +14,18 @@
 
 FROM rust:1.88-bookworm
 
-RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
-    gcc g++ libssl-dev \
-    g++-aarch64-linux-gnu \
-    libc6-dev-arm64-cross \
+RUN apt-get update && apt-get install -y \
+    build-essential libssl-dev gcc-multilib \
+    lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-RUN rustup target add x86_64-unknown-linux-gnu
-RUN rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
-RUN rustup target add aarch64-unknown-linux-gnu
-RUN rustup toolchain install stable-aarch64-unknown-linux-gnu --profile minimal --force-non-host
+# Install Clang 20
+RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20
 
 WORKDIR /workspace
+
+ENV CC=clang-20
+ENV CXX=clang++-20
 
 ADD build-graviton /bin/
 ADD build-x86 /bin/

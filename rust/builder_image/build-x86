@@ -16,5 +16,7 @@
 set -ex
 
 pushd /workspace/sleeper/rust
+rustup target add x86_64-unknown-linux-gnu
+rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
 cargo build --release --target x86_64-unknown-linux-gnu --verbose "$@"
 popd
