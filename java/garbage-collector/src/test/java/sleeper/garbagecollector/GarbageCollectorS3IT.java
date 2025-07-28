@@ -57,8 +57,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnreferencedFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.util.ThreadSleepTestHelper.refuseWaits;
@@ -114,8 +114,8 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
                 dataFileObjectKey("new-file-2"),
                 sketchesFileObjectKey("new-file-2")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime,
-                        List.of(activeReference("new-file-1"), activeReference("new-file-2")),
+                .isEqualTo(referencedAndUnreferencedFilesReport(oldEnoughTime,
+                        List.of(fileReference("new-file-1"), fileReference("new-file-2")),
                         List.of(oldFile1.getFilename())));
     }
 
@@ -138,8 +138,8 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
                 dataFileObjectKey("new-file"),
                 sketchesFileObjectKey("new-file")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                .isEqualTo(activeFilesReport(oldEnoughTime,
-                        activeReference("new-file")));
+                .isEqualTo(referencedFilesReport(oldEnoughTime,
+                        fileReference("new-file")));
     }
 
     @Test
@@ -165,10 +165,10 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
                 dataFileObjectKey("new-file3"),
                 sketchesFileObjectKey("new-file3")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                .isEqualTo(activeFilesReport(oldEnoughTime,
-                        activeReference("new-file1"),
-                        activeReference("new-file2"),
-                        activeReference("new-file3")));
+                .isEqualTo(referencedFilesReport(oldEnoughTime,
+                        fileReference("new-file1"),
+                        fileReference("new-file2"),
+                        fileReference("new-file3")));
     }
 
     private InstanceProperties createInstanceProperties() {
@@ -178,13 +178,13 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         return instanceProperties;
     }
 
-    private FileReference activeReference(String filePath) {
+    private FileReference fileReference(String filePath) {
         return fileFactory().rootFile(filePath, 100);
     }
 
     private void createFileWithNoReferencesByCompaction(
             String oldFilePath, String newFilePath) throws Exception {
-        FileReference oldFile = createActiveFile(oldFilePath);
+        FileReference oldFile = createReferencedFile(oldFilePath);
         createFileWithNoReferencesByCompaction(oldFile, newFilePath);
     }
 
@@ -198,7 +198,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
                 "job1", List.of(oldFile.getFilename()), newFile)));
     }
 
-    private FileReference createActiveFile(String filename) throws Exception {
+    private FileReference createReferencedFile(String filename) throws Exception {
         FileReference fileReference = fileFactory().rootFile(filename, 100L);
         update(stateStore).addFile(fileReference);
         writeFileAndSketches(filename);

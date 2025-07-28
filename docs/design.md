@@ -112,13 +112,13 @@ atomic, conditional, update ensures that a partition cannot be split twice.
 How is the midpoint of a partition identified? Whenever a file is written out, either during the ingest process or
 as the result of a compaction, a sidecar quantiles sketch file is written. This quantiles sketch allows quick estimation
 of the quantiles of the keys in the file. Quantile sketches from different files can be merged together. To identify
-the midpoint of a partition, the list of active files is retrieved from the state store. The associated sketches
+the midpoint of a partition, the list of file references is retrieved from the state store. The associated sketches
 are read from S3, and merged together. Then the median is found and used as the split point. This approach is much
 quicker than reading all the data in sorted order and stopping once half the data has been read.
 
 The partition splitting stack has two parts. The first consists of a Cloudwatch rule that periodically executes
 a lambda that runs `sleeper.splitter.lambda.FindPartitionsToSplitLambda`. For each online table, this queries the
-state store to find the leaf partitions and the active files. For each leaf partition it then calculates the
+state store to find the leaf partitions and the file references. For each leaf partition it then calculates the
 number of rows and if that is greater than a threshold it sends a message to an SQS queue saying that this partition
 should be split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue.
 This lambda executes `sleeper.splitter.lambda.SplitPartitionLambda`. This splits the partition using the process
@@ -343,10 +343,10 @@ more than N minutes. These files are then deleted in batches.
 
 A Sleeper query is a request for all rows where the key is in a range (or in one of a list of ranges). Queries
 are executed by the `QueryExecutor` class. This contains a cache of the information required from the state store
-(namely the partition tree and the active files). This cache is refreshed periodically. When a query is received,
+(namely the partition tree and the file references). This cache is refreshed periodically. When a query is received,
 the requested ranges are examined to see which leaf partitions overlap with the range. Then all partitions up
 the partition tree from the leaf partition to the root are found. Rows that are relevant to the query may be
-found in any of these partitions. All the active files in these partitions are then found. Each file is opened
+found in any of these partitions. All the file references in these partitions are then found. Each file is opened
 with a filter that specifies the required range. A streaming merge of the results is performed, with these results
 being passed through the compaction and query time iterators.
 
