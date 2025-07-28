@@ -17,25 +17,28 @@ Compaction:
 - Experimental DataFusion aggregation support is now applied automatically for Java compactions
 
 Query:
-- Returned parsed records to the client for queries via a web socket, where previously they were returned as strings
+- For queries via a web socket in Java, returned parsed records to the client, where previously they were returned as strings
+- Experimental code to query via a web socket in Python
 
 Reporting:
-- Included reasons for failure in reports on unfinished jobs
-
-Misc:
-- Renamed the concept of "records" to use "rows" instead
-- Removed the concept of "active files" in favour of referenced/unreferenced files
+- Included reasons for failures in reports on unfinished jobs
 
 Build:
 - Added `scripts/deploy/deployToDockerRepository.sh` to publish all Docker images to a repository
-
-Documentation:
-- Documented which Docker images are needed when manually deploying the system
 
 Upgrades:
 - Updated to latest version of Athena Query Federation SDK
 - Updated to Trino 435
 - Removed all use of AWS SDK v1
+
+Misc:
+- Renamed the concept of "records" to use "rows" instead
+- Removed the concept of "active files" in favour of referenced/unreferenced files
+
+Documentation:
+- Documented which Docker images are needed when manually deploying the system
+- Improved design documentation of DataFusion compaction and aggregation
+- Improved documentation of test strategy
 
 Bugfixes:
 - Compactions with DataFusion now produce correctly sorted data at large scales
