@@ -26,7 +26,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRuns;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
 
 import java.time.Duration;
@@ -107,7 +107,7 @@ public class IngestJobStatusTestData {
      * Creates a process run for an ingest job that finished.
      *
      * @param  taskId  the ingest task ID
-     * @param  summary the records processed summary
+     * @param  summary the summary of what happened in the run
      * @return         a {@link JobRun}
      */
     public static JobRun finishedIngestRun(String taskId, JobRunSummary summary) {
@@ -120,7 +120,7 @@ public class IngestJobStatusTestData {
      * Creates a process run for an ingest job that finished.
      *
      * @param  taskId               the ingest task ID
-     * @param  summary              the records processed summary
+     * @param  summary              the summary of what happened in the run
      * @param  numFilesWrittenByJob the number of files written by the job
      * @return                      a {@link JobRun}
      */
@@ -134,7 +134,7 @@ public class IngestJobStatusTestData {
      * Creates a process run for an ingest job that finished.
      *
      * @param  taskId  the ingest task ID
-     * @param  summary the records processed summary
+     * @param  summary the summary of what happened in the run
      * @return         a {@link JobRun}
      */
     public static JobRun finishedIngestRunUncommitted(String taskId, JobRunSummary summary) {
@@ -176,7 +176,7 @@ public class IngestJobStatusTestData {
     /**
      * Creates a list of ingest job statuses from a stream of process update records.
      *
-     * @param  records the {@link TestJobStatusUpdateRecords} object
+     * @param  records the status updates
      * @return         a list of ingest job statuses
      */
     public static List<IngestJobStatus> ingestJobStatusListFrom(TestJobStatusUpdateRecords records) {
@@ -186,7 +186,7 @@ public class IngestJobStatusTestData {
     /**
      * Creates one ingest job status from a stream of process update records.
      *
-     * @param  records               the {@link TestJobStatusUpdateRecords} object
+     * @param  records               the status updates
      * @return                       an ingest job status
      * @throws IllegalStateException if there was not exactly 1 job
      */
@@ -350,7 +350,7 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatus(JobRunSummary summary, int numFilesWrittenByJob) {
-        return ingestFinishedStatus(summary.getFinishTime(), numFilesWrittenByJob, summary.getRecordsProcessed());
+        return ingestFinishedStatus(summary.getFinishTime(), numFilesWrittenByJob, summary.getRowsProcessed());
     }
 
     /**
@@ -358,15 +358,15 @@ public class IngestJobStatusTestData {
      *
      * @param  finishTime           the time the job finished
      * @param  numFilesWrittenByJob the number of files written by the job
-     * @param  recordsProcessed     the numbers of records processed by the job
+     * @param  rowsProcessed        the numbers of rows processed by the job
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatus(
-            Instant finishTime, int numFilesWrittenByJob, RecordsProcessed recordsProcessed) {
+            Instant finishTime, int numFilesWrittenByJob, RowsProcessed rowsProcessed) {
         return IngestJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
                 .finishTime(finishTime)
-                .recordsProcessed(recordsProcessed)
+                .rowsProcessed(rowsProcessed)
                 .numFilesWrittenByJob(numFilesWrittenByJob)
                 .committedBySeparateFileUpdates(false)
                 .build();
@@ -390,7 +390,7 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(JobRunSummary summary, int numFilesWrittenByJob) {
-        return ingestFinishedStatusUncommitted(summary.getFinishTime(), numFilesWrittenByJob, summary.getRecordsProcessed());
+        return ingestFinishedStatusUncommitted(summary.getFinishTime(), numFilesWrittenByJob, summary.getRowsProcessed());
     }
 
     /**
@@ -398,14 +398,14 @@ public class IngestJobStatusTestData {
      *
      * @param  finishTime           the time the job finished in the task
      * @param  numFilesWrittenByJob the number of files written by the job
-     * @param  recordsProcessed     the numbers of records processed by the job
+     * @param  rowsProcessed        the numbers of rows processed by the job
      * @return                      an ingest job started status
      */
-    public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(Instant finishTime, int numFilesWrittenByJob, RecordsProcessed recordsProcessed) {
+    public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(Instant finishTime, int numFilesWrittenByJob, RowsProcessed rowsProcessed) {
         return IngestJobFinishedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
                 .finishTime(finishTime)
-                .recordsProcessed(recordsProcessed)
+                .rowsProcessed(rowsProcessed)
                 .numFilesWrittenByJob(numFilesWrittenByJob)
                 .committedBySeparateFileUpdates(true)
                 .build();

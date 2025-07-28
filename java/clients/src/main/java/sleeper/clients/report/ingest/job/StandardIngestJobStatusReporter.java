@@ -20,7 +20,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
-import sleeper.clients.report.job.AverageRecordRateReport;
+import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.util.tablewriter.TableField;
@@ -32,7 +32,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRun;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -179,7 +179,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             Map<String, Integer> persistentEmrStepCount) {
         printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
         out.printf("Total jobs finished: %s%n", statusList.stream().filter(IngestJobStatus::isAnyRunSuccessful).count());
-        AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
+        AverageRowRateReport.printf("Average ingest rate: %s%n", rowRate(statusList), out);
     }
 
     private void printUnfinishedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,
@@ -199,7 +199,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void printRangeSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
         queueMessages.print(out);
         out.printf("Total jobs in defined range: %d%n", statusList.size());
-        AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
+        AverageRowRateReport.printf("Average ingest rate: %s%n", rowRate(statusList), out);
     }
 
     private void printRejectedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
@@ -207,8 +207,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         out.printf("Total jobs rejected: %d%n", statusList.size());
     }
 
-    private static AverageRecordRate recordRate(List<IngestJobStatus> jobs) {
-        return AverageRecordRate.of(jobs.stream()
+    private static AverageRowRate rowRate(List<IngestJobStatus> jobs) {
+        return AverageRowRate.of(jobs.stream()
                 .flatMap(job -> job.getRunsLatestFirst().stream()));
     }
 

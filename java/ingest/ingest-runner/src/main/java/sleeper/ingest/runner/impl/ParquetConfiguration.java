@@ -21,7 +21,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -56,7 +56,7 @@ public class ParquetConfiguration {
     }
 
     /**
-     * Create a writer to write records to a Parquet file. It is the responsibility of the caller to close the writer
+     * Create a writer to write rows to a Parquet file. It is the responsibility of the caller to close the writer
      * after use.
      *
      * @param  outputFile  The name of the Parquet file to write to
@@ -64,7 +64,7 @@ public class ParquetConfiguration {
      * @throws IOException Thrown when the writer cannot be created
      */
     public ParquetWriter<Row> createParquetWriter(String outputFile) throws IOException {
-        return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
+        return ParquetRowWriterFactory.createParquetRowWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
     }
 
     public static final class Builder {

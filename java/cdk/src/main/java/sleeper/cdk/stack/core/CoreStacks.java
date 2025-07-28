@@ -80,14 +80,14 @@ public class CoreStacks {
     public void grantReadTablesAndData(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
-        stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
+        stateStoreStacks.grantReadFileReferencesAndPartitions(grantee);
         dataStack.grantRead(grantee);
     }
 
     public void grantReadTablesMetadata(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
-        stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
+        stateStoreStacks.grantReadFileReferencesAndPartitions(grantee);
     }
 
     public void grantReadTablesStatus(IGrantable grantee) {
@@ -112,7 +112,7 @@ public class CoreStacks {
     public void grantIngest(IRole grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
+        stateStoreStacks.grantReadPartitionsReadWriteFileReferences(grantee);
         dataStack.grantReadWrite(grantee);
         policiesStack.grantReadIngestSources(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
@@ -123,7 +123,7 @@ public class CoreStacks {
     public void grantGarbageCollection(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
-        stateStoreStacks.grantReadWriteReadyForGCFiles(grantee);
+        stateStoreStacks.grantReadWriteUnreferencedFiles(grantee);
         dataStack.grantReadDelete(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
@@ -131,7 +131,7 @@ public class CoreStacks {
     public void grantCreateCompactionJobs(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
+        stateStoreStacks.grantReadPartitionsReadWriteFileReferences(grantee);
         compactionTracker.grantWriteJobEvent(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
@@ -139,7 +139,7 @@ public class CoreStacks {
     public void grantRunCompactionJobs(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
-        stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(grantee);
+        stateStoreStacks.grantReadWriteFileReferencesAndUnreferenced(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
         dataStack.grantReadWrite(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
@@ -164,7 +164,7 @@ public class CoreStacks {
     public void grantUpdateJobTrackersFromTransactionLog(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
-        stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
+        stateStoreStacks.grantReadFileReferencesAndPartitions(grantee);
         stateStoreStacks.grantReadAllSnapshotsTable(grantee);
         compactionTracker.grantWriteJobEvent(grantee);
         ingestTracker.grantWriteJobEvent(grantee);

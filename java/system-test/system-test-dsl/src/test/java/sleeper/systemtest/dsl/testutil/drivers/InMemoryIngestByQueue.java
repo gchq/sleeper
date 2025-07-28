@@ -35,7 +35,7 @@ import sleeper.ingest.core.job.ExpandDirectoriesResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
@@ -178,7 +178,7 @@ public class InMemoryIngestByQueue {
         try (IngestCoordinator<Row> coordinator = ingest.coordinatorBuilder()
                 .addFilesToStateStore(AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds))
                 .build()) {
-            return new IngestRecordsFromIterator(coordinator, iterator).write();
+            return new IngestRowsFromIterator(coordinator, iterator).write();
         } catch (IteratorCreationException | IOException e) {
             throw new RuntimeException(e);
         }

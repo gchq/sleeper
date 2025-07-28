@@ -75,7 +75,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
-                            "Query took 1 second to return 1 records\n" +
+                            "Query took 1 second to return 1 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -106,7 +106,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
-                            "Query took 1 second to return 1 records\n" +
+                            "Query took 1 second to return 1 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -145,7 +145,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             asJson(expectedRow1) + "\n" +
                             asJson(expectedRow2) + "\n" +
                             asJson(expectedRow3) + "\n" +
-                            "Query took 1 second to return 3 records\n" +
+                            "Query took 1 second to return 3 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -154,7 +154,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
         }
 
         @Test
-        void shouldReturnResultsWhenRecordCountDoesNotMatchRowsReceived() throws Exception {
+        void shouldReturnResultsWhenRowCountDoesNotMatchRowsReceived() throws Exception {
             // Given
             Query expectedQuery = exactQuery("test-query-id", 123);
             Row expectedRow = new Row(Map.of("key", 123L));
@@ -175,7 +175,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             "Submitting query with ID: test-query-id\n" +
                             "Query results:\n" +
                             asJson(expectedRow) + "\n" +
-                            "Query took 1 second to return 1 records\n" +
+                            "Query took 1 second to return 1 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -207,7 +207,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -235,7 +235,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -262,7 +262,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Error while running queries: Failure message\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -289,7 +289,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"queryId\": \"test-query-id\",\"message\": \"unknown\"}\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -316,7 +316,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -343,7 +343,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"message\":\"error\"}\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -370,7 +370,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: Found invalid message: {\"queryId\":\"test-query-id\"}\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();
@@ -397,7 +397,7 @@ public class QueryWebSocketCommandLineClientTest extends QueryWebSocketClientTes
                             PROMPT_EXACT_KEY_LONG_TYPE +
                             "Submitting query with ID: test-query-id\n" +
                             "Query failed: WebSocket closed unexpectedly with reason: Network error\n" +
-                            "Query took 1 second to return 0 records\n" +
+                            "Query took 1 second to return 0 rows\n" +
                             PROMPT_QUERY_TYPE);
             assertThat(connection.isConnected()).isFalse();
             assertThat(connection.isClosed()).isTrue();

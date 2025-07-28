@@ -59,7 +59,7 @@ public class CompactionStrategyIndexTest {
         }
 
         @Test
-        void shouldIndexMultipleFilesWithSameNumberOfRecords() {
+        void shouldIndexMultipleFilesWithSameNumberOfRows() {
             // Given
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
                     .rootFirst("root");

@@ -37,8 +37,8 @@ import static sleeper.core.properties.instance.PartitionSplittingProperty.MAX_NU
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 
 /**
- * This finds partitions that need splitting. It does this by querying the {@link StateStore} for {@link FileReference}s
- * for all active files. This information is used to calculate the number of records in each partition. If a partition
+ * This finds partitions that need splitting. It does this by querying the {@link StateStore} for all
+ * {@link FileReference}s. This information is used to calculate the number of rows in each partition. If a partition
  * needs splitting a {@link JobSender} is run. That will send the definition of a splitting job to an SQS queue.
  */
 public class FindPartitionsToSplit {
@@ -73,7 +73,7 @@ public class FindPartitionsToSplit {
                 filesForJob.addAll(
                         result.getRelevantFiles()
                                 .stream()
-                                .sorted((f1, f2) -> Long.compare(f2.getNumberOfRecords(), f1.getNumberOfRecords()))
+                                .sorted((f1, f2) -> Long.compare(f2.getNumberOfRows(), f1.getNumberOfRows()))
                                 .limit(maxFilesInJob)
                                 .map(FileReference::getFilename)
                                 .collect(Collectors.toList()));

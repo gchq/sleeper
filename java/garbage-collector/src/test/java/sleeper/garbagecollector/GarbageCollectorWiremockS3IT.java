@@ -44,8 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnreferencedFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedFilesReport;
 import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2ClientWithRetryAttempts;
 
@@ -100,7 +100,7 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
                         "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
                                 "<Object><Key>test-table/data/partition_root/old-file.sketches</Key></Object></Delete>")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                .isEqualTo(activeFilesReport(oldEnoughTime, activeReference("new-file")));
+                .isEqualTo(referencedFilesReport(oldEnoughTime, fileReference("new-file")));
         assertThat(threadSleeps).hasSize(1);
     }
 
@@ -126,8 +126,8 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
                         "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
                                 "<Object><Key>test-table/data/partition_root/old-file.sketches</Key></Object></Delete>")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
-                activeAndReadyForGCFilesReport(oldEnoughTime,
-                        List.of(activeReference("new-file")),
+                referencedAndUnreferencedFilesReport(oldEnoughTime,
+                        List.of(fileReference("new-file")),
                         List.of("s3a://test-bucket/test-table/data/partition_root/old-file.parquet")));
         assertThat(threadSleeps).isEmpty();
     }

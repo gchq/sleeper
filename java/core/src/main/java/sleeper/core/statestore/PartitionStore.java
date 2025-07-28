@@ -22,7 +22,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Stores information about the partitions holding records in a Sleeper table.
+ * Stores information about the partitions holding rows in a Sleeper table.
  */
 public interface PartitionStore {
 

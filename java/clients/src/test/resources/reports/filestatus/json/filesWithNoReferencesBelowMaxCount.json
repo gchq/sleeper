@@ -3,21 +3,21 @@
   "leafPartitionCount": 2,
   "nonLeafPartitionCount": 1,
   "statistics": {
-    "records": {
+    "rows": {
       "allPartitions": {
-        "totalRecords": 200,
-        "totalRecordsApprox": 0,
-        "totalRecordsKnown": 200
+        "totalRows": 200,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 200
       },
       "leafPartitions": {
-        "totalRecords": 200,
-        "totalRecordsApprox": 0,
-        "totalRecordsKnown": 200
+        "totalRows": 200,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 200
       },
       "nonLeafPartitions": {
-        "totalRecords": 0,
-        "totalRecordsApprox": 0,
-        "totalRecordsKnown": 0
+        "totalRows": 0,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 0
       }
     },
     "fileReferences": {
@@ -54,7 +54,7 @@
       "internalReferences": [
         {
           "partitionId": "B",
-          "numberOfRecords": 200,
+          "numberOfRows": 200,
           "lastUpdateTime": "2022-08-22T14:20:00.001Z",
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true

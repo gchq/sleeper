@@ -50,8 +50,8 @@ public class SystemTestTableFiles {
         return instance.getStateStore().getFileReferences();
     }
 
-    public Map<String, Long> recordsByFilename() {
-        return all().recordsByFilename();
+    public Map<String, Long> rowsByFilename() {
+        return all().rowsByFilename();
     }
 
     public SystemTestTableFiles waitForState(Predicate<AllReferencesToAllFiles> stateCheck, PollWithRetries poll) throws InterruptedException {

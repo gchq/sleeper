@@ -29,8 +29,8 @@ public class CVSFileStatusReporter implements FileStatusReporter {
     public void report(TableFilesStatus status, boolean verbose) {
         outputData.clear();
 
-        appendToOutputDataList(status.getTotalRecords());
-        appendToOutputDataList(status.getTotalRecordsInLeafPartitions());
+        appendToOutputDataList(status.getTotalRows());
+        appendToOutputDataList(status.getTotalRowsInLeafPartitions());
         appendToOutputDataList(status.isMoreThanMax());
         appendToOutputDataList(status.getLeafPartitionCount());
         appendToOutputDataList(status.getNonLeafPartitionCount());

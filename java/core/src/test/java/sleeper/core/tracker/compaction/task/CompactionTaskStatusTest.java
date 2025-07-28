@@ -67,8 +67,8 @@ public class CompactionTaskStatusTest {
                 .containsExactly(3, Duration.ofSeconds(30));
         assertThat(status.asJobRunReport()).extracting("taskId",
                 "startTime", "finishTime", "finishedSummary.duration",
-                "finishedSummary.recordsRead", "finishedSummary.recordsWritten",
-                "finishedSummary.recordsReadPerSecond", "finishedSummary.recordsWrittenPerSecond")
+                "finishedSummary.rowsRead", "finishedSummary.rowsWritten",
+                "finishedSummary.rowsReadPerSecond", "finishedSummary.rowsWrittenPerSecond")
                 .containsExactly("test-task-id",
                         taskStartedTime, taskFinishedTime, Duration.ofSeconds(50),
                         3000L, 1500L, 100.0, 50.0);

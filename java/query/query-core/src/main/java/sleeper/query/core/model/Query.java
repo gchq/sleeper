@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A request for records with row keys that fall within one of a list of regions.
+ * A request for rows with row keys that fall within one of a list of regions.
  */
 public class Query {
     private final String tableName;
@@ -204,9 +204,9 @@ public class Query {
         }
 
         /**
-         * Provides how records should be processed during a query.
+         * Provides how rows should be processed during a query.
          *
-         * @param  processingConfig how records should be processed during a query
+         * @param  processingConfig how rows should be processed during a query
          * @return                  the builder
          */
         public Builder processingConfig(QueryProcessingConfig processingConfig) {

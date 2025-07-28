@@ -68,10 +68,10 @@ public class StateStoreSnapshotsST {
         // And we create fake references for 10,000 files
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         TableFilePaths filePaths = TableFilePaths.buildDataFilePathPrefix(sleeper.instanceProperties(), sleeper.tableProperties());
-        Map<String, Long> recordsByFilename = LongStream
+        Map<String, Long> rowsByFilename = LongStream
                 .range(0, 10_000).mapToObj(i -> i)
                 .collect(toMap(i -> filePaths.constructPartitionParquetFilePath(partitionId, numberedUUID("file", i)), i -> i));
-        List<FileReference> files = recordsByFilename.entrySet().stream()
+        List<FileReference> files = rowsByFilename.entrySet().stream()
                 .map(entry -> fileFactory.rootFile(entry.getKey(), entry.getValue()))
                 .toList();
 
@@ -84,10 +84,10 @@ public class StateStoreSnapshotsST {
         AllReferencesToAllFiles snapshotFiles = sleeper.stateStore().waitForFilesSnapshot(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)),
                 snapshot -> snapshot.getFiles().size() == 10_000);
-        assertThat(snapshotFiles.recordsByFilename())
-                .isEqualTo(recordsByFilename);
-        assertThat(sleeper.tableFiles().recordsByFilename())
-                .isEqualTo(recordsByFilename);
+        assertThat(snapshotFiles.rowsByFilename())
+                .isEqualTo(rowsByFilename);
+        assertThat(sleeper.tableFiles().rowsByFilename())
+                .isEqualTo(rowsByFilename);
     }
 
 }

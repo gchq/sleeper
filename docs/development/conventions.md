@@ -5,6 +5,10 @@ There are a number of ways we tend to write and structure our code, where if we 
 the maintainability of the codebase as a whole. We try to keep to these conventions unless there's a good reason within
 a specific part of the code. We try to remain open to alternative approaches if they improve maintainability.
 
+## Tests
+
+Please see [our test strategy](test-strategy.md), which also includes conventions when writing tests.
+
 ## Java keyword usage
 
 ### Access level modifiers
@@ -77,7 +81,7 @@ Note that many classes will not contain many of these elements.
 ## Javadoc
 
 We try to ensure that all classes have Javadoc. Most methods should also have Javadoc. Javadoc should generally explain
-the public API and high level behaviour of a class, and avoid implementation details.
+purpose, usage and high level behaviour, and avoid implementation details.
 
 An exception to this is test classes, e.g. SomeFeatureTest, SomeFeatureIT, SomeFeatureST (unit, integration and system
 tests). These classes should not have Javadoc, to put focus on the tests themselves. Other test code should have

@@ -46,7 +46,7 @@ public class PythonIngestST {
     void shouldBatchWriteOneFile(SleeperSystemTest sleeper) {
         // Given
         sleeper.localFiles(tempDir)
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+                .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.pythonApi()
@@ -54,8 +54,8 @@ public class PythonIngestST {
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -63,8 +63,8 @@ public class PythonIngestST {
     void shouldIngestTwoFilesFromS3(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("file2.parquet", LongStream.range(100, 200));
 
         // When
         sleeper.pythonApi()
@@ -72,8 +72,8 @@ public class PythonIngestST {
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 200)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -81,8 +81,8 @@ public class PythonIngestST {
     void shouldIngestDirectoryFromS3(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("test-dir/file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("test-dir/file2.parquet", LongStream.range(100, 200));
+                .createWithNumberedRows("test-dir/file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRows("test-dir/file2.parquet", LongStream.range(100, 200));
 
         // When
         sleeper.pythonApi()
@@ -90,8 +90,8 @@ public class PythonIngestST {
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 200)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

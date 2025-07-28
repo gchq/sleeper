@@ -44,8 +44,8 @@ import static sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter
  * Writes partition files to S3 in an asynchronous manner. Here's a summary of this process:
  * <ul>
  * <li>Data is provided to this class, in sort order, through the {@link #append} method.</li>
- * <li>As the records arrive, local Parquet files are created for each partition. As the records are in sorted order,
- * there will be first be records for one partition, then records for another partition, and so on. (See note
+ * <li>As the rows arrive, local Parquet files are created for each partition. As the rows are in sorted order,
+ * there will be first be rows for one partition, then rows for another partition, and so on. (See note
  * below)</li>
  * <li>As each Parquet partition file is completed, an asynchronous upload to S3 is initiated, which will delete the
  * local copy of the Parquet partition file once the upload has completed</li>
@@ -56,7 +56,7 @@ import static sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter
  * </ul>
  * <p>
  * Note that the sort-order and the partition-order may not be the same when the Sleeper Schema has more than one row
- * key. This is the responsibility of the calling classes to handle and this class can assume that all of the records
+ * key. This is the responsibility of the calling classes to handle and this class can assume that all of the rows
  * that it receives belong to the same partition.
  */
 public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
@@ -73,7 +73,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final String quantileSketchesS3Key;
     private final ParquetWriter<Row> parquetWriter;
     private final Sketches sketches;
-    private long recordsWrittenToCurrentPartition;
+    private long rowsWrittenToCurrentPartition;
 
     /**
      * Creates an instance. Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will
@@ -113,7 +113,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
         this.sketches = Sketches.from(sleeperSchema);
-        this.recordsWrittenToCurrentPartition = 0L;
+        this.rowsWrittenToCurrentPartition = 0L;
     }
 
     /**
@@ -155,18 +155,18 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     }
 
     /**
-     * Append a record to the partition. This writes the record to a local Parquet file and does not upload it to S3.
+     * Append a row to the partition. This writes the row to a local Parquet file and does not upload it to S3.
      *
-     * @param  row         the record to append
+     * @param  row         the row to append
      * @throws IOException if there was a failure writing to the file
      */
     @Override
     public void append(Row row) throws IOException {
         parquetWriter.write(row);
         sketches.update(row);
-        recordsWrittenToCurrentPartition++;
-        if (recordsWrittenToCurrentPartition % 1000000 == 0) {
-            LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
+        rowsWrittenToCurrentPartition++;
+        if (rowsWrittenToCurrentPartition % 1000000 == 0) {
+            LOGGER.info("Written {} rows to partition {}", rowsWrittenToCurrentPartition, partition.getId());
         }
     }
 
@@ -183,7 +183,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         parquetWriter.close();
         LOGGER.debug("Closed writer for local partition {} after writing {} rows: file {}",
                 partition.getId(),
-                recordsWrittenToCurrentPartition,
+                rowsWrittenToCurrentPartition,
                 partitionParquetLocalFileName);
         // Write sketches to a local file
         new LocalFileSystemSketchesStore().saveFileSketches(partitionParquetLocalFileName, sleeperSchema, sketches);
@@ -191,7 +191,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         FileReference fileReference = createFileReference(
                 String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),
                 partition.getId(),
-                recordsWrittenToCurrentPartition);
+                rowsWrittenToCurrentPartition);
         // Start the asynchronous upload of the files to S3
         CompletableFuture<?> partitionFileUploadFuture = asyncUploadLocalFileToS3ThenDeleteLocalCopy(
                 s3TransferManager,

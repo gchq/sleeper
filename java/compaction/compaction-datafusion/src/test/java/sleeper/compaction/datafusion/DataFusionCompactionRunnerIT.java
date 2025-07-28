@@ -45,10 +45,10 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
-import sleeper.core.tracker.job.run.RecordsProcessed;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.parquet.record.RecordReadSupport;
+import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowWriterFactory;
+import sleeper.parquet.row.RowReadSupport;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
@@ -103,11 +103,11 @@ public class DataFusionCompactionRunnerIT {
             String file2 = writeFileForPartition("root", List.of(row2));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
             // When
-            RecordsProcessed summary = compact(job);
+            RowsProcessed summary = compact(job);
 
             // Then
-            assertThat(summary.getRecordsRead()).isEqualTo(2);
-            assertThat(summary.getRecordsWritten()).isEqualTo(2);
+            assertThat(summary.getRowsRead()).isEqualTo(2);
+            assertThat(summary.getRowsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -127,11 +127,11 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
-            RecordsProcessed summary = compact(job);
+            RowsProcessed summary = compact(job);
 
             // Then
-            assertThat(summary.getRecordsRead()).isEqualTo(2);
-            assertThat(summary.getRecordsWritten()).isEqualTo(2);
+            assertThat(summary.getRowsRead()).isEqualTo(2);
+            assertThat(summary.getRowsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -151,11 +151,11 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
-            RecordsProcessed summary = compact(job);
+            RowsProcessed summary = compact(job);
 
             // Then
-            assertThat(summary.getRecordsRead()).isEqualTo(2);
-            assertThat(summary.getRecordsWritten()).isEqualTo(2);
+            assertThat(summary.getRowsRead()).isEqualTo(2);
+            assertThat(summary.getRowsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -175,11 +175,11 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
-            RecordsProcessed summary = compact(job);
+            RowsProcessed summary = compact(job);
 
             // Then
-            assertThat(summary.getRecordsRead()).isEqualTo(2);
-            assertThat(summary.getRecordsWritten()).isEqualTo(2);
+            assertThat(summary.getRowsRead()).isEqualTo(2);
+            assertThat(summary.getRowsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -203,11 +203,11 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(emptyFile, nonEmptyFile));
 
             // When
-            RecordsProcessed summary = compact(job);
+            RowsProcessed summary = compact(job);
 
             // Then
-            assertThat(summary.getRecordsRead()).isEqualTo(1);
-            assertThat(summary.getRecordsWritten()).isEqualTo(1);
+            assertThat(summary.getRowsRead()).isEqualTo(1);
+            assertThat(summary.getRowsWritten()).isEqualTo(1);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row);
         }
@@ -223,11 +223,11 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
-            RecordsProcessed summary = compact(job);
+            RowsProcessed summary = compact(job);
 
             // Then
-            assertThat(summary.getRecordsRead()).isZero();
-            assertThat(summary.getRecordsWritten()).isZero();
+            assertThat(summary.getRowsRead()).isZero();
+            assertThat(summary.getRowsWritten()).isZero();
             assertThat(dataFileExists(job.getOutputFile())).isFalse();
         }
     }
@@ -281,11 +281,11 @@ public class DataFusionCompactionRunnerIT {
             Row output1 = new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2", Map.of("map_key1", 4L, "map_key2", 7L)));
 
             // When
-            RecordsProcessed summary = compact(job);
+            RowsProcessed summary = compact(job);
 
             // Then
-            assertThat(summary.getRecordsRead()).isEqualTo(2);
-            assertThat(summary.getRecordsWritten()).isEqualTo(1);
+            assertThat(summary.getRowsRead()).isEqualTo(2);
+            assertThat(summary.getRowsWritten()).isEqualTo(1);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(output1);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -315,11 +315,11 @@ public class DataFusionCompactionRunnerIT {
             Row output1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 4L));
 
             // When
-            RecordsProcessed summary = compact(job);
+            RowsProcessed summary = compact(job);
 
             // Then
-            assertThat(summary.getRecordsRead()).isEqualTo(2);
-            assertThat(summary.getRecordsWritten()).isEqualTo(1);
+            assertThat(summary.getRowsRead()).isEqualTo(2);
+            assertThat(summary.getRowsWritten()).isEqualTo(1);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(output1);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -331,7 +331,7 @@ public class DataFusionCompactionRunnerIT {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    private RecordsProcessed compact(CompactionJob job) throws Exception {
+    private RowsProcessed compact(CompactionJob job) throws Exception {
         CompactionRunner runner = new DataFusionCompactionRunner();
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
     }
@@ -340,7 +340,7 @@ public class DataFusionCompactionRunnerIT {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
             for (Row row : rows) {
                 writer.write(row);
                 sketches.update(row);
@@ -362,7 +362,7 @@ public class DataFusionCompactionRunnerIT {
     private List<Row> readDataFile(Schema schema, String filename) throws IOException {
         List<Row> results = new ArrayList<>();
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
-                ParquetReader.builder(new RecordReadSupport(schema), new org.apache.hadoop.fs.Path(filename)).build())) {
+                ParquetReader.builder(new RowReadSupport(schema), new org.apache.hadoop.fs.Path(filename)).build())) {
             while (reader.hasNext()) {
                 results.add(new Row(reader.next()));
             }

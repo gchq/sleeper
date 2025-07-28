@@ -99,6 +99,6 @@ class LocalStack:
         results = []
         with cls.s3fs().open(path, "rb") as f:
             with ParquetFile(f) as po:
-                for record in ParquetDeserialiser(use_threads=False).read(po):
-                    results.append(record)
+                for row in ParquetDeserialiser(use_threads=False).read(po):
+                    results.append(row)
         return results

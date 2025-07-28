@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Serialises and deserialises a list of records to and from a Base64 encoded string.
+ * Serialises and deserialises a list of rows to and from a Base64 encoded string.
  */
 public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
     private final RowSerialiser rowSerialiser;
@@ -48,8 +48,8 @@ public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeUTF(resultsBatch.getQueryId());
-            int numRecords = resultsBatch.getRows().size();
-            dos.writeInt(numRecords);
+            int numRows = resultsBatch.getRows().size();
+            dos.writeInt(numRows);
             for (Row row : resultsBatch.getRows()) {
                 byte[] serialisedValue = rowSerialiser.serialise(row);
                 dos.writeInt(serialisedValue.length);
@@ -64,15 +64,15 @@ public class Base64ResultsBatchSerialiser implements ResultsBatchSerialiser {
     }
 
     @Override
-    public ResultsBatch deserialise(String serialisedRecords) {
+    public ResultsBatch deserialise(String serialisedRows) {
         try {
-            byte[] bytes = Base64.decodeBase64(serialisedRecords);
+            byte[] bytes = Base64.decodeBase64(serialisedRows);
             ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
             DataInputStream dis = new DataInputStream(bais);
             String queryId = dis.readUTF();
-            int numRecords = dis.readInt();
-            List<Row> rows = new ArrayList<>(numRecords);
-            for (int i = 0; i < numRecords; i++) {
+            int numRows = dis.readInt();
+            List<Row> rows = new ArrayList<>(numRows);
+            for (int i = 0; i < numRows; i++) {
                 int length = dis.readInt();
                 byte[] serialisedRow = new byte[length];
                 dis.readFully(serialisedRow);

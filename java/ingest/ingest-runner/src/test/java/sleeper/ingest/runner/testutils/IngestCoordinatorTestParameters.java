@@ -29,8 +29,8 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
-import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriter;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriter;
 
 import java.util.List;
 import java.util.Objects;
@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -96,16 +96,16 @@ public class IngestCoordinatorTestParameters {
         return coordinatorBuilder(instanceProperties, tableProperties).build();
     }
 
-    public <T extends ArrowRecordWriter<U>, U> IngestCoordinator<U> buildCoordinatorWithArrowWriter(T recordWriter) {
+    public <T extends ArrowRowWriter<U>, U> IngestCoordinator<U> buildCoordinatorWithArrowWriter(T rowWriter) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         setProperties.setProperties(instanceProperties, tableProperties, this);
-        ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builderWith(instanceProperties)
+        ArrowRowBatchFactory.Builder<U> arrowConfigBuilder = ArrowRowBatchFactory.builderWith(instanceProperties)
                 .schema(schema)
                 .localWorkingDirectory(localWorkingDir)
-                .recordWriter(recordWriter);
+                .rowWriter(rowWriter);
         return coordinatorBuilder(instanceProperties, tableProperties)
-                .recordBatchFactory(arrowConfigBuilder.build())
+                .rowBatchFactory(arrowConfigBuilder.build())
                 .build();
     }
 
@@ -222,11 +222,11 @@ public class IngestCoordinatorTestParameters {
         }
 
         public Builder backedByArrow() {
-            return setInstanceProperties(properties -> properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow"));
+            return setInstanceProperties(properties -> properties.set(DEFAULT_INGEST_ROW_BATCH_TYPE, "arrow"));
         }
 
         public Builder backedByArrayList() {
-            return setInstanceProperties(properties -> properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arraylist"));
+            return setInstanceProperties(properties -> properties.set(DEFAULT_INGEST_ROW_BATCH_TYPE, "arraylist"));
         }
 
         public Builder localDirectWrite() {

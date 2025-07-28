@@ -33,19 +33,19 @@ public class TrackedQueryTestHelper {
         return queryWithState(queryId, lastUpdateTime, QueryState.IN_PROGRESS).build();
     }
 
-    public static TrackedQuery queryCompleted(String queryId, Instant lastUpdateTime, long records) {
+    public static TrackedQuery queryCompleted(String queryId, Instant lastUpdateTime, long rows) {
         return queryWithState(queryId, lastUpdateTime, QueryState.COMPLETED)
-                .recordCount(records)
+                .rowCount(rows)
                 .build();
     }
 
-    public static TrackedQuery queryPartiallyFailed(String queryId, Instant lastUpdateTime, long records) {
-        return queryPartiallyFailed(queryId, lastUpdateTime, records, "");
+    public static TrackedQuery queryPartiallyFailed(String queryId, Instant lastUpdateTime, long rows) {
+        return queryPartiallyFailed(queryId, lastUpdateTime, rows, "");
     }
 
-    public static TrackedQuery queryPartiallyFailed(String queryId, Instant lastUpdateTime, long records, String errorMessage) {
+    public static TrackedQuery queryPartiallyFailed(String queryId, Instant lastUpdateTime, long rows, String errorMessage) {
         return queryWithState(queryId, lastUpdateTime, QueryState.PARTIALLY_FAILED)
-                .recordCount(records)
+                .rowCount(rows)
                 .errorMessage(errorMessage)
                 .build();
     }

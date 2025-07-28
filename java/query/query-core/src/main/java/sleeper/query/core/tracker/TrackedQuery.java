@@ -24,7 +24,7 @@ import java.util.Objects;
  * This class encapsulates key details required for tracking the lifecycle and outcome of a query.
  * It provides storage for query-related metadata, such as its unique identifier,
  * sub-query details, timestamps for updates and expiry, its last known state,
- * record count, and any associated error messages.
+ * row count, and any associated error messages.
  *
  */
 public class TrackedQuery {
@@ -33,7 +33,7 @@ public class TrackedQuery {
     private final Long lastUpdateTime;
     private final Long expiryDate;
     private final QueryState lastKnownState;
-    private final Long recordCount;
+    private final Long rowCount;
     private final String errorMessage;
 
     private TrackedQuery(Builder builder) {
@@ -42,7 +42,7 @@ public class TrackedQuery {
         lastUpdateTime = builder.lastUpdateTime;
         expiryDate = builder.expiryDate;
         lastKnownState = builder.lastKnownState;
-        recordCount = builder.recordCount;
+        rowCount = builder.rowCount;
         errorMessage = builder.errorMessage;
     }
 
@@ -70,8 +70,8 @@ public class TrackedQuery {
         return subQueryId;
     }
 
-    public Long getRecordCount() {
-        return recordCount;
+    public Long getRowCount() {
+        return rowCount;
     }
 
     public String getErrorMessage() {
@@ -92,13 +92,13 @@ public class TrackedQuery {
                 && Objects.equals(lastUpdateTime, that.lastUpdateTime)
                 && Objects.equals(expiryDate, that.expiryDate)
                 && lastKnownState == that.lastKnownState
-                && Objects.equals(recordCount, that.recordCount)
+                && Objects.equals(rowCount, that.rowCount)
                 && Objects.equals(errorMessage, that.errorMessage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(queryId, subQueryId, lastUpdateTime, expiryDate, lastKnownState, recordCount, errorMessage);
+        return Objects.hash(queryId, subQueryId, lastUpdateTime, expiryDate, lastKnownState, rowCount, errorMessage);
     }
 
     @Override
@@ -109,7 +109,7 @@ public class TrackedQuery {
                 ", lastUpdateTime=" + lastUpdateTime +
                 ", expiryDate=" + expiryDate +
                 ", lastKnownState=" + lastKnownState +
-                ", recordCount=" + recordCount +
+                ", rowCount=" + rowCount +
                 ", errorMessage='" + errorMessage + '\'' +
                 '}';
     }
@@ -123,7 +123,7 @@ public class TrackedQuery {
         private Long lastUpdateTime;
         private Long expiryDate;
         private QueryState lastKnownState;
-        private Long recordCount = 0L;
+        private Long rowCount = 0L;
         private String errorMessage;
 
         private Builder() {
@@ -205,13 +205,13 @@ public class TrackedQuery {
         }
 
         /**
-         * Provides the number of records returned by the query.
+         * Provides the number of rows returned by the query.
          *
-         * @param  recordCount the number of records returned
-         * @return             the builder
+         * @param  rowCount the number of rows returned
+         * @return          the builder
          */
-        public Builder recordCount(Long recordCount) {
-            this.recordCount = recordCount;
+        public Builder rowCount(Long rowCount) {
+            this.rowCount = rowCount;
             return this;
         }
 

@@ -197,7 +197,7 @@ means that it is hard to produce reproducible figures. In future work we hope to
 more accurate results. Nevertheless, these tests have caught several significant performance regressions that would
 otherwise not have been noticed.
 
-All figures are in records per second, measured by start and finish time in a single process that either executes or
+All figures are in rows per second, measured by start and finish time in a single process that either executes or
 directs the operation. For standard ingest and compaction this is an ECS task. For bulk import this is a Spark driver.
 
 | Version number | Test date  | Java compaction | DataFusion compaction | Standard ingest | EMR bulk import |

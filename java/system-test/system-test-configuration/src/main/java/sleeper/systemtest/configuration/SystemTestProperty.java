@@ -139,33 +139,33 @@ public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty NUMBER_OF_INGESTS_PER_WRITER = Index.propertyBuilder("sleeper.systemtest.ingests.per.writer")
             .description("The number of ingests to run for each writer")
             .defaultValue("1").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
-    SystemTestProperty NUMBER_OF_RECORDS_PER_INGEST = Index.propertyBuilder("sleeper.systemtest.records.per.ingest")
-            .description("The number of random records that each ingest should write")
+    SystemTestProperty NUMBER_OF_ROWS_PER_INGEST = Index.propertyBuilder("sleeper.systemtest.rows.per.ingest")
+            .description("The number of random rows that each ingest should write")
             .defaultValue("100").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
     SystemTestProperty MIN_RANDOM_INT = Index.propertyBuilder("sleeper.systemtest.random.int.min")
-            .description("The minimum value of integers generated randomly during random record generation")
+            .description("The minimum value of integers generated randomly during random row generation")
             .defaultValue("0").validationPredicate(SleeperPropertyValueUtils::isInteger).build();
     SystemTestProperty MAX_RANDOM_INT = Index.propertyBuilder("sleeper.systemtest.random.int.max")
-            .description("The maximum value of integers generated randomly during random record generation")
+            .description("The maximum value of integers generated randomly during random row generation")
             .defaultValue("100000000").validationPredicate(SleeperPropertyValueUtils::isInteger).build();
     SystemTestProperty MIN_RANDOM_LONG = Index.propertyBuilder("sleeper.systemtest.random.long.min")
-            .description("The minimum value of longs generated randomly during random record generation")
+            .description("The minimum value of longs generated randomly during random row generation")
             .defaultValue("0").validationPredicate(SleeperPropertyValueUtils::isLong).build();
     SystemTestProperty MAX_RANDOM_LONG = Index.propertyBuilder("sleeper.systemtest.random.long.max")
-            .description("The maximum value of longs generated randomly during random record generation")
+            .description("The maximum value of longs generated randomly during random row generation")
             .defaultValue("10000000000").validationPredicate(SleeperPropertyValueUtils::isLong).build();
     SystemTestProperty RANDOM_STRING_LENGTH = Index.propertyBuilder("sleeper.systemtest.random.string.length")
-            .description("The length of strings generated randomly during random record generation")
+            .description("The length of strings generated randomly during random row generation")
             .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
     SystemTestProperty RANDOM_BYTE_ARRAY_LENGTH = Index.propertyBuilder("sleeper.systemtest.random.bytearray.length")
-            .description("The length of byte arrays generated randomly during random record generation")
+            .description("The length of byte arrays generated randomly during random row generation")
             .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
     SystemTestProperty MAX_ENTRIES_RANDOM_MAP = Index.propertyBuilder("sleeper.systemtest.random.map.length")
-            .description("The maximum number of entries in maps generated randomly during random record generation\n" +
+            .description("The maximum number of entries in maps generated randomly during random row generation\n" +
                     "(the number of entries in the map will range randomly from 0 to this number)")
             .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
     SystemTestProperty MAX_ENTRIES_RANDOM_LIST = Index.propertyBuilder("sleeper.systemtest.random.list.length")
-            .description("The maximum number of entries in lists generated randomly during random record generation\n" +
+            .description("The maximum number of entries in lists generated randomly during random row generation\n" +
                     "(the number of entries in the list will range randomly from 0 to this number)")
             .defaultValue("10").validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger).build();
 

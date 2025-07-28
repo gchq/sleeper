@@ -158,7 +158,7 @@ public class QueryWebSocketMessageSerDeTest {
             // When
             assertThatThrownBy(() -> serDe.forEachRowBatchJson("test-query", rows.iterator(), handler))
                     .isInstanceOfSatisfying(QueryWebSocketRowsException.class,
-                            e -> assertThat(e.getRecordsSent()).isEqualTo(0L))
+                            e -> assertThat(e.getRowsSent()).isEqualTo(0L))
                     .hasCause(failure);
         }
     }
@@ -250,7 +250,7 @@ public class QueryWebSocketMessageSerDeTest {
             // When
             assertThatThrownBy(() -> serDe.forEachRowBatchJson("test-query", rows.iterator(), handler))
                     .isInstanceOfSatisfying(QueryWebSocketRowsException.class,
-                            e -> assertThat(e.getRecordsSent()).isEqualTo(2L))
+                            e -> assertThat(e.getRowsSent()).isEqualTo(2L))
                     .hasCause(failure);
         }
     }
@@ -328,7 +328,7 @@ public class QueryWebSocketMessageSerDeTest {
         }
 
         @Test
-        void shouldResetRemainingSizeBetweenBatchesWhenSizeIsMetByNumberOfRecords() throws Exception {
+        void shouldResetRemainingSizeBetweenBatchesWhenSizeIsMetByNumberOfRows() throws Exception {
             // Given
             List<Row> rows = List.of(
                     new Row(Map.of("key", 10L)),

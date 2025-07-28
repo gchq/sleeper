@@ -23,10 +23,10 @@ class MessageType(Enum):
         COMPLETED (str): Indicates that the query has completed.
         ERROR (str): Indicates that an error has occurred.
         SUBQUERIES (str): Contains subquery identifiers related to the main query.
-        RECORDS (str): Contains the records returned from the query.
+        ROWS (str): Contains the rows returned from the query.
     """
 
     COMPLETED = "completed"
     ERROR = "error"
     SUBQUERIES = "subqueries"
-    RECORDS = "records"
+    ROWS = "rows"

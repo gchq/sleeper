@@ -88,7 +88,7 @@ That leaves the following stacks as optional:
   that is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up
   and down on demand.
 * `IngestBatcherStack` - for gathering files to be ingested or bulk imported in larger jobs
-* `TableMetricsStack` - for creating CloudWatch metrics showing statistics such as the number of records in a table over
+* `TableMetricsStack` - for creating CloudWatch metrics showing statistics such as the number of rows in a table over
   time
 * `DashboardStack` - to create a CloudWatch dashboard showing recorded metrics
 * `BulkExportStack` - to export a whole table as parquet files

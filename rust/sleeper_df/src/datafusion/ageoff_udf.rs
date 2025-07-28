@@ -56,7 +56,7 @@ impl AgeOff {
         }
     }
 
-    /// Tests if the timestamp `t` >= the threshold for retention. Returns true if the record
+    /// Tests if the timestamp `t` >= the threshold for retention. Returns true if the row
     /// with timestamp `t` should be retained.
     #[inline]
     fn retain(&self, t: i64) -> bool {

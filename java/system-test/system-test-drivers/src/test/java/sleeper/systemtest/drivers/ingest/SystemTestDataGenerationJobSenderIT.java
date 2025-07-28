@@ -17,8 +17,6 @@ package sleeper.systemtest.drivers.ingest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -64,11 +62,7 @@ public class SystemTestDataGenerationJobSenderIT extends LocalStackTestBase {
 
     private List<SystemTestDataGenerationJob> receiveJobs() {
         SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
-        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
-                .queueUrl(testProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
-                .waitTimeSeconds(1));
-        return response.messages().stream()
-                .map(Message::body)
+        return receiveMessages(testProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
                 .map(serDe::fromJson)
                 .toList();
     }

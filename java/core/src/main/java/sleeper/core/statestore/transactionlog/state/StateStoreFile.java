@@ -101,7 +101,7 @@ public class StateStoreFile {
 
     /**
      * Removes the reference on one partition, and replaces it with new references. This is used to move the file down
-     * the tree of partitions. The new references should cover all the records that were previously covered by the
+     * the tree of partitions. The new references should cover all the rows that were previously covered by the
      * reference that's being removed.
      *
      * @param partitionId   the ID of the partition to remove the file from
@@ -118,7 +118,7 @@ public class StateStoreFile {
 
     /**
      * Removes the reference to this file on a partition. This is used when adding the output of a compaction in a new
-     * file that contains all the records for a certain partition. This means that the input files for the compaction
+     * file that contains all the rows for a certain partition. This means that the input files for the compaction
      * must no longer be referenced in that partition.
      *
      * @param partitionId the ID of the partition to remove the file from
@@ -132,7 +132,7 @@ public class StateStoreFile {
     /**
      * Assigns the reference to this file on one partition to a job. This is used when assigning a compaction job to its
      * input files. Note that parts of a file are assigned to jobs independently. Each partition that a file is in
-     * covers different records. Each reference on each partition will be assigned to and processed by a different job.
+     * covers different rows. Each reference on each partition will be assigned to and processed by a different job.
      *
      * @param jobId       the ID of the job to assign the file reference to
      * @param partitionId the ID of the partition whose reference should be assigned to the job

@@ -23,7 +23,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.run.JobRuns;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -96,7 +96,7 @@ class CompactionJobStatusFromRecordsTest {
         // Given
         CompactionJobFinishedStatus finished = compactionFinishedStatus(
                 Instant.parse("2022-09-23T09:23:30.001Z"),
-                new RecordsProcessed(200L, 100L));
+                new RowsProcessed(200L, 100L));
 
         // When
         List<CompactionJobStatus> statuses = jobStatusListFromUpdates(

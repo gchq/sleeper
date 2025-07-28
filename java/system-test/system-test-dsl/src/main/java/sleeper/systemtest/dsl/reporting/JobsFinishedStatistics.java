@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.reporting;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 import sleeper.core.tracker.job.run.JobRunReport;
 
 import java.util.List;
@@ -30,14 +30,14 @@ public class JobsFinishedStatistics {
     private final int numFinishedJobs;
     private final int numJobRuns;
     private final int numFinishedJobRuns;
-    private final AverageRecordRate averageRecordRate;
+    private final AverageRowRate averageRowRate;
 
     private JobsFinishedStatistics(Builder builder) {
         numJobs = builder.numJobs;
         numFinishedJobs = builder.numFinishedJobs;
         numJobRuns = builder.numJobRuns;
         numFinishedJobRuns = builder.numFinishedJobRuns;
-        averageRecordRate = builder.averageRecordRate;
+        averageRowRate = builder.averageRowRate;
     }
 
     public static JobsFinishedStatistics fromIngestJobs(List<IngestJobStatus> jobs) {
@@ -59,11 +59,11 @@ public class JobsFinishedStatistics {
                 && numFinishedJobRuns == expectedJobs;
     }
 
-    public boolean isAverageRunRecordsPerSecondInRange(double minRate, double maxRate) {
-        return averageRecordRate.getAverageRunRecordsReadPerSecond() > minRate
-                && averageRecordRate.getAverageRunRecordsWrittenPerSecond() > minRate
-                && averageRecordRate.getAverageRunRecordsReadPerSecond() < maxRate
-                && averageRecordRate.getAverageRunRecordsWrittenPerSecond() < maxRate;
+    public boolean isAverageRunRowsPerSecondInRange(double minRate, double maxRate) {
+        return averageRowRate.getAverageRunRowsReadPerSecond() > minRate
+                && averageRowRate.getAverageRunRowsWrittenPerSecond() > minRate
+                && averageRowRate.getAverageRunRowsReadPerSecond() < maxRate
+                && averageRowRate.getAverageRunRowsWrittenPerSecond() < maxRate;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class JobsFinishedStatistics {
                 ", numFinishedJobs=" + numFinishedJobs +
                 ", numJobRuns=" + numJobRuns +
                 ", numFinishedJobRuns=" + numFinishedJobRuns +
-                ", averageRecordRate=" + averageRecordRate +
+                ", averageRowRate=" + averageRowRate +
                 '}';
     }
 
@@ -82,7 +82,7 @@ public class JobsFinishedStatistics {
         private int numFinishedJobs;
         private int numJobRuns;
         private int numFinishedJobRuns;
-        private AverageRecordRate averageRecordRate;
+        private AverageRowRate averageRowRate;
 
         private Builder() {
         }
@@ -96,7 +96,7 @@ public class JobsFinishedStatistics {
             this.numFinishedJobRuns = jobs.stream()
                     .mapToInt(job -> (int) getJobRuns.apply(job).stream().filter(JobRunReport::isFinished).count())
                     .sum();
-            this.averageRecordRate = AverageRecordRate.of(jobs.stream()
+            this.averageRowRate = AverageRowRate.of(jobs.stream()
                     .filter(isJobFinished)
                     .flatMap(job -> getJobRuns.apply(job).stream()));
             return this;

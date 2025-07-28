@@ -24,8 +24,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
-import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -55,12 +55,12 @@ public class InMemoryDirectQueryDriver implements QueryDriver {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRecordRetriever(dataStore), Instant.now());
+                new InMemoryLeafPartitionRowRetriever(dataStore), Instant.now());
         executor.init();
         try (CloseableIterator<Row> iterator = executor.execute(query)) {
-            List<Row> records = new ArrayList<>();
-            iterator.forEachRemaining(records::add);
-            return records;
+            List<Row> rows = new ArrayList<>();
+            iterator.forEachRemaining(rows::add);
+            return rows;
         } catch (IOException | QueryException e) {
             throw new RuntimeException(e);
         }

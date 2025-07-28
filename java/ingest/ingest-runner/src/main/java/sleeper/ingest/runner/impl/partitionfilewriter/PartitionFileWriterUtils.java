@@ -28,20 +28,20 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Create a reference to a new file to add to the state store. This should be passed to
-     * {@link sleeper.core.statestore.StateStore.addFile}.
+     * Create a reference to a new file to add to the state store. This should be passed to an
+     * {@link sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction}.
      *
-     * @param  filename        the full path to the file, including file system
-     * @param  partitionId     the ID of the partition the reference should be added to
-     * @param  numberOfRecords the number of records in the file
-     * @return                 the {@link FileReference} object
+     * @param  filename     the full path to the file, including file system
+     * @param  partitionId  the ID of the partition the reference should be added to
+     * @param  numberOfRows the number of rows in the file
+     * @return              the file reference
      */
     public static FileReference createFileReference(
-            String filename, String partitionId, long numberOfRecords) {
+            String filename, String partitionId, long numberOfRows) {
         return FileReference.builder()
                 .filename(filename)
                 .partitionId(partitionId)
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRows)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();

@@ -8,8 +8,8 @@ of writes to S3.
 
 For example, suppose there are currently 100 leaf partitions for a table, and suppose that we have 1000
 files of data to ingest. With the standard approach, if we create one ingest job per file and send it to the SQS queue,
-then there will be 100,000 writes to S3 (in fact, there might be more if the files contain more records than the value
-of `sleeper.ingest.max.local.records`). Using the bulk import method, there will only be 100 writes to S3 (assuming that
+then there will be 100,000 writes to S3 (in fact, there might be more if the files contain more rows than the value
+of `sleeper.ingest.max.local.rows`). Using the bulk import method, there will only be 100 writes to S3 (assuming that
 the 1000 files are all imported in the same bulk import job).
 
 Note that it is vital that a table is pre-split before data is bulk
@@ -367,11 +367,11 @@ on how to access the logs of the Spark driver.
 
 #### An example of using bulk import
 
-This section describes how a large volume of records were bulk imported into Sleeper using the Persistent EMR stack. A
-set of 10 billion records was generated at random. These records conformed to the schema used for the system tests, i.e.
+This section describes how a large volume of rows were bulk imported into Sleeper using the Persistent EMR stack. A
+set of 10 billion rows was generated at random. These rows conformed to the schema used for the system tests, i.e.
 a row key of type string, a sort key of type long, and a value of type string. The row key and the value are random
 strings of length 10 with characters from the lower case alphabet a to z. The sort key is a random long in the range 0
-to 10,000,000,000. The records were stored in 10 Parquet files in a prefix in an S3 bucket (given as `mybucket/data/` in
+to 10,000,000,000. The rows were stored in 10 Parquet files in a prefix in an S3 bucket (given as `mybucket/data/` in
 the examples below).
 
 The table was pre-split into 256 partitions.
@@ -404,7 +404,7 @@ This queue will have the name `instance-id-BulkImportPersistentEMRQ`.
 ```
 
 This runs with the default settings of 29 Spark executors. The progress of the job can be tracked using the steps tab.
-This job took 23 minutes to run. The rate of import would therefore be 626 billion records per 24 hours, if a sequence
+This job took 23 minutes to run. The rate of import would therefore be 626 billion rows per 24 hours, if a sequence
 of these jobs was run.
 
 To increase the rate of import, there are two options: increase the size of the cluster so that multiple jobs can run
@@ -419,7 +419,7 @@ latency.
 
 The size of the cluster was next increased to 40 servers. Two jobs were run in parallel using the console to set the
 number of concurrent steps to 2. Each job still takes 12 minutes to run. This would give an ingest rate of 2 *
-10,000,000,000 * (24 * 60) / 12 = 2.4 trillion records per day.
+10,000,000,000 * (24 * 60) / 12 = 2.4 trillion rows per day.
 
 #### Overriding Spark's properties for a job
 

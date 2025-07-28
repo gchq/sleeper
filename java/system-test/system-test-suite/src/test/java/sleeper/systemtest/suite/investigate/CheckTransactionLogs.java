@@ -104,9 +104,9 @@ public class CheckTransactionLogs {
         return tableProperties;
     }
 
-    public long totalRecordsAtTransaction(long transactionNumber) {
+    public long totalRowsAtTransaction(long transactionNumber) {
         return filesStateAtTransaction(transactionNumber)
-                .references().mapToLong(FileReference::getNumberOfRecords).sum();
+                .references().mapToLong(FileReference::getNumberOfRows).sum();
     }
 
     public long countCompactionCommitTransactions() {
@@ -121,8 +121,8 @@ public class CheckTransactionLogs {
                 }).sum();
     }
 
-    public List<CompactionChangedRecordCountReport> reportCompactionTransactionsChangedRecordCount() {
-        return CompactionChangedRecordCountReport.findChanges(filesLog);
+    public List<CompactionChangedRowCountReport> reportCompactionTransactionsChangedRowCount() {
+        return CompactionChangedRowCountReport.findChanges(filesLog);
     }
 
     public StateStoreFiles filesStateAtTransaction(long transactionNumber) {

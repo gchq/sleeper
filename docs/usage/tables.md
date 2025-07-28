@@ -69,7 +69,7 @@ large-scale use of Sleeper, and is essential for running bulk import jobs.
 One way to do this is by taking a sample of your data to generate a split points file:
 
 ```bash
-./scripts/utility/estimateSplitPoints.sh <schema-file> <num-partitions> <read-max-records-per-file> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>
+./scripts/utility/estimateSplitPoints.sh <schema-file> <num-partitions> <read-max-rows-per-file> <sketch-size> <output-split-points-file> <parquet-paths-as-separate-args>
 ```
 
 The schema file should be the `schema.json` file you created for your table.
@@ -77,8 +77,8 @@ The schema file should be the `schema.json` file you created for your table.
 You can calculate the number of partitions by dividing the total number of rows you expect for your table by the average
 number of rows you want per partition.
 
-The estimate will be based on the given number of records from the start of each input file. If your data is such that
-the beginning of a file will not be representative of the distribution of row keys, you can either read more records,
+The estimate will be based on the given number of rows from the start of each input file. If your data is such that
+the beginning of a file will not be representative of the distribution of row keys, you can either read more rows,
 or prepare a representative sample first.
 
 The sketch size controls the size and accuracy of the data sketches used to estimate the split points. It should be a

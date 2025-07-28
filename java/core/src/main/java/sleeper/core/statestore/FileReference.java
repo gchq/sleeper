@@ -20,15 +20,15 @@ import java.util.Objects;
 
 /**
  * Stores metadata about a reference to a physical file. This includes its filename, which partition it is in,
- * the number of records in this section of the file, and optionally a job id indicating which compaction
+ * the number of rows in this section of the file, and optionally a job id indicating which compaction
  * job is responsible for compacting it. If a file is referenced in multiple partitions, the ranges covered by those
- * partitions must not overlap, or the records in the overlapping portion may be duplicated.
+ * partitions must not overlap, or the rows in the overlapping portion may be duplicated.
  */
 public class FileReference {
 
     private final String filename;
     private final String partitionId;
-    private final Long numberOfRecords;
+    private final Long numberOfRows;
     private final String jobId;
     private final Instant lastStateStoreUpdateTime;
     private final boolean countApproximate;
@@ -37,7 +37,7 @@ public class FileReference {
     private FileReference(Builder builder) {
         filename = Objects.requireNonNull(builder.filename, "filename must not be null");
         partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
-        numberOfRecords = Objects.requireNonNull(builder.numberOfRecords, "numberOfRecords must not be null");
+        numberOfRows = Objects.requireNonNull(builder.numberOfRows, "numberOfRows must not be null");
         jobId = builder.jobId;
         lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         countApproximate = builder.countApproximate;
@@ -64,8 +64,8 @@ public class FileReference {
         return partitionId;
     }
 
-    public Long getNumberOfRecords() {
-        return numberOfRecords;
+    public Long getNumberOfRows() {
+        return numberOfRows;
     }
 
     public boolean isCountApproximate() {
@@ -91,13 +91,13 @@ public class FileReference {
         }
         FileReference fileReference = (FileReference) o;
         return countApproximate == fileReference.countApproximate && onlyContainsDataForThisPartition == fileReference.onlyContainsDataForThisPartition
-                && Objects.equals(filename, fileReference.filename) && Objects.equals(partitionId, fileReference.partitionId) && Objects.equals(numberOfRecords, fileReference.numberOfRecords)
+                && Objects.equals(filename, fileReference.filename) && Objects.equals(partitionId, fileReference.partitionId) && Objects.equals(numberOfRows, fileReference.numberOfRows)
                 && Objects.equals(jobId, fileReference.jobId) && Objects.equals(lastStateStoreUpdateTime, fileReference.lastStateStoreUpdateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(filename, partitionId, numberOfRecords, jobId, lastStateStoreUpdateTime, countApproximate, onlyContainsDataForThisPartition);
+        return Objects.hash(filename, partitionId, numberOfRows, jobId, lastStateStoreUpdateTime, countApproximate, onlyContainsDataForThisPartition);
     }
 
     @Override
@@ -105,7 +105,7 @@ public class FileReference {
         return "FileReference{" +
                 "filename='" + filename + '\'' +
                 ", partitionId='" + partitionId + '\'' +
-                ", numberOfRecords=" + numberOfRecords +
+                ", numberOfRows=" + numberOfRows +
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 ", countApproximate=" + countApproximate +
@@ -117,7 +117,7 @@ public class FileReference {
         return new Builder()
                 .filename(filename)
                 .partitionId(partitionId)
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRows)
                 .jobId(jobId)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
                 .countApproximate(countApproximate)
@@ -130,7 +130,7 @@ public class FileReference {
     public static final class Builder {
         private String filename;
         private String partitionId;
-        private Long numberOfRecords;
+        private Long numberOfRows;
         private String jobId;
         private Instant lastStateStoreUpdateTime;
         private boolean countApproximate;
@@ -162,19 +162,19 @@ public class FileReference {
         }
 
         /**
-         * Sets the number of records in the file that are in the given partition. This may be exact or an estimate.
+         * Sets the number of rows in the file that are in the given partition. This may be exact or an estimate.
          * This must be set alongside {@link #countApproximate(boolean)}.
          *
-         * @param  numberOfRecords the number of records
-         * @return                 the builder
+         * @param  numberOfRows the number of rows
+         * @return              the builder
          */
-        public Builder numberOfRecords(Long numberOfRecords) {
-            this.numberOfRecords = numberOfRecords;
+        public Builder numberOfRows(Long numberOfRows) {
+            this.numberOfRows = numberOfRows;
             return this;
         }
 
         /**
-         * Sets which job the file reference is assigned to. This will only be set if the file's records on this
+         * Sets which job the file reference is assigned to. This will only be set if the file's rows on this
          * partition are due to be processed by a job, e.g. a compaction.
          *
          * @param  jobId the ID of the job
@@ -199,10 +199,10 @@ public class FileReference {
         }
 
         /**
-         * Sets whether the count of records in the given partition is exact or an estimate. This must be set alongside
-         * {@link #numberOfRecords(Long)}.
+         * Sets whether the count of rows in the given partition is exact or an estimate. This must be set alongside
+         * {@link #numberOfRows(Long)}.
          *
-         * @param  countApproximate true if the number of records is approximate
+         * @param  countApproximate true if the number of rows is approximate
          * @return                  the builder
          */
         public Builder countApproximate(boolean countApproximate) {

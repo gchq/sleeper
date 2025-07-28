@@ -21,21 +21,21 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import java.util.Map;
 
 import static sleeper.core.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.table.TableProperty.INGEST_ROW_BATCH_TYPE;
 
 public class SystemTestIngestType {
 
     private final String fileWriterType;
-    private final String recordBatchType;
+    private final String rowBatchType;
 
-    private SystemTestIngestType(String fileWriterType, String recordBatchType) {
+    private SystemTestIngestType(String fileWriterType, String rowBatchType) {
         this.fileWriterType = fileWriterType;
-        this.recordBatchType = recordBatchType;
+        this.rowBatchType = rowBatchType;
     }
 
     public void applyTo(SystemTestInstanceContext instance) {
         instance.updateTableProperties(Map.of(
-                INGEST_RECORD_BATCH_TYPE, recordBatchType,
+                INGEST_ROW_BATCH_TYPE, rowBatchType,
                 INGEST_PARTITION_FILE_WRITER_TYPE, fileWriterType));
     }
 

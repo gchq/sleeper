@@ -27,8 +27,8 @@ sleeper.systemtest.writers=11
 # The number of ingests to run for each writer
 sleeper.systemtest.ingests.per.writer=1
 
-# The number of random records that each ingest should write
-sleeper.systemtest.records.per.ingest=40000000
+# The number of random rows that each ingest should write
+sleeper.systemtest.rows.per.ingest=40000000
 
 ########################################################################################
 #                             Sleeper Instance Properties                              #

@@ -70,11 +70,11 @@ public class CheckTransactionLogsTest {
         CheckTransactionLogs check = checkState();
 
         // Then
-        assertThat(check.totalRecordsAtTransaction(2)).isEqualTo(200);
+        assertThat(check.totalRowsAtTransaction(2)).isEqualTo(200);
     }
 
     @Test
-    void shouldFindCompactionWhichChangedNumberOfRecords() {
+    void shouldFindCompactionWhichChangedNumberOfRows() {
         // Given
         FileReference input = fileFactory().rootFile("input.parquet", 100);
         FileReference output = fileFactory().rootFile("output.parquet", 90);
@@ -89,13 +89,13 @@ public class CheckTransactionLogsTest {
         ReplaceFileReferencesRequest expectedRequest = replaceJobFileReferences("test-job", List.of("input.parquet"), output).withNoUpdateTime();
         ReplaceFileReferencesTransaction expectedTransaction = new ReplaceFileReferencesTransaction(List.of(expectedRequest));
         TransactionLogEntry expectedEntry = new TransactionLogEntry(3, UPDATE_TIME, expectedTransaction);
-        assertThat(check.reportCompactionTransactionsChangedRecordCount()).containsExactly(
-                new CompactionChangedRecordCountReport(expectedEntry, expectedTransaction,
-                        List.of(new CompactionChangedRecordCount(expectedRequest, List.of(withJobId("test-job", input)), output))));
+        assertThat(check.reportCompactionTransactionsChangedRowCount()).containsExactly(
+                new CompactionChangedRowCountReport(expectedEntry, expectedTransaction,
+                        List.of(new CompactionChangedRowCount(expectedRequest, List.of(withJobId("test-job", input)), output))));
     }
 
     @Test
-    void shouldFindNoCompactionChangedNumberOfRecords() {
+    void shouldFindNoCompactionChangedNumberOfRows() {
         // Given
         FileReference input = fileFactory().rootFile("input.parquet", 100);
         FileReference output = fileFactory().rootFile("output.parquet", 100);
@@ -107,7 +107,7 @@ public class CheckTransactionLogsTest {
         CheckTransactionLogs check = checkState();
 
         // Then
-        assertThat(check.reportCompactionTransactionsChangedRecordCount()).isEmpty();
+        assertThat(check.reportCompactionTransactionsChangedRowCount()).isEmpty();
     }
 
     @Test

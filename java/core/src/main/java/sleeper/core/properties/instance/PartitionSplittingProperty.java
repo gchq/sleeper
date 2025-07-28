@@ -91,7 +91,7 @@ public interface PartitionSplittingProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.default.partition.splitting.threshold")
             .description("This is the default value of the partition splitting threshold. Partitions with more than the following " +
-                    "number of records in will be split. This value can be overridden on a per-table basis.")
+                    "number of rows in will be split. This value can be overridden on a per-table basis.")
             .defaultValue("1000000000")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING).build();
 

@@ -44,7 +44,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_P
 // Slow because it needs to do two CDK deployments, one to add the EMR cluster and one to remove it.
 // Each CDK deployment takes around 20 minutes.
 // If we leave the EMR cluster deployed, the costs for the EMR instances add up to hundreds of pounds quite quickly.
-// With the CDK deployments, the cluster doesn't stay around for very long as it only imports 100 records.
+// With the CDK deployments, the cluster doesn't stay around for very long as it only imports 100 rows.
 @Slow
 public class EmrPersistentBulkImportST {
 
@@ -63,7 +63,7 @@ public class EmrPersistentBulkImportST {
     }
 
     @Test
-    void shouldBulkImport100Records(SleeperSystemTest sleeper) {
+    void shouldBulkImport100Rows(SleeperSystemTest sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
@@ -73,7 +73,7 @@ public class EmrPersistentBulkImportST {
         sleeper.setGeneratorOverrides(overrideField(
                 SystemTestSchema.ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-        sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.ingest().bulkImportByQueue()
@@ -81,8 +81,8 @@ public class EmrPersistentBulkImportST {
                 .waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
     }
 }

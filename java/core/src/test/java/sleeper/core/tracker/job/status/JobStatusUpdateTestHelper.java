@@ -16,7 +16,7 @@
 package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,53 +32,53 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
-     * Creates a job started status.
+     * Creates a job started status update.
      *
      * @param  startTime the start time
-     * @return           a {@link TestJobStartedStatus}
+     * @return           the status update
      */
     public static TestJobStartedStatus startedStatus(Instant startTime) {
         return TestJobStartedStatus.updateAndStartTime(defaultUpdateTime(startTime), startTime);
     }
 
     /**
-     * Creates a job finished status.
+     * Creates a job finished status update.
      *
-     * @param  startedStatus  the {@link TestJobStartedStatus}
-     * @param  runDuration    the duration
-     * @param  recordsRead    the number of records read
-     * @param  recordsWritten the number of records written
-     * @return                a {@link AggregatedTaskJobsFinishedStatus}
+     * @param  startedStatus the started status update
+     * @param  runDuration   the duration
+     * @param  rowsRead      the number of rows read
+     * @param  rowsWritten   the number of rows written
+     * @return               the status update
      */
     public static AggregatedTaskJobsFinishedStatus finishedStatus(
-            JobRunStartedUpdate startedStatus, Duration runDuration, long recordsRead, long recordsWritten) {
-        return finishedStatus(startedStatus.getStartTime(), runDuration, recordsRead, recordsWritten);
+            JobRunStartedUpdate startedStatus, Duration runDuration, long rowsRead, long rowsWritten) {
+        return finishedStatus(startedStatus.getStartTime(), runDuration, rowsRead, rowsWritten);
     }
 
     /**
-     * Creates a job finished status.
+     * Creates a job finished status update.
      *
-     * @param  startTime      the start time
-     * @param  runDuration    the duration
-     * @param  recordsRead    the number of records read
-     * @param  recordsWritten the number of records written
-     * @return                a {@link AggregatedTaskJobsFinishedStatus}
+     * @param  startTime   the start time
+     * @param  runDuration the duration
+     * @param  rowsRead    the number of rows read
+     * @param  rowsWritten the number of rows written
+     * @return             the status update
      */
     public static AggregatedTaskJobsFinishedStatus finishedStatus(
-            Instant startTime, Duration runDuration, long recordsRead, long recordsWritten) {
+            Instant startTime, Duration runDuration, long rowsRead, long rowsWritten) {
         Instant finishTime = startTime.plus(runDuration);
         JobRunSummary summary = new JobRunSummary(
-                new RecordsProcessed(recordsRead, recordsWritten), startTime, finishTime);
+                new RowsProcessed(rowsRead, rowsWritten), startTime, finishTime);
         return AggregatedTaskJobsFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
     }
 
     /**
-     * Creates a job failed status.
+     * Creates a job failed status update.
      *
-     * @param  startedStatus  the {@link TestJobStartedStatus}
+     * @param  startedStatus  the started status update
      * @param  runDuration    the duration
      * @param  failureReasons the reasons for the failure
-     * @return                a {@link JobRunFailedStatus}
+     * @return                the status update
      */
     public static JobRunFailedStatus failedStatus(
             JobRunStartedUpdate startedStatus, Duration runDuration, List<String> failureReasons) {
@@ -87,11 +87,11 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
-     * Creates a job failed status.
+     * Creates a job failed status update.
      *
      * @param  failureTime    the time of the failure
      * @param  failureReasons the reasons for the failure
-     * @return                a {@link JobRunFailedStatus}
+     * @return                the status update
      */
     public static JobRunFailedStatus failedStatus(
             Instant failureTime, List<String> failureReasons) {

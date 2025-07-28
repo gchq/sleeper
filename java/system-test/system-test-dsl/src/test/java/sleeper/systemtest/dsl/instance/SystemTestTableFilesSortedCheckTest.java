@@ -42,12 +42,12 @@ public class SystemTestTableFilesSortedCheckTest {
     @Test
     void shouldFindFileIsSortedAfterIngest(SleeperSystemTest sleeper) {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.of(1, 3, 2));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 3, 2));
 
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
-                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                             .isEqualTo(SortedRowsCheck.sorted(3));
                 });
     }
@@ -55,16 +55,16 @@ public class SystemTestTableFilesSortedCheckTest {
     @Test
     void shouldFindFileIsNotSortedAfterAddingSourceFile(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.sourceFiles().inDataBucket().createWithNumberedRecords("test.parquet", LongStream.of(1, 3, 2));
+        sleeper.sourceFiles().inDataBucket().createWithNumberedRows("test.parquet", LongStream.of(1, 3, 2));
         sleeper.ingest().toStateStore().addFileOnEveryPartition("test.parquet", 3);
 
         // When / Then
         assertThat(sleeper.tableFiles().all().getFilesWithReferences())
                 .first().satisfies(file -> {
-                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
+                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                             .isEqualTo(SortedRowsCheck.outOfOrderAt(3,
-                                    sleeper.numberedRecords().generateRecord(3),
-                                    sleeper.numberedRecords().generateRecord(2)));
+                                    sleeper.numberedRows().generateRow(3),
+                                    sleeper.numberedRows().generateRow(2)));
                 });
     }
 

@@ -1,0 +1,151 @@
+{
+  "moreThanMax": false,
+  "leafPartitionCount": 8,
+  "nonLeafPartitionCount": 7,
+  "statistics": {
+    "rows": {
+      "allPartitions": {
+        "totalRows": 400000036,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 400000036
+      },
+      "leafPartitions": {
+        "totalRows": 400000036,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 400000036
+      },
+      "nonLeafPartitions": {
+        "totalRows": 0,
+        "totalRowsApprox": 0,
+        "totalRowsKnown": 0
+      }
+    },
+    "fileReferences": {
+      "totalFiles": 8,
+      "totalReferences": 8,
+      "leafPartitions": {
+        "minReferences": 1,
+        "maxReferences": 1,
+        "averageReferences": 1.0,
+        "totalReferences": 8
+      },
+      "nonLeafPartitions": {
+        "totalReferences": 0
+      }
+    }
+  },
+  "files": [
+    {
+      "filename": "A.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "A",
+          "numberOfRows": 50000001,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "B.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "B",
+          "numberOfRows": 50000002,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "C.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "C",
+          "numberOfRows": 50000003,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "D.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "D",
+          "numberOfRows": 50000004,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "E.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "E",
+          "numberOfRows": 50000005,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "F.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "F",
+          "numberOfRows": 50000006,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "G.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "G",
+          "numberOfRows": 50000007,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    },
+    {
+      "filename": "H.parquet",
+      "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+      "totalReferenceCount": 1,
+      "internalReferences": [
+        {
+          "partitionId": "H",
+          "numberOfRows": 50000008,
+          "lastUpdateTime": "2022-08-22T14:20:00.001Z",
+          "countApproximate": false,
+          "onlyContainsDataForThisPartition": true
+        }
+      ]
+    }
+  ]
+}

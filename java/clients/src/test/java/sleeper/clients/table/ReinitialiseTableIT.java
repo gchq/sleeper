@@ -306,7 +306,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         return FileReference.builder()
                 .filename(filename)
                 .partitionId(partitionId)
-                .numberOfRecords(100L)
+                .numberOfRows(100L)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();

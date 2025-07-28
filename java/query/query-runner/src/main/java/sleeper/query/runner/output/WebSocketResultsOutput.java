@@ -53,16 +53,16 @@ public class WebSocketResultsOutput implements ResultsOutput {
     public ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results) {
         String queryId = query.getQueryId();
         try {
-            long recordsSent = serDe.forEachRowBatchJson(queryId, results, json -> {
+            long rowsSent = serDe.forEachRowBatchJson(queryId, results, json -> {
                 try {
                     output.sendString(json);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
             });
-            return new ResultsOutputInfo(recordsSent, outputLocations);
+            return new ResultsOutputInfo(rowsSent, outputLocations);
         } catch (QueryWebSocketRowsException e) {
-            return new ResultsOutputInfo(e.getRecordsSent(), outputLocations, e.getCause());
+            return new ResultsOutputInfo(e.getRowsSent(), outputLocations, e.getCause());
         } finally {
             try {
                 results.close();

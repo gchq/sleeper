@@ -147,7 +147,7 @@ public class IngestTaskTest {
             IngestJob job = createJobOnQueue("job1");
 
             // When
-            IngestResult jobResult = recordsReadAndWritten(10L, 10L);
+            IngestResult jobResult = rowsReadAndWritten(10L, 10L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(jobResult)));
 
@@ -173,7 +173,7 @@ public class IngestTaskTest {
             IngestJob job = createJobOnQueue("job1");
 
             // When
-            IngestResult jobResult = recordsReadAndWritten(10L, 5L);
+            IngestResult jobResult = rowsReadAndWritten(10L, 5L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(jobResult)));
 
@@ -202,8 +202,8 @@ public class IngestTaskTest {
             IngestJob job2 = createJobOnQueue("job2");
 
             // When
-            IngestResult job1Result = recordsReadAndWritten(10L, 10L);
-            IngestResult job2Result = recordsReadAndWritten(5L, 5L);
+            IngestResult job1Result = rowsReadAndWritten(10L, 10L);
+            IngestResult job2Result = rowsReadAndWritten(5L, 5L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(job1Result),
                     jobSucceeds(job2Result)));
@@ -273,7 +273,7 @@ public class IngestTaskTest {
             RuntimeException failure = new RuntimeException("Something went wrong");
 
             // When
-            IngestResult job1Result = recordsReadAndWritten(10L, 10L);
+            IngestResult job1Result = rowsReadAndWritten(10L, 10L);
             runTask("test-task-1", processJobs(
                     jobSucceeds(job1Result),
                     jobFails(failure)));
@@ -351,7 +351,7 @@ public class IngestTaskTest {
 
             // When
             runTask("test-task", processJobs(
-                    jobSucceeds(recordsReadAndWritten(10L, 10L))));
+                    jobSucceeds(rowsReadAndWritten(10L, 10L))));
 
             // Then
             assertThat(jobTracker.streamTableRecords(DEFAULT_TABLE_ID))
@@ -441,12 +441,12 @@ public class IngestTaskTest {
         return job;
     }
 
-    private IngestResult recordsReadAndWritten(long recordsRead, long recordsWritten) {
-        return defaultFileIngestResultReadAndWritten("test-file", recordsRead, recordsWritten);
+    private IngestResult rowsReadAndWritten(long rowsRead, long rowsWritten) {
+        return defaultFileIngestResultReadAndWritten("test-file", rowsRead, rowsWritten);
     }
 
     private JobRunSummary summary(IngestResult result, Instant startTime, Instant finishTime) {
-        return new JobRunSummary(result.asRecordsProcessed(), startTime, finishTime);
+        return new JobRunSummary(result.asRowsProcessed(), startTime, finishTime);
     }
 
     private IngestJobHandler jobsSucceed(int numJobs) {

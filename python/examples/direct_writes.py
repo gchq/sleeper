@@ -44,14 +44,14 @@ num_batches = 1
 
 # Recommended method is to use the batch writer as follows:
 with my_sleeper.create_batch_writer(table_name) as writer:
-    # Create records in a loop
+    # Create rows in a loop
     for x in range(num_batches):
-        records = []
+        rows = []
         for y in range(1000):
-            record = {"key": random_string(10, chars=string.digits), "value": random_string(30)}
-            records.append(record)
+            row = {"key": random_string(10, chars=string.digits), "value": random_string(30)}
+            rows.append(row)
 
         # Write this batch to Sleeper
-        writer.write(records)
+        writer.write(rows)
 
 # Batch writer closed automatically

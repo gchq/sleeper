@@ -89,7 +89,7 @@ public class WebSocketResultsOutputIT {
         verify(1, postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
                         .and(matchingJsonPath("$.message", equalTo("rows")))));
-        assertThat(result.getRecordCount()).isZero();
+        assertThat(result.getRowCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("GoneException");
     }
 
@@ -123,6 +123,6 @@ public class WebSocketResultsOutputIT {
         verify(rows.size(), postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
                         .and(matchingJsonPath("$.message", equalTo("rows")))));
-        assertThat(result.getRecordCount()).isEqualTo(5);
+        assertThat(result.getRowCount()).isEqualTo(5);
     }
 }

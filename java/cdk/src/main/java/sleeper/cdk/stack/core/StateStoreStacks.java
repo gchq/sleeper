@@ -18,15 +18,15 @@ package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.services.iam.IGrantable;
 
-import static sleeper.cdk.stack.core.StateStoreGrants.readActiveFilesAndPartitions;
-import static sleeper.cdk.stack.core.StateStoreGrants.readActiveFilesReadWritePartitions;
 import static sleeper.cdk.stack.core.StateStoreGrants.readAllFilesAndPartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readFileReferencesAndPartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readFileReferencesReadWritePartitions;
 import static sleeper.cdk.stack.core.StateStoreGrants.readPartitions;
-import static sleeper.cdk.stack.core.StateStoreGrants.readPartitionsReadWriteActiveFiles;
-import static sleeper.cdk.stack.core.StateStoreGrants.readWriteActiveAndReadyForGCFiles;
+import static sleeper.cdk.stack.core.StateStoreGrants.readPartitionsReadWriteFileReferences;
 import static sleeper.cdk.stack.core.StateStoreGrants.readWriteAllFilesAndPartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readWriteFileReferencesAndUnreferenced;
 import static sleeper.cdk.stack.core.StateStoreGrants.readWritePartitions;
-import static sleeper.cdk.stack.core.StateStoreGrants.readWriteReadyForGCFiles;
+import static sleeper.cdk.stack.core.StateStoreGrants.readWriteUnreferencedFiles;
 
 public final class StateStoreStacks {
 
@@ -36,8 +36,8 @@ public final class StateStoreStacks {
             TransactionLogStateStoreStack transactionLog,
             ManagedPoliciesStack policiesStack) {
         this.transactionLog = transactionLog;
-        grantAccess(readPartitionsReadWriteActiveFiles(), policiesStack.getDirectIngestPolicyForGrants());
-        grantAccess(readActiveFilesAndPartitions(), policiesStack.getQueryPolicyForGrants());
+        grantAccess(readPartitionsReadWriteFileReferences(), policiesStack.getDirectIngestPolicyForGrants());
+        grantAccess(readFileReferencesAndPartitions(), policiesStack.getQueryPolicyForGrants());
         grantAccess(readAllFilesAndPartitions(), policiesStack.getReportingPolicyForGrants());
         transactionLog.grantReadAllSnapshotsTable(policiesStack.getReportingPolicyForGrants());
         grantAccess(readWriteAllFilesAndPartitions(), policiesStack.getClearInstancePolicyForGrants());
@@ -45,32 +45,32 @@ public final class StateStoreStacks {
         grantAccess(readWritePartitions(), policiesStack.getEditTablesPolicyForGrants());
     }
 
-    public void grantReadActiveFilesAndPartitions(IGrantable grantee) {
-        grantAccess(readActiveFilesAndPartitions(), grantee);
+    public void grantReadFileReferencesAndPartitions(IGrantable grantee) {
+        grantAccess(readFileReferencesAndPartitions(), grantee);
     }
 
     public void grantReadWriteAllFilesAndPartitions(IGrantable grantee) {
         grantAccess(readWriteAllFilesAndPartitions(), grantee);
     }
 
-    public void grantReadActiveFilesReadWritePartitions(IGrantable grantee) {
-        grantAccess(readActiveFilesReadWritePartitions(), grantee);
+    public void grantReadFileReferencesReadWritePartitions(IGrantable grantee) {
+        grantAccess(readFileReferencesReadWritePartitions(), grantee);
     }
 
-    public void grantReadPartitionsReadWriteActiveFiles(IGrantable grantee) {
-        grantAccess(readPartitionsReadWriteActiveFiles(), grantee);
+    public void grantReadPartitionsReadWriteFileReferences(IGrantable grantee) {
+        grantAccess(readPartitionsReadWriteFileReferences(), grantee);
     }
 
     public void grantReadPartitions(IGrantable grantee) {
         grantAccess(readPartitions(), grantee);
     }
 
-    public void grantReadWriteActiveAndReadyForGCFiles(IGrantable grantee) {
-        grantAccess(readWriteActiveAndReadyForGCFiles(), grantee);
+    public void grantReadWriteFileReferencesAndUnreferenced(IGrantable grantee) {
+        grantAccess(readWriteFileReferencesAndUnreferenced(), grantee);
     }
 
-    public void grantReadWriteReadyForGCFiles(IGrantable grantee) {
-        grantAccess(readWriteReadyForGCFiles(), grantee);
+    public void grantReadWriteUnreferencedFiles(IGrantable grantee) {
+        grantAccess(readWriteUnreferencedFiles(), grantee);
     }
 
     public void grantReadWritePartitions(IGrantable grantee) {

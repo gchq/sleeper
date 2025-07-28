@@ -39,9 +39,9 @@
           {
             "updateTime": "2022-09-21T13:35:12.123Z",
             "finishTime": "2022-09-21T13:35:12.001Z",
-            "recordsProcessed": {
-              "recordsRead": 600,
-              "recordsWritten": 300
+            "rowsProcessed": {
+              "rowsRead": 600,
+              "rowsWritten": 300
             },
             "type": "FINISHED_WHEN_COMMITTED"
           },
@@ -71,9 +71,9 @@
           {
             "updateTime": "2022-09-20T13:35:12.123Z",
             "finishTime": "2022-09-20T13:35:12.001Z",
-            "recordsProcessed": {
-              "recordsRead": 600,
-              "recordsWritten": 300
+            "rowsProcessed": {
+              "rowsRead": 600,
+              "rowsWritten": 300
             },
             "type": "FINISHED_WHEN_COMMITTED"
           }

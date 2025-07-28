@@ -9,6 +9,6 @@ Total queries completed: 0
 
 Total queries partially failed: 0
 Total queries failed: 0
----------------------------------------------------------------------
-| STATE | QUERY_ID | SUB_QUERY_ID | LAST_UPDATE_TIME | RECORD_COUNT |
----------------------------------------------------------------------
+------------------------------------------------------------------
+| STATE | QUERY_ID | SUB_QUERY_ID | LAST_UPDATE_TIME | ROW_COUNT |
+------------------------------------------------------------------
