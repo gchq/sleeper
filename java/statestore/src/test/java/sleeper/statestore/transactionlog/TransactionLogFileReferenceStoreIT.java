@@ -56,11 +56,11 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.partialUnreferencedFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.unreferencedFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -79,7 +79,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
     class HandleIngest {
 
         @Test
-        public void shouldAddAndReadActiveFiles() {
+        public void shouldAddAndReadFiles() {
             // Given
             Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
             FileReference file1 = factory.rootFile("file1", 100L);
@@ -147,7 +147,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
                     withLastUpdate(updateTime, leftFile),
                     withLastUpdate(updateTime, rightFile));
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(updateTime, leftFile, rightFile));
+                    .isEqualTo(referencedFilesReport(updateTime, leftFile, rightFile));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .isEmpty();
             assertThat(store.hasNoFiles()).isFalse();
@@ -173,7 +173,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
                     withLastUpdate(updateTime, rightFile1),
                     withLastUpdate(updateTime, file2));
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(updateTime, leftFile1, rightFile1, file2));
+                    .isEqualTo(referencedFilesReport(updateTime, leftFile1, rightFile1, file2));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .isEmpty();
             assertThat(store.hasNoFiles()).isFalse();
@@ -189,7 +189,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             // When / Then
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(readyForGCFilesReport(updateTime, "test-file"));
+                    .isEqualTo(unreferencedFilesReport(updateTime, "test-file"));
             assertThat(store.getReadyForGCFilenamesBefore(updateTime.plus(Duration.ofDays(1))))
                     .containsExactly("test-file");
             assertThat(store.hasNoFiles()).isFalse();
@@ -249,7 +249,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -272,7 +272,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -298,7 +298,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -323,7 +323,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -345,7 +345,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             assertThat(store.getFileReferences())
                     .containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -362,7 +362,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             assertThat(store.getFileReferences())
                     .containsExactly(file);
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, file));
         }
 
         @Test
@@ -410,7 +410,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, existingReference));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, existingReference));
         }
 
         @Test
@@ -434,7 +434,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             List<FileReference> expectedReferences = List.of(leftFile, nestedFile);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrderElementsOf(expectedReferences);
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, expectedReferences));
         }
 
         @Test
@@ -453,7 +453,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             assertThat(store.getFileReferences())
                     .containsExactly(withJobId("job1", file));
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, withJobId("job1", file)));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, withJobId("job1", file)));
         }
     }
 
@@ -1044,11 +1044,11 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
             assertThat(store.getAllFilesWithMaxUnreferenced(100))
-                    .isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftOutputFile, rightOutputFile));
+                    .isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, leftOutputFile, rightOutputFile));
         }
 
         @Test
-        public void shouldFailToDeleteActiveFile() {
+        public void shouldFailToDeleteReferencedFile() {
             // Given
             FileReference file = factory.rootFile("test", 100L);
             update(store).addFile(file);
@@ -1066,7 +1066,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
         }
 
         @Test
-        public void shouldFailToDeleteActiveFileWhenOneOfTwoSplitRecordsIsReadyForGC() {
+        public void shouldFailToDeleteFileWhenOneOfTwoSplitReferencesHasBeenRemoved() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference rootFile = factory.rootFile("file", 100L);
@@ -1107,18 +1107,18 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
         }
 
         @Test
-        public void shouldFailToDeleteActiveFileWhenAlsoDeletingReadyForGCFile() {
+        public void shouldFailToDeleteReferencedFileWhenAlsoDeletingUnreferencedFile() {
             // Given
-            FileReference activeFile = factory.rootFile("activeFile", 100L);
+            FileReference reference = factory.rootFile("referencedFile", 100L);
             update(store).addFilesWithReferences(List.of(
                     fileWithNoReferences("gcFile"),
-                    fileWithReferences(List.of(activeFile))));
+                    fileWithReferences(List.of(reference))));
 
             // When / Then
-            assertThatThrownBy(() -> update(store).deleteGarbageCollectedFileReferenceCounts(List.of("gcFile", "activeFile")))
+            assertThatThrownBy(() -> update(store).deleteGarbageCollectedFileReferenceCounts(List.of("gcFile", "referencedFile")))
                     .isInstanceOf(FileHasReferencesException.class);
             assertThat(store.getFileReferences())
-                    .containsExactly(activeFile);
+                    .containsExactly(reference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
                     .containsExactly("gcFile");
         }
@@ -1129,7 +1129,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
     class ReportFileStatus {
 
         @Test
-        void shouldReportOneActiveFile() {
+        void shouldReportOneFileReference() {
             // Given
             FileReference file = factory.rootFile("test", 100L);
             update(store).addFile(file);
@@ -1138,11 +1138,11 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file));
+            assertThat(report).isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, file));
         }
 
         @Test
-        void shouldReportOneReadyForGCFile() {
+        void shouldReportOneUnreferencedFile() {
             // Given
             update(store).addFilesWithReferences(List.of(fileWithNoReferences("test")));
 
@@ -1150,11 +1150,11 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test"));
+            assertThat(report).isEqualTo(unreferencedFilesReport(DEFAULT_UPDATE_TIME, "test"));
         }
 
         @Test
-        void shouldReportTwoActiveFiles() {
+        void shouldReportTwoReferencedFiles() {
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
@@ -1164,7 +1164,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, file1, file2));
+            assertThat(report).isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, file1, file2));
         }
 
         @Test
@@ -1180,7 +1180,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, leftFile, rightFile));
+            assertThat(report).isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, leftFile, rightFile));
         }
 
         @Test
@@ -1201,11 +1201,11 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
 
             // Then
-            assertThat(report).isEqualTo(activeFilesReport(DEFAULT_UPDATE_TIME, outputFile, rightFile));
+            assertThat(report).isEqualTo(referencedFilesReport(DEFAULT_UPDATE_TIME, outputFile, rightFile));
         }
 
         @Test
-        void shouldReportReadyForGCFilesWithLimit() {
+        void shouldReportUnreferencedFilesWithLimit() {
             // Given
             update(store).addFilesWithReferences(List.of(
                     fileWithNoReferences("test1"),
@@ -1216,11 +1216,11 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(2);
 
             // Then
-            assertThat(report).isEqualTo(partialReadyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
+            assertThat(report).isEqualTo(partialUnreferencedFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
         }
 
         @Test
-        void shouldReportReadyForGCFilesMeetingLimit() {
+        void shouldReportUnreferencedFilesMeetingLimit() {
             // Given
             update(store).addFilesWithReferences(List.of(
                     fileWithNoReferences("test1"),
@@ -1230,7 +1230,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(2);
 
             // Then
-            assertThat(report).isEqualTo(readyForGCFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
+            assertThat(report).isEqualTo(unreferencedFilesReport(DEFAULT_UPDATE_TIME, "test1", "test2"));
         }
     }
 

@@ -19,8 +19,8 @@ import java.util.stream.Stream;
 
 public class StateStoreGrants {
 
-    private final Access activeFiles;
-    private final Access readyForGCFiles;
+    private final Access fileReferences;
+    private final Access unreferencedFiles;
     private final Access partitions;
 
     public static Builder builder() {
@@ -35,54 +35,54 @@ public class StateStoreGrants {
         return builder().partitions(Access.READ_WRITE).build();
     }
 
-    public static StateStoreGrants readPartitionsReadWriteActiveFiles() {
-        return builder().partitions(Access.READ).activeFiles(Access.READ_WRITE).build();
+    public static StateStoreGrants readPartitionsReadWriteFileReferences() {
+        return builder().partitions(Access.READ).fileReferences(Access.READ_WRITE).build();
     }
 
-    public static StateStoreGrants readActiveFilesReadWritePartitions() {
-        return builder().activeFiles(Access.READ).partitions(Access.READ_WRITE).build();
+    public static StateStoreGrants readFileReferencesReadWritePartitions() {
+        return builder().fileReferences(Access.READ).partitions(Access.READ_WRITE).build();
     }
 
     public static StateStoreGrants readWriteAllFilesAndPartitions() {
-        return builder().activeFiles(Access.READ_WRITE).readyForGCFiles(Access.READ_WRITE).partitions(Access.READ_WRITE).build();
+        return builder().fileReferences(Access.READ_WRITE).unreferencedFiles(Access.READ_WRITE).partitions(Access.READ_WRITE).build();
     }
 
-    public static StateStoreGrants readActiveFilesAndPartitions() {
-        return builder().activeFiles(Access.READ).partitions(Access.READ).build();
+    public static StateStoreGrants readFileReferencesAndPartitions() {
+        return builder().fileReferences(Access.READ).partitions(Access.READ).build();
     }
 
     public static StateStoreGrants readAllFilesAndPartitions() {
-        return builder().activeFiles(Access.READ).readyForGCFiles(Access.READ).partitions(Access.READ).build();
+        return builder().fileReferences(Access.READ).unreferencedFiles(Access.READ).partitions(Access.READ).build();
     }
 
-    public static StateStoreGrants readWriteReadyForGCFiles() {
-        return builder().readyForGCFiles(Access.READ_WRITE).build();
+    public static StateStoreGrants readWriteUnreferencedFiles() {
+        return builder().unreferencedFiles(Access.READ_WRITE).build();
     }
 
-    public static StateStoreGrants readWriteActiveAndReadyForGCFiles() {
-        return builder().activeFiles(Access.READ_WRITE).readyForGCFiles(Access.READ_WRITE).build();
+    public static StateStoreGrants readWriteFileReferencesAndUnreferenced() {
+        return builder().fileReferences(Access.READ_WRITE).unreferencedFiles(Access.READ_WRITE).build();
     }
 
     private StateStoreGrants(Builder builder) {
-        this.activeFiles = builder.activeFiles;
-        this.readyForGCFiles = builder.readyForGCFiles;
+        this.fileReferences = builder.fileReferences;
+        this.unreferencedFiles = builder.unreferencedFiles;
         this.partitions = builder.partitions;
     }
 
-    public boolean canWriteActiveFiles() {
-        return activeFiles.canWrite();
+    public boolean canWriteFileReferences() {
+        return fileReferences.canWrite();
     }
 
-    public boolean canReadActiveFiles() {
-        return activeFiles.canRead();
+    public boolean canReadFileReferences() {
+        return fileReferences.canRead();
     }
 
-    public boolean canReadActiveOrReadyForGCFiles() {
-        return activeFiles.canRead() || readyForGCFiles.canRead();
+    public boolean canReadFileReferencesOrUnreferencedFiles() {
+        return fileReferences.canRead() || unreferencedFiles.canRead();
     }
 
-    public boolean canWriteActiveOrReadyForGCFiles() {
-        return activeFiles.canWrite() || readyForGCFiles.canWrite();
+    public boolean canWriteFileReferencesOrUnreferencedFiles() {
+        return fileReferences.canWrite() || unreferencedFiles.canWrite();
     }
 
     public boolean canWritePartitions() {
@@ -102,21 +102,21 @@ public class StateStoreGrants {
     }
 
     private Stream<Access> allData() {
-        return Stream.of(activeFiles, readyForGCFiles, partitions);
+        return Stream.of(fileReferences, unreferencedFiles, partitions);
     }
 
     public static class Builder {
-        private Access activeFiles = Access.NO_ACCESS;
-        private Access readyForGCFiles = Access.NO_ACCESS;
+        private Access fileReferences = Access.NO_ACCESS;
+        private Access unreferencedFiles = Access.NO_ACCESS;
         private Access partitions = Access.NO_ACCESS;
 
-        public Builder activeFiles(Access activeFiles) {
-            this.activeFiles = activeFiles;
+        public Builder fileReferences(Access fileReferences) {
+            this.fileReferences = fileReferences;
             return this;
         }
 
-        public Builder readyForGCFiles(Access readyForGCFiles) {
-            this.readyForGCFiles = readyForGCFiles;
+        public Builder unreferencedFiles(Access unreferencedFiles) {
+            this.unreferencedFiles = unreferencedFiles;
             return this;
         }
 

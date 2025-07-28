@@ -163,8 +163,8 @@ lambda-based approach allows for a much greater degree of parallelism in the que
 Be careful that if you specify SQS as the output, and query for a range containing a large number of rows, then a
 large number of results could be posted to SQS, and this could result in significant charges.
 
-Over time you will see the number of active files (as reported by the `filesStatusReport.sh` script) decrease. This is
-due to compaction tasks merging files together. These are executed in an ECS cluster (named
+Over time you will see the number of files (as reported by the `filesStatusReport.sh` script) decrease. This is due to
+compaction tasks merging files together. These are executed in an ECS cluster (named
 `sleeper-${ID}-compaction-cluster`).
 
 You will also see the number of leaf partitions increase. This functionality is performed using lambdas called

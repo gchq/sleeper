@@ -78,9 +78,9 @@ public class StandardFileStatusReporter implements FileStatusReporter {
 
     private void printRowStats(TableFilesStatus status) {
         String percentageSuffix = ": ";
-        String allActiveFilesSuffix = ": ";
+        String allReferencedFilesSuffix = ": ";
         if (status.getTotalRowsApprox() > 0L) {
-            allActiveFilesSuffix = " (approx): ";
+            allReferencedFilesSuffix = " (approx): ";
             percentageSuffix = " (approx): ";
         }
         String leafFilesSuffix = ": ";
@@ -92,7 +92,7 @@ public class StandardFileStatusReporter implements FileStatusReporter {
         if (status.getTotalRowsInNonLeafPartitionsApprox() > 0L) {
             nonLeafFilesSuffix = " (approx): ";
         }
-        out.println("Number of rows referenced in partitions" + allActiveFilesSuffix +
+        out.println("Number of rows referenced in partitions" + allReferencedFilesSuffix +
                 abbreviatedRowCount(status.getTotalRows()));
         out.println("Number of rows in non-leaf partitions" + nonLeafFilesSuffix +
                 abbreviatedRowCount(status.getTotalRowsInNonLeafPartitions()));

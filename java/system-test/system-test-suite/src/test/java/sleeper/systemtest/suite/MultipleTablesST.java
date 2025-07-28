@@ -75,7 +75,7 @@ public class MultipleTablesST {
                 .waitForTask().waitForJobs();
 
         // Then all tables should contain the source file rows
-        // And all tables should have one active file
+        // And all tables should have one file reference
         assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, rows) -> assertThat(rows).containsExactlyElementsOf(
@@ -106,7 +106,7 @@ public class MultipleTablesST {
         sleeper.compaction().putTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
         sleeper.garbageCollection().waitFor();
 
-        // Then all tables should have one active file with the expected rows, and none ready for GC
+        // Then all tables should have one file reference with the expected rows, and none ready for GC
         assertThat(sleeper.query().byQueue().allRowsByTable())
                 .hasSize(NUMBER_OF_TABLES)
                 .allSatisfy((table, rows) -> assertThat(rows).containsExactlyElementsOf(
