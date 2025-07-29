@@ -20,11 +20,11 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
@@ -46,20 +46,20 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
-        List<Record> data = keyAndTwoValuesSortedEvenLongs();
-        FileReference file1 = ingestRecordsGetFile(data);
+        List<Row> data = keyAndTwoValuesSortedEvenLongs();
+        FileReference file1 = ingestRowsGetFile(data);
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessed summary = compact(schema, compactionJob);
+        RowsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
-        assertThat(summary.getRecordsRead()).isEqualTo(data.size());
-        assertThat(summary.getRecordsWritten()).isEqualTo(data.size());
+        assertThat(summary.getRowsRead()).isEqualTo(data.size());
+        assertThat(summary.getRowsWritten()).isEqualTo(data.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
     }
 
@@ -77,12 +77,12 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RecordsProcessed summary = compact(schema, compactionJob);
+        RowsProcessed summary = compact(schema, compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
-        assertThat(summary.getRecordsRead()).isZero();
-        assertThat(summary.getRecordsWritten()).isZero();
+        assertThat(summary.getRowsRead()).isZero();
+        assertThat(summary.getRowsWritten()).isZero();
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
     }
 

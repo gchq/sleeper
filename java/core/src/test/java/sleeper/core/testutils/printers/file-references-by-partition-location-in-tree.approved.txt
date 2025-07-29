@@ -1,0 +1,14 @@
+Unreferenced files: 0
+Referenced files: 11
+File references: 11
+Partition at LLL: 13 rows in file 1
+Partition at LLR: 25 rows in file 2
+Partition at LRL: 12 rows in file 3
+Partition at RLL: 12 rows in file 4
+Partition at RLR: 50 rows in file 5
+Partition at RRL: 13 rows in file 6
+Partition at RRR: 100 rows in file 7
+Partition at RR: 12 rows in file 8
+Partition at L: 50 rows in file 9
+Partition at R: 12 rows in file 10
+Partition at root: 100 rows in file 11

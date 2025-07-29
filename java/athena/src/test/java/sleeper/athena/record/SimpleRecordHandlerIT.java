@@ -19,7 +19,6 @@ import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.domain.Split;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
 import com.amazonaws.athena.connector.lambda.domain.predicate.EquatableValueSet;
 import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
 import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
@@ -28,20 +27,20 @@ import com.amazonaws.athena.connector.lambda.domain.spill.S3SpillLocation;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsResponse;
 import com.amazonaws.athena.connector.lambda.records.RecordResponse;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
 import org.apache.hadoop.fs.Path;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.athena.AthenaClient;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowReader;
 
 import java.util.HashMap;
 import java.util.List;
@@ -51,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static sleeper.athena.TestUtils.createConstraints;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -90,7 +90,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, file)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 1_000_000L,
                 1_000L));
 
@@ -128,7 +128,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, file)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 1_000_000L,
                 1_000L));
 
@@ -175,7 +175,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, file2018)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 1_000_000L,
                 1_000_000L));
 
@@ -220,7 +220,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, file)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 1_000_000L,
                 1_000L));
 
@@ -257,17 +257,17 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, file)
                         .build(),
-                new Constraints(new HashMap<>()),
+                createConstraints(new HashMap<>()),
                 1_000_000L,
                 1_000_000L));
 
         // Then
-        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRecordReader(new Path(file), SCHEMA));
+        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRowReader(new Path(file), SCHEMA));
         while (parquetReaderIterator.hasNext()) {
             parquetReaderIterator.next();
         }
 
-        long numberOfRecords = parquetReaderIterator.getNumberOfRecordsRead();
+        long numberOfRecords = parquetReaderIterator.getNumberOfRowsRead();
 
         assertThat(response).isInstanceOf(ReadRecordsResponse.class);
         assertThat(((ReadRecordsResponse) response).getRecordCount()).isEqualTo(numberOfRecords);
@@ -318,7 +318,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 Split.newBuilder(spillLocation, null)
                         .add(RELEVANT_FILES_FIELD, file)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 1_000_000L,
                 1_000_000L));
 
@@ -333,8 +333,8 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
 
     private SimpleRecordHandler handler(InstanceProperties instanceProperties) {
         return new SimpleRecordHandler(
-                s3ClientV1, s3Client, dynamoClient,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+                mock(SecretsManagerClient.class), mock(AthenaClient.class));
     }
 }

@@ -15,13 +15,14 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.31.1</version>
+    <version>0.32.0</version>
 
     <modules>
         <module>core</module>
@@ -32,6 +33,7 @@
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
         <module>configuration</module>
+        <module>foreign-bridge</module>
         <module>compaction</module>
         <module>query</module>
         <module>system-test</module>
@@ -72,8 +74,8 @@
         <!-- The version of Arrow should match the version used by Spark, under spark-sql-api. -->
         <arrow.version>12.0.1</arrow.version>
         <!--
-        Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as it is
-        provided in EMR.
+        Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as
+        it is provided in EMR.
         -->
         <datasketches.version>3.3.0</datasketches.version>
         <!--
@@ -94,13 +96,13 @@
         Snappy is used by both hadoop-client and parquet-hadoop.
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
         -->
-        <snappy.version>1.1.10.7</snappy.version>
+        <snappy.version>1.1.10.8</snappy.version>
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
         <protobuf.version>4.31.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.4</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -110,7 +112,7 @@
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.10</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
-        <okhttp3.version>4.12.0</okhttp3.version>
+        <okhttp3.version>5.1.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
@@ -120,7 +122,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
         -->
-        <okio.version>3.14.0</okio.version>
+        <okio.version>3.15.0</okio.version>
         <!--
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
@@ -129,30 +131,30 @@
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
-        <aws-java-sdk.version>1.12.787</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.31.74</aws-java-sdk-v2.version>
-        <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
-        <!-- At the time of writing it's not compatible with the latest version. -->
-        <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
-        <!-- BulkImportJobDriver.start tries to create an SqsClient: -->
-        <!-- java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE -->
-        <!-- at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75) -->
-        <!-- The old version of the library is coming from this file in the EMR Serverless Docker image: -->
-        <!-- /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.19.0.jar -->
-        <!-- To find the version below, we logged out the code location for the class in the Spark driver, then -->
-        <!-- copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class. -->
+        <aws-java-sdk-v2.version>2.32.8</aws-java-sdk-v2.version>
+        <!--
+        EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
+        At the time of writing it's not compatible with the latest version.
+        We're getting different versions mixed together in the classpath and seeing the following error when
+        BulkImportJobDriver.start tries to create an SqsClient:
+        java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE
+        at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75)
+        The old version of the library is coming from this file in the EMR Serverless Docker image:
+        /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.19.0.jar
+        To find the version below, we logged out the code location for the class in the Spark
+        driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
+        -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.38.5</aws-crt.version>
-        <aws-lambda-java-events.version>3.16.0</aws-lambda-java-events.version>
+        <aws-crt.version>0.38.7</aws-crt.version>
+        <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>2.1.1</aws-lambda-powertools.version>
-        <commons-lang3.version>3.17.0</commons-lang3.version>
-        <commons-lang.version>2.6</commons-lang.version>
-        <commons-codec.version>1.18.0</commons-codec.version>
-        <commons-io.version>2.19.0</commons-io.version>
+        <aws-lambda-powertools.version>2.2.0</aws-lambda-powertools.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <commons-codec.version>1.19.0</commons-codec.version>
+        <commons-io.version>2.20.0</commons-io.version>
         <commons-configuration.version>2.12.0</commons-configuration.version>
         <commons-compress.version>1.27.1</commons-compress.version>
-        <commons-text.version>1.13.1</commons-text.version>
+        <commons-text.version>1.14.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
@@ -160,24 +162,29 @@
         <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <httpcore4.version>4.4.16</httpcore4.version>
         <httpclient4.version>4.5.14</httpclient4.version>
+        <httpclient5.version>5.5</httpclient5.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>3.30.4</jline.version>
         <jetbrains-annotations.version>26.0.2</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
-        <zstd-jni.version>1.5.7-3</zstd-jni.version>
-        <airlift-units.version>1.10</airlift-units.version>
-        <airlift-slice.version>0.41</airlift-slice.version>
-        <guice.version>5.1.0</guice.version>
-        <jol.version>0.2</jol.version>
+        <zstd-jni.version>1.5.7-4</zstd-jni.version>
+        <airlift.units.version>1.10</airlift.units.version>
+        <airlift.slice.version>2.3</airlift.slice.version>
+        <!-- Trino and its dependencies declare different versions of Airlift. -->
+        <airlift.version>241</airlift.version>
+        <!-- Trino and its dependencies declare different versions of OpenTelemetry. -->
+        <opentelemetry.version>1.52.0</opentelemetry.version>
+        <guice.version>7.0.0</guice.version>
+        <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.3</zookeeper.version>
-        <jackson.version>2.19.1</jackson.version>
+        <jackson.version>2.19.2</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
-        <google.errorprone.version>2.39.0</google.errorprone.version>
-        <cdk.version>2.202.0</cdk.version>
+        <google.errorprone.version>2.41.0</google.errorprone.version>
+        <cdk.version>2.207.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.112.0</jsii.version>
@@ -187,22 +194,20 @@
         <aspectj.version>1.9.24</aspectj.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.81</bouncycastle.version>
-        <athena.version>2023.3.1</athena.version>
-        <trino.version>390</trino.version>
+        <athena.version>2025.15.1</athena.version>
+        <trino.version>435</trino.version>
         <!-- Trino requires an old version of JGraphT -->
         <trino.jgrapht.version>0.9.2</trino.jgrapht.version>
-        <!-- Trino's AssertJ plugin is not compatible with the latest version -->
-        <trino.assertj.version>3.18.1</trino.assertj.version>
         <!-- Build module uses Jersey w/Jakarta WS for communicating with GitHub API -->
         <jersey.version>2.45</jersey.version>
         <jakarta.ws.version>2.1.6</jakarta.ws.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.2.Final</netty.version>
+        <netty.version>4.2.3.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
         <netty-tcnative.version>2.0.72.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
-        <jetty.version>9.4.57.v20241219</jetty.version>
+        <jetty.version>11.0.25</jetty.version>
         <jakarta.activation.version>2.1.3</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
@@ -213,28 +218,29 @@
         <jnr.ffi.version>2.2.17</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.13.2</junit.version>
-        <junit.platform.version>1.13.2</junit.platform.version>
+        <junit.version>5.13.4</junit.version>
+        <junit.platform.version>1.13.4</junit.platform.version>
         <mockito.version>5.18.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <wiremock.version>2.35.2</wiremock.version>
+        <wiremock.version>3.13.1</wiremock.version>
+        <handlebars.version>4.4.0</handlebars.version>
         <assertj.version>3.27.3</assertj.version>
-        <hamcrest.version>1.3</hamcrest.version>
-        <approvaltests.version>24.22.0</approvaltests.version>
+        <hamcrest.version>3.0</hamcrest.version>
+        <approvaltests.version>25.0.23</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.3</xmlunit.version>
         <jsonunit.version>4.1.1</jsonunit.version>
         <checkstyle.version>10.26.1</checkstyle.version>
-        <sleeper.system.test.short.id/>
-        <sleeper.system.test.vpc.id/>
-        <sleeper.system.test.subnet.ids/>
-        <sleeper.system.test.output.dir/>
+        <sleeper.system.test.short.id />
+        <sleeper.system.test.vpc.id />
+        <sleeper.system.test.subnet.ids />
+        <sleeper.system.test.output.dir />
         <sleeper.system.test.cluster.enabled>false</sleeper.system.test.cluster.enabled>
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
-        <sleeper.system.test.force.statestore.classname/>
-        <sleeper.system.test.standalone.properties.template/>
-        <sleeper.system.test.instance.properties.overrides/>
+        <sleeper.system.test.force.statestore.classname />
+        <sleeper.system.test.standalone.properties.template />
+        <sleeper.system.test.instance.properties.overrides />
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
@@ -246,7 +252,7 @@
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
         <jar.plugin.version>3.4.2</jar.plugin.version>
         <compiler.plugin.version>3.14.0</compiler.plugin.version>
-        <enforcer.plugin.version>3.5.0</enforcer.plugin.version>
+        <enforcer.plugin.version>3.6.1</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.9.3</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
@@ -264,7 +270,7 @@
         java.lang.invoke.SerializedLambda is accessed by Apache Spark KryoSerializer, used in the bulk import job runner
 
         See also https://arrow.apache.org/docs/java/install.html
-        "When using Java 17 or later, some JDK internals must be exposed by adding - - add-opens=java.base/java.nio=ALL-UNNAMED.
+        "When using Java 17 or later, some JDK internals must be exposed by adding add-opens=java.base/java.nio=ALL-UNNAMED.
         Otherwise, you may see errors like module java.base does not "opens java.nio" to unnamed module."
         -->
         <module.access.args>
@@ -274,7 +280,7 @@
             --add-opens java.base/java.lang.invoke=ALL-UNNAMED
         </module.access.args>
         <!--  This is required for later correct replacement of argLine -->
-        <argLine/>
+        <argLine />
     </properties>
 
     <dependencyManagement>
@@ -330,26 +336,6 @@
                 <groupId>software.amazon.lambda</groupId>
                 <artifactId>powertools-metrics</artifactId>
                 <version>${aws-lambda-powertools.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-core</artifactId>
-                <version>${aws-java-sdk.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-kms</artifactId>
-                <version>${aws-java-sdk.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>aws-java-sdk-s3</artifactId>
-                <version>${aws-java-sdk.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>jmespath-java</artifactId>
-                <version>${aws-java-sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
@@ -454,6 +440,101 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>apigatewaymanagementapi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>sdk-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>metrics-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>regions</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>aws-json-protocol</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>endpoints-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>json-utils</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>utils</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>identity-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>annotations</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-client-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>http-auth-aws</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>retries-spi</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>protocol-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>aws-core</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>profiles</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>checksums</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>checksums-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
             <!-- Data processing -->
@@ -770,32 +851,12 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-alpn-openjdk8-client</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-alpn-server</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-alpn-java-server</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-alpn-openjdk8-server</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty.websocket</groupId>
-                <artifactId>websocket-common</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty.websocket</groupId>
-                <artifactId>websocket-client</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
@@ -811,6 +872,16 @@
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
                 <artifactId>http2-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-client</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-http-client-transport</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
@@ -940,6 +1011,11 @@
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp-urlconnection</artifactId>
+                <version>${okhttp3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${okhttp3.version}</version>
             </dependency>
@@ -1043,6 +1119,11 @@
                 <artifactId>json-smart</artifactId>
                 <version>${json-smart.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.jknack</groupId>
+                <artifactId>handlebars</artifactId>
+                <version>${handlebars.version}</version>
+            </dependency>
             <!-- Apache commons -->
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -1053,11 +1134,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${commons-lang.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -1120,6 +1196,11 @@
                 <version>${httpclient4.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>${httpclient5.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
                 <version>${jaxb.version}</version>
@@ -1147,12 +1228,62 @@
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>units</artifactId>
-                <version>${airlift-units.version}</version>
+                <version>${airlift.units.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.airlift</groupId>
                 <artifactId>slice</artifactId>
-                <version>${airlift-slice.version}</version>
+                <version>${airlift.slice.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>http-client</artifactId>
+                <version>${airlift.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>json</artifactId>
+                <version>${airlift.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>node</artifactId>
+                <version>${airlift.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>log</artifactId>
+                <version>${airlift.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>configuration</artifactId>
+                <version>${airlift.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>stats</artifactId>
+                <version>${airlift.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>concurrent</artifactId>
+                <version>${airlift.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.airlift</groupId>
+                <artifactId>security</artifactId>
+                <version>${airlift.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-context</artifactId>
+                <version>${opentelemetry.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject</groupId>
@@ -1472,6 +1603,8 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.hadoop:hadoop-aws::</ignoredUnusedDeclaredDependency>
                                 <!-- AspectJ wants to be declared as a compile dependency -->
                                 <ignoredUnusedDeclaredDependency>org.aspectj:aspectjrt::</ignoredUnusedDeclaredDependency>
+                                <!-- Ignored due to false positive for dependency in localstack-test -->
+                                <ignoredUnusedDeclaredDependency>com.github.tomakehurst:wiremock-jre8::</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoreAllNonTestScoped>true</ignoreAllNonTestScoped>
                         </configuration>
@@ -1536,8 +1669,8 @@
                             </includes>
                             <message>Log4j conflicts with reload4j, add an exclusion</message>
                         </bannedDependencies>
-                        <dependencyConvergence/>
-                        <banDuplicatePomDependencyVersions/>
+                        <dependencyConvergence />
+                        <banDuplicatePomDependencyVersions />
                     </rules>
                 </configuration>
             </plugin>
@@ -1579,15 +1712,18 @@
                                     <!--
                                     This is needed to merge META-INFO/services/org.apache.hadoop.fs.FileSystem, which
                                     is provided by different libraries.
+
                                     Otherwise depending on the order Maven processes the jars, sometimes it takes the
                                     version of this file from hadoop-aws, which only declares
-                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem.
-                                    This prevents Hadoop from loading the local file system, and we see errors like this:
+                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem. This prevents Hadoop from loading
+                                    the local file system, and we see errors like this:
+
                                     org.apache.hadoop.fs.UnsupportedFileSystemException: No FileSystem for scheme "file"
+
                                     This is only strictly needed for modules that use Hadoop, but in practice this is
                                     most fat jars.
                                     -->
-                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                 </transformers>
                                 <filters>
                                     <filter>

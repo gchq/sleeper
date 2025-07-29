@@ -54,7 +54,8 @@ chunks:
     name: Rust
     workflow: chunk-rust.yaml
     modules:
-      - compaction/compaction-rust
+      - compaction/compaction-datafusion
+      - foreign-bridge
   ingest:
     name: Ingest
     workflow: chunk-ingest.yaml

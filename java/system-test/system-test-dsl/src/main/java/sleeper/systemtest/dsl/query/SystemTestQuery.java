@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.query;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -55,22 +55,22 @@ public class SystemTestQuery {
         return this;
     }
 
-    public List<Record> allRecordsInTable() {
-        return driver.run(queryCreator().allRecordsQuery());
+    public List<Row> allRowsInTable() {
+        return driver.run(queryCreator().allRowsQuery());
     }
 
-    public Map<String, List<Record>> allRecordsByTable() {
-        return driver.runForAllTables(QueryCreator::allRecordsQuery);
+    public Map<String, List<Row>> allRowsByTable() {
+        return driver.runForAllTables(QueryCreator::allRowsQuery);
     }
 
-    public List<Record> byRowKey(String key, QueryRange... ranges) {
+    public List<Row> byRowKey(String key, QueryRange... ranges) {
         return driver.run(queryCreator().byRowKey(key, List.of(ranges)));
     }
 
-    public List<Record> allRecordsWithProcessingConfig(Consumer<QueryProcessingConfig.Builder> config) {
+    public List<Row> allRowsWithProcessingConfig(Consumer<QueryProcessingConfig.Builder> config) {
         QueryProcessingConfig.Builder builder = QueryProcessingConfig.builder();
         config.accept(builder);
-        return driver.run(queryCreator().allRecordsQuery(builder.build()));
+        return driver.run(queryCreator().allRowsQuery(builder.build()));
     }
 
     public void emptyResultsBucket() {

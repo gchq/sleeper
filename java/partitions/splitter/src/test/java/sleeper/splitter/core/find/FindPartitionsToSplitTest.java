@@ -113,7 +113,7 @@ public class FindPartitionsToSplitTest {
         }
 
         @Test
-        public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws Exception {
+        public void shouldPrioritiseFilesContainingTheLargestNumberOfRows() throws Exception {
             // Given
             instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 2);
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
@@ -146,7 +146,7 @@ public class FindPartitionsToSplitTest {
     }
 
     @Nested
-    @DisplayName("Handle files split over multiple metadata records")
+    @DisplayName("Handle files split over multiple metadata rows")
     class HandleSplitFiles {
 
         @BeforeEach
@@ -154,7 +154,7 @@ public class FindPartitionsToSplitTest {
             // Given we have two leaf partitions
             setPartitions(builder -> builder.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 50L));
-            // And we have a file split over the two leaves, so that each leaf has approximately 300 records
+            // And we have a file split over the two leaves, so that each leaf has approximately 300 rows
             FileReference file = fileReferenceFactory.rootFile("split.parquet", 600L);
             update(stateStore).addFiles(List.of(
                     SplitFileReference.referenceForChildPartition(file, "L"),
@@ -180,7 +180,7 @@ public class FindPartitionsToSplitTest {
         }
 
         @Test
-        void shouldNotSplitPartitionWhenAFileWithRecordsInAnotherPartitionWouldPutItOverTheLimit() throws Exception {
+        void shouldNotSplitPartitionWhenAFileWithRowsInAnotherPartitionWouldPutItOverTheLimit() throws Exception {
             // Given the left partition would be over the splitting threshold if we included the split file
             update(stateStore).addFile(fileReferenceFactory.partitionFile("L", "left.parquet", 300L));
             instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);

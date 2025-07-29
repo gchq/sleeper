@@ -78,7 +78,7 @@ public class StateStoreFilesArrowFormatTest {
         FileReference reference = wholeFileReferenceBuilder()
                 .filename("test.parquet")
                 .partitionId("root")
-                .numberOfRecords(123L)
+                .numberOfRows(123L)
                 .jobId("test-job")
                 .lastStateStoreUpdateTime(Instant.parse("2024-05-28T13:25:02.123Z"))
                 .build();
@@ -99,7 +99,7 @@ public class StateStoreFilesArrowFormatTest {
         FileReference reference = wholeFileReferenceBuilder()
                 .filename("test.parquet")
                 .partitionId("root")
-                .numberOfRecords(123L)
+                .numberOfRows(123L)
                 .build();
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
         AllReferencesToAFile file = fileWithOneReference(reference, updateTime);
@@ -118,13 +118,13 @@ public class StateStoreFilesArrowFormatTest {
         FileReference reference1 = partitialFileReferenceBuilder()
                 .filename("file.parquet")
                 .partitionId("A")
-                .numberOfRecords(123L)
+                .numberOfRows(123L)
                 .jobId("test-job-1")
                 .build();
         FileReference reference2 = partitialFileReferenceBuilder()
                 .filename("file.parquet")
                 .partitionId("B")
-                .numberOfRecords(456L)
+                .numberOfRows(456L)
                 .jobId("test-job-2")
                 .build();
         AllReferencesToAFile file = fileWithReferences(reference1, reference2)
@@ -156,19 +156,19 @@ public class StateStoreFilesArrowFormatTest {
         FileReference reference1 = wholeFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("A")
-                .numberOfRecords(123L)
+                .numberOfRows(123L)
                 .jobId("test-job-1")
                 .build();
         FileReference reference2 = wholeFileReferenceBuilder()
                 .filename("file2.parquet")
                 .partitionId("B")
-                .numberOfRecords(456L)
+                .numberOfRows(456L)
                 .jobId("test-job-2")
                 .build();
         FileReference reference3 = wholeFileReferenceBuilder()
                 .filename("file3.parquet")
                 .partitionId("C")
-                .numberOfRecords(789L)
+                .numberOfRows(789L)
                 .build();
         AllReferencesToAFile file1 = fileWithReferences(reference1)
                 .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
@@ -194,17 +194,17 @@ public class StateStoreFilesArrowFormatTest {
         FileReference reference1 = partitialFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("A")
-                .numberOfRecords(123L)
+                .numberOfRows(123L)
                 .build();
         FileReference reference2 = partitialFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("B")
-                .numberOfRecords(456L)
+                .numberOfRows(456L)
                 .build();
         FileReference reference3 = wholeFileReferenceBuilder()
                 .filename("file2.parquet")
                 .partitionId("C")
-                .numberOfRecords(789L)
+                .numberOfRows(789L)
                 .build();
         AllReferencesToAFile file1 = fileWithReferences(reference1, reference2)
                 .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
@@ -228,27 +228,27 @@ public class StateStoreFilesArrowFormatTest {
         FileReference file1Ref1 = partitialFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("A")
-                .numberOfRecords(123L)
+                .numberOfRows(123L)
                 .build();
         FileReference file1Ref2 = partitialFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("B")
-                .numberOfRecords(456L)
+                .numberOfRows(456L)
                 .build();
         FileReference file1Ref3 = partitialFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("C")
-                .numberOfRecords(789L)
+                .numberOfRows(789L)
                 .build();
         FileReference file2Ref = wholeFileReferenceBuilder()
                 .filename("file2.parquet")
                 .partitionId("D")
-                .numberOfRecords(123L)
+                .numberOfRows(123L)
                 .build();
         FileReference file3Ref = wholeFileReferenceBuilder()
                 .filename("file3.parquet")
                 .partitionId("E")
-                .numberOfRecords(456L)
+                .numberOfRows(456L)
                 .build();
         AllReferencesToAFile file1 = fileWithReferences(file1Ref1, file1Ref2, file1Ref3)
                 .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));

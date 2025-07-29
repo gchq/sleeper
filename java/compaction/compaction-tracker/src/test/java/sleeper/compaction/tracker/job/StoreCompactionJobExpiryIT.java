@@ -24,7 +24,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -86,7 +86,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTest
         storeJobCreated(tracker, job);
         tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
         tracker.jobFinished(job.finishedEventBuilder(new JobRunSummary(
-                new RecordsProcessed(60L, 60L), startedTime, finishedTime))
+                new RowsProcessed(60L, 60L), startedTime, finishedTime))
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
 
         // Then

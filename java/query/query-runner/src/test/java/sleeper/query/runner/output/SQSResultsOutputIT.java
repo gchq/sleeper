@@ -17,17 +17,15 @@ package sleeper.query.runner.output;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
-import sleeper.core.record.ResultsBatch;
-import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
+import sleeper.core.row.ResultsBatch;
+import sleeper.core.row.Row;
+import sleeper.core.row.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -61,16 +59,16 @@ public class SQSResultsOutputIT extends LocalStackTestBase {
     @Test
     void shouldSendResultsTOSQS() {
         // Given
-        List<Record> records = List.of(
-                new Record(Map.of("key", "value-1")),
-                new Record(Map.of("key", "value-2")));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", "value-1")),
+                new Row(Map.of("key", "value-2")));
 
         // When
-        output().publish(queryWithId("test-query"), new WrappedIterator<>(records.iterator()));
+        output().publish(queryWithId("test-query"), new WrappedIterator<>(rows.iterator()));
 
         // Then
         assertThat(receiveResults()).containsExactly(
-                new ResultsBatch("test-query", schema, records));
+                new ResultsBatch("test-query", schema, rows));
     }
 
     private SQSResultsOutput output() {
@@ -91,12 +89,8 @@ public class SQSResultsOutputIT extends LocalStackTestBase {
     }
 
     private List<ResultsBatch> receiveResults() {
-        ReceiveMessageResponse response = sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
-                .waitTimeSeconds(1));
         JSONResultsBatchSerialiser serDe = new JSONResultsBatchSerialiser();
-        return response.messages().stream()
-                .map(Message::body)
+        return receiveMessages(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
                 .map(serDe::deserialise)
                 .toList();
     }

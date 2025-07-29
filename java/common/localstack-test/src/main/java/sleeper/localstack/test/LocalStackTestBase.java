@@ -15,7 +15,6 @@
  */
 package sleeper.localstack.test;
 
-import com.amazonaws.services.s3.AmazonS3;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -29,13 +28,18 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT;
@@ -48,7 +52,6 @@ import static sleeper.localstack.test.SleeperLocalStackClients.SQS_CLIENT;
 public abstract class LocalStackTestBase {
 
     protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
-    protected final AmazonS3 s3ClientV1 = SleeperLocalStackClients.S3_CLIENT_V1;
     protected final S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
     protected final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
     protected final S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
@@ -91,6 +94,25 @@ public abstract class LocalStackTestBase {
                 .queueName(UUID.randomUUID().toString())
                 .build())
                 .queueUrl();
+    }
+
+    public static Stream<String> receiveMessages(String queueUrl) {
+        return SQS_CLIENT.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .maxNumberOfMessages(10)
+                .waitTimeSeconds(0)
+                .build())
+                .messages().stream().map(Message::body);
+    }
+
+    public static Stream<Message> receiveMessagesAndMessageGroupId(String queueUrl) {
+        return SQS_CLIENT.receiveMessage(ReceiveMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .maxNumberOfMessages(10)
+                .waitTimeSeconds(0)
+                .messageSystemAttributeNames(List.of(MessageSystemAttributeName.MESSAGE_GROUP_ID))
+                .build())
+                .messages().stream();
     }
 
 }

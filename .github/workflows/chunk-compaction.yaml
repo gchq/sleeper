@@ -11,6 +11,7 @@ on:
       - 'java/compaction/pom.xml'
       - 'java/partitions/pom.xml'
       - 'java/bulk-export/pom.xml'
+      - 'java/compaction/compaction-datafusion/**'
       - 'java/compaction/compaction-job-execution/**'
       - 'java/compaction/compaction-task-creation/**'
       - 'java/compaction/compaction-job-creation/**'
@@ -24,7 +25,6 @@ on:
       - 'java/bulk-export/bulk-export-planner/**'
       - 'java/bulk-export/bulk-export-task-creator/**'
       - 'java/bulk-export/bulk-export-task-execution/**'
-      - 'java/compaction/compaction-rust/**'
       - 'java/common/common-task/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-job/**'
@@ -39,6 +39,7 @@ on:
       - 'java/common/localstack-test/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
+      - 'java/foreign-bridge/**'
 
 jobs:
   chunk-workflow:

@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Implements a record aggregating iterator similiar to the DataFusion
+ * Implements a row aggregating iterator similiar to the DataFusion
  * aggregation functionality.
  *
  * The format for the iterator's configuration string mirrors that of the
@@ -63,7 +63,7 @@ import java.util.stream.Stream;
  * We may decide to expand the list of allowable operations. Additional
  * aggregation filters should be comma separated.
  */
-public class AggregationFilteringIterator implements SortedRecordIterator {
+public class AggregationFilteringIterator implements SortedRowIterator {
     /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
     public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
 
@@ -206,7 +206,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
             } else if (lhs instanceof byte[]) {
                 return op((byte[]) lhs, (byte[]) rhs);
             } else if (lhs instanceof Map) {
-                // Clone the map to avoid aliasing problems: don't want to alter map in previous Record
+                // Clone the map to avoid aliasing problems: don't want to alter map in previous row
                 Map<?, ?> mapLhs = new HashMap<>((Map<?, ?>) lhs);
                 // Find first value of RHS if there is one
                 Object testValue = ((Map<?, ?>) rhs).values().stream().findFirst().orElse(null);
@@ -297,12 +297,12 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> source) {
+    public CloseableIterator<Row> apply(CloseableIterator<Row> source) {
         if (config == null) {
             throw new IllegalStateException("AggregatingIterator has not been initialised, call init()");
         }
         // See if we need to age-off data
-        CloseableIterator<Record> input = maybeCreateFilter(source);
+        CloseableIterator<Row> input = maybeCreateFilter(source);
 
         // Do any aggregations need to be performed?
         if (!config.aggregations().isEmpty()) {
@@ -322,7 +322,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
      * @param  source the input iterator
      * @return        the source iterator or a new filtering iterator
      */
-    private CloseableIterator<Record> maybeCreateFilter(CloseableIterator<Record> source) {
+    private CloseableIterator<Row> maybeCreateFilter(CloseableIterator<Row> source) {
         return config.ageOffColumn().map(filter_col -> {
             AgeOffIterator ageoff = new AgeOffIterator();
             // Age off iterator operates in milliseconds
@@ -370,7 +370,7 @@ public class AggregationFilteringIterator implements SortedRecordIterator {
      * </ol>
      *
      * @param  iteratorConfig           the configuration to check
-     * @param  schema                   the record schema to check against
+     * @param  schema                   the schema to check against
      * @throws IllegalArgumentException if {@code iteratorConfig} is invalid
      */
     private static void validate(FilterAggregationConfig iteratorConfig, Schema schema) {

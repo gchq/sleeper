@@ -61,20 +61,15 @@ public class CompactionJob {
         return new Builder();
     }
 
-    public String getTableId() {
-        return tableId;
-    }
-
-    public String getId() {
-        return jobId;
-    }
-
-    public String getPartitionId() {
-        return partitionId;
-    }
-
-    public List<String> getInputFiles() {
-        return inputFiles;
+    public Builder toBuilder() {
+        return builder()
+                .tableId(tableId)
+                .jobId(jobId)
+                .inputFiles(inputFiles)
+                .outputFile(outputFile)
+                .partitionId(partitionId)
+                .iteratorClassName(iteratorClassName)
+                .iteratorConfig(iteratorConfig);
     }
 
     public CheckFileAssignmentsRequest createInputFileAssignmentsCheck() {
@@ -106,19 +101,19 @@ public class CompactionJob {
                 .failureTime(failureTime);
     }
 
-    public FileReference createOutputFileReference(long recordsWritten) {
+    public FileReference createOutputFileReference(long rowsWritten) {
         return FileReference.builder()
                 .filename(outputFile)
                 .partitionId(partitionId)
-                .numberOfRecords(recordsWritten)
+                .numberOfRows(rowsWritten)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
     }
 
-    public ReplaceFileReferencesRequest.Builder replaceFileReferencesRequestBuilder(long recordsWritten) {
+    public ReplaceFileReferencesRequest.Builder replaceFileReferencesRequestBuilder(long rowsWritten) {
         return ReplaceFileReferencesRequest.builder().jobId(jobId).inputFiles(inputFiles)
-                .newReference(createOutputFileReference(recordsWritten));
+                .newReference(createOutputFileReference(rowsWritten));
     }
 
     /**
@@ -134,6 +129,22 @@ public class CompactionJob {
                 .count() != files.size()) {
             throw new IllegalArgumentException("Duplicate entry present in file list");
         }
+    }
+
+    public String getTableId() {
+        return tableId;
+    }
+
+    public String getId() {
+        return jobId;
+    }
+
+    public String getPartitionId() {
+        return partitionId;
+    }
+
+    public List<String> getInputFiles() {
+        return inputFiles;
     }
 
     public String getOutputFile() {

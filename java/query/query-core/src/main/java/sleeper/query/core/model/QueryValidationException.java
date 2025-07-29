@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Custom exception for validation failure of a query.
+ */
 public class QueryValidationException extends RuntimeException {
     private final String queryId;
     private final List<Map<String, String>> statusReportDestinations;

@@ -19,9 +19,9 @@ package sleeper.systemtest.dsl.ingest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.HashSet;
@@ -46,11 +46,11 @@ public class SystemTestIngestTest {
     @Test
     void shouldIngestByQueue(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
-        sleeper.sourceFiles().create("test.parquet", record);
+        sleeper.sourceFiles().create("test.parquet", row);
 
         // When
         sleeper.ingest().byQueue()
@@ -58,8 +58,8 @@ public class SystemTestIngestTest {
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactly(record);
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactly(row);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
     }
@@ -67,19 +67,19 @@ public class SystemTestIngestTest {
     @Test
     void shouldBulkImportByQueue(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
-        sleeper.sourceFiles().create("test.parquet", record);
+        sleeper.sourceFiles().create("test.parquet", row);
 
         // When
         sleeper.ingest().bulkImportByQueue()
                 .sendSourceFiles("test.parquet").waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactly(record);
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactly(row);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
     }
@@ -87,15 +87,15 @@ public class SystemTestIngestTest {
     @Test
     void shouldIngestSplitIntoFiles(SleeperSystemTest sleeper) {
         // Given
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100_000));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
 
         // When
         sleeper.ingest().direct(null)
                 .splitIngests(1_000, numbers);
 
         // Then
-        assertThat(new HashSet<>(sleeper.directQuery().allRecordsInTable()))
-                .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, 100_000))));
+        assertThat(new HashSet<>(sleeper.directQuery().allRowsInTable()))
+                .isEqualTo(setFrom(sleeper.generateNumberedRows(LongStream.range(0, 100_000))));
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1_000);
     }
@@ -103,7 +103,7 @@ public class SystemTestIngestTest {
     @Test
     void shouldNotSplitIntoFilesIfNotExactSplit(SleeperSystemTest sleeper) {
         // Given
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 10));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 10));
         SystemTestDirectIngest ingest = sleeper.ingest().direct(null);
 
         // When / Then

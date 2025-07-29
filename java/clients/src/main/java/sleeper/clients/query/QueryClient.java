@@ -30,7 +30,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
@@ -41,8 +41,8 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -113,7 +113,7 @@ public class QueryClient extends QueryCommandLineClient {
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties));
+                    new LeafPartitionRowRetrieverImpl(executorService, conf, tableProperties));
             queryExecutor.init(partitions, partitionToFileMapping);
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
@@ -123,26 +123,26 @@ public class QueryClient extends QueryCommandLineClient {
     protected void submitQuery(TableProperties tableProperties, Query query) {
         Schema schema = tableProperties.getSchema();
 
-        CloseableIterator<Record> records;
+        CloseableIterator<Row> rows;
         Instant startTime = Instant.now();
         try {
-            records = runQuery(query);
+            rows = runQuery(query);
         } catch (QueryException e) {
             out.println("Encountered an error while running query " + query.getQueryId());
             e.printStackTrace(out.printStream());
             return;
         }
-        out.println("Returned Records:");
+        out.println("Returned Rows:");
         long count = 0L;
-        while (records.hasNext()) {
-            out.println(records.next().toString(schema));
+        while (rows.hasNext()) {
+            out.println(rows.next().toString(schema));
             count++;
         }
 
-        out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " records");
+        out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " rows");
     }
 
-    private CloseableIterator<Record> runQuery(Query query) throws QueryException {
+    private CloseableIterator<Row> runQuery(Query query) throws QueryException {
         QueryExecutor queryExecutor = cachedQueryExecutors.get(query.getTableName());
         return queryExecutor.execute(query);
     }

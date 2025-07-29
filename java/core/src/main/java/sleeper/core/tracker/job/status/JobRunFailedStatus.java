@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.List;
@@ -51,8 +51,8 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public RecordsProcessed getRecordsProcessed() {
-        return RecordsProcessed.NONE;
+    public RowsProcessed getRowsProcessed() {
+        return RowsProcessed.NONE;
     }
 
     @Override

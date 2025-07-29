@@ -22,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -54,16 +54,16 @@ public class GarbageCollectionST {
     void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
         // Given
         int numberOfFilesToGC = 11_000;
-        int recordsPerFile = 100;
-        int numberOfRecords = recordsPerFile * numberOfFilesToGC;
+        int rowsPerFile = 100;
+        int numberOfRows = rowsPerFile * numberOfFilesToGC;
         sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(5).then(addPrefix("row-"))));
-        RecordNumbers records = sleeper.scrambleNumberedRecords(LongStream.range(0, numberOfRecords));
+        RowNumbers rows = sleeper.scrambleNumberedRows(LongStream.range(0, numberOfRows));
         sleeper.ingest().direct(tempDir)
-                .splitIngests(numberOfFilesToGC, records);
+                .splitIngests(numberOfFilesToGC, rows);
         sleeper.stateStore().fakeCommits().compactAllFilesToOnePerPartition();
 
         // When
@@ -73,7 +73,7 @@ public class GarbageCollectionST {
         // Then
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
-            assertThat(files.listFileReferences()).hasSize(1);
+            assertThat(files.streamFileReferences()).hasSize(1);
         });
     }
 }

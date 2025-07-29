@@ -1,0 +1,12 @@
+{
+  "message": "error",
+  "queryId": "test-query",
+  "rowCount": 123,
+  "locations": [
+    {
+      "type": "s3",
+      "location": "s3a://test-bucket/test-file.parquet"
+    }
+  ],
+  "error": "Something went wrong"
+}

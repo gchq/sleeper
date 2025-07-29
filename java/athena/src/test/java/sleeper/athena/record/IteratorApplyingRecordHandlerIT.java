@@ -19,7 +19,6 @@ import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.domain.Split;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
-import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
 import com.amazonaws.athena.connector.lambda.domain.predicate.EquatableValueSet;
 import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
 import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
@@ -28,22 +27,22 @@ import com.amazonaws.athena.connector.lambda.domain.spill.S3SpillLocation;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsResponse;
 import com.amazonaws.athena.connector.lambda.records.RecordResponse;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.util.Text;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.athena.AthenaClient;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.SortedRecordIterator;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -64,6 +63,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static sleeper.athena.TestUtils.createConstraints;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MAX_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MIN_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
@@ -117,7 +117,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 1_000_000L,
                 1_000L));
 
@@ -170,7 +170,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -224,7 +224,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -267,7 +267,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -310,7 +310,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 0, "")
                         .add(MAX_ROW_KEY_PREFIX + 0, null)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -366,7 +366,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
                         .add(MIN_ROW_KEY_PREFIX + 1, MIN_VALUE)
                         .add(MIN_ROW_KEY_PREFIX + 2, MIN_VALUE)
                         .build(),
-                new Constraints(predicates),
+                createConstraints(predicates),
                 Integer.MAX_VALUE,
                 Integer.MAX_VALUE));
 
@@ -392,9 +392,9 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
 
     private IteratorApplyingRecordHandler handler(InstanceProperties instanceProperties) {
         return new IteratorApplyingRecordHandler(
-                s3ClientV1, s3Client, dynamoClient,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
-                mock(AWSSecretsManager.class), mock(AmazonAthena.class));
+                mock(SecretsManagerClient.class), mock(AthenaClient.class));
     }
 
     private void assertRecordContainedDay(Block records, int position, int year, Month month, int day) {
@@ -413,9 +413,9 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     }
 
     /**
-     * Simple iterator which adds the count of the previous record to the current one.
+     * Simple iterator which adds the count of the previous row to the current one.
      */
-    public static class CountAggregator implements SortedRecordIterator {
+    public static class CountAggregator implements SortedRowIterator {
 
         @Override
         public void init(String configString, Schema schema) {
@@ -428,31 +428,31 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         }
 
         @Override
-        public CloseableIterator<Record> apply(CloseableIterator<Record> recordCloseableIterator) {
-            return new CountAggregatorIteratorImpl(recordCloseableIterator);
+        public CloseableIterator<Row> apply(CloseableIterator<Row> rowCloseableIterator) {
+            return new CountAggregatorIteratorImpl(rowCloseableIterator);
         }
 
-        private static class CountAggregatorIteratorImpl implements CloseableIterator<Record> {
-            private final CloseableIterator<Record> records;
-            private Record previous = null;
+        private static class CountAggregatorIteratorImpl implements CloseableIterator<Row> {
+            private final CloseableIterator<Row> rows;
+            private Row previous = null;
 
-            private CountAggregatorIteratorImpl(CloseableIterator<Record> consumedRecords) {
-                this.records = consumedRecords;
+            private CountAggregatorIteratorImpl(CloseableIterator<Row> consumedRows) {
+                this.rows = consumedRows;
             }
 
             @Override
             public void close() throws IOException {
-                records.close();
+                rows.close();
             }
 
             @Override
             public boolean hasNext() {
-                return records.hasNext();
+                return rows.hasNext();
             }
 
             @Override
-            public Record next() {
-                Record current = records.next();
+            public Row next() {
+                Row current = rows.next();
                 if (previous != null) {
                     current.put("count", (long) current.get("count") + (long) previous.get("count"));
                 }

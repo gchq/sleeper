@@ -36,6 +36,19 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        Arrow is used in the state store and standard ingest, and is also a dependency of Spark. Because it's a
+        dependency of Spark, the version we're able to use is restricted by support in AWS EMR.
+
+        This affects the Arrow R package, which we don't use internally. It doesn't seem to affect the Arrow
+        implementations that we use.
+
+        This was found against Arrow 12.0.1.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.arrow/arrow-.*@.*$</packageUrl>
+        <cve>CVE-2024-52338</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         Hadoop is suppressed as the version we are able to use is restricted by support in AWS EMR:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]></notes>
@@ -107,7 +120,7 @@
         Spark SQL integrates with Apache Hive, but we don't use it.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hive/hive\-storage\-api@.*$</packageUrl>
-        <cve>CVE-2021-34538</cve>
+        <vulnerabilityName regex="true">CVE-2021-34538|CVE-2024-23953|CVE-2024-23945|CVE-2024-29869</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -122,45 +135,11 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        JGraphT is used in the build module to visualise the dependencies between Maven modules. This is not used in
-        production code, and there is not a more up to date version that does not have this problem.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jgrapht/jgrapht\-core@.*$</packageUrl>
-        <vulnerabilityName regex="true">CVE-2024-23078|CVE-2024-23079</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         Apfloat is used in the build module by JUNG for visualising dependencies between Maven modules. This is not used
         in production code, and there is not a more up to date version that does not have this problem.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apfloat/apfloat@.*$</packageUrl>
         <vulnerabilityName regex="true">CVE-2024-23084|CVE-2024-23085</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Joda Time is used by most of the AWS SDK v1 dependencies, by the Trino Plugin Toolkit, and by the AWS Lambda
-        API. There is currently no version of the library without this vulnerability, and the vulnerability itself is
-        disputed.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/joda\-time/joda\-time@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-23080</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Jetty Servlets is only used by WireMock, which is only used for tests. The CVE also seems to incorrectly match
-        the version we're using. It's listed as having been patched in version 9.4.52, and we're using 9.4.57 at time of
-        writing.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty-servlets@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-36479</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        We're not using the HttpURI class directly, and the CVE states that Jetty is not vulnerable unless you use that
-        directly.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty(/.*$|\.http2/http2.*$|\.websocket/websocket.*$)</packageUrl>
-        <vulnerabilityName>CVE-2024-6763</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -182,50 +161,7 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        This seems to be a false positive, as the CVE is for Eclipse Glassfish, which isn't on the classpath for Sleeper
-        anywhere. The dependency it flagged is for HK2, which is a dependency injection framework used by both Glassfish
-        and Jersey. We only have Jersey and not Glassfish. The version number it's flagged is also specific to the OSGi
-        Resource Locator, and not Glassfish, and it's comparing it to the vulnerable version of Glassfish.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.glassfish\.hk2/osgi-resource-locator@.*$</packageUrl>
-        <cve>CVE-2024-9329</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        This library is only used during build time tests, with WireMock, JsonUnit and Trino testing.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/net\.minidev/json-smart@.*$</packageUrl>
-        <vulnerabilityName>CVE-2024-57699</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        RoaringBitmap is a dependency of spark-core. At time of writing the latest version is still vulnerable.
-        Dependabot should update it automatically when a fixed version is available.
-        file name: RoaringBitmap-1.3.0.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.roaringbitmap/RoaringBitmap@.*$</packageUrl>
-        <cve>CVE-2018-17073</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        The following JSON libraries have a stack overflow issue that allows for DDoS attacks.
-        Once there's a version of any of these libraries that don't, we can use those instead.
-
-        These are used by AWS SDK v2. We'll need to wait for AWS to resolve this, and Dependabot should update it
-        automatically.
-        file name: aws-json-protocol-2.31.59.jar
-        file name: json-utils-2.31.59.jar
-
-        json-unit-core is used as part of WireMock which is on an older version because it's used by Trino. After
-        Trino and WireMock are upgraded we should not have any usages of this old version remaining.
-        file name: json-unit-core-2.36.0.jar
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk/aws-json-protocol@.*$|^pkg:maven/net\.javacrumbs\.json-unit/json-unit-core@.*$|^pkg:maven/software\.amazon\.awssdk/json-utils@.*$</packageUrl>
-        <vulnerabilityName regex="true">CVE-2022-45688|CVE-2023-5072</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        This dependency includes a new vunerability with latest version.
+        This is a false positive which is only used for testing, given that it is a dependency of WireMock.
         Dependabot should update it automatically when a fixed version is available.
         file name: xmlunit-core-2.10.3.jar
         ]]></notes>

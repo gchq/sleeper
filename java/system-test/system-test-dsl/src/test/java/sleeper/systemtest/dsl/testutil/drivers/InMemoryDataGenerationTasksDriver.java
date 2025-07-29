@@ -17,8 +17,8 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
@@ -26,7 +26,7 @@ import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -39,11 +39,11 @@ import java.util.stream.LongStream;
 public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDriver {
 
     private final SystemTestInstanceContext instance;
-    private final InMemoryRecordStore data;
+    private final InMemoryRowStore data;
     private final InMemorySketchesStore sketches;
     private final Random random = new Random(0);
 
-    public InMemoryDataGenerationTasksDriver(SystemTestInstanceContext instance, InMemoryRecordStore data, InMemorySketchesStore sketches) {
+    public InMemoryDataGenerationTasksDriver(SystemTestInstanceContext instance, InMemoryRowStore data, InMemorySketchesStore sketches) {
         this.instance = instance;
         this.data = data;
         this.sketches = sketches;
@@ -54,9 +54,9 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
         for (SystemTestDataGenerationJob job : jobs) {
             TableProperties tableProperties = instance.getTablePropertiesByDeployedName(job.getTableName()).orElseThrow();
             for (int i = 0; i < job.getNumberOfIngests(); i++) {
-                try (IngestCoordinator<Record> coordinator = ingest(tableProperties).createCoordinator()) {
-                    for (Record record : generateRecords(job, tableProperties)) {
-                        coordinator.write(record);
+                try (IngestCoordinator<Row> coordinator = ingest(tableProperties).createCoordinator()) {
+                    for (Row row : generateRows(job, tableProperties)) {
+                        coordinator.write(row);
                     }
                 } catch (IteratorCreationException e) {
                     throw new RuntimeException(e);
@@ -74,13 +74,13 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
                 data, sketches);
     }
 
-    private Iterable<Record> generateRecords(SystemTestDataGenerationJob job, TableProperties tableProperties) {
-        List<Long> recordNumbers = LongStream.range(0, job.getRecordsPerIngest())
+    private Iterable<Row> generateRows(SystemTestDataGenerationJob job, TableProperties tableProperties) {
+        List<Long> rowNumbers = LongStream.range(0, job.getRowsPerIngest())
                 .mapToObj(num -> num)
                 .collect(Collectors.toList());
-        Collections.shuffle(recordNumbers, random);
-        GenerateNumberedRecords generator = instance.numberedRecords(tableProperties.getSchema());
-        return () -> recordNumbers.stream().map(generator::generateRecord).iterator();
+        Collections.shuffle(rowNumbers, random);
+        GenerateNumberedRows generator = instance.numberedRows(tableProperties.getSchema());
+        return () -> rowNumbers.stream().map(generator::generateRow).iterator();
     }
 
 }

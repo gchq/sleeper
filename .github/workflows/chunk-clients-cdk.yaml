@@ -37,7 +37,7 @@ on:
       - 'java/garbage-collector/**'
       - 'java/ingest/ingest-batcher-core/**'
       - 'java/query/query-core/**'
-      - 'java/compaction/compaction-rust/**'
+      - 'java/compaction/compaction-datafusion/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-invoke-tables/**'
       - 'java/compaction/compaction-core/**'
@@ -49,6 +49,7 @@ on:
       - 'java/core/**'
       - 'java/common/localstack-test/**'
       - 'java/bulk-export/bulk-export-core/**'
+      - 'java/foreign-bridge/**'
 
 jobs:
   chunk-workflow:

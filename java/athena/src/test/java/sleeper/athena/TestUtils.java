@@ -15,6 +15,8 @@
  */
 package sleeper.athena;
 
+import com.amazonaws.athena.connector.lambda.domain.predicate.Constraints;
+import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
 import com.amazonaws.athena.connector.lambda.security.FederatedIdentity;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
@@ -29,7 +31,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
@@ -44,9 +46,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_ROWS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -67,7 +70,7 @@ public class TestUtils {
         instanceProperties.set(DATA_BUCKET, dataDir);
         instanceProperties.set(FILE_SYSTEM, "file://"); // Overwrite S3 because we're going to use the standard fs.
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
+        instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 1000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
 
@@ -102,35 +105,40 @@ public class TestUtils {
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();
-            factory.ingestFromRecordIterator(table, generateTimeSeriesData().iterator());
+            factory.ingestFromRowIterator(table, generateTimeSeriesData().iterator());
         } catch (IOException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }
 
-    private static List<Record> generateTimeSeriesData() {
+    private static List<Row> generateTimeSeriesData() {
         LocalDate startDate = LocalDate.of(2017, 1, 1);
         LocalDate endDate = LocalDate.of(2021, 1, 1);
-        List<Record> records = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (LocalDate date = startDate; date.isBefore(endDate); date = date.plusDays(1)) {
-            Record record = new Record();
-            record.put("year", date.getYear());
-            record.put("month", date.getMonthValue());
-            record.put("day", date.getDayOfMonth());
-            record.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
-            record.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
+            Row row = new Row();
+            row.put("year", date.getYear());
+            row.put("month", date.getMonthValue());
+            row.put("day", date.getDayOfMonth());
+            row.put("timestamp", Date.from(Timestamp.valueOf(date.atStartOfDay()).toInstant()).getTime());
+            row.put("count", (long) date.getYear() * (long) date.getMonthValue() * (long) date.getDayOfMonth());
             HashMap<String, String> map = new HashMap<>();
             map.put(date.getMonth().name(), date.getMonth().name());
-            record.put("map", map);
-            record.put("list", Lists.newArrayList(date.getEra().toString()));
-            record.put("str", date.toString());
-            records.add(record);
+            row.put("map", map);
+            row.put("list", Lists.newArrayList(date.getEra().toString()));
+            row.put("str", date.toString());
+            rows.add(row);
         }
 
-        return records;
+        return rows;
     }
 
     public static FederatedIdentity createIdentity() {
         return new FederatedIdentity("arn", "account", new HashMap<>(), new ArrayList<>());
     }
+
+    public static Constraints createConstraints(Map<String, ValueSet> predicate) {
+        return new Constraints(predicate, new ArrayList<>(), new ArrayList<>(), Constraints.DEFAULT_NO_LIMIT, new HashMap<>());
+    }
+
 }

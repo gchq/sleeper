@@ -6,10 +6,10 @@
       "finishTime": "2022-10-06T12:24:50.001Z",
       "totalJobRuns": 4,
       "timeSpentOnJobs": 40.0,
-      "totalRecordsRead": 1600,
-      "totalRecordsWritten": 800,
-      "recordsReadPerSecond": 40.0,
-      "recordsWrittenPerSecond": 20.0
+      "totalRowsRead": 1600,
+      "totalRowsWritten": 800,
+      "rowsReadPerSecond": 40.0,
+      "rowsWrittenPerSecond": 20.0
     }
   },
   {
@@ -19,10 +19,10 @@
       "finishTime": "2022-10-06T12:20:50.001Z",
       "totalJobRuns": 4,
       "timeSpentOnJobs": 40.0,
-      "totalRecordsRead": 800,
-      "totalRecordsWritten": 400,
-      "recordsReadPerSecond": 20.0,
-      "recordsWrittenPerSecond": 10.0
+      "totalRowsRead": 800,
+      "totalRowsWritten": 400,
+      "rowsReadPerSecond": 20.0,
+      "rowsWrittenPerSecond": 10.0
     }
   }
 ]

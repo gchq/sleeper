@@ -59,7 +59,7 @@ source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
-OUTPUT_DIR="$REPO_PARENT_DIR/${MAIN_SUITE_NAME}Tests/$START_TIME"
+OUTPUT_DIR="$REPO_PARENT_DIR/logs/$START_TIME-$MAIN_SUITE_NAME"
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh

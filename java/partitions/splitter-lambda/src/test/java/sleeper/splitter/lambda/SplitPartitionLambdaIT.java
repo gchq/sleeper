@@ -17,7 +17,6 @@ package sleeper.splitter.lambda;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -27,7 +26,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
@@ -48,7 +47,6 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -78,8 +76,8 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     @Test
     void shouldCommitToStateStoreDirectly() throws Exception {
         // Given
-        List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
-                .mapToObj(i -> new Record(Map.of("key", i))));
+        List<String> filenames = ingestRowsGetFilenames(IntStream.rangeClosed(1, 100)
+                .mapToObj(i -> new Row(Map.of("key", i))));
 
         // When
         lambdaWithNewPartitionIds("L", "R").splitPartitionFromJson(
@@ -100,8 +98,8 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
         // Given
         tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
-        List<String> filenames = ingestRecordsGetFilenames(IntStream.rangeClosed(1, 100)
-                .mapToObj(i -> new Record(Map.of("key", i))));
+        List<String> filenames = ingestRowsGetFilenames(IntStream.rangeClosed(1, 100)
+                .mapToObj(i -> new Row(Map.of("key", i))));
 
         // When
         lambdaWithNewPartitionIds("L", "R").splitPartitionFromJson(
@@ -133,16 +131,9 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
     }
 
     private List<StateStoreCommitRequest> receiveSplitPartitionCommitMessages() {
-        return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.body()))
-                .collect(Collectors.toList());
-    }
-
-    private List<Message> receiveCommitMessages() {
-        return sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .maxNumberOfMessages(10))
-                .messages();
+        return receiveMessages(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .map(new StateStoreCommitRequestSerDe(tableProperties)::fromJson)
+                .toList();
     }
 
     private TableProperties createTable(Schema schema, PartitionTree partitionTree) {
@@ -169,7 +160,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
         return new SplitPartitionLambda(instanceProperties, s3Client, dynamoClient, sqsClient, List.of(ids).iterator()::next);
     }
 
-    private List<String> ingestRecordsGetFilenames(Stream<Record> records) throws Exception {
+    private List<String> ingestRowsGetFilenames(Stream<Row> rows) throws Exception {
         IngestResult result = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(tempDir.toString())
@@ -177,7 +168,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConf)
                 .s3AsyncClient(s3AsyncClient)
-                .build().ingestFromRecordIterator(tableProperties, records.iterator());
+                .build().ingestFromRowIterator(tableProperties, rows.iterator());
         return result.getFileReferenceList().stream()
                 .map(FileReference::getFilename)
                 .collect(toUnmodifiableList());

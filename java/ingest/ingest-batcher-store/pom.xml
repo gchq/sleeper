@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>ingest</artifactId>
-        <version>0.31.1</version>
+        <version>0.32.0</version>
     </parent>
 
     <artifactId>ingest-batcher-store</artifactId>
@@ -60,8 +60,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8</artifactId>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
             <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>

@@ -1,0 +1,64 @@
+# Copyright 2022-2025 Crown Copyright
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+[package]
+name = "sleeper_df"
+description = "This is the native library for Sleeper that implements all the core data compaction and sketches generation functionality."
+keywords = ["sleeper"]
+categories = ["science"]
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+authors = { workspace = true }
+rust-version = { workspace = true }
+publish = { workspace = true }
+
+[lib]
+doc = true
+doctest = true
+test = true
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+arrow = { workspace = true, features = ["prettyprint"] }
+async-trait = { workspace = true }
+aws-config = { workspace = true }
+aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
+aws-types = { workspace = true }
+bytes = { workspace = true }
+chrono = { workspace = true }
+color-eyre = { workspace = true }
+cxx = { workspace = true }
+datafusion = { workspace = true }
+env_logger = { workspace = true }
+futures = { workspace = true }
+libc = { workspace = true }
+log = { workspace = true }
+nohash = { workspace = true }
+num-format = { workspace = true }
+num-traits = { workspace = true }
+object_store = { workspace = true, features = [ "aws" ] }
+regex = { workspace = true }
+rust_sketch = { path = "../rust_sketch" }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-test = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+object_store = { workspace = true, features = ["integration"] }
+tempfile = { workspace = true }
+test-log = { workspace = true }
+testing_logger = { workspace = true }
+mockall = { workspace = true }

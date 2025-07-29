@@ -16,13 +16,22 @@
 package sleeper.query.core.output;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 
 /**
- * An interface that classes for sending the results of queries somewhere must implement.
+ * Results output. Implemented by classes that need to send results of queries somewhere.
  */
 public interface ResultsOutput {
 
-    ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Record> results);
+    String DESTINATION = "destination";
+
+    /**
+     * Publishes the results obtained from a given query or a specific leaf partition query.
+     *
+     * @param  query   the query definition
+     * @param  results the query results to publish
+     * @return         the results
+     */
+    ResultsOutputInfo publish(QueryOrLeafPartitionQuery query, CloseableIterator<Row> results);
 }

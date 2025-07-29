@@ -30,8 +30,8 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
-import sleeper.core.record.Record;
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
@@ -45,7 +45,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.sketches.Sketches;
@@ -74,10 +74,10 @@ public class InMemoryCompaction {
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     private final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
-    private final InMemoryRecordStore dataStore;
+    private final InMemoryRowStore dataStore;
     private final InMemorySketchesStore sketchesStore;
 
-    public InMemoryCompaction(InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore) {
+    public InMemoryCompaction(InMemoryRowStore dataStore, InMemorySketchesStore sketchesStore) {
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;
     }
@@ -217,12 +217,12 @@ public class InMemoryCompaction {
         Instant startTime = run.getStartTime();
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
-        RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
+        RowsProcessed rowsProcessed = mergeInputFiles(job, partition, schema);
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
+                job.replaceFileReferencesRequestBuilder(rowsProcessed.getRowsWritten())
                         .taskId(run.getTaskId()).jobRunId(job.getId()).build()));
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
-        return new JobRunSummary(recordsProcessed, startTime, finishTime);
+        return new JobRunSummary(rowsProcessed, startTime, finishTime);
     }
 
     private static Partition getPartitionForJob(StateStore stateStore, CompactionJob job) {
@@ -230,11 +230,11 @@ public class InMemoryCompaction {
         return partitionTree.getPartition(job.getPartitionId());
     }
 
-    private RecordsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
-        List<CloseableIterator<Record>> inputIterators = job.getInputFiles().stream()
+    private RowsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
+        List<CloseableIterator<Row>> inputIterators = job.getInputFiles().stream()
                 .map(file -> new CountingIterator(file, partition.getRegion(), schema))
                 .collect(toUnmodifiableList());
-        CloseableIterator<Record> mergingIterator;
+        CloseableIterator<Row> mergingIterator;
         try {
             mergingIterator = JavaCompactionRunner.getMergingIterator(
                     ObjectFactory.noUserJars(), schema, job, inputIterators);
@@ -242,14 +242,14 @@ public class InMemoryCompaction {
             throw new RuntimeException(e);
         }
         Sketches sketches = Sketches.from(schema);
-        List<Record> records = new ArrayList<>();
-        mergingIterator.forEachRemaining(record -> {
-            records.add(record);
-            sketches.update(record);
+        List<Row> rows = new ArrayList<>();
+        mergingIterator.forEachRemaining(row -> {
+            rows.add(row);
+            sketches.update(row);
         });
-        dataStore.addFile(job.getOutputFile(), records);
+        dataStore.addFile(job.getOutputFile(), rows);
         sketchesStore.saveFileSketches(job.getOutputFile(), sketches);
-        return new RecordsProcessed(records.size(), inputIterators.stream()
+        return new RowsProcessed(rows.size(), inputIterators.stream()
                 .map(it -> (CountingIterator) it)
                 .mapToLong(it -> it.count)
                 .sum());
@@ -269,14 +269,14 @@ public class InMemoryCompaction {
         });
     }
 
-    private class CountingIterator implements CloseableIterator<Record> {
+    private class CountingIterator implements CloseableIterator<Row> {
 
-        private final Iterator<Record> iterator;
+        private final Iterator<Row> iterator;
         private long count = 0;
 
         CountingIterator(String filename, Region region, Schema schema) {
-            iterator = dataStore.streamRecords(List.of(filename))
-                    .filter(record -> region.isKeyInRegion(schema, record.getRowKeys(schema)))
+            iterator = dataStore.streamRows(List.of(filename))
+                    .filter(row -> region.isKeyInRegion(schema, row.getRowKeys(schema)))
                     .iterator();
         }
 
@@ -286,10 +286,10 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public Record next() {
-            Record record = iterator.next();
+        public Row next() {
+            Row row = iterator.next();
             count++;
-            return record;
+            return row;
         }
 
         @Override

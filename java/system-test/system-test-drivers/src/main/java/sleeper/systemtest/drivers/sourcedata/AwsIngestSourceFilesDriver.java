@@ -24,9 +24,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -46,16 +46,16 @@ public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
 
     public void writeFile(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            String path, boolean writeSketches, Iterator<Record> records) {
+            String path, boolean writeSketches, Iterator<Row> rows) {
         Schema schema = tableProperties.getSchema();
         Configuration conf = clients.createHadoopConf(instanceProperties, tableProperties);
         Sketches sketches = Sketches.from(schema);
         LOGGER.info("Writing to {}", path);
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                 new Path(path), tableProperties, conf)) {
-            for (Record record : (Iterable<Record>) () -> records) {
-                sketches.update(record);
-                writer.write(record);
+            for (Row row : (Iterable<Row>) () -> rows) {
+                sketches.update(row);
+                writer.write(row);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

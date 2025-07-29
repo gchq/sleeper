@@ -5,8 +5,8 @@ This section describes the design of Sleeper. It starts with an overview of the 
 on, followed by a detailed description of the design.
 
 Sleeper is based on the log-structured merge tree. This data structure is designed to support high rates of data
-ingest, and to support quick retrieval of records by a key field. To achieve this, the records are stored in a small
-number of files that are sorted by key. As records are continually arriving, it is necessary to merge old files with
+ingest, and to support quick retrieval of rows by a key field. To achieve this, the rows are stored in a small
+number of files that are sorted by key. As rows are continually arriving, it is necessary to merge old files with
 new files in order to ensure that the number of files remains small. This is called a compaction. As Sleeper is a
 large-scale system, data is also range-partitioned by key. Over time partitions can be split if they become larger
 than a threshold.
@@ -19,7 +19,7 @@ when the instance is created, others are defined by the CDK deployment process. 
 in a properties file, which is stored in a bucket in S3. The name of this S3 bucket is `sleeper-` followed by the
 instance id followed by `-config`, e.g. `sleeper-mySleeperInstance-config`.
 
-An instance of Sleeper can contain one or more tables. Each table contains records with fields matching a schema.
+An instance of Sleeper can contain one or more tables. Each table contains rows with fields matching a schema.
 Each table has its own folder in a shared S3 bucket for storing data and a state store for storing metadata about that table.
 
 The Sleeper instance also contains infrastructure to ingest data, compact data, garbage collect data, split
@@ -30,36 +30,36 @@ The following diagram shows the architecture of Sleeper.
 
 ![High level design diagram](design/high-level-design.png)
 
-## Records
+## Rows
 
-Records are the fundamental unit of data in Sleeper. A record is simply a map from a field name to a value, i.e.
-`Map<String, Object>` where the object should be one of the supported types. For example, we might have a record
+Rows are the fundamental unit of data in Sleeper. A row is simply a map from a field name to a value, i.e.
+`Map<String, Object>` where the object should be one of the supported types. For example, we might have a row
 with 3 fields: `id -> "abc"`, `timestamp -> 1234567980`, `value -> "hello"`.
 
 ## Schema
 
-A schema specifies the fields that will be found in records in a table. Each field has a name and a type. There are
+A schema specifies the fields that will be found in rows in a table. Each field has a name and a type. There are
 three different classes of fields: row fields, sort fields, and value fields. The row fields are used to partition
-and sort the data, i.e. all records with the same values of the row fields are within the same partition, and a
-partition contains a range of values of the row fields. Within a partition, records are stored sorted by the row
+and sort the data, i.e. all rows with the same values of the row fields are within the same partition, and a
+partition contains a range of values of the row fields. Within a partition, rows are stored sorted by the row
 fields and then the sort fields. The following types are supported for row and sort fields: int, long, string,
 byte array. Value fields can be one of these primitive types but can also be of map or list type.
 
-Sleeper is designed to allow quick retrieval of records where the key field is a given value, or where the key
+Sleeper is designed to allow quick retrieval of rows where the key field is a given value, or where the key
 field is in a certain range. Note that the row fields and sort fields are ordered, e.g. if there are two row key
-fields id1 and id2, then records are stored sorted by id1 and, in the case of ties, by id2. This means that queries
-for records where id1 = x and id2 = y will be quick, as will queries that just specify id1. But queries that just
+fields id1 and id2, then rows are stored sorted by id1 and, in the case of ties, by id2. This means that queries
+for rows where id1 = x and id2 = y will be quick, as will queries that just specify id1. But queries that just
 specify id2 will not be quick as they will require a full scan of the table (although file-level statistics can
 sometimes be used to avoid reading a lot of the data).
 
 ## Tables
 
-All records in a table conform to a schema. The records in a table are stored in multiple files, with each file
+All rows in a table conform to a schema. The rows in a table are stored in multiple files, with each file
 belonging to a partition. These files are all stored in an S3 bucket deployed at an instance level, referred to as
 the data bucket.
 
 Each table has a state store associated to it. This stores metadata about the table, namely the files that are in
-the table and how the records in the table are partitioned.
+the table and how the rows in the table are partitioned.
 
 When an instance is deployed, it creates an S3 data bucket and creates the infrastructure for all future state stores.
 When a table is created, a state store for that table is initialised (to achieve this, state store implementations
@@ -72,7 +72,7 @@ starts online or offline. This property defaults to `true`.
 
 ## Sorted files
 
-Records in a table are stored in files. The records in each file are stored sorted by row key and sort keys. Currently
+Rows in a table are stored in files. The rows in each file are stored sorted by row key and sort keys. Currently
 data is always stored in Parquet files (support for Rfiles will be added). The files used must support retrieving
 individual rows by key (assuming the file is sorted by key) without needing to read the entire file. Parquet supports
 this because it stores a footer than contains the minimum and maximum values of each column, by both row group and
@@ -82,9 +82,9 @@ to retrieve an individual row.
 
 ## Partitions
 
-Data within a table is split into partitions. Each partition contains records with keys from a certain range, e.g.
-if the row key field is an integer then there might be two partitions, one for records with key less than 0 and one
-for records with key greater than or equal to 0. Each record exists in one and only one partition. Partitions are
+Data within a table is split into partitions. Each partition contains rows with keys from a certain range, e.g.
+if the row key field is an integer then there might be two partitions, one for rows with key less than 0 and one
+for rows with key greater than or equal to 0. Each row exists in one and only one partition. Partitions are
 closed on the left, and open on the right, i.e. the minimum value of a partition is contained within the partition,
 but the maximum value is not. For example if the row key field is a string then there could be two partitions, one
 for strings up to, but not including 'G', and one for strings 'G' and greater. The first partition would be written
@@ -95,14 +95,14 @@ is no maximum value for strings in that partition.
 
 ## Partition splitting
 
-Over time a partition may contain more records than a certain threshold and if this happens the partition will be
+Over time a partition may contain more rows than a certain threshold and if this happens the partition will be
 split into two child partitions. Over time this process builds up a tree of partitions. We think of this tree
 upside-down, i.e. the tree grows downwards with the root at the top and the leaves at the bottom. The root partition
 is the only partition with no parent. A leaf partition has no children.
 
 The partition splitting process periodically checks for leaf partitions that have become larger than the specified
 maximum partition size. The size of a partition can be determined from the state store as that records the number of
-records in each file, and which partition a file is in. When a partition that is too large is found a partition
+rows in each file, and which partition a file is in. When a partition that is too large is found a partition
 splitting job is created and sent to an SQS queue. When a job arrives on this queue, a lambda processes it. To split
 the partition, the lambda identifies the midpoint of the partition. It then creates two child partitions, and calls
 the state store to add these two new partitions and to change the status of the parent partition to be a non-leaf.
@@ -112,14 +112,14 @@ atomic, conditional, update ensures that a partition cannot be split twice.
 How is the midpoint of a partition identified? Whenever a file is written out, either during the ingest process or
 as the result of a compaction, a sidecar quantiles sketch file is written. This quantiles sketch allows quick estimation
 of the quantiles of the keys in the file. Quantile sketches from different files can be merged together. To identify
-the midpoint of a partition, the list of active files is retrieved from the state store. The associated sketches
+the midpoint of a partition, the list of file references is retrieved from the state store. The associated sketches
 are read from S3, and merged together. Then the median is found and used as the split point. This approach is much
 quicker than reading all the data in sorted order and stopping once half the data has been read.
 
 The partition splitting stack has two parts. The first consists of a Cloudwatch rule that periodically executes
 a lambda that runs `sleeper.splitter.lambda.FindPartitionsToSplitLambda`. For each online table, this queries the
-state store to find the leaf partitions and the active files. For each leaf partition it then calculates the
-number of records and if that is greater than a threshold it sends a message to an SQS queue saying that this partition
+state store to find the leaf partitions and the file references. For each leaf partition it then calculates the
+number of rows and if that is greater than a threshold it sends a message to an SQS queue saying that this partition
 should be split. The second part of the stack is the lambda that is triggered when a message arrives on the SQS queue.
 This lambda executes `sleeper.splitter.lambda.SplitPartitionLambda`. This splits the partition using the process
 described in the previous paragraph.
@@ -200,21 +200,21 @@ out of date with the head of the transaction log, and it is used to find old sna
 
 ## Ingest of data
 
-To ingest data to a table, it is necessary to write files of sorted records. Each file should contain data for one
+To ingest data to a table, it is necessary to write files of sorted rows. Each file should contain data for one
 and only one partition. When these files have been written to S3, the state store needs to be updated. There are
 two ways to do this: standard ingest and bulk import.
 
 ### Standard ingest
 
-Standard ingest is performed by the `sleeper.ingest.IngestRecords` class. This performs ingest using the following
+Standard ingest is performed by the `sleeper.ingest.runner.IngestRows` class. This performs ingest using the following
 steps:
 
-- A batch of records is read into memory.
+- A batch of rows is read into memory.
 - This batch is sorted in memory and then flushed to a local file.
-- The above two steps are repeated until a certain number of records have been written locally.
+- The above two steps are repeated until a certain number of rows have been written locally.
 - The state store is then queried for all leaf partitions.
 - As the local files are all sorted, it is possible to run a streaming merge of these files to produce a sorted
-  iterable of records. This sorted iterable is then used to write records to files in S3, with one file per leaf
+  iterable of rows. This sorted iterable is then used to write rows to files in S3, with one file per leaf
   partition.
 - Once these files have been written to S3 then the state store is updated.
 
@@ -226,10 +226,10 @@ still receive data. The fact that some of those partitions may no longer be leaf
 that matters is that the ingest process writes files of data such that each file contains data for one and only
 one partition.
 
-Users can avoid the complexity of deploying and running multiple instances of the `IngestRecords` class by
+Users can avoid the complexity of deploying and running multiple instances of the `IngestRows` class by
 writing the data that they wish to ingest into Parquet files and then sending a message to a queue telling Sleeper
 to ingest that data. This then causes ECS tasks to run to perform the ingest. These tasks are calling the
-`IngestRecords` class on an iterable of records that simply reads the Parquet files.
+`IngestRows` class on an iterable of rows that simply reads the Parquet files.
 
 The resources that provide this functionality are deployed by the ingest stack. The user sends a message to
 the SQS queue containing details of the files to be ingested. The ingest stack consists of the SQS queue to
@@ -248,7 +248,7 @@ and sorting of the data. This Spark job runs on either an EMR or an EKS cluster 
 There are two variations of the EMR-based bulk import. The first is an on-demand approach. The user sends a
 message to a queue with a list of the files that they want to ingest. This triggers a lambda that creates an
 EMR cluster to perform that ingest. As this cluster is created specifically for this job, the job needs to
-contain a large number of records. The cluster will take around 10 minutes to create.
+contain a large number of rows. The cluster will take around 10 minutes to create.
 
 The other EMR-based approach uses a persistent, i.e. long running, EMR cluster. A process on the master node
 of the cluster monitors a queue and when a job appears submits it to YARN for execution. The EMR cluster can
@@ -261,6 +261,9 @@ either be of fixed size or use EMR managed scaling.
 The ingest batcher groups ingest requests for individual files into ingest or bulk import jobs. File ingest requests are
 submitted to an SQS queue. The batcher is then triggered periodically to group files into jobs and send them to the
 ingest queue configured for the table. The number of jobs created is determined by the configuration of the batcher.
+The advantage of using the ingest batcher is that the user does not have to think about how to group the data they
+want ingested into sensibly sized jobs; the batcher takes care of that for them. The user can just submit a file
+ingest request whenever they have a file to ingest and Sleeper will take care of asynchronously ingesting it.
 
 The files need to be accessible to the relevant ingest system, but are not read directly by the batcher.
 
@@ -272,7 +275,7 @@ An outline of the design of this system is shown below:
 
 The purpose of a compaction job is to read N files and replace them with one file. This process keeps the number
 of files for a partition small, which means the number of files that need to be read in a query is small. The input
-files contain records sorted by key and sort fields, and are filtered so that only data for the current partition is
+files contain rows sorted by key and sort fields, and are filtered so that only data for the current partition is
 read. The data for an input file that exists within a specific partition can be represented by a file reference.
 The output from the job is a sorted file. As the filtered input files are sorted, it is simple to write out a sorted
 file containing their data. The output file will be written to the same partition that the input files were in.
@@ -315,6 +318,13 @@ number of concurrent compaction tasks is configurable.
 
 ![Execution of compaction tasks design diagram](design/compaction-task-running.png)
 
+There are two implementations of the code that compacts the files: a Java implementation and an implementation
+written in Rust that uses [Apache DataFusion](https://datafusion.apache.org/). The DataFusion implementation is
+much more performant than the Java one - often 10x quicker. It is also more cost effective even though it runs on
+more vCPUs (the Java compaction can run with 1 vCPU and 4GiB RAM, it is recommended that the DataFusion one runs
+with 4 vCPU and either 8 or 16GiB RAM - even with the additional resource usage, the DataFusion one is around 6x
+cheaper).
+
 ## Garbage collection
 
 A file is ready for garbage collection if there are no longer any references to the file in the state store,
@@ -331,12 +341,12 @@ more than N minutes. These files are then deleted in batches.
 
 ## Queries
 
-A Sleeper query is a request for all records where the key is in a range (or in one of a list of ranges). Queries
+A Sleeper query is a request for all rows where the key is in a range (or in one of a list of ranges). Queries
 are executed by the `QueryExecutor` class. This contains a cache of the information required from the state store
-(namely the partition tree and the active files). This cache is refreshed periodically. When a query is received,
+(namely the partition tree and the file references). This cache is refreshed periodically. When a query is received,
 the requested ranges are examined to see which leaf partitions overlap with the range. Then all partitions up
-the partition tree from the leaf partition to the root are found. Records that are relevant to the query may be
-found in any of these partitions. All the active files in these partitions are then found. Each file is opened
+the partition tree from the leaf partition to the root are found. Rows that are relevant to the query may be
+found in any of these partitions. All the file references in these partitions are then found. Each file is opened
 with a filter that specifies the required range. A streaming merge of the results is performed, with these results
 being passed through the compaction and query time iterators.
 
@@ -354,16 +364,52 @@ Sleeper allows Athena queries to be run over Sleeper data. This is enabled by th
 lambda functions that read Sleeper data and pass it to Athena. This can be done in two ways: with or without the
 application of the iterators.
 
-## Iterators
+## Iterators and continual aggregation and filtering
 
-An iterator is a function that is called either during a compaction job or during a query. It allows
-logic to be inserted into the compaction or query path. This logic could be used to age-off old data or to
-aggregate together values for the same key (e.g. to sum counts associated with the same key). Each iterator is a
-function that takes as input a `CloseableIterator<Record>` and returns a `CloseableIterator<Record>`. Examples of
-iterators can be found in the `example-iterators` module.
+There are many use cases where we want to aggregate rows where the keys are the same, e.g. we have a three column
+table where the key field is a string called 'id', the first value field is a long called 'count' and the second
+value field is a long called 'last_seen'. If multiple rows with the same id are inserted then we want to add the
+counts and take the maximum of the values in the last_seen column. Other use cases require filtering of data
+based on the fields, e.g. if the rows in our table have a timestamp field we may want to remove them whenever
+the timestamp is more than a certain age.
 
-We are in the process of designing a replacement for this that will work with DataFusion rather than just in Java. See
-the following epic: https://github.com/gchq/sleeper/issues/5123
+Aggregation and filtering logic can be applied during compactions. This persistently applies the logic to the
+data. When a query is performed there will normally be multiple files in a partition so to ensure the user sees
+the filtered or aggregated results, the same logic is applied to the results of the query. As the data in a table
+is sorted by key, logic to merge two rows with the same key can efficiently be applied during compactions as
+the rows with the same key will be processed at the same time.
+
+There are two different ways of configuring this logic, depending on whether compactions are being run using
+Java or DataFusion. The table property `sleeper.table.compaction.method` controls which is used - the possible
+values are `java` and `datafusion`.
+
+If Java is being used then an iterator can be applied. An iterator is a function that takes as input a
+`CloseableIterator<Row>` and returns a `CloseableIterator<Row>`. Examples of iterators that perform
+aggregation or filtering can be found in the `example-iterators` module. The iterator should respect the general
+constraints of a compaction: there could be many hundreds of millions of rows processed by a single compaction job,
+so there should be no attempt to buffer lots of rows in memory; there is no guarantee of the order the files in a
+partition will be compacted, or that all of them will be compacted at the same time so the logic should be
+commutative and associative; the output should be sorted by key so in general the row and sort keys should not be
+changed by the iterator.
+
+If one of the fields in a table is a byte array then that could be a serialised version of an arbitrary Java object.
+This allows aggregation of fields that contain complex values, e.g. Accumulo's iterators in
+[Gaffer](https://github.com/gchq/Gaffer) are used to maintain HyperLogLog sketches which are used to quickly
+approximate the degree of a vertex.
+
+If DataFusion is used for compactions then the aggregation and filtering logic can be applied using a table
+property. This is much simpler than writing an iterator, and DataFusion-based compactions that apply filtering and
+aggregation are much more efficient than Java-based compactions with iterators. The only down-side to the
+DataFusion-based compactions is that it is not possible to write arbitrary logic. The table property
+`sleeper.table.iterator.class.name` can be set to `AGGREGATORS` to specify that aggregation and filtering will
+be performed using DataFusion. The actual aggegation and filtering logic is specified in the
+`sleeper.table.iterator.config` property. The format of this will change. Currently to perform aggregation of
+a count field and to take the maximum of a last_seen field would require the property to be `;,sum(count),max(last_seen)`.
+See https://github.com/gchq/sleeper/issues/4344 for more details and see https://github.com/gchq/sleeper/issues/5102
+for the issue to improve this specification.
+
+Note that if DataFusion-based aggregation is specified then the same logic will be applied in a query-time Java
+iterator so that the user sees the correct results. In time this will be replaced by queries executed via DataFusion.
 
 ## Job and task trackers
 

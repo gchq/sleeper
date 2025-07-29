@@ -46,17 +46,17 @@ public class ClientUtils {
     private static final long G_COUNT = 1_000_000_000;
     private static final long T_COUNT = 1_000_000_000_000L;
 
-    public static String abbreviatedRecordCount(long records) {
-        if (records < K_COUNT) {
-            return "" + records;
-        } else if (records < M_COUNT) {
-            return Math.round((double) records / K_COUNT) + "K (" + countWithCommas(records) + ")";
-        } else if (records < G_COUNT) {
-            return Math.round((double) records / M_COUNT) + "M (" + countWithCommas(records) + ")";
-        } else if (records < T_COUNT) {
-            return Math.round((double) records / G_COUNT) + "G (" + countWithCommas(records) + ")";
+    public static String abbreviatedRowCount(long rows) {
+        if (rows < K_COUNT) {
+            return "" + rows;
+        } else if (rows < M_COUNT) {
+            return Math.round((double) rows / K_COUNT) + "K (" + countWithCommas(rows) + ")";
+        } else if (rows < G_COUNT) {
+            return Math.round((double) rows / M_COUNT) + "M (" + countWithCommas(rows) + ")";
+        } else if (rows < T_COUNT) {
+            return Math.round((double) rows / G_COUNT) + "G (" + countWithCommas(rows) + ")";
         } else {
-            return countWithCommas(Math.round((double) records / T_COUNT)) + "T (" + countWithCommas(records) + ")";
+            return countWithCommas(Math.round((double) rows / T_COUNT)) + "T (" + countWithCommas(rows) + ")";
         }
     }
 

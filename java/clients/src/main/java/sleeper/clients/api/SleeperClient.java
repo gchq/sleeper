@@ -36,9 +36,9 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
-import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
-import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.QueryExecutor;
 
 import java.util.List;
 import java.util.Objects;
@@ -62,7 +62,7 @@ public class SleeperClient implements AutoCloseable {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
-    private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
+    private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
     private final IngestJobSender ingestJobSender;
     private final BulkExportQuerySender bulkExportQuerySender;
     private final BulkImportJobSender bulkImportJobSender;
@@ -76,7 +76,7 @@ public class SleeperClient implements AutoCloseable {
         tablePropertiesProvider = Objects.requireNonNull(builder.tablePropertiesProvider, "tablePropertiesProvider must not be null");
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
         objectFactory = Objects.requireNonNull(builder.objectFactory, "objectFactory must not be null");
-        recordRetrieverProvider = Objects.requireNonNull(builder.recordRetrieverProvider, "recordRetrieverProvider must not be null");
+        rowRetrieverProvider = Objects.requireNonNull(builder.rowRetrieverProvider, "rowRetrieverProvider must not be null");
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
         bulkExportQuerySender = Objects.requireNonNull(builder.bulkExportQuerySender, "bulkExportQuerySender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
@@ -192,8 +192,8 @@ public class SleeperClient implements AutoCloseable {
     public QueryExecutor getQueryExecutor(String tableName) {
         TableProperties tableProperties = getTableProperties(tableName);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        LeafPartitionRecordRetriever recordRetriever = recordRetrieverProvider.getRecordRetriever(tableProperties);
-        QueryExecutor executor = new QueryExecutor(objectFactory, tableProperties, stateStore, recordRetriever);
+        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+        QueryExecutor executor = new QueryExecutor(objectFactory, tableProperties, stateStore, rowRetriever);
         executor.init();
         return executor;
     }
@@ -210,7 +210,7 @@ public class SleeperClient implements AutoCloseable {
      * ingested.
      *
      * @param  tableName the name of the Sleeper table to write to
-     * @param  files     a list of files containing the records to ingest
+     * @param  files     a list of files containing the rows to ingest
      * @return           the ID of the job for tracking
      */
     public String ingestFromFiles(String tableName, List<String> files) {
@@ -256,7 +256,7 @@ public class SleeperClient implements AutoCloseable {
      *
      * @param  tableName the name of the Sleeper table to write to
      * @param  platform  the platform the import should run on
-     * @param  files     a list of files containing the records to ingest
+     * @param  files     a list of files containing the rows to ingest
      * @return           the ID of the job for tracking
      */
     public String bulkImportFromFiles(String tableName, BulkImportPlatform platform, List<String> files) {
@@ -309,7 +309,7 @@ public class SleeperClient implements AutoCloseable {
      * property `sleeper.table.bulk.import.min.leaf.partitions`.
      *
      * @param tableName the name of the Sleeper table to write to
-     * @param files     a list of files containing the records to ingest
+     * @param files     a list of files containing the rows to ingest
      */
     public void sendFilesToIngestBatcher(String tableName, List<String> files) {
         ingestBatcherSender.submit(new IngestBatcherSubmitRequest(tableName, files));
@@ -353,7 +353,7 @@ public class SleeperClient implements AutoCloseable {
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
-        private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
+        private LeafPartitionRowRetrieverProvider rowRetrieverProvider;
         private IngestJobSender ingestJobSender;
         private BulkExportQuerySender bulkExportQuerySender;
         private BulkImportJobSender bulkImportJobSender;
@@ -428,13 +428,13 @@ public class SleeperClient implements AutoCloseable {
         }
 
         /**
-         * Sets the provider for record retrievers to read table data files.
+         * Sets the provider for row retrievers to read table data files.
          *
-         * @param  recordRetrieverProvider the record retriever
-         * @return                         this builder for chaining
+         * @param  rowRetrieverProvider the row retriever
+         * @return                      this builder for chaining
          */
-        public Builder recordRetrieverProvider(LeafPartitionRecordRetrieverProvider recordRetrieverProvider) {
-            this.recordRetrieverProvider = recordRetrieverProvider;
+        public Builder rowRetrieverProvider(LeafPartitionRowRetrieverProvider rowRetrieverProvider) {
+            this.rowRetrieverProvider = rowRetrieverProvider;
             return this;
         }
 

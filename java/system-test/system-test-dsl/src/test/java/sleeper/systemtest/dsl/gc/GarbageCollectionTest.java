@@ -23,7 +23,7 @@ import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.nio.file.Path;
@@ -75,11 +75,11 @@ public class GarbageCollectionTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", UUID.randomUUID().toString(), UUID.randomUUID().toString(), "row-50000")
                 .buildTree());
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100_000));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
         SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
         IntStream.range(0, 1000)
                 .mapToObj(i -> numbers.range(i * 100, i * 100 + 100))
-                .forEach(range -> ingest.numberedRecords(range));
+                .forEach(range -> ingest.numberedRows(range));
         sleeper.compaction().createJobs(200).waitForTasks(1).waitForJobs();
 
         // When
@@ -87,11 +87,11 @@ public class GarbageCollectionTest {
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
 
         // Then
-        assertThat(new HashSet<>(sleeper.query().byQueue().allRecordsInTable()))
-                .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, 100_000))));
+        assertThat(new HashSet<>(sleeper.query().byQueue().allRowsInTable()))
+                .isEqualTo(setFrom(sleeper.generateNumberedRows(LongStream.range(0, 100_000))));
         assertThat(sleeper.tableFiles().all()).satisfies(files -> {
             assertThat(files.getFilesWithNoReferences()).isEmpty();
-            assertThat(files.listFileReferences()).hasSize(200);
+            assertThat(files.streamFileReferences()).hasSize(200);
         });
     }
 

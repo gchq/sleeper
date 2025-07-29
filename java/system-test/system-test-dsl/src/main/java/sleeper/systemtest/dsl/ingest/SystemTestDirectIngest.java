@@ -16,11 +16,11 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -40,26 +40,26 @@ public class SystemTestDirectIngest {
         this.tempDir = tempDir;
     }
 
-    public SystemTestDirectIngest splitIngests(int numIngests, RecordNumbers numbers) {
-        if (numbers.numRecords() % numIngests != 0) {
-            throw new IllegalArgumentException("Number of ingests must split number of records exactly");
+    public SystemTestDirectIngest splitIngests(int numIngests, RowNumbers numbers) {
+        if (numbers.numRows() % numIngests != 0) {
+            throw new IllegalArgumentException("Number of ingests must split number of rows exactly");
         }
-        int recordsPerIngest = numbers.numRecords() / numIngests;
+        int rowsPerIngest = numbers.numRows() / numIngests;
         List<FileReference> fileReferences = new ArrayList<>();
         IntStream.range(0, numIngests)
-                .mapToObj(i -> numbers.range(i * recordsPerIngest, i * recordsPerIngest + recordsPerIngest))
-                .map(range -> instance.numberedRecords().iteratorFrom(range))
-                .forEach(records -> driver.ingest(tempDir, records, fileReferences::addAll));
+                .mapToObj(i -> numbers.range(i * rowsPerIngest, i * rowsPerIngest + rowsPerIngest))
+                .map(range -> instance.numberedRows().iteratorFrom(range))
+                .forEach(rows -> driver.ingest(tempDir, rows, fileReferences::addAll));
         AddFilesTransaction.fromReferences(fileReferences).synchronousCommit(instance.getStateStore());
         return this;
     }
 
-    public SystemTestDirectIngest numberedRecords(LongStream numbers) {
-        driver.ingest(tempDir, instance.numberedRecords().iteratorFrom(numbers));
+    public SystemTestDirectIngest numberedRows(LongStream numbers) {
+        driver.ingest(tempDir, instance.numberedRows().iteratorFrom(numbers));
         return this;
     }
 
-    public void records(Record... records) {
-        driver.ingest(tempDir, List.of(records).iterator());
+    public void rows(Row... rows) {
+        driver.ingest(tempDir, List.of(rows).iterator());
     }
 }

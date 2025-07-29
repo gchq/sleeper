@@ -16,6 +16,7 @@
 package sleeper.trino;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorRecordSetProvider;
 import io.trino.spi.connector.ConnectorSession;
@@ -29,8 +30,6 @@ import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
-
-import javax.inject.Inject;
 
 import java.util.List;
 

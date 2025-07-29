@@ -21,11 +21,31 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * A test helper to create file records for a state store.
+ * A test helper to work with file rows for a state store.
  */
 public class AllReferencesToAFileTestHelper {
 
     private AllReferencesToAFileTestHelper() {
+    }
+
+    /**
+     * Builds an estimate of the number of rows in a file by adding up all rows in each file reference.
+     *
+     * @param  file the file
+     * @return      the number of rows
+     */
+    public static long sumFileReferenceRowCounts(AllReferencesToAFile file) {
+        return file.getReferences().stream().mapToLong(FileReference::getNumberOfRows).sum();
+    }
+
+    /**
+     * Builds an estimate of the number of rows in all files by adding up all rows in each file reference.
+     *
+     * @param  files the files
+     * @return       the number of rows
+     */
+    public static long sumFileReferenceRowCounts(AllReferencesToAllFiles files) {
+        return files.streamFileReferences().mapToLong(FileReference::getNumberOfRows).sum();
     }
 
     /**

@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
@@ -47,10 +47,10 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final Configuration hadoopConfiguration;
     private final String partitionParquetFileName;
     private final String quantileSketchesFileName;
-    private final ParquetWriter<Record> parquetWriter;
+    private final ParquetWriter<Row> parquetWriter;
     private final SketchesStore sketchesStore;
     private final Sketches sketches;
-    private long recordsWrittenToCurrentPartition;
+    private long rowsWrittenToCurrentPartition;
 
     /**
      * Create an instance. The final file store is specified as the prefix to the filePathPrefix argument.
@@ -86,22 +86,22 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.sketchesStore = sketchesStore;
         this.sketches = Sketches.from(sleeperSchema);
-        this.recordsWrittenToCurrentPartition = 0L;
+        this.rowsWrittenToCurrentPartition = 0L;
     }
 
     /**
-     * Append a record to the partition file.
+     * Append a row to the partition file.
      *
-     * @param  record      the record to append
+     * @param  row         the row to append
      * @throws IOException if there was a failure writing to the file
      */
     @Override
-    public void append(Record record) throws IOException {
-        parquetWriter.write(record);
-        sketches.update(record);
-        recordsWrittenToCurrentPartition++;
-        if (recordsWrittenToCurrentPartition % 1000000 == 0) {
-            LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
+    public void append(Row row) throws IOException {
+        parquetWriter.write(row);
+        sketches.update(row);
+        rowsWrittenToCurrentPartition++;
+        if (rowsWrittenToCurrentPartition % 1000000 == 0) {
+            LOGGER.info("Written {} rows to partition {}", rowsWrittenToCurrentPartition, partition.getId());
         }
     }
 
@@ -115,14 +115,14 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     @Override
     public CompletableFuture<FileReference> close() throws IOException {
         parquetWriter.close();
-        LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), recordsWrittenToCurrentPartition);
+        LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), rowsWrittenToCurrentPartition);
         // Write sketches to an Hadoop file system, which could be s3a:// or file://
         sketchesStore.saveFileSketches(partitionParquetFileName, sleeperSchema, sketches);
         LOGGER.info("Wrote sketches for partition {} to file {}", partition.getId(), quantileSketchesFileName);
         FileReference fileReference = PartitionFileWriterUtils.createFileReference(
                 partitionParquetFileName,
                 partition.getId(),
-                recordsWrittenToCurrentPartition);
+                rowsWrittenToCurrentPartition);
         return CompletableFuture.completedFuture(fileReference);
     }
 

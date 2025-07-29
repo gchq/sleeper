@@ -20,13 +20,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse;
-import software.amazon.awssdk.services.sqs.model.Message;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -36,11 +37,11 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
@@ -75,6 +76,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
+    private final Partition rootPartition = new PartitionTree(stateStore.getAllPartitions()).getRootPartition();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
 
@@ -91,21 +93,19 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
 
         // Then
-        List<Message> messages = receivePartitionSplittingMessages();
-        assertThat(messages).hasSize(1);
-
-        SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).body());
-
-        assertThat(job.getFileNames()).hasSize(10);
-        assertThat(job.getTableId()).isEqualTo(tableId);
-        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
+        assertThat(receiveSplitPartitionJobs())
+                .singleElement()
+                .satisfies(job -> {
+                    assertThat(job.getFileNames()).hasSize(10);
+                    assertThat(job.getTableId()).isEqualTo(tableId);
+                    assertThat(job.getPartition()).isEqualTo(rootPartition);
+                });
     }
 
     @Test
@@ -113,13 +113,13 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 1001);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
 
         // The
-        assertThat(receivePartitionSplittingMessages()).isEmpty();
+        assertThat(receiveSplitPartitionJobs()).isEmpty();
     }
 
     @Test
@@ -127,51 +127,47 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createEvenRecordList(100, 10));
+        writeFiles(createEvenRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
 
         // Then
-        List<Message> messages = receivePartitionSplittingMessages();
-        assertThat(messages).hasSize(1);
-
-        SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).body());
-
-        assertThat(job.getFileNames()).hasSize(5);
-        assertThat(job.getTableId()).isEqualTo(tableId);
-        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
+        assertThat(receiveSplitPartitionJobs())
+                .singleElement()
+                .satisfies(job -> {
+                    assertThat(job.getFileNames()).hasSize(5);
+                    assertThat(job.getTableId()).isEqualTo(tableId);
+                    assertThat(job.getPartition()).isEqualTo(rootPartition);
+                });
     }
 
     @Test
-    public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws IOException {
+    public void shouldPrioritiseFilesContainingTheLargestNumberOfRows() throws IOException {
         // Given
         instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(createAscendingRecordList(100, 10));
+        writeFiles(createAscendingRowList(100, 10));
 
         // When
         findPartitionsToSplit().run(tableProperties);
 
         // Then
-        List<Message> messages = receivePartitionSplittingMessages();
-        assertThat(messages).hasSize(1);
+        assertThat(receiveSplitPartitionJobs())
+                .singleElement()
+                .satisfies(job -> {
+                    assertThat(job.getFileNames()).hasSize(5);
+                    assertThat(job.getTableId()).isEqualTo(tableId);
+                    assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
-        SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
-                .fromJson(messages.get(0).body());
+                    List<FileReference> fileReferences = stateStore.getFileReferences();
+                    Optional<Long> numberOfRows = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
+                            .filter(fi -> fi.getFilename().equals(fileName))
+                            .map(FileReference::getNumberOfRows)).reduce(Long::sum);
 
-        assertThat(job.getFileNames()).hasSize(5);
-        assertThat(job.getTableId()).isEqualTo(tableId);
-        assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
-
-        List<FileReference> fileReferences = stateStore.getFileReferences();
-        Optional<Long> numberOfRecords = job.getFileNames().stream().flatMap(fileName -> fileReferences.stream()
-                .filter(fi -> fi.getFilename().equals(fileName))
-                .map(FileReference::getNumberOfRecords)).reduce(Long::sum);
-
-        // 109 + 108 + 107 + 106 + 105 = 535
-        assertThat(numberOfRecords).contains(535L);
+                    // 109 + 108 + 107 + 106 + 105 = 535
+                    assertThat(numberOfRows).contains(535L);
+                });
     }
 
     private FindPartitionsToSplit findPartitionsToSplit() {
@@ -180,57 +176,57 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
                 new SqsSplitPartitionJobSender(tablePropertiesProvider, instanceProperties, sqsClient)::send);
     }
 
-    private List<List<Record>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
-        List<List<Record>> recordLists = new ArrayList<>();
+    private List<List<Row>> createEvenRowList(Integer rowsPerList, Integer numberOfLists) {
+        List<List<Row>> rowLists = new ArrayList<>();
         for (int i = 0; i < numberOfLists; i++) {
-            List<Record> records = new ArrayList<>();
-            for (int j = 0; j < recordsPerList; j++) {
-                Record record = new Record();
-                record.put("key", j);
-                records.add(record);
+            List<Row> rows = new ArrayList<>();
+            for (int j = 0; j < rowsPerList; j++) {
+                Row row = new Row();
+                row.put("key", j);
+                rows.add(row);
             }
-            recordLists.add(records);
+            rowLists.add(rows);
         }
 
-        return recordLists;
+        return rowLists;
     }
 
-    private List<List<Record>> createAscendingRecordList(Integer startingRecordsPerList, Integer numberOfLists) {
-        List<List<Record>> recordLists = new ArrayList<>();
-        Integer recordsPerList = startingRecordsPerList;
+    private List<List<Row>> createAscendingRowList(Integer startingRowsPerList, Integer numberOfLists) {
+        List<List<Row>> rowLists = new ArrayList<>();
+        Integer rowsPerList = startingRowsPerList;
         for (int i = 0; i < numberOfLists; i++) {
-            List<Record> records = new ArrayList<>();
-            for (int j = 0; j < recordsPerList; j++) {
-                Record record = new Record();
-                record.put("key", j);
-                records.add(record);
+            List<Row> rows = new ArrayList<>();
+            for (int j = 0; j < rowsPerList; j++) {
+                Row row = new Row();
+                row.put("key", j);
+                rows.add(row);
             }
-            recordLists.add(records);
-            recordsPerList++;
+            rowLists.add(rows);
+            rowsPerList++;
         }
 
-        return recordLists;
+        return rowLists;
     }
 
-    private void writeFiles(List<List<Record>> recordLists) {
+    private void writeFiles(List<List<Row>> rowLists) {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(SCHEMA, new Configuration());
-        recordLists.forEach(list -> {
+        rowLists.forEach(list -> {
             try {
                 File stagingArea = createTempDirectory(tempDir, null).toFile();
                 File directory = createTempDirectory(tempDir, null).toFile();
-                try (IngestCoordinator<Record> coordinator = standardIngestCoordinator(stateStore, SCHEMA,
-                        ArrayListRecordBatchFactory.builder()
+                try (IngestCoordinator<Row> coordinator = standardIngestCoordinator(stateStore, SCHEMA,
+                        ArrayListRowBatchFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
                                 .localWorkingDirectory(stagingArea.getAbsolutePath())
-                                .maxNoOfRecordsInMemory(1_000_000)
-                                .maxNoOfRecordsInLocalStore(1000L)
-                                .buildAcceptingRecords(),
+                                .maxNoOfRowsInMemory(1_000_000)
+                                .maxNoOfRowsInLocalStore(1000L)
+                                .buildAcceptingRows(),
                         DirectPartitionFileWriterFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
                                 .filePaths(TableFilePaths.fromPrefix("file://" + directory.getAbsolutePath()))
                                 .sketchesStore(new LocalFileSystemSketchesStore())
                                 .build())) {
-                    new IngestRecordsFromIterator(coordinator, list.iterator()).write();
+                    new IngestRowsFromIterator(coordinator, list.iterator()).write();
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -238,9 +234,9 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
         });
     }
 
-    private List<Message> receivePartitionSplittingMessages() {
-        return sqsClient.receiveMessage(builder -> builder
-                .queueUrl(instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL)))
-                .messages();
+    private List<SplitPartitionJobDefinition> receiveSplitPartitionJobs() {
+        return receiveMessages(instanceProperties.get(PARTITION_SPLITTING_JOB_QUEUE_URL))
+                .map(new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)::fromJson)
+                .toList();
     }
 }

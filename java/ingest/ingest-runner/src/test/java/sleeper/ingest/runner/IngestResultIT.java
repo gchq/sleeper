@@ -24,19 +24,19 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.ingest.core.IngestResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
+import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getRows;
 
-class IngestResultIT extends IngestRecordsTestBase {
+class IngestResultIT extends IngestRowsTestBase {
     @Test
-    void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
+    void shouldReturnNumberOfRowsFromIngestResult() throws Exception {
         // Given
         StateStore stateStore = initialiseStateStore();
 
         // When
-        IngestResult result = ingestRecords(stateStore, getRecords());
+        IngestResult result = ingestRows(stateStore, getRows());
 
         // Then
-        assertThat(result.getRecordsWritten())
+        assertThat(result.getRowsWritten())
                 .isEqualTo(2L);
     }
 
@@ -46,7 +46,7 @@ class IngestResultIT extends IngestRecordsTestBase {
         StateStore stateStore = initialiseStateStore();
 
         // When
-        IngestResult result = ingestRecords(stateStore, getRecords());
+        IngestResult result = ingestRows(stateStore, getRows());
 
         // Then
         assertThat(result.getFileReferenceList())

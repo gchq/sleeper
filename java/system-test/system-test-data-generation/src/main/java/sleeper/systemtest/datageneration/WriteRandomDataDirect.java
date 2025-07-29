@@ -17,11 +17,11 @@ package sleeper.systemtest.datageneration;
 
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
@@ -58,14 +58,14 @@ public class WriteRandomDataDirect {
     public static void writeWithIngestFactory(
             IngestFactory ingestFactory, AddFilesToStateStore addFilesToStateStore,
             SystemTestDataGenerationJob job, TableProperties tableProperties) throws IOException {
-        Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(job, tableProperties);
+        Iterator<Row> rowIterator = WriteRandomData.createRowIterator(job, tableProperties);
 
-        try (IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
+        try (IngestCoordinator<Row> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
                 .addFilesToStateStore(addFilesToStateStore)
                 .build()) {
-            new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
+            new IngestRowsFromIterator(ingestCoordinator, rowIterator).write();
         } catch (IteratorCreationException e) {
-            throw new IOException("Failed to write records using iterator", e);
+            throw new IOException("Failed to write rows using iterator", e);
         }
     }
 

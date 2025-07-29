@@ -25,7 +25,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SystemTestIngestToStateStore {
@@ -39,46 +38,30 @@ public class SystemTestIngestToStateStore {
     }
 
     public SystemTestIngestToStateStore addFileOnPartition(
-            String name, String partitionId, long numberOfRecords) throws Exception {
+            String name, String partitionId, long numberOfRows) throws Exception {
         String path = ingestSource.getFilePath(name);
         addFiles(List.of(FileReference.builder()
                 .filename(path)
                 .partitionId(partitionId)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRows)
                 .build()));
         return this;
     }
 
-    public SystemTestIngestToStateStore addFileWithRecordEstimatesOnPartitions(
-            String name, Map<String, Long> recordsByPartition) throws Exception {
-        String path = ingestSource.getFilePath(name);
-        boolean singlePartition = recordsByPartition.size() == 1;
-        addFiles(recordsByPartition.entrySet().stream()
-                .map(entry -> FileReference.builder()
-                        .filename(path)
-                        .partitionId(entry.getKey())
-                        .countApproximate(true)
-                        .onlyContainsDataForThisPartition(singlePartition)
-                        .numberOfRecords(entry.getValue())
-                        .build())
-                .collect(Collectors.toUnmodifiableList()));
-        return this;
-    }
-
-    public SystemTestIngestToStateStore addFileOnEveryPartition(String name, long numberOfRecords) throws Exception {
+    public SystemTestIngestToStateStore addFileOnEveryPartition(String name, long numberOfRows) throws Exception {
         String path = ingestSource.getFilePath(name);
         PartitionTree partitionTree = new PartitionTree(instance.getStateStore().getAllPartitions());
         List<Partition> leafPartitions = partitionTree.getLeafPartitions();
-        long recordsPerPartition = numberOfRecords / leafPartitions.size();
+        long rowsPerPartition = numberOfRows / leafPartitions.size();
         addFiles(leafPartitions.stream()
                 .map(partition -> FileReference.builder()
                         .filename(path)
                         .partitionId(partition.getId())
                         .countApproximate(true)
                         .onlyContainsDataForThisPartition(false)
-                        .numberOfRecords(recordsPerPartition)
+                        .numberOfRows(rowsPerPartition)
                         .build())
                 .collect(Collectors.toUnmodifiableList()));
         return this;

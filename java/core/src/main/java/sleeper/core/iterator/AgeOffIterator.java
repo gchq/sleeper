@@ -15,17 +15,17 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Filters out records older than a specified age. If the specified timestamp field is more than a certain length of
- * time ago then the record is removed. This is an example implementation of {@link SortedRecordIterator}.
+ * Filters out rows older than a specified age. If the specified timestamp field is more than a certain length of
+ * time ago then the row is removed. This is an example implementation of {@link SortedRowIterator}.
  */
-public class AgeOffIterator implements SortedRecordIterator {
+public class AgeOffIterator implements SortedRowIterator {
     private String fieldName;
     private long ageOff;
 
@@ -48,9 +48,9 @@ public class AgeOffIterator implements SortedRecordIterator {
     }
 
     @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
-        return new FilteringIterator<>(input, record -> {
-            Long value = (Long) record.get(fieldName);
+    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+        return new FilteringIterator<>(input, row -> {
+            Long value = (Long) row.get(fieldName);
             return null != value && System.currentTimeMillis() - value < ageOff;
         });
     }

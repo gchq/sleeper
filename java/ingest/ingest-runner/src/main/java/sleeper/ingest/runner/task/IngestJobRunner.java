@@ -31,7 +31,7 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
@@ -44,11 +44,11 @@ import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.IngestRowsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowReader;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.io.IOException;
@@ -124,14 +124,14 @@ public class IngestJobRunner implements IngestJobHandler {
         LOGGER.info("There are {} files to ingest", paths.size());
         LOGGER.debug("Files to ingest are: {}", paths);
 
-        // Create supplier of iterator of records from each file (using a supplier avoids having multiple files open
+        // Create supplier of iterator of rows from each file (using a supplier avoids having multiple files open
         // at the same time)
-        List<Supplier<CloseableIterator<Record>>> inputIterators = new ArrayList<>();
+        List<Supplier<CloseableIterator<Row>>> inputIterators = new ArrayList<>();
         for (String path : paths) {
             if (path.endsWith(".parquet")) {
                 inputIterators.add(() -> {
                     try {
-                        ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).withConf(hadoopConfiguration).build();
+                        ParquetReader<Row> reader = new ParquetRowReader.Builder(path, schema).withConf(hadoopConfiguration).build();
                         return new ParquetReaderIterator(reader);
                     } catch (IOException e) {
                         throw new RuntimeException("Ingest job: " + job.getId() + " IOException creating reader for file "
@@ -146,13 +146,13 @@ public class IngestJobRunner implements IngestJobHandler {
 
         // Concatenate iterators into one iterator and run the ingest
         IngestResult result;
-        try (CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
-                IngestCoordinator<Record> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
+        try (CloseableIterator<Row> concatenatingIterator = new ConcatenatingIterator(inputIterators);
+                IngestCoordinator<Row> ingestCoordinator = ingestFactory.ingestCoordinatorBuilder(tableProperties)
                         .addFilesToStateStore(addFilesToStateStore(job, jobRunId, tableProperties))
                         .build()) {
-            result = new IngestRecordsFromIterator(ingestCoordinator, concatenatingIterator).write();
+            result = new IngestRowsFromIterator(ingestCoordinator, concatenatingIterator).write();
         }
-        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);
+        LOGGER.info("Ingest job {}: Wrote {} rows from files {}", job.getId(), result.getRowsWritten(), paths);
         return result;
     }
 

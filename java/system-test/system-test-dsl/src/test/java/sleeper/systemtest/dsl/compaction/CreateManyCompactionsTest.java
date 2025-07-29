@@ -29,8 +29,9 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
-import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
+import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRowsPerPartitionAndTotal;
 
 @InMemoryDslTest
 public class CreateManyCompactionsTest {
@@ -47,10 +48,10 @@ public class CreateManyCompactionsTest {
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
         sleeper.partitioning().setPartitions(
-                createPartitionTreeWithRecordsPerPartitionAndTotal(10, 10240, sleeper));
+                createPartitionTreeWithRowsPerPartitionAndTotal(10, 10240, sleeper));
         sleeper.sourceFiles().inDataBucket().writeSketches()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 10240))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(0, 10240));
+                .createWithNumberedRows("file1.parquet", LongStream.range(0, 10240))
+                .createWithNumberedRows("file2.parquet", LongStream.range(0, 10240));
         sleeper.ingest().toStateStore()
                 .addFileOnEveryPartition("file1.parquet", 10240)
                 .addFileOnEveryPartition("file2.parquet", 10240);
@@ -65,6 +66,6 @@ public class CreateManyCompactionsTest {
         assertThat(files.getFilesWithReferences().size()).isEqualTo(1024);
         assertThat(files.getFilesWithNoReferences().size()).isEqualTo(2);
         assertThat(files.countFileReferences()).isEqualTo(1024);
-        assertThat(files.estimateRecordsInTable()).isEqualTo(20480);
+        assertThat(sumFileReferenceRowCounts(files)).isEqualTo(20480);
     }
 }

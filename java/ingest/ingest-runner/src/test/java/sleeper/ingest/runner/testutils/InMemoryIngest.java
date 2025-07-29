@@ -17,8 +17,8 @@ package sleeper.ingest.runner.testutils;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -29,27 +29,27 @@ public class InMemoryIngest {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
-    private final InMemoryRecordStore recordStore;
+    private final InMemoryRowStore rowStore;
     private final InMemorySketchesStore sketchesStore;
 
     public InMemoryIngest(InstanceProperties instanceProperties, TableProperties tableProperties,
-            StateStore stateStore, InMemoryRecordStore recordStore, InMemorySketchesStore sketchesStore) {
+            StateStore stateStore, InMemoryRowStore rowStore, InMemorySketchesStore sketchesStore) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
-        this.recordStore = recordStore;
+        this.rowStore = rowStore;
         this.sketchesStore = sketchesStore;
     }
 
-    public IngestCoordinator<Record> createCoordinator() {
+    public IngestCoordinator<Row> createCoordinator() {
         return coordinatorBuilder().build();
     }
 
-    public IngestCoordinator.Builder<Record> coordinatorBuilder() {
+    public IngestCoordinator.Builder<Row> coordinatorBuilder() {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
-                .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))
-                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(recordStore, sketchesStore, instanceProperties, tableProperties))
+                .rowBatchFactory(() -> new InMemoryRowBatch(tableProperties.getSchema()))
+                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(rowStore, sketchesStore, instanceProperties, tableProperties))
                 .stateStore(stateStore);
     }
 

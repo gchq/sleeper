@@ -38,9 +38,9 @@ public class PartitionsStatusReporter {
     private static final TableField PARENT_SIDE = BUILDER.addField("PARENT_SIDE");
     private static final TableField FILES = BUILDER.addNumericField("FILES");
     private static final TableField FILES_ON_JOBS = BUILDER.addNumericField("FILES_ON_JOBS");
-    private static final TableField APPROX_RECORDS = BUILDER.addNumericField("APPROX_RECORDS");
-    private static final TableField APPROX_RECORDS_REFERENCED = BUILDER.addNumericField("APPROX_RECORDS_REFERENCED");
-    private static final TableField EXACT_RECORDS_REFERENCED = BUILDER.addNumericField("EXACT_RECORDS_REFERENCED");
+    private static final TableField APPROX_ROWS = BUILDER.addNumericField("APPROX_ROWS");
+    private static final TableField APPROX_ROW_REFERENCED = BUILDER.addNumericField("APPROX_ROWS_REFERENCED");
+    private static final TableField EXACT_ROWS_REFERENCED = BUILDER.addNumericField("EXACT_ROWS_REFERENCED");
     private static final TableField WILL_BE_SPLIT = BUILDER.addField("WILL_BE_SPLIT");
     private static final TableField MAY_SPLIT_IF_COMPACTED = BUILDER.addField("MAY_SPLIT_IF_COMPACTED");
     private static final TableField SPLIT_FIELD = BUILDER.addField("SPLIT_FIELD");
@@ -59,7 +59,7 @@ public class PartitionsStatusReporter {
         out.println("--------------------------");
         out.println("There are " + status.getNumPartitions() + " partitions (" + status.getNumLeafPartitions() + " leaf partitions)");
         out.println("There are " + status.getNumLeafPartitionsThatWillBeSplit() + " leaf partitions that will be split");
-        out.println("Split threshold is " + status.getSplitThreshold() + " records");
+        out.println("Split threshold is " + status.getSplitThreshold() + " rows");
         TABLE_FACTORY.tableBuilder()
                 .itemsAndWriter(status.getPartitions(), PartitionsStatusReporter::writeRow)
                 .build().write(out);
@@ -72,9 +72,9 @@ public class PartitionsStatusReporter {
                 .value(PARENT_SIDE, parentSideString(status))
                 .value(FILES, status.getNumberOfFiles())
                 .value(FILES_ON_JOBS, status.getNumberOfFilesOnJobs())
-                .value(APPROX_RECORDS, status.getApproxRecords())
-                .value(APPROX_RECORDS_REFERENCED, status.getApproxRecordsReferenced())
-                .value(EXACT_RECORDS_REFERENCED, status.getExactRecordsReferenced())
+                .value(APPROX_ROWS, status.getApproxRows())
+                .value(APPROX_ROW_REFERENCED, status.getApproxRowsReferenced())
+                .value(EXACT_ROWS_REFERENCED, status.getExactRowsReferenced())
                 .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
                 .value(WILL_BE_SPLIT, willBeSplitString(status))
                 .value(MAY_SPLIT_IF_COMPACTED, maySplitIfCompactedString(status))

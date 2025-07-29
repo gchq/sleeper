@@ -26,12 +26,11 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetRowReader;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
@@ -90,7 +89,7 @@ class FileWritingIteratorIT {
     }
 
     @Test
-    void shouldGroupRecordsByFinalColumn() {
+    void shouldGroupRowsByFinalColumn() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -112,7 +111,7 @@ class FileWritingIteratorIT {
     }
 
     @Test
-    void shouldWriteAllRecordsToParquetFiles() {
+    void shouldWriteAllRowsToParquetFiles() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -125,18 +124,18 @@ class FileWritingIteratorIT {
 
         // Then
         assertThat(fileWritingIterator).toIterable()
-                .extracting(row -> readRecords(row.getString(1)))
+                .extracting(row -> readRows(row.getString(1)))
                 .containsExactly(
                         List.of(
-                                createRecord("a", 1, 2, "a"),
-                                createRecord("b", 1, 2, "a")),
+                                createRow("a", 1, 2, "a"),
+                                createRow("b", 1, 2, "a")),
                         List.of(
-                                createRecord("c", 1, 2, "b"),
-                                createRecord("d", 1, 2, "b")));
+                                createRow("c", 1, 2, "b"),
+                                createRow("d", 1, 2, "b")));
     }
 
     @Test
-    void shouldHandleExamplesWhereTheLastRecordBelongsToADifferentPartition() {
+    void shouldHandleExamplesWhereTheLastRowBelongsToADifferentPartition() {
         // Given
         Iterator<Row> input = Lists.newArrayList(
                 RowFactory.create("a", 1, 2, "a"),
@@ -150,16 +149,16 @@ class FileWritingIteratorIT {
 
         // Then
         assertThat(fileWritingIterator).toIterable()
-                .extracting(row -> readRecords(row.getString(1)))
+                .extracting(row -> readRows(row.getString(1)))
                 .containsExactly(
                         List.of(
-                                createRecord("a", 1, 2, "a"),
-                                createRecord("b", 1, 2, "a")),
+                                createRow("a", 1, 2, "a"),
+                                createRow("b", 1, 2, "a")),
                         List.of(
-                                createRecord("c", 1, 2, "b"),
-                                createRecord("d", 1, 2, "b")),
+                                createRow("c", 1, 2, "b"),
+                                createRow("d", 1, 2, "b")),
                         List.of(
-                                createRecord("e", 1, 2, "c")));
+                                createRow("e", 1, 2, "c")));
     }
 
     @Test
@@ -206,30 +205,30 @@ class FileWritingIteratorIT {
         return instanceProperties;
     }
 
-    private Record createRecord(Object... values) {
-        return createRecord(RowFactory.create(values), createSchema());
+    private sleeper.core.row.Row createRow(Object... values) {
+        return createRow(RowFactory.create(values), createSchema());
     }
 
-    private Record createRecord(Row row, Schema schema) {
-        Record record = new Record();
+    private sleeper.core.row.Row createRow(Row row, Schema schema) {
+        sleeper.core.row.Row outRow = new sleeper.core.row.Row();
         int i = 0;
         for (Field field : schema.getAllFields()) {
-            record.put(field.getName(), row.get(i));
+            outRow.put(field.getName(), row.get(i));
             i++;
         }
-        return record;
+        return outRow;
     }
 
-    private List<Record> readRecords(String path) {
-        try (ParquetRecordReader reader = new ParquetRecordReader(new Path(path), createSchema())) {
-            List<Record> records = new ArrayList<>();
-            Record record = reader.read();
-            while (null != record) {
-                records.add(new Record(record));
-                record = reader.read();
+    private List<sleeper.core.row.Row> readRows(String path) {
+        try (ParquetRowReader reader = new ParquetRowReader(new Path(path), createSchema())) {
+            List<sleeper.core.row.Row> rows = new ArrayList<>();
+            sleeper.core.row.Row row = reader.read();
+            while (null != row) {
+                rows.add(new sleeper.core.row.Row(row));
+                row = reader.read();
             }
             reader.close();
-            return records;
+            return rows;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

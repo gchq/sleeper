@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A request for records with row keys that fall within one of a list of regions.
+ * A request for rows with row keys that fall within one of a list of regions.
  */
 public class Query {
     private final String tableName;
@@ -85,18 +85,36 @@ public class Query {
         return processingConfig.getStatusReportDestinations();
     }
 
+    /**
+     * Creates a copy of this query that will include the values of the given fields in the result.
+     *
+     * @param  requestedValueFields value fields to apply to the QueryProcessingConfig
+     * @return                      the copy
+     */
     public Query withRequestedValueFields(List<String> requestedValueFields) {
         return toBuilder()
                 .processingConfig(processingConfig.withRequestedValueFields(requestedValueFields))
                 .build();
     }
 
+    /**
+     * Creates a copy of this query that includes the given configuration for publishing results.
+     *
+     * @param  resultsPublisherConfig publisher configs to apply to the QueryProcessingConfig
+     * @return                        the copy
+     */
     public Query withResultsPublisherConfig(Map<String, String> resultsPublisherConfig) {
         return toBuilder()
                 .processingConfig(processingConfig.withResultsPublisherConfig(resultsPublisherConfig))
                 .build();
     }
 
+    /**
+     * Creates a copy of this query that includes the given configuration for publishing status reports.
+     *
+     * @param  statusReportDestination status report destination to apply to the QueryProcessingConfig
+     * @return                         the copy
+     */
     public Query withStatusReportDestination(Map<String, String> statusReportDestination) {
         return toBuilder()
                 .processingConfig(processingConfig.withStatusReportDestination(statusReportDestination))
@@ -139,6 +157,9 @@ public class Query {
                 '}';
     }
 
+    /**
+     * Builder for this class.
+     */
     public static final class Builder {
         private String tableName;
         private String queryId;
@@ -148,21 +169,46 @@ public class Query {
         private Builder() {
         }
 
+        /**
+         * Provides the table name.
+         *
+         * @param  tableName the name of the Sleeper table
+         * @return           the builder
+         */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
 
+        /**
+         * Provides the query ID.
+         *
+         * @param  queryId the ID of the query
+         * @return         the builder
+         */
         public Builder queryId(String queryId) {
             this.queryId = queryId;
             return this;
         }
 
+        /**
+         * Provides the regions that data will be retrieved from.
+         * A region contains ranges of key fields that query will use to return data.
+         *
+         * @param  regions the ranges of key fields
+         * @return         the builder
+         */
         public Builder regions(List<Region> regions) {
             this.regions = regions;
             return this;
         }
 
+        /**
+         * Provides how rows should be processed during a query.
+         *
+         * @param  processingConfig how rows should be processed during a query
+         * @return                  the builder
+         */
         public Builder processingConfig(QueryProcessingConfig processingConfig) {
             this.processingConfig = processingConfig;
             return this;

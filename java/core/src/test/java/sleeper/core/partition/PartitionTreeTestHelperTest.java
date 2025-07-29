@@ -17,7 +17,7 @@ package sleeper.core.partition;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.testutils.printers.PartitionsPrinter;
@@ -26,22 +26,22 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.partition.PartitionTreeTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
+import static sleeper.core.partition.PartitionTreeTestHelper.createPartitionTreeWithRowsPerPartitionAndTotal;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PartitionTreeTestHelperTest {
 
     @Test
-    void shouldCreateSplitPointsFromRecordRangeAndRecordsPerPartition() {
+    void shouldCreateSplitPointsFromRowRangeAndRowsPerPartition() {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
-        List<Record> records = List.of(
-                new Record(Map.of("key", 10)),
-                new Record(Map.of("key", 20)),
-                new Record(Map.of("key", 30)));
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 10)),
+                new Row(Map.of("key", 20)),
+                new Row(Map.of("key", 30)));
 
         // When
-        PartitionTree tree = createPartitionTreeWithRecordsPerPartition(1, records, schema);
+        PartitionTree tree = createPartitionTreeWithRowsPerPartition(1, rows, schema);
 
         // Then
         assertThat(PartitionsPrinter.printPartitions(schema, tree))
@@ -59,9 +59,9 @@ public class PartitionTreeTestHelperTest {
                         """);
     }
 
-    private PartitionTree createPartitionTreeWithRecordsPerPartition(int recordsPerPartition, List<Record> records, Schema schema) {
-        return createPartitionTreeWithRecordsPerPartitionAndTotal(recordsPerPartition, records.size(),
-                index -> records.get((int) index),
+    private PartitionTree createPartitionTreeWithRowsPerPartition(int recordsPerPartition, List<Row> rows, Schema schema) {
+        return createPartitionTreeWithRowsPerPartitionAndTotal(recordsPerPartition, rows.size(),
+                index -> rows.get((int) index),
                 schema);
     }
 }

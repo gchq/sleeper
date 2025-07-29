@@ -16,15 +16,18 @@
 
 package sleeper.systemtest.dsl;
 
+import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
@@ -35,9 +38,9 @@ import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
-import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
@@ -163,25 +166,31 @@ public class SleeperSystemTest {
         context.instance().setGeneratorOverrides(overrides);
     }
 
-    public GenerateNumberedRecords numberedRecords() {
-        return context.instance().numberedRecords();
+    public GenerateNumberedRows numberedRows() {
+        return context.instance().numberedRows();
     }
 
-    public Iterable<Record> generateNumberedRecords(LongStream numbers) {
-        return context.instance().numberedRecords().iterableFrom(numbers);
+    public Iterable<Row> generateNumberedRows(LongStream numbers) {
+        return context.instance().numberedRows().iterableFrom(numbers);
     }
 
-    public Iterable<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return context.instance().numberedRecords(schema).iterableFrom(numbers);
+    public Iterable<Row> generateNumberedRows(Schema schema, LongStream numbers) {
+        return context.instance().numberedRows(schema).iterableFrom(numbers);
     }
 
-    public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
-        return RecordNumbers.scrambleNumberedRecords(longStream);
+    public RowNumbers scrambleNumberedRows(LongStream longStream) {
+        return RowNumbers.scrambleNumberedRows(longStream);
     }
 
     public Path getSplitPointsDirectory() {
         return parameters.getScriptsDirectory()
                 .resolve("test/splitpoints");
+    }
+
+    public CloseableIterator<Row> getRows(AllReferencesToAFile file) {
+        Schema schema = context.instance().getTableProperties().getSchema();
+        DataFilesDriver driver = context.instance().adminDrivers().dataFiles(context);
+        return driver.getRows(schema, file.getFilename());
     }
 
     public void enableOptionalStack(OptionalStack stack) {

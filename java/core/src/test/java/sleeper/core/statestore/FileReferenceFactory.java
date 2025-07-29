@@ -156,22 +156,22 @@ public class FileReferenceFactory {
      * Repeated use of this method will result in references to the same file. This should be avoided as it will produce
      * failures due to duplicate file references.
      *
-     * @param  records the number of records in the file
-     * @return         the file reference
+     * @param  rows the number of rows in the file
+     * @return      the file reference
      */
-    public FileReference rootFile(long records) {
-        return fileForPartition(partitionTree.getRootPartition(), records);
+    public FileReference rootFile(long rows) {
+        return fileForPartition(partitionTree.getRootPartition(), rows);
     }
 
     /**
      * Creates a file in the root partition.
      *
      * @param  filename the filename
-     * @param  records  the number of records in the file
+     * @param  rows     the number of rows in the file
      * @return          the file reference
      */
-    public FileReference rootFile(String filename, long records) {
-        return fileForPartition(partitionTree.getRootPartition(), filename, records);
+    public FileReference rootFile(String filename, long rows) {
+        return fileForPartition(partitionTree.getRootPartition(), filename, rows);
     }
 
     /**
@@ -180,11 +180,11 @@ public class FileReferenceFactory {
      * file. This should be avoided as it will produce failures due to duplicate file references.
      *
      * @param  partitionId the partition ID
-     * @param  records     the number of records in the file
+     * @param  rows        the number of rows in the file
      * @return             the file reference
      */
-    public FileReference partitionFile(String partitionId, long records) {
-        return fileForPartition(partitionTree.getPartition(partitionId), records);
+    public FileReference partitionFile(String partitionId, long rows) {
+        return fileForPartition(partitionTree.getPartition(partitionId), rows);
     }
 
     /**
@@ -192,41 +192,41 @@ public class FileReferenceFactory {
      *
      * @param  partitionId the partition ID
      * @param  filename    the filename
-     * @param  records     the number of records in the file
+     * @param  rows        the number of rows in the file
      * @return             the file reference
      */
-    public FileReference partitionFile(String partitionId, String filename, long records) {
-        return fileForPartitionBuilder(partitionId, records)
+    public FileReference partitionFile(String partitionId, String filename, long rows) {
+        return fileForPartitionBuilder(partitionId, rows)
                 .filename(filePathGenerator.buildFilePath(partitionId, filename))
                 .build();
     }
 
     /**
-     * Creates a single file in every leaf partition with a given number of records.
+     * Creates a single file in every leaf partition with a given number of rows.
      *
-     * @param  records the number of records
-     * @return         the files
+     * @param  rows the number of rows
+     * @return      the files
      */
-    public Stream<FileReference> singleFileInEachLeafPartitionWithRecords(long records) {
+    public Stream<FileReference> singleFileInEachLeafPartitionWithRows(long rows) {
         return partitionTree.streamLeavesInTreeOrder()
-                .map(partition -> fileForPartition(partition, records));
+                .map(partition -> fileForPartition(partition, rows));
     }
 
-    private FileReference fileForPartition(Partition partition, long records) {
-        return fileForPartitionBuilder(partition.getId(), records)
+    private FileReference fileForPartition(Partition partition, long rows) {
+        return fileForPartitionBuilder(partition.getId(), rows)
                 .filename(filePathGenerator.buildFilePath(partition.getId(), partition.getId() + ".parquet"))
                 .build();
     }
 
-    private FileReference fileForPartition(Partition partition, String filename, long records) {
-        return partitionFile(partition.getId(), filename, records);
+    private FileReference fileForPartition(Partition partition, String filename, long rows) {
+        return partitionFile(partition.getId(), filename, rows);
     }
 
-    private FileReference.Builder fileForPartitionBuilder(String partitionId, long records) {
+    private FileReference.Builder fileForPartitionBuilder(String partitionId, long rows) {
         return FileReference.builder()
                 .filename(partitionId + ".parquet")
                 .partitionId(partitionId)
-                .numberOfRecords(records)
+                .numberOfRows(rows)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true);

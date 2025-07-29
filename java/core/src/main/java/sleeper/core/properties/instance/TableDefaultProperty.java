@@ -116,17 +116,17 @@ public interface TableDefaultProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_FILES_SNAPSHOT_BATCH_SIZE = Index.propertyBuilder("sleeper.default.statestore.transactionlog.files.snapshot.batch.size")
-            .description("The number of elements to include per Arrow record batch in a snapshot derived from the " +
+            .description("The number of elements to include per Arrow row batch in a snapshot derived from the " +
                     "transaction log, of the state of files in a Sleeper table. Each file includes some number of " +
-                    "references on different partitions. Each reference will count for one element in a record " +
-                    "batch, but a file cannot currently be split between record batches. A record batch may contain " +
+                    "references on different partitions. Each reference will count for one element in a row " +
+                    "batch, but a file cannot currently be split between row batches. A row batch may contain " +
                     "more file references than this if a single file overflows the batch. A file with no references " +
                     "counts as one element.")
             .defaultValue("1000")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_PARTITIONS_SNAPSHOT_BATCH_SIZE = Index.propertyBuilder("sleeper.default.statestore.transactionlog.partitions.snapshot.batch.size")
-            .description("The number of partitions to include per Arrow record batch in a snapshot derived from the " +
+            .description("The number of partitions to include per Arrow row batch in a snapshot derived from the " +
                     "transaction log, of the state of partitions in a Sleeper table.")
             .defaultValue("1000")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
@@ -263,10 +263,10 @@ public interface TableDefaultProperty {
             .defaultValue(IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF.name().toLowerCase(Locale.ROOT))
             .validationPredicate(IngestFileWritingStrategy::isValid)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.default.ingest.record.batch.type")
-            .description("The way in which records are held in memory before they are written to a local store.\n" +
+    UserDefinedInstanceProperty DEFAULT_INGEST_ROW_BATCH_TYPE = Index.propertyBuilder("sleeper.default.ingest.row.batch.type")
+            .description("The way in which rows are held in memory before they are written to a local store.\n" +
                     "Valid values are 'arraylist' and 'arrow'.\n" +
-                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of records in each batch.")
+                    "The arraylist method is simpler, but it is slower and requires careful tuning of the number of rows in each batch.")
             .defaultValue("arrow")
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE = Index.propertyBuilder("sleeper.default.ingest.partition.file.writer.type")

@@ -36,7 +36,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
@@ -101,12 +101,12 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
 
     protected static JobRunSummary defaultSummary(Instant startTime, Instant finishTime) {
         return new JobRunSummary(
-                defaultRecordsProcessed(),
+                defaultRowsProcessed(),
                 startTime, finishTime);
     }
 
-    protected static RecordsProcessed defaultRecordsProcessed() {
-        return new RecordsProcessed(200, 200);
+    protected static RowsProcessed defaultRowsProcessed() {
+        return new RowsProcessed(200, 200);
     }
 
     protected static IngestJobStartedEvent defaultJobStartedEvent(IngestJob job, Instant startedTime) {
@@ -174,7 +174,7 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(finishedTime))
                         .finishTime(finishedTime)
-                        .recordsProcessed(defaultRecordsProcessed())
+                        .rowsProcessed(defaultRowsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
                         .build()));
@@ -186,7 +186,7 @@ public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(finishedTime))
                         .finishTime(finishedTime)
-                        .recordsProcessed(defaultRecordsProcessed())
+                        .rowsProcessed(defaultRowsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
                         .build(),

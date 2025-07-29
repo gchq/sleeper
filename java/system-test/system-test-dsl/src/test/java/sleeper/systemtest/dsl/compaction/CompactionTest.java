@@ -22,6 +22,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.row.testutils.SortedRowsCheck;
+import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -35,6 +37,7 @@ import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_REFERE
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -69,14 +72,14 @@ public class CompactionTest {
         // And half the partitions have a file A wholly on each partition
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 50));
+                .numberedRows(LongStream.range(0, 50));
         // And we have a file B containing data for all partitions, referenced on each
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(sleeper.scrambleNumberedRecords(LongStream.range(0, 100)).stream());
+                .numberedRows(sleeper.scrambleNumberedRows(LongStream.range(0, 100)).stream());
         // And we have a file C in the root partition
         sleeper.sourceFiles().inDataBucket().writeSketches()
-                .createWithNumberedRecords("file.parquet", LongStream.range(50, 100));
+                .createWithNumberedRows("file.parquet", LongStream.range(50, 100));
         sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
 
         // When
@@ -87,10 +90,15 @@ public class CompactionTest {
                 .createJobs(4).waitForTasks(1).waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
-        Approvals.verify(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()));
+        AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        Approvals.verify(printFiles(sleeper.partitioning().tree(), files));
+        assertThat(files.getFilesWithReferences())
+                .allSatisfy(file -> assertThat(
+                        SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
+                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
     }
 
 }

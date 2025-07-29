@@ -19,8 +19,8 @@ package sleeper.systemtest.drivers.python;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import sleeper.core.record.Record;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.core.row.Row;
+import sleeper.parquet.row.ParquetRowReader;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
@@ -76,22 +76,22 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public Stream<Record> results(Path outputDir, String queryId) {
+    public Stream<Row> results(Path outputDir, String queryId) {
         String path = "file://" + outputDir.resolve(queryId + ".txt");
-        List<Record> records = new ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         try {
-            ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path),
+            ParquetRowReader reader = new ParquetRowReader(new org.apache.hadoop.fs.Path(path),
                     instance.getTableProperties().getSchema());
 
-            Record record = reader.read();
-            while (null != record) {
-                records.add(new Record(record));
-                record = reader.read();
+            Row row = reader.read();
+            while (null != row) {
+                rows.add(new Row(row));
+                row = reader.read();
             }
             reader.close();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        return records.stream();
+        return rows.stream();
     }
 }

@@ -18,14 +18,14 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
-import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -39,28 +39,28 @@ import java.util.List;
 public class InMemoryDirectQueryDriver implements QueryDriver {
 
     private final SystemTestInstanceContext instance;
-    private final InMemoryRecordStore dataStore;
+    private final InMemoryRowStore dataStore;
 
-    InMemoryDirectQueryDriver(SystemTestInstanceContext instance, InMemoryRecordStore dataStore) {
+    InMemoryDirectQueryDriver(SystemTestInstanceContext instance, InMemoryRowStore dataStore) {
         this.instance = instance;
         this.dataStore = dataStore;
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryRecordStore dataStore) {
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryRowStore dataStore) {
         return new QueryAllTablesInParallelDriver(instance, new InMemoryDirectQueryDriver(instance, dataStore));
     }
 
     @Override
-    public List<Record> run(Query query) {
+    public List<Row> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRecordRetriever(dataStore), Instant.now());
+                new InMemoryLeafPartitionRowRetriever(dataStore), Instant.now());
         executor.init();
-        try (CloseableIterator<Record> iterator = executor.execute(query)) {
-            List<Record> records = new ArrayList<>();
-            iterator.forEachRemaining(records::add);
-            return records;
+        try (CloseableIterator<Row> iterator = executor.execute(query)) {
+            List<Row> rows = new ArrayList<>();
+            iterator.forEachRemaining(rows::add);
+            return rows;
         } catch (IOException | QueryException e) {
             throw new RuntimeException(e);
         }

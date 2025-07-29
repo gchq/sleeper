@@ -14,8 +14,8 @@ Start update time: 2022-09-28T13:39:12.123Z
 Finish time: 2022-09-28T13:44:12.001Z
 Finish update time: 2022-09-28T13:44:12.123Z
 Duration: 5m
-Records read: 3,000
-Records written: 1,500
+Rows read: 3,000
+Rows written: 1,500
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 1 files written at: 2022-09-28T13:45:12.001Z

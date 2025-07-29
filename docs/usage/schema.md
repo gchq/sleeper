@@ -3,11 +3,11 @@ Creating a schema
 
 A schema describes the data in a table. A schema consists of several fields. A field has a
 name and a type, e.g. a field with name 'id' and type 'string'. A schema has three types of field:
-row keys, sort keys and values. 
+row keys, sort keys and values.
 
-See [a full example](../../example/full/schema.json) for an example of a schema. 
+See [a full example](../../example/full/schema.json) for an example of a schema.
 
-For example, a simple key-value schema with a string key and a string value would allow records to be
+For example, a simple key-value schema with a string key and a string value would allow rows to be
 retrieved by querying for a key. The schema for this would be:
 
 ```JSON
@@ -30,11 +30,11 @@ retrieved by querying for a key. The schema for this would be:
 
 Note that if there are no sort or value fields then this must be indicated with an empty list.
 
-If we wanted to sort the records for a particular field by a timestamp, we could add a sort field of type long:
+If we wanted to sort the rows for a particular field by a timestamp, we could add a sort field of type long:
 
 ```JSON
     {
-      "rowKeyFields": [ 
+      "rowKeyFields": [
         {
           "name": "key",
           "type": "StringType"
@@ -55,7 +55,7 @@ If we wanted to sort the records for a particular field by a timestamp, we could
     }
 ```
 
-This would cause records for a particular key to be stored (and retrieved) in increasing order of timestamps.
+This would cause rows for a particular key to be stored (and retrieved) in increasing order of timestamps.
 
 The following types are permitted as row keys and sort keys: `IntType`, `LongType`, `StringType`, `ByteArrayType`. All
 of these types can be used for values. Additionally, value fields may be of type `ListType` or `MapType`. Here is an
@@ -111,7 +111,7 @@ There may be multiple row key fields. In the following example two string fields
 
 ```JSON
     {
-      "rowKeyFields": [ 
+      "rowKeyFields": [
         {
           "name": "key1",
           "type": "StringType"
@@ -136,7 +136,7 @@ There may be multiple row key fields. In the following example two string fields
     }
 ```
 
-Sleeper will store the records sorted by `key1` and then `key2`. Thus retrieving all records where `key1`
-and `key2` have specified values will be quick. A range scan to retrieve all records where `key1` has a certain
-value and `key2` can take any value will also be quick. But a query for all records where `key2` has a specified
+Sleeper will store the rows sorted by `key1` and then `key2`. Thus retrieving all rows where `key1`
+and `key2` have specified values will be quick. A range scan to retrieve all rows where `key1` has a certain
+value and `key2` can take any value will also be quick. But a query for all rows where `key2` has a specified
 value but `key1` can take any value will not be quick.

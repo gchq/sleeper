@@ -26,14 +26,14 @@ import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
@@ -77,11 +77,11 @@ public class CompactionRunnerTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected RecordsProcessed compact(Schema schema, CompactionJob job) throws Exception {
+    protected RowsProcessed compact(Schema schema, CompactionJob job) throws Exception {
         return compact(job, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
     }
 
-    protected RecordsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
+    protected RowsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), conf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
@@ -91,12 +91,12 @@ public class CompactionRunnerTestBase {
         return new LocalFileSystemSketchesStore();
     }
 
-    protected FileReference ingestRecordsGetFile(List<Record> records) throws Exception {
-        return ingestRecordsGetFile(records, builder -> {
+    protected FileReference ingestRowsGetFile(List<Row> rows) throws Exception {
+        return ingestRowsGetFile(rows, builder -> {
         });
     }
 
-    protected FileReference ingestRecordsGetFile(List<Record> records, Consumer<IngestFactory.Builder> config) throws Exception {
+    protected FileReference ingestRowsGetFile(List<Row> rows, Consumer<IngestFactory.Builder> config) throws Exception {
         String localDir = createTempDirectory(tempDir, null).toString();
         IngestFactory.Builder builder = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -104,7 +104,7 @@ public class CompactionRunnerTestBase {
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .instanceProperties(instanceProperties);
         config.accept(builder);
-        IngestResult result = builder.build().ingestFromRecordIterator(tableProperties, records.iterator());
+        IngestResult result = builder.build().ingestFromRowIterator(tableProperties, rows.iterator());
         List<FileReference> files = result.getFileReferenceList();
         if (files.size() != 1) {
             throw new IllegalStateException("Expected 1 file ingested, found: " + files);

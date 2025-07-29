@@ -32,10 +32,10 @@ public class SystemTestLocalFiles {
         this.tempDir = tempDir;
     }
 
-    public void createWithNumberedRecords(String file, LongStream numbers) {
+    public void createWithNumberedRows(String file, LongStream numbers) {
         driver.writeFile(
                 instance.getTableProperties(),
                 tempDir.resolve(file),
-                instance.numberedRecords().iteratorFrom(numbers));
+                instance.numberedRows().iteratorFrom(numbers));
     }
 }

@@ -29,12 +29,13 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -47,7 +48,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
-import static sleeper.parquet.record.ParquetRecordWriterFactory.createParquetRecordWriter;
 
 public class ShowPageIndexesIT {
     @TempDir
@@ -68,8 +68,8 @@ public class ShowPageIndexesIT {
                 .build());
         tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100),
-                (i, record) -> record.put("test-key", String.format("row-%03d", i)));
+        writeRows(file, tableProperties, LongStream.rangeClosed(1, 100),
+                (i, row) -> row.put("test-key", String.format("row-%03d", i)));
 
         // When/Then
         assertThat(runShowPageIndexes(file))
@@ -87,9 +87,9 @@ public class ShowPageIndexesIT {
                 .build());
         tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100), (i, record) -> {
-            record.put("test-key1", String.format("row1-%03d", i));
-            record.put("test-key2", String.format("row2-%03d", i));
+        writeRows(file, tableProperties, LongStream.rangeClosed(1, 100), (i, row) -> {
+            row.put("test-key1", String.format("row1-%03d", i));
+            row.put("test-key2", String.format("row2-%03d", i));
         });
 
         // When/Then
@@ -108,10 +108,10 @@ public class ShowPageIndexesIT {
                 .build());
         tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100), (i, record) -> {
-            record.put("test-key", String.format("row-%03d", i));
-            record.put("test-sort", i.intValue());
-            record.put("test-value", i * 10L);
+        writeRows(file, tableProperties, LongStream.rangeClosed(1, 100), (i, row) -> {
+            row.put("test-key", String.format("row-%03d", i));
+            row.put("test-sort", i.intValue());
+            row.put("test-value", i * 10L);
         });
 
         // When/Then
@@ -129,8 +129,8 @@ public class ShowPageIndexesIT {
         tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         tableProperties.set(TableProperty.PAGE_SIZE, "100");
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000),
-                (i, record) -> record.put("test-key", String.format("row-%04d", i)));
+        writeRows(file, tableProperties, LongStream.rangeClosed(1, 1000),
+                (i, row) -> row.put("test-key", String.format("row-%04d", i)));
 
         // When/Then
         assertThat(runShowPageIndexes(file))
@@ -147,22 +147,22 @@ public class ShowPageIndexesIT {
         tableProperties.set(PARQUET_WRITER_VERSION, parquetVersion);
         tableProperties.set(TableProperty.ROW_GROUP_SIZE, "1");
         Path file = tempDir.resolve("test.parquet");
-        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000),
-                (i, record) -> record.put("test-key", String.format("row-%04d", i)));
+        writeRows(file, tableProperties, LongStream.rangeClosed(1, 1000),
+                (i, row) -> row.put("test-key", String.format("row-%04d", i)));
 
         // When/Then
         assertThat(runShowPageIndexes(file))
                 .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/multipleRowGroups.txt"));
     }
 
-    private static void writeRecords(Path file, TableProperties tableProperties,
-            LongStream range, BiConsumer<Long, Record> recordCreator) throws IOException {
-        try (ParquetWriter<Record> writer = createRecordWriter(file, tableProperties)) {
+    private static void writeRows(Path file, TableProperties tableProperties,
+            LongStream range, BiConsumer<Long, Row> rowCreator) throws IOException {
+        try (ParquetWriter<Row> writer = createRowWriter(file, tableProperties)) {
             range.boxed().forEach(i -> {
-                Record record = new Record();
-                recordCreator.accept(i, record);
+                Row row = new Row();
+                rowCreator.accept(i, row);
                 try {
-                    writer.write(record);
+                    writer.write(row);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -176,8 +176,8 @@ public class ShowPageIndexesIT {
         return tableProperties;
     }
 
-    private static ParquetWriter<Record> createRecordWriter(Path file, TableProperties tableProperties) throws IOException {
-        return createParquetRecordWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
+    private static ParquetWriter<Row> createRowWriter(Path file, TableProperties tableProperties) throws IOException {
+        return ParquetRowWriterFactory.createParquetRowWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
     }
 
     private static String example(String path) throws IOException {

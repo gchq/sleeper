@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -51,19 +51,19 @@ public class SetupInstanceST {
     }
 
     @Test
-    void shouldIngestOneRecord(SleeperSystemTest sleeper) {
+    void shouldIngestOneRow(SleeperSystemTest sleeper) {
         // Given
-        Record record = new Record(Map.of(
+        Row row = new Row(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
 
         // When
-        sleeper.ingest().direct(tempDir).records(record);
+        sleeper.ingest().direct(tempDir).rows(row);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactly(record);
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactly(row);
     }
 
     @Test
@@ -74,11 +74,11 @@ public class SetupInstanceST {
 
         // When
         sleeper.systemTestCluster().runDataGenerationJobs(2,
-                builder -> builder.ingestMode(QUEUE).ingestQueue(STANDARD_INGEST).recordsPerIngest(123))
+                builder -> builder.ingestMode(QUEUE).ingestQueue(STANDARD_INGEST).rowsPerIngest(123))
                 .waitForStandardIngestTask().waitForIngestJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .hasSize(2)
@@ -93,11 +93,11 @@ public class SetupInstanceST {
 
         // When
         sleeper.systemTestCluster().runDataGenerationJobs(2,
-                builder -> builder.ingestMode(DIRECT).recordsPerIngest(123))
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(123))
                 .waitForTotalFileReferences(2);
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .hasSize(246);
         assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .isEmpty();

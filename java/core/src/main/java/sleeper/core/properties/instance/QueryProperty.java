@@ -50,12 +50,12 @@ public interface QueryProperty {
             .defaultValue("60")
             .propertyGroup(InstancePropertyGroup.QUERY).build();
     UserDefinedInstanceProperty QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE = Index.propertyBuilder("sleeper.query.processor.results.batch.size")
-            .description("The maximum number of records to include in a batch of query results send to " +
+            .description("The maximum number of rows to include in a batch of query results send to " +
                     "the results queue from the query processing lambda.")
             .defaultValue("2000")
             .propertyGroup(InstancePropertyGroup.QUERY).build();
-    UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS = Index.propertyBuilder("sleeper.query.processor.record.retrieval.threads")
-            .description("The size of the thread pool for retrieving records in a query processing lambda.")
+    UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS = Index.propertyBuilder("sleeper.query.processor.row.retrieval.threads")
+            .description("The size of the thread pool for retrieving rows in a query processing lambda.")
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();

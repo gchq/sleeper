@@ -60,10 +60,10 @@ public class ParallelCompactionsST {
                 COMPACTION_FILES_BATCH_SIZE, "10",
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString()));
         sleeper.partitioning().setPartitions(create8192StringPartitions(sleeper));
-        // And we have records spread across all partitions in many files per partition
+        // And we have rows spread across all partitions in many files per partition
         sleeper.systemTestCluster()
                 .runDataGenerationJobs(10,
-                        builder -> builder.ingestMode(DIRECT).recordsPerIngest(1_000_000),
+                        builder -> builder.ingestMode(DIRECT).rowsPerIngest(1_000_000),
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(10)))
                 .waitForTotalFileReferences(81920);
@@ -83,14 +83,14 @@ public class ParallelCompactionsST {
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
                 .hasSize(8192)
-                .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRecords).sum())
+                .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRows).sum())
                         .isEqualTo(10_000_000))
                 .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
                         "only contains data for one partition")
                 .allMatch(file -> file.getJobId() == null,
                         "not assigned to any job")
-                .allSatisfy(file -> assertThat(file.getNumberOfRecords())
-                        .describedAs("contains an even distribution of records for the partition")
+                .allSatisfy(file -> assertThat(file.getNumberOfRows())
+                        .describedAs("contains an even distribution of rows for the partition")
                         .isBetween(800L, 1600L));
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())

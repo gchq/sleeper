@@ -38,7 +38,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -114,20 +114,25 @@ public class ECSBulkExportTaskRunner {
      * @throws IOException               if there is an error interacting with S3
      * @throws IteratorCreationException if there is an error creating iterators
      * @throws ObjectFactoryException    if there is an error creating objects
+     *
      */
     public static void runECSBulkExportTaskRunner(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient, Configuration hadoopConf) throws IOException, IteratorCreationException, ObjectFactoryException {
+            SqsClient sqsClient, S3Client s3Client, DynamoDbClient dynamoDBClient,
+            Configuration hadoopConf) throws RuntimeException, IOException, ObjectFactoryException, IteratorCreationException {
         SqsBulkExportQueueHandler exportQueueHandler = new SqsBulkExportQueueHandler(sqsClient,
                 tablePropertiesProvider, instanceProperties);
         LOGGER.info("Waiting for leaf partition bulk export job from queue {}",
                 instanceProperties.get(CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
+        Optional<SqsMessageHandle> messageHandleOpt;
 
-        Optional<SqsMessageHandle> messageHandleOpt = exportQueueHandler.receiveMessage();
+        messageHandleOpt = exportQueueHandler.receiveMessage();
+
         if (messageHandleOpt.isPresent()) {
             SqsMessageHandle messageHandle = messageHandleOpt.get();
             try {
                 BulkExportLeafPartitionQuery exportTask = messageHandle.getJob();
+
                 LOGGER.info("Received bulk export job for table ID: {}, partition ID: {}", exportTask.getTableId(), exportTask.getLeafPartitionId());
                 LOGGER.debug("Bulk Export job details: {}", exportTask);
 
@@ -175,11 +180,11 @@ public class ECSBulkExportTaskRunner {
         CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
         Partition partition = stateStore.getPartition(bulkExportLeafPartitionQuery.getLeafPartitionId());
 
-        RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
-        LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Records read: {}, records written: {}",
+        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition);
+        LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
                 bulkExportLeafPartitionQuery.getTableId(),
                 bulkExportLeafPartitionQuery.getLeafPartitionId(),
-                recordsProcessed.getRecordsRead(),
-                recordsProcessed.getRecordsWritten());
+                rowsProcessed.getRowsRead(),
+                rowsProcessed.getRowsWritten());
     }
 }

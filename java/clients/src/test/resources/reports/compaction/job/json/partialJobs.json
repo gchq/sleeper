@@ -8,9 +8,9 @@
           {
             "updateTime": "2025-05-14T10:47:00.123Z",
             "finishTime": "2025-05-14T10:47:00Z",
-            "recordsProcessed": {
-              "recordsRead": 10,
-              "recordsWritten": 5
+            "rowsProcessed": {
+              "rowsRead": 10,
+              "rowsWritten": 5
             },
             "type": "FINISHED_WHEN_COMMITTED"
           },

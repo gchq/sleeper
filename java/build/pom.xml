@@ -19,7 +19,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.31.1</version>
+        <version>0.32.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -120,8 +120,8 @@
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8</artifactId>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
             <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>

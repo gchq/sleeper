@@ -28,7 +28,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Duration;
@@ -87,7 +87,7 @@ public class DynamoDBCompactionTaskTrackerTestBase extends LocalStackTestBase {
 
     private static JobRunSummary defaultJobSummary() {
         return new JobRunSummary(
-                new RecordsProcessed(4800L, 2400L),
+                new RowsProcessed(4800L, 2400L),
                 defaultJobStartTime(), defaultJobFinishTime());
     }
 
@@ -130,7 +130,7 @@ public class DynamoDBCompactionTaskTrackerTestBase extends LocalStackTestBase {
         return builder.startTime(startTime)
                 .finished(finishTime, CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new JobRunSummary(
-                                new RecordsProcessed(200, 100),
+                                new RowsProcessed(200, 100),
                                 startTime, finishTime)))
                 .build();
     }

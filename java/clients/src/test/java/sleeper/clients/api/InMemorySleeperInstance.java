@@ -23,7 +23,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
-import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
@@ -31,7 +31,7 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
-import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
+import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 
 import java.util.HashMap;
@@ -47,7 +47,7 @@ public class InMemorySleeperInstance {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InMemoryTransactionLogsPerTable transactionLogsPerTable = new InMemoryTransactionLogsPerTable();
     private final StateStoreProvider stateStoreProvider;
-    private final InMemoryRecordStore dataStore = new InMemoryRecordStore();
+    private final InMemoryRowStore dataStore = new InMemoryRowStore();
     private final InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     private final Queue<IngestJob> ingestQueue = new LinkedList<>();
     private final Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
@@ -67,7 +67,7 @@ public class InMemorySleeperInstance {
                 .tablePropertiesStore(tablePropertiesStore)
                 .tablePropertiesProvider(tablePropertiesProvider)
                 .stateStoreProvider(stateStoreProvider)
-                .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
+                .rowRetrieverProvider(new InMemoryLeafPartitionRowRetriever(dataStore))
                 .ingestJobSender(ingestQueue::add)
                 .bulkImportJobSender(bulkImportSender())
                 .ingestBatcherSender(ingestBatcherQueue::add)
@@ -113,7 +113,7 @@ public class InMemorySleeperInstance {
         return stateStoreProvider;
     }
 
-    public InMemoryRecordStore dataStore() {
+    public InMemoryRowStore dataStore() {
         return dataStore;
     }
 

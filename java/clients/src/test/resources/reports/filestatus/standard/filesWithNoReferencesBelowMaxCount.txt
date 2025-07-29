@@ -8,10 +8,10 @@ Number of files with no references, which will be garbage collected: 2
 Number of references to files: 1
 Number of file references in leaf partitions: min = 1, max = 1, average = 1.0, total = 1
 Number of file references in non-leaf partitions: 0
-Number of records referenced in partitions: 200
-Number of records in non-leaf partitions: 0
-Number of records in leaf partitions: 200
-Percentage of records in leaf partitions: 100.0
+Number of rows referenced in partitions: 200
+Number of rows in non-leaf partitions: 0
+Number of rows in leaf partitions: 200
+Percentage of rows in leaf partitions: 100.0
 
 Files with no references:
 file1.parquet, last updated at 2022-08-22T14:20:00.001Z
@@ -19,4 +19,4 @@ file2.parquet, last updated at 2022-08-22T14:20:00.001Z
 
 Files with references:
 file3.parquet, 1 reference total, last updated at 2022-08-22T14:20:00.001Z
-	Reference in partition B, 200 records, last updated at 2022-08-22T14:20:00.001Z
+	Reference in partition B, 200 rows, last updated at 2022-08-22T14:20:00.001Z

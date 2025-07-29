@@ -22,7 +22,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
@@ -32,9 +32,9 @@ import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.ingest.runner.impl.recordbatch.RecordBatchFactory;
-import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.RowBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatchFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -46,7 +46,7 @@ import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.table.TableProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.table.TableProperty.INGEST_ROW_BATCH_TYPE;
 
 public class IngestFactory {
 
@@ -74,50 +74,50 @@ public class IngestFactory {
         return new Builder();
     }
 
-    public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator) throws StateStoreException, IteratorCreationException, IOException {
-        try (recordIterator) {
-            return ingestFromRecordIterator(tableProperties, recordIterator);
+    public IngestResult ingestFromRowIteratorAndClose(TableProperties tableProperties, CloseableIterator<Row> rowIterator) throws StateStoreException, IteratorCreationException, IOException {
+        try (rowIterator) {
+            return ingestFromRowIterator(tableProperties, rowIterator);
         }
     }
 
-    public IngestResult ingestFromRecordIterator(TableProperties tableProperties, Iterator<Record> recordIterator) throws StateStoreException, IteratorCreationException, IOException {
-        try (IngestCoordinator<Record> ingestCoordinator = createIngestCoordinator(tableProperties)) {
-            return new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
+    public IngestResult ingestFromRowIterator(TableProperties tableProperties, Iterator<Row> rowIterator) throws StateStoreException, IteratorCreationException, IOException {
+        try (IngestCoordinator<Row> ingestCoordinator = createIngestCoordinator(tableProperties)) {
+            return new IngestRowsFromIterator(ingestCoordinator, rowIterator).write();
         }
     }
 
-    public IngestRecords createIngestRecords(TableProperties tableProperties) {
-        return new IngestRecords(createIngestCoordinator(tableProperties));
+    public IngestRows createIngestRows(TableProperties tableProperties) {
+        return new IngestRows(createIngestCoordinator(tableProperties));
     }
 
-    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder(TableProperties tableProperties) {
+    public IngestCoordinator.Builder<Row> ingestCoordinatorBuilder(TableProperties tableProperties) {
         ParquetConfiguration parquetConfiguration = ParquetConfiguration.from(tableProperties, hadoopConfiguration);
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(objectFactory)
                 .stateStore(stateStoreProvider.getStateStore(tableProperties))
-                .recordBatchFactory(standardRecordBatchFactory(tableProperties, parquetConfiguration))
+                .rowBatchFactory(standardRowBatchFactory(tableProperties, parquetConfiguration))
                 .partitionFileWriterFactory(standardPartitionFileWriterFactory(tableProperties, parquetConfiguration));
     }
 
-    public IngestCoordinator<Record> createIngestCoordinator(TableProperties tableProperties) {
+    public IngestCoordinator<Row> createIngestCoordinator(TableProperties tableProperties) {
         return ingestCoordinatorBuilder(tableProperties).build();
     }
 
-    private RecordBatchFactory<Record> standardRecordBatchFactory(
+    private RowBatchFactory<Row> standardRowBatchFactory(
             TableProperties tableProperties, ParquetConfiguration parquetConfiguration) {
-        String recordBatchType = tableProperties.get(INGEST_RECORD_BATCH_TYPE).toLowerCase(Locale.ROOT);
-        if ("arraylist".equals(recordBatchType)) {
-            return ArrayListRecordBatchFactory.builderWith(instanceProperties)
+        String rowBatchType = tableProperties.get(INGEST_ROW_BATCH_TYPE).toLowerCase(Locale.ROOT);
+        if ("arraylist".equals(rowBatchType)) {
+            return ArrayListRowBatchFactory.builderWith(instanceProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
-                    .buildAcceptingRecords();
-        } else if ("arrow".equals(recordBatchType)) {
-            return ArrowRecordBatchFactory.builderWith(instanceProperties)
+                    .buildAcceptingRows();
+        } else if ("arrow".equals(rowBatchType)) {
+            return ArrowRowBatchFactory.builderWith(instanceProperties)
                     .schema(parquetConfiguration.getTableProperties().getSchema())
                     .localWorkingDirectory(localDir)
-                    .buildAcceptingRecords();
+                    .buildAcceptingRows();
         } else {
-            throw new UnsupportedOperationException(String.format("Record batch type %s not supported", recordBatchType));
+            throw new UnsupportedOperationException(String.format("Row batch type %s not supported", rowBatchType));
         }
     }
 

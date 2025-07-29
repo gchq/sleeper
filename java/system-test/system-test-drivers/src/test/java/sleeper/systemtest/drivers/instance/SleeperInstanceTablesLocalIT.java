@@ -25,7 +25,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
@@ -116,33 +116,33 @@ public class SleeperInstanceTablesLocalIT {
         }
 
         @Test
-        void shouldQueryRecordsForNamedTables(SleeperSystemTest sleeper) {
+        void shouldQueryRowsForNamedTables(SleeperSystemTest sleeper) {
             // Given
             sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
-            sleeper.table("A").ingest().direct(tempDir).numberedRecords(LongStream.of(1, 2));
-            sleeper.table("B").ingest().direct(tempDir).numberedRecords(LongStream.of(3, 4));
+            sleeper.table("A").ingest().direct(tempDir).numberedRows(LongStream.of(1, 2));
+            sleeper.table("B").ingest().direct(tempDir).numberedRows(LongStream.of(3, 4));
 
             // When / Then
-            Map<String, List<Record>> expectedRecords = Map.of(
+            Map<String, List<Row>> expectedRows = Map.of(
                     "A", List.of(
-                            new Record(Map.of("key", 1L)),
-                            new Record(Map.of("key", 2L))),
+                            new Row(Map.of("key", 1L)),
+                            new Row(Map.of("key", 2L))),
                     "B", List.of(
-                            new Record(Map.of("key", 3L)),
-                            new Record(Map.of("key", 4L))));
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEqualTo(expectedRecords);
+                            new Row(Map.of("key", 3L)),
+                            new Row(Map.of("key", 4L))));
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRows);
         }
 
         @Test
-        void shouldQueryNoRecordsForNamedTables(SleeperSystemTest sleeper) {
+        void shouldQueryNoRowsForNamedTables(SleeperSystemTest sleeper) {
             // Given
             sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
 
             // When / Then
-            Map<String, List<Record>> expectedRecords = Map.of(
+            Map<String, List<Row>> expectedRows = Map.of(
                     "A", List.of(),
                     "B", List.of());
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEqualTo(expectedRecords);
+            assertThat(sleeper.directQuery().allRowsByTable()).isEqualTo(expectedRows);
         }
 
         @Test
@@ -156,8 +156,8 @@ public class SleeperInstanceTablesLocalIT {
 
             // Then
             assertThat(sleeper.tables().list()).isEmpty();
-            assertThat(sleeper.directQuery().allRecordsByTable()).isEmpty();
-            assertThat(sleeper.query().byQueue().allRecordsByTable()).isEmpty();
+            assertThat(sleeper.directQuery().allRowsByTable()).isEmpty();
+            assertThat(sleeper.query().byQueue().allRowsByTable()).isEmpty();
         }
 
         @Test
@@ -167,7 +167,7 @@ public class SleeperInstanceTablesLocalIT {
 
             // Then
             assertThat(sleeper.tables().list()).hasSize(2);
-            assertThat(sleeper.directQuery().allRecordsByTable()).hasSize(2);
+            assertThat(sleeper.directQuery().allRowsByTable()).hasSize(2);
         }
     }
 
@@ -189,7 +189,7 @@ public class SleeperInstanceTablesLocalIT {
             var ingest = sleeper.ingest().direct(null);
 
             // When / Then
-            assertThatThrownBy(() -> ingest.numberedRecords(LongStream.of(1, 2, 3)))
+            assertThatThrownBy(() -> ingest.numberedRows(LongStream.of(1, 2, 3)))
                     .isInstanceOf(NoTableChosenException.class);
         }
     }

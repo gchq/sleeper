@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.paginators.ListObjectsV2Iterable;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.PollWithRetries;
 import sleeper.query.core.model.Query;
@@ -33,7 +33,7 @@ import sleeper.query.core.tracker.QueryTrackerException;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
-import sleeper.systemtest.drivers.util.ReadRecordsFromS3;
+import sleeper.systemtest.drivers.util.ReadRowsFromS3;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
@@ -106,14 +106,14 @@ public class SQSQueryDriver implements QuerySendAndWaitDriver {
     }
 
     @Override
-    public List<Record> getResults(Query query) {
+    public List<Row> getResults(Query query) {
         LOGGER.info("Loading results for query: {}", query.getQueryId());
         Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
         String bucketName = instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET);
         ListObjectsV2Iterable response = s3Client.listObjectsV2Paginator(
                 request -> request.bucket(bucketName).prefix("query-" + query.getQueryId()));
         return response.contents().stream()
-                .flatMap(object -> ReadRecordsFromS3.getRecords(bucketName, object.key(), schema, clients.createHadoopConf()))
+                .flatMap(object -> ReadRowsFromS3.getRows(bucketName, object.key(), schema, clients.createHadoopConf()))
                 .toList();
     }
 }

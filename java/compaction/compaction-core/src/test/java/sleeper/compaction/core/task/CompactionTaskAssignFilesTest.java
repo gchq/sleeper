@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -196,7 +196,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         // When
         runTaskCheckingFiles(
                 waitForFileAssignment(timePassesAMinuteAtATimeFrom(Instant.parse("2024-10-28T11:45:00Z"))).withAttempts(10),
-                processJobs(jobSucceeds(new RecordsProcessed(10L, 5L))),
+                processJobs(jobSucceeds(new RowsProcessed(10L, 5L))),
                 timePassesAMinuteAtATimeFrom(Instant.parse("2024-10-28T11:50:00Z")));
 
         // Then

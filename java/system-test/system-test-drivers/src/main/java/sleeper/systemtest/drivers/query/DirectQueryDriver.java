@@ -19,13 +19,13 @@ package sleeper.systemtest.drivers.query;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
@@ -58,12 +58,12 @@ public class DirectQueryDriver implements QueryDriver {
         return new QueryAllTablesInParallelDriver(instance, new DirectQueryDriver(instance, clients));
     }
 
-    public List<Record> run(Query query) {
+    public List<Row> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         PartitionTree tree = getPartitionTree(stateStore);
-        try (CloseableIterator<Record> recordIterator = executor(tableProperties, stateStore, tree).execute(query)) {
-            return stream(recordIterator)
+        try (CloseableIterator<Row> rowIterator = executor(tableProperties, stateStore, tree).execute(query)) {
+            return stream(rowIterator)
                     .collect(Collectors.toUnmodifiableList());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -78,7 +78,7 @@ public class DirectQueryDriver implements QueryDriver {
 
     private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new LeafPartitionRecordRetrieverImpl(EXECUTOR_SERVICE, clients.createHadoopConf(),
+                new LeafPartitionRowRetrieverImpl(EXECUTOR_SERVICE, clients.createHadoopConf(),
                         tableProperties));
         executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor;

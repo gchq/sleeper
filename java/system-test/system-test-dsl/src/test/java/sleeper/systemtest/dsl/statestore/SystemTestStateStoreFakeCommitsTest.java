@@ -61,7 +61,7 @@ public class SystemTestStateStoreFakeCommitsTest {
                 .isEqualTo("Unreferenced files: 0\n" +
                         "Referenced files: 1\n" +
                         "File references: 1\n" +
-                        "Partition at root: 100 records in file 1\n");
+                        "Partition at root: 100 rows in file 1\n");
     }
 
     @Test
@@ -110,7 +110,7 @@ public class SystemTestStateStoreFakeCommitsTest {
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
-        assertThat(files.listFileReferences()).hasSize(2);
+        assertThat(files.streamFileReferences()).hasSize(2);
         assertThat(files.getFilesWithNoReferences()).hasSize(3);
     }
 

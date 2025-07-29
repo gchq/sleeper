@@ -31,4 +31,18 @@ public interface PrimitiveType extends Type {
      * @return       the comparable object
      */
     Comparable toComparable(Object value);
+
+    /**
+     * Compares two values of this type.
+     *
+     * @param  value1 the first value
+     * @param  value2 the second value
+     * @return        a negative integer, zero, or a positive integer as the first argument is less than, equal to, or
+     *                greater than the second
+     */
+    default int compare(Object value1, Object value2) {
+        Comparable comparable1 = toComparable(value1);
+        Comparable comparable2 = toComparable(value2);
+        return COMPARATOR.compare(comparable1, comparable2);
+    }
 }

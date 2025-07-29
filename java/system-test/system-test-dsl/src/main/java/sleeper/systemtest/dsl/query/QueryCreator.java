@@ -55,12 +55,12 @@ public class QueryCreator {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public Query allRecordsQuery() {
-        return allRecordsBuilder().build();
+    public Query allRowsQuery() {
+        return allRowsBuilder().build();
     }
 
-    public Query allRecordsQuery(QueryProcessingConfig config) {
-        return allRecordsBuilder().processingConfig(config).build();
+    public Query allRowsQuery(QueryProcessingConfig config) {
+        return allRowsBuilder().processingConfig(config).build();
     }
 
     public Query byRowKey(String key, List<QueryRange> ranges) {
@@ -72,7 +72,7 @@ public class QueryCreator {
                 .build();
     }
 
-    private Query.Builder allRecordsBuilder() {
+    private Query.Builder allRowsBuilder() {
         return builder().regions(List.of(getPartitionTree().getRootPartition().getRegion()));
     }
 

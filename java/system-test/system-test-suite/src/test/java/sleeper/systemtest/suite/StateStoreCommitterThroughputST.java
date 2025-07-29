@@ -39,8 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnreferencedFiles;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
@@ -166,7 +166,7 @@ public class StateStoreCommitterThroughputST {
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
-                .isEqualTo(printFiles(partitions, activeFiles(
+                .isEqualTo(printFiles(partitions, referencedFiles(
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> withJobId(jobId(i), fileFactory.rootFile(filename(i), i)))
                                 .collect(toUnmodifiableList()))));
@@ -203,7 +203,7 @@ public class StateStoreCommitterThroughputST {
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
-                .isEqualTo(printFiles(partitions, activeAndReadyForGCFiles(
+                .isEqualTo(printFiles(partitions, referencedAndUnreferencedFiles(
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> fileFactory.rootFile(filename(i), i * 2))
                                 .collect(toUnmodifiableList()),
@@ -245,7 +245,7 @@ public class StateStoreCommitterThroughputST {
 
         // Then
         assertThat(printFiles(partitions, sleeper.tableFiles().all()))
-                .isEqualTo(printFiles(partitions, activeFiles(
+                .isEqualTo(printFiles(partitions, referencedFiles(
                         IntStream.rangeClosed(1, 1000)
                                 .mapToObj(i -> fileFactory.rootFile(filename(i + 2000), i * 2))
                                 .collect(toUnmodifiableList()))));

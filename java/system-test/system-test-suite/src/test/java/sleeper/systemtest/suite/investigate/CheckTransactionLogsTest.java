@@ -18,6 +18,7 @@ package sleeper.systemtest.suite.investigate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -69,11 +70,11 @@ public class CheckTransactionLogsTest {
         CheckTransactionLogs check = checkState();
 
         // Then
-        assertThat(check.totalRecordsAtTransaction(2)).isEqualTo(200);
+        assertThat(check.totalRowsAtTransaction(2)).isEqualTo(200);
     }
 
     @Test
-    void shouldFindCompactionWhichChangedNumberOfRecords() {
+    void shouldFindCompactionWhichChangedNumberOfRows() {
         // Given
         FileReference input = fileFactory().rootFile("input.parquet", 100);
         FileReference output = fileFactory().rootFile("output.parquet", 90);
@@ -88,13 +89,13 @@ public class CheckTransactionLogsTest {
         ReplaceFileReferencesRequest expectedRequest = replaceJobFileReferences("test-job", List.of("input.parquet"), output).withNoUpdateTime();
         ReplaceFileReferencesTransaction expectedTransaction = new ReplaceFileReferencesTransaction(List.of(expectedRequest));
         TransactionLogEntry expectedEntry = new TransactionLogEntry(3, UPDATE_TIME, expectedTransaction);
-        assertThat(check.reportCompactionTransactionsChangedRecordCount()).containsExactly(
-                new CompactionChangedRecordCountReport(expectedEntry, expectedTransaction,
-                        List.of(new CompactionChangedRecordCount(expectedRequest, List.of(withJobId("test-job", input)), output))));
+        assertThat(check.reportCompactionTransactionsChangedRowCount()).containsExactly(
+                new CompactionChangedRowCountReport(expectedEntry, expectedTransaction,
+                        List.of(new CompactionChangedRowCount(expectedRequest, List.of(withJobId("test-job", input)), output))));
     }
 
     @Test
-    void shouldFindNoCompactionChangedNumberOfRecords() {
+    void shouldFindNoCompactionChangedNumberOfRows() {
         // Given
         FileReference input = fileFactory().rootFile("input.parquet", 100);
         FileReference output = fileFactory().rootFile("output.parquet", 100);
@@ -106,7 +107,24 @@ public class CheckTransactionLogsTest {
         CheckTransactionLogs check = checkState();
 
         // Then
-        assertThat(check.reportCompactionTransactionsChangedRecordCount()).isEmpty();
+        assertThat(check.reportCompactionTransactionsChangedRowCount()).isEmpty();
+    }
+
+    @Test
+    void shouldInferUnfinishedCompactionJob() {
+        // Given
+        FileReference file1 = fileFactory().rootFile("test1.parquet", 100);
+        FileReference file2 = fileFactory().rootFile("test2.parquet", 100);
+        update(stateStore).addFiles(List.of(file1, file2));
+        update(stateStore).assignJobId("test-job", List.of(file1, file2));
+
+        // When
+        CheckTransactionLogs check = checkState();
+
+        // Then
+        assertThat(check.inferLastCompactionJobFromAssignJobIdsTransaction()).isEqualTo(
+                new CompactionJobFactory(instanceProperties, tableProperties)
+                        .createCompactionJobWithFilenames("test-job", List.of("test1.parquet", "test2.parquet"), "root"));
     }
 
     private FileReferenceFactory fileFactory() {

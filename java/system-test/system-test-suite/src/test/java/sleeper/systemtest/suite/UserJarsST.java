@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -63,7 +63,7 @@ public class UserJarsST {
     @Test
     void shouldApplyTableIteratorFromUserJarDuringIngest(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.range(0, 100));
+        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
@@ -72,14 +72,14 @@ public class UserJarsST {
         sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.query().byQueue().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+        assertThat(sleeper.query().byQueue().allRowsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
     @Test
     void shouldApplyTableIteratorFromUserJarDuringCompaction(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
@@ -88,39 +88,39 @@ public class UserJarsST {
         sleeper.compaction().forceCreateJobs(1);
 
         // Then
-        assertThat(sleeper.query().byQueue().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+        assertThat(sleeper.query().byQueue().allRowsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
     @Test
     void shouldApplyTableIteratorFromUserJarDuringQuery(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
 
         // When
-        List<Record> records = sleeper.query().byQueue().allRecordsInTable();
+        List<Row> rows = sleeper.query().byQueue().allRowsInTable();
 
         // Then
-        assertThat(records)
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+        assertThat(rows)
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
     @Test
     void shouldApplyQueryIteratorFromUserJar(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When
-        List<Record> records = sleeper.query().byQueue().allRecordsWithProcessingConfig(builder -> builder
+        List<Row> rows = sleeper.query().byQueue().allRowsWithProcessingConfig(builder -> builder
                 .queryTimeIteratorClassName("sleeper.example.iterator.FixedAgeOffIterator")
                 .queryTimeIteratorConfig("timestamp,50"));
 
         // Then
-        assertThat(records)
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+        assertThat(rows)
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
     }
 
 }

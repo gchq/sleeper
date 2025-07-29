@@ -39,7 +39,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -227,19 +227,19 @@ public class CompactionTask {
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getPartition(job.getPartitionId());
-        RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
+        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition);
         Instant jobFinishTime = timeSupplier.get();
-        JobRunSummary summary = new JobRunSummary(recordsProcessed, jobStartTime, jobFinishTime);
+        JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
         return summary;
     }
 
     private void logMetrics(CompactionJob job, JobRunSummary summary) {
         LOGGER.info("Compaction job {}: finished at {}", job.getId(), summary.getFinishTime());
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
-        METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),
-                summary.getRecordsRead(), String.format("%.1f", summary.getRecordsReadPerSecond()));
-        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} records at {} per second", job.getId(),
-                summary.getRecordsWritten(), String.format("%.1f", summary.getRecordsWrittenPerSecond()));
+        METRICS_LOGGER.info("Compaction job {}: compaction read {} rows at {} per second", job.getId(),
+                summary.getRowsRead(), String.format("%.1f", summary.getRowsReadPerSecond()));
+        METRICS_LOGGER.info("Compaction job {}: compaction wrote {} rows at {} per second", job.getId(),
+                summary.getRowsWritten(), String.format("%.1f", summary.getRowsWrittenPerSecond()));
     }
 
     @FunctionalInterface

@@ -65,10 +65,10 @@ public class CompactionFakeCommitTest {
                 .waitForJobs();
 
         // Then
-        assertThat(sleeper.tableFiles().recordsByFilename())
+        assertThat(sleeper.tableFiles().rowsByFilename())
                 .isEqualTo(compactions.streamOutputFiles()
                         .collect(groupingBy(FileReference::getFilename,
-                                summingLong(FileReference::getNumberOfRecords))));
+                                summingLong(FileReference::getNumberOfRows))));
     }
 
 }

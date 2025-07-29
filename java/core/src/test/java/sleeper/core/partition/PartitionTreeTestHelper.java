@@ -15,7 +15,7 @@
  */
 package sleeper.core.partition;
 
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
@@ -31,40 +31,40 @@ public class PartitionTreeTestHelper {
     }
 
     /**
-     * Creates a partition tree by finding records at the boundaries. This can be used when we are generating predefined
-     * test data, and we can generate the nth record in sort order at will. This will create a leaf partition for each
-     * group of records where we specify the number of records in a group. The boundaries of each partition will be the
-     * value of the split field for the record at the boundary. This will take the first row key as the field to split
+     * Creates a partition tree by finding rows at the boundaries. This can be used when we are generating predefined
+     * test data, and we can generate the nth row in sort order at will. This will create a leaf partition for each
+     * group of rows where we specify the number of rows in a group. The boundaries of each partition will be the
+     * value of the split field for the row at the boundary. This will take the first row key as the field to split
      * on. This may be used to avoid needing to hold all the test data in memory at once.
      *
-     * @param  recordsPerPartition the number of records to fit in each partition
-     * @param  totalRecords        the total number of records that will be in the table
-     * @param  generator           a method to find the nth record in sort order
-     * @param  schema              the schema
-     * @return                     the partition tree
+     * @param  rowsPerPartition the number of rows to fit in each partition
+     * @param  totalRows        the total number of rows that will be in the table
+     * @param  generator        a method to find the nth row in sort order
+     * @param  schema           the schema
+     * @return                  the partition tree
      */
-    public static PartitionTree createPartitionTreeWithRecordsPerPartitionAndTotal(int recordsPerPartition, long totalRecords, NthRecordGenerator generator, Schema schema) {
+    public static PartitionTree createPartitionTreeWithRowsPerPartitionAndTotal(int rowsPerPartition, long totalRows, NthRowGenerator generator, Schema schema) {
         List<Object> splitPoints = new ArrayList<>();
         Field splitField = schema.getRowKeyFields().get(0);
-        for (long i = recordsPerPartition; i < totalRecords; i += recordsPerPartition) {
-            splitPoints.add(generator.getNthRecord(i).get(splitField.getName()));
+        for (long i = rowsPerPartition; i < totalRows; i += rowsPerPartition) {
+            splitPoints.add(generator.getNthRow(i).get(splitField.getName()));
         }
         return PartitionsFromSplitPoints.treeFrom(schema, splitPoints);
     }
 
     /**
-     * A generator for the nth record in sort order to generate test data on the fly. Used when the test data is defined
+     * A generator for the nth row in sort order to generate test data on the fly. Used when the test data is defined
      * deterministically to avoid needing to hold it all in memory at once.
      */
     @FunctionalInterface
-    public interface NthRecordGenerator {
+    public interface NthRowGenerator {
 
         /**
-         * Gets the nth record in the test data in sort order.
+         * Gets the nth row in the test data in sort order.
          *
-         * @param  n the index of the record, starting from 0
-         * @return   the record
+         * @param  n the index of the row, starting from 0
+         * @return   the row
          */
-        Record getNthRecord(long n);
+        Row getNthRow(long n);
     }
 }

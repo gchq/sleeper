@@ -58,6 +58,8 @@ sleeper.retain.infra.after.destroy=true
 sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack,QueryStack,AthenaStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack,DashboardStack,TableMetricsStack
 
 # The deployment type for AWS Lambda. Not case sensitive.
+# There are two types of Lambda deployments, jar and container.
+# If the size of the jar file is too large, it will always be deployed as a container.
 # Valid values: [jar, container]
 sleeper.lambda.deploy.type=jar
 
@@ -352,17 +354,17 @@ sleeper.ingest.task.status.ttl=604800
 # https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-short-and-long-polling.html
 sleeper.ingest.job.queue.wait.time=20
 
-# The maximum number of records written to local file in an ingest job. (Records are written in sorted
-# order to local disk before being uploaded to S3. Increasing this value increases the amount of time
-# before data is visible in the system, but increases the number of records written to S3 in a batch,
-# therefore reducing costs.)
+# The maximum number of rows written to local file in an ingest job. Rows are written in sorted order
+# to local disk before being uploaded to S3. Increasing this value increases the amount of time before
+# data is visible in the system, but increases the number of rows written to S3 in a batch, therefore
+# reducing costs.
 # (arraylist-based ingest only)
-sleeper.ingest.max.local.records=100000000
+sleeper.ingest.max.local.rows=100000000
 
-# The maximum number of records to read into memory in an ingest job. (Up to
-# sleeper.ingest.memory.max.batch.size records are read into memory before being sorted and written to
-# disk. This process is repeated until sleeper.ingest.max.local.records records have been written to
-# local files. Then the sorted files and merged and the data is written to sorted files in S3.)
+# The maximum number of rows to read into memory in an ingest job. (Up to
+# sleeper.ingest.memory.max.batch.size rows are read into memory before being sorted and written to
+# disk. This process is repeated until sleeper.ingest.max.local.rows rows have been written to local
+# files. Then the sorted files and merged and the data is written to sorted files in S3.)
 # (arraylist-based ingest only)
 sleeper.ingest.memory.max.batch.size=1000000
 
@@ -372,7 +374,7 @@ sleeper.ingest.memory.max.batch.size=1000000
 # (arrow-based ingest only) [256MB]
 sleeper.ingest.arrow.working.buffer.bytes=268435456
 
-# The number of bytes to allocate to the Arrow batch buffer, which is used to hold the records before
+# The number of bytes to allocate to the Arrow batch buffer, which is used to hold the rows before
 # they are written to local disk. A larger value means that the local disk holds fewer, larger files,
 # which are more efficient to merge together during an upload to S3. Larger values may require a
 # larger working buffer. Note that this is off-heap memory, which is in addition to the memory
@@ -386,11 +388,11 @@ sleeper.ingest.arrow.batch.buffer.bytes=1073741824
 # (arrow-based ingest only) [2GB]
 sleeper.ingest.arrow.max.local.store.bytes=2147483648
 
-# The number of records to write at once into an Arrow file in the local store. A single Arrow file
+# The number of rows to write at once into an Arrow file in the local store. A single Arrow file
 # contains many of these micro-batches and so this parameter does not significantly affect the final
 # size of the Arrow file. Larger values may require a larger working buffer.
 # (arrow-based ingest only) [1K]
-sleeper.ingest.arrow.max.single.write.to.file.records=1024
+sleeper.ingest.arrow.max.single.write.to.file.rows=1024
 
 # The implementation of the async S3 client to use for upload during ingest.
 # Valid values are 'java' or 'crt'. This determines the implementation of S3AsyncClient that gets
@@ -971,7 +973,7 @@ sleeper.partition.splitting.timeout.seconds=900
 sleeper.partition.splitting.reserved.concurrency=10
 
 # This is the default value of the partition splitting threshold. Partitions with more than the
-# following number of records in will be split. This value can be overridden on a per-table basis.
+# following number of rows in will be split. This value can be overridden on a per-table basis.
 sleeper.default.partition.splitting.threshold=1000000000
 
 
@@ -1318,12 +1320,12 @@ sleeper.query.processor.timeout.seconds=900
 # (i.e. the partitions and the mapping from partition to files), in seconds.
 sleeper.query.processor.state.refresh.period.seconds=60
 
-# The maximum number of records to include in a batch of query results send to the results queue from
-# the query processing lambda.
+# The maximum number of rows to include in a batch of query results send to the results queue from the
+# query processing lambda.
 sleeper.query.processor.results.batch.size=2000
 
-# The size of the thread pool for retrieving records in a query processing lambda.
-sleeper.query.processor.record.retrieval.threads=10
+# The size of the thread pool for retrieving rows in a query processing lambda.
+sleeper.query.processor.row.retrieval.threads=10
 
 # The default amount of time in seconds the query executor's cache of partition and file reference
 # information is valid for. After this it will time out and need refreshing.
@@ -1475,15 +1477,15 @@ sleeper.default.statestore.transactionlog.add.transaction.first.retry.wait.ceili
 # This default can be overridden by a table property.
 sleeper.default.statestore.transactionlog.add.transaction.max.retry.wait.ceiling.ms=30000
 
-# The number of elements to include per Arrow record batch in a snapshot derived from the transaction
+# The number of elements to include per Arrow row batch in a snapshot derived from the transaction
 # log, of the state of files in a Sleeper table. Each file includes some number of references on
-# different partitions. Each reference will count for one element in a record batch, but a file cannot
-# currently be split between record batches. A record batch may contain more file references than this
-# if a single file overflows the batch. A file with no references counts as one element.
+# different partitions. Each reference will count for one element in a row batch, but a file cannot
+# currently be split between row batches. A row batch may contain more file references than this if a
+# single file overflows the batch. A file with no references counts as one element.
 sleeper.default.statestore.transactionlog.files.snapshot.batch.size=1000
 
-# The number of partitions to include per Arrow record batch in a snapshot derived from the
-# transaction log, of the state of partitions in a Sleeper table.
+# The number of partitions to include per Arrow row batch in a snapshot derived from the transaction
+# log, of the state of partitions in a Sleeper table.
 sleeper.default.statestore.transactionlog.partitions.snapshot.batch.size=1000
 
 # The number of seconds to wait after we've loaded a snapshot before looking for a new snapshot. This
@@ -1578,11 +1580,11 @@ sleeper.default.ingest.batcher.file.tracking.ttl.minutes=10080
 # Valid values are: [one_file_per_leaf, one_reference_per_leaf]
 sleeper.default.ingest.file.writing.strategy=one_reference_per_leaf
 
-# The way in which records are held in memory before they are written to a local store.
+# The way in which rows are held in memory before they are written to a local store.
 # Valid values are 'arraylist' and 'arrow'.
-# The arraylist method is simpler, but it is slower and requires careful tuning of the number of
-# records in each batch.
-sleeper.default.ingest.record.batch.type=arrow
+# The arraylist method is simpler, but it is slower and requires careful tuning of the number of rows
+# in each batch.
+sleeper.default.ingest.row.batch.type=arrow
 
 # The way in which partition files are written to the main Sleeper store.
 # Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes

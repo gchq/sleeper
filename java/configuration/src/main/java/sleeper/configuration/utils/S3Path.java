@@ -31,12 +31,26 @@ public record S3Path(String requestedPath, String bucket, String prefix) {
      * @return      the parsed location in S3
      */
     public static S3Path parse(String path) {
-        if (!path.contains("/")) {
-            return new S3Path(path, path, "");
+        String bucketPath = pathStartsWithScheme(path) ? path.substring(path.indexOf("//") + 2) : path;
+
+        if (!bucketPath.contains("/")) {
+            return new S3Path(path, bucketPath, "");
         } else {
+            int firstSlashLocation = bucketPath.indexOf("/");
             return new S3Path(path,
-                    path.substring(0, path.indexOf("/")),
-                    path.substring(path.indexOf("/") + 1));
+                    bucketPath.substring(0, firstSlashLocation),
+                    getPrefixAfterSlashes(bucketPath.substring(firstSlashLocation + 1)));
         }
+    }
+
+    private static boolean pathStartsWithScheme(String path) {
+        return path.startsWith("s3://") || path.startsWith("s3a://");
+    }
+
+    private static String getPrefixAfterSlashes(String path) {
+        while (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        return path;
     }
 }

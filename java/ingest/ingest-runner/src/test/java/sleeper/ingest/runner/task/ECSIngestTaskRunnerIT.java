@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -29,7 +29,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.ingest.runner.testutils.RowGenerator;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 import sleeper.sketches.testutils.SketchesDeciles;
@@ -46,7 +46,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
+import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRowsFromPartitionDataFiles;
 
 public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     private void runTask(String localDir, String taskId) throws Exception {
@@ -65,17 +65,17 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     @Test
     public void shouldIngestParquetFilesPutOnTheQueue() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 2);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        List<String> files = writeParquetFilesForIngest(rowListAndSchema, "", 2);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        List<Record> expectedRecords = Collections.nCopies(2, recordListAndSchema.recordList).stream()
+        List<Row> expectedRows = Collections.nCopies(2, rowListAndSchema.rowList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
+        StateStore stateStore = createTable(rowListAndSchema.sleeperSchema);
 
         sendJobs(List.of(createJobWithTableAndFiles("job", tableProperties.getStatus(), files)));
 
@@ -87,18 +87,18 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
         FileReference expectedFile = fileReferenceFactory.rootFile(actualFiles.get(0).getFilename(), 400);
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     @Test
     public void shouldContinueReadingFromQueueWhileMoreMessagesExist() throws Exception {
         // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RowGenerator.RowListAndSchema rowListAndSchema = RowGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         int noOfJobs = 10;
@@ -106,13 +106,13 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
         List<IngestJob> ingestJobs = IntStream.rangeClosed(1, noOfJobs)
                 .mapToObj(jobNo -> "job-" + jobNo)
                 .map(jobId -> IngestJob.builder().tableName(tableName).id(jobId)
-                        .files(writeParquetFilesForIngest(recordListAndSchema, jobId, noOfFilesPerJob))
+                        .files(writeParquetFilesForIngest(rowListAndSchema, jobId, noOfFilesPerJob))
                         .build())
                 .collect(Collectors.toList());
-        List<Record> expectedRecords = Collections.nCopies(40, recordListAndSchema.recordList).stream()
+        List<Row> expectedRows = Collections.nCopies(40, rowListAndSchema.rowList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
+        StateStore stateStore = createTable(rowListAndSchema.sleeperSchema);
 
         sendJobs(ingestJobs);
 
@@ -121,8 +121,8 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
+        PartitionTree tree = new PartitionsBuilder(rowListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree,
@@ -133,9 +133,9 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime", "filename")
                 .containsExactlyElementsOf(Collections.nCopies(10,
                         fileReferenceFactory.rootFile("anyfilename", 800)));
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
+                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
     }
 
     private void sendJobs(List<IngestJob> jobs) {

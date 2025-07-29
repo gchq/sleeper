@@ -16,24 +16,23 @@
 package sleeper.athena.record;
 
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.filter2.compat.FilterCompat;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.hadoop.ParquetReader;
+import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.FilterTranslator;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowReader;
 
 import java.util.List;
 import java.util.Set;
@@ -50,8 +49,8 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
         super();
     }
 
-    public SimpleRecordHandler(AmazonS3 s3ClientV1, S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3ClientV1, s3Client, dynamoDB, configBucket, secretsManager, athena);
+    public SimpleRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, SecretsManagerClient secretsManager, AthenaClient athena) {
+        super(s3Client, dynamoDB, configBucket, secretsManager, athena);
     }
 
     /**
@@ -93,13 +92,13 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
      * @throws Exception       if something goes wrong with the read
      */
     @Override
-    protected CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception {
+    protected CloseableIterator<Row> createRowIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception {
         String fileName = recordsRequest.getSplit().getProperty(RELEVANT_FILES_FIELD);
 
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = filterTranslator.toPredicate(recordsRequest.getConstraints().getSummary());
 
-        ParquetReader.Builder<Record> recordReaderBuilder = new ParquetRecordReader.Builder(new Path(fileName), schema)
+        ParquetReader.Builder<Row> recordReaderBuilder = new ParquetRowReader.Builder(new Path(fileName), schema)
                 .withConf(getConfigurationForTable(tableProperties));
 
         if (filterPredicate != null) {

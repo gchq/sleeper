@@ -37,7 +37,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
@@ -48,8 +48,8 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
@@ -92,7 +92,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private static final int NO_OF_EXECUTOR_THREADS = 10;
     private static final int PARTITION_CACHE_EXPIRY_VALUE = 60;
     private static final TimeUnit PARTITION_CACHE_EXPIRY_UNITS = TimeUnit.MINUTES;
-    public static final int MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
+    public static final int MAX_NO_OF_ROWS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
     public static final long WORKING_ARROW_BUFFER_ALLOCATOR_BYTES = 64 * 1024 * 1024L;
     public static final long BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN = 64 * 1024 * 1024L;
     private static final int INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = 120;
@@ -240,12 +240,12 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @throws QueryException     if something goes wrong
      * @throws ExecutionException if something goes wrong
      */
-    public Stream<Record> createResultRecordStream(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException {
-        CloseableIterator<Record> resultRecordIterator = createResultRecordIterator(asOfInstant, query);
-        Spliterator<Record> resultRecordSpliterator = Spliterators.spliteratorUnknownSize(
+    public Stream<Row> createResultRecordStream(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException {
+        CloseableIterator<Row> resultRecordIterator = createResultRecordIterator(asOfInstant, query);
+        Spliterator<Row> resultRecordSpliterator = Spliterators.spliteratorUnknownSize(
                 resultRecordIterator,
                 Spliterator.NONNULL | Spliterator.IMMUTABLE);
-        Stream<Record> resultRecordStream = StreamSupport.stream(resultRecordSpliterator, false);
+        Stream<Row> resultRecordStream = StreamSupport.stream(resultRecordSpliterator, false);
         return resultRecordStream.onClose(() -> {
             try {
                 resultRecordIterator.close();
@@ -278,7 +278,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 objectFactory,
                 tableProperties,
                 null,
-                new LeafPartitionRecordRetrieverImpl(executorService,
+                new LeafPartitionRowRetrieverImpl(executorService,
                         hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
                         tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
@@ -297,7 +297,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @throws ExecutionException          if something goes wrong
      * @throws UncheckedExecutionException if something goes wrong
      */
-    private CloseableIterator<Record> createResultRecordIterator(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException, UncheckedExecutionException {
+    private CloseableIterator<Row> createResultRecordIterator(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException, UncheckedExecutionException {
         TableProperties tableProperties = tablePropertiesProvider.getById(query.getTableId());
         StateStore stateStore = this.stateStoreFactory.getStateStore(tableProperties);
         SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(query.getTableId(), asOfInstant));
@@ -307,7 +307,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 this.objectFactory,
                 tableProperties,
                 stateStore,
-                new LeafPartitionRecordRetrieverImpl(executorService,
+                new LeafPartitionRowRetrieverImpl(executorService,
                         hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
                         tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
@@ -320,7 +320,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @param  tableName The table to add the rows to.
      * @return           The new {@link IngestCoordinator} object.
      */
-    public IngestCoordinator<Page> createIngestRecordsAsync(String tableName) {
+    public IngestCoordinator<Page> createIngestRowsAsync(String tableName) {
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         // Use of the state store provider is not thread-safe and this requires the use of a synchronized method.
         // The state store which is returned may not be thread-safe either.

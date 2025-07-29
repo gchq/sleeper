@@ -26,14 +26,13 @@ import com.amazonaws.athena.connector.lambda.data.writers.extractors.VarBinaryEx
 import com.amazonaws.athena.connector.lambda.data.writers.extractors.VarCharExtractor;
 import com.amazonaws.athena.connector.lambda.handlers.RecordHandler;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
-import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.athena.AthenaClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -41,7 +40,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.Record;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -71,13 +70,13 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     }
 
     public SleeperRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket) {
-        super(SOURCE_TYPE);
+        super(SOURCE_TYPE, System.getenv());
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
     }
 
-    public SleeperRecordHandler(AmazonS3 s3ClientV1, S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3ClientV1, secretsManager, athena, SOURCE_TYPE);
+    public SleeperRecordHandler(S3Client s3Client, DynamoDbClient dynamoDB, String configBucket, SecretsManagerClient secretsManager, AthenaClient athena) {
+        super(s3Client, secretsManager, athena, SOURCE_TYPE, System.getenv());
         this.instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDB);
     }
@@ -98,7 +97,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
         TableProperties tableProperties = tablePropertiesProvider.getByName(recordsRequest.getTableName().getTableName());
 
         Schema schema = createSchemaForDataRead(tableProperties.getSchema(), recordsRequest);
-        CloseableIterator<Record> recordIterator = createRecordIterator(recordsRequest, schema, tableProperties);
+        CloseableIterator<Row> recordIterator = createRowIterator(recordsRequest, schema, tableProperties);
 
         // Null indicates there is no data to read
         if (recordIterator == null) {
@@ -111,7 +110,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
         GeneratedRowWriter writer = rowWriterBuilder.build();
 
         while (recordIterator.hasNext()) {
-            Record next = recordIterator.next();
+            Row next = recordIterator.next();
             spiller.writeRows((block, rowNum) -> writer.writeRow(block, rowNum, next) ? 1 : 0);
         }
 
@@ -140,7 +139,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      * @implNote                 do not use the schema in the table properties as it could differ from the schema
      *                           provided
      */
-    protected abstract CloseableIterator<Record> createRecordIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
+    protected abstract CloseableIterator<Row> createRowIterator(ReadRecordsRequest recordsRequest, Schema schema, TableProperties tableProperties) throws Exception;
 
     /**
      * Configures the writer so that it can write records from Sleeper to Athena.
@@ -180,9 +179,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addByteArrayExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (VarBinaryExtractor) (context, dst) -> {
-            Record record = (Record) context;
+            Row row = (Row) context;
             dst.isSet = 1;
-            dst.value = (byte[]) record.get(name);
+            dst.value = (byte[]) row.get(name);
         });
     }
 
@@ -195,8 +194,8 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addListExtractorFactory(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name, ListType type) {
         rowWriterBuilder.withFieldWriterFactory(name, (vector, extractor, constraint) -> (context, rowNum) -> {
-            Record record = (Record) context;
-            Object object = record.get(name);
+            Row row = (Row) context;
+            Object object = row.get(name);
             if (object != null) {
                 BlockUtils.setComplexValue(vector, rowNum, FieldResolver.DEFAULT, object);
             }
@@ -212,9 +211,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addStringExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (VarCharExtractor) (context, dst) -> {
-            Record record = (Record) context;
+            Row row = (Row) context;
             dst.isSet = 1;
-            dst.value = (String) record.get(name);
+            dst.value = (String) row.get(name);
         });
     }
 
@@ -226,9 +225,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addLongExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (BigIntExtractor) (context, dst) -> {
-            Record record = (Record) context;
+            Row row = (Row) context;
             dst.isSet = 1;
-            dst.value = (Long) record.get(name);
+            dst.value = (Long) row.get(name);
         });
     }
 
@@ -240,9 +239,9 @@ public abstract class SleeperRecordHandler extends RecordHandler {
      */
     private void addIntExtractor(GeneratedRowWriter.RowWriterBuilder rowWriterBuilder, String name) {
         rowWriterBuilder.withExtractor(name, (IntExtractor) (context, dst) -> {
-            Record record = (Record) context;
+            Row row = (Row) context;
             dst.isSet = 1;
-            dst.value = (Integer) record.get(name);
+            dst.value = (Integer) row.get(name);
         });
     }
 

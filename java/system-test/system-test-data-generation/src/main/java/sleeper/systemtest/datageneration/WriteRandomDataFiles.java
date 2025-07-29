@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.core.row.Row;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
@@ -46,20 +46,20 @@ public class WriteRandomDataFiles {
         String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + job.getJobId();
 
         writeToPath(dir, "s3a://", tableProperties,
-                WriteRandomData.createRecordIterator(job, tableProperties),
+                WriteRandomData.createRowIterator(job, tableProperties),
                 hadoopConf);
         return dir;
     }
 
     public static void writeFilesToDirectory(
             String directory, InstanceProperties instanceProperties,
-            TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException {
+            TableProperties tableProperties, Iterator<Row> rowIterator) throws IOException {
         Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
-        writeToPath(directory, "file:///", tableProperties, recordIterator, conf);
+        writeToPath(directory, "file:///", tableProperties, rowIterator, conf);
     }
 
     private static void writeToPath(
-            String dir, String filePathPrefix, TableProperties tableProperties, Iterator<Record> recordIterator,
+            String dir, String filePathPrefix, TableProperties tableProperties, Iterator<Row> rowIterator,
             Configuration conf) throws IOException {
         int fileNumber = 0;
         if (!dir.endsWith("/")) {
@@ -67,26 +67,26 @@ public class WriteRandomDataFiles {
         }
         String filename = dir + fileNumber + ".parquet";
         String path = filePathPrefix + filename;
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+        ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(path), tableProperties, conf);
         long count = 0L;
         LOGGER.info("Created writer to path {}", path);
-        while (recordIterator.hasNext()) {
-            writer.write(recordIterator.next());
+        while (rowIterator.hasNext()) {
+            writer.write(rowIterator.next());
             count++;
             if (0 == count % 1_000_000L) {
-                LOGGER.info("Wrote {} records", count);
+                LOGGER.info("Wrote {} rows", count);
                 if (0 == count % 100_000_000L) {
                     writer.close();
                     LOGGER.info("Closed writer to path {}", path);
                     fileNumber++;
                     filename = dir + fileNumber + ".parquet";
                     path = filePathPrefix + filename;
-                    writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
+                    writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(path), tableProperties, conf);
                 }
             }
         }
         LOGGER.info("Closed writer to path {}", path);
         writer.close();
-        LOGGER.info("Wrote {} records", count);
+        LOGGER.info("Wrote {} rows", count);
     }
 }
