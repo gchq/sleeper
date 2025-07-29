@@ -14,7 +14,7 @@ to version 0.32.0*
 This contains fixes to compaction with DataFusion, and preparation for deployment from published artefacts.
 
 Ingest:
-- All ingest systems (standard, bulk import, batcher) now allow filenames including a scheme such as s3a:// or s3://
+- All ingest systems (standard, bulk import, batcher) now allow filenames including the scheme s3a:// or s3://
 
 Iterators:
 - Experimental aggregation configuration can now be used as an iterator in Java as well as in DataFusion
