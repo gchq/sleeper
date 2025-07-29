@@ -24,7 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class S3PathTest {
 
     @Test
-    public void shouldhandleMakingS3PathPathWithoutPrefix() {
+    public void shouldHandlePathWithoutPrefix() {
+        //Given
         String path = "justBucket";
 
         //When
@@ -37,7 +38,8 @@ public class S3PathTest {
     }
 
     @Test
-    public void shouldhandleMakingS3PathPathWithPrefix() {
+    public void shouldHandlePathWithPrefix() {
+        //Given
         String path = "bucket/prefix";
 
         //When
@@ -50,7 +52,8 @@ public class S3PathTest {
     }
 
     @Test
-    public void shouldhandleMakingS3PathPathWithPrefixAndDoubleSlash() {
+    public void shouldHandlePathWithPrefixAndDoubleSlash() {
+        //Given
         String path = "bucket//prefix";
 
         //When
@@ -64,7 +67,7 @@ public class S3PathTest {
 
     @ParameterizedTest
     @CsvSource({"s3://bucket/prefix", "s3a://bucket/prefix"})
-    public void shouldhandleMakingS3PathPathWithScheme(String path) {
+    public void shouldHandlePathWithScheme(String path) {
         //When
         S3Path s3Path = S3Path.parse(path);
 
