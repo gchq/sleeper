@@ -17,7 +17,7 @@ Ingest:
 - All ingest systems (standard, bulk import, batcher) now allow filenames including a scheme such as s3a:// or s3://
 
 Compaction:
-- Experimental aggregation configuration can now be used for compactions with the Java runner as well as DataFusion
+- Experimental aggregation configuration can now be used for compactions, queries and ingest in Java as well as in DataFusion
 
 Query:
 - The web socket query client in Java now parses returned rows for further processing, where previously they were returned as strings
