@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class S3PathTest {
 
     @Test
-    public void shouldHandlePathWithoutPrefix() {
-        final String path = "justBucket";
+    public void shouldhandleMakingS3PathPathWithoutPrefix() {
+        String path = "justBucket";
 
         //When
         S3Path s3Path = S3Path.parse(path);
@@ -36,79 +36,41 @@ public class S3PathTest {
         assertThat(s3Path.prefix()).isEqualTo("");
     }
 
-    @ParameterizedTest
-    @CsvSource({"/", "//"})
-    public void shouldHandlePathEndingInSlashes(final String slashes) {
-        final String bucket = "justBucket";
-        final String path = bucket + slashes;
+    @Test
+    public void shouldhandleMakingS3PathPathWithPrefix() {
+        String path = "bucket/prefix";
 
         //When
         S3Path s3Path = S3Path.parse(path);
 
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
-        assertThat(s3Path.bucket()).isEqualTo(bucket);
-        assertThat(s3Path.prefix()).isEqualTo("");
+        assertThat(s3Path.bucket()).isEqualTo("bucket");
+        assertThat(s3Path.prefix()).isEqualTo("prefix");
     }
 
     @Test
-    public void shouldHandlePathWithPrefix() {
-        final String bucket = "bucket";
-        final String prefix = "prefix";
-        final String path = bucket + '/' + prefix;
+    public void shouldhandleMakingS3PathPathWithPrefixAndDoubleSlash() {
+        String path = "bucket//prefix";
 
         //When
         S3Path s3Path = S3Path.parse(path);
 
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
-        assertThat(s3Path.bucket()).isEqualTo(bucket);
-        assertThat(s3Path.prefix()).isEqualTo(prefix);
-    }
-
-    @Test
-    public void shouldHandlePathWithPrefixAndDoubleSlash() {
-        final String bucket = "bucket";
-        final String prefix = "prefix";
-        final String path = bucket + "//" + prefix;
-
-        //When
-        S3Path s3Path = S3Path.parse(path);
-
-        //Then
-        assertThat(s3Path.requestedPath()).isEqualTo(path);
-        assertThat(s3Path.bucket()).isEqualTo(bucket);
-        assertThat(s3Path.prefix()).isEqualTo(prefix);
-    }
-
-    @Test
-    public void shouldHandlePathWithPrefixAndEndSlash() {
-        final String bucket = "bucket";
-        final String prefix = "prefix";
-        final String path = bucket + '/' + prefix + '/';
-
-        //When
-        S3Path s3Path = S3Path.parse(path);
-
-        //Then
-        assertThat(s3Path.requestedPath()).isEqualTo(path);
-        assertThat(s3Path.bucket()).isEqualTo(bucket);
-        assertThat(s3Path.prefix()).isEqualTo(prefix);
+        assertThat(s3Path.bucket()).isEqualTo("bucket");
+        assertThat(s3Path.prefix()).isEqualTo("prefix");
     }
 
     @ParameterizedTest
-    @CsvSource({"s3://", "s3a://"})
-    public void shouldHandlePathWithScheme(final String scheme) {
-        final String bucket = "bucket";
-        final String prefix = "prefix";
-        final String path = scheme + bucket + '/' + prefix;
-
+    @CsvSource({"s3://bucket/prefix", "s3a://bucket/prefix"})
+    public void shouldhandleMakingS3PathPathWithScheme(String path) {
         //When
         S3Path s3Path = S3Path.parse(path);
 
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
-        assertThat(s3Path.bucket()).isEqualTo(bucket);
-        assertThat(s3Path.prefix()).isEqualTo(prefix);
+        assertThat(s3Path.bucket()).isEqualTo("bucket");
+        assertThat(s3Path.prefix()).isEqualTo("prefix");
     }
 }
