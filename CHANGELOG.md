@@ -24,7 +24,7 @@ Iterators:
 
 Query:
 - The web socket query client in Java now parses returned rows for further processing, where previously they were returned as strings
-- Experimental code to query via a web socket in Python
+- Added experimental example code to query via a web socket in Python
 
 Reporting:
 - Included reasons for failures in reports on unfinished jobs
