@@ -20,7 +20,7 @@ Compaction:
 - Experimental DataFusion aggregation support is now applied automatically for Java compactions
 
 Query:
-- For queries via a web socket in Java, returned parsed records to the client, where previously they were returned as strings
+- The web socket query client in Java now parses returned rows for further processing, where previously they were returned as strings
 - Experimental code to query via a web socket in Python
 
 Reporting:
