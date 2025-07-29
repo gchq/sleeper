@@ -148,6 +148,24 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
             assertThat(listFileSizeBytes(files))
                     .containsExactlyInAnyOrder(30L, 100L);
         }
+
+        @Test
+        void shouldReadOnlyFolderContentWhenPathEndsInSlash() {
+            // Given
+            List<String> files = List.of(bucket + "/test-folder/");
+            String objectKey1 = "test-folder";
+            String objectKey2 = "test-folder/file-1.parquet";
+            String objectKey3 = "test-folder/file-2.parquet";
+            putObject(bucket, objectKey1, "test-data");
+            putObject(bucket, objectKey2, "test-data");
+            putObject(bucket, objectKey3, "test-data");
+
+            // When / Then
+            assertThat(listPathsForJob(files))
+                    .containsExactlyInAnyOrder(
+                            bucket + "/" + objectKey2,
+                            bucket + "/" + objectKey3);
+        }
     }
 
     @Nested
