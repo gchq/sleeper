@@ -150,7 +150,7 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldReadCorrectFilesWhenPathEndsInSlash() {
+        void shouldReadOnlyFolderContentWhenPathEndsInSlash() {
             // Given
             List<String> files = List.of(bucket + "/test-folder/");
             String objectKey1 = "test-folder";
