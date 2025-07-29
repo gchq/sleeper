@@ -16,8 +16,11 @@ This contains fixes to compaction with DataFusion, and preparation for deploymen
 Ingest:
 - All ingest systems (standard, bulk import, batcher) now allow filenames including a scheme such as s3a:// or s3://
 
-Compaction:
-- Experimental aggregation configuration can now be used for compactions, queries and ingest in Java as well as in DataFusion
+Iterators:
+- Experimental aggregation configuration can now be used as an iterator in Java as well as in DataFusion
+  - This means it can now be applied to queries and standard ingest as well as compaction
+  - This can be configured as in issue https://github.com/gchq/sleeper/issues/4344
+  - This will be redesigned in issue https://github.com/gchq/sleeper/issues/5102
 
 Query:
 - The web socket query client in Java now parses returned rows for further processing, where previously they were returned as strings
