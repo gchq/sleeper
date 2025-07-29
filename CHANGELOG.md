@@ -18,8 +18,8 @@ Ingest:
   - Previously the scheme had to be omitted
 
 Iterators:
-- Experimental aggregation configuration can now be used as an iterator in Java as well as in DataFusion
-  - This means it is now applied to queries and standard ingest as well as compaction
+- Experimental aggregation configuration is now applied to queries, standard ingest and compactions in Java
+  - This is set as an iterator, but previously it was only applied in compactions with DataFusion
   - This can be configured as in issue https://github.com/gchq/sleeper/issues/4344
   - This will be redesigned in issue https://github.com/gchq/sleeper/issues/5102
 
