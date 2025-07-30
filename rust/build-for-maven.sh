@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -e
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
