@@ -20,6 +20,8 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.ecs.model.ClusterNotFoundException;
+import software.amazon.awssdk.services.ecs.model.ListContainerInstancesResponse;
 
 import java.util.Map;
 
@@ -53,8 +55,40 @@ public class AutoDeleteEcsClusterLambda {
     }
 
     private void deleteCluster(String clusterName) {
-        // Need to de-register containers from cluster
-        ecsClient.deleteCluster(request -> request.cluster(clusterName));
+        try {
+            LOGGER.info("Deleting cluster {}", clusterName);
+            ecsClient.listContainerInstancesPaginator(builder -> builder.cluster(clusterName))
+                    .stream()
+                    .parallel()
+                    .forEach(response -> {
+                        deregisterContainer(clusterName, response);
+                    });
+            ecsClient.deleteCluster(request -> request.cluster(clusterName));
+        } catch (ClusterNotFoundException e) {
+            LOGGER.info("Cluster not found: {}", clusterName);
+        }
+    }
+
+    private void deregisterContainer(String clusterName, ListContainerInstancesResponse response) {
+        if (!response.containerInstanceArns().isEmpty()) {
+            LOGGER.info("De-registering {} containers", response.containerInstanceArns().size());
+            response.containerInstanceArns().forEach(container -> {
+                stopContainerTasks(clusterName, container);
+                ecsClient.deregisterContainerInstance(builder -> builder.cluster(clusterName)
+                        .containerInstance(container));
+            });
+        }
+    }
+
+    private void stopContainerTasks(String clusterName, String containerName) {
+        if (!containerName.isEmpty()) {
+            ecsClient.listTasks(builder -> builder.cluster(clusterName)
+                    .containerInstance(containerName)).taskArns().forEach(task -> {
+                        LOGGER.info("Stopping task {} in container {} ", task, containerName);
+                        ecsClient.stopTask(builder -> builder.cluster(clusterName)
+                                .task(task));
+                    });
+        }
     }
 
 }
