@@ -125,6 +125,16 @@ public class LambdaJar {
     }
 
     /**
+     * This method formats the filename with the supplied version.
+     *
+     * @param  version the version of sleeper to use in the format
+     * @return         a formatted filename with the version in it
+     */
+    public String getFormattedFilename(String version) {
+        return String.format(filenameFormat, version);
+    }
+
+    /**
      * Retrieves the name of the ECR repository for deploying this jar as a Docker container.
      *
      * @param  instanceProperties the instance properties

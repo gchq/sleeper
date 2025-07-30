@@ -50,6 +50,16 @@ public class ClientJar {
         return artifactId;
     }
 
+    /**
+     * This method formats the filename with the supplied version.
+     *
+     * @param  version the version of sleeper to use in the format
+     * @return         a formatted filename with the version in it
+     */
+    public String getFormattedFilename(String version) {
+        return String.format(filenameFormat, version);
+    }
+
     @Override
     public String toString() {
         return "ClientJar{filename=" + filenameFormat + ", imageName=" + artifactId + "}";

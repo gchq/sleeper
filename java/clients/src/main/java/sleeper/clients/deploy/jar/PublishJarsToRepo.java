@@ -70,23 +70,23 @@ public class PublishJarsToRepo {
      */
     public void upload() {
         for (ClientJar clientJar : ClientJar.getAll()) {
-            deployJars(clientJar.getFilenameFormat(), clientJar.getArtifactId());
+            deployJars(clientJar.getFormattedFilename(version), clientJar.getArtifactId());
         }
 
         for (LambdaJar lambdaJar : LambdaJar.getAll()) {
-            deployJars(lambdaJar.getFilenameFormat(), lambdaJar.getArtifactId());
+            deployJars(lambdaJar.getFormattedFilename(version), lambdaJar.getArtifactId());
         }
     }
 
     //Requires matching server with auth details in local m2 settings.xml <servers>
-    private void deployJars(String filename, String imageName) {
+    private void deployJars(String filename, String artifactId) {
         try {
             commandRunner.run("mvn", "deploy:deploy-file", "-q",
                     "-Durl=" + repoUrl,
                     "-DrepositoryId=repo.id", //Requires matching server with auth details in local m2 settings.xml <servers>
-                    "-Dfile=" + pathOfJarsDirectory.resolve(String.format(filename, version)),
+                    "-Dfile=" + pathOfJarsDirectory.resolve(filename),
                     "-DgroupId=sleeper",
-                    "-DartifactId=" + imageName,
+                    "-DartifactId=" + artifactId,
                     "-Dversion=" + version,
                     "-DgeneratePom=false");
         } catch (IOException | InterruptedException e) {
