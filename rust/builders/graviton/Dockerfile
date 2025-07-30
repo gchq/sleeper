@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ghcr.io/gchq/sleeper-rust-builder-base:latest
+ARG BASE_IMAGE="sleeper-rust-builder-base:current"
+FROM ${BASE_IMAGE}
 
 RUN apt-get install --assume-yes --no-install-recommends \
     g++-aarch64-linux-gnu \

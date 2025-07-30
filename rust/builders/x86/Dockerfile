@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ghcr.io/gchq/sleeper-rust-builder-base:latest
+ARG BASE_IMAGE="sleeper-rust-builder-base:current"
+FROM ${BASE_IMAGE}
 
 RUN rustup target add x86_64-unknown-linux-gnu
 RUN rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host

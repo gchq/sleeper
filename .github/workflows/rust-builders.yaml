@@ -50,13 +50,12 @@ jobs:
             build-url=${{ env.BUILD_URL }}
       - name: Pull base image from local registry
         run: docker pull ${{ env.BASE_IMAGE }}
-      - name: Retag base image
-        run: docker tag ${{ env.BASE_IMAGE }} ghcr.io/gchq/sleeper-rust-builder-base:latest
       - name: Build x86 Docker image
         uses: docker/build-push-action@v4
         with:
           context: ./rust/builders/x86
           tags: ghcr.io/gchq/sleeper-rust-builder-x86:latest
+          build-args: BASE_IMAGE=${{ env.BASE_IMAGE }}
           sbom: false
           provenance: false
           platforms: ${{ env.DOCKER_PLATFORMS }}
@@ -69,6 +68,7 @@ jobs:
         with:
           context: ./rust/builders/graviton
           tags: ghcr.io/gchq/sleeper-rust-builder-graviton:latest
+          build-args: BASE_IMAGE=${{ env.BASE_IMAGE }}
           sbom: false
           provenance: false
           platforms: ${{ env.DOCKER_PLATFORMS }}
