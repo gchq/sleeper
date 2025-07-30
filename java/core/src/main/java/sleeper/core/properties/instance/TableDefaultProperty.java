@@ -18,10 +18,12 @@ package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.CompressionCodec;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.model.IngestQueue;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
+import sleeper.core.properties.table.TablePropertyGroup;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.List;
@@ -363,6 +365,12 @@ public interface TableDefaultProperty {
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_DATA_ENGINE = Index.propertyBuilder("sleeper.default.table.data.engine")
+            .description("Select which data engine to use for the table. DataFusion support is experimental. " +
+                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
+            .defaultValue(DataEngine.JAVA.toString())
+            .validationPredicate(DataEngine::isValid)
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
