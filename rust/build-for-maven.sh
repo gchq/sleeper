@@ -16,7 +16,7 @@
 set -ex
 unset CDPATH
 
-THIS_DIR=$(cd "$(dirname "$0")" && && pwd)
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 
 # Redirects stderr to stdout, so that Maven will log the output at INFO level instead of ERROR
 "$THIS_DIR"/build-in-docker.sh "$@" 2>&1
