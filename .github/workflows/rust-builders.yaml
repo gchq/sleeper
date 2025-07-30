@@ -10,6 +10,7 @@ on:
 env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  BASE_IMAGE: localhost:5000/sleeper-rust-builder-base:latest
 
 jobs:
   build:
@@ -33,7 +34,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./rust/builders/base
-          tags: ghcr.io/gchq/sleeper-rust-builder-base:latest
+          tags: ${{ env.BASE_IMAGE }}
           sbom: false
           provenance: false
           platforms: ${{ env.DOCKER_PLATFORMS }}
@@ -41,6 +42,10 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
+      - name: Pull base image from buildx
+        run: |
+          docker pull ${{ env.BASE_IMAGE }}
+          docker tag ${{ env.BASE_IMAGE }} ghcr.io/gchq/sleeper-rust-builder-base:latest
       - name: Build x86 Docker image
         uses: docker/build-push-action@v4
         with:
