@@ -49,9 +49,9 @@ jobs:
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
       - name: Pull base image from local registry
-        run: |
-          docker pull ${{ env.BASE_IMAGE }}
-          docker tag ${{ env.BASE_IMAGE }} ghcr.io/gchq/sleeper-rust-builder-base:latest
+        run: docker pull ${{ env.BASE_IMAGE }}
+      - name: Retag base image
+        run: docker tag ${{ env.BASE_IMAGE }} ghcr.io/gchq/sleeper-rust-builder-base:latest
       - name: Build x86 Docker image
         uses: docker/build-push-action@v4
         with:
