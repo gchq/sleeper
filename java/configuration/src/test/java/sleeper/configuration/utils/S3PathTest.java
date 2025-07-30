@@ -25,7 +25,8 @@ public class S3PathTest {
 
     @Test
     public void shouldHandlePathWithoutPrefix() {
-        final String path = "justBucket";
+        //Given
+        String path = "justBucket";
 
         //When
         S3Path s3Path = S3Path.parse(path);
@@ -38,32 +39,41 @@ public class S3PathTest {
 
     @Test
     public void shouldHandlePathWithPrefix() {
-        final String bucket = "bucket";
-        final String prefix = "prefix";
-        final String path = bucket + '/' + prefix;
+        //Given
+        String path = "bucket/prefix";
 
         //When
         S3Path s3Path = S3Path.parse(path);
 
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
-        assertThat(s3Path.bucket()).isEqualTo(bucket);
-        assertThat(s3Path.prefix()).isEqualTo(prefix);
+        assertThat(s3Path.bucket()).isEqualTo("bucket");
+        assertThat(s3Path.prefix()).isEqualTo("prefix");
+    }
+
+    @Test
+    public void shouldHandlePathWithPrefixAndDoubleSlash() {
+        //Given
+        String path = "bucket//prefix";
+
+        //When
+        S3Path s3Path = S3Path.parse(path);
+
+        //Then
+        assertThat(s3Path.requestedPath()).isEqualTo(path);
+        assertThat(s3Path.bucket()).isEqualTo("bucket");
+        assertThat(s3Path.prefix()).isEqualTo("prefix");
     }
 
     @ParameterizedTest
-    @CsvSource({"s3://", "s3a://"})
-    public void shouldHandlePathWithScheme(final String scheme) {
-        final String bucket = "bucket";
-        final String prefix = "prefix";
-        final String path = scheme + bucket + '/' + prefix;
-
+    @CsvSource({"s3://bucket/prefix", "s3a://bucket/prefix"})
+    public void shouldHandlePathWithScheme(String path) {
         //When
         S3Path s3Path = S3Path.parse(path);
 
         //Then
         assertThat(s3Path.requestedPath()).isEqualTo(path);
-        assertThat(s3Path.bucket()).isEqualTo(bucket);
-        assertThat(s3Path.prefix()).isEqualTo(prefix);
+        assertThat(s3Path.bucket()).isEqualTo("bucket");
+        assertThat(s3Path.prefix()).isEqualTo("prefix");
     }
 }
