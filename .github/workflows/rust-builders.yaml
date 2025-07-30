@@ -44,11 +44,11 @@ jobs:
           sbom: false
           provenance: false
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          push: false
+          push: true
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-      - name: Pull base image from buildx
+      - name: Pull base image from local registry
         run: |
           docker pull ${{ env.BASE_IMAGE }}
           docker tag ${{ env.BASE_IMAGE }} ghcr.io/gchq/sleeper-rust-builder-base:latest
