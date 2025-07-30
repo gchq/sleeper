@@ -57,8 +57,8 @@ import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCUR
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
  * configurable maximum.
  */
-public class RunCompactionTasks {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RunCompactionTasks.class);
+public class RunDataProcessingTasks {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunDataProcessingTasks.class);
 
     private final InstanceProperties instanceProperties;
     private final TaskCounts taskCounts;
@@ -69,7 +69,7 @@ public class RunCompactionTasks {
     private String clusterName;
     private String fargateDefinitionFamily;
 
-    public RunCompactionTasks(
+    public RunDataProcessingTasks(
             InstanceProperties instanceProperties,
             EcsClient ecsClient,
             AutoScalingClient asClient,
@@ -103,7 +103,7 @@ public class RunCompactionTasks {
         }
     }
 
-    public RunCompactionTasks(
+    public RunDataProcessingTasks(
             InstanceProperties instanceProperties,
             TaskCounts taskCounts,
             CompactionTaskHostScaler hostScaler,
@@ -291,7 +291,7 @@ public class RunCompactionTasks {
                 AutoScalingClient asClient = AutoScalingClient.create();
                 Ec2Client ec2Client = Ec2Client.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.COMPACTION)
+            new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.COMPACTION)
                     .runToMeetTargetTasks(numberOfTasks);
         }
     }

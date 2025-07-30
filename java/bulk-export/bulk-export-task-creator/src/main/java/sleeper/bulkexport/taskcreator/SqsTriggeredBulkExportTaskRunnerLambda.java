@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.common.task.CompactionTaskType;
 import sleeper.common.task.QueueMessageCount;
-import sleeper.common.task.RunCompactionTasks;
+import sleeper.common.task.RunDataProcessingTasks;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -42,7 +42,7 @@ public class SqsTriggeredBulkExportTaskRunnerLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsTriggeredBulkExportTaskRunnerLambda.class);
 
     private final QueueMessageCount.Client queueMessageCount;
-    private final RunCompactionTasks runTasks;
+    private final RunDataProcessingTasks runTasks;
 
     public SqsTriggeredBulkExportTaskRunnerLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
@@ -52,7 +52,7 @@ public class SqsTriggeredBulkExportTaskRunnerLambda {
         AutoScalingClient asClient = AutoScalingClient.create();
         Ec2Client ec2Client = Ec2Client.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
-        this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.BULK_EXPORT);
+        this.runTasks = new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.BULK_EXPORT);
         this.queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }
 

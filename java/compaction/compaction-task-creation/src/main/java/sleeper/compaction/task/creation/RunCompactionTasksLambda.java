@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.common.task.CompactionTaskType;
 import sleeper.common.task.QueueMessageCount;
-import sleeper.common.task.RunCompactionTasks;
+import sleeper.common.task.RunDataProcessingTasks;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -35,7 +35,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
  * A lambda function to start compaction tasks based on the number of queued compaction jobs.
  */
 public class RunCompactionTasksLambda {
-    private final RunCompactionTasks runTasks;
+    private final RunDataProcessingTasks runTasks;
     private final QueueMessageCount.Client queueMessageCount;
 
     public RunCompactionTasksLambda() {
@@ -46,7 +46,7 @@ public class RunCompactionTasksLambda {
         AutoScalingClient asClient = AutoScalingClient.create();
         Ec2Client ec2Client = Ec2Client.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
-        this.runTasks = new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.COMPACTION);
+        this.runTasks = new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.COMPACTION);
         this.queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }
 

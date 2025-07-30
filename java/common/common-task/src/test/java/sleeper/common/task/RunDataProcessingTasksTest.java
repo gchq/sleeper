@@ -24,8 +24,8 @@ import sleeper.common.task.CompactionTaskHostScaler.CheckAutoScalingGroup;
 import sleeper.common.task.CompactionTaskHostScaler.CheckInstanceType;
 import sleeper.common.task.CompactionTaskHostScaler.InstanceType;
 import sleeper.common.task.CompactionTaskHostScaler.SetDesiredInstances;
-import sleeper.common.task.RunCompactionTasks.TaskCounts;
-import sleeper.common.task.RunCompactionTasks.TaskLauncher;
+import sleeper.common.task.RunDataProcessingTasks.TaskCounts;
+import sleeper.common.task.RunDataProcessingTasks.TaskLauncher;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class RunCompactionTasksTest {
+public class RunDataProcessingTasksTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Map<String, InstanceType> instanceTypes = new HashMap<>();
     private final Map<String, Integer> autoScalingGroupMaxSizeByName = new HashMap<>();
@@ -415,8 +415,8 @@ public class RunCompactionTasksTest {
         taskRunner(taskCounts).runToMeetTargetTasks(requestedTasks);
     }
 
-    private RunCompactionTasks taskRunner(TaskCounts taskCounts) {
-        return new RunCompactionTasks(instanceProperties, taskCounts, hostScaler(), taskLauncher());
+    private RunDataProcessingTasks taskRunner(TaskCounts taskCounts) {
+        return new RunDataProcessingTasks(instanceProperties, taskCounts, hostScaler(), taskLauncher());
     }
 
     private CompactionTaskHostScaler hostScaler() {
