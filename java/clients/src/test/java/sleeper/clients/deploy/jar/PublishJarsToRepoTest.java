@@ -54,6 +54,20 @@ public class PublishJarsToRepoTest {
     }
 
     @Test
+    public void shouldThrowIllegalArgumentExceptionWhenTooFewArguments() {
+        assertThatThrownBy(() -> PublishJarsToRepo.main(new String[]{"anyString"}))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Usage: <jars-dir> <repository url>");
+    }
+
+    @Test
+    public void shouldThrowIllegalArgumentExceptionWhenTooManyArguments() {
+        assertThatThrownBy(() -> PublishJarsToRepo.main(new String[]{"anyString", "anyString", "anyString"}))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Usage: <jars-dir> <repository url>");
+    }
+
+    @Test
     public void shouldThrowNullPointerWhenPathOfJarsDirectoryIsNull() {
         assertThatThrownBy(() -> PublishJarsToRepo.builder().pathOfJarsDirectory(null).repoUrl("file:/someRepo").build())
                 .isInstanceOf(NullPointerException.class)

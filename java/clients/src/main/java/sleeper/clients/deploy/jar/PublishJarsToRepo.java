@@ -54,6 +54,10 @@ public class PublishJarsToRepo {
      * @param args Should contain the path to the jars folder first and the repisotry url to publish the jars to second.
      */
     public static void main(String[] args) throws Exception {
+        if (args.length < 2 || args.length > 2) {
+            throw new IllegalArgumentException("Usage: <jars-dir> <repository url>");
+        }
+
         builder()
                 .pathOfJarsDirectory(Path.of(args[0]))
                 .repoUrl(args[1])
