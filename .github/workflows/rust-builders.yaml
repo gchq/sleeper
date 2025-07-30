@@ -31,7 +31,7 @@ jobs:
           sbom: false
           provenance: false
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          push: ${{ inputs.pushImages }}
+          push: false
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}

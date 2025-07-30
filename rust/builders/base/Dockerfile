@@ -15,7 +15,7 @@
 FROM rust:1.88-bookworm
 
 RUN apt-get update && apt-get install -y \
-    build-essential libssl-dev gcc g++ \
+    build-essential libssl-dev \
     lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
 
