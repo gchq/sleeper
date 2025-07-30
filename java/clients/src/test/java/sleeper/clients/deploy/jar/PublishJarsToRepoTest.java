@@ -29,13 +29,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 
 public class PublishJarsToRepoTest {
+    private final PublishJarsToRepo.Builder genericBuilder = PublishJarsToRepo.builder()
+            .pathOfJarsDirectory(Path.of("/some/directory/"))
+            .repoUrl("file:/someRepo")
+            .m2SettingsServerId("someId");
 
     @Test
     public void testRunsCommands() throws Exception {
         //Given
         List<CommandPipeline> commandsThatRan = new ArrayList<>();
         CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
-        PublishJarsToRepo publishJarsToRepo = PublishJarsToRepo.builder().pathOfJarsDirectory(Path.of("/some/directory/")).repoUrl("someUrl").version("0.31.0").commandRunner(commandRunner).build();
+        PublishJarsToRepo publishJarsToRepo = PublishJarsToRepo.builder()
+                .pathOfJarsDirectory(Path.of("/some/directory/"))
+                .repoUrl("someUrl").version("0.31.0")
+                .m2SettingsServerId("repo.id")
+                .commandRunner(commandRunner).build();
 
         //When
         publishJarsToRepo.upload();
@@ -55,42 +63,49 @@ public class PublishJarsToRepoTest {
 
     @Test
     public void shouldThrowIllegalArgumentExceptionWhenTooFewArguments() {
-        assertThatThrownBy(() -> PublishJarsToRepo.main(new String[]{"anyString"}))
+        assertThatThrownBy(() -> PublishJarsToRepo.main(new String[]{"anyString", "anyString"}))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Usage: <jars-dir> <repository url>");
+                .hasMessage("Usage: <jars-dir> <repository url> <m2 settings server id>");
     }
 
     @Test
     public void shouldThrowIllegalArgumentExceptionWhenTooManyArguments() {
-        assertThatThrownBy(() -> PublishJarsToRepo.main(new String[]{"anyString", "anyString", "anyString"}))
+        assertThatThrownBy(() -> PublishJarsToRepo.main(new String[]{"anyString", "anyString", "anyString", "anyString"}))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Usage: <jars-dir> <repository url>");
+                .hasMessage("Usage: <jars-dir> <repository url> <m2 settings server id>");
     }
 
     @Test
     public void shouldThrowNullPointerWhenPathOfJarsDirectoryIsNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().pathOfJarsDirectory(null).repoUrl("file:/someRepo").build())
+        assertThatThrownBy(() -> genericBuilder.pathOfJarsDirectory(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("File path must not be null");
     }
 
     @Test
     public void shouldThrowNullPointerWhenRepositoryUrlIsNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().repoUrl(null).pathOfJarsDirectory(Path.of("any")).build())
+        assertThatThrownBy(() -> genericBuilder.repoUrl(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Repository URL must not be null");
     }
 
     @Test
+    public void shouldThrowNullPointerWhenm2SettingsServerIdIsNull() {
+        assertThatThrownBy(() -> genericBuilder.m2SettingsServerId(null).build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("M2 settings server Id must not be null");
+    }
+
+    @Test
     public void shouldThrowNullPointerWhenVerisonIsNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().pathOfJarsDirectory(Path.of("any")).repoUrl("file:/someRepo").version(null).build())
+        assertThatThrownBy(() -> genericBuilder.version(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Version to publish must not be null");
     }
 
     @Test
     public void shouldThrowNullPointerWhenCommandRunnerISNull() {
-        assertThatThrownBy(() -> PublishJarsToRepo.builder().pathOfJarsDirectory(Path.of("any")).repoUrl("file:/someRepo").commandRunner(null).build())
+        assertThatThrownBy(() -> genericBuilder.commandRunner(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Command Runner must not be null");
     }

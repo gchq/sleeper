@@ -34,12 +34,14 @@ import static java.util.Objects.requireNonNull;
 public class PublishJarsToRepo {
     private final Path pathOfJarsDirectory;
     private final String repoUrl;
+    private final String m2SettingsServerId;
     private final String version;
     private final CommandPipelineRunner commandRunner;
 
     private PublishJarsToRepo(Builder builder) {
         this.pathOfJarsDirectory = requireNonNull(builder.pathOfJarsDirectory, "File path must not be null");
         this.repoUrl = requireNonNull(builder.repoUrl, "Repository URL must not be null");
+        this.m2SettingsServerId = requireNonNull(builder.m2SettingsServerId, "M2 settings server Id must not be null");
         this.version = requireNonNull(builder.version, "Version to publish must not be null");
         this.commandRunner = requireNonNull(builder.commandRunner, "Command Runner must not be null");
     }
@@ -54,13 +56,14 @@ public class PublishJarsToRepo {
      * @param args Should contain the path to the jars folder first and the repisotry url to publish the jars to second.
      */
     public static void main(String[] args) throws Exception {
-        if (args.length < 2 || args.length > 2) {
-            throw new IllegalArgumentException("Usage: <jars-dir> <repository url>");
+        if (args.length < 3 || args.length > 3) {
+            throw new IllegalArgumentException("Usage: <jars-dir> <repository url> <m2 settings server id>");
         }
 
         builder()
                 .pathOfJarsDirectory(Path.of(args[0]))
                 .repoUrl(args[1])
+                .m2SettingsServerId(args[2])
                 .build()
                 .upload();
     }
@@ -83,7 +86,7 @@ public class PublishJarsToRepo {
         try {
             commandRunner.run("mvn", "deploy:deploy-file", "-q",
                     "-Durl=" + repoUrl,
-                    "-DrepositoryId=repo.id", //Requires matching server with auth details in local m2 settings.xml <servers>
+                    "-DrepositoryId=" + m2SettingsServerId, //Requires matching server with auth details in local m2 settings.xml <servers>
                     "-Dfile=" + pathOfJarsDirectory.resolve(filename),
                     "-DgroupId=sleeper",
                     "-DartifactId=" + artifactId,
@@ -100,6 +103,7 @@ public class PublishJarsToRepo {
     public static final class Builder {
         private Path pathOfJarsDirectory;
         private String repoUrl;
+        private String m2SettingsServerId;
         private String version = SleeperVersion.getVersion();
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
 
@@ -125,6 +129,18 @@ public class PublishJarsToRepo {
          */
         public Builder repoUrl(String repoUrl) {
             this.repoUrl = repoUrl;
+            return this;
+        }
+
+        /**
+         * Sets the id of a server that will be found in a local m2 settings file.
+         * Used for authentication.
+         *
+         * @param  m2SettingsServerId the id of the server in a local m2 settings
+         * @return                    the builder for method chaining
+         */
+        public Builder m2SettingsServerId(String m2SettingsServerId) {
+            this.m2SettingsServerId = m2SettingsServerId;
             return this;
         }
 
