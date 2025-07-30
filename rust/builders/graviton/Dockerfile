@@ -17,7 +17,8 @@ FROM ${BASE_IMAGE}
 
 RUN apt-get install --assume-yes --no-install-recommends \
     g++-aarch64-linux-gnu \
-    libc6-dev-arm64-cross
+    libc6-dev-arm64-cross \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN rustup target add aarch64-unknown-linux-gnu
 RUN rustup toolchain install stable-aarch64-unknown-linux-gnu --profile minimal --force-non-host
