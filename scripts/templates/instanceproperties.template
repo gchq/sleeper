@@ -33,13 +33,6 @@ sleeper.subnets=changeme
 # Default Values #
 ##################
 
-## The following table properties relate to the definition of data inside a table.
-
-# Select which data engine to use for the table. DataFusion support is experimental. Valid values are:
-# [java, datafusion]
-sleeper.default.table.data.engine=JAVA
-
-
 ## The following instance properties are commonly used throughout Sleeper.
 
 # A comma-separated list of the jars containing application specific iterator code. These jars are
@@ -1659,3 +1652,7 @@ sleeper.default.statestore.committer.update.every.commit=false
 # When using the transaction log state store, this sets whether to update from the transaction log
 # before adding a batch of transactions in the asynchronous state store committer.
 sleeper.default.statestore.committer.update.every.batch=true
+
+# Select which data engine to use for the table. DataFusion support is experimental. Valid values are:
+# [java, datafusion]
+sleeper.default.table.data.engine=JAVA

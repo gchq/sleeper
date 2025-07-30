@@ -23,7 +23,6 @@ import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.model.IngestQueue;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
-import sleeper.core.properties.table.TablePropertyGroup;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.List;
@@ -370,7 +369,7 @@ public interface TableDefaultProperty {
                     "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
             .defaultValue(DataEngine.JAVA.toString())
             .validationPredicate(DataEngine::isValid)
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION).build();
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
