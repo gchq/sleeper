@@ -70,8 +70,11 @@ public class PublishJarsToRepo {
 
     /**
      * This method loops through the client jars and lambda jars, publishing each one to the supplied maven repository.
+     *
+     * @throws InterruptedException if the current thread was interrupted
+     * @throws IOException          if soemthing goes wrong with running the maven commands
      */
-    public void upload() {
+    public void upload() throws IOException, InterruptedException {
         for (ClientJar clientJar : ClientJar.getAll()) {
             deployJars(clientJar.getFormattedFilename(version), clientJar.getArtifactId());
         }
@@ -82,19 +85,15 @@ public class PublishJarsToRepo {
     }
 
     //Requires matching server with auth details in local m2 settings.xml <servers>
-    private void deployJars(String filename, String artifactId) {
-        try {
-            commandRunner.run("mvn", "deploy:deploy-file", "-q",
-                    "-Durl=" + repoUrl,
-                    "-DrepositoryId=" + m2SettingsServerId, //Requires matching server with auth details in local m2 settings.xml <servers>
-                    "-Dfile=" + pathOfJarsDirectory.resolve(filename),
-                    "-DgroupId=sleeper",
-                    "-DartifactId=" + artifactId,
-                    "-Dversion=" + version,
-                    "-DgeneratePom=false");
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+    private void deployJars(String filename, String artifactId) throws IOException, InterruptedException {
+        commandRunner.run("mvn", "deploy:deploy-file", "-q",
+                "-Durl=" + repoUrl,
+                "-DrepositoryId=" + m2SettingsServerId, //Requires matching server with auth details in local m2 settings.xml <servers>
+                "-Dfile=" + pathOfJarsDirectory.resolve(filename),
+                "-DgroupId=sleeper",
+                "-DartifactId=" + artifactId,
+                "-Dversion=" + version,
+                "-DgeneratePom=false");
     }
 
     /**
