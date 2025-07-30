@@ -10,7 +10,8 @@ on:
         type: boolean
 
 env:
-  CROSS_CONFIG: "Cross.sccache.toml"
+  RUST_BUILD_IMAGE_X86: "ghcr.io/gchq/sleeper-rust-builder-x86-sccache:latest"
+  RUST_BUILD_IMAGE_GRAVITON: "ghcr.io/gchq/sleeper-rust-builder-graviton-sccache:latest"
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
 
@@ -29,9 +30,6 @@ jobs:
         with:
          toolchain: 1.88
       - uses: mozilla-actions/sccache-action@v0.0.9
-        if: ${{ ! inputs.skipRust }}
-      - name: Install cargo cross
-        run: cargo install cross
         if: ${{ ! inputs.skipRust }}
       - name: Cache dependencies
         uses: actions/cache@v4

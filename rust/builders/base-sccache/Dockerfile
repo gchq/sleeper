@@ -15,9 +15,9 @@
 ARG BASE_IMAGE="sleeper-rust-builder-base:current"
 FROM ${BASE_IMAGE}
 
-RUN rustup target add x86_64-unknown-linux-gnu
-RUN rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
+RUN cargo install sccache --locked
 
-ENV CARGO_BUILD_TARGET="x86_64-unknown-linux-gnu"
-ENV SCCACHE_C_CUSTOM_CACHE_BUSTER="x86_64"
-ENV SCCACHE_GHA_VERSION="x86_64"
+ENV CC="sccache clang-20"
+ENV CXX="sccache clang++-20"
+ENV RUSTC_WRAPPER="/usr/bin/sccache"
+ENV SCCACHE_DIR="/tmp/sccache"

@@ -25,3 +25,5 @@ RUN rustup toolchain install stable-aarch64-unknown-linux-gnu --profile minimal 
 
 ENV RUSTFLAGS="-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1 -Clinker=aarch64-linux-gnu-gcc"
 ENV CARGO_BUILD_TARGET="aarch64-unknown-linux-gnu"
+ENV SCCACHE_C_CUSTOM_CACHE_BUSTER="aarch64"
+ENV SCCACHE_GHA_VERSION="aarch64"

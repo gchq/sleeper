@@ -8,7 +8,8 @@ on:
       - '.github/workflows/rust-cache.yaml'
 
 env:
-  CROSS_CONFIG: "Cross.sccache.toml"
+  RUST_BUILD_IMAGE_X86: "ghcr.io/gchq/sleeper-rust-builder-x86-sccache:latest"
+  RUST_BUILD_IMAGE_GRAVITON: "ghcr.io/gchq/sleeper-rust-builder-graviton-sccache:latest"
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
   RUSTC_WRAPPER: "sccache"
@@ -23,16 +24,14 @@ jobs:
         with:
          toolchain: 1.88
       - uses: mozilla-actions/sccache-action@v0.0.9
-      - name: Install cargo cross
-        run: cargo install cross
-      - name: Build without cross
+      - name: Build without Docker
         working-directory: ./rust
         run: SCCACHE_LOG=trace cargo build --verbose
-      - name: Build x86_64
+      - name: Build for x86
         working-directory: ./rust
-        run: SCCACHE_LOG=trace cross build --release --target x86_64-unknown-linux-gnu --verbose
-      - name: Build aarch64
+        run: SCCACHE_LOG=trace ./build-in-docker.sh x86
+      - name: Build for Graviton
         working-directory: ./rust
         env:
           RUSTFLAGS: "-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1"
-        run: SCCACHE_LOG=trace cross build --release --target aarch64-unknown-linux-gnu --verbose
+        run: SCCACHE_LOG=trace ./build-in-docker.sh graviton
