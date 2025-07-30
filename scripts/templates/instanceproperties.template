@@ -33,6 +33,13 @@ sleeper.subnets=changeme
 # Default Values #
 ##################
 
+## The following table properties relate to the definition of data inside a table.
+
+# Select which data engine to use for the table. DataFusion support is experimental. Valid values are:
+# [java, datafusion]
+sleeper.default.table.data.engine=JAVA
+
+
 ## The following instance properties are commonly used throughout Sleeper.
 
 # A comma-separated list of the jars containing application specific iterator code. These jars are
@@ -1297,11 +1304,6 @@ sleeper.default.table.compaction.strategy.sizeratio.ratio=3
 # Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running
 # concurrently per partition. It can be overridden on a per-table basis.
 sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition=2147483647
-
-# Select which compaction method to use if not configured against a Sleeper table. DataFusion
-# compaction support is experimental.
-# Valid values are: [java, datafusion]
-sleeper.default.table.compaction.method=JAVA
 
 
 ## The following instance properties relate to queries.
