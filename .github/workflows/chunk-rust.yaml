@@ -10,12 +10,13 @@ on:
       - 'rust/**'
       - 'java/pom.xml'
       - 'java/compaction/pom.xml'
-      - 'java/compaction/compaction-rust/**'
+      - 'java/compaction/compaction-datafusion/**'
       - 'java/compaction/compaction-core/**'
       - 'java/sketches/**'
       - 'java/parquet/**'
       - 'java/core/**'
       - 'java/common/localstack-test/**'
+      - 'java/foreign-bridge/**'
 
 jobs:
   chunk-workflow:

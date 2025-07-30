@@ -17,7 +17,6 @@ package sleeper.clients.api.aws;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.clients.api.IngestBatcherSender;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -54,12 +53,8 @@ public class IngestBatcherSenderIT extends LocalStackTestBase {
     }
 
     private List<IngestBatcherSubmitRequest> receiveSubmitRequests() {
-        return sqsClient.receiveMessage(request -> request
-                .queueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL))
-                .maxNumberOfMessages(10)
-                .waitTimeSeconds(1))
-                .messages().stream()
-                .map(Message::body)
+
+        return receiveMessages(instanceProperties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL))
                 .map(new IngestBatcherSubmitRequestSerDe()::fromJson)
                 .toList();
     }

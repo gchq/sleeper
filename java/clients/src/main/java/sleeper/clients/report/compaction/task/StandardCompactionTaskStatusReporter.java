@@ -15,13 +15,13 @@
  */
 package sleeper.clients.report.compaction.task;
 
-import sleeper.clients.report.job.AverageRecordRateReport;
+import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
 import sleeper.clients.util.tablewriter.TableField;
 import sleeper.clients.util.tablewriter.TableRow;
 import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -36,8 +36,8 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
     private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.DURATION);
     private static final TableField JOB_RUNS = TABLE_FACTORY_BUILDER.addNumericField("JOB_RUNS");
     private static final TableField JOB_DURATION = TABLE_FACTORY_BUILDER.addNumericField("JOB_DURATION");
-    private static final TableField RECORDS_READ = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.RECORDS_READ);
-    private static final TableField RECORDS_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.RECORDS_WRITTEN);
+    private static final TableField ROWS_READ = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.ROWS_READ);
+    private static final TableField ROWS_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.ROWS_WRITTEN);
     private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.READ_RATE);
     private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.WRITE_RATE);
     private static final TableWriterFactory TABLE_WRITER_FACTORY = TABLE_FACTORY_BUILDER.build();
@@ -62,7 +62,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
 
         TABLE_WRITER_FACTORY.tableBuilder()
                 .showFields(query != CompactionTaskQuery.UNFINISHED,
-                        FINISH_TIME, DURATION, JOB_DURATION, JOB_RUNS, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE)
+                        FINISH_TIME, DURATION, JOB_DURATION, JOB_RUNS, ROWS_READ, ROWS_WRITTEN, READ_RATE, WRITE_RATE)
                 .itemsAndWriter(tasks, this::writeRow)
                 .build().write(out);
     }
@@ -78,15 +78,15 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
         if (tasks.stream().anyMatch(CompactionTaskStatus::isFinished)) {
             out.printf("Total job runs: %s%n", getTotalJobsRun(tasks));
         }
-        AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(tasks), out);
+        AverageRowRateReport.printf("Average compaction rate: %s%n", rowRate(tasks), out);
     }
 
     private static int getTotalJobsRun(List<CompactionTaskStatus> tasks) {
         return tasks.stream().mapToInt(CompactionTaskStatus::getJobRuns).sum();
     }
 
-    private static AverageRecordRate recordRate(List<CompactionTaskStatus> tasks) {
-        return AverageRecordRate.of(tasks.stream()
+    private static AverageRowRate rowRate(List<CompactionTaskStatus> tasks) {
+        return AverageRowRate.of(tasks.stream()
                 .map(CompactionTaskStatus::asJobRunReport));
     }
 

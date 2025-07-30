@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
@@ -28,14 +28,14 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
     private final Instant finishTime;
-    private final RecordsProcessed recordsProcessed;
+    private final RowsProcessed rowsProcessed;
     private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
 
     private IngestJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
-        recordsProcessed = Objects.requireNonNull(builder.recordsProcessed, "recordsProcessed must not be null");
+        rowsProcessed = Objects.requireNonNull(builder.rowsProcessed, "rowsProcessed must not be null");
         numFilesWrittenByJob = builder.numFilesWrittenByJob;
         committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
     }
@@ -55,8 +55,8 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public RecordsProcessed getRecordsProcessed() {
-        return recordsProcessed;
+    public RowsProcessed getRowsProcessed() {
+        return rowsProcessed;
     }
 
     public int getNumFilesWrittenByJob() {
@@ -69,7 +69,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, finishTime, recordsProcessed, numFilesWrittenByJob, committedBySeparateFileUpdates);
+        return Objects.hash(updateTime, finishTime, rowsProcessed, numFilesWrittenByJob, committedBySeparateFileUpdates);
     }
 
     @Override
@@ -81,13 +81,13 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
             return false;
         }
         IngestJobFinishedStatus other = (IngestJobFinishedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(recordsProcessed, other.recordsProcessed)
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(rowsProcessed, other.rowsProcessed)
                 && numFilesWrittenByJob == other.numFilesWrittenByJob && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates;
     }
 
     @Override
     public String toString() {
-        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", recordsProcessed=" + recordsProcessed + ", numFilesWrittenByJob=" + numFilesWrittenByJob
+        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", rowsProcessed=" + rowsProcessed + ", numFilesWrittenByJob=" + numFilesWrittenByJob
                 + ", committedBySeparateFileUpdates=" + committedBySeparateFileUpdates + "}";
     }
 
@@ -97,7 +97,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
     public static class Builder {
         private Instant updateTime;
         private Instant finishTime;
-        private RecordsProcessed recordsProcessed;
+        private RowsProcessed rowsProcessed;
         private int numFilesWrittenByJob;
         private boolean committedBySeparateFileUpdates;
 
@@ -127,13 +127,13 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
         }
 
         /**
-         * Sets the records processed.
+         * Sets the rows processed.
          *
-         * @param  recordsProcessed the records processed
-         * @return                  the builder for chaining
+         * @param  rowsProcessed the rows processed
+         * @return               the builder for chaining
          */
-        public Builder recordsProcessed(RecordsProcessed recordsProcessed) {
-            this.recordsProcessed = recordsProcessed;
+        public Builder rowsProcessed(RowsProcessed rowsProcessed) {
+            this.rowsProcessed = rowsProcessed;
             return this;
         }
 

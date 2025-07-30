@@ -35,7 +35,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransacti
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
+import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRows;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
@@ -78,7 +78,7 @@ class BulkImportJobDriverTest {
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
         List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+                defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
 
         // When
         runJob(job, "test-run", "test-task", validationTime,
@@ -124,7 +124,7 @@ class BulkImportJobDriverTest {
     }
 
     @Test
-    void shouldReportJobFinishedWithNoRecordsWhenStateStoreUpdateFailed() throws Exception {
+    void shouldReportJobFinishedWithNoRowsWhenStateStoreUpdateFailed() throws Exception {
         // Given
         BulkImportJob job = singleFileImportJob();
         Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
@@ -132,7 +132,7 @@ class BulkImportJobDriverTest {
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
         RuntimeException jobFailure = new RuntimeException("Failed updating files");
         List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+                defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
         filesLogStore.atStartOfNextAddTransaction(() -> {
             throw jobFailure;
         });
@@ -163,8 +163,8 @@ class BulkImportJobDriverTest {
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
         List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRecords("file1.parquet", 100),
-                defaultFileOnRootPartitionWithRecords("file2.parquet", 200));
+                defaultFileOnRootPartitionWithRows("file1.parquet", 100),
+                defaultFileOnRootPartitionWithRows("file2.parquet", 200));
 
         // When
         runJob(job, "test-run", "test-task", validationTime, driver(
@@ -175,7 +175,7 @@ class BulkImportJobDriverTest {
                 .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
                         validatedIngestStartedStatus(startTime, 1),
-                        ingestFinishedStatusUncommitted(finishTime, 2, new RecordsProcessed(300, 300)))));
+                        ingestFinishedStatusUncommitted(finishTime, 2, new RowsProcessed(300, 300)))));
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                 AddFilesTransaction.builder()
@@ -193,7 +193,7 @@ class BulkImportJobDriverTest {
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
         List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+                defaultFileOnRootPartitionWithRows("test-output.parquet", 100));
 
         // When
         runJob(job, "test-run", "test-task", validationTime,

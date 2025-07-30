@@ -52,11 +52,11 @@ class PartitionsStatusTest {
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
 
     @Nested
-    @DisplayName("Count known & estimated records")
-    class CountRecords {
+    @DisplayName("Count known & estimated rows")
+    class CountRows {
 
         @Test
-        void shouldCountRecordsFromReferencesOnLeaves() throws Exception {
+        void shouldCountRowsFromReferencesOnLeaves() throws Exception {
             // Given
             update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
@@ -73,7 +73,7 @@ class PartitionsStatusTest {
 
             // Then
             assertThat(status.getPartitions())
-                    .extracting("partition.id", "numberOfFiles", "exactRecordsReferenced", "approxRecordsReferenced", "approxRecords")
+                    .extracting("partition.id", "numberOfFiles", "exactRowsReferenced", "approxRowsReferenced", "approxRows")
                     .containsExactlyInAnyOrder(
                             tuple("parent", 0, 0L, 0L, 15L),
                             tuple("A", 2, 5L, 10L, 10L),
@@ -81,7 +81,7 @@ class PartitionsStatusTest {
         }
 
         @Test
-        void shouldCountRecordsFromReferenceOnLeafAndRoot() throws Exception {
+        void shouldCountRowsFromReferenceOnLeafAndRoot() throws Exception {
             // Given
             update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
@@ -95,7 +95,7 @@ class PartitionsStatusTest {
 
             // Then
             assertThat(status.getPartitions())
-                    .extracting("partition.id", "numberOfFiles", "exactRecordsReferenced", "approxRecordsReferenced", "approxRecords")
+                    .extracting("partition.id", "numberOfFiles", "exactRowsReferenced", "approxRowsReferenced", "approxRows")
                     .containsExactlyInAnyOrder(
                             tuple("parent", 1, 10L, 10L, 15L),
                             tuple("A", 1, 5L, 5L, 10L),
@@ -103,7 +103,7 @@ class PartitionsStatusTest {
         }
 
         @Test
-        void shouldCountRecordsFromNestedTree() throws Exception {
+        void shouldCountRowsFromNestedTree() throws Exception {
             // Given
             update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -119,7 +119,7 @@ class PartitionsStatusTest {
 
             // Then
             assertThat(status.getPartitions())
-                    .extracting("partition.id", "numberOfFiles", "exactRecordsReferenced", "approxRecordsReferenced", "approxRecords")
+                    .extracting("partition.id", "numberOfFiles", "exactRowsReferenced", "approxRowsReferenced", "approxRows")
                     .containsExactlyInAnyOrder(
                             tuple("root", 1, 20L, 20L, 35L),
                             tuple("L", 0, 0L, 0L, 10L),
@@ -156,7 +156,7 @@ class PartitionsStatusTest {
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
-            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
+            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRows(5).toList());
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
@@ -173,7 +173,7 @@ class PartitionsStatusTest {
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
-            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(100).toList());
+            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRows(100).toList());
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);

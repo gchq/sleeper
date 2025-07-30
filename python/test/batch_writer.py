@@ -22,12 +22,12 @@ from sleeper.client import SleeperClient
 
 def read_files(filename: str):
     parq = ParquetDeserialiser()
-    file_records = []
+    file_rows = []
     with open(filename, "rb") as file:
         with ParquetFile(file) as po:
-            for record in parq.read(po):
-                file_records.append(record)
-    return file_records
+            for row in parq.read(po):
+                file_rows.append(row)
+    return file_rows
 
 
 if __name__ == "__main__":
@@ -42,6 +42,6 @@ if __name__ == "__main__":
     sleeper_client = SleeperClient(args.instance)
     table_name = args.table
 
-    records = read_files(args.file)
+    rows = read_files(args.file)
     with sleeper_client.create_batch_writer(table_name, args.jobid) as writer:
-        writer.write(records)
+        writer.write(rows)

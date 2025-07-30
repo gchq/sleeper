@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -34,13 +35,13 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
-import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to compact this many records on fairly large ECS instances.
+@Expensive // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
 public class CompactionDataFusionPerformanceST {
 
     @BeforeEach
@@ -61,7 +62,7 @@ public class CompactionDataFusionPerformanceST {
                 TABLE_ONLINE, "false",
                 COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString()));
         sleeper.systemTestCluster().runDataGenerationJobs(110,
-                builder -> builder.ingestMode(DIRECT).recordsPerIngest(40_000_000),
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(40_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForTotalFileReferences(110);
 
@@ -71,16 +72,15 @@ public class CompactionDataFusionPerformanceST {
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
-        assertThat(sumFileReferenceRecordCounts(files)).isEqualTo(4_400_000_000L);
+        assertThat(sumFileReferenceRowCounts(files)).isEqualTo(4_400_000_000L);
         assertThat(files.streamFileReferences()).hasSize(10);
-        assertThat(files.getFilesWithReferences()).hasSize(10);
-        // This can be uncommented when the following issue is fixed: https://github.com/gchq/sleeper/issues/5186
-        // .first() // Only check one file because it's time consuming to read all records
-        // .satisfies(file -> assertThat(SortedRecordsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-        //         .isEqualTo(SortedRecordsCheck.sorted(sumFileReferenceRecordCounts(file))));
+        assertThat(files.getFilesWithReferences()).hasSize(10)
+                .first() // Only check one file because it's time consuming to read all rows
+                .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
+                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRecordsPerSecondInRange(3_000_000, 4_000_000),
+                        && stats.isAverageRunRowsPerSecondInRange(3_000_000, 4_000_000),
                         "meets expected performance");
     }
 }

@@ -15,27 +15,22 @@
  */
 package sleeper.query.runner.tracker;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.tracker.QueryStatusReportListener;
-import sleeper.query.runner.output.ApiGatewayWebSocketOutput;
+import sleeper.query.runner.websocket.ApiGatewayWebSocketOutput;
+import sleeper.query.runner.websocket.QueryWebSocketMessage;
+import sleeper.query.runner.websocket.QueryWebSocketMessageSerDe;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class WebSocketQueryStatusReportDestination implements QueryStatusReportListener {
-    private final Gson serde = new GsonBuilder().create();
+    private final QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forStatusMessages();
     private final ApiGatewayWebSocketOutput output;
-    private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryStatusReportDestination.class);
 
     public WebSocketQueryStatusReportDestination(ApiGatewayWebSocketOutput output) {
         this.output = output;
@@ -62,10 +57,8 @@ public class WebSocketQueryStatusReportDestination implements QueryStatusReportL
 
     @Override
     public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
-        List<String> subQueryIds = subQueries.stream().map(LeafPartitionQuery::getSubQueryId).collect(Collectors.toList());
-        Map<String, Object> data = new HashMap<>();
-        data.put("queryIds", subQueryIds);
-        this.sendStatusReport("subqueries", query.getQueryId(), data);
+        List<String> subQueryIds = subQueries.stream().map(LeafPartitionQuery::getSubQueryId).toList();
+        send(QueryWebSocketMessage.queryWasSplitToSubqueries(query.getQueryId(), subQueryIds));
     }
 
     @Override
@@ -79,16 +72,12 @@ public class WebSocketQueryStatusReportDestination implements QueryStatusReportL
     }
 
     private void queryCompleted(String queryId, ResultsOutputInfo outputInfo) {
-        String message = outputInfo.getError() == null ? "completed" : "error";
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("recordCount", outputInfo.getRecordCount());
-        data.put("locations", outputInfo.getLocations());
         if (outputInfo.getError() != null) {
-            data.put("error", outputInfo.getError().getClass().getSimpleName() + ": " + outputInfo.getError().getMessage());
+            String error = outputInfo.getError().getClass().getSimpleName() + ": " + outputInfo.getError().getMessage();
+            send(QueryWebSocketMessage.queryError(queryId, error, outputInfo.getRowCount(), outputInfo.getLocations()));
+        } else {
+            send(QueryWebSocketMessage.queryCompleted(queryId, outputInfo.getRowCount(), outputInfo.getLocations()));
         }
-
-        sendStatusReport(message, queryId, data);
     }
 
     @Override
@@ -98,9 +87,8 @@ public class WebSocketQueryStatusReportDestination implements QueryStatusReportL
 
     @Override
     public void queryFailed(String queryId, Exception e) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
-        sendStatusReport("error", queryId, data);
+        String error = e.getClass().getSimpleName() + ": " + e.getMessage();
+        send(QueryWebSocketMessage.queryError(queryId, error));
     }
 
     @Override
@@ -108,15 +96,11 @@ public class WebSocketQueryStatusReportDestination implements QueryStatusReportL
         queryFailed(leafQuery.getSubQueryId(), e);
     }
 
-    private void sendStatusReport(String message, String queryId, Map<String, Object> data) {
-        HashMap<String, Object> record = new HashMap<>(data);
-        record.put("message", message);
-        record.put("queryId", queryId);
-
+    private void send(QueryWebSocketMessage message) {
         try {
-            output.sendString(serde.toJson(record));
+            output.sendString(serDe.toJson(message));
         } catch (IOException e) {
-            LOGGER.error("Unable to send query status report to websocket", e);
+            throw new UncheckedIOException(e);
         }
     }
 }

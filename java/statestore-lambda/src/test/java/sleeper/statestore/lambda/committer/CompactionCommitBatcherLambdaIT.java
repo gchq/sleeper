@@ -21,7 +21,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
@@ -65,7 +64,7 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
         SQSBatchResponse response = lambda().handleRequest(createEvent("test-table", filesRequest), null);
 
         // Then
-        assertThat(consumeQueueMessages()).containsExactly(
+        assertThat(receiveCommitRequests()).containsExactly(
                 StateStoreCommitRequest.create("test-table",
                         new ReplaceFileReferencesTransaction(List.of(filesRequest))));
         assertThat(response.getBatchItemFailures()).isEmpty();
@@ -122,13 +121,9 @@ public class CompactionCommitBatcherLambdaIT extends LocalStackTestBase {
         return message;
     }
 
-    private List<StateStoreCommitRequest> consumeQueueMessages() {
-        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .waitTimeSeconds(1)
-                .maxNumberOfMessages(10).build())
-                .messages().stream()
-                .map(message -> stateStoreSerDe.fromJson(message.body()))
+    private List<StateStoreCommitRequest> receiveCommitRequests() {
+        return receiveMessages(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .map(stateStoreSerDe::fromJson)
                 .toList();
     }
 }

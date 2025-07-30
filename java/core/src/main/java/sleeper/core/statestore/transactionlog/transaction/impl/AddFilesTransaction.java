@@ -42,8 +42,8 @@ import java.util.Objects;
  * Adds files to the Sleeper table, with any number of references. Each new file should be specified once, with all
  * its references. Once a file has been added, it may not be added again, even as a reference on a different partition.
  * <p>
- * A file must never be referenced in two partitions where one is a descendent of another. This means each record in
- * a file must only be covered by one reference. A partition covers a range of records. A partition which is the
+ * A file must never be referenced in two partitions where one is a descendent of another. This means each row in
+ * a file must only be covered by one reference. A partition covers a range of rows. A partition which is the
  * child of another covers a sub-range within the parent partition.
  */
 public class AddFilesTransaction implements FileReferenceTransaction {

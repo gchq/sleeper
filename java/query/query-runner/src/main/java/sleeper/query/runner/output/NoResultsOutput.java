@@ -19,7 +19,6 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
-import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.output.ResultsOutputLocation;
 
@@ -33,7 +32,7 @@ public class NoResultsOutput implements ResultsOutput {
     private final List<ResultsOutputLocation> outputLocations = new ArrayList<>();
 
     public NoResultsOutput() {
-        this.outputLocations.add(new ResultsOutputLocation(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT));
+        this.outputLocations.add(new ResultsOutputLocation(ResultsOutput.DESTINATION, NO_RESULTS_OUTPUT));
     }
 
     @Override

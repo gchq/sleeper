@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.HashSet;
@@ -58,7 +58,7 @@ public class SystemTestIngestTest {
                 .waitForTask().waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
@@ -78,7 +78,7 @@ public class SystemTestIngestTest {
                 .sendSourceFiles("test.parquet").waitForJobs();
 
         // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
+        assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactly(row);
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1);
@@ -87,15 +87,15 @@ public class SystemTestIngestTest {
     @Test
     void shouldIngestSplitIntoFiles(SleeperSystemTest sleeper) {
         // Given
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100_000));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
 
         // When
         sleeper.ingest().direct(null)
                 .splitIngests(1_000, numbers);
 
         // Then
-        assertThat(new HashSet<>(sleeper.directQuery().allRecordsInTable()))
-                .isEqualTo(setFrom(sleeper.generateNumberedRecords(LongStream.range(0, 100_000))));
+        assertThat(new HashSet<>(sleeper.directQuery().allRowsInTable()))
+                .isEqualTo(setFrom(sleeper.generateNumberedRows(LongStream.range(0, 100_000))));
         assertThat(sleeper.tableFiles().references())
                 .hasSize(1_000);
     }
@@ -103,7 +103,7 @@ public class SystemTestIngestTest {
     @Test
     void shouldNotSplitIntoFilesIfNotExactSplit(SleeperSystemTest sleeper) {
         // Given
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 10));
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 10));
         SystemTestDirectIngest ingest = sleeper.ingest().direct(null);
 
         // When / Then

@@ -25,11 +25,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TableFilesStatistics {
-    private final Records records;
+    private final Rows rows;
     private final References fileReferences;
 
-    private TableFilesStatistics(Records records, References fileReferences) {
-        this.records = records;
+    private TableFilesStatistics(Rows rows, References fileReferences) {
+        this.rows = rows;
         this.fileReferences = fileReferences;
     }
 
@@ -48,10 +48,10 @@ public class TableFilesStatistics {
                 .collect(Collectors.toList());
 
         return new TableFilesStatistics(
-                new Records(
-                        FileRecordsStats.from(fileReferences),
-                        FileRecordsStats.from(fileReferencesInLeafPartitions),
-                        FileRecordsStats.from(fileReferencesInNonLeafPartitions)),
+                new Rows(
+                        FileRowsStats.from(fileReferences),
+                        FileRowsStats.from(fileReferencesInLeafPartitions),
+                        FileRowsStats.from(fileReferencesInNonLeafPartitions)),
                 new References(
                         files.getFiles().size(),
                         fileReferences.size(),
@@ -75,28 +75,28 @@ public class TableFilesStatistics {
         return fileReferences.nonLeafPartitions;
     }
 
-    public long getTotalRecords() {
-        return records.allPartitions.getTotalRecords();
+    public long getTotalRows() {
+        return rows.allPartitions.getTotalRows();
     }
 
-    public long getTotalRecordsApprox() {
-        return records.allPartitions.getTotalRecordsApprox();
+    public long getTotalRowsApprox() {
+        return rows.allPartitions.getTotalRowsApprox();
     }
 
-    public long getTotalRecordsInLeafPartitions() {
-        return records.leafPartitions.getTotalRecords();
+    public long getTotalRowsInLeafPartitions() {
+        return rows.leafPartitions.getTotalRows();
     }
 
-    public long getTotalRecordsInLeafPartitionsApprox() {
-        return records.leafPartitions.getTotalRecordsApprox();
+    public long getTotalRowsInLeafPartitionsApprox() {
+        return rows.leafPartitions.getTotalRowsApprox();
     }
 
-    public long getTotalRecordsInNonLeafPartitions() {
-        return records.nonLeafPartitions.getTotalRecords();
+    public long getTotalRowsInNonLeafPartitions() {
+        return rows.nonLeafPartitions.getTotalRows();
     }
 
-    public long getTotalRecordsInNonLeafPartitionsApprox() {
-        return records.nonLeafPartitions.getTotalRecordsApprox();
+    public long getTotalRowsInNonLeafPartitionsApprox() {
+        return rows.nonLeafPartitions.getTotalRowsApprox();
     }
 
     public int getFileCount() {
@@ -107,12 +107,12 @@ public class TableFilesStatistics {
         return fileReferences.totalReferences;
     }
 
-    private static class Records {
-        private final FileRecordsStats allPartitions;
-        private final FileRecordsStats leafPartitions;
-        private final FileRecordsStats nonLeafPartitions;
+    private static class Rows {
+        private final FileRowsStats allPartitions;
+        private final FileRowsStats leafPartitions;
+        private final FileRowsStats nonLeafPartitions;
 
-        private Records(FileRecordsStats allPartitions, FileRecordsStats leafPartitions, FileRecordsStats nonLeafPartitions) {
+        private Rows(FileRowsStats allPartitions, FileRowsStats leafPartitions, FileRowsStats nonLeafPartitions) {
             this.allPartitions = allPartitions;
             this.leafPartitions = leafPartitions;
             this.nonLeafPartitions = nonLeafPartitions;

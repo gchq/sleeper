@@ -5,13 +5,13 @@
       "references": [
         {
           "partitionId": "L",
-          "numberOfRecords": 100,
+          "numberOfRows": 100,
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         },
         {
           "partitionId": "R",
-          "numberOfRecords": 100,
+          "numberOfRows": 100,
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         }

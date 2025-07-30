@@ -35,7 +35,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetRowReader;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
@@ -99,7 +99,7 @@ class S3ResultsOutputIT {
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
+        assertThat(getRowsFromOutput(pathToResultsFile)).as("Results list matches rows").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There is only one block as rowGroup size is large").isOne();
     }
 
@@ -117,7 +117,7 @@ class S3ResultsOutputIT {
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
+        assertThat(getRowsFromOutput(pathToResultsFile)).as("Results list matches rows").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
@@ -134,7 +134,7 @@ class S3ResultsOutputIT {
         // Then
         String pathToResultsFile = getParquetFilesWithinDirPath(outputDir);
         int numberOfBlocks = getMetaData(pathToResultsFile).getBlocks().size();
-        assertThat(getRecordsFromOutput(pathToResultsFile)).as("Results list matches records").isEqualTo(rowList);
+        assertThat(getRowsFromOutput(pathToResultsFile)).as("Results list matches rows").isEqualTo(rowList);
         assertThat(numberOfBlocks).as("There are several blocks as rowGroup size is small").isGreaterThan(10);
     }
 
@@ -161,10 +161,10 @@ class S3ResultsOutputIT {
         }
     }
 
-    private List<Row> getRecordsFromOutput(String path) {
+    private List<Row> getRowsFromOutput(String path) {
         List<Row> rows = new ArrayList<>();
         try {
-            ParquetRecordReader reader = new ParquetRecordReader(path, schema);
+            ParquetRowReader reader = new ParquetRowReader(path, schema);
 
             Row row = reader.read();
             while (null != row) {

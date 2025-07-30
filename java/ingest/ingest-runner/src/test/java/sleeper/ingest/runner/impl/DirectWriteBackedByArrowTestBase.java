@@ -56,7 +56,7 @@ public abstract class DirectWriteBackedByArrowTestBase {
                 .stateStore(stateStore);
     }
 
-    static void assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(List<Row> rows, String fieldName, LongStream range) {
+    static void assertThatRowsHaveFieldValuesThatAllAppearInRangeInSameOrder(List<Row> rows, String fieldName, LongStream range) {
         assertThat(range.boxed())
                 .containsSubsequence(rows.stream()
                         .mapToLong(row -> (long) row.get(fieldName))

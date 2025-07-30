@@ -29,8 +29,6 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -56,12 +54,12 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.record.ParquetReaderIterator;
-import sleeper.parquet.record.ParquetRecordReader;
+import sleeper.parquet.row.ParquetReaderIterator;
+import sleeper.parquet.row.ParquetRowReader;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
-import sleeper.query.core.output.ResultsOutputConstants;
+import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
@@ -167,7 +165,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                 .containsExactly(trackedQuery()
                         .queryId("abc")
                         .lastKnownState(COMPLETED)
-                        .recordCount(0L)
+                        .rowCount(0L)
                         .build());
     }
 
@@ -192,19 +190,19 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
-                .queryId("abc").recordCount(0L);
+                .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
                 .containsExactlyInAnyOrder(
-                        builder.lastKnownState(IN_PROGRESS).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build(),
-                        builder.lastKnownState(QUEUED).recordCount(0L).build());
+                        builder.lastKnownState(IN_PROGRESS).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build(),
+                        builder.lastKnownState(QUEUED).rowCount(0L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(IN_PROGRESS).recordCount(0L).build());
+                .isEqualTo(builder.lastKnownState(IN_PROGRESS).rowCount(0L).build());
     }
 
     @Test
@@ -229,19 +227,19 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
-                .queryId("abc").recordCount(0L);
+                .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getAllQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate", "subQueryId")
                 .containsExactlyInAnyOrder(
-                        builder.lastKnownState(COMPLETED).recordCount(1461L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(365L).build(),
-                        builder.lastKnownState(COMPLETED).recordCount(366L).build());
+                        builder.lastKnownState(COMPLETED).rowCount(1461L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(365L).build(),
+                        builder.lastKnownState(COMPLETED).rowCount(366L).build());
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate", "subQueryId")
-                .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1461L).build());
     }
 
     @Test
@@ -266,12 +264,12 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         // Then
         TrackedQuery.Builder builder = trackedQuery()
-                .queryId("abc").recordCount(0L);
+                .queryId("abc").rowCount(0L);
 
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
-                .isEqualTo(builder.lastKnownState(COMPLETED).recordCount(1461L).build());
+                .isEqualTo(builder.lastKnownState(COMPLETED).rowCount(1461L).build());
         // Given
         timeSeriesTable = createTimeSeriesTable(2000, 2020);
         query = Query.builder()
@@ -287,7 +285,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
 
         // Then
         builder = trackedQuery()
-                .queryId("abc").recordCount(0L);
+                .queryId("abc").rowCount(0L);
         assertThat(queryTracker.getStatus("abc"))
                 .usingRecursiveComparison()
                 .ignoringFields("lastUpdateTime", "expiryDate")
@@ -322,13 +320,13 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                         .queryId("abc")
                         .subQueryId("-")
                         .lastKnownState(COMPLETED)
-                        .recordCount(10L)
+                        .rowCount(10L)
                         .build(),
                         trackedQuery()
                                 .queryId("abc")
                                 .subQueryId(subQueryId.orElseThrow())
                                 .lastKnownState(COMPLETED)
-                                .recordCount(10L)
+                                .rowCount(10L)
                                 .build());
     }
 
@@ -360,8 +358,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRecordCount().longValue());
+        assertThat(status.getRowCount().longValue()).isEqualTo(28);
+        assertThat(getNumberOfRowsInFileOutput(instanceProperties, query)).isEqualTo(status.getRowCount().longValue());
     }
 
     @Test
@@ -381,7 +379,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, S3ResultsOutput.S3);
+        resultsPublishConfig.put(ResultsOutput.DESTINATION, S3ResultsOutput.S3);
         resultsPublishConfig.put(S3ResultsOutput.S3_BUCKET, instanceProperties.get(QUERY_RESULTS_BUCKET));
         Query query = Query.builder()
                 .tableName(timeSeriesTable.get(TABLE_NAME))
@@ -398,8 +396,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInFileOutput(instanceProperties, query)).isEqualTo(status.getRecordCount().longValue());
+        assertThat(status.getRowCount().longValue()).isEqualTo(28);
+        assertThat(getNumberOfRowsInFileOutput(instanceProperties, query)).isEqualTo(status.getRowCount().longValue());
     }
 
     @Test
@@ -419,7 +417,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, SQSResultsOutput.SQS);
+        resultsPublishConfig.put(ResultsOutput.DESTINATION, SQSResultsOutput.SQS);
         resultsPublishConfig.put(SQSResultsOutput.SQS_RESULTS_URL, instanceProperties.get(QUERY_RESULTS_QUEUE_URL));
         resultsPublishConfig.put(SQSResultsOutput.BATCH_SIZE, "1");
         Query query = Query.builder()
@@ -437,8 +435,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         // Then
         TrackedQuery status = queryTracker.getStatus(query.getQueryId());
         assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-        assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-        assertThat(this.getNumberOfRecordsInSqsOutput(instanceProperties)).isEqualTo(28);
+        assertThat(status.getRowCount().longValue()).isEqualTo(28);
+        assertThat(getNumberOfMessagesInResultsQueue(instanceProperties)).isEqualTo(28);
     }
 
     @Test
@@ -463,7 +461,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketOutput.DESTINATION_NAME);
+        resultsPublishConfig.put(ResultsOutput.DESTINATION, WebSocketOutput.DESTINATION_NAME);
         resultsPublishConfig.put(WebSocketOutput.ENDPOINT, wireMockServer.baseUrl());
         resultsPublishConfig.put(WebSocketOutput.REGION, "eu-west-1");
         resultsPublishConfig.put(WebSocketOutput.CONNECTION_ID, connectionId);
@@ -486,7 +484,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-            assertThat(status.getRecordCount().longValue()).isEqualTo(28);
+            assertThat(status.getRowCount().longValue()).isEqualTo(28);
             wireMockServer.verify(28, postRequestedFor(url));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(containing("\"day\":2,")));
         } finally {
@@ -516,7 +514,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         Range range23 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(2), 1, true, 3, true);
         Region region2 = new Region(Arrays.asList(range21, range22, range23));
         Map<String, String> resultsPublishConfig = new HashMap<>();
-        resultsPublishConfig.put(ResultsOutputConstants.DESTINATION, WebSocketOutput.DESTINATION_NAME);
+        resultsPublishConfig.put(ResultsOutput.DESTINATION, WebSocketOutput.DESTINATION_NAME);
         resultsPublishConfig.put(WebSocketOutput.ENDPOINT, wireMockServer.baseUrl());
         resultsPublishConfig.put(WebSocketOutput.REGION, "eu-west-1");
         resultsPublishConfig.put(WebSocketOutput.CONNECTION_ID, connectionId);
@@ -539,8 +537,8 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             // Then
             TrackedQuery status = queryTracker.getStatus(query.getQueryId());
             assertThat(status.getLastKnownState()).isEqualTo(COMPLETED);
-            assertThat(status.getRecordCount().longValue()).isEqualTo(28);
-            wireMockServer.verify(4, postRequestedFor(url)); // 4 batches containing max 8 records each
+            assertThat(status.getRowCount().longValue()).isEqualTo(28);
+            wireMockServer.verify(4, postRequestedFor(url)); // 4 batches containing max 8 rows each
         } finally {
             wireMockServer.stop();
         }
@@ -597,7 +595,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(equalToJson("""
                     {
                         "message": "completed",
-                        "recordCount": 28
+                        "rowCount": 28
                     }
                     """, true, true)));
         } finally {
@@ -655,49 +653,43 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
                             .and(matchingJsonPath("$.queryIds"))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("3")))));
+                            .and(matchingJsonPath("$.rowCount", equalTo("3")))));
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
                     matchingJsonPath("$.message", equalTo("completed"))
-                            .and(matchingJsonPath("$.recordCount", equalTo("25")))));
+                            .and(matchingJsonPath("$.rowCount", equalTo("25")))));
         } finally {
             wireMockServer.stop();
         }
     }
 
-    private long getNumberOfRecordsInSqsOutput(InstanceProperties instanceProperties) {
-        long recordCount = 0;
-        ReceiveMessageRequest request = ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
-                .maxNumberOfMessages(1)
-                .build();
-
-        int lastReceiveCount = -1;
-        while (lastReceiveCount != 0) {
-            ReceiveMessageResponse response = sqsClient.receiveMessage(request);
-            lastReceiveCount = response.messages().size();
-            recordCount += lastReceiveCount;
+    private long getNumberOfMessagesInResultsQueue(InstanceProperties instanceProperties) {
+        long count = 0;
+        long lastReceiveCount = receiveMessages(instanceProperties.get(QUERY_RESULTS_QUEUE_URL)).count();
+        while (lastReceiveCount > 0) {
+            count += lastReceiveCount;
+            lastReceiveCount = receiveMessages(instanceProperties.get(QUERY_RESULTS_QUEUE_URL)).count();
         }
-        return recordCount;
+        return count;
     }
 
-    private long getNumberOfRecordsInFileOutput(InstanceProperties instanceProperties, Query query) throws IllegalArgumentException, IOException {
+    private long getNumberOfRowsInFileOutput(InstanceProperties instanceProperties, Query query) throws IllegalArgumentException, IOException {
         String fileSystem = instanceProperties.get(FILE_SYSTEM);
         String resultsBucket = instanceProperties.get(QUERY_RESULTS_BUCKET);
         String outputDir = fileSystem + resultsBucket + "/query-" + query.getQueryId();
 
-        long numberOfRecordsInOutput = 0;
+        long numberOfRowsInOutput = 0;
         RemoteIterator<LocatedFileStatus> outputFiles = FileSystem.get(new Configuration()).listFiles(new Path(outputDir), true);
         while (outputFiles.hasNext()) {
             LocatedFileStatus outputFile = outputFiles.next();
-            try (ParquetReader<Row> reader = new ParquetRecordReader.Builder(outputFile.getPath(), SCHEMA).build()) {
-                ParquetReaderIterator it = new ParquetReaderIterator(reader);
+            try (ParquetReader<Row> reader = new ParquetRowReader.Builder(outputFile.getPath(), SCHEMA).build();
+                    ParquetReaderIterator it = new ParquetReaderIterator(reader)) {
                 while (it.hasNext()) {
                     it.next();
                 }
-                numberOfRecordsInOutput = it.getNumberOfRowsRead();
+                numberOfRowsInOutput = it.getNumberOfRowsRead();
             }
         }
-        return numberOfRecordsInOutput;
+        return numberOfRowsInOutput;
     }
 
     private void processQuery(Query query) {
@@ -715,19 +707,15 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
     }
 
     private void processLeafPartitionQuery(int maxMessages) {
-        List<SQSMessage> leafPartitionQueries = new ArrayList<>();
-        sqsClient.receiveMessage(
-                ReceiveMessageRequest.builder().queueUrl(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
-                        .maxNumberOfMessages(maxMessages).build())
-                .messages().forEach(message -> {
-                    SQSMessage leafMessage = new SQSMessage();
-                    leafMessage.setBody(message.body());
-                    leafPartitionQueries.add(leafMessage);
-                });
-
-        SQSEvent leafEvent = new SQSEvent();
-        leafEvent.setRecords(Lists.newArrayList(leafPartitionQueries));
-        queyLeafPartitionQueryLambda.handleRequest(leafEvent, null);
+        SQSEvent event = new SQSEvent();
+        event.setRecords(receiveMessages(instanceProperties.get(LEAF_PARTITION_QUERY_QUEUE_URL))
+                .map(body -> {
+                    SQSMessage message = new SQSMessage();
+                    message.setBody(body);
+                    return message;
+                })
+                .toList());
+        queyLeafPartitionQueryLambda.handleRequest(event, null);
     }
 
     private void processLeafPartitionQuery() {

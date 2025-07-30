@@ -50,7 +50,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final ParquetWriter<Row> parquetWriter;
     private final SketchesStore sketchesStore;
     private final Sketches sketches;
-    private long recordsWrittenToCurrentPartition;
+    private long rowsWrittenToCurrentPartition;
 
     /**
      * Create an instance. The final file store is specified as the prefix to the filePathPrefix argument.
@@ -86,7 +86,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.sketchesStore = sketchesStore;
         this.sketches = Sketches.from(sleeperSchema);
-        this.recordsWrittenToCurrentPartition = 0L;
+        this.rowsWrittenToCurrentPartition = 0L;
     }
 
     /**
@@ -99,9 +99,9 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     public void append(Row row) throws IOException {
         parquetWriter.write(row);
         sketches.update(row);
-        recordsWrittenToCurrentPartition++;
-        if (recordsWrittenToCurrentPartition % 1000000 == 0) {
-            LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
+        rowsWrittenToCurrentPartition++;
+        if (rowsWrittenToCurrentPartition % 1000000 == 0) {
+            LOGGER.info("Written {} rows to partition {}", rowsWrittenToCurrentPartition, partition.getId());
         }
     }
 
@@ -115,14 +115,14 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     @Override
     public CompletableFuture<FileReference> close() throws IOException {
         parquetWriter.close();
-        LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), recordsWrittenToCurrentPartition);
+        LOGGER.info("Closed writer for partition {} after writing {} rows", partition.getId(), rowsWrittenToCurrentPartition);
         // Write sketches to an Hadoop file system, which could be s3a:// or file://
         sketchesStore.saveFileSketches(partitionParquetFileName, sleeperSchema, sketches);
         LOGGER.info("Wrote sketches for partition {} to file {}", partition.getId(), quantileSketchesFileName);
         FileReference fileReference = PartitionFileWriterUtils.createFileReference(
                 partitionParquetFileName,
                 partition.getId(),
-                recordsWrittenToCurrentPartition);
+                rowsWrittenToCurrentPartition);
         return CompletableFuture.completedFuture(fileReference);
     }
 

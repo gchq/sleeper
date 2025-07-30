@@ -104,7 +104,7 @@ public class AwsStateStoreCommitterDriverIT {
         List<Message> messages = sqs.receiveMessage(request -> request
                 .queueUrl(queueUrl)
                 .messageSystemAttributeNames(MessageSystemAttributeName.MESSAGE_GROUP_ID)
-                .waitTimeSeconds(2)
+                .waitTimeSeconds(0)
                 .visibilityTimeout(60)
                 .maxNumberOfMessages(10))
                 .messages();

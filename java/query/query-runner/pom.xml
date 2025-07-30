@@ -19,7 +19,7 @@
     <parent>
         <artifactId>query</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.32.0-SNAPSHOT</version>
+        <version>0.32.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -78,6 +78,11 @@
             <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
             <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.approvaltests</groupId>
+            <artifactId>approvaltests</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

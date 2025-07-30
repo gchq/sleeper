@@ -30,7 +30,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 /**
  * Reports on all the references for an individual physical file. A file may be referenced in a number of different
  * partitions. If a file is referenced in multiple partitions, the ranges covered by those partitions must not overlap,
- * or the records in the overlapping portion may be duplicated.
+ * or the rows in the overlapping portion may be duplicated.
  */
 public class AllReferencesToAFile {
 

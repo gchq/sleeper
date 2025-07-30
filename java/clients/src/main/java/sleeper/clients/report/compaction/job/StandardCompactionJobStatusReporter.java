@@ -16,7 +16,7 @@
 
 package sleeper.clients.report.compaction.job;
 
-import sleeper.clients.report.job.AverageRecordRateReport;
+import sleeper.clients.report.job.AverageRowRateReport;
 import sleeper.clients.report.job.StandardJobRunReporter;
 import sleeper.clients.report.job.query.JobQuery;
 import sleeper.clients.util.tablewriter.TableField;
@@ -28,7 +28,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
-import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRowRate;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.util.DurationStatistics;
 
@@ -51,6 +51,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final StandardJobRunReporter runReporter;
     private final TableField commitTimeField;
     private final List<TableFieldDefinition> finishedFields;
+    private final List<TableFieldDefinition> unfinishedFields;
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
 
@@ -73,6 +74,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         runReporter = runReporterBuilder.addResultsFields().build(out);
         finishedFields = Stream.concat(runReporter.getFinishedFields().stream(), Stream.of(commitTimeFieldDef))
                 .collect(Collectors.toList());
+        unfinishedFields = runReporter.getUnfinishedFields();
         tableFactory = tableFactoryBuilder.build();
     }
 
@@ -84,8 +86,13 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         if (!queryType.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
                     .showFields(queryType != JobQuery.Type.UNFINISHED, finishedFields)
+                    .showFields(queryType == JobQuery.Type.UNFINISHED, unfinishedFields)
                     .itemsAndSplittingWriter(jobStatusList, this::writeJob)
                     .build().write(out);
+        }
+        if (queryType == JobQuery.Type.UNFINISHED) {
+            out.println();
+            out.println("For more information concerning the failure reasons, please consult the more detailed report.");
         }
     }
 
@@ -171,15 +178,15 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     }
 
     private void printRateAndDelayStatistics(List<CompactionJobStatus> jobs) {
-        AverageRecordRateReport.printf("Average compaction rate: %s%n", recordRate(jobs), out);
+        AverageRowRateReport.printf("Average compaction rate: %s%n", rowRate(jobs), out);
         out.println("Statistics for delay between finish and commit time:");
         out.println("  " + CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(jobs)
                 .map(DurationStatistics::toString)
                 .orElse("no jobs committed"));
     }
 
-    private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
-        return AverageRecordRate.of(jobs.stream()
+    private static AverageRowRate rowRate(List<CompactionJobStatus> jobs) {
+        return AverageRowRate.of(jobs.stream()
                 .flatMap(job -> job.getRunsLatestFirst().stream()));
     }
 
@@ -197,6 +204,9 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
                         .map(CompactionJobCommittedStatus::getCommitTime)
                         .orElse(null));
                 runReporter.writeRunFields(run, row);
+                if (run.getStatusType().equals(CompactionJobStatusType.FAILED)) {
+                    row.value(StandardJobRunReporter.FAILURE_REASONS, run.getFailureReasons());
+                }
             }));
         }
     }

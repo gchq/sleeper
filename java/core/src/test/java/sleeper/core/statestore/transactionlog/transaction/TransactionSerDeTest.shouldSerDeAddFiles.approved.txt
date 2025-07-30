@@ -5,7 +5,7 @@
       "references": [
         {
           "partitionId": "root",
-          "numberOfRecords": 100,
+          "numberOfRows": 100,
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -16,7 +16,7 @@
       "references": [
         {
           "partitionId": "root",
-          "numberOfRecords": 200,
+          "numberOfRows": 200,
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }

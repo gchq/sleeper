@@ -59,7 +59,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsTableMetricsDriver.class);
     private static final Map<String, String> METRIC_ID_TO_NAME = Map.of(
             "filesWithReferences", "NumberOfFilesWithReferences",
-            "records", "RecordCount",
+            "rows", "RowCount",
             "partitions", "PartitionCount",
             "leafPartitions", "LeafPartitionCount",
             "filesReferencesPerPartition", "AverageFileReferencesPerPartition");
@@ -94,7 +94,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
                 .instanceId(dimensions.instanceId)
                 .tableName(dimensions.table.getTableName())
                 .fileCount((int) getMetric(map, "filesWithReferences"))
-                .recordCount((long) getMetric(map, "records"))
+                .rowCount((long) getMetric(map, "rows"))
                 .partitionCount((int) getMetric(map, "partitions"))
                 .leafPartitionCount((int) getMetric(map, "leafPartitions"))
                 .averageFileReferencesPerPartition(getMetric(map, "filesReferencesPerPartition"))

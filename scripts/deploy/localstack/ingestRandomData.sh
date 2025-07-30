@@ -17,7 +17,7 @@ set -e
 unset CDPATH
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ];  then
-  echo "Usage: $0 <instance-id> <table-name> <optional-number-of-records>"
+  echo "Usage: $0 <instance-id> <table-name> <optional-number-of-rows>"
   exit 1
 fi
 

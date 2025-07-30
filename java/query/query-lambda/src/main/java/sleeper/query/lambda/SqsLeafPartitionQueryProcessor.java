@@ -36,15 +36,14 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
-import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.output.ResultsOutputInfo;
-import sleeper.query.core.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.output.NoResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
@@ -56,13 +55,13 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class SqsLeafPartitionQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsLeafPartitionQueryProcessor.class);
-    private static final UserDefinedInstanceProperty EXECUTOR_POOL_THREADS = QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
+    private static final UserDefinedInstanceProperty EXECUTOR_POOL_THREADS = QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS;
 
     private final ExecutorService executorService;
     private final InstanceProperties instanceProperties;
@@ -96,7 +95,7 @@ public class SqsLeafPartitionQueryProcessor {
             queryTrackers.queryInProgress(leafPartitionQuery);
             Configuration conf = getConfiguration(tableProperties);
             LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(
-                    objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties));
+                    objectFactory, tableProperties, new LeafPartitionRowRetrieverImpl(executorService, conf, tableProperties));
             CloseableIterator<Row> results = leafPartitionQueryExecutor.getRows(leafPartitionQuery);
             publishResults(results, query, tableProperties, queryTrackers);
         } catch (QueryException e) {
@@ -131,7 +130,7 @@ public class SqsLeafPartitionQueryProcessor {
         if (null == resultsPublisherConfig || resultsPublisherConfig.isEmpty()) {
             return new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
         }
-        String destination = resultsPublisherConfig.get(ResultsOutputConstants.DESTINATION);
+        String destination = resultsPublisherConfig.get(ResultsOutput.DESTINATION);
         if (SQSResultsOutput.SQS.equals(destination)) {
             return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), resultsPublisherConfig);
         } else if (S3ResultsOutput.S3.equals(destination)) {

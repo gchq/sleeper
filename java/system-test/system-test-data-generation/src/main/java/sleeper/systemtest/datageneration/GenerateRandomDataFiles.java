@@ -32,19 +32,19 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class GenerateRandomDataFiles {
     private final TableProperties tableProperties;
-    private final long numberOfRecords;
+    private final long numberOfRows;
     private final String outputDirectory;
 
-    public GenerateRandomDataFiles(TableProperties tableProperties, long numberOfRecords, String outputDirectory) {
+    public GenerateRandomDataFiles(TableProperties tableProperties, long numberOfRows, String outputDirectory) {
         this.tableProperties = tableProperties;
-        this.numberOfRecords = numberOfRecords;
+        this.numberOfRows = numberOfRows;
         this.outputDirectory = outputDirectory;
     }
 
     private void run() throws IOException {
         SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
-                .recordsPerIngest(numberOfRecords)
+                .rowsPerIngest(numberOfRows)
                 .build();
         WriteRandomDataFiles.writeFilesToDirectory(outputDirectory, new InstanceProperties(),
                 tableProperties, WriteRandomData.createRowIterator(job, tableProperties));
@@ -52,14 +52,14 @@ public class GenerateRandomDataFiles {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 3 || args.length > 4) {
-            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-directory> <optional-number-of-records>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-directory> <optional-number-of-rows>");
         }
         String instanceId = args[0];
         String tableName = args[1];
         String outputDirectory = args[2];
-        long numberOfRecords = 100000;
+        long numberOfRows = 100000;
         if (args.length > 3) {
-            numberOfRecords = Long.parseLong(args[3]);
+            numberOfRows = Long.parseLong(args[3]);
         }
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
@@ -68,7 +68,7 @@ public class GenerateRandomDataFiles {
             TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                     .loadByName(tableName);
 
-            new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)
+            new GenerateRandomDataFiles(tableProperties, numberOfRows, outputDirectory)
                     .run();
         }
     }

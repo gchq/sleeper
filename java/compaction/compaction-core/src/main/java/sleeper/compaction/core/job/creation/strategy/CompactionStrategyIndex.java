@@ -71,7 +71,7 @@ public class CompactionStrategyIndex {
 
         List<FileReference> values() {
             return files.stream()
-                    .sorted(Comparator.comparing(FileReference::getNumberOfRecords))
+                    .sorted(Comparator.comparing(FileReference::getNumberOfRows))
                     .collect(Collectors.toList());
         }
     }

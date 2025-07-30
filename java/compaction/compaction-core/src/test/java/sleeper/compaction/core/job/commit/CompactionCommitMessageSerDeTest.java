@@ -96,18 +96,8 @@ public class CompactionCommitMessageSerDeTest {
         CompactionCommitMessage message = new CompactionCommitMessage(tableId, createExampleFilesRequestOfRepresentativeSize());
 
         // When / Then
-        Approvals.verify(serDe.toJson(message), new Options().forFile()
-                .withName("example-compaction-commit", ".json"));
-    }
-
-    @Test
-    void shouldGenerateExpectedPrettyJson() {
-        // Given
-        CompactionCommitMessage message = new CompactionCommitMessage(tableId, createExampleFilesRequestOfRepresentativeSize());
-
-        // When / Then
         Approvals.verify(serDe.toJsonPrettyPrint(message), new Options().forFile()
-                .withName("example-compaction-commit-pretty", ".json"));
+                .withName("example-compaction-commit", ".json"));
     }
 
     private ReplaceFileReferencesRequest createExampleFilesRequestOfRepresentativeSize() {

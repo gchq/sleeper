@@ -28,10 +28,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Filters out records that a user is not allowed to see. This is intended to be used in a query, adding the user's
+ * Filters out rows that a user is not allowed to see. This is intended to be used in a query, adding the user's
  * authorisations to the query in the iterator configuration. If the visibility field equals one of these authorisations
- * then the user is allowed to see the record. If the visibility field is the empty or null string then the user is also
- * allowed to see the record. This is an example implementation of {@link SortedRowIterator}.
+ * then the user is allowed to see the row. If the visibility field is the empty or null string then the user is also
+ * allowed to see the row. This is an example implementation of {@link SortedRowIterator}.
  */
 public class SecurityFilteringIterator implements SortedRowIterator {
     private String fieldName;
@@ -62,7 +62,7 @@ public class SecurityFilteringIterator implements SortedRowIterator {
     }
 
     /**
-     * Discards records in the input iterator where the security label is not one of the permitted auths.
+     * Discards rows in the input iterator where the security label is not one of the permitted auths.
      */
     public static class SecurityFilteringIteratorInternal implements CloseableIterator<Row> {
         private final CloseableIterator<Row> iterator;

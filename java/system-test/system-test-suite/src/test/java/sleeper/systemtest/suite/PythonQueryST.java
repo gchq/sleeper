@@ -50,7 +50,7 @@ public class PythonQueryST {
     @Test
     void shouldRunExactKeyQuery(SleeperSystemTest sleeper) {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
         assertThat(sleeper.pythonApi()
@@ -58,13 +58,13 @@ public class PythonQueryST {
                         "row-0000000000000000001",
                         "row-0000000000000000002")
                 .results())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.rangeClosed(1, 2)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.rangeClosed(1, 2)));
     }
 
     @Test
     void shouldRunRangeKeyQuery(SleeperSystemTest sleeper) {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
         assertThat(sleeper.pythonApi()
@@ -72,13 +72,13 @@ public class PythonQueryST {
                         "row-0000000000000000010",
                         "row-0000000000000000020")
                 .results())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 20)));
     }
 
     @Test
     void shouldRunRangeKeyQueryWithMinAndMaxInclusive(SleeperSystemTest sleeper) {
         // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
         // When/Then
         assertThat(sleeper.pythonApi()
@@ -86,7 +86,7 @@ public class PythonQueryST {
                         "row-0000000000000000010", true,
                         "row-0000000000000000020", true)
                 .results())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.rangeClosed(10, 20)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.rangeClosed(10, 20)));
     }
 
     @Test

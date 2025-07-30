@@ -67,7 +67,7 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(0).recordCount(0)
+                    .fileCount(0).rowCount(0)
                     .partitionCount(1).leafPartitionCount(1)
                     .averageFileReferencesPerPartition(0)
                     .build());
@@ -85,14 +85,14 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(1).recordCount(100)
+                    .fileCount(1).rowCount(100)
                     .partitionCount(1).leafPartitionCount(1)
                     .averageFileReferencesPerPartition(1)
                     .build());
         }
 
         @Test
-        void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
+        void shouldReportMetricsForMultipleFilesWithDifferentRowCounts() {
             // Given
             update(stateStore).addFile(fileFactory().rootFile("file1.parquet", 100L));
             update(stateStore).addFile(fileFactory().rootFile("file2.parquet", 200L));
@@ -104,7 +104,7 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(2).recordCount(300)
+                    .fileCount(2).rowCount(300)
                     .partitionCount(1).leafPartitionCount(1)
                     .averageFileReferencesPerPartition(2)
                     .build());
@@ -130,7 +130,7 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(0).recordCount(0)
+                    .fileCount(0).rowCount(0)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageFileReferencesPerPartition(0)
                     .build());
@@ -154,7 +154,7 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(3).recordCount(123)
+                    .fileCount(3).rowCount(123)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageFileReferencesPerPartition(1.5)
                     .build());
@@ -178,7 +178,7 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(3).recordCount(30)
+                    .fileCount(3).rowCount(30)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageFileReferencesPerPartition(1.5)
                     .build());
@@ -200,7 +200,7 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(1).recordCount(10)
+                    .fileCount(1).rowCount(10)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageFileReferencesPerPartition(1)
                     .build());
@@ -230,7 +230,7 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(1).recordCount(100)
+                    .fileCount(1).rowCount(100)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageFileReferencesPerPartition(1)
                     .build());
@@ -256,7 +256,7 @@ public class TableMetricsTest {
             assertThat(metrics).isEqualTo(TableMetrics.builder()
                     .instanceId("test-instance")
                     .tableName("test-table")
-                    .fileCount(2).recordCount(123)
+                    .fileCount(2).rowCount(123)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageFileReferencesPerPartition(1.5)
                     .build());

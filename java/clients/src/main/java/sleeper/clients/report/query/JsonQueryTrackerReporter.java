@@ -58,7 +58,7 @@ public class JsonQueryTrackerReporter implements QueryTrackerReporter {
         jsonObject.addProperty("subQueryId", query.getSubQueryId());
         jsonObject.add("lastUpdateTime", context.serialize(Instant.ofEpochMilli(query.getLastUpdateTime())));
         jsonObject.addProperty("lastKnownState", query.getLastKnownState().toString());
-        jsonObject.addProperty("recordCount", query.getRecordCount());
+        jsonObject.addProperty("rowCount", query.getRowCount());
         jsonObject.addProperty("errorMessage", query.getErrorMessage());
         return jsonObject;
     }

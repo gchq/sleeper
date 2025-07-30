@@ -56,15 +56,15 @@ public class AllReferencesToAllFiles {
     }
 
     /**
-     * Builds a map from filename to the number of referenced records.
+     * Builds a map from filename to the number of referenced rows.
      *
      * @return the map
      */
-    public Map<String, Long> recordsByFilename() {
+    public Map<String, Long> rowsByFilename() {
         return getFilesWithReferences().stream()
                 .collect(toMap(
                         AllReferencesToAFile::getFilename,
-                        file -> file.getReferences().stream().mapToLong(FileReference::getNumberOfRecords).sum()));
+                        file -> file.getReferences().stream().mapToLong(FileReference::getNumberOfRows).sum()));
     }
 
     /**

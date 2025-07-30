@@ -32,7 +32,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
@@ -74,8 +74,8 @@ class DynamoDBIngestJobStatusFormat {
     static final String FILES_WRITTEN_COUNT = "FilesWrittenCount";
     static final String FINISH_TIME = "FinishTime";
     static final String JOB_COMMITTED_WHEN_FILES_ADDED = "JobCommittedWhenFilesAdded";
-    static final String RECORDS_READ = "RecordsRead";
-    static final String RECORDS_WRITTEN = "RecordsWritten";
+    static final String ROWS_READ = "RowsRead";
+    static final String ROWS_WRITTEN = "RowsWritten";
     static final String FAILURE_REASONS = "FailureReasons";
     static final String JOB_RUN_ID = "JobRunId";
     static final String TASK_ID = "TaskId";
@@ -137,14 +137,14 @@ class DynamoDBIngestJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             IngestJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        RecordsProcessed recordsProcessed = event.getRecordsProcessed();
+        RowsProcessed rowsProcessed = event.getRowsProcessed();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
-                .number(RECORDS_READ, recordsProcessed.getRecordsRead())
-                .number(RECORDS_WRITTEN, recordsProcessed.getRecordsWritten())
+                .number(ROWS_READ, rowsProcessed.getRowsRead())
+                .number(ROWS_WRITTEN, rowsProcessed.getRowsWritten())
                 .bool(JOB_COMMITTED_WHEN_FILES_ADDED, event.isCommittedBySeparateFileUpdates())
                 .number(FILES_WRITTEN_COUNT, event.getNumFilesWrittenByJob())
                 .build();
@@ -229,9 +229,9 @@ class DynamoDBIngestJobStatusFormat {
                 return IngestJobFinishedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
-                        .recordsProcessed(new RecordsProcessed(
-                                getLongAttribute(item, RECORDS_READ, 0),
-                                getLongAttribute(item, RECORDS_WRITTEN, 0)))
+                        .rowsProcessed(new RowsProcessed(
+                                getLongAttribute(item, ROWS_READ, 0),
+                                getLongAttribute(item, ROWS_WRITTEN, 0)))
                         .committedBySeparateFileUpdates(getBooleanAttribute(item, JOB_COMMITTED_WHEN_FILES_ADDED))
                         .numFilesWrittenByJob(getNullableIntAttribute(item, FILES_WRITTEN_COUNT))
                         .build();

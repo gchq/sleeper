@@ -34,13 +34,13 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
-import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to compact this many records on fairly large ECS instances.
+@Expensive // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
 public class CompactionPerformanceST {
 
     @BeforeEach
@@ -59,7 +59,7 @@ public class CompactionPerformanceST {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         sleeper.systemTestCluster().runDataGenerationJobs(110,
-                builder -> builder.ingestMode(DIRECT).recordsPerIngest(40_000_000),
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(40_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .waitForTotalFileReferences(110);
 
@@ -69,15 +69,15 @@ public class CompactionPerformanceST {
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
-        assertThat(sumFileReferenceRecordCounts(files)).isEqualTo(4_400_000_000L);
+        assertThat(sumFileReferenceRowCounts(files)).isEqualTo(4_400_000_000L);
         assertThat(files.streamFileReferences()).hasSize(10);
         assertThat(files.getFilesWithReferences()).hasSize(10)
-                .first() // Only check one file because it's time consuming to read all records
-                .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRecords(file)))
-                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRecordCounts(file))));
+                .first() // Only check one file because it's time consuming to read all rows
+                .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
+                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRecordsPerSecondInRange(180_000, 400_000),
+                        && stats.isAverageRunRowsPerSecondInRange(180_000, 400_000),
                         "meets expected performance");
     }
 }

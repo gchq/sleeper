@@ -53,7 +53,7 @@ this can lead to failures of compaction jobs. Each state store update can be ret
 there may be a delay. To partially mitigate this issue, a salt field can be added to the file reference count table.
 The salt is the hash of the partition id modulo some number, e.g. 128. This means that the counts are split across
 multiple rows, which has the advantage of decreasing the chance that multiple compaction jobs that finish at the same
-time will attempt to update the same records.
+time will attempt to update the same rows.
 
 - Option 2: For each Sleeper table, there is one PostgreSQL table containing the file references. We do not explicitly
 store the file reference counts. If we just add the

@@ -20,8 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.query.QueryWebSocketClient;
 import sleeper.core.row.Row;
-import sleeper.core.row.serialiser.RowJsonSerDe;
-import sleeper.core.schema.Schema;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -30,12 +28,10 @@ import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class WebSocketQueryDriver implements QueryDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketQueryDriver.class);
 
-    private final SystemTestInstanceContext instance;
     private final QueryWebSocketClient queryWebSocketClient;
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
@@ -43,19 +39,14 @@ public class WebSocketQueryDriver implements QueryDriver {
     }
 
     public WebSocketQueryDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
-        this.instance = instance;
         this.queryWebSocketClient = new QueryWebSocketClient(instance.getInstanceProperties(), instance.getTablePropertiesProvider(), clients.getCredentialsProvider());
     }
 
     @Override
     public List<Row> run(Query query) {
         LOGGER.info("Submitting query: {}", query.getQueryId());
-        Schema schema = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow().getSchema();
-        RowJsonSerDe rowSerDe = new RowJsonSerDe(schema);
         try {
-            return queryWebSocketClient.submitQuery(query).join().stream()
-                    .map(rowSerDe::fromJson)
-                    .collect(Collectors.toList());
+            return queryWebSocketClient.submitQuery(query).join();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

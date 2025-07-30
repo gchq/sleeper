@@ -70,7 +70,7 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
         update(stateStore).initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
                 schema, List.of("A", "B"), List.of("aaa"))
                 .parentJoining("parent", "A", "B").buildList());
-        update(stateStore).addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRows(5).toList());
 
         // When
         String output = runClient()
@@ -86,7 +86,7 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
                 .contains("Partitions Status Report:")
                 .contains("There are 3 partitions (2 leaf partitions")
                 .contains("There are 0 leaf partitions that will be split")
-                .contains("Split threshold is 1000000000 records");
+                .contains("Split threshold is 1000000000 rows");
         confirmAndVerifyNoMoreInteractions();
     }
 

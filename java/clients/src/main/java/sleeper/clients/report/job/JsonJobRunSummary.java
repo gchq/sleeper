@@ -33,10 +33,10 @@ public class JsonJobRunSummary {
 
     private static JsonElement createSummaryJson(JobRunSummary summary, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.add("recordsProcessed", context.serialize(summary.getRecordsProcessed()));
+        jsonObject.add("rowsProcessed", context.serialize(summary.getRowsProcessed()));
         jsonObject.add("runTime", context.serialize(summary.getRunTime()));
-        jsonObject.addProperty("recordsReadPerSecond", summary.getRecordsReadPerSecond());
-        jsonObject.addProperty("recordsWrittenPerSecond", summary.getRecordsWrittenPerSecond());
+        jsonObject.addProperty("rowsReadPerSecond", summary.getRowsReadPerSecond());
+        jsonObject.addProperty("rowsWrittenPerSecond", summary.getRowsWrittenPerSecond());
         return jsonObject;
     }
 }

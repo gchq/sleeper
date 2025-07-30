@@ -48,8 +48,8 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.recordretrieval.QueryExecutor;
-import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
+import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
@@ -92,7 +92,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private static final int NO_OF_EXECUTOR_THREADS = 10;
     private static final int PARTITION_CACHE_EXPIRY_VALUE = 60;
     private static final TimeUnit PARTITION_CACHE_EXPIRY_UNITS = TimeUnit.MINUTES;
-    public static final int MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
+    public static final int MAX_NO_OF_ROWS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
     public static final long WORKING_ARROW_BUFFER_ALLOCATOR_BYTES = 64 * 1024 * 1024L;
     public static final long BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN = 64 * 1024 * 1024L;
     private static final int INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = 120;
@@ -278,7 +278,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 objectFactory,
                 tableProperties,
                 null,
-                new LeafPartitionRecordRetrieverImpl(executorService,
+                new LeafPartitionRowRetrieverImpl(executorService,
                         hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
                         tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
@@ -307,7 +307,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 this.objectFactory,
                 tableProperties,
                 stateStore,
-                new LeafPartitionRecordRetrieverImpl(executorService,
+                new LeafPartitionRowRetrieverImpl(executorService,
                         hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
                         tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
@@ -320,7 +320,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @param  tableName The table to add the rows to.
      * @return           The new {@link IngestCoordinator} object.
      */
-    public IngestCoordinator<Page> createIngestRecordsAsync(String tableName) {
+    public IngestCoordinator<Page> createIngestRowsAsync(String tableName) {
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         // Use of the state store provider is not thread-safe and this requires the use of a synchronized method.
         // The state store which is returned may not be thread-safe either.

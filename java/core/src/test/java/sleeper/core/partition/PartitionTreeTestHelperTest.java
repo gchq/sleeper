@@ -26,13 +26,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.partition.PartitionTreeTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
+import static sleeper.core.partition.PartitionTreeTestHelper.createPartitionTreeWithRowsPerPartitionAndTotal;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PartitionTreeTestHelperTest {
 
     @Test
-    void shouldCreateSplitPointsFromRecordRangeAndRecordsPerPartition() {
+    void shouldCreateSplitPointsFromRowRangeAndRowsPerPartition() {
         // Given
         Schema schema = createSchemaWithKey("key", new IntType());
         List<Row> rows = List.of(
@@ -41,7 +41,7 @@ public class PartitionTreeTestHelperTest {
                 new Row(Map.of("key", 30)));
 
         // When
-        PartitionTree tree = createPartitionTreeWithRecordsPerPartition(1, rows, schema);
+        PartitionTree tree = createPartitionTreeWithRowsPerPartition(1, rows, schema);
 
         // Then
         assertThat(PartitionsPrinter.printPartitions(schema, tree))
@@ -59,8 +59,8 @@ public class PartitionTreeTestHelperTest {
                         """);
     }
 
-    private PartitionTree createPartitionTreeWithRecordsPerPartition(int recordsPerPartition, List<Row> rows, Schema schema) {
-        return createPartitionTreeWithRecordsPerPartitionAndTotal(recordsPerPartition, rows.size(),
+    private PartitionTree createPartitionTreeWithRowsPerPartition(int recordsPerPartition, List<Row> rows, Schema schema) {
+        return createPartitionTreeWithRowsPerPartitionAndTotal(recordsPerPartition, rows.size(),
                 index -> rows.get((int) index),
                 schema);
     }

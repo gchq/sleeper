@@ -31,41 +31,41 @@ public class JobRunSummaryTestHelper {
     /**
      * Creates a job run summary.
      *
-     * @param  startedUpdate  the started status update
-     * @param  duration       the duration
-     * @param  recordsRead    the number of records read
-     * @param  recordsWritten the number of records written
-     * @return                a {@link JobRunSummary}
+     * @param  startedUpdate the started status update
+     * @param  duration      the duration
+     * @param  rowsRead      the number of rows read
+     * @param  rowsWritten   the number of rows written
+     * @return               a summary
      */
-    public static JobRunSummary summary(JobRunStartedUpdate startedUpdate, Duration duration, long recordsRead, long recordsWritten) {
-        return summary(startedUpdate.getStartTime(), duration, recordsRead, recordsWritten);
+    public static JobRunSummary summary(JobRunStartedUpdate startedUpdate, Duration duration, long rowsRead, long rowsWritten) {
+        return summary(startedUpdate.getStartTime(), duration, rowsRead, rowsWritten);
     }
 
     /**
      * Creates a job run summary.
      *
-     * @param  startTime      the start time
-     * @param  duration       the duration
-     * @param  recordsRead    the number of records read
-     * @param  recordsWritten the number of records written
-     * @return                a {@link JobRunSummary}
+     * @param  startTime   the start time
+     * @param  duration    the duration
+     * @param  rowsRead    the number of rows read
+     * @param  rowsWritten the number of rows written
+     * @return             a summary
      */
-    public static JobRunSummary summary(Instant startTime, Duration duration, long recordsRead, long recordsWritten) {
-        return summary(startTime, startTime.plus(duration), recordsRead, recordsWritten);
+    public static JobRunSummary summary(Instant startTime, Duration duration, long rowsRead, long rowsWritten) {
+        return summary(startTime, startTime.plus(duration), rowsRead, rowsWritten);
     }
 
     /**
      * Creates a job run summary.
      *
-     * @param  startTime      the start time
-     * @param  finishTime     the finish time
-     * @param  recordsRead    the number of records read
-     * @param  recordsWritten the number of records written
-     * @return                a {@link JobRunSummary}
+     * @param  startTime   the start time
+     * @param  finishTime  the finish time
+     * @param  rowsRead    the number of rows read
+     * @param  rowsWritten the number of rows written
+     * @return             a summary
      */
-    public static JobRunSummary summary(Instant startTime, Instant finishTime, long recordsRead, long recordsWritten) {
+    public static JobRunSummary summary(Instant startTime, Instant finishTime, long rowsRead, long rowsWritten) {
         return new JobRunSummary(
-                new RecordsProcessed(recordsRead, recordsWritten),
+                new RowsProcessed(rowsRead, rowsWritten),
                 startTime, finishTime);
     }
 }

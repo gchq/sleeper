@@ -32,7 +32,7 @@ public interface ArrowIngestProperty {
             .defaultValue("268435456")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty ARROW_INGEST_BATCH_BUFFER_BYTES = Index.propertyBuilder("sleeper.ingest.arrow.batch.buffer.bytes")
-            .description("The number of bytes to allocate to the Arrow batch buffer, which is used to hold the records before they are " +
+            .description("The number of bytes to allocate to the Arrow batch buffer, which is used to hold the rows before they are " +
                     "written to local disk. A larger value means that the local disk holds fewer, larger files, which are more efficient " +
                     "to merge together during an upload to S3. Larger values may require a larger working buffer. " +
                     "Note that this is off-heap memory, which is in addition to the memory assigned to the JVM.\n" +
@@ -45,8 +45,8 @@ public interface ArrowIngestProperty {
                     "(arrow-based ingest only) [2GB]")
             .defaultValue("2147483648")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-    UserDefinedInstanceProperty ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS = Index.propertyBuilder("sleeper.ingest.arrow.max.single.write.to.file.records")
-            .description("The number of records to write at once into an Arrow file in the local store. A single Arrow file contains many of " +
+    UserDefinedInstanceProperty ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_ROWS = Index.propertyBuilder("sleeper.ingest.arrow.max.single.write.to.file.rows")
+            .description("The number of rows to write at once into an Arrow file in the local store. A single Arrow file contains many of " +
                     "these micro-batches and so this parameter does not significantly affect the final size of the Arrow file. " +
                     "Larger values may require a larger working buffer.\n" +
                     "(arrow-based ingest only) [1K]")

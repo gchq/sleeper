@@ -37,8 +37,8 @@ import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYN
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
-import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedAndUnreferencedFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.referencedFilesReport;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class GarbageCollectorTest extends GarbageCollectorTestBase {
@@ -64,17 +64,17 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).containsExactly("new-file.parquet");
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(oldEnoughTime, activeReference("new-file.parquet")));
+                    .isEqualTo(referencedFilesReport(oldEnoughTime, fileReference("new-file.parquet")));
         }
 
         @Test
-        void shouldNotCollectFileMarkedAsActive() throws Exception {
+        void shouldNotCollectFileWithReference() throws Exception {
             // Given
             Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-            createActiveFile("test-file.parquet", stateStore);
+            createReferencedFile("test-file.parquet", stateStore);
 
             // When
             collectGarbageAtTime(currentTime);
@@ -82,7 +82,7 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).containsExactly("test-file.parquet");
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(oldEnoughTime, activeReference("test-file.parquet")));
+                    .isEqualTo(referencedFilesReport(oldEnoughTime, fileReference("test-file.parquet")));
         }
 
         @Test
@@ -100,8 +100,8 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("old-file.parquet", "new-file.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
-                    activeAndReadyForGCFilesReport(notOldEnoughTime,
-                            List.of(activeReference("new-file.parquet")),
+                    referencedAndUnreferencedFilesReport(notOldEnoughTime,
+                            List.of(fileReference("new-file.parquet")),
                             List.of("old-file.parquet")));
         }
 
@@ -121,9 +121,9 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(oldEnoughTime,
-                            activeReference("new-file-1.parquet"),
-                            activeReference("new-file-2.parquet")));
+                    .isEqualTo(referencedFilesReport(oldEnoughTime,
+                            fileReference("new-file-1.parquet"),
+                            fileReference("new-file-2.parquet")));
         }
 
         @Test
@@ -144,10 +144,10 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet", "new-file-3.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(oldEnoughTime,
-                            activeReference("new-file-1.parquet"),
-                            activeReference("new-file-2.parquet"),
-                            activeReference("new-file-3.parquet")));
+                    referencedFilesReport(oldEnoughTime,
+                            fileReference("new-file-1.parquet"),
+                            fileReference("new-file-2.parquet"),
+                            fileReference("new-file-3.parquet")));
         }
 
         @Test
@@ -167,8 +167,8 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(oldEnoughTime,
-                            activeReference("new-file.parquet")));
+                    .isEqualTo(referencedFilesReport(oldEnoughTime,
+                            fileReference("new-file.parquet")));
         }
 
         @Test
@@ -194,10 +194,10 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
                     "new-file2.parquet",
                     "new-file3.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
-                    activeAndReadyForGCFilesReport(oldEnoughTime,
-                            List.of(activeReference("new-file1.parquet"),
-                                    activeReference("new-file2.parquet"),
-                                    activeReference("new-file3.parquet")),
+                    referencedAndUnreferencedFilesReport(oldEnoughTime,
+                            List.of(fileReference("new-file1.parquet"),
+                                    fileReference("new-file2.parquet"),
+                                    fileReference("new-file3.parquet")),
                             List.of("old-file3.parquet")));
         }
     }
@@ -225,9 +225,9 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet"));
             assertThat(stateStore1.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(oldEnoughTime, activeReference("new-file-1.parquet")));
+                    referencedFilesReport(oldEnoughTime, fileReference("new-file-1.parquet")));
             assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(oldEnoughTime, activeReference("new-file-2.parquet")));
+                    referencedFilesReport(oldEnoughTime, fileReference("new-file-2.parquet")));
         }
 
         @Test
@@ -257,9 +257,9 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
                                     .containsExactly(fileFailure(table1, file1, failure)));
             assertThat(filesInBucket).isEqualTo(Set.of(file1, "new-file-1.parquet", "new-file-2.parquet"));
             assertThat(stateStore1.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference("new-file-1.parquet")), List.of(file1)));
+                    .isEqualTo(referencedAndUnreferencedFilesReport(oldEnoughTime, List.of(fileReference("new-file-1.parquet")), List.of(file1)));
             assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeFilesReport(oldEnoughTime, List.of(activeReference("new-file-2.parquet"))));
+                    .isEqualTo(referencedFilesReport(oldEnoughTime, List.of(fileReference("new-file-2.parquet"))));
         }
 
         @Test
@@ -307,7 +307,7 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference("new-file.parquet")), List.of("old-file.parquet")));
+                    .isEqualTo(referencedAndUnreferencedFilesReport(oldEnoughTime, List.of(fileReference("new-file.parquet")), List.of("old-file.parquet")));
             assertThat(sentCommits).containsExactly(
                     StateStoreCommitRequest.create(table.get(TABLE_ID),
                             new DeleteFilesTransaction(List.of("old-file.parquet"))));
@@ -333,10 +333,10 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet", "new-file-3.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime,
-                            List.of(activeReference("new-file-1.parquet"),
-                                    activeReference("new-file-2.parquet"),
-                                    activeReference("new-file-3.parquet")),
+                    .isEqualTo(referencedAndUnreferencedFilesReport(oldEnoughTime,
+                            List.of(fileReference("new-file-1.parquet"),
+                                    fileReference("new-file-2.parquet"),
+                                    fileReference("new-file-3.parquet")),
                             List.of("old-file-1.parquet",
                                     "old-file-2.parquet",
                                     "old-file-3.parquet")));
@@ -363,7 +363,7 @@ public class GarbageCollectorTest extends GarbageCollectorTestBase {
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference("new-file.parquet")), List.of()));
+                    .isEqualTo(referencedAndUnreferencedFilesReport(oldEnoughTime, List.of(fileReference("new-file.parquet")), List.of()));
             assertThat(sentCommits).isEmpty();
         }
     }

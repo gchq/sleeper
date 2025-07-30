@@ -23,7 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
+import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -34,7 +34,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRecordCounts;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.OPTIONAL_FEATURES_DISABLED;
 
 @SystemTest
@@ -53,7 +53,7 @@ public class OptionalFeaturesDisabledST {
     void shouldIngest1FileFromDataBucketWhenSourceBucketAndTrackerAreDisabled(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.sourceFiles().inDataBucket()
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+                .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file.parquet");
@@ -62,8 +62,8 @@ public class OptionalFeaturesDisabledST {
         sleeper.tableFiles().waitForState(
                 files -> files.countFileReferences() > 0,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(6)));
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 
@@ -71,23 +71,23 @@ public class OptionalFeaturesDisabledST {
     void shouldAllowForCompactionWhenTrackerIsDisabled(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.updateTableProperties(Map.of(COMPACTION_FILES_BATCH_SIZE, "5"));
-        // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
+        // Files with rows 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
+        RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 46));
 
         // When
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 9))
-                .numberedRecords(numbers.range(9, 18))
-                .numberedRecords(numbers.range(18, 27))
-                .numberedRecords(numbers.range(27, 36))
-                .numberedRecords(numbers.range(36, 46));
+                .numberedRows(numbers.range(0, 9))
+                .numberedRows(numbers.range(9, 18))
+                .numberedRows(numbers.range(18, 27))
+                .numberedRows(numbers.range(27, 36))
+                .numberedRows(numbers.range(36, 46));
 
         // Then
         sleeper.tableFiles().waitForState(
-                files -> sumFileReferenceRecordCounts(files) == 46
+                files -> sumFileReferenceRowCounts(files) == 46
                         && files.getFilesWithReferences().size() == 1,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)));
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 46)));
     }
 }

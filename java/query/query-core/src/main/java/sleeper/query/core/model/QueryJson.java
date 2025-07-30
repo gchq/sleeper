@@ -26,6 +26,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Represents a JSON definition of a Sleeper query.
+ * <p>
+ * This class is primarily used for serializing and deserializing {@link Query}
+ * and {@link LeafPartitionQuery} objects to and from a JSON format. It provides
+ * a structured representation suitable for transmission and persistence of query definitions,
+ * serving as a contract between callers and implementations for query behavior.
+ *
+ */
 class QueryJson {
     private final String tableName;
     private final String tableId;
@@ -193,6 +202,9 @@ class QueryJson {
                 .collect(Collectors.toUnmodifiableList());
     }
 
+    /**
+     * Builder for this class.
+     */
     private static final class Builder {
         private String tableName;
         private String tableId;

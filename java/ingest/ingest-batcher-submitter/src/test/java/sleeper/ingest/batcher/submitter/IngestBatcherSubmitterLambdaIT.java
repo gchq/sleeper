@@ -20,9 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -453,14 +450,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
     }
 
     private List<String> receiveDeadLetters() {
-        ReceiveMessageResponse result = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL))
-                .maxNumberOfMessages(10)
-                .waitTimeSeconds(1)
-                .build());
-        return result.messages().stream()
-                .map(Message::body)
-                .toList();
+        return receiveMessages(instanceProperties.get(INGEST_BATCHER_SUBMIT_DLQ_URL)).toList();
     }
 
     private IngestBatcherSubmitterLambda lambda() {

@@ -34,7 +34,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class FilesStatusReportTest extends FilesStatusReportTestBase {
 
     @Test
-    public void shouldReportFilesStatusGivenOneActiveFilePerLeafPartition() throws Exception {
+    public void shouldReportFilesStatusGivenOneReferencedFilePerLeafPartition() throws Exception {
         // Given
         PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("0")
@@ -60,13 +60,13 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
-                .isEqualTo(example("reports/filestatus/standard/oneActiveFilePerLeaf.txt"));
+                .isEqualTo(example("reports/filestatus/standard/oneReferencedFilePerLeaf.txt"));
         assertThatJson(verboseReportString(JsonFileStatusReporter::new))
-                .isEqualTo(example("reports/filestatus/json/oneActiveFilePerLeaf.json"));
+                .isEqualTo(example("reports/filestatus/json/oneReferencedFilePerLeaf.json"));
     }
 
     @Test
-    public void shouldReportFilesStatusGivenActiveFileInLeafAndMiddlePartition() throws Exception {
+    public void shouldReportFilesStatusGivenReferencedFileInLeafAndMiddlePartition() throws Exception {
         // Given
         PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("A")

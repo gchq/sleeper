@@ -112,8 +112,8 @@ public class SystemTestStateStoreFakeCommits {
             List<FileReference> allReferences = stateStore.getFileReferences();
             Map<String, List<FileReference>> partitionIdToReferences = allReferences
                     .stream().collect(groupingBy(FileReference::getPartitionId));
-            Map<String, Long> partitionIdToRecords = allReferences
-                    .stream().collect(groupingBy(FileReference::getPartitionId, summingLong(FileReference::getNumberOfRecords)));
+            Map<String, Long> partitionIdToRows = allReferences
+                    .stream().collect(groupingBy(FileReference::getPartitionId, summingLong(FileReference::getNumberOfRows)));
             List<CompactionJob> jobs = partitionIdToReferences.entrySet().stream()
                     .map(entry -> jobFactory.createCompactionJob(entry.getValue(), entry.getKey()))
                     .toList();
@@ -123,7 +123,7 @@ public class SystemTestStateStoreFakeCommits {
                     .synchronousCommit(stateStore);
             new ReplaceFileReferencesTransaction(jobs.stream()
                     .map(job -> job.replaceFileReferencesRequestBuilder(
-                            partitionIdToRecords.get(job.getPartitionId()))
+                            partitionIdToRows.get(job.getPartitionId()))
                             .build())
                     .toList())
                     .synchronousCommit(stateStore);

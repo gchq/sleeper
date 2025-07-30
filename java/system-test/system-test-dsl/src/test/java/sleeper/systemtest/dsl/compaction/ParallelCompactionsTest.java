@@ -58,7 +58,7 @@ public class ParallelCompactionsTest {
 
     @Test
     void shouldApplyOneCompactionPerPartition(SleeperSystemTest sleeper) {
-        // Given we have partitions split evenly across the intended range of records
+        // Given we have partitions split evenly across the intended range of rows
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(4).then(addPrefix("row-"))));
         List<String> leafIds = IntStream.range(0, NUMBER_OF_COMPACTIONS)
@@ -72,15 +72,15 @@ public class ParallelCompactionsTest {
                 .leavesWithSplits(schema, leafIds, splitPoints)
                 .anyTreeJoiningAllLeaves()
                 .buildTree());
-        // And we have records spread across all partitions in two files per partition
+        // And we have rows spread across all partitions in two files per partition
         // And we configure to compact every partition
         sleeper.updateTableProperties(Map.of(
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
-                .numberedRecords(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
+                .numberedRows(LongStream.range(0, 5000).map(i -> i * 2)) // Evens
+                .numberedRows(LongStream.range(0, 5000).map(i -> i * 2 + 1)); // Odds
 
         // When we run compaction
         sleeper.compaction()
@@ -91,9 +91,9 @@ public class ParallelCompactionsTest {
         // Then we have one output file per compaction
         assertThat(sleeper.tableFiles().references())
                 .hasSize(NUMBER_OF_COMPACTIONS);
-        // And we have the same records afterwards
-        assertThat(inAnyOrder(sleeper.directQuery().allRecordsInTable()))
-                .isEqualTo(inAnyOrder(sleeper.generateNumberedRecords(
+        // And we have the same rows afterwards
+        assertThat(inAnyOrder(sleeper.directQuery().allRowsInTable()))
+                .isEqualTo(inAnyOrder(sleeper.generateNumberedRows(
                         LongStream.range(0, 10000))));
     }
 

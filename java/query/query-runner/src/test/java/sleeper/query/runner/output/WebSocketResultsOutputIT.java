@@ -89,7 +89,7 @@ public class WebSocketResultsOutputIT {
         verify(1, postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
                         .and(matchingJsonPath("$.message", equalTo("rows")))));
-        assertThat(result.getRecordCount()).isZero();
+        assertThat(result.getRowCount()).isZero();
         assertThat(result.getError()).hasMessageContaining("GoneException");
     }
 
@@ -117,11 +117,12 @@ public class WebSocketResultsOutputIT {
         rows.add(new Row(Collections.singletonMap("id", "row5")));
 
         // When
-        out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
+        ResultsOutputInfo result = out.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rows.iterator()));
 
         // Then
         verify(rows.size(), postRequestedFor(url).withRequestBody(
                 matchingJsonPath("$.queryId", equalTo("query1"))
                         .and(matchingJsonPath("$.message", equalTo("rows")))));
+        assertThat(result.getRowCount()).isEqualTo(5);
     }
 }

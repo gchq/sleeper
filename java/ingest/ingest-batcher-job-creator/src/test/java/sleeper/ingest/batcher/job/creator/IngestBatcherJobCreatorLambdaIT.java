@@ -17,8 +17,6 @@ package sleeper.ingest.batcher.job.creator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -84,8 +82,7 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
                 .batchFiles();
 
         // Then
-        assertThat(consumeQueueMessages(INGEST_JOB_QUEUE_URL))
-                .extracting(this::readJobMessage)
+        assertThat(receiveJobs(INGEST_JOB_QUEUE_URL))
                 .containsExactly(IngestJob.builder()
                         .id("test-job-id")
                         .tableId(tableProperties.get(TABLE_ID))
@@ -93,17 +90,10 @@ public class IngestBatcherJobCreatorLambdaIT extends LocalStackTestBase {
                         .build());
     }
 
-    private List<Message> consumeQueueMessages(InstanceProperty queueProperty) {
-        return sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                .queueUrl(instanceProperties.get(queueProperty))
-                .waitTimeSeconds(1)
-                .maxNumberOfMessages(10)
-                .build())
-                .messages();
-    }
-
-    private IngestJob readJobMessage(Message message) {
-        return new IngestJobSerDe().fromJson(message.body());
+    private List<IngestJob> receiveJobs(InstanceProperty queueProperty) {
+        return receiveMessages(instanceProperties.get(queueProperty))
+                .map(new IngestJobSerDe()::fromJson)
+                .toList();
     }
 
     private IngestBatcherStore batcherStore() {

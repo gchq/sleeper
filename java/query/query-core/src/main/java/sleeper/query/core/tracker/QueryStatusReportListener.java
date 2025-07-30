@@ -21,25 +21,81 @@ import sleeper.query.core.output.ResultsOutputInfo;
 
 import java.util.List;
 
+/**
+ * Tracks changes to the status of a query.
+ * It is implemented by something that should be notified when the status changes for example
+ * that includes the query tracker, and the web socket for a query that was made through a web socket.
+ */
 public interface QueryStatusReportListener {
     String DESTINATION = "destination";
 
+    /**
+     * Notifies when a query has been queued.
+     *
+     * @param query the Sleeper query
+     */
     void queryQueued(Query query);
 
+    /**
+     * Notifies when a query is in progress.
+     *
+     * @param query the Sleeper query
+     */
     void queryInProgress(Query query);
 
+    /**
+     * Notifies if a sub query is in progress.
+     *
+     * @param leafQuery the Sleeper leaf partition query
+     */
     void queryInProgress(LeafPartitionQuery leafQuery);
 
+    /**
+     * Notifies if a sub query has been created.
+     *
+     * @param query      the Sleeper query
+     * @param subQueries the sub queries
+     */
     void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
 
+    /**
+     * Notifies when a query completes.
+     *
+     * @param query      the Sleeper query
+     * @param outputInfo the query results output information
+     */
     void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 
+    /**
+     * Notifies when a sub query completes.
+     *
+     * @param leafQuery  the Sleeper leaf partition query
+     * @param outputInfo the query results output information
+     */
     void queryCompleted(LeafPartitionQuery leafQuery, ResultsOutputInfo outputInfo);
 
+    /**
+     * Notifies when a query fails.
+     *
+     * @param query the Sleeper query
+     * @param e     the exception raised
+     */
     void queryFailed(Query query, Exception e);
 
+    /**
+     * Notifies when a specific query fails.
+     *
+     * @param queryId the query ID
+     * @param e       the exception raised
+     */
     void queryFailed(String queryId, Exception e);
 
+    /**
+     * Notifies when a sub query fails.
+     *
+     * @param leafQuery the Sleeper leaf partition query
+     * @param e         the exception raised
+     */
     void queryFailed(LeafPartitionQuery leafQuery, Exception e);
 
 }

@@ -22,8 +22,8 @@ Start update time: 2022-09-21T13:34:12.123Z
 Finish time: 2022-09-21T13:35:12.001Z
 Finish update time: 2022-09-21T13:35:12.123Z
 Duration: 1m
-Records read: 600
-Records written: 300
+Rows read: 600
+Rows written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 State store commit time: 2022-09-21T13:36:12.001Z
@@ -40,8 +40,8 @@ Start update time: 2022-09-20T13:34:12.123Z
 Finish time: 2022-09-20T13:35:12.001Z
 Finish update time: 2022-09-20T13:35:12.123Z
 Duration: 1m
-Records read: 600
-Records written: 300
+Rows read: 600
+Rows written: 300
 Read rate (reads per second): 10.00
 Write rate (writes per second): 5.00
 Not committed

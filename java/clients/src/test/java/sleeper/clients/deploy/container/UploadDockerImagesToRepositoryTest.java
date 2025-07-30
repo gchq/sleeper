@@ -34,7 +34,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     protected final Map<Path, String> files = new HashMap<>();
 
     @Test
-    void shouldBuildAndPushContainerImages() throws Exception {
+    void shouldBuildAndPushDockerDeploymentImages() throws Exception {
 
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
@@ -60,7 +60,31 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     @Test
-    void shouldBuildAndPushLambdas() throws Exception {
+    void shouldDisableCreatingBuildxBuilder() throws Exception {
+
+        // Given
+        DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
+
+        // When
+        uploadAllImagesNoBuildxBuilder(dockerImageConfiguration);
+
+        // Then
+        String expectedIngestTag = "www.somedocker.com/ingest:1.0.0";
+        String expectedBulkImportTag = "www.somedocker.com/bulk-import-runner:1.0.0";
+        String expectedCompactionTag = "www.somedocker.com/compaction:1.0.0";
+        String expectedEmrTag = "www.somedocker.com/bulk-import-runner-emr-serverless:1.0.0";
+        assertThat(commandsThatRan).containsExactly(
+                buildImageCommand(expectedIngestTag, "./docker/ingest"),
+                pushImageCommand(expectedIngestTag),
+                buildImageCommand(expectedBulkImportTag, "./docker/bulk-import-runner"),
+                pushImageCommand(expectedBulkImportTag),
+                buildAndPushMultiplatformImageCommand(expectedCompactionTag, "./docker/compaction"),
+                buildImageCommand(expectedEmrTag, "./docker/bulk-import-runner-emr-serverless"),
+                pushImageCommand(expectedEmrTag));
+    }
+
+    @Test
+    void shouldBuildAndPushLambdaImages() throws Exception {
 
         // Given
         files.put(Path.of("./jars/statestore.jar"), "statestore-jar-content");
@@ -119,15 +143,22 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     protected void uploadAllImages(DockerImageConfiguration imageConfig) throws Exception {
-        UploadDockerImagesToRepository.uploadAllImages(imageConfig, uploader(), "www.somedocker.com");
+        uploadAllImages(imageConfig, uploaderBuilder().build());
     }
 
-    protected UploadDockerImages uploader() {
+    protected void uploadAllImagesNoBuildxBuilder(DockerImageConfiguration imageConfig) throws Exception {
+        uploadAllImages(imageConfig, uploaderBuilder().createMultiplatformBuilder(false).build());
+    }
+
+    protected void uploadAllImages(DockerImageConfiguration imageConfig, UploadDockerImages uploader) throws Exception {
+        UploadDockerImagesToRepository.uploadAllImages(imageConfig, uploader, "www.somedocker.com");
+    }
+
+    protected UploadDockerImages.Builder uploaderBuilder() {
         return UploadDockerImages.builder()
                 .commandRunner(commandRunner)
                 .copyFile((source, target) -> files.put(target, files.get(source)))
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
-                .version("1.0.0")
-                .build();
+                .version("1.0.0");
     }
 }

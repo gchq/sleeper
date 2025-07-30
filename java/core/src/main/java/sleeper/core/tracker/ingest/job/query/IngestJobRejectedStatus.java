@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
@@ -75,8 +75,8 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, JobRun
     }
 
     @Override
-    public RecordsProcessed getRecordsProcessed() {
-        return RecordsProcessed.NONE;
+    public RowsProcessed getRowsProcessed() {
+        return RowsProcessed.NONE;
     }
 
     @Override

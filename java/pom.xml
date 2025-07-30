@@ -15,13 +15,14 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.32.0-SNAPSHOT</version>
+    <version>0.32.0</version>
 
     <modules>
         <module>core</module>
@@ -32,6 +33,7 @@
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
         <module>configuration</module>
+        <module>foreign-bridge</module>
         <module>compaction</module>
         <module>query</module>
         <module>system-test</module>
@@ -72,8 +74,8 @@
         <!-- The version of Arrow should match the version used by Spark, under spark-sql-api. -->
         <arrow.version>12.0.1</arrow.version>
         <!--
-        Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as it is
-        provided in EMR.
+        Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as
+        it is provided in EMR.
         -->
         <datasketches.version>3.3.0</datasketches.version>
         <!--
@@ -94,13 +96,13 @@
         Snappy is used by both hadoop-client and parquet-hadoop.
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
         -->
-        <snappy.version>1.1.10.7</snappy.version>
+        <snappy.version>1.1.10.8</snappy.version>
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
         <protobuf.version>4.31.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.3.1</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.4</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -120,7 +122,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
         -->
-        <okio.version>3.15.0</okio.version>
+        <okio.version>3.16.0</okio.version>
         <!--
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
@@ -129,28 +131,30 @@
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
-        <aws-java-sdk-v2.version>2.32.1</aws-java-sdk-v2.version>
-        <!-- EMR Serverless has a version of the AWS SDK built into it that we can't easily change. -->
-        <!-- At the time of writing it's not compatible with the latest version. -->
-        <!-- We're getting different versions mixed together in the classpath and seeing the following error when -->
-        <!-- BulkImportJobDriver.start tries to create an SqsClient: -->
-        <!-- java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE -->
-        <!-- at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75) -->
-        <!-- The old version of the library is coming from this file in the EMR Serverless Docker image: -->
-        <!-- /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.19.0.jar -->
-        <!-- To find the version below, we logged out the code location for the class in the Spark driver, then -->
-        <!-- copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class. -->
+        <aws-java-sdk-v2.version>2.32.11</aws-java-sdk-v2.version>
+        <!--
+        EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
+        At the time of writing it's not compatible with the latest version.
+        We're getting different versions mixed together in the classpath and seeing the following error when
+        BulkImportJobDriver.start tries to create an SqsClient:
+        java.lang.NoSuchFieldError: AWS_AUTH_SCHEME_PREFERENCE
+        at software.amazon.awssdk.awscore.auth.AuthSchemePreferenceResolver.fromSystemSetting(AuthSchemePreferenceResolver.java:75)
+        The old version of the library is coming from this file in the EMR Serverless Docker image:
+        /usr/share/aws/emr/serverless-goodies/lib/emr-serverless-spark-goodies-2.19.0.jar
+        To find the version below, we logged out the code location for the class in the Spark
+        driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
+        -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.38.7</aws-crt.version>
-        <aws-lambda-java-events.version>3.16.0</aws-lambda-java-events.version>
+        <aws-crt.version>0.38.8</aws-crt.version>
+        <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>2.2.0</aws-lambda-powertools.version>
+        <aws-lambda-powertools.version>2.2.1</aws-lambda-powertools.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
-        <commons-codec.version>1.18.0</commons-codec.version>
-        <commons-io.version>2.19.0</commons-io.version>
+        <commons-codec.version>1.19.0</commons-codec.version>
+        <commons-io.version>2.20.0</commons-io.version>
         <commons-configuration.version>2.12.0</commons-configuration.version>
-        <commons-compress.version>1.27.1</commons-compress.version>
-        <commons-text.version>1.13.1</commons-text.version>
+        <commons-compress.version>1.28.0</commons-compress.version>
+        <commons-text.version>1.14.0</commons-text.version>
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
         <commons-fileupload.version>1.6.0</commons-fileupload.version>
@@ -173,14 +177,14 @@
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.3</zookeeper.version>
-        <jackson.version>2.19.1</jackson.version>
+        <jackson.version>2.19.2</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
-        <google.errorprone.version>2.40.0</google.errorprone.version>
-        <cdk.version>2.205.0</cdk.version>
+        <google.errorprone.version>2.41.0</google.errorprone.version>
+        <cdk.version>2.208.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.112.0</jsii.version>
@@ -214,29 +218,29 @@
         <jnr.ffi.version>2.2.17</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.13.3</junit.version>
-        <junit.platform.version>1.13.3</junit.platform.version>
+        <junit.version>5.13.4</junit.version>
+        <junit.platform.version>1.13.4</junit.platform.version>
         <mockito.version>5.18.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <wiremock.version>3.13.1</wiremock.version>
         <handlebars.version>4.4.0</handlebars.version>
         <assertj.version>3.27.3</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <approvaltests.version>24.22.0</approvaltests.version>
+        <approvaltests.version>25.0.23</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.3</xmlunit.version>
         <jsonunit.version>4.1.1</jsonunit.version>
         <checkstyle.version>10.26.1</checkstyle.version>
-        <sleeper.system.test.short.id/>
-        <sleeper.system.test.vpc.id/>
-        <sleeper.system.test.subnet.ids/>
-        <sleeper.system.test.output.dir/>
+        <sleeper.system.test.short.id />
+        <sleeper.system.test.vpc.id />
+        <sleeper.system.test.subnet.ids />
+        <sleeper.system.test.output.dir />
         <sleeper.system.test.cluster.enabled>false</sleeper.system.test.cluster.enabled>
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
-        <sleeper.system.test.force.statestore.classname/>
-        <sleeper.system.test.standalone.properties.template/>
-        <sleeper.system.test.instance.properties.overrides/>
+        <sleeper.system.test.force.statestore.classname />
+        <sleeper.system.test.standalone.properties.template />
+        <sleeper.system.test.instance.properties.overrides />
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
         <release.plugin.version>3.1.1</release.plugin.version>
@@ -267,7 +271,7 @@
         java.lang.invoke.SerializedLambda is accessed by Apache Spark KryoSerializer, used in the bulk import job runner
 
         See also https://arrow.apache.org/docs/java/install.html
-        "When using Java 17 or later, some JDK internals must be exposed by adding - - add-opens=java.base/java.nio=ALL-UNNAMED.
+        "When using Java 17 or later, some JDK internals must be exposed by adding add-opens=java.base/java.nio=ALL-UNNAMED.
         Otherwise, you may see errors like module java.base does not "opens java.nio" to unnamed module."
         -->
         <module.access.args>
@@ -277,7 +281,7 @@
             --add-opens java.base/java.lang.invoke=ALL-UNNAMED
         </module.access.args>
         <!--  This is required for later correct replacement of argLine -->
-        <argLine/>
+        <argLine />
     </properties>
 
     <dependencyManagement>
@@ -479,57 +483,57 @@
                 <artifactId>json-utils</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>utils</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>identity-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>annotations</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>http-client-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>http-auth-aws</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>retries-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>protocol-core</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>aws-core</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>profiles</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>checksums</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
             </dependency>
-           <dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>checksums-spi</artifactId>
                 <version>${aws-java-sdk-v2.version}</version>
@@ -1666,8 +1670,8 @@
                             </includes>
                             <message>Log4j conflicts with reload4j, add an exclusion</message>
                         </bannedDependencies>
-                        <dependencyConvergence/>
-                        <banDuplicatePomDependencyVersions/>
+                        <dependencyConvergence />
+                        <banDuplicatePomDependencyVersions />
                     </rules>
                 </configuration>
             </plugin>
@@ -1709,15 +1713,18 @@
                                     <!--
                                     This is needed to merge META-INFO/services/org.apache.hadoop.fs.FileSystem, which
                                     is provided by different libraries.
+
                                     Otherwise depending on the order Maven processes the jars, sometimes it takes the
                                     version of this file from hadoop-aws, which only declares
-                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem.
-                                    This prevents Hadoop from loading the local file system, and we see errors like this:
+                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem. This prevents Hadoop from loading
+                                    the local file system, and we see errors like this:
+
                                     org.apache.hadoop.fs.UnsupportedFileSystemException: No FileSystem for scheme "file"
+
                                     This is only strictly needed for modules that use Hadoop, but in practice this is
                                     most fat jars.
                                     -->
-                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                 </transformers>
                                 <filters>
                                     <filter>

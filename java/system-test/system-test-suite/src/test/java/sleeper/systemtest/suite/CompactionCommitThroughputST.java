@@ -73,10 +73,10 @@ public class CompactionCommitThroughputST {
                 .waitForJobsToCommit(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(6)));
 
         // Then
-        assertThat(sleeper.tableFiles().recordsByFilename())
+        assertThat(sleeper.tableFiles().rowsByFilename())
                 .isEqualTo(compactions.streamOutputFiles()
                         .collect(groupingBy(FileReference::getFilename,
-                                summingLong(FileReference::getNumberOfRecords))));
+                                summingLong(FileReference::getNumberOfRows))));
     }
 
 }

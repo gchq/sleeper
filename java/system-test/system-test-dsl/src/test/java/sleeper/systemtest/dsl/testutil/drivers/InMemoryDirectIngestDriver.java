@@ -48,20 +48,20 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
     }
 
     @Override
-    public void ingest(Path tempDir, Iterator<Row> records) {
-        ingest(records, ingestCoordinatorBuilder(tempDir));
+    public void ingest(Path tempDir, Iterator<Row> rows) {
+        ingest(rows, ingestCoordinatorBuilder(tempDir));
     }
 
     @Override
-    public void ingest(Path tempDir, Iterator<Row> records, Consumer<List<FileReference>> addFiles) {
-        ingest(records, ingestCoordinatorBuilder(tempDir)
+    public void ingest(Path tempDir, Iterator<Row> rows, Consumer<List<FileReference>> addFiles) {
+        ingest(rows, ingestCoordinatorBuilder(tempDir)
                 .addFilesToStateStore(addFiles::accept));
     }
 
-    private void ingest(Iterator<Row> records, IngestCoordinator.Builder<Row> builder) {
+    private void ingest(Iterator<Row> rows, IngestCoordinator.Builder<Row> builder) {
         try (IngestCoordinator<Row> coordinator = builder.build()) {
-            while (records.hasNext()) {
-                coordinator.write(records.next());
+            while (rows.hasNext()) {
+                coordinator.write(rows.next());
             }
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);

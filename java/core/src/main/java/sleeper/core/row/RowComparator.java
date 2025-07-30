@@ -23,7 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Compares records by row keys then sort keys.
+ * Compares rows by row keys then sort keys.
  */
 public class RowComparator implements Comparator<Row> {
     private final Schema schema;

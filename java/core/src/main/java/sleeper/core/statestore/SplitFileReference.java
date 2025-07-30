@@ -34,7 +34,7 @@ public class SplitFileReference {
      * with. This will be paired with another call to this method for the other child partition, to split the original
      * file reference into two. The original reference should then be deleted.
      * <p>
-     * This will estimate the number of records in the child partition by assuming an even split between two child
+     * This will estimate the number of rows in the child partition by assuming an even split between two child
      * partitions.
      *
      * @param  file             the file reference being split
@@ -42,7 +42,7 @@ public class SplitFileReference {
      * @return                  the reference to the new copy
      */
     public static FileReference referenceForChildPartition(FileReference file, String childPartitionId) {
-        return referenceForChildPartition(file, childPartitionId, file.getNumberOfRecords() / 2);
+        return referenceForChildPartition(file, childPartitionId, file.getNumberOfRows() / 2);
     }
 
     /**
@@ -50,18 +50,18 @@ public class SplitFileReference {
      * with. This will be paired with another call to this method for the other child partition, to split the original
      * file reference into two. The original reference should then be deleted.
      * <p>
-     * This should be used when we have estimated the number of records in the child partiton.
+     * This should be used when we have estimated the number of rows in the child partiton.
      *
      * @param  file             the file reference being split
      * @param  childPartitionId the ID of the child partition to create metadata for
-     * @param  numberOfRecords  the estimate of the number of records in the child partition
+     * @param  numberOfRows     the estimate of the number of rows in the child partition
      * @return                  the reference to the new copy
      */
-    public static FileReference referenceForChildPartition(FileReference file, String childPartitionId, long numberOfRecords) {
+    public static FileReference referenceForChildPartition(FileReference file, String childPartitionId, long numberOfRows) {
         return FileReference.builder()
                 .partitionId(childPartitionId)
                 .filename(file.getFilename())
-                .numberOfRecords(numberOfRecords)
+                .numberOfRows(numberOfRows)
                 .countApproximate(true)
                 .onlyContainsDataForThisPartition(false)
                 .build();

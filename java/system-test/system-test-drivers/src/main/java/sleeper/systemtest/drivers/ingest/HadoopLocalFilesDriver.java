@@ -20,7 +20,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.systemtest.dsl.sourcedata.IngestLocalFilesDriver;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ public class HadoopLocalFilesDriver implements IngestLocalFilesDriver {
 
     @Override
     public void writeFile(TableProperties tableProperties, Path filePath, Iterator<Row> rows) {
-        try (ParquetWriter<Row> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                 new org.apache.hadoop.fs.Path("file://" + filePath),
                 tableProperties, new Configuration())) {
             for (Row row : (Iterable<Row>) () -> rows) {

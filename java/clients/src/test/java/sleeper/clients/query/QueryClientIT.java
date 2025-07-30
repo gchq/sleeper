@@ -41,7 +41,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
+import sleeper.ingest.runner.testutils.IngestRowsTestDataHelper;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -93,7 +93,7 @@ public class QueryClientIT {
     @DisplayName("Exact query")
     class ExactQuery {
         @Test
-        void shouldReturnNoRecordsWhenExactRecordNotFound() throws Exception {
+        void shouldReturnNoRowsWhenExactRowNotFound() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key");
             createTable("test-table", schema);
@@ -112,17 +112,17 @@ public class QueryClientIT {
         }
 
         @Test
-        void shouldRunExactRecordQuery() throws Exception {
+        void shouldRunExactRowQuery() throws Exception {
             // Given
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key", new LongType()))
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
-            Row record = new Row();
-            record.put("key", 123L);
-            record.put("value", "abc");
-            ingestData(tableProperties, List.of(record).iterator());
+            Row row = new Row();
+            row.put("key", 123L);
+            row.put("value", "abc");
+            ingestData(tableProperties, List.of(row).iterator());
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
@@ -143,14 +143,14 @@ public class QueryClientIT {
     @DisplayName("Range query")
     class RangeQuery {
         @Test
-        void shouldRunRangeRecordQuery() throws Exception {
+        void shouldRunRangeQuery() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Row> records = LongStream.rangeClosed(0, 10)
+            List<Row> rows = LongStream.rangeClosed(0, 10)
                     .mapToObj(num -> new Row(Map.of("key", num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, records.iterator());
+            ingestData(tableProperties, rows.iterator());
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -179,10 +179,10 @@ public class QueryClientIT {
             // Given
             Schema schema = createSchemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Row> records = LongStream.rangeClosed(0, 3)
+            List<Row> rows = LongStream.rangeClosed(0, 3)
                     .mapToObj(num -> new Row(Map.of("key", num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, records.iterator());
+            ingestData(tableProperties, rows.iterator());
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -208,20 +208,20 @@ public class QueryClientIT {
         }
 
         @Test
-        void shouldRunRangeRecordQueryByMultipleKeys() throws Exception {
+        void shouldRunRangeQueryByMultipleKeys() throws Exception {
             // Given
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new LongType()), new Field("key2", new LongType()))
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
-            List<Row> records = LongStream.rangeClosed(0, 10)
+            List<Row> rows = LongStream.rangeClosed(0, 10)
                     .mapToObj(num -> new Row(Map.of(
                             "key1", num,
                             "key2", num + 100L,
                             "value", "test-" + num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, records.iterator());
+            ingestData(tableProperties, rows.iterator());
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -336,11 +336,11 @@ public class QueryClientIT {
                 .run();
     }
 
-    private void ingestData(TableProperties tableProperties, Iterator<Row> recordIterator) throws Exception {
+    private void ingestData(TableProperties tableProperties, Iterator<Row> rowIterator) throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
-        IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
+        IngestFactory factory = IngestRowsTestDataHelper.createIngestFactory(tempDir.toString(),
                 InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
                 instanceProperties);
-        factory.ingestFromRowIterator(tableProperties, recordIterator);
+        factory.ingestFromRowIterator(tableProperties, rowIterator);
     }
 }

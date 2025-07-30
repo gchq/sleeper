@@ -31,7 +31,7 @@ public class FileReferenceSystemTestHelper {
         return FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), sleeper.partitioning().tree());
     }
 
-    public static long numberOfRecordsIn(List<? extends FileReference> files) {
-        return files.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+    public static long numberOfRowsIn(List<? extends FileReference> files) {
+        return files.stream().mapToLong(FileReference::getNumberOfRows).sum();
     }
 }

@@ -6,6 +6,52 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.32.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.32.0*
+
+This contains fixes to compaction with DataFusion, and preparation for deployment from published artefacts.
+
+Ingest:
+- All ingest systems (standard, bulk import, batcher) now allow filenames that start with the scheme s3a:// or s3://
+  - Previously the scheme had to be omitted
+
+Iterators:
+- Experimental aggregation configuration is now applied to queries, standard ingest and compactions in Java
+  - This is set as an iterator, but previously it was only allowed in compactions with DataFusion
+  - This can be configured as in issue https://github.com/gchq/sleeper/issues/4344
+  - This will be redesigned in issue https://github.com/gchq/sleeper/issues/5102
+
+Query:
+- The web socket query client in Java now parses returned rows for further processing, where previously they were returned as strings
+- Added experimental example code to query via a web socket in Python
+
+Reporting:
+- Included reasons for failures in reports on unfinished jobs
+
+Build:
+- Added `scripts/deploy/deployToDockerRepository.sh` to publish all Docker images to a repository
+
+Upgrades:
+- Updated to latest version of Athena Query Federation SDK
+- Updated to Trino 435
+- Removed all use of AWS SDK v1
+
+Misc:
+- Renamed the concept of "records" to use "rows" instead
+- Removed the concept of "active files" in favour of referenced/unreferenced files
+
+Documentation:
+- Documented which Docker images are needed when manually deploying the system
+- Improved design documentation of DataFusion compaction and aggregation
+- Improved documentation of test strategy
+
+Bugfixes:
+- Compactions with DataFusion now produce correctly sorted data at large scales
+- Fixed `scripts/utility/runCompactionTasks.sh` to invoke the correct Java class
+
+
 ## Version 0.31.1
 
 This is a bug fix release for the Python API.

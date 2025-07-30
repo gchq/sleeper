@@ -38,6 +38,7 @@ public class UploadDockerImages {
     private final Path baseDockerDirectory;
     private final Path jarsDirectory;
     private final String version;
+    private final boolean createMultiplatformBuilder;
 
     private UploadDockerImages(Builder builder) {
         commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
@@ -45,6 +46,7 @@ public class UploadDockerImages {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
+        createMultiplatformBuilder = builder.createMultiplatformBuilder;
     }
 
     public static Builder builder() {
@@ -67,7 +69,7 @@ public class UploadDockerImages {
             callbacks.beforeAll();
         }
 
-        if (imagesToUpload.stream().anyMatch(StackDockerImage::isMultiplatform)) {
+        if (createMultiplatformBuilder && imagesToUpload.stream().anyMatch(StackDockerImage::isMultiplatform)) {
             commandRunner.run("docker", "buildx", "rm", "sleeper");
             commandRunner.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
         }
@@ -111,6 +113,7 @@ public class UploadDockerImages {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
         private String version = SleeperVersion.getVersion();
+        private boolean createMultiplatformBuilder = true;
 
         private Builder() {
         }
@@ -137,6 +140,11 @@ public class UploadDockerImages {
 
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        public Builder createMultiplatformBuilder(boolean createMultiplatformBuilder) {
+            this.createMultiplatformBuilder = createMultiplatformBuilder;
             return this;
         }
 

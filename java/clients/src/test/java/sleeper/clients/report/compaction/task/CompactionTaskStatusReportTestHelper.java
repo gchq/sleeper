@@ -19,7 +19,7 @@ package sleeper.clients.report.compaction.task;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -39,8 +39,8 @@ public class CompactionTaskStatusReportTestHelper {
     }
 
     public static CompactionTaskStatus finishedTask(
-            String taskId, String startTime, String finishTime, long recordsRead, long recordsWritten) {
-        return finishedTaskBuilder(taskId, startTime, finishTime, recordsRead, recordsWritten).build();
+            String taskId, String startTime, String finishTime, long rowsRead, long rowsWritten) {
+        return finishedTaskBuilder(taskId, startTime, finishTime, rowsRead, rowsWritten).build();
     }
 
     public static CompactionTaskStatus finishedTask(
@@ -51,27 +51,27 @@ public class CompactionTaskStatusReportTestHelper {
     }
 
     private static CompactionTaskStatus.Builder finishedTaskBuilder(
-            String taskId, String startTime, String finishTime, long recordsRead, long recordsWritten) {
+            String taskId, String startTime, String finishTime, long rowsRead, long rowsWritten) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime),
-                        taskFinishedStatus(startTime, finishTime, recordsRead, recordsWritten));
+                        taskFinishedStatus(startTime, finishTime, rowsRead, rowsWritten));
     }
 
     private static CompactionTaskFinishedStatus.Builder taskFinishedStatus(
-            String startTime, String finishTime, long recordsRead, long recordsWritten) {
-        return taskFinishedStatusBuilder(startTime, finishTime, recordsRead, recordsWritten);
+            String startTime, String finishTime, long rowsRead, long rowsWritten) {
+        return taskFinishedStatusBuilder(startTime, finishTime, rowsRead, rowsWritten);
     }
 
     private static CompactionTaskFinishedStatus.Builder taskFinishedStatusBuilder(
-            String startTime, String finishTime, long recordsRead, long recordsWritten) {
+            String startTime, String finishTime, long rowsRead, long rowsWritten) {
         return CompactionTaskFinishedStatus.builder()
-                .addJobSummary(createSummary(startTime, finishTime, recordsRead, recordsWritten));
+                .addJobSummary(createSummary(startTime, finishTime, rowsRead, rowsWritten));
     }
 
     private static JobRunSummary createSummary(
-            String startTime, String finishTime, long recordsRead, long recordsWritten) {
+            String startTime, String finishTime, long rowsRead, long rowsWritten) {
         return new JobRunSummary(
-                new RecordsProcessed(recordsRead, recordsWritten),
+                new RowsProcessed(rowsRead, rowsWritten),
                 Instant.parse(startTime), Instant.parse(finishTime));
     }
 }

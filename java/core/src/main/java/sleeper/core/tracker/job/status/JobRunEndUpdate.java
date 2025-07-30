@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -36,11 +36,11 @@ public interface JobRunEndUpdate extends JobRunStatusUpdate {
     Instant getFinishTime();
 
     /**
-     * Gets a summary of records processed by this run.
+     * Gets a summary of rows processed by this run.
      *
      * @return the summary
      */
-    RecordsProcessed getRecordsProcessed();
+    RowsProcessed getRowsProcessed();
 
     default Optional<Duration> getTimeInProcess() {
         return Optional.empty();
