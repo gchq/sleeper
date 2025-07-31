@@ -19,5 +19,5 @@ RUN cargo install sccache --locked
 
 ENV CC="sccache clang-20"
 ENV CXX="sccache clang++-20"
-ENV RUSTC_WRAPPER="/usr/bin/sccache"
+ENV RUSTC_WRAPPER="/usr/local/cargo/bin/sccache"
 ENV SCCACHE_DIR="/tmp/sccache"
