@@ -9,21 +9,19 @@ assignees: ''
 
 You've done some work towards another issue but haven't finished it yet. Because you're a bright and community minded
 person, you want to integrate your changes into the rest of the project before you continue your work on the issue. This
-means everyone else can see your changes in their copy of the code, and they can take your work into account in
+will mean everyone else can see your changes in their copy of the code, and they can take your work into account in
 anything they're doing. This is great!
 
-Please link this to the issue you're working on by replacing the link below, or fill in the issue number in the
-placeholder.
+Please complete the link below to link this to the issue you're working on. Give this new issue a name that describes
+the changes you will include in your pull request.
 
 Split from:
 - https://github.com/gchq/sleeper/issues/XXX
 
 For tracking reasons, we want each pull request to be linked to an issue that it resolves. For an issue that's still in
 progress, please don't link your pull request to the original because that would trigger GitHub to close the original
-issue when the pull request is merged.
-
-This new issue will record that some progress was made, and can be considered split from the original. Please give it a
-name that describes the changes you've made. You can then link your pull request to this new issue.
+issue when the pull request is merged. This new issue will record that some progress was made, and can be considered
+split from the original. You can link your pull request to this new issue.
 
 Any changes you make must still pass all tests and linting. Your code in progress should still follow
 [our conventions](https://github.com/gchq/sleeper/blob/develop/docs/development/conventions.md), and should
