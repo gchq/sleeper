@@ -18,17 +18,22 @@ the changes you will include in a pull request.
 Split from:
 - https://github.com/gchq/sleeper/issues/XXX
 
-For tracking reasons, we want each pull request to be linked to an issue that it resolves. For an issue that's still in
-progress, please don't link a pull request to the original because that would trigger GitHub to close the original issue
-when the pull request is merged. Instead, you can link your pull request to a new issue that's split from the original.
+#### Pull requests for unfinished changes
 
 Any changes you make must still pass all tests and linting. Your code in progress should still follow
 [our conventions](https://github.com/gchq/sleeper/blob/develop/docs/development/conventions.md), and should
 still include automated test coverage following
-[our test strategy](https://github.com/gchq/sleeper/blob/develop/docs/development/test-strategy.md). If your changes
-affect the behaviour of the system in incomplete ways, or may cause confusion over an incomplete feature, we may still
-be able to accommodate this. You could avoid connecting your new code to the rest of the system temporarily, or include
-configuration such that the new behaviour is disabled by default.
+[our test strategy](https://github.com/gchq/sleeper/blob/develop/docs/development/test-strategy.md).
+
+If your changes affect the behaviour of the system in incomplete ways, or may cause confusion over an incomplete
+feature, we may still be able to accommodate this. You could avoid connecting your new code to the rest of the system
+temporarily, or include configuration such that the new behaviour is disabled by default.
+
+#### Explanation
+
+For tracking reasons, we want each pull request to be linked to an issue that it resolves. For an issue that's still in
+progress, please don't link a pull request to the original because that would trigger GitHub to close the original issue
+when the pull request is merged. Instead, you can link your pull request to a new issue that's split from the original.
 
 As an alternative to this template, you could consider raising a normal feature issue, with a link to the original in
 the background section. You can use a "Split from:" link as shown above. That gives you an opportunity to include more
