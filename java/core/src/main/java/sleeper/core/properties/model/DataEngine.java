@@ -24,7 +24,7 @@ import org.apache.commons.lang3.EnumUtils;
 public enum DataEngine {
     /** Pure Java implementations. */
     JAVA,
-    /** Uses a native library written in Rust to perform a data operations with Apache DataFusion. */
+    /** Uses a native library written in Rust to perform data operations with Apache DataFusion. */
     DATAFUSION;
 
     /**
