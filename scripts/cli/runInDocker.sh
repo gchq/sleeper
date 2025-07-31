@@ -38,14 +38,9 @@ run_in_docker() {
     RUN_PARAMS+=(-it)
   fi
   local TEMP_DIR=$(mktemp -d)
-  local CONTAINER_ID_PATH="$TEMP_DIR/container.id"
   mkdir -p "$HOME/.aws"
-  # We ensure the container ID is available as a file inside the container
-  # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
     --rm
-    --cidfile "$CONTAINER_ID_PATH"
-    -v "$CONTAINER_ID_PATH:/tmp/container.id"
     --add-host "host.docker.internal=host-gateway"
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
@@ -64,7 +59,6 @@ run_in_docker() {
     "$@"
   )
   docker run "${RUN_PARAMS[@]}"
-  rm "$CONTAINER_ID_PATH"
   rmdir "$TEMP_DIR"
 }
 
