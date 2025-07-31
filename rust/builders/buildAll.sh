@@ -22,10 +22,10 @@ pushd "$THIS_DIR"/base
 docker build -t sleeper-rust-builder-base:current .
 popd
 
-pushd "$THIS_DIR"/x86
-docker build -t ghcr.io/gchq/sleeper-rust-builder-x86:latest .
+pushd "$THIS_DIR"/x86_64
+docker build -t ghcr.io/gchq/sleeper-rust-builder-x86_64:latest .
 popd
 
-pushd "$THIS_DIR"/graviton
-docker build -t ghcr.io/gchq/sleeper-rust-builder-graviton:latest .
+pushd "$THIS_DIR"/aarch64
+docker build -t ghcr.io/gchq/sleeper-rust-builder-aarch64:latest .
 popd

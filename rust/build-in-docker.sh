@@ -20,12 +20,12 @@ PROJECT_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 
 PLATFORM=$1
 shift
-if [ "$PLATFORM" = "x86" ]; then
-  BUILD_IMAGE=${RUST_BUILD_IMAGE_X86:-"ghcr.io/gchq/sleeper-rust-builder-x86:latest"}
-elif [ "$PLATFORM" = "graviton" ]; then
-  BUILD_IMAGE=${RUST_BUILD_IMAGE_GRAVITON:-"ghcr.io/gchq/sleeper-rust-builder-graviton:latest"}
+if [ "$PLATFORM" = "x86_64" ]; then
+  BUILD_IMAGE=${RUST_BUILD_IMAGE_X86_64:-"ghcr.io/gchq/sleeper-rust-builder-x86_64:latest"}
+elif [ "$PLATFORM" = "aarch64" ]; then
+  BUILD_IMAGE=${RUST_BUILD_IMAGE_AARCH64:-"ghcr.io/gchq/sleeper-rust-builder-aarch64:latest"}
 else
-  echo "Platform not recognised, expected x86 or graviton: $PLATFORM"
+  echo "Platform not recognised, expected x86_64 or aarch64: $PLATFORM"
   exit 1
 fi
 

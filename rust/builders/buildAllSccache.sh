@@ -26,10 +26,10 @@ pushd "$THIS_DIR"/base-sccache
 docker build -t sleeper-rust-builder-sccache:current .
 popd
 
-pushd "$THIS_DIR"/x86
-docker build -t ghcr.io/gchq/sleeper-rust-builder-x86-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
+pushd "$THIS_DIR"/x86_64
+docker build -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
 popd
 
-pushd "$THIS_DIR"/graviton
-docker build -t ghcr.io/gchq/sleeper-rust-builder-graviton-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
+pushd "$THIS_DIR"/aarch64
+docker build -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
 popd

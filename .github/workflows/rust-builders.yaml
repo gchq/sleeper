@@ -66,11 +66,11 @@ jobs:
             build-url=${{ env.BUILD_URL }}
       - name: Pull base sccache image
         run: docker pull ${{ env.SCCACHE_IMAGE }}
-      - name: Build x86 Docker image
+      - name: Build x86_64 Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./rust/builders/x86
-          tags: ghcr.io/gchq/sleeper-rust-builder-x86:latest
+          context: ./rust/builders/x86_64
+          tags: ghcr.io/gchq/sleeper-rust-builder-x86_64:latest
           build-args: BASE_IMAGE=${{ env.BASE_IMAGE }}
           sbom: false
           provenance: false
@@ -79,11 +79,11 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-      - name: Build graviton Docker image
+      - name: Build aarch64 Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./rust/builders/graviton
-          tags: ghcr.io/gchq/sleeper-rust-builder-graviton:latest
+          context: ./rust/builders/aarch64
+          tags: ghcr.io/gchq/sleeper-rust-builder-aarch64:latest
           build-args: BASE_IMAGE=${{ env.BASE_IMAGE }}
           sbom: false
           provenance: false
@@ -92,11 +92,11 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-      - name: Build x86 sccache Docker image
+      - name: Build x86_64 sccache Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./rust/builders/x86
-          tags: ghcr.io/gchq/sleeper-rust-builder-x86-sccache:latest
+          context: ./rust/builders/x86_64
+          tags: ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest
           build-args: BASE_IMAGE=${{ env.SCCACHE_IMAGE }}
           sbom: false
           provenance: false
@@ -105,11 +105,11 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-      - name: Build graviton sccache Docker image
+      - name: Build aarch64 sccache Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./rust/builders/graviton
-          tags: ghcr.io/gchq/sleeper-rust-builder-graviton-sccache:latest
+          context: ./rust/builders/aarch64
+          tags: ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest
           build-args: BASE_IMAGE=${{ env.SCCACHE_IMAGE }}
           sbom: false
           provenance: false
