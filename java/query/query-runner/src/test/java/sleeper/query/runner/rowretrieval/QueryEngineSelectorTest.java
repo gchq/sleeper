@@ -15,12 +15,37 @@
  */
 package sleeper.query.runner.rowretrieval;
 
-import org.junit.Test;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.Test;
+
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.DataEngine;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class QueryEngineSelectorTest {
 
     @Test
     public void shouldSelectJavaQueryPath() {
+        // Given
+        Configuration conf = new Configuration();
+        ExecutorService exec = Executors.newSingleThreadExecutor();
+        QueryEngineSelector selector = new QueryEngineSelector(exec, conf);
+        InstanceProperties instanceProperties = new InstanceProperties();
 
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.setEnum(TableProperty.DATA_ENGINE, DataEngine.JAVA);
+
+        // When
+        LeafPartitionRowRetriever retriever = selector.getRowRetriever(tableProperties);
+
+        // Then
+        assertThat(retriever).isInstanceOf(LeafPartitionRowRetrieverImpl.class);
     }
 }
