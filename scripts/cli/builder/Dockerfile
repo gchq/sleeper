@@ -62,8 +62,6 @@ USER root
 RUN chmod -R a+rw $RUSTUP_HOME
 RUN chmod -R a+rw $CARGO_HOME
 
-COPY entrypoint.sh /entrypoint.sh
-
 # Create non-root user
 RUN adduser --disabled-password --gecos "" sleeper \
     && usermod -aG sudo,docker,rust sleeper \
