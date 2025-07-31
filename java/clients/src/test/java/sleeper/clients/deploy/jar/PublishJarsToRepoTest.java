@@ -29,52 +29,75 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class PublishJarsToRepoTest {
     private final PublishJarsToRepo.Builder genericBuilder = PublishJarsToRepo.builder()
             .pathOfJarsDirectory(Path.of("/some/directory/"))
-            .repoUrl("file:/someRepo")
-            .m2SettingsServerId("someId");
-    private final List<ClientJar> clientJars = List.of(
-            ClientJar.builder().filenameFormat("test1-%s.jar").artifactId("test1Artifact").build(),
-            ClientJar.builder().filenameFormat("test2-%s.jar").artifactId("test2Artifact").build());
-    private final List<LambdaJar> lambdJars = List.of(
-            LambdaJar.builder().filenameFormat("test3-%s.jar").imageName("test3Image").artifactId("test3Artifact").build(),
-            LambdaJar.builder().filenameFormat("test4-%s.jar").imageName("test4Image").artifactId("test4Artifact").build());
+            .repoUrl("someUrl")
+            .version("0.31.0")
+            .m2SettingsServerId("repo.id");
+
+    private final ClientJar clientJar1 = ClientJar.builder().filenameFormat("testClient1-%s.jar").artifactId("testClient1Artifact").build();
+    private final CommandPipeline clientJarPipeline1 = generateCommandPipeline("testClient1-0.31.0.jar", "testClient1Artifact");
+    private final ClientJar clientJar2 = ClientJar.builder().filenameFormat("testClient2-%s.jar").artifactId("testClient2Artifact").build();
+    private final CommandPipeline clientJarPipeline2 = generateCommandPipeline("testClient2-0.31.0.jar", "testClient2Artifact");
+    private final LambdaJar lambdaJar1 = LambdaJar.builder().filenameFormat("testLambda1-%s.jar").imageName("testLambda1Image").artifactId("testLambda1Artifact").build();
+    private final CommandPipeline lambdaJarPipeline1 = generateCommandPipeline("testLambda1-0.31.0.jar", "testLambda1Artifact");
+    private final LambdaJar lambdaJar2 = LambdaJar.builder().filenameFormat("testLambda2-%s.jar").imageName("testLambda2Image").artifactId("testLambda2Artifact").build();
+    private final CommandPipeline lambdaJarPipeline2 = generateCommandPipeline("testLambda2-0.31.0.jar", "testLambda2Artifact");
 
     @Test
-    public void testRunsCommands() throws Exception {
+    public void shouldPublishOneJarWhenJustOneClientJarNoLambda() throws Exception {
         //Given
         List<CommandPipeline> commandsThatRan = new ArrayList<>();
         CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
-        PublishJarsToRepo publishJarsToRepo = PublishJarsToRepo.builder()
-                .pathOfJarsDirectory(Path.of("/some/directory/"))
-                .repoUrl("someUrl").version("0.31.0")
-                .m2SettingsServerId("repo.id")
+        PublishJarsToRepo publishJarsToRepo = genericBuilder
                 .commandRunner(commandRunner)
-                .clientJars(clientJars)
-                .lambdaJars(lambdJars).build();
+                .clientJars(List.of(clientJar1))
+                .lambdaJars(List.of()).build();
 
         //When
         publishJarsToRepo.upload();
-        List<String> commandsString = commandsThatRan.stream().map(CommandPipeline::toString).toList();
 
         //Then
-        assertThat(commandsString)
-                //This one's from ClientJar
-                .containsExactly(
-                        "[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
-                                "-Dfile=/some/directory/test1-0.31.0.jar, -DgroupId=sleeper, " +
-                                "-DartifactId=test1Artifact, -Dversion=0.31.0, -DgeneratePom=false]",
-                        "[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
-                                "-Dfile=/some/directory/test2-0.31.0.jar, -DgroupId=sleeper, " +
-                                "-DartifactId=test2Artifact, -Dversion=0.31.0, -DgeneratePom=false]",
-                        "[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
-                                "-Dfile=/some/directory/test3-0.31.0.jar, -DgroupId=sleeper, " +
-                                "-DartifactId=test3Artifact, -Dversion=0.31.0, -DgeneratePom=false]",
-                        "[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
-                                "-Dfile=/some/directory/test4-0.31.0.jar, -DgroupId=sleeper, " +
-                                "-DartifactId=test4Artifact, -Dversion=0.31.0, -DgeneratePom=false]");
+        assertThat(commandsThatRan).containsExactly(clientJarPipeline1);
+    }
+
+    @Test
+    public void shouldPublishOneJarWhenJustOneLambdaJarNoClient() throws Exception {
+        //Given
+        List<CommandPipeline> commandsThatRan = new ArrayList<>();
+        CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
+        PublishJarsToRepo publishJarsToRepo = genericBuilder
+                .commandRunner(commandRunner)
+                .clientJars(List.of())
+                .lambdaJars(List.of(lambdaJar1)).build();
+
+        //When
+        publishJarsToRepo.upload();
+
+        //Then
+        assertThat(commandsThatRan).containsExactly(lambdaJarPipeline1);
+    }
+
+    @Test
+    public void shouldPublishAllJarsWhenMultipleClientAndLambda() throws Exception {
+        //Given
+        List<CommandPipeline> commandsThatRan = new ArrayList<>();
+        CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
+        PublishJarsToRepo publishJarsToRepo = genericBuilder
+                .commandRunner(commandRunner)
+                .clientJars(List.of(clientJar1, clientJar2))
+                .lambdaJars(List.of(lambdaJar1, lambdaJar2)).build();
+
+        //When
+        publishJarsToRepo.upload();
+
+        //Then
+        assertThat(commandsThatRan)
+                .containsExactly(clientJarPipeline1, clientJarPipeline2, lambdaJarPipeline1, lambdaJarPipeline2);
     }
 
     @Test
@@ -138,5 +161,16 @@ public class PublishJarsToRepoTest {
         assertThatThrownBy(() -> genericBuilder.lambdaJars(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Lambda jars must not be null");
+    }
+
+    private CommandPipeline generateCommandPipeline(String filename, String artifactId) {
+        return pipeline(command("mvn", "deploy:deploy-file", "-q",
+                "-Durl=someUrl",
+                "-DrepositoryId=repo.id",
+                "-Dfile=/some/directory/" + filename,
+                "-DgroupId=sleeper",
+                "-DartifactId=" + artifactId,
+                "-Dversion=0.31.0",
+                "-DgeneratePom=false"));
     }
 }
