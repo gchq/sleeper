@@ -30,7 +30,7 @@ else
 fi
 
 if [[ -z $1 ]]; then
-  BUILD_COMMAND=(cargo build --release --verbose)
+  BUILD_COMMAND=(cargo build --release)
 else
   BUILD_COMMAND=("$@")
 fi

@@ -29,9 +29,9 @@ jobs:
         run: SCCACHE_LOG=trace cargo build --verbose
       - name: Build for x86_64
         working-directory: ./rust
-        run: SCCACHE_LOG=trace ./build-in-docker.sh x86_64
+        run: SCCACHE_LOG=trace ./build-in-docker.sh x86_64 cargo build --release --verbose
       - name: Build for Graviton
         working-directory: ./rust
         env:
           RUSTFLAGS: "-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1"
-        run: SCCACHE_LOG=trace ./build-in-docker.sh aarch64
+        run: SCCACHE_LOG=trace ./build-in-docker.sh aarch64 cargo build --release --verbose
