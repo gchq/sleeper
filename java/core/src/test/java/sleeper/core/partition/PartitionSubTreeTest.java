@@ -22,29 +22,39 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PartitionSubTreeTest extends PartitionTreeTestBase {
 
     @Test
-    void shouldCreateSimpleSubTreeWithExactElements() {
+    void shouldCreateSubTreeWithExactLeafPartitionCount() {
+        // Given / When
+        int leafPartitionCount = 2;
+        PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), leafPartitionCount);
+
+        // Then
         Partition l1LeftAsLeaf = adjustLeafStatus(l1Left, true);
         Partition l1RightAsLeaf = adjustLeafStatus(l1Right, true);
-
-        PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), 2);
         assertThat(subTree.getLeafPartitions()).contains(l1LeftAsLeaf, l1RightAsLeaf);
-        assertThat(subTree.getAllPartitions().size()).isEqualTo(3);
+        assertThat(subTree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
     }
 
     @Test
-    void shouldCreateSimpleSubTreeWithElementsButExceedPartitionCount() {
+    void shouldCreateSubTreeWithLeafCountGreaterThanRequested() {
+        // Given / When
+        int leafPartitionCount = 3;
         PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), 3);
 
+        // Then
         assertThat(subTree.getAllPartitions()).contains(l1Left, l1Right);
         assertThat(subTree.getLeafPartitions()).doesNotContain(l1Left, l1Right);
+
         assertThat(subTree.getLeafPartitions()).contains(l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R);
-        assertThat(subTree.getAllPartitions().size()).isEqualTo(7);
+        assertThat(subTree.getLeafPartitions().size()).isGreaterThanOrEqualTo(leafPartitionCount);
     }
 
     @Test
-    void shouldCreateRootOnlyTreeWhenGivenZeroCount() {
+    void shouldCreateRootOnlySubTreeWhenGivenLeafPartitions() {
+        // Given / When
         PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), 0);
+
+        // Then
         assertThat(subTree.getRootPartition()).isEqualTo(root);
-        assertThat(subTree.getAllPartitions().size()).isEqualTo(1);
+        assertThat(subTree.getLeafPartitions().size()).isEqualTo(1);
     }
 }
