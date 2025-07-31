@@ -15,9 +15,11 @@
 ARG BASE_IMAGE="sleeper-rust-builder-base:current"
 FROM ${BASE_IMAGE}
 
-RUN cargo install sccache --locked
+RUN apt-get update && apt-get install -y \
+    sccache \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV CC="sccache clang-20"
 ENV CXX="sccache clang++-20"
-ENV RUSTC_WRAPPER="/usr/local/cargo/bin/sccache"
+ENV RUSTC_WRAPPER="sccache"
 ENV SCCACHE_DIR="/tmp/sccache"
