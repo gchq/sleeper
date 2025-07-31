@@ -17,6 +17,7 @@ package sleeper.core.partition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Generates a subtree of PartitionTree for given number of leaf nodes.
@@ -60,5 +61,10 @@ public class PartitionSubTree extends PartitionTree {
         }
         PartitionSubTree that = (PartitionSubTree) o;
         return idToPartition.equals(that.idToPartition);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idToPartition);
     }
 }
