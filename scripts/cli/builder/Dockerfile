@@ -27,7 +27,9 @@ RUN apt-get update && apt-get install -y \
     uuid-runtime \
     sudo \
     # Rust build time dependencies
-    gcc g++ libssl-dev \
+    clang \
+    gcc g++ cmake make \
+    pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # VS Code Java extension requires Java 21, so we install that but set the preferred version to match AWS EMR.
