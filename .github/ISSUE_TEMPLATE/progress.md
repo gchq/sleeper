@@ -30,6 +30,6 @@ affect the behaviour of the system in incomplete ways, or may cause confusion ov
 be able to accommodate this. You could avoid connecting your new code to the rest of the system temporarily, or include
 configuration such that the new behaviour is disabled by default.
 
-As an alternative to this template, you could consider raising a normal feature issue, and add a link to the original in
+As an alternative to this template, you could consider raising a normal feature issue, with a link to the original in
 the background section. You can use a "Split from:" link as shown above. That gives you an opportunity to include more
 information about the intention and any analysis.
