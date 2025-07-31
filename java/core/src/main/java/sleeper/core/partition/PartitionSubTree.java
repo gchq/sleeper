@@ -16,6 +16,7 @@
 package sleeper.core.partition;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,7 +32,8 @@ public class PartitionSubTree extends PartitionTree {
         // Check loop has count incremented by 1 to account for root partition that always must exist
         while (idToPartition.values().size() < leafPartitionCount + 1) {
             resetLeafIds.clear();
-            idToPartition.values().forEach(partition -> {
+            Collection<Partition> presentBatch = List.copyOf(idToPartition.values());
+            presentBatch.forEach(partition -> {
                 partition.getChildPartitionIds().forEach(
                         partitionId -> {
                             if (!idToPartition.containsKey(partitionId)) {
