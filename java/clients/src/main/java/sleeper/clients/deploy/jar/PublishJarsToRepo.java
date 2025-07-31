@@ -23,6 +23,7 @@ import sleeper.core.deploy.LambdaJar;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -37,6 +38,8 @@ public class PublishJarsToRepo {
     private final String m2SettingsServerId;
     private final String version;
     private final CommandPipelineRunner commandRunner;
+    private final List<ClientJar> clientJars;
+    private final List<LambdaJar> lambdaJars;
 
     private PublishJarsToRepo(Builder builder) {
         this.pathOfJarsDirectory = requireNonNull(builder.pathOfJarsDirectory, "File path must not be null");
@@ -44,6 +47,8 @@ public class PublishJarsToRepo {
         this.m2SettingsServerId = requireNonNull(builder.m2SettingsServerId, "M2 settings server Id must not be null");
         this.version = requireNonNull(builder.version, "Version to publish must not be null");
         this.commandRunner = requireNonNull(builder.commandRunner, "Command Runner must not be null");
+        this.clientJars = requireNonNull(builder.clientJars, "Client jars must not be null");
+        this.lambdaJars = requireNonNull(builder.lambdaJars, "Lambda jars must not be null");
     }
 
     public static Builder builder() {
@@ -75,11 +80,11 @@ public class PublishJarsToRepo {
      * @throws IOException          if soemthing goes wrong with running the maven commands
      */
     public void upload() throws IOException, InterruptedException {
-        for (ClientJar clientJar : ClientJar.getAll()) {
+        for (ClientJar clientJar : clientJars) {
             deployJars(clientJar.getFormattedFilename(version), clientJar.getArtifactId());
         }
 
-        for (LambdaJar lambdaJar : LambdaJar.getAll()) {
+        for (LambdaJar lambdaJar : lambdaJars) {
             deployJars(lambdaJar.getFormattedFilename(version), lambdaJar.getArtifactId());
         }
     }
@@ -105,6 +110,8 @@ public class PublishJarsToRepo {
         private String m2SettingsServerId;
         private String version = SleeperVersion.getVersion();
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
+        private List<ClientJar> clientJars = ClientJar.getAll();
+        private List<LambdaJar> lambdaJars = LambdaJar.getAll();
 
         private Builder() {
         }
@@ -164,6 +171,28 @@ public class PublishJarsToRepo {
          */
         public Builder commandRunner(CommandPipelineRunner commandRunner) {
             this.commandRunner = commandRunner;
+            return this;
+        }
+
+        /**
+         * Sets the list of client jars to be published.
+         *
+         * @param  clientJars the list of client jars to be used
+         * @return            the builder for method chaining
+         */
+        public Builder clientJars(List<ClientJar> clientJars) {
+            this.clientJars = clientJars;
+            return this;
+        }
+
+        /**
+         * Sets the list of client jars to be published.
+         *
+         * @param  lambdaJars the list of client jars to be used
+         * @return            the builder for method chaining
+         */
+        public Builder lambdaJars(List<LambdaJar> lambdaJars) {
+            this.lambdaJars = lambdaJars;
             return this;
         }
 

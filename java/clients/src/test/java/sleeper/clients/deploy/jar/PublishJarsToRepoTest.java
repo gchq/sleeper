@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandPipelineRunner;
+import sleeper.core.deploy.ClientJar;
+import sleeper.core.deploy.LambdaJar;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -33,6 +35,12 @@ public class PublishJarsToRepoTest {
             .pathOfJarsDirectory(Path.of("/some/directory/"))
             .repoUrl("file:/someRepo")
             .m2SettingsServerId("someId");
+    private final List<ClientJar> clientJars = List.of(
+            ClientJar.builder().filenameFormat("test1-%s.jar").artifactId("test1Artifact").build(),
+            ClientJar.builder().filenameFormat("test2-%s.jar").artifactId("test2Artifact").build());
+    private final List<LambdaJar> lambdJars = List.of(
+            LambdaJar.builder().filenameFormat("test3-%s.jar").imageName("test3Image").artifactId("test3Artifact").build(),
+            LambdaJar.builder().filenameFormat("test4-%s.jar").imageName("test4Image").artifactId("test4Artifact").build());
 
     @Test
     public void testRunsCommands() throws Exception {
@@ -43,7 +51,9 @@ public class PublishJarsToRepoTest {
                 .pathOfJarsDirectory(Path.of("/some/directory/"))
                 .repoUrl("someUrl").version("0.31.0")
                 .m2SettingsServerId("repo.id")
-                .commandRunner(commandRunner).build();
+                .commandRunner(commandRunner)
+                .clientJars(clientJars)
+                .lambdaJars(lambdJars).build();
 
         //When
         publishJarsToRepo.upload();
@@ -52,13 +62,19 @@ public class PublishJarsToRepoTest {
         //Then
         assertThat(commandsString)
                 //This one's from ClientJar
-                .contains("[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
-                        "-Dfile=/some/directory/bulk-import-runner-0.31.0.jar, -DgroupId=sleeper, " +
-                        "-DartifactId=bulk-import-runner, -Dversion=0.31.0, -DgeneratePom=false]")
-                //This one's from LambdaJar
-                .contains("[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
-                        "-Dfile=/some/directory/athena-0.31.0.jar, -DgroupId=sleeper, " +
-                        "-DartifactId=athena, -Dversion=0.31.0, -DgeneratePom=false]");
+                .containsExactly(
+                        "[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
+                                "-Dfile=/some/directory/test1-0.31.0.jar, -DgroupId=sleeper, " +
+                                "-DartifactId=test1Artifact, -Dversion=0.31.0, -DgeneratePom=false]",
+                        "[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
+                                "-Dfile=/some/directory/test2-0.31.0.jar, -DgroupId=sleeper, " +
+                                "-DartifactId=test2Artifact, -Dversion=0.31.0, -DgeneratePom=false]",
+                        "[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
+                                "-Dfile=/some/directory/test3-0.31.0.jar, -DgroupId=sleeper, " +
+                                "-DartifactId=test3Artifact, -Dversion=0.31.0, -DgeneratePom=false]",
+                        "[mvn, deploy:deploy-file, -q, -Durl=someUrl, -DrepositoryId=repo.id, " +
+                                "-Dfile=/some/directory/test4-0.31.0.jar, -DgroupId=sleeper, " +
+                                "-DartifactId=test4Artifact, -Dversion=0.31.0, -DgeneratePom=false]");
     }
 
     @Test
@@ -104,9 +120,23 @@ public class PublishJarsToRepoTest {
     }
 
     @Test
-    public void shouldThrowNullPointerWhenCommandRunnerISNull() {
+    public void shouldThrowNullPointerWhenCommandRunnerIsNull() {
         assertThatThrownBy(() -> genericBuilder.commandRunner(null).build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("Command Runner must not be null");
+    }
+
+    @Test
+    public void shouldThrowNullPointerWhenClientJarsIsNull() {
+        assertThatThrownBy(() -> genericBuilder.clientJars(null).build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Client jars must not be null");
+    }
+
+    @Test
+    public void shouldThrowNullPointerWhenLambdaJarsIsNull() {
+        assertThatThrownBy(() -> genericBuilder.lambdaJars(null).build())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("Lambda jars must not be null");
     }
 }
