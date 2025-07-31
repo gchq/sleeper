@@ -2,8 +2,9 @@ Make sure you have checked _all_ steps below.
 
 ### Issue
 
-- [ ] My PR addresses the following issues and references them in the PR title. For example, "Issue 1234 - My Sleeper
-  PR"
+- [ ] My PR fully resolves the following issues and references them in the PR title. For example, "Issue 1234 - My
+      Feature". Note that before an issue is finished, you can still make a pull request by raising a separate issue
+      for your progress.
     - Resolves https://github.com/gchq/sleeper/issues/XXX
 
 ### Tests
