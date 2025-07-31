@@ -204,6 +204,13 @@ This command should replace the `docker build` and `docker push` commands docume
 docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BASE_DIR/<image directory>
 ```
 
+#### Publishing jars to Docker and Maven
+There is a script [here](/scripts/deploy/publishJars.sh) to publish the jars to a repository.
+It takes in one argument, the repository url to publish to.
+This script can be tested locally by using a repository url similar to file:/path/to/output that will publish these files locally.
+
+The development team are adding a way to retrieve and publish jars to AWS.
+
 #### Upload the jars to a bucket
 
 We need to upload jars to a S3 bucket so that they can be used by various resources. The code below assumes you start
