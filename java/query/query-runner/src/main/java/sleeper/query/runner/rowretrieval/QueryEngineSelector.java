@@ -50,7 +50,6 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
                 // Not implemented yet : fall through
             case JAVA:
             default:
-                System.out.println("Pick Java...");
                 return LeafPartitionRowRetrieverImpl.createProvider(executorService, configuration).getRowRetriever(tableProperties);
         }
     }
