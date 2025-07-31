@@ -28,7 +28,7 @@ public class PartitionSubTree extends PartitionTree {
         super(List.of(originalTree.getRootPartition()));
 
         // Check loop has count incremented by 1 to account for root partition that always must exist
-        while (this.getAllPartitions().size() < leafPartitionCount + 1) {
+        while (getAllPartitions().size() < leafPartitionCount + 1) {
             resetLeafIds.clear();
             getAllPartitions().forEach(partition -> {
                 partition.getChildPartitionIds().forEach(
@@ -48,5 +48,17 @@ public class PartitionSubTree extends PartitionTree {
                     .leafPartition(true)
                     .build());
         });
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PartitionSubTree that = (PartitionSubTree) o;
+        return idToPartition.equals(that.idToPartition);
     }
 }
