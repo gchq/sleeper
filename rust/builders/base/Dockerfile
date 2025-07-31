@@ -15,14 +15,7 @@
 FROM rust:1.88-bookworm
 
 RUN apt-get update && apt-get install -y \
-    build-essential libssl-dev \
-    lsb-release wget software-properties-common gnupg \
+    gcc g++ libssl-dev \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Clang 20
-RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20
-
-ENV CC=clang-20
-ENV CXX=clang++-20
 
 WORKDIR /workspace
