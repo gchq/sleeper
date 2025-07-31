@@ -42,11 +42,15 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     }
 
     @Override
+    @SuppressWarnings("fallthrough")
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
+            case DATAFUSION:
+                // Not implemented yet : fall through
             case JAVA:
             default:
+                System.out.println("Pick Java...");
                 return LeafPartitionRowRetrieverImpl.createProvider(executorService, configuration).getRowRetriever(tableProperties);
         }
     }
