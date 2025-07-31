@@ -8,8 +8,8 @@ assignees: ''
 ---
 
 You've done some work towards another issue but haven't finished it yet. You want to integrate your changes into the
-rest of the project before you continue your work on the issue. This will mean others can see your changes in their copy
-of the code, and they can take your work into account in anything they're doing. This is great!
+rest of the project with a pull request before you continue your work on the issue. This will mean others can see your
+changes in their copy of the code, and can take your work into account in anything they're doing. This is great!
 
 Please complete the link below to link this to the issue you're working on. Give this new issue a name that describes
 the changes you will include in a pull request.
@@ -24,8 +24,11 @@ when the pull request is merged. Instead, you can link your pull request to a ne
 Any changes you make must still pass all tests and linting. Your code in progress should still follow
 [our conventions](https://github.com/gchq/sleeper/blob/develop/docs/development/conventions.md), and should
 still include automated test coverage following
-[our test strategy](https://github.com/gchq/sleeper/blob/develop/docs/development/test-strategy.md).
+[our test strategy](https://github.com/gchq/sleeper/blob/develop/docs/development/test-strategy.md). If your changes
+affect the behaviour of the system in incomplete ways, or may cause confusion over an incomplete feature, we may still
+be able to accommodate this. You could avoid connecting your new code to the rest of the system temporarily, or include
+configuration such that the new behaviour is disabled by default.
 
-Alternatively you could raise a normal feature issue and link that to the original in the background section. You can
-use a "Split from:" link as shown above. That gives you an opportunity to include more information about the intention
-and any analysis.
+As an alternative to this template, you could consider raising a normal feature issue, and link that to the original in
+the background section. You can use a "Split from:" link as shown above. That gives you an opportunity to include more
+information about the intention and any analysis.
