@@ -20,3 +20,25 @@ mod group_accumulator;
 mod state;
 
 pub use aggregator::MapAggregator;
+
+/// The aggregation operation to peform inside of each map. The values
+/// of identical keys will be aggregated according to the specified operation.
+#[derive(Debug, Clone)]
+pub enum MapAggregatorOp {
+    Sum,
+    Min,
+    Max,
+}
+
+impl MapAggregatorOp {
+    pub fn op<T>(&self, acc: T, value: T) -> T
+    where
+        T: NumAssign + Ord,
+    {
+        match self {
+            Self::Sum => acc + value,
+            Self::Min => std::cmp::min(acc, value),
+            Self::Max => std::cmp::max(acc, value),
+        }
+    }
+}

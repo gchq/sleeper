@@ -1,22 +1,22 @@
-/// Implementation of [`AggregateUDFImpl`] for aggregating maps of integers.
-/// For example, given:
-///
-/// | Key |Total | Items |
-/// |--|--|--|
-/// | a | 6 | { 'k1' = 2, 'k2' = 1, 'k3' = 4} |
-/// | a | 3 | { 'k2' = 2, 'k4' = 1} |
-/// | b | 1 | { 'k1' = 1 } |
-/// | b | 2 | { 'k1' = 1, 'k3' = 1 } |
-/// | ....|
-///
-///
-/// Given a "`map_sum`" aggregator configured, the SQL query `SELECT Key, sum(Total), map_sum(Items) FROM table` we would get:
-/// | Key |Total | Items |
-/// |--|--|--|
-/// | a | 9 | { 'k1' = 2, 'k2' = 3, 'k3' = 4, 'k4' = 1} |
-/// | b | 3 | { 'k1' = 2, 'k3 = 1 } |
-/// | ....|
-///
+//! Implementation of [`AggregateUDFImpl`] for aggregating maps of integers.
+//! For example, given:
+//!
+//! | Key |Total | Items |
+//! |--|--|--|
+//! | a | 6 | { 'k1' = 2, 'k2' = 1, 'k3' = 4} |
+//! | a | 3 | { 'k2' = 2, 'k4' = 1} |
+//! | b | 1 | { 'k1' = 1 } |
+//! | b | 2 | { 'k1' = 1, 'k3' = 1 } |
+//! | ....|
+//!
+//!
+//! Given a "`map_sum`" aggregator configured, the SQL query `SELECT Key, sum(Total), map_sum(Items) FROM table` we would get:
+//! | Key |Total | Items |
+//! |--|--|--|
+//! | a | 9 | { 'k1' = 2, 'k2' = 3, 'k3' = 4, 'k4' = 1} |
+//! | b | 3 | { 'k1' = 2, 'k3 = 1 } |
+//! | ....|
+//!
 /*
  * Copyright 2022-2025 Crown Copyright
  *
@@ -32,6 +32,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use crate::map_aggregate::{
+    MapAggregatorOp,
+    accumulator::{
+        byte_accumulator::ByteMapAccumulator, prim_accumulator::PrimMapAccumulator,
+        string_accumulator::StringMapAccumulator,
+    },
+};
 use arrow::{
     array::{ArrowPrimitiveType, PrimitiveBuilder, downcast_integer},
     datatypes::{DataType, Fields},

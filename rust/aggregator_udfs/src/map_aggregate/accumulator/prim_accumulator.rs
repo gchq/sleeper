@@ -1,4 +1,4 @@
-/// Simple [`Accumulator`] implementations for primitive map aggregation.
+//! Simple [`Accumulator`] implementations for primitive map aggregation.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -14,6 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::map_aggregate::{MapAggregatorOp, aggregator::PrimBuilderType};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, MapBuilder, MapFieldNames, StructArray,
