@@ -72,5 +72,3 @@ USER sleeper
 RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' >> ~/.bashrc
 
 WORKDIR /sleeper-builder
-
-ENTRYPOINT [ "/entrypoint.sh" ]

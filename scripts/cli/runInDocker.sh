@@ -101,8 +101,6 @@ run_in_environment_docker() {
 
 run_in_builder_docker() {
   build_temp_runner_image sleeper-builder:current
-  # Builder directory is mounted twice to work around a problem with the Rust cross compiler in WSL, which causes it to
-  # look for the source code at its path in the host: https://github.com/cross-rs/cross/issues/728
   mkdir -p "$HOME/.sleeper/builder"
   mkdir -p "$HOME/.m2"
   run_in_docker \
