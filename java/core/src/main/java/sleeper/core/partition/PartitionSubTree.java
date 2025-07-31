@@ -29,9 +29,9 @@ public class PartitionSubTree extends PartitionTree {
         super(List.of(originalTree.getRootPartition()));
 
         // Check loop has count incremented by 1 to account for root partition that always must exist
-        while (getAllPartitions().size() < leafPartitionCount + 1) {
+        while (idToPartition.values().size() < leafPartitionCount + 1) {
             resetLeafIds.clear();
-            getAllPartitions().forEach(partition -> {
+            idToPartition.values().forEach(partition -> {
                 partition.getChildPartitionIds().forEach(
                         partitionId -> {
                             if (!idToPartition.containsKey(partitionId)) {
