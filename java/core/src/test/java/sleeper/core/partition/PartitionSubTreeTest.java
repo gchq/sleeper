@@ -51,10 +51,11 @@ public class PartitionSubTreeTest extends PartitionTreeTestBase {
     @Test
     void shouldCreateRootOnlySubTreeWhenGivenLeafPartitions() {
         // Given / When
-        PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), 0);
+        int leafPartitionCount = 0;
+        PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), leafPartitionCount);
 
         // Then
         assertThat(subTree.getRootPartition()).isEqualTo(root);
-        assertThat(subTree.getLeafPartitions().size()).isEqualTo(1);
+        assertThat(subTree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
     }
 }
