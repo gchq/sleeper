@@ -1,5 +1,3 @@
-//! Module contains structs and functions relating to implementing Sleeper 'iterators' in Rust using
-//! `DataFusion`.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -29,9 +27,6 @@ use map_aggregate::MapAggregator;
 use num_traits::NumAssign;
 use regex::Regex;
 use std::sync::Arc;
-
-pub mod map_aggregate;
-pub mod nonnull;
 
 pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 

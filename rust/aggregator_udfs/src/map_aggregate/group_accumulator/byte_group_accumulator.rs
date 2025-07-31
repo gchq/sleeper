@@ -1,4 +1,4 @@
-/// [`GroupAccumulator`] implementations for string group map aggregation.
+/// [`GroupAccumulator`] implementations for byte group map aggregation.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -14,14 +14,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::aggregate_udf::{
-    MapAggregatorOp,
-    map_aggregate::{aggregator::PrimBuilderType, state::MapNullState},
-};
 use arrow::{
     array::{
-        ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BooleanArray, MapBuilder,
-        MapFieldNames, StringBuilder, StructArray,
+        ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, BooleanArray,
+        MapBuilder, MapFieldNames, StructArray,
     },
     datatypes::{DataType, Field},
 };
@@ -39,9 +35,9 @@ use super::{INITIAL_GROUP_MAP_SIZE, INITIAL_KEY_CACHE_SIZE};
 /* Implementation note:
 * This group accumulator implementation holds the maps for many aggregation groups at once. Since the same map keys
 * may be seen duplicated across many groups, we want to avoid that storage cost, e.g. if we are storing 10,000 aggregation
-* groups, each with the key "this long map key is being aggregated", we don't want to store that string 10,000 times.
-* Therefore, we use a cache to store each string key seen in "key_cache". The cache maps to an index number. This is the
-* index into the "keys" vector which contains the owned key string.
+* groups, each with the key "this long map key is being aggregated", we don't want to store that binary 10,000 times.
+* Therefore, we use a cache to store each binary key seen in "key_cache". The cache maps to an index number. This is the
+* index into the "keys" vector which contains the owned key binary.
 *
 * When new values are placed into the group accumulator, lookups into the group_maps are exceedingly quick since we use
 * a [`NoHashHasher`] with a `usize` key, essentially making the hashing operation a no-op.
@@ -50,13 +46,13 @@ use super::{INITIAL_GROUP_MAP_SIZE, INITIAL_KEY_CACHE_SIZE};
 */
 /// An enhanced accumulator for maps of primitive values that implements [`GroupsAccumulator`].
 #[derive(Debug)]
-pub struct StringGroupMapAccumulator<VBuilder>
+pub struct ByteGroupMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
     inner_field_type: DataType,
-    key_cache: HashMap<Arc<String>, usize>,
-    keys: Vec<Arc<String>>,
+    key_cache: HashMap<Arc<Vec<u8>>, usize>,
+    keys: Vec<Arc<Vec<u8>>>,
     group_maps: Vec<
         HashMap<
             usize,
@@ -68,7 +64,7 @@ where
     op: MapAggregatorOp,
 }
 
-impl<VBuilder> StringGroupMapAccumulator<VBuilder>
+impl<VBuilder> ByteGroupMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
@@ -84,7 +80,7 @@ where
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
-                    "StringGroupMapAccumulator inner field type should be a DataType::Struct"
+                    "ByteGroupMapAccumulator inner field type should be a DataType::Struct"
                 );
             };
             Ok(Self {
@@ -96,7 +92,7 @@ where
                 op,
             })
         } else {
-            plan_err!("Invalid datatype for StringGroupMapAccumulator {map_type:?}")
+            plan_err!("Invalid datatype for ByteGroupMapAccumulator {map_type:?}")
         }
     }
 
@@ -107,7 +103,7 @@ where
     /// # Panics
     /// If an invalid map type is found. This condition shouldn't occur as it is checked
     /// upon construction.
-    fn make_map_builder(&self, cap: usize) -> MapBuilder<StringBuilder, VBuilder> {
+    fn make_map_builder(&self, cap: usize) -> MapBuilder<BinaryBuilder, VBuilder> {
         match &self.inner_field_type {
             DataType::Struct(fields) => {
                 let names = MapFieldNames {
@@ -115,14 +111,14 @@ where
                     value: fields[1].name().clone(),
                     entry: "key_value".into(),
                 };
-                let key_builder = StringBuilder::with_capacity(cap, 1024);
+                let key_builder = BinaryBuilder::with_capacity(cap, 1024);
                 let value_builder = VBuilder::default();
                 MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
                     .with_keys_field(fields[0].clone())
                     .with_values_field(fields[1].clone())
             }
             _ => unreachable!(
-                "Invalid datatype inside StringGroupMapAccumulator {:?}",
+                "Invalid datatype inside ByteGroupMapAccumulator {:?}",
                 self.inner_field_type
             ),
         }
@@ -131,25 +127,25 @@ where
 
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
 ///
-/// This implementation is for maps with string keys and primitive values.
+/// This implementation is for maps with binary keys and primitive values.
 ///
 /// All nulls keys/values are skipped over.
-fn update_string_map_group<VBuilder>(
+fn update_binary_map_group<VBuilder>(
     input: Option<&StructArray>,
     map: &mut HashMap<
         usize,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         BuildNoHashHasher<usize>,
     >,
-    key_cache: &mut HashMap<Arc<String>, usize>,
-    keys: &mut Vec<Arc<String>>,
+    key_cache: &mut HashMap<Arc<Vec<u8>>, usize>,
+    keys: &mut Vec<Arc<Vec<u8>>>,
     op: &MapAggregatorOp,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     if let Some(entries) = input {
-        let map_keys = entries.column(0).as_string::<i32>();
+        let map_keys = entries.column(0).as_binary::<i32>();
         let map_vals = entries
             .column(1)
             .as_primitive::<<VBuilder as PrimBuilderType>::ArrowType>();
@@ -163,7 +159,7 @@ fn update_string_map_group<VBuilder>(
                         // Use raw lookup to avoid having to create new Arc from string reference
                         .from_hash(key_hash, |stored_key| stored_key.as_ref() == key)
                         .or_insert_with(|| {
-                            // Only pay cost to create string if needed
+                            // Only pay cost to create binary if needed
                             let owned_key = Arc::new(key.to_owned());
                             // Clone pointer into word list
                             keys.push(owned_key.clone());
@@ -180,7 +176,7 @@ fn update_string_map_group<VBuilder>(
     }
 }
 
-impl<VBuilder> GroupsAccumulator for StringGroupMapAccumulator<VBuilder>
+impl<VBuilder> GroupsAccumulator for ByteGroupMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
@@ -193,7 +189,7 @@ where
         total_num_groups: usize,
     ) -> Result<()> {
         if values.len() != 1 {
-            return exec_err!("StringGroupMapAccumulator only accepts single column input");
+            return exec_err!("ByteGroupMapAccumulator only accepts single column input");
         }
         let data = values[0].as_map();
         // make sure we have room for the groups count
@@ -205,7 +201,7 @@ where
             total_num_groups,
             |g_idx, val| {
                 let agg_map = &mut self.group_maps[g_idx];
-                update_string_map_group::<VBuilder>(
+                update_binary_map_group::<VBuilder>(
                     Some(val).as_ref(),
                     agg_map,
                     &mut self.key_cache,
@@ -266,7 +262,7 @@ where
         values: &[ArrayRef],
         opt_filter: Option<&BooleanArray>,
     ) -> Result<Vec<ArrayRef>> {
-        let mut grouper = StringGroupMapAccumulator::<VBuilder>::try_new(
+        let mut grouper = ByteGroupMapAccumulator::<VBuilder>::try_new(
             &DataType::Map(
                 Arc::new(Field::new(
                     "key_value",
@@ -299,8 +295,8 @@ mod tests {
             MapAggregatorOp,
             map_aggregate::{
                 aggregator::map_test_common::make_map_datatype,
-                group_accumulator::string_group_accumulator::{
-                    StringGroupMapAccumulator, update_string_map_group,
+                group_accumulator::byte_group_accumulator::{
+                    ByteGroupMapAccumulator, update_binary_map_group,
                 },
                 state::MapNullState,
             },
@@ -308,7 +304,7 @@ mod tests {
     };
     use arrow::{
         array::{
-            AsArray, Int64Array, Int64Builder, StringArray, StringBuilder, StructBuilder,
+            AsArray, BinaryArray, BinaryBuilder, Int64Array, Int64Builder, StructBuilder,
             UInt16Builder,
         },
         datatypes::{DataType, Field, Fields, Int64Type},
@@ -324,17 +320,17 @@ mod tests {
     // Macro to stringify a literal
     macro_rules! s {
         ($l:literal) => {
-            Arc::new(String::from($l))
+            Arc::new(String::from($l).into_bytes())
         };
     }
 
     #[test]
     fn try_new_should_succeed() {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
 
         // When
-        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
 
         // Then
         assert!(acc.is_ok());
@@ -344,13 +340,13 @@ mod tests {
     fn try_new_should_error_on_non_map_type() {
         // Given
         let mt = DataType::Int16;
-        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
 
         // Then
         assert_error!(
             acc,
             DataFusionError::Plan,
-            "Invalid datatype for StringGroupMapAccumulator Int16"
+            "Invalid datatype for ByteGroupMapAccumulator Int16"
         );
     }
 
@@ -358,22 +354,22 @@ mod tests {
     fn try_new_should_error_on_wrong_inner_type() {
         // Given
         let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
-        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
 
         // Then
         assert_error!(
             acc,
             DataFusionError::Plan,
-            "StringGroupMapAccumulator inner field type should be a DataType::Struct"
+            "ByteGroupMapAccumulator inner field type should be a DataType::Struct"
         );
     }
 
     #[test]
-    #[should_panic(expected = "Invalid datatype inside StringGroupMapAccumulator Int16")]
+    #[should_panic(expected = "Invalid datatype inside ByteGroupMapAccumulator Int16")]
     fn make_map_builder_check_unreachable() {
         // Given
         // Build instance directly via private constructor
-        let acc = StringGroupMapAccumulator::<Int64Builder> {
+        let acc = ByteGroupMapAccumulator::<Int64Builder> {
             inner_field_type: DataType::Int16,
             group_maps: Vec::with_capacity(1000),
             keys: Vec::with_capacity(200),
@@ -389,9 +385,9 @@ mod tests {
     #[test]
     fn make_map_builder_field_names_equal() {
         // Given
-        let acc = StringGroupMapAccumulator::<Int64Builder> {
+        let acc = ByteGroupMapAccumulator::<Int64Builder> {
             inner_field_type: DataType::Struct(Fields::from(vec![
-                Field::new("key1_name", DataType::Utf8, false),
+                Field::new("key1_name", DataType::Binary, false),
                 Field::new("value1_name", DataType::Int64, false),
             ])),
             group_maps: Vec::with_capacity(1000),
@@ -414,9 +410,9 @@ mod tests {
     #[test]
     fn make_map_builder_field_types_equal() {
         // Given
-        let acc = StringGroupMapAccumulator::<UInt16Builder> {
+        let acc = ByteGroupMapAccumulator::<UInt16Builder> {
             inner_field_type: DataType::Struct(Fields::from(vec![
-                Field::new("key1_name", DataType::Utf8, false),
+                Field::new("key1_name", DataType::Binary, false),
                 Field::new("value1_name", DataType::UInt16, false),
             ])),
             group_maps: Vec::with_capacity(1000),
@@ -430,19 +426,19 @@ mod tests {
         let array = acc.make_map_builder(10).finish();
 
         // Then
-        assert_eq!(*array.key_type(), DataType::Utf8);
+        assert_eq!(*array.key_type(), DataType::Binary);
         assert_eq!(*array.value_type(), DataType::UInt16);
     }
 
     #[test]
-    fn update_string_map_none() {
+    fn update_byte_map_none() {
         // Given
         let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         map.insert(0, 2);
         map.insert(1, 4);
         let expected_map = map.clone();
 
-        let mut key_cache = HashMap::<Arc<String>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let expected_key_cache = key_cache.clone();
@@ -451,7 +447,7 @@ mod tests {
         let expected_klist = klist.clone();
 
         // When
-        update_string_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             None,
             &mut map,
             &mut key_cache,
@@ -466,14 +462,14 @@ mod tests {
     }
 
     #[test]
-    fn update_string_map_empty_values() {
+    fn update_byte_map_empty_values() {
         // Given
         let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         map.insert(0, 2);
         map.insert(1, 4);
         let expected_map = map.clone();
 
-        let mut key_cache = HashMap::<Arc<String>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let expected_key_cache = key_cache.clone();
@@ -483,17 +479,17 @@ mod tests {
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
-                Field::new("key", DataType::Utf8, false),
+                Field::new("key", DataType::Binary, false),
                 Field::new("value", DataType::Int64, false),
             ]),
             vec![
-                Box::new(StringBuilder::new()),
+                Box::new(BinaryBuilder::new()),
                 Box::new(Int64Builder::new()),
             ],
         );
 
         // When
-        update_string_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &mut key_cache,
@@ -508,7 +504,7 @@ mod tests {
     }
 
     #[test]
-    fn update_string_map_enters_first_values() {
+    fn update_byte_map_enters_first_values() {
         // Given
         let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         let mut expected_map = map.clone();
@@ -516,7 +512,7 @@ mod tests {
         expected_map.insert(1, 4);
         expected_map.insert(2, -10);
 
-        let mut key_cache = HashMap::<Arc<String>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         let mut expected_key_cache = key_cache.clone();
         expected_key_cache.insert(s!["1"], 0);
         expected_key_cache.insert(s!["3"], 1);
@@ -527,17 +523,17 @@ mod tests {
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
-                Field::new("key", DataType::Utf8, false),
+                Field::new("key", DataType::Binary, false),
                 Field::new("value", DataType::Int64, false),
             ]),
             vec![
-                Box::new(StringBuilder::new()),
+                Box::new(BinaryBuilder::new()),
                 Box::new(Int64Builder::new()),
             ],
         );
         for (k, v) in &[(s!["1"], 2), (s!["3"], 4), (s!["8"], -10)] {
             entry_builder
-                .field_builder::<StringBuilder>(0)
+                .field_builder::<BinaryBuilder>(0)
                 .unwrap()
                 .append_value(k.as_ref());
             entry_builder
@@ -548,7 +544,7 @@ mod tests {
         }
 
         // When
-        update_string_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &mut key_cache,
@@ -563,7 +559,7 @@ mod tests {
     }
 
     #[test]
-    fn update_string_map_enters_values_and_sums() {
+    fn update_byte_map_enters_values_and_sums() {
         // Given
         let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         map.insert(0, 2);
@@ -573,7 +569,7 @@ mod tests {
         expected_map.insert(1, 8);
         expected_map.insert(2, 2);
 
-        let mut key_cache = HashMap::<Arc<String>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         key_cache.insert(s!["1"], 0);
         key_cache.insert(s!["3"], 1);
         let mut expected_key_cache = key_cache.clone();
@@ -586,17 +582,17 @@ mod tests {
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
-                Field::new("key", DataType::Utf8, false),
+                Field::new("key", DataType::Binary, false),
                 Field::new("value", DataType::Int64, false),
             ]),
             vec![
-                Box::new(StringBuilder::new()),
+                Box::new(BinaryBuilder::new()),
                 Box::new(Int64Builder::new()),
             ],
         );
         for (k, v) in [(s!["1"], 2), (s!["1"], 2), (s!["3"], 4), (s!["4"], 2)] {
             entry_builder
-                .field_builder::<StringBuilder>(0)
+                .field_builder::<BinaryBuilder>(0)
                 .unwrap()
                 .append_value(k.as_ref());
             entry_builder
@@ -607,7 +603,7 @@ mod tests {
         }
 
         // When
-        update_string_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &mut key_cache,
@@ -623,25 +619,25 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Nullable entries aren't supported")]
-    fn update_string_map_panics_on_null() {
+    fn update_byte_map_panics_on_null() {
         // Given
         let mut map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
-        let mut key_cache = HashMap::<Arc<String>, usize>::new();
+        let mut key_cache = HashMap::<Arc<Vec<u8>>, usize>::new();
         let mut klist = vec![];
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
-                Field::new("key", DataType::Utf8, true),
+                Field::new("key", DataType::Binary, true),
                 Field::new("value", DataType::Int64, true),
             ]),
             vec![
-                Box::new(StringBuilder::new()),
+                Box::new(BinaryBuilder::new()),
                 Box::new(Int64Builder::new()),
             ],
         );
         for (k, v) in [(s!["1"], 2), (s!["1"], 2), (s!["3"], 4), (s!["4"], 2)] {
             entry_builder
-                .field_builder::<StringBuilder>(0)
+                .field_builder::<BinaryBuilder>(0)
                 .unwrap()
                 .append_value(k.as_ref());
             entry_builder
@@ -652,7 +648,7 @@ mod tests {
         }
         // Add null elements
         entry_builder
-            .field_builder::<StringBuilder>(0)
+            .field_builder::<BinaryBuilder>(0)
             .unwrap()
             .append_null();
         entry_builder
@@ -662,7 +658,7 @@ mod tests {
         entry_builder.append(true);
 
         // When - panic
-        update_string_map_group::<Int64Builder>(
+        update_binary_map_group::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &mut key_cache,
@@ -674,9 +670,8 @@ mod tests {
     #[test]
     fn update_batch_should_fail_on_zero_or_multi_column() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
 
         // When
         let result = acc.update_batch(&[], &[1], None, 1);
@@ -685,11 +680,11 @@ mod tests {
         assert_error!(
             result,
             DataFusionError::Execution,
-            "StringGroupMapAccumulator only accepts single column input"
+            "ByteGroupMapAccumulator only accepts single column input"
         );
 
         // When
-        let arr1 = StringArray::from(vec!["test", "test2"]);
+        let arr1 = BinaryArray::from_vec(vec![b"test", b"test2"]);
         let arr2 = Int64Array::from_value(1, 1);
         let result = acc.update_batch(&[Arc::new(arr1), Arc::new(arr2)], &[1], None, 1);
 
@@ -697,7 +692,7 @@ mod tests {
         assert_error!(
             result,
             DataFusionError::Execution,
-            "StringGroupMapAccumulator only accepts single column input"
+            "ByteGroupMapAccumulator only accepts single column input"
         );
 
         Ok(())
@@ -706,9 +701,8 @@ mod tests {
     #[test]
     fn update_batch_should_not_update_zero_maps() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -725,9 +719,8 @@ mod tests {
     #[test]
     fn update_batch_should_not_update_single_empty_map() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -746,11 +739,10 @@ mod tests {
     #[test]
     fn update_batch_should_update_single_map() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<Arc<String>, usize>::from([(s!["3"], 0)]);
+        let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([(s!["3"], 0)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         expected_group_map.insert(0, 10);
         let expected_group_maps = vec![expected_group_map];
@@ -773,11 +765,10 @@ mod tests {
     #[test]
     fn update_batch_should_update_two_single_map() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<Arc<String>, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
+        let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
         expected_group_map.insert(0, 10);
         expected_group_map.insert(1, 5);
@@ -806,11 +797,10 @@ mod tests {
     #[test]
     fn update_batch_should_update_multiple_maps() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<Arc<String>, usize>::from([
+        let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([
             (s!["3"], 0),
             (s!["1"], 1),
             (s!["2"], 2),
@@ -856,11 +846,10 @@ mod tests {
     #[test]
     fn update_batch_should_update_multiple_maps_multiple_groups() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
-        let expected_cache = HashMap::<Arc<String>, usize>::from([
+        let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([
             (s!["3"], 0),
             (s!["1"], 1),
             (s!["2"], 2),
@@ -923,9 +912,8 @@ mod tests {
     #[test]
     fn evaluate_should_produce_results_single_map() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["1"], 9), (s!["2"], 7)]);
 
@@ -948,7 +936,7 @@ mod tests {
         // Then
         // Iteration order of maps is not guaranteed, so read the scalar value results into a new map
         let result_map = result.as_map();
-        let keys = result_map.keys().as_string::<i32>();
+        let keys = result_map.keys().as_binary::<i32>();
         let values = result_map.values().as_primitive::<Int64Type>();
         let mut accumulated_map = HashMap::new();
         for item in keys.iter().zip(values.iter()) {
@@ -964,9 +952,8 @@ mod tests {
     #[test]
     fn evaluate_should_produce_results_multiple_groups() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_first_group =
             HashMap::from([(s!["3"], 10), (s!["1"], 10), (s!["2"], 7), (s!["4"], 11)]);
@@ -1013,7 +1000,7 @@ mod tests {
                 panic!("inner_struct should never be null in this test");
             };
             // Read inner map array into a HashMap, then compare against expected values
-            let keys = inner_struct.column(0).as_string::<i32>();
+            let keys = inner_struct.column(0).as_binary::<i32>();
             let values = inner_struct.column(1).as_primitive::<Int64Type>();
             let mut accumulated_map = HashMap::new();
             for item in keys.iter().zip(values.iter()) {

@@ -1,4 +1,4 @@
-/// Simple [`Accumulator`] implementations for string map aggregation.
+/// Simple [`Accumulator`] implementations for byte map aggregation.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -16,8 +16,8 @@
 */
 use arrow::{
     array::{
-        ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, MapBuilder, MapFieldNames,
-        StringBuilder, StructArray,
+        ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BinaryBuilder, MapBuilder,
+        MapFieldNames, StructArray,
     },
     datatypes::DataType,
 };
@@ -30,19 +30,15 @@ use datafusion::{
 use num_traits::NumAssign;
 use std::{fmt::Debug, sync::Arc};
 
-use crate::datafusion::aggregate_udf::{
-    MapAggregatorOp, map_aggregate::aggregator::PrimBuilderType,
-};
-
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
 ///
-/// This implementation is for maps with string keys and primitive values.
+/// This implementation is for maps with byte keys and primitive values.
 ///
 /// All nulls keys/values are skipped over.
-fn update_string_map<VBuilder>(
+fn update_byte_map<VBuilder>(
     input: Option<&StructArray>,
     map: &mut HashMap<
-        String,
+        Vec<u8>,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
     op: &MapAggregatorOp,
@@ -51,7 +47,7 @@ fn update_string_map<VBuilder>(
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     if let Some(entries) = input {
-        let col1 = entries.column(0).as_string::<i32>();
+        let col1 = entries.column(0).as_binary::<i32>();
         let col2 = entries
             .column(1)
             .as_primitive::<<VBuilder as PrimBuilderType>::ArrowType>();
@@ -70,17 +66,17 @@ fn update_string_map<VBuilder>(
 
 /// Single value primitive accumulator function for maps.
 #[derive(Debug)]
-pub struct StringMapAccumulator<VBuilder>
+pub struct ByteMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
     inner_field_type: DataType,
     values:
-        HashMap<String, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
+        HashMap<Vec<u8>, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
     op: MapAggregatorOp,
 }
 
-impl<VBuilder> StringMapAccumulator<VBuilder>
+impl<VBuilder> ByteMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
 {
@@ -96,7 +92,7 @@ where
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
-                    "StringMapAccumulator inner field type should be a DataType::Struct"
+                    "ByteMapAccumulator inner field type should be a DataType::Struct"
                 );
             };
             Ok(Self {
@@ -105,7 +101,7 @@ where
                 op,
             })
         } else {
-            plan_err!("Invalid datatype for StringMapAccumulator {map_type:?}")
+            plan_err!("Invalid datatype for ByteMapAccumulator {map_type:?}")
         }
     }
 
@@ -116,7 +112,7 @@ where
     /// # Panics
     /// If an invalid map type is found. This condition shouldn't occur as it is checked
     /// upon construction.
-    fn make_map_builder(&self, cap: usize) -> MapBuilder<StringBuilder, VBuilder> {
+    fn make_map_builder(&self, cap: usize) -> MapBuilder<BinaryBuilder, VBuilder> {
         match &self.inner_field_type {
             DataType::Struct(fields) => {
                 let names = MapFieldNames {
@@ -124,34 +120,34 @@ where
                     value: fields[1].name().clone(),
                     entry: "key_value".into(),
                 };
-                let key_builder = StringBuilder::with_capacity(cap, 1024);
+                let key_builder = BinaryBuilder::with_capacity(cap, 1024);
                 let value_builder = VBuilder::default();
                 MapBuilder::with_capacity(Some(names), key_builder, value_builder, cap)
                     .with_keys_field(fields[0].clone())
                     .with_values_field(fields[1].clone())
             }
             _ => unreachable!(
-                "Invalid datatype inside StringMapAccumulator {:?}",
+                "Invalid datatype inside ByteMapAccumulator {:?}",
                 self.inner_field_type
             ),
         }
     }
 }
 
-impl<VBuilder> Accumulator for StringMapAccumulator<VBuilder>
+impl<VBuilder> Accumulator for ByteMapAccumulator<VBuilder>
 where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         if values.len() != 1 {
-            return exec_err!("StringMapAccumulator only accepts single column input");
+            return exec_err!("ByteMapAccumulator only accepts single column input");
         }
 
         let input = values[0].as_map();
         // For each map we get, feed it into our internal aggregated map
         for map in input.iter() {
-            update_string_map::<VBuilder>(map.as_ref(), &mut self.values, &self.op);
+            update_byte_map::<VBuilder>(map.as_ref(), &mut self.values, &self.op);
         }
         Ok(())
     }
@@ -186,14 +182,14 @@ mod tests {
         datafusion::aggregate_udf::{
             MapAggregatorOp,
             map_aggregate::{
-                accumulator::string_accumulator::{StringMapAccumulator, update_string_map},
+                accumulator::byte_accumulator::update_byte_map,
                 aggregator::map_test_common::make_map_datatype,
             },
         },
     };
     use arrow::{
         array::{
-            AsArray, Int64Array, Int64Builder, StringArray, StringBuilder, StructBuilder,
+            AsArray, BinaryArray, BinaryBuilder, Int64Array, Int64Builder, StructBuilder,
             UInt16Builder,
         },
         datatypes::{DataType, Field, Fields, Int64Type},
@@ -203,49 +199,51 @@ mod tests {
     };
     use std::sync::Arc;
 
-    // Macro to stringify a literal
+    use super::ByteMapAccumulator;
+
+    // Macro to convert a literal to owned bytes
     macro_rules! s {
         ($l:literal) => {
-            String::from($l)
+            String::from($l).into_bytes()
         };
     }
 
     #[test]
-    fn update_string_map_none() {
+    fn update_byte_map_none() {
         // Given
-        let mut map = HashMap::<String, i64>::new();
+        let mut map = HashMap::<Vec<u8>, i64>::new();
         map.insert(s!["test"], 2);
         map.insert(s!["test2"], 4);
         let expected = map.clone();
 
         // When
-        update_string_map::<Int64Builder>(None, &mut map, &MapAggregatorOp::Sum);
+        update_byte_map::<Int64Builder>(None, &mut map, &MapAggregatorOp::Sum);
 
         // Then - expect no changes
         assert_eq!(map, expected);
     }
 
     #[test]
-    fn update_string_map_empty_values() {
+    fn update_byte_map_empty_values() {
         // Given
-        let mut map = HashMap::<String, i64>::new();
+        let mut map = HashMap::<Vec<u8>, i64>::new();
         map.insert(s!["test"], 2);
         map.insert(s!["test2"], 4);
         let expected = map.clone();
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
-                Field::new("key", DataType::Utf8, false),
+                Field::new("key", DataType::Binary, false),
                 Field::new("value", DataType::Int64, false),
             ]),
             vec![
-                Box::new(StringBuilder::new()),
+                Box::new(BinaryBuilder::new()),
                 Box::new(Int64Builder::new()),
             ],
         );
 
         // When
-        update_string_map::<Int64Builder>(
+        update_byte_map::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &MapAggregatorOp::Sum,
@@ -256,9 +254,9 @@ mod tests {
     }
 
     #[test]
-    fn update_string_map_enters_first_values() {
+    fn update_byte_map_enters_first_values() {
         // Given
-        let mut map = HashMap::<String, i64>::new();
+        let mut map = HashMap::<Vec<u8>, i64>::new();
         let mut expected = HashMap::new();
         expected.insert(s!["1"], 2);
         expected.insert(s!["3"], 4);
@@ -266,17 +264,17 @@ mod tests {
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
-                Field::new("key", DataType::Utf8, false),
+                Field::new("key", DataType::Binary, false),
                 Field::new("value", DataType::Int64, false),
             ]),
             vec![
-                Box::new(StringBuilder::new()),
+                Box::new(BinaryBuilder::new()),
                 Box::new(Int64Builder::new()),
             ],
         );
         for (k, v) in [(s!["1"], 2), (s!["3"], 4), (s!["8"], -10)] {
             entry_builder
-                .field_builder::<StringBuilder>(0)
+                .field_builder::<BinaryBuilder>(0)
                 .unwrap()
                 .append_value(k);
             entry_builder
@@ -287,7 +285,7 @@ mod tests {
         }
 
         // When
-        update_string_map::<Int64Builder>(
+        update_byte_map::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &MapAggregatorOp::Sum,
@@ -298,9 +296,9 @@ mod tests {
     }
 
     #[test]
-    fn update_string_map_enters_values_and_sums() {
+    fn update_byte_map_enters_values_and_sums() {
         // Given
-        let mut map = HashMap::<String, i64>::new();
+        let mut map = HashMap::<Vec<u8>, i64>::new();
         map.insert(s!["1"], 2);
         map.insert(s!["3"], 4);
         let mut expected = HashMap::new();
@@ -310,17 +308,17 @@ mod tests {
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
-                Field::new("key", DataType::Utf8, false),
+                Field::new("key", DataType::Binary, false),
                 Field::new("value", DataType::Int64, false),
             ]),
             vec![
-                Box::new(StringBuilder::new()),
+                Box::new(BinaryBuilder::new()),
                 Box::new(Int64Builder::new()),
             ],
         );
         for (k, v) in [(s!["1"], 2), (s!["1"], 2), (s!["3"], 4), (s!["4"], 2)] {
             entry_builder
-                .field_builder::<StringBuilder>(0)
+                .field_builder::<BinaryBuilder>(0)
                 .unwrap()
                 .append_value(k);
             entry_builder
@@ -331,7 +329,7 @@ mod tests {
         }
 
         // When
-        update_string_map::<Int64Builder>(
+        update_byte_map::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &MapAggregatorOp::Sum,
@@ -343,23 +341,23 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "Nullable entries aren't supported")]
-    fn update_string_map_panics_on_null() {
+    fn update_byte_map_panics_on_null() {
         // Given
-        let mut map = HashMap::<String, i64>::new();
+        let mut map = HashMap::<Vec<u8>, i64>::new();
 
         let mut entry_builder = StructBuilder::new(
             Fields::from(vec![
-                Field::new("key", DataType::Utf8, true),
+                Field::new("key", DataType::Binary, true),
                 Field::new("value", DataType::Int64, true),
             ]),
             vec![
-                Box::new(StringBuilder::new()),
+                Box::new(BinaryBuilder::new()),
                 Box::new(Int64Builder::new()),
             ],
         );
         for (k, v) in [(s!["1"], 2), (s!["1"], 2), (s!["3"], 4), (s!["4"], 2)] {
             entry_builder
-                .field_builder::<StringBuilder>(0)
+                .field_builder::<BinaryBuilder>(0)
                 .unwrap()
                 .append_value(k);
             entry_builder
@@ -370,7 +368,7 @@ mod tests {
         }
         // Add null elements
         entry_builder
-            .field_builder::<StringBuilder>(0)
+            .field_builder::<BinaryBuilder>(0)
             .unwrap()
             .append_null();
         entry_builder
@@ -380,7 +378,7 @@ mod tests {
         entry_builder.append(true);
 
         // When - panic
-        update_string_map::<Int64Builder>(
+        update_byte_map::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
             &MapAggregatorOp::Sum,
@@ -390,10 +388,10 @@ mod tests {
     #[test]
     fn try_new_should_succeed() {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
 
         // When
-        let acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
 
         // Then
         assert!(acc.is_ok());
@@ -403,13 +401,13 @@ mod tests {
     fn try_new_should_error_on_non_map_type() {
         // Given
         let mt = DataType::Int16;
-        let acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
 
         // Then
         assert_error!(
             acc,
             DataFusionError::Plan,
-            "Invalid datatype for StringMapAccumulator Int16"
+            "Invalid datatype for ByteMapAccumulator Int16"
         );
     }
 
@@ -418,22 +416,22 @@ mod tests {
         // Given
         let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
         let acc: Result<_, DataFusionError> =
-            StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+            ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
 
         // Then
         assert_error!(
             acc,
             DataFusionError::Plan,
-            "StringMapAccumulator inner field type should be a DataType::Struct"
+            "ByteMapAccumulator inner field type should be a DataType::Struct"
         );
     }
 
     #[test]
-    #[should_panic(expected = "Invalid datatype inside StringMapAccumulator Int16")]
+    #[should_panic(expected = "Invalid datatype inside ByteMapAccumulator Int16")]
     fn make_map_builder_check_unreachable() {
         // Given
         // Build instance directly via private constructor
-        let acc = StringMapAccumulator::<Int64Builder> {
+        let acc = ByteMapAccumulator::<Int64Builder> {
             inner_field_type: DataType::Int16,
             values: HashMap::new(),
             op: MapAggregatorOp::Sum,
@@ -446,9 +444,9 @@ mod tests {
     #[test]
     fn make_map_builder_field_names_equal() {
         // Given
-        let acc = StringMapAccumulator::<Int64Builder> {
+        let acc = ByteMapAccumulator::<Int64Builder> {
             inner_field_type: DataType::Struct(Fields::from(vec![
-                Field::new("key1_name", DataType::Utf8, false),
+                Field::new("key1_name", DataType::Binary, false),
                 Field::new("value1_name", DataType::Int64, false),
             ])),
             values: HashMap::new(),
@@ -468,9 +466,9 @@ mod tests {
     #[test]
     fn make_map_builder_field_types_equal() {
         // Given
-        let acc = StringMapAccumulator::<UInt16Builder> {
+        let acc = ByteMapAccumulator::<UInt16Builder> {
             inner_field_type: DataType::Struct(Fields::from(vec![
-                Field::new("key1_name", DataType::Utf8, false),
+                Field::new("key1_name", DataType::Binary, false),
                 Field::new("value1_name", DataType::UInt16, false),
             ])),
             values: HashMap::new(),
@@ -481,15 +479,15 @@ mod tests {
         let array = acc.make_map_builder(10).finish();
 
         // Then
-        assert_eq!(*array.key_type(), DataType::Utf8);
+        assert_eq!(*array.key_type(), DataType::Binary);
         assert_eq!(*array.value_type(), DataType::UInt16);
     }
 
     #[test]
     fn update_batch_should_fail_on_zero_or_multi_column() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
 
         // When
         let result = acc.update_batch(&[]);
@@ -498,11 +496,11 @@ mod tests {
         assert_error!(
             result,
             DataFusionError::Execution,
-            "StringMapAccumulator only accepts single column input"
+            "ByteMapAccumulator only accepts single column input"
         );
 
         // When
-        let arr1 = StringArray::from(vec!["a"]);
+        let arr1 = BinaryArray::from_vec(vec![b"a"]);
         let arr2 = Int64Array::from_value(1, 1);
         let result = acc.update_batch(&[Arc::new(arr1), Arc::new(arr2)]);
 
@@ -510,7 +508,7 @@ mod tests {
         assert_error!(
             result,
             DataFusionError::Execution,
-            "StringMapAccumulator only accepts single column input"
+            "ByteMapAccumulator only accepts single column input"
         );
 
         Ok(())
@@ -519,8 +517,8 @@ mod tests {
     #[test]
     fn update_batch_should_not_update_zero_maps() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -536,8 +534,8 @@ mod tests {
     #[test]
     fn update_batch_should_not_update_single_empty_map() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -554,8 +552,8 @@ mod tests {
     #[test]
     fn update_batch_should_update_single_map() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10)]);
 
@@ -575,8 +573,8 @@ mod tests {
     #[test]
     fn update_batch_should_update_two_single_map() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["2"], 5)]);
 
@@ -600,8 +598,8 @@ mod tests {
     #[test]
     fn update_batch_should_update_multiple_maps() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["1"], 13), (s!["2"], 7), (s!["4"], 10)]);
 
@@ -635,8 +633,8 @@ mod tests {
     #[test]
     fn evaluate_should_produce_results() -> Result<(), DataFusionError> {
         // Given
-        let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mt = make_map_datatype(DataType::Binary, DataType::Int64);
+        let mut acc = ByteMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["1"], 9), (s!["2"], 7)]);
 
@@ -661,12 +659,12 @@ mod tests {
         let ScalarValue::Map(result_map) = result else {
             panic!("result type not a map");
         };
-        let keys = result_map.keys().as_string::<i32>();
+        let keys = result_map.keys().as_binary::<i32>();
         let values = result_map.values().as_primitive::<Int64Type>();
         let mut accumulated_map = HashMap::new();
         for item in keys.iter().zip(values.iter()) {
             if let (Some(opt_k), Some(opt_v)) = item {
-                accumulated_map.insert(opt_k.to_string(), opt_v);
+                accumulated_map.insert(opt_k.to_vec(), opt_v);
             }
         }
 

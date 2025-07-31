@@ -29,10 +29,6 @@ use datafusion::{
 use num_traits::NumAssign;
 use std::{fmt::Debug, hash::Hash, sync::Arc};
 
-use crate::datafusion::aggregate_udf::{
-    MapAggregatorOp, map_aggregate::aggregator::PrimBuilderType,
-};
-
 /// Given an Arrow [`StructArray`] of keys and values, update the given map.
 ///
 /// This implementation is for maps with primitive keys and values.

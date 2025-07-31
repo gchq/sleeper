@@ -14,7 +14,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::aggregate_udf::Filter;
 use arrow::{
     array::{AsArray, BooleanBuilder},
     datatypes::{DataType, Int64Type},
@@ -70,62 +69,58 @@ impl AgeOff {
     ///
     /// # Errors
     /// If any of:
-    ///  * an error occurs if the maximum age in the filter is not representable as a timestamp,
+    ///  * an error occurs if the `max_age` is not representable as a timestamp,
     ///  * `time_origin` is before the UNIX epoch.
     pub fn try_from_relative_to(
-        value: &Filter,
+        max_age: i64,
         time_origin: SystemTime,
     ) -> std::result::Result<Self, DataFusionError> {
         if time_origin < UNIX_EPOCH {
             return plan_err!("time_origin must not be before UNIX epoch");
         }
-        match value {
-            Filter::Ageoff { column: _, max_age } => {
-                // Figure out max_age in as a millisecond threshold from current time
-                // The filter time may be -ve (i.e. in the future relative to time_origin),
-                // but Durations must be +ve. Therefore, we take the absolute value
-                // and then add or subtract the duration from the time_origin to derive
-                // the absolute threshold time.
-                let absolute_instant = if *max_age >= 0 {
-                    time_origin.checked_sub(Duration::from_millis(max_age.unsigned_abs()))
-                } else {
-                    time_origin.checked_add(Duration::from_millis(max_age.unsigned_abs()))
-                }
-                // Convert Option to Result with DataFusionError
-                .ok_or(plan_datafusion_err!(
-                    "Age off filter max_age not representable as a SystemTime timestamp"
-                ))?;
-                // We might have a time that is before the origin
-                let absolute_seconds = if absolute_instant < UNIX_EPOCH {
-                    let time_before_epoch = UNIX_EPOCH
-                        .duration_since(absolute_instant)
-                        .map_err(|e| DataFusionError::External(Box::new(e)))?
-                        .as_millis();
-                    // Ensure time difference is negative in filter
-                    0 - i64::try_from(time_before_epoch)
-                        .map_err(|e| DataFusionError::External(Box::new(e)))?
-                } else {
-                    let time_after_epoch = absolute_instant
-                        .duration_since(UNIX_EPOCH)
-                        .map_err(|e| DataFusionError::External(Box::new(e)))?
-                        .as_millis();
-                    i64::try_from(time_after_epoch)
-                        .map_err(|e| DataFusionError::External(Box::new(e)))?
-                };
-                Ok(AgeOff::new(absolute_seconds))
-            }
+
+        // Figure out max_age in as a millisecond threshold from current time
+        // The filter time may be -ve (i.e. in the future relative to time_origin),
+        // but Durations must be +ve. Therefore, we take the absolute value
+        // and then add or subtract the duration from the time_origin to derive
+        // the absolute threshold time.
+        let absolute_instant = if max_age >= 0 {
+            time_origin.checked_sub(Duration::from_millis(max_age.unsigned_abs()))
+        } else {
+            time_origin.checked_add(Duration::from_millis(max_age.unsigned_abs()))
         }
+        // Convert Option to Result with DataFusionError
+        .ok_or(plan_datafusion_err!(
+            "Age off filter max_age not representable as a SystemTime timestamp"
+        ))?;
+        // We might have a time that is before the origin
+        let absolute_seconds = if absolute_instant < UNIX_EPOCH {
+            let time_before_epoch = UNIX_EPOCH
+                .duration_since(absolute_instant)
+                .map_err(|e| DataFusionError::External(Box::new(e)))?
+                .as_millis();
+            // Ensure time difference is negative in filter
+            0 - i64::try_from(time_before_epoch)
+                .map_err(|e| DataFusionError::External(Box::new(e)))?
+        } else {
+            let time_after_epoch = absolute_instant
+                .duration_since(UNIX_EPOCH)
+                .map_err(|e| DataFusionError::External(Box::new(e)))?
+                .as_millis();
+            i64::try_from(time_after_epoch).map_err(|e| DataFusionError::External(Box::new(e)))?
+        };
+        Ok(AgeOff::new(absolute_seconds))
     }
 }
 
-impl TryFrom<&Filter> for AgeOff {
+impl TryFrom<i64> for AgeOff {
     type Error = DataFusionError;
 
     /// Attempts to convert relative to current system time.
     ///
     /// See [`AgeOff::try_from_relative_to`].
-    fn try_from(value: &Filter) -> std::result::Result<Self, Self::Error> {
-        AgeOff::try_from_relative_to(value, SystemTime::now())
+    fn try_from(max_age: i64) -> std::result::Result<Self, Self::Error> {
+        AgeOff::try_from_relative_to(max_age, SystemTime::now())
     }
 }
 
