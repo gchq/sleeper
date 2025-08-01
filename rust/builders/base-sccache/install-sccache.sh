@@ -18,9 +18,6 @@ set -ex
 SCCACHE_REPO="https://github.com/mozilla/sccache"
 ARCH_TRIPLE="x86_64-unknown-linux-musl"
 
-apt-get update
-apt-get install -y unzip
-
 TEMP_DIR="$(mktemp -d)"
 pushd "$TEMP_DIR"
 
@@ -40,7 +37,3 @@ chmod +x "/usr/bin/sccache"
 
 popd
 rm -rf "$TEMP_DIR"
-
-apt-get purge -y unzip
-apt-get autoremove
-rm -rf /var/lib/apt/lists/*
