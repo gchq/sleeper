@@ -28,9 +28,9 @@ jobs:
       - name: Build without Docker
         working-directory: ./rust
         run: cargo build --verbose
-      - name: Build for x86_64
+      - name: Build x86_64
         working-directory: ./rust
         run: ./build-in-docker.sh x86_64 cargo build --release --verbose
-      - name: Build for Graviton
+      - name: Build aarch64
         working-directory: ./rust
         run: ./build-in-docker.sh aarch64 cargo build --release --verbose
