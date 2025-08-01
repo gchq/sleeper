@@ -119,7 +119,7 @@ pub fn register_non_nullable_aggregate_udfs(registry: &mut dyn FunctionRegistry)
 ///
 /// # Errors
 /// This function must only be called on [`Expr::AggregateFunction`] variants.
-#[allow(dead_code)]
+#[must_use]
 pub fn non_nullable(func: &Arc<AggregateUDF>) -> Arc<AggregateUDF> {
     let non_null: Arc<NonNullable> = Arc::new(func.inner().clone().into());
     Arc::new(AggregateUDF::new_from_shared_impl(non_null))

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [workspace]
-members = [ "aggregator_udfs", "filter_udfs", "compactor", "objectstore_ext", "rust_sketch", "sleeper_df" ]
+members = [ "aggregator_udfs", "filter_udfs", "compactor", "objectstore_ext", "rust_sketch", "sleeper_core", "sleeper_df" ]
 resolver = "2"
 
 [workspace.package]

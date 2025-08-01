@@ -1,10 +1,4 @@
-//! The `compaction` crate implements all the core functionality for running Sleeper
-//! Parquet data compaction in Rust. We provide a C library interface wrapper which
-//! will serve as the interface from Java code in Sleeper. We are careful to adhere to C style
-//! conventions here such as libc error codes.
-//!
-//! We have an internal "details" module that encapsulates the internal workings. All the
-//! public API should be in this module.
+//! All Foreign Function Interface logic is in this crate.
 /*
  * Copyright 2022-2025 Crown Copyright
  *
@@ -20,28 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-mod datafusion;
-mod details;
-
 use chrono::Local;
 use color_eyre::eyre::eyre;
-use details::AwsConfig;
-use libc::{EFAULT, EINVAL, EIO, c_void, size_t};
+use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::io::Write;
-use std::str::Utf8Error;
-use std::sync::Once;
+use sleeper_core::{AwsConfig, ColRange, CompactionInput, PartitionBound, run_compaction};
 use std::{
-    ffi::{CStr, c_char, c_int},
+    borrow::Borrow,
+    collections::HashMap,
+    ffi::{CStr, c_char, c_int, c_void},
+    io::Write,
     slice,
+    str::Utf8Error,
+    sync::Once,
 };
 use url::Url;
-
-pub use datafusion::sketch::{DataSketchVariant, deserialise_sketches};
-pub use details::{ColRange, CompactionInput, CompactionResult, PartitionBound, run_compaction};
 
 /// An object guaranteed to only initialise once. Thread safe.
 static LOG_CFG: Once = Once::new();
@@ -328,7 +315,7 @@ pub extern "C" fn merge_sorted_files(
     };
 
     // Run compaction
-    let result = rt.block_on(details::run_compaction(&details));
+    let result = rt.block_on(run_compaction(&details));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_data.as_mut() } {

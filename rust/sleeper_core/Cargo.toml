@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [package]
-name = "compactor"
-description = "Binary crate for running the data compactor from the command line."
-keywords = ["sleeper", "compaction"]
+name = "sleeper_core"
+description = "This contains all data processing functionality for Sleeper using Apache DataFusion."
+keywords = ["sleeper"]
 categories = ["science"]
 version = { workspace = true }
 edition = { workspace = true }
@@ -25,19 +25,28 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
+arrow = { workspace = true, features = ["prettyprint"] }
+aggregator_udfs = { path = "../aggregator_udfs" }
+aws-config = { workspace = true }
+aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
+aws-types = { workspace = true }
+bytes = { workspace = true }
 chrono = { workspace = true }
-clap = { workspace = true, features = ["derive"] }
 color-eyre = { workspace = true }
-sleeper_core = { path = "../sleeper_core" }
-env_logger = { workspace = true }
-human-panic = { workspace = true }
-log = { workspace = true, features = ["release_max_level_debug"] }
+cxx = { workspace = true }
+datafusion = { workspace = true }
+filter_udfs = { path = "../filter_udfs" }
+futures = { workspace = true }
+log = { workspace = true }
 num-format = { workspace = true }
-owo-colors = { workspace = true }
-thiserror = { workspace = true }
+object_store = { workspace = true }
+objectstore_ext = { path = "../objectstore_ext" }
+regex = { workspace = true }
+rust_sketch = { path = "../rust_sketch" }
 tokio = { workspace = true, features = ["full"] }
 url = { workspace = true }
 
 [dev-dependencies]
-assert_cmd = { workspace = true }
-predicates = { workspace = true }
+tempfile = { workspace = true }
+test-log = { workspace = true }
+tokio-test = { workspace = true }

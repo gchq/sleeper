@@ -14,16 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use std::{
-    cell::RefCell,
-    collections::{HashMap, hash_map::Entry},
-    future::ready,
-    num::NonZero,
-    pin::Pin,
-    sync::Arc,
-    time::Duration,
-};
-
+use crate::{readahead::ReadaheadStore, store::LoggingObjectStore};
 use aws_config::{BehaviorVersion, Region};
 use aws_credential_types::provider::ProvideCredentials;
 use color_eyre::eyre::eyre;
@@ -33,9 +24,16 @@ use object_store::{
     aws::{AmazonS3, AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
 };
+use std::{
+    cell::RefCell,
+    collections::{HashMap, hash_map::Entry},
+    future::ready,
+    num::NonZero,
+    pin::Pin,
+    sync::Arc,
+    time::Duration,
+};
 use url::Url;
-
-use crate::{readahead::ReadaheadStore, store::LoggingObjectStore};
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
@@ -69,6 +67,7 @@ impl CredentialProvider for CredentialsFromConfigProvider {
 }
 
 /// Create an [`object_store::ObjectStore`] builder for AWS S3 for the given region and with provided credentials.
+#[must_use]
 pub fn config_for_s3_module(
     creds: &aws_credential_types::Credentials,
     region: &Region,

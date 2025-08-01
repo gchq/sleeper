@@ -1226,7 +1226,7 @@ dependencies = [
  "num-format",
  "owo-colors",
  "predicates",
- "sleeper_df",
+ "sleeper_core",
  "thiserror",
  "tokio",
  "url",
@@ -4234,7 +4234,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sleeper_df"
+name = "sleeper_core"
 version = "0.33.0-SNAPSHOT"
 dependencies = [
  "aggregator_udfs",
@@ -4247,13 +4247,10 @@ dependencies = [
  "color-eyre",
  "cxx",
  "datafusion",
- "env_logger",
  "filter_udfs",
  "futures",
- "libc",
  "log",
  "num-format",
- "num-traits",
  "object_store",
  "objectstore_ext",
  "regex",
@@ -4262,6 +4259,21 @@ dependencies = [
  "test-log",
  "tokio",
  "tokio-test",
+ "url",
+]
+
+[[package]]
+name = "sleeper_df"
+version = "0.33.0-SNAPSHOT"
+dependencies = [
+ "aws-types",
+ "chrono",
+ "color-eyre",
+ "env_logger",
+ "libc",
+ "log",
+ "sleeper_core",
+ "tokio",
  "url",
 ]
 

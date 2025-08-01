@@ -48,6 +48,7 @@ impl AgeOff {
     /// Create a new age-off filter expression with the given threshold.
     ///
     /// Threshold is measured in seconds since the UNIX epoch.
+    #[must_use]
     pub fn new(threshold: i64) -> Self {
         Self {
             threshold,
@@ -194,7 +195,6 @@ mod tests {
         scalar::ScalarValue,
     };
     use std::{
-        i64,
         sync::Arc,
         time::{Duration, SystemTime},
     };

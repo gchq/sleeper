@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
-use sleeper_df::{ColRange, CompactionInput, PartitionBound, run_compaction};
+use sleeper_core::{ColRange, CompactionInput, PartitionBound, run_compaction};
 use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
 

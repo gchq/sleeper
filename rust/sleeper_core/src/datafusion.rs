@@ -1,7 +1,7 @@
-/// `DataFusion` contains the implementation for performing Sleeper compactions
-/// using Apache `DataFusion`.
-///
-/// This allows for multi-threaded compaction and optimised Parquet reading.
+//! `DataFusion` contains the implementation for performing Sleeper compactions
+//! using Apache `DataFusion`.
+//!
+//! This allows for multi-threaded compaction and optimised Parquet reading.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -24,7 +24,6 @@ use crate::{
         sketch::serialise_sketches,
         sketch_udf::SketchUDF,
     },
-    details::create_sketch_path,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
@@ -56,7 +55,7 @@ use log::{error, info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use url::Url;
 
 mod filter_aggregation_config;
@@ -243,6 +242,19 @@ fn create_sketch_udf(
     )));
     frame.task_ctx().register_udf(sketch_func.clone())?;
     Ok(sketch_func)
+}
+
+/// Creates a file path suitable for writing sketches to.
+///
+#[must_use]
+pub fn create_sketch_path(output_path: &Url) -> Url {
+    let mut res = output_path.clone();
+    res.set_path(
+        &PathBuf::from(output_path.path())
+            .with_extension("sketches")
+            .to_string_lossy(),
+    );
+    res
 }
 
 /// Apply any configured filters to the `DataFusion` operation if any are present.
