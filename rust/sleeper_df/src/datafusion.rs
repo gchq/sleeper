@@ -25,7 +25,6 @@ use crate::{
         sketch_udf::SketchUDF,
     },
     details::create_sketch_path,
-    s3::ObjectStoreFactory,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
@@ -56,6 +55,7 @@ use datafusion::{
 use log::{error, info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
+use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 use url::Url;
 

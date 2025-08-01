@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::s3::ObjectStoreFactory;
 use arrow::array::ArrayAccessor;
 use arrow::datatypes::DataType;
 use bytes::{Buf, BufMut};
@@ -24,6 +23,7 @@ use cxx::{Exception, UniquePtr};
 use datafusion::parquet::data_type::AsBytes;
 use log::info;
 use num_format::{Locale, ToFormattedString};
+use objectstore_ext::s3::ObjectStoreFactory;
 use rust_sketch::quantiles::byte::{byte_deserialize, byte_sketch_t, new_byte_sketch};
 use rust_sketch::quantiles::i64::{i64_deserialize, i64_sketch_t, new_i64_sketch};
 use rust_sketch::quantiles::str::{new_str_sketch, str_deserialize, string_sketch_t};

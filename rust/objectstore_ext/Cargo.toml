@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [package]
-name = "sleeper_df"
-description = "This is the native library for Sleeper that implements all the core data compaction and sketches generation functionality."
+name = "objectstore_ext"
+description = "ObjectStore extensions and wrappers for Sleeper."
 keywords = ["sleeper"]
 categories = ["science"]
 version = { workspace = true }
@@ -24,38 +24,24 @@ authors = { workspace = true }
 rust-version = { workspace = true }
 publish = { workspace = true }
 
-[lib]
-doc = true
-doctest = true
-test = true
-crate-type = ["cdylib", "rlib"]
-
 [dependencies]
-arrow = { workspace = true, features = ["prettyprint"] }
-aggregator_udfs = { path = "../aggregator_udfs" }
 aws-config = { workspace = true }
 aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
-aws-types = { workspace = true }
+async-trait = { workspace = true }
 bytes = { workspace = true }
 chrono = { workspace = true }
 color-eyre = { workspace = true }
-cxx = { workspace = true }
-datafusion = { workspace = true }
-env_logger = { workspace = true }
-filter_udfs = { path = "../filter_udfs" }
 futures = { workspace = true }
-libc = { workspace = true }
 log = { workspace = true }
 num-format = { workspace = true }
-num-traits = { workspace = true }
-object_store = { workspace = true }
-objectstore_ext = { path = "../objectstore_ext" }
-regex = { workspace = true }
-rust_sketch = { path = "../rust_sketch" }
-tokio = { workspace = true, features = ["full"] }
+object_store = { workspace = true, features = [ "aws" ] }
+thiserror = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
+object_store = { workspace = true, features = ["integration"] }
 tempfile = { workspace = true }
 test-log = { workspace = true }
+testing_logger = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
 tokio-test = { workspace = true }
