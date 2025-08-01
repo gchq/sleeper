@@ -18,7 +18,7 @@ FROM ${BASE_IMAGE}
 COPY install-sccache.sh /
 RUN /install-sccache.sh
 
-ENV CC="sccache gcc"
-ENV CXX="sccache g++"
+ENV CC="sccache clang-20"
+ENV CXX="sccache clang++-20"
 ENV RUSTC_WRAPPER="sccache"
 ENV SCCACHE_DIR="/tmp/sccache"
