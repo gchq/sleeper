@@ -15,7 +15,7 @@
 FROM rust:1.88-bookworm
 
 RUN apt-get update && apt-get install -y \
-    gcc g++ libssl-dev \
+    gcc g++ cmake make libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
