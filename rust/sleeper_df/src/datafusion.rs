@@ -20,13 +20,13 @@
 use crate::{
     ColRange, CompactionInput, CompactionResult, PartitionBound,
     datafusion::{
-        aggregate_udf::nonnull::register_non_nullable_aggregate_udfs, sketch::serialise_sketches,
+        filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
+        sketch::serialise_sketches,
         sketch_udf::SketchUDF,
     },
     details::create_sketch_path,
     s3::ObjectStoreFactory,
 };
-use aggregate_udf::{FilterAggregationConfig, validate_aggregations};
 use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
 use datafusion::{
     common::{
@@ -58,8 +58,7 @@ use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
-mod ageoff_udf;
-mod aggregate_udf;
+mod filter_aggregation_config;
 mod metrics;
 pub mod sketch;
 mod sketch_udf;
