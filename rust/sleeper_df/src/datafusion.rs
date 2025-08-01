@@ -27,6 +27,7 @@ use crate::{
     details::create_sketch_path,
     s3::ObjectStoreFactory,
 };
+use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
 use datafusion::{
     common::{

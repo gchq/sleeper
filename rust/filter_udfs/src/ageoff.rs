@@ -182,7 +182,7 @@ impl ScalarUDFImpl for AgeOff {
 #[cfg(test)]
 mod tests {
     use super::AgeOff;
-    use crate::{assert_error, datafusion::aggregate_udf::Filter};
+    use crate::assert_error;
     use arrow::{
         array::{AsArray, Int64Builder},
         datatypes::{DataType, Field},
@@ -194,6 +194,7 @@ mod tests {
         scalar::ScalarValue,
     };
     use std::{
+        i64,
         sync::Arc,
         time::{Duration, SystemTime},
     };
@@ -243,15 +244,11 @@ mod tests {
     #[test]
     fn try_from_should_create_from_filter_positive_time() -> Result<(), DataFusionError> {
         // Given
-        let filter = Filter::Ageoff {
-            column: "test".into(),
-            max_age: 1000,
-        };
         let now = SystemTime::UNIX_EPOCH;
         let origin_time = now.checked_add(Duration::from_millis(2000)).unwrap();
 
         // When
-        let filter = AgeOff::try_from_relative_to(&filter, origin_time)?;
+        let filter = AgeOff::try_from_relative_to(1000, origin_time)?;
 
         // Then
         assert_eq!(filter.threshold, 1000);
@@ -261,15 +258,11 @@ mod tests {
     #[test]
     fn try_from_should_create_from_filter_negative_time() -> Result<(), DataFusionError> {
         // Given
-        let filter = Filter::Ageoff {
-            column: "test".into(),
-            max_age: -1000,
-        };
         let now = SystemTime::UNIX_EPOCH;
         let origin_time = now.checked_add(Duration::from_millis(2000)).unwrap();
 
         // When
-        let filter = AgeOff::try_from_relative_to(&filter, origin_time)?;
+        let filter = AgeOff::try_from_relative_to(-1000, origin_time)?;
 
         // Then
         assert_eq!(filter.threshold, 3000);
@@ -278,14 +271,8 @@ mod tests {
 
     #[test]
     fn try_from_should_work_on_large_timestamp() {
-        // Given
-        let filter = Filter::Ageoff {
-            column: "test".into(),
-            max_age: i64::MAX,
-        };
-
         // When
-        let result = AgeOff::try_from(&filter);
+        let result = AgeOff::try_from(i64::MAX);
 
         // Then
         assert!(result.is_ok());

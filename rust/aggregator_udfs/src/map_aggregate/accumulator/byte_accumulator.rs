@@ -180,12 +180,9 @@ where
 mod tests {
     use crate::{
         assert_error,
-        datafusion::aggregate_udf::{
-            MapAggregatorOp,
-            map_aggregate::{
-                accumulator::byte_accumulator::update_byte_map,
-                aggregator::map_test_common::make_map_datatype,
-            },
+        map_aggregate::{
+            MapAggregatorOp, accumulator::byte_accumulator::update_byte_map,
+            aggregator::map_test_common::make_map_datatype,
         },
     };
     use arrow::{

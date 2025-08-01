@@ -292,15 +292,13 @@ where
 mod tests {
     use crate::{
         assert_error,
-        datafusion::aggregate_udf::{
+        map_aggregate::{
             MapAggregatorOp,
-            map_aggregate::{
-                aggregator::map_test_common::make_map_datatype,
-                group_accumulator::string_group_accumulator::{
-                    StringGroupMapAccumulator, update_string_map_group,
-                },
-                state::MapNullState,
+            aggregator::map_test_common::make_map_datatype,
+            group_accumulator::string_group_accumulator::{
+                StringGroupMapAccumulator, update_string_map_group,
             },
+            state::MapNullState,
         },
     };
     use arrow::{

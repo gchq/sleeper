@@ -436,7 +436,7 @@ impl GroupsAccumulator for NonNullableGroupsAccumulator {
 mod tests {
     use crate::{
         assert_error,
-        datafusion::aggregate_udf::nonnull::{
+        nonnull::{
             NON_NULL_MAX_UDAF, NON_NULL_MIN_UDAF, NON_NULL_SUM_UDAF, NonNullable,
             NonNullableAccumulator, NonNullableGroupsAccumulator, non_null_max, non_null_min,
             non_null_sum, non_nullable, nullable_check, register_non_nullable_aggregate_udfs,

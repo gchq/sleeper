@@ -23,6 +23,7 @@ version = "0.33.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "datafusion",
+ "mockall",
  "nohash",
  "num-traits",
 ]
@@ -4229,7 +4230,6 @@ dependencies = [
  "futures",
  "libc",
  "log",
- "mockall",
  "num-format",
  "num-traits",
  "object_store",
