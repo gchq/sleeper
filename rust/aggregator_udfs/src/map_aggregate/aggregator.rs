@@ -38,6 +38,11 @@ use crate::map_aggregate::{
         byte_accumulator::ByteMapAccumulator, prim_accumulator::PrimMapAccumulator,
         string_accumulator::StringMapAccumulator,
     },
+    group_accumulator::{
+        byte_group_accumulator::ByteGroupMapAccumulator,
+        prim_group_accumulator::PrimGroupMapAccumulator,
+        string_group_accumulator::StringGroupMapAccumulator,
+    },
 };
 use arrow::{
     array::{ArrowPrimitiveType, PrimitiveBuilder, downcast_integer},

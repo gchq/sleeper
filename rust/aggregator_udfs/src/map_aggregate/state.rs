@@ -1,5 +1,5 @@
-/// A specialised version of [`NullState`] for map column types.
-/// Adapted from <`https://docs.rs/datafusion/latest/datafusion/physical_expr/struct.NullState.html`>
+//! A specialised version of [`NullState`] for map column types.
+//! Adapted from <`https://docs.rs/datafusion/latest/datafusion/physical_expr/struct.NullState.html`>
 /*
 * Copyright 2022-2025 Crown Copyright
 *

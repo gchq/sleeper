@@ -20,6 +20,7 @@ mod group_accumulator;
 mod state;
 
 pub use aggregator::MapAggregator;
+use num_traits::NumAssign;
 
 /// The aggregation operation to peform inside of each map. The values
 /// of identical keys will be aggregated according to the specified operation.

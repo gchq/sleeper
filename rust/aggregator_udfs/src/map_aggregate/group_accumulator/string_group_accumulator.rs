@@ -1,4 +1,4 @@
-/// [`GroupAccumulator`] implementations for string group map aggregation.
+//! [`GroupAccumulator`] implementations for string group map aggregation.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -14,6 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::map_aggregate::{MapAggregatorOp, aggregator::PrimBuilderType, state::MapNullState};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BooleanArray, MapBuilder,
