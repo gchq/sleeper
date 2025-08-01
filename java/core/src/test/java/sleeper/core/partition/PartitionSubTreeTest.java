@@ -25,7 +25,7 @@ public class PartitionSubTreeTest extends PartitionTreeTestBase {
     void shouldCreateSubTreeWithExactLeafPartitionCount() {
         // Given / When
         int leafPartitionCount = 2;
-        PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), leafPartitionCount);
+        PartitionTree subTree = PartitionSubTreeFactory.createSubTree(generateTreeTo2Levels(), leafPartitionCount);
 
         // Then
         Partition l1LeftAsLeaf = adjustLeafStatus(l1Left, true);
@@ -38,7 +38,7 @@ public class PartitionSubTreeTest extends PartitionTreeTestBase {
     void shouldCreateSubTreeWithLeafCountGreaterThanRequested() {
         // Given / When
         int leafPartitionCount = 3;
-        PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), 3);
+        PartitionTree subTree = PartitionSubTreeFactory.createSubTree(generateTreeTo2Levels(), 3);
 
         // Then
         assertThat(subTree.getAllPartitions()).contains(l1Left, l1Right);
@@ -52,7 +52,7 @@ public class PartitionSubTreeTest extends PartitionTreeTestBase {
     void shouldCreateRootOnlySubTreeWhenGivenLeafPartitions() {
         // Given / When
         int leafPartitionCount = 0;
-        PartitionSubTree subTree = new PartitionSubTree(generateTreeTo2Levels(), leafPartitionCount);
+        PartitionTree subTree = PartitionSubTreeFactory.createSubTree(generateTreeTo2Levels(), leafPartitionCount);
 
         // Then
         assertThat(subTree.getRootPartition()).isEqualTo(root);

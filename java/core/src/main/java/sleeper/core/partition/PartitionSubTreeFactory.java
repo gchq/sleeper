@@ -18,26 +18,37 @@ package sleeper.core.partition;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 /**
- * Generates a subtree of PartitionTree for given number of leaf nodes.
+ * Utility class to generate subtree from given leaf partition requirements.
  */
-public class PartitionSubTree extends PartitionTree {
-    private final ArrayList<String> resetLeafIds = new ArrayList<>();
+public class PartitionSubTreeFactory {
+    //private static final
 
-    public PartitionSubTree(PartitionTree originalTree, int leafPartitionCount) {
-        super(List.of(originalTree.getRootPartition()));
+    private PartitionSubTreeFactory() {
+    }
+
+    /**
+     * Generates a subTree from a given tree with a target leaf count. Actual result may exceed the count requested
+     * as presently will go to a depth until the count is matched or exceeded.
+     *
+     * @param  originalTree       source from which the new sub tree is to be created
+     * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
+     * @return                    newly generated sub tree
+     */
+    public static PartitionTree createSubTree(PartitionTree originalTree, int leafPartitionCount) {
+        ArrayList<String> resetLeafIds = new ArrayList<>();
+        PartitionTree subTree = new PartitionTree(List.of(originalTree.getRootPartition()));
 
         // Check loop has count incremented by 1 to account for root partition that always must exist
-        while (idToPartition.values().size() < leafPartitionCount + 1) {
+        while (subTree.idToPartition.values().size() < leafPartitionCount + 1) {
             resetLeafIds.clear();
-            Collection<Partition> presentBatch = List.copyOf(idToPartition.values());
+            Collection<Partition> presentBatch = List.copyOf(subTree.idToPartition.values());
             presentBatch.forEach(partition -> {
                 partition.getChildPartitionIds().forEach(
                         partitionId -> {
-                            if (!idToPartition.containsKey(partitionId)) {
-                                idToPartition.put(partitionId, originalTree.getPartition(partitionId));
+                            if (!subTree.idToPartition.containsKey(partitionId)) {
+                                subTree.idToPartition.put(partitionId, originalTree.getPartition(partitionId));
                                 resetLeafIds.add(partitionId);
                             }
                         });
@@ -46,27 +57,12 @@ public class PartitionSubTree extends PartitionTree {
 
         // Last gathered selection of ids are set to be leaves of new tree.
         resetLeafIds.forEach(leafId -> {
-            idToPartition.put(leafId, idToPartition.get(leafId)
+            subTree.idToPartition.put(leafId, subTree.idToPartition.get(leafId)
                     .toBuilder()
                     .leafPartition(true)
                     .build());
         });
-    }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PartitionSubTree that = (PartitionSubTree) o;
-        return idToPartition.equals(that.idToPartition);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(idToPartition);
+        return subTree;
     }
 }
