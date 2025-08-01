@@ -12,8 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-apt-get update
-apt-get --assume-yes install libssl-dev wget lsb-release software-properties-common gnupg
-wget https://apt.llvm.org/llvm.sh
-chmod +x llvm.sh
-./llvm.sh 20
+
+set -e
+unset CDPATH
+
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+
+# Redirects stderr to stdout, so that Maven will log the output at INFO level instead of ERROR
+"$THIS_DIR"/build-in-docker.sh "$@" 2>&1

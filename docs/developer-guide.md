@@ -106,7 +106,6 @@ You will need the following software:
 * [Maven](https://maven.apache.org/)
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating)
 * [Rust](https://rustup.rs/)
-* [Cross-rs](https://github.com/cross-rs/cross)
 
 ## Building
 

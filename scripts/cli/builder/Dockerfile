@@ -26,10 +26,18 @@ RUN apt-get update && apt-get install -y \
     jq \
     uuid-runtime \
     sudo \
-    clang \
-    gcc g++ cmake make \
-    pkg-config libssl-dev \
+    # Rust build time dependencies
+    build-essential libssl-dev \
+    # Clang installation dependencies
+    lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Clang 20
+RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV CC=clang-20
+ENV CXX=clang++-20
 
 # VS Code Java extension requires Java 21, so we install that but set the preferred version to match AWS EMR.
 RUN update-java-alternatives --set java-17-amazon-corretto
@@ -48,14 +56,18 @@ USER rust
 ENV RUSTUP_HOME=/rust/.rustup
 ENV CARGO_HOME=/rust/.cargo
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y -c clippy,rustfmt
-RUN $CARGO_HOME/bin/rustup component add rust-std-x86_64-unknown-linux-gnu rust-std-aarch64-unknown-linux-gnu rust-src
-RUN $CARGO_HOME/bin/cargo install cross
-RUN $CARGO_HOME/bin/cargo install cargo-audit --features=fix
+
+# Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
+ENV PATH=$CARGO_HOME/bin:$PATH
+
+# Rust build tools
+RUN rustup component add rust-src
+RUN cargo install cargo-audit --features=fix
+
+# Adjust permissions for Rust install
 USER root
 RUN chmod -R a+rw $RUSTUP_HOME
 RUN chmod -R a+rw $CARGO_HOME
-
-COPY entrypoint.sh /entrypoint.sh
 
 # Create non-root user
 RUN adduser --disabled-password --gecos "" sleeper \
@@ -63,15 +75,7 @@ RUN adduser --disabled-password --gecos "" sleeper \
     && passwd -d sleeper
 USER sleeper
 
-# Add Rust toolchain to path for non-interactive shells, as by default it is only added to .bashrc
-ENV PATH=$CARGO_HOME/bin:$PATH
-
-# Set variable telling cross-rs Rust cross compiler that it is already inside a container
-ENV CROSS_CONTAINER_IN_CONTAINER=true
-
 # Set command line prompt to show you're in the builder Docker container
 RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' >> ~/.bashrc
 
 WORKDIR /sleeper-builder
-
-ENTRYPOINT [ "/entrypoint.sh" ]
