@@ -31,7 +31,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -285,7 +285,7 @@ public class IngestRowsTestDataHelper {
     }
 
     public static List<Row> readRowsFromParquetFile(String filename, Schema schema) throws IOException {
-        ParquetReader<Row> reader = new ParquetRowReader.Builder(new Path(filename), schema).build();
+        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(new Path(filename), schema).build();
         List<Row> readRows = new ArrayList<>();
         Row row = reader.read();
         while (null != row) {

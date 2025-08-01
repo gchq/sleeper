@@ -24,7 +24,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -76,7 +76,7 @@ public class ResultVerifier {
             Path filePath,
             Configuration hadoopConfiguration) {
         try {
-            ParquetReader<Row> parquetReader = new ParquetRowReader.Builder(filePath, sleeperSchema)
+            ParquetReader<Row> parquetReader = new ParquetRowReaderFactory.Builder(filePath, sleeperSchema)
                     .withConf(hadoopConfiguration)
                     .build();
             return new ParquetReaderIterator(parquetReader);

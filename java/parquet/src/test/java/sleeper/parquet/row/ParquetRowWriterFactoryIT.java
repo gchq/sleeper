@@ -74,7 +74,7 @@ class ParquetRowWriterFactoryIT {
         writer.close();
 
         // When
-        ParquetReader<Row> reader = new ParquetRowReader.Builder(path, schema).build();
+        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(path, schema).build();
         Row readRow1 = new Row(reader.read());
         Row readRow2 = new Row(reader.read());
         Row readRow3 = reader.read();
@@ -113,7 +113,7 @@ class ParquetRowWriterFactoryIT {
         writer.close();
 
         // When
-        ParquetReader<Row> reader = new ParquetRowReader.Builder(path, schema).build();
+        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(path, schema).build();
         Row readRow1 = new Row(reader.read());
         Row readRow2 = new Row(reader.read());
         Row readRow3 = reader.read();
@@ -155,7 +155,7 @@ class ParquetRowWriterFactoryIT {
         writer.close();
 
         // When
-        ParquetReader<Row> reader = new ParquetRowReader.Builder(path, schema).build();
+        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(path, schema).build();
         Row readRow1 = new Row(reader.read());
         Row readRow2 = new Row(reader.read());
         Row readRow3 = reader.read();

@@ -62,7 +62,7 @@ class ParquetReaderIteratorIT {
         Row row2 = new Row(map2);
         writer.write(row2);
         writer.close();
-        ParquetReader<Row> reader = new ParquetRowReader.Builder(path, schema).build();
+        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(path, schema).build();
 
         // When
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
@@ -80,7 +80,7 @@ class ParquetReaderIteratorIT {
         Path path = new Path(createTempDirectory(folder, null).toString() + "/file.parquet");
         ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(path, schema);
         writer.close();
-        ParquetReader<Row> reader = new ParquetRowReader.Builder(path, schema).build();
+        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(path, schema).build();
 
         // When
         ParquetReaderIterator iterator = new ParquetReaderIterator(reader);
