@@ -30,7 +30,7 @@ use aggregate_udf::{FilterAggregationConfig, validate_aggregations};
 use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
 use datafusion::{
     common::{
-        DFSchema,
+        DFSchema, plan_err,
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     },
     config::{ExecutionOptions, TableParquetOptions},
@@ -44,8 +44,11 @@ use datafusion::{
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
-        accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
-        expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
+        ExecutionPlan, accept,
+        coalesce_partitions::CoalescePartitionsExec,
+        collect, displayable,
+        expressions::Column,
+        sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
     prelude::*,
 };
@@ -419,11 +422,34 @@ async fn collect_stats(
 
     info!("Physical plan\n{}", displayable(&*new_plan).indent(true));
 
+    // Check physical plan is free of `SortExec` stages.
+    // Issue <https://github.com/gchq/sleeper/issues/5248>
+    check_for_sort_exec(&new_plan)?;
+
     let _ = collect(new_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::new(input_paths);
     accept(new_plan.as_ref(), &mut stats)?;
     stats.log_metrics();
     Ok(stats)
+}
+
+/// Checks if a physical plan contains a `SortExec` stage.
+///
+/// We must ensure the physical plans don't contains a full sort stage as this entails
+/// reading all input data before performing a sort which requires enough memory/disk space
+/// to contain all the data. By ensuring plans only contain streaming merge sort stages we
+/// will get a streaming merge of records for compaction.
+///
+/// # Errors
+/// If a `SortExec` stage is found in the given plan.
+fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusionError> {
+    let contains_sort_exec =
+        plan.exists(|node| Ok(node.as_any().downcast_ref::<SortExec>().is_some()))?;
+    if contains_sort_exec {
+        plan_err!("Physical plan contains SortExec stage. Please file a bug report.")
+    } else {
+        Ok(())
+    }
 }
 
 /// Write explanation of query plan to log output.

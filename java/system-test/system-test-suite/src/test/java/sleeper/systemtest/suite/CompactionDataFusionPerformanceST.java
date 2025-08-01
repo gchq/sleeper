@@ -19,7 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.util.PollWithRetries;
@@ -33,7 +33,7 @@ import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
+import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
@@ -60,7 +60,7 @@ public class CompactionDataFusionPerformanceST {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
-                COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString()));
+                DATA_ENGINE, DataEngine.DATAFUSION.toString()));
         sleeper.systemTestCluster().runDataGenerationJobs(110,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(40_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))

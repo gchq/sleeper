@@ -30,7 +30,7 @@ import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
@@ -269,7 +269,7 @@ public class DataFusionCompactionRunnerIT {
                     .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
                     .build();
             tableProperties.setSchema(schema);
-            tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, CompactionMethod.AGGREGATION_ITERATOR_NAME);
+            tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, DataEngine.AGGREGATION_ITERATOR_NAME);
             tableProperties.set(TableProperty.ITERATOR_CONFIG, "sort;,sum(value),map_sum(map_value2)");
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Row row1 = new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2", Map.of("map_key1", 1L, "map_key2", 3L)));
@@ -301,7 +301,7 @@ public class DataFusionCompactionRunnerIT {
                     .valueFields(new Field("value", new LongType()))
                     .build();
             tableProperties.setSchema(schema);
-            tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, CompactionMethod.AGGREGATION_ITERATOR_NAME);
+            tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, DataEngine.AGGREGATION_ITERATOR_NAME);
             tableProperties.set(TableProperty.ITERATOR_CONFIG, "timestamp;ageoff=timestamp,10,sum(value)");
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Row row1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 1L));
