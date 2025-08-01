@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y \
     sudo \
     # Rust build time dependencies
     build-essential libssl-dev \
+    # Clang installation dependencies
+    lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Clang 20

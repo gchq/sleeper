@@ -15,7 +15,9 @@
 FROM rust:1.88-bookworm
 
 RUN apt-get update && apt-get install -y \
+    # Sleeper Rust build-time dependencies
     build-essential libssl-dev \
+    # Clang installation dependencies
     lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
 
