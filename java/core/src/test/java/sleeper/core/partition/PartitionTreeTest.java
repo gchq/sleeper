@@ -18,108 +18,23 @@ package sleeper.core.partition;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
-import sleeper.core.range.Range;
 import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PartitionTreeTest {
-    private static final String ROOT = "root";
-    private static final String L1_LEFT = "l1_left";
-    private static final String L1_RIGHT = "l1_right";
-    private static final String L2_LEFT_OF_L1L = "l2_left_of_l1l";
-    private static final String L2_RIGHT_OF_L1L = "l2_right_of_l1l";
-    private static final String L2_LEFT_OF_L1R = "l2_left_of_l1r";
-    private static final String L2_RIGHT_OF_L1R = "l2_right_of_l1r";
+public class PartitionTreeTest extends PartitionTreeTestBase {
+
     private static final String L3_LEFT_OF_L2_LEFT_OF_L1_LEFT = "l3_left_of_l2_left_of_l1_left";
     private static final String L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT = "l3_right_of_l2_left_of_l1_left";
 
     @Test
     public void shouldReturnCorrectChildren() {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
-        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
-        Partition root = Partition.builder()
-                .region(rootRegion)
-                .id(ROOT)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
-                .dimension(-1)
-                .build();
-        Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
-        Partition l1Left = Partition.builder()
-                .region(l1LeftRegion)
-                .id(L1_LEFT)
-                .leafPartition(false)
-                .parentPartitionId(ROOT)
-                .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
-                .dimension(-1)
-                .build();
-        Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
-        Partition l1Right = Partition.builder()
-                .region(l1RightRegion)
-                .id(L1_RIGHT)
-                .leafPartition(false)
-                .parentPartitionId(ROOT)
-                .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
-                .dimension(-1)
-                .build();
-        Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
-        Partition l2LeftOfL1L = Partition.builder()
-                .region(l2LeftOfL1LRegion)
-                .id(L2_LEFT_OF_L1L)
-                .leafPartition(true)
-                .parentPartitionId(L1_LEFT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
-        Partition l2RightOfL1L = Partition.builder()
-                .region(l2RightOfL1LRegion)
-                .id(L2_RIGHT_OF_L1L)
-                .leafPartition(true)
-                .parentPartitionId(L1_LEFT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
-        Partition l2LeftOfL1R = Partition.builder()
-                .region(l2LeftOfL1RRegion)
-                .id(L2_LEFT_OF_L1R)
-                .leafPartition(true)
-                .parentPartitionId(L1_RIGHT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
-        Partition l2RightOfL1R = Partition.builder()
-                .region(l2RightOfL1RRegion)
-                .id(L2_RIGHT_OF_L1R)
-                .leafPartition(true)
-                .parentPartitionId(L1_RIGHT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-
-        List<Partition> partitions = new ArrayList<>();
-        partitions.add(root);
-        partitions.add(l1Left);
-        partitions.add(l1Right);
-        partitions.add(l2LeftOfL1L);
-        partitions.add(l2RightOfL1L);
-        partitions.add(l2LeftOfL1R);
-        partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        PartitionTree partitionTree = generateTreeTo2Levels();
 
         // When
         List<String> children1 = partitionTree.getChildIds(ROOT);
@@ -133,81 +48,7 @@ public class PartitionTreeTest {
     @Test
     public void shouldReturnCorrectAncestors() {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
-        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
-        Partition root = Partition.builder()
-                .region(rootRegion)
-                .id(ROOT)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
-                .dimension(-1)
-                .build();
-        Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
-        Partition l1Left = Partition.builder()
-                .region(l1LeftRegion)
-                .id(L1_LEFT)
-                .leafPartition(false)
-                .parentPartitionId(ROOT)
-                .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
-                .dimension(-1)
-                .build();
-        Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
-        Partition l1Right = Partition.builder()
-                .region(l1RightRegion)
-                .id(L1_RIGHT)
-                .leafPartition(false)
-                .parentPartitionId(ROOT)
-                .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
-                .dimension(-1)
-                .build();
-        Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
-        Partition l2LeftOfL1L = Partition.builder()
-                .region(l2LeftOfL1LRegion)
-                .id(L2_LEFT_OF_L1L)
-                .leafPartition(true)
-                .parentPartitionId(L1_LEFT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
-        Partition l2RightOfL1L = Partition.builder()
-                .region(l2RightOfL1LRegion)
-                .id(L2_RIGHT_OF_L1L)
-                .leafPartition(true)
-                .parentPartitionId(L1_LEFT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
-        Partition l2LeftOfL1R = Partition.builder()
-                .region(l2LeftOfL1RRegion)
-                .id(L2_LEFT_OF_L1R)
-                .leafPartition(true)
-                .parentPartitionId(L1_RIGHT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
-        Partition l2RightOfL1R = Partition.builder()
-                .region(l2RightOfL1RRegion)
-                .id(L2_RIGHT_OF_L1R)
-                .leafPartition(true)
-                .parentPartitionId(L1_RIGHT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-
-        List<Partition> partitions = new ArrayList<>();
-        partitions.add(root);
-        partitions.add(l1Left);
-        partitions.add(l1Right);
-        partitions.add(l2LeftOfL1L);
-        partitions.add(l2RightOfL1L);
-        partitions.add(l2LeftOfL1R);
-        partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        PartitionTree partitionTree = generateTreeTo2Levels();
 
         // When
         List<Partition> ancestorsOfRoot = partitionTree.getAllAncestors(ROOT);
@@ -225,106 +66,20 @@ public class PartitionTreeTest {
     @Test
     public void shouldReturnRootIfOnlyPartitionAndAskedForLeafPartitionContainingKey() {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
-        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-
-        Region region = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
-        Partition root = Partition.builder()
-                .region(region)
-                .id(ROOT)
-                .leafPartition(true)
-                .parentPartitionId(null)
-                .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
-                .dimension(-1)
-                .build();
-        PartitionTree partitionTree = new PartitionTree(Collections.singletonList(root));
+        PartitionTree partitionTree = generateTreeToRootLevel();
 
         // When
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
 
         // Then 1
         assertThat(partition.isRowKeyInPartition(schema, Key.create(10L))).isTrue();
-        assertThat(partition).isEqualTo(root);
+        assertThat(partition).isEqualTo(adjustLeafStatus(root, true));
     }
 
     @Test
     public void shouldReturnCorrectLeafWhenAskedForLeafPartitionContainingKeyInTwoLevelTree() {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
-        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
-        Partition root = Partition.builder()
-                .region(rootRegion)
-                .id(ROOT)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
-                .dimension(-1)
-                .build();
-        Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
-        Partition l1Left = Partition.builder()
-                .region(l1LeftRegion)
-                .id(L1_LEFT)
-                .leafPartition(false)
-                .parentPartitionId(ROOT)
-                .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
-                .dimension(-1)
-                .build();
-        Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
-        Partition l1Right = Partition.builder()
-                .region(l1RightRegion)
-                .id(L1_RIGHT)
-                .leafPartition(false)
-                .parentPartitionId(ROOT)
-                .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
-                .dimension(-1)
-                .build();
-        Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
-        Partition l2LeftOfL1L = Partition.builder()
-                .region(l2LeftOfL1LRegion)
-                .id(L2_LEFT_OF_L1L)
-                .leafPartition(true)
-                .parentPartitionId(L1_LEFT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
-        Partition l2RightOfL1L = Partition.builder()
-                .region(l2RightOfL1LRegion)
-                .id(L2_RIGHT_OF_L1L)
-                .leafPartition(true)
-                .parentPartitionId(L1_LEFT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
-        Partition l2LeftOfL1R = Partition.builder()
-                .region(l2LeftOfL1RRegion)
-                .id(L2_LEFT_OF_L1R)
-                .leafPartition(true)
-                .parentPartitionId(L1_RIGHT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
-        Partition l2RightOfL1R = Partition.builder()
-                .region(l2RightOfL1RRegion)
-                .id(L2_RIGHT_OF_L1R)
-                .leafPartition(true)
-                .parentPartitionId(L1_RIGHT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-
-        List<Partition> partitions = new ArrayList<>();
-        partitions.add(root);
-        partitions.add(l1Left);
-        partitions.add(l1Right);
-        partitions.add(l2LeftOfL1L);
-        partitions.add(l2RightOfL1L);
-        partitions.add(l2LeftOfL1R);
-        partitions.add(l2RightOfL1R);
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        PartitionTree partitionTree = generateTreeTo2Levels();
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
@@ -344,71 +99,6 @@ public class PartitionTreeTest {
     @Test
     public void shouldReturnCorrectLeafWhenAskedForLeafPartitionContainingKeyInThreeLevelTree() {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
-        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
-        Partition root = Partition.builder()
-                .region(rootRegion)
-                .id(ROOT)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
-                .dimension(-1)
-                .build();
-        Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
-        Partition l1Left = Partition.builder()
-                .region(l1LeftRegion)
-                .id(L1_LEFT)
-                .leafPartition(false)
-                .parentPartitionId(ROOT)
-                .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
-                .dimension(-1)
-                .build();
-        Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
-        Partition l1Right = Partition.builder()
-                .region(l1RightRegion)
-                .id(L1_RIGHT)
-                .leafPartition(false)
-                .parentPartitionId(ROOT)
-                .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
-                .dimension(-1)
-                .build();
-        Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
-        Partition l2LeftOfL1L = Partition.builder()
-                .region(l2LeftOfL1LRegion)
-                .id(L2_LEFT_OF_L1L)
-                .leafPartition(false)
-                .parentPartitionId(L1_LEFT)
-                .childPartitionIds(Arrays.asList(L3_LEFT_OF_L2_LEFT_OF_L1_LEFT, L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT))
-                .dimension(-1)
-                .build();
-        Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
-        Partition l2RightOfL1L = Partition.builder()
-                .region(l2RightOfL1LRegion)
-                .id(L2_RIGHT_OF_L1L)
-                .leafPartition(false)
-                .parentPartitionId(L1_LEFT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
-        Partition l2LeftOfL1R = Partition.builder()
-                .region(l2LeftOfL1RRegion)
-                .id(L2_LEFT_OF_L1R)
-                .leafPartition(true)
-                .parentPartitionId(L1_RIGHT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
-        Partition l2RightOfL1R = Partition.builder()
-                .region(l2RightOfL1RRegion)
-                .id(L2_RIGHT_OF_L1R)
-                .leafPartition(true)
-                .parentPartitionId(L1_RIGHT)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
         Region l3LeftOfL2LoL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -9000000L, false));
         Partition l3LeftOfL2LoL1L = Partition.builder()
                 .region(l3LeftOfL2LoL1LRegion)
@@ -428,17 +118,14 @@ public class PartitionTreeTest {
                 .dimension(-1)
                 .build();
 
-        List<Partition> partitions = new ArrayList<>();
-        partitions.add(root);
-        partitions.add(l1Left);
-        partitions.add(l1Right);
-        partitions.add(l2LeftOfL1L);
-        partitions.add(l2RightOfL1L);
-        partitions.add(l2LeftOfL1R);
-        partitions.add(l2RightOfL1R);
-        partitions.add(l3LeftOfL2LoL1L);
-        partitions.add(l3RightOfL2LoL1L);
-        PartitionTree partitionTree = new PartitionTree(partitions);
+        //Adjust the child partitions to include new elements
+        l2LeftOfL1L = l2LeftOfL1L.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList(L3_LEFT_OF_L2_LEFT_OF_L1_LEFT, L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT))
+                .build();
+
+        PartitionTree partitionTree = new PartitionTree(
+                List.of(root, l1Left, l1Right, l2LeftOfL1L, adjustLeafStatus(l2RightOfL1L, false), l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R, l3LeftOfL2LoL1L, l3RightOfL2LoL1L));
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(123456789L));
