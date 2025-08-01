@@ -12,6 +12,7 @@ env:
   RUST_BUILD_IMAGE_AARCH64: "ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest"
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
+  SCCACHE_LOG: "trace"
   RUSTC_WRAPPER: "sccache"
 
 jobs:
@@ -26,12 +27,10 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.9
       - name: Build without Docker
         working-directory: ./rust
-        run: SCCACHE_LOG=trace cargo build --verbose
+        run: cargo build --verbose
       - name: Build for x86_64
         working-directory: ./rust
-        run: SCCACHE_LOG=trace ./build-in-docker.sh x86_64 cargo build --release --verbose
+        run: ./build-in-docker.sh x86_64 cargo build --release --verbose
       - name: Build for Graviton
         working-directory: ./rust
-        env:
-          RUSTFLAGS: "-Ctarget-feature=+lse -Ctarget-cpu=neoverse-n1"
-        run: SCCACHE_LOG=trace ./build-in-docker.sh aarch64 cargo build --release --verbose
+        run: ./build-in-docker.sh aarch64 cargo build --release --verbose
