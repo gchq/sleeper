@@ -15,7 +15,8 @@
 ARG BASE_IMAGE="sleeper-rust-builder-base:current"
 FROM ${BASE_IMAGE}
 
-RUN cargo install sccache --locked
+COPY install-sccache.sh /
+RUN /install-sccache.sh
 
 ENV CC="sccache clang-20"
 ENV CXX="sccache clang++-20"
