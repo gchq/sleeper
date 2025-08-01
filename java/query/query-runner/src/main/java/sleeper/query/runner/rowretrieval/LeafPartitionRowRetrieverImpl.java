@@ -31,7 +31,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
@@ -144,7 +144,7 @@ public class LeafPartitionRowRetrieverImpl implements LeafPartitionRowRetriever 
     private ParquetReader<Row> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate) throws IOException {
         // NB Do not create a ParquetReaderIterator here as that forces the
         // opening of the file which needs to be done in parallel.
-        return new ParquetRowReader.Builder(new Path(fileName), readSchema)
+        return new ParquetRowReaderFactory.Builder(new Path(fileName), readSchema)
                 .withConf(filesConfig)
                 .withFilter(FilterCompat.get(filterPredicate))
                 .useColumnIndexFilter(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED))

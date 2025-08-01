@@ -25,12 +25,15 @@ import sleeper.core.schema.Schema;
 import java.io.IOException;
 
 /**
- * Reads Parquet files. Uses {@link RowReadSupport}.
+ * Reads Parquet files. Uses {@link RowReadSupport}. TODO sort this
  */
-public class ParquetRowReader extends ParquetReader<Row> {
+public class ParquetRowReaderFactory {
 
-    public ParquetRowReader(Path path, Schema schema) throws IOException {
-        super(path, new RowReadSupport(schema));
+    private ParquetRowReaderFactory() {
+    }
+
+    public static ParquetReader<Row> createParquetRowReader(Path path, Schema schema) throws IOException {
+        return new ParquetReader<Row>(path, new RowReadSupport(schema));
     }
 
     public static class Builder extends ParquetReader.Builder<Row> {

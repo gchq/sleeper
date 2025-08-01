@@ -17,6 +17,7 @@ package sleeper.bulkimport.runner;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,7 +58,7 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 import sleeper.sketches.store.SketchesStore;
@@ -307,7 +308,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
             relevantFiles.stream()
                     .map(af -> {
                         try {
-                            return new ParquetRowReader(new Path(af.getFilename()), schema);
+                            return ParquetRowReaderFactory.createParquetRowReader(new Path(af.getFilename()), schema);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
@@ -413,7 +414,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static List<Row> readRows(String filename, Schema schema) {
-        try (ParquetRowReader reader = new ParquetRowReader(new Path(filename), schema)) {
+        try (ParquetReader<Row> reader = ParquetRowReaderFactory.createParquetRowReader(new Path(filename), schema)) {
             List<Row> readRows = new ArrayList<>();
             Row row = reader.read();
             while (null != row) {

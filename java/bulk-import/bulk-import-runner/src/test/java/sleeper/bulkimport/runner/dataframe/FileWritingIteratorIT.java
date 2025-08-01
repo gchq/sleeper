@@ -18,6 +18,7 @@ package sleeper.bulkimport.runner.dataframe;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +31,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
 
 import java.io.IOException;
@@ -220,7 +221,7 @@ class FileWritingIteratorIT {
     }
 
     private List<sleeper.core.row.Row> readRows(String path) {
-        try (ParquetRowReader reader = new ParquetRowReader(new Path(path), createSchema())) {
+        try (ParquetReader<sleeper.core.row.Row> reader = ParquetRowReaderFactory.createParquetRowReader(new Path(path), createSchema())) {
             List<sleeper.core.row.Row> rows = new ArrayList<>();
             sleeper.core.row.Row row = reader.read();
             while (null != row) {
