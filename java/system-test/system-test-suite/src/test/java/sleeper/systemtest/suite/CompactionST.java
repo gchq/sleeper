@@ -22,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -38,8 +38,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
@@ -71,7 +71,7 @@ public class CompactionST {
     void shouldCompactFilesFromMultiplePartitionsInJava(SleeperSystemTest sleeper) throws Exception {
         // Given we compact in Java
         sleeper.updateTableProperties(Map.of(
-                COMPACTION_METHOD, CompactionMethod.JAVA.toString()));
+                DATA_ENGINE, DataEngine.JAVA.toString()));
         // And we have 4 leaf partitions, LL, LR, RL, RR
         sleeper.setGeneratorOverrides(overrideField(
                 ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
@@ -118,7 +118,7 @@ public class CompactionST {
     void shouldCompactFilesFromMultiplePartitionsInDataFusion(SleeperSystemTest sleeper) throws Exception {
         // Given we compact in DataFusion
         sleeper.updateTableProperties(Map.of(
-                COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString()));
+                DATA_ENGINE, DataEngine.DATAFUSION.toString()));
         // And we have 4 leaf partitions, LL, LR, RL, RR
         sleeper.setGeneratorOverrides(overrideField(
                 ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
