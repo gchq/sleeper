@@ -118,3 +118,15 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
+      - name: Delete old images
+        if: ${{ inputs.pushImages }}
+        working-directory: ./java/build
+        run: |
+          echo "token=${{ secrets.GITHUB_TOKEN }}" >> delete.properties
+          echo "organization=${{ github.repository_owner }}" >> delete.properties
+          echo "packageNames=sleeper-rust-builder-x86_64,sleeper-rust-builder-aarch64,sleeper-rust-builder-x86_64-sccache,sleeper-rust-builder-aarch64-sccache" >> delete.properties
+          echo "ignoreTagsPattern=^latest$" >> delete.properties
+          echo "keepMostRecent=4" >> delete.properties
+          mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRVersions \
+            -Dmaven.repo.local=../.m2/repository \
+            -Dexec.args=delete.properties
