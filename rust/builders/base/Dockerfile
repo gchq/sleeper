@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,19 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
-unset CDPATH
+FROM rust:1.88-bookworm
 
-THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+RUN apt-get update && apt-get install -y \
+    gcc g++ libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-pushd "$THIS_DIR"/base
-docker build -t sleeper-rust-builder-base:current .
-popd
-
-pushd "$THIS_DIR"/x86_64
-docker build -t ghcr.io/gchq/sleeper-rust-builder-x86_64:latest .
-popd
-
-pushd "$THIS_DIR"/aarch64
-docker build -t ghcr.io/gchq/sleeper-rust-builder-aarch64:latest .
-popd
+WORKDIR /workspace

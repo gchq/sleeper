@@ -12,14 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM rust:1.88-bookworm
+ARG BASE_IMAGE="sleeper-rust-builder-base:current"
+FROM ${BASE_IMAGE}
 
-RUN dpkg --add-architecture arm64
-
-RUN apt-get update \
-    && apt-get install --assume-yes \
-    gcc g++ libssl-dev:arm64 \
-    && apt-get install --assume-yes --no-install-recommends \
+RUN apt-get update && apt-get install --assume-yes --no-install-recommends \
     g++-aarch64-linux-gnu \
     libc6-dev-arm64-cross \
     && rm -rf /var/lib/apt/lists/*

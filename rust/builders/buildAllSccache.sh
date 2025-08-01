@@ -18,18 +18,18 @@ unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 
+pushd "$THIS_DIR"/base
+docker build -t sleeper-rust-builder-base:current .
+popd
+
+pushd "$THIS_DIR"/base-sccache
+docker build -t sleeper-rust-builder-sccache:current .
+popd
+
 pushd "$THIS_DIR"/x86_64
-docker build -t sleeper-rust-builder-x86_64:current .
+docker build -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
 popd
 
 pushd "$THIS_DIR"/aarch64
-docker build -t sleeper-rust-builder-aarch64:current .
-popd
-
-pushd "$THIS_DIR"/sccache
-docker build -t ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-x86_64:current .
-popd
-
-pushd "$THIS_DIR"/sccache
-docker build -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-aarch64:current .
+docker build -t ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest --build-arg BASE_IMAGE=sleeper-rust-builder-sccache:current .
 popd
