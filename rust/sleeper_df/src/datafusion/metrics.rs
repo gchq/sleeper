@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+use crate::CompactionResult;
 use datafusion::{
     common::HashMap,
     datasource::source::DataSourceExec,
@@ -29,8 +29,6 @@ use datafusion::{
 use log::info;
 use std::io::Write;
 use url::Url;
-
-use crate::CompactionResult;
 
 /// Per file metrics to collect from the Parquet reader after compaction
 pub const FILE_METRICS: [&str; 10] = [

@@ -1,7 +1,3 @@
-use aggregator_udfs::{
-    map_aggregate::{MapAggregator, MapAggregatorOp},
-    nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
-};
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -17,6 +13,10 @@ use aggregator_udfs::{
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use aggregator_udfs::{
+    map_aggregate::{MapAggregator, MapAggregatorOp},
+    nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
+};
 use datafusion::{
     common::{DFSchema, HashSet, plan_datafusion_err, plan_err},
     error::{DataFusionError, Result},

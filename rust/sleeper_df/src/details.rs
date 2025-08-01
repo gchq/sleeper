@@ -20,7 +20,6 @@ use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail, eyre};
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
-
 use std::{collections::HashMap, path::PathBuf};
 use url::Url;
 

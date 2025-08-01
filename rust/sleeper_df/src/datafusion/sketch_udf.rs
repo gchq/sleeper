@@ -1,9 +1,9 @@
-/// A user defined function for `DataFusion` to create quantile sketches
-/// of data as it is being compacted.
-///
-/// This function is designed to be used with a array of columns, one per Sleeper
-/// row key field. The return value is just the first column, untransformed. The sketches
-/// are produced as a side effect.
+//! A user defined function for `DataFusion` to create quantile sketches
+//! of data as it is being compacted.
+//!
+//! This function is designed to be used with a array of columns, one per Sleeper
+//! row key field. The return value is just the first column, untransformed. The sketches
+//! are produced as a side effect.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -19,13 +19,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use std::{
-    any::Any,
-    fmt::Debug,
-    iter::zip,
-    sync::{Arc, Mutex, MutexGuard},
-};
-
+use super::sketch::{DataSketchVariant, K, update_sketch};
 use arrow::{
     array::AsArray,
     datatypes::{
@@ -40,8 +34,12 @@ use datafusion::{
     },
     scalar::ScalarValue,
 };
-
-use super::sketch::{DataSketchVariant, K, update_sketch};
+use std::{
+    any::Any,
+    fmt::Debug,
+    iter::zip,
+    sync::{Arc, Mutex, MutexGuard},
+};
 
 /// A UDF for producing quantile sketches of Sleeper tables. It operates on row key columns.
 /// This function works by taking each row key column as an argument. It returns a clone of the 0'th column.
