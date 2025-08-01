@@ -40,13 +40,13 @@ import java.util.function.BooleanSupplier;
 import static sleeper.core.ContainerConstants.BULK_EXPORT_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -64,56 +64,30 @@ public class RunDataProcessingTasks {
     private final TaskCounts taskCounts;
     private final CompactionTaskHostScaler hostScaler;
     private final TaskLauncher taskLauncher;
-    private CompactionECSLaunchType launchType;
-    private String containerName;
-    private String clusterName;
-    private String fargateDefinitionFamily;
+    private final String sqsJobQueueUrl;
+    private final boolean compactionTask;
 
-    public RunDataProcessingTasks(
-            InstanceProperties instanceProperties,
-            EcsClient ecsClient,
-            AutoScalingClient asClient,
-            Ec2Client ec2Client,
-            CompactionTaskType compactionTaskType) {
-
-        this.instanceProperties = instanceProperties;
-
-        // Initialize taskCounts lambda
-        this.taskCounts = () -> ECSTaskCount.getNumPendingAndRunningTasks(
-                instanceProperties.get(compactionTaskType == CompactionTaskType.BULK_EXPORT ? BULK_EXPORT_CLUSTER : COMPACTION_CLUSTER),
-                ecsClient);
-
-        // Initialize hostScaler
-        this.hostScaler = EC2Scaler.create(instanceProperties, asClient, ec2Client);
-
-        // Set taskLauncher to call internal method
-        this.taskLauncher = (numberOfTasks, checkAbort) -> this.launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort);
-
-        // Determine launch type and related configs
-        if (compactionTaskType == CompactionTaskType.BULK_EXPORT) {
-            containerName = BULK_EXPORT_CONTAINER_NAME;
-            clusterName = instanceProperties.get(BULK_EXPORT_CLUSTER);
-            fargateDefinitionFamily = instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY);
-            launchType = CompactionECSLaunchType.FARGATE;
-        } else { // default to COMPACTION
-            containerName = COMPACTION_CONTAINER_NAME;
-            clusterName = instanceProperties.get(COMPACTION_CLUSTER);
-            fargateDefinitionFamily = instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
-            launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
-        }
+    private RunDataProcessingTasks(
+            InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client, boolean compactionTask) {
+        this(instanceProperties,
+                () -> ECSTaskCount.getNumPendingAndRunningTasks(getClusterName(instanceProperties, compactionTask), ecsClient),
+                EC2Scaler.create(instanceProperties, asClient, ec2Client),
+                (numberOfTasks, checkAbort, ct) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort, ct),
+                compactionTask);
     }
 
-    public RunDataProcessingTasks(
+    private RunDataProcessingTasks(
             InstanceProperties instanceProperties,
             TaskCounts taskCounts,
             CompactionTaskHostScaler hostScaler,
-            TaskLauncher taskLauncher) {
+            TaskLauncher taskLauncher,
+            boolean compactionTask) {
         this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
         this.hostScaler = hostScaler;
         this.taskLauncher = taskLauncher;
-
-        this.launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
+        this.sqsJobQueueUrl = getSqsJobQueueUrl(instanceProperties, compactionTask);
+        this.compactionTask = compactionTask;
     }
 
     public interface TaskCounts {
@@ -121,18 +95,10 @@ public class RunDataProcessingTasks {
     }
 
     public interface TaskLauncher {
-        void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort);
+        void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort, boolean compactionTask);
     }
 
-    public void runCompaction(QueueMessageCount.Client queueMessageCount) {
-        run(queueMessageCount, instanceProperties.get(COMPACTION_JOB_QUEUE_URL));
-    }
-
-    public void runBulkExport(QueueMessageCount.Client queueMessageCount) {
-        run(queueMessageCount, instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL));
-    }
-
-    private void run(QueueMessageCount.Client queueMessageCount, String sqsJobQueueUrl) {
+    public void run(QueueMessageCount.Client queueMessageCount) {
         long startTime = System.currentTimeMillis();
         int maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
@@ -191,7 +157,7 @@ public class RunDataProcessingTasks {
             LOGGER.info("Finishing as no new tasks are needed");
             return;
         }
-        taskLauncher.launchTasks(createTasks, checkAbort);
+        taskLauncher.launchTasks(createTasks, checkAbort, compactionTask);
     }
 
     /**
@@ -201,13 +167,14 @@ public class RunDataProcessingTasks {
      * @param instanceProperties    Properties for instance
      * @param numberOfTasksToCreate number of tasks to create
      * @param checkAbort            a condition under which launching will be aborted
+     * @param compactionTask        a compaction task
      */
-    private void launchTasks(
+    private static void launchTasks(
             EcsClient ecsClient, InstanceProperties instanceProperties,
-            int numberOfTasksToCreate, BooleanSupplier checkAbort) {
+            int numberOfTasksToCreate, BooleanSupplier checkAbort, boolean compactionTask) {
         RunECSTasks.runTasks(builder -> builder
                 .ecsClient(ecsClient)
-                .runTaskRequest(createRunTaskRequest(instanceProperties))
+                .runTaskRequest(createRunTaskRequest(instanceProperties, compactionTask))
                 .numberOfTasksToCreate(numberOfTasksToCreate)
                 .checkAbort(checkAbort));
     }
@@ -216,19 +183,20 @@ public class RunDataProcessingTasks {
      * Creates a new task request that can be passed to ECS.
      *
      * @param  instanceProperties       the instance properties
+     * @param  compactionTask           a compaction task
      * @return                          the request for ECS
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
-    private RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
+    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties, boolean compactionTask) {
 
         // CHoose either compaction or export
-        TaskOverride override = createOverride(instanceProperties);
+        TaskOverride override = createOverride(instanceProperties, compactionTask);
         RunTaskRequest.Builder runTaskRequest = RunTaskRequest.builder()
-                .cluster(clusterName)
+                .cluster(getClusterName(instanceProperties, compactionTask))
                 .overrides(override)
                 .propagateTags(PropagateTags.TASK_DEFINITION);
-        // ToDo Check this
-        //CompactionECSLaunchType launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
+
+        CompactionECSLaunchType launchType = instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class);
         if (launchType == CompactionECSLaunchType.FARGATE) {
             String fargateVersion = Objects.requireNonNull(instanceProperties.get(FARGATE_VERSION), "fargateVersion cannot be null");
             NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
@@ -236,11 +204,11 @@ public class RunDataProcessingTasks {
                     .launchType(LaunchType.FARGATE)
                     .platformVersion(fargateVersion)
                     .networkConfiguration(networkConfiguration)
-                    .taskDefinition(fargateDefinitionFamily);
+                    .taskDefinition(getFargateDefinitionFamily(instanceProperties, compactionTask));
         } else if (launchType == CompactionECSLaunchType.EC2) {
             runTaskRequest
                     .launchType(LaunchType.EC2)
-                    .taskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY)); //ToDo Check this
+                    .taskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY));
         } else {
             throw new IllegalArgumentException("Unrecognised ECS launch type: " + launchType);
         }
@@ -251,11 +219,12 @@ public class RunDataProcessingTasks {
      * Create the container definition overrides for the task launch.
      *
      * @param  instanceProperties the instance properties
+     * @param  compactionTask     a compaction task
      * @return                    the container definition overrides
      */
-    private TaskOverride createOverride(InstanceProperties instanceProperties) {
+    private static TaskOverride createOverride(InstanceProperties instanceProperties, boolean compactionTask) {
         ContainerOverride containerOverride = ContainerOverride.builder()
-                .name(containerName)
+                .name(getContainerName(compactionTask))
                 .command(List.of(instanceProperties.get(CONFIG_BUCKET)))
                 .build();
         return TaskOverride.builder()
@@ -269,7 +238,7 @@ public class RunDataProcessingTasks {
      * @param  instanceProperties the instance properties
      * @return                    task network configuration
      */
-    private NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
+    private static NetworkConfiguration networkConfig(InstanceProperties instanceProperties) {
         AwsVpcConfiguration vpcConfiguration = AwsVpcConfiguration.builder()
                 .subnets(instanceProperties.getList(SUBNETS))
                 .securityGroups(instanceProperties.getList(ECS_SECURITY_GROUPS))
@@ -279,19 +248,66 @@ public class RunDataProcessingTasks {
                 .build();
     }
 
+    private static String getSqsJobQueueUrl(InstanceProperties instanceProperties, boolean compactionTask) {
+        if (compactionTask) {
+            return instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+        } else {
+            return instanceProperties.get(BULK_EXPORT_QUEUE_URL);
+        }
+    }
+
+    private static String getClusterName(InstanceProperties instanceProperties, boolean compactionTask) {
+        if (compactionTask) {
+            return instanceProperties.get(COMPACTION_CLUSTER);
+        } else {
+            return instanceProperties.get(BULK_EXPORT_CLUSTER);
+        }
+    }
+
+    private static String getContainerName(boolean compactionTask) {
+        if (compactionTask) {
+            return COMPACTION_CONTAINER_NAME;
+        } else {
+            return BULK_EXPORT_CONTAINER_NAME;
+        }
+    }
+
+    private static String getFargateDefinitionFamily(InstanceProperties instanceProperties, boolean compactionTask) {
+        if (compactionTask) {
+            return instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+        } else {
+            return instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY);
+        }
+    }
+
+    public static RunDataProcessingTasks createForCompactions(InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
+        return new RunDataProcessingTasks(instanceProperties, taskCounts, hostScaler, taskLauncher, true);
+    }
+
+    public static RunDataProcessingTasks createForCompactions(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+        return new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, true);
+
+    }
+
+    public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+        return new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, false);
+
+    }
+
     public static void main(String[] args) {
         if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <number-of-tasks>");
+            System.out.println("Usage: <instance-id> <number-of-tasks> <compaction-task>");
             return;
         }
         String instanceId = args[0];
         int numberOfTasks = Integer.parseInt(args[1]);
+        boolean compactionTask = Boolean.parseBoolean(args[2]);
         try (S3Client s3Client = S3Client.create();
                 EcsClient ecsClient = EcsClient.create();
                 AutoScalingClient asClient = AutoScalingClient.create();
                 Ec2Client ec2Client = Ec2Client.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, CompactionTaskType.COMPACTION)
+            new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, compactionTask)
                     .runToMeetTargetTasks(numberOfTasks);
         }
     }

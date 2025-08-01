@@ -408,7 +408,7 @@ public class RunDataProcessingTasksTest {
     }
 
     private void runTasks(QueueMessageCount.Client queueClient, TaskCounts taskCounts) {
-        taskRunner(taskCounts).runCompaction(queueClient);
+        taskRunner(taskCounts).run(queueClient);
     }
 
     private void runToMeetTargetTasks(int requestedTasks, TaskCounts taskCounts) {
@@ -416,7 +416,7 @@ public class RunDataProcessingTasksTest {
     }
 
     private RunDataProcessingTasks taskRunner(TaskCounts taskCounts) {
-        return new RunDataProcessingTasks(instanceProperties, taskCounts, hostScaler(), taskLauncher());
+        return RunDataProcessingTasks.createForCompactions(instanceProperties, taskCounts, hostScaler(), taskLauncher());
     }
 
     private CompactionTaskHostScaler hostScaler() {
@@ -424,7 +424,7 @@ public class RunDataProcessingTasksTest {
     }
 
     private TaskLauncher taskLauncher() {
-        return (numberOfTasks, checkAbort) -> launchTasksRequests.add(numberOfTasks);
+        return (numberOfTasks, checkAbort, compactionTask) -> launchTasksRequests.add(numberOfTasks);
     }
 
     private CheckAutoScalingGroup checkAutoScalingGroup() {
