@@ -15,9 +15,7 @@
 ARG BASE_IMAGE="sleeper-rust-builder-base:current"
 FROM ${BASE_IMAGE}
 
-RUN apt-get update && apt-get install -y \
-    sccache \
-    && rm -rf /var/lib/apt/lists/*
+RUN cargo install sccache --locked
 
 ENV CC="sccache clang-20"
 ENV CXX="sccache clang++-20"
