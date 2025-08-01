@@ -164,7 +164,7 @@ class S3ResultsOutputIT {
     private List<Row> getRowsFromOutput(String path) {
         List<Row> rows = new ArrayList<>();
         try {
-            ParquetRowReader reader = new ParquetRowReader(path, schema);
+            ParquetRowReader reader = new ParquetRowReader(new org.apache.hadoop.fs.Path(path), schema);
 
             Row row = reader.read();
             while (null != row) {

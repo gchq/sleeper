@@ -413,7 +413,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static List<Row> readRows(String filename, Schema schema) {
-        try (ParquetRowReader reader = new ParquetRowReader(filename, schema)) {
+        try (ParquetRowReader reader = new ParquetRowReader(new Path(filename), schema)) {
             List<Row> readRows = new ArrayList<>();
             Row row = reader.read();
             while (null != row) {

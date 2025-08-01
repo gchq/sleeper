@@ -29,10 +29,6 @@ import java.io.IOException;
  */
 public class ParquetRowReader extends ParquetReader<Row> {
 
-    public ParquetRowReader(String file, Schema schema) throws IOException {
-        super(new Path(file), new RowReadSupport(schema));
-    }
-
     public ParquetRowReader(Path path, Schema schema) throws IOException {
         super(path, new RowReadSupport(schema));
     }
