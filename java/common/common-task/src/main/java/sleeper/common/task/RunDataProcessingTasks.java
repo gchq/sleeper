@@ -37,7 +37,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
+import static sleeper.core.ContainerConstants.BULK_EXPORT_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
@@ -53,28 +57,37 @@ import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCUR
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
  * configurable maximum.
  */
-public class RunCompactionTasks {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RunCompactionTasks.class);
+public class RunDataProcessingTasks {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunDataProcessingTasks.class);
 
     private final InstanceProperties instanceProperties;
     private final TaskCounts taskCounts;
     private final CompactionTaskHostScaler hostScaler;
     private final TaskLauncher taskLauncher;
+    private final String sqsJobQueueUrl;
+    private final boolean compactionTask;
 
-    public RunCompactionTasks(
-            InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+    private RunDataProcessingTasks(
+            InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client, boolean compactionTask) {
         this(instanceProperties,
-                () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
+                () -> ECSTaskCount.getNumPendingAndRunningTasks(getClusterName(instanceProperties, compactionTask), ecsClient),
                 EC2Scaler.create(instanceProperties, asClient, ec2Client),
-                (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
+                (numberOfTasks, checkAbort, ct) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort, ct),
+                compactionTask);
     }
 
-    public RunCompactionTasks(
-            InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
+    private RunDataProcessingTasks(
+            InstanceProperties instanceProperties,
+            TaskCounts taskCounts,
+            CompactionTaskHostScaler hostScaler,
+            TaskLauncher taskLauncher,
+            boolean compactionTask) {
         this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
         this.hostScaler = hostScaler;
         this.taskLauncher = taskLauncher;
+        this.sqsJobQueueUrl = getSqsJobQueueUrl(instanceProperties, compactionTask);
+        this.compactionTask = compactionTask;
     }
 
     public interface TaskCounts {
@@ -82,12 +95,11 @@ public class RunCompactionTasks {
     }
 
     public interface TaskLauncher {
-        void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort);
+        void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort, boolean compactionTask);
     }
 
     public void run(QueueMessageCount.Client queueMessageCount) {
         long startTime = System.currentTimeMillis();
-        String sqsJobQueueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         int maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed
@@ -145,7 +157,7 @@ public class RunCompactionTasks {
             LOGGER.info("Finishing as no new tasks are needed");
             return;
         }
-        taskLauncher.launchTasks(createTasks, checkAbort);
+        taskLauncher.launchTasks(createTasks, checkAbort, compactionTask);
     }
 
     /**
@@ -155,13 +167,14 @@ public class RunCompactionTasks {
      * @param instanceProperties    Properties for instance
      * @param numberOfTasksToCreate number of tasks to create
      * @param checkAbort            a condition under which launching will be aborted
+     * @param compactionTask        a compaction task
      */
     private static void launchTasks(
             EcsClient ecsClient, InstanceProperties instanceProperties,
-            int numberOfTasksToCreate, BooleanSupplier checkAbort) {
+            int numberOfTasksToCreate, BooleanSupplier checkAbort, boolean compactionTask) {
         RunECSTasks.runTasks(builder -> builder
                 .ecsClient(ecsClient)
-                .runTaskRequest(createRunTaskRequest(instanceProperties))
+                .runTaskRequest(createRunTaskRequest(instanceProperties, compactionTask))
                 .numberOfTasksToCreate(numberOfTasksToCreate)
                 .checkAbort(checkAbort));
     }
@@ -170,13 +183,16 @@ public class RunCompactionTasks {
      * Creates a new task request that can be passed to ECS.
      *
      * @param  instanceProperties       the instance properties
+     * @param  compactionTask           a compaction task
      * @return                          the request for ECS
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
-    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
-        TaskOverride override = createOverride(instanceProperties);
+    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties, boolean compactionTask) {
+
+        // CHoose either compaction or export
+        TaskOverride override = createOverride(instanceProperties, compactionTask);
         RunTaskRequest.Builder runTaskRequest = RunTaskRequest.builder()
-                .cluster(instanceProperties.get(COMPACTION_CLUSTER))
+                .cluster(getClusterName(instanceProperties, compactionTask))
                 .overrides(override)
                 .propagateTags(PropagateTags.TASK_DEFINITION);
 
@@ -188,7 +204,7 @@ public class RunCompactionTasks {
                     .launchType(LaunchType.FARGATE)
                     .platformVersion(fargateVersion)
                     .networkConfiguration(networkConfiguration)
-                    .taskDefinition(instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY));
+                    .taskDefinition(getFargateDefinitionFamily(instanceProperties, compactionTask));
         } else if (launchType == CompactionECSLaunchType.EC2) {
             runTaskRequest
                     .launchType(LaunchType.EC2)
@@ -203,11 +219,12 @@ public class RunCompactionTasks {
      * Create the container definition overrides for the task launch.
      *
      * @param  instanceProperties the instance properties
+     * @param  compactionTask     a compaction task
      * @return                    the container definition overrides
      */
-    private static TaskOverride createOverride(InstanceProperties instanceProperties) {
+    private static TaskOverride createOverride(InstanceProperties instanceProperties, boolean compactionTask) {
         ContainerOverride containerOverride = ContainerOverride.builder()
-                .name(COMPACTION_CONTAINER_NAME)
+                .name(getContainerName(compactionTask))
                 .command(List.of(instanceProperties.get(CONFIG_BUCKET)))
                 .build();
         return TaskOverride.builder()
@@ -231,19 +248,66 @@ public class RunCompactionTasks {
                 .build();
     }
 
+    private static String getSqsJobQueueUrl(InstanceProperties instanceProperties, boolean compactionTask) {
+        if (compactionTask) {
+            return instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+        } else {
+            return instanceProperties.get(BULK_EXPORT_QUEUE_URL);
+        }
+    }
+
+    private static String getClusterName(InstanceProperties instanceProperties, boolean compactionTask) {
+        if (compactionTask) {
+            return instanceProperties.get(COMPACTION_CLUSTER);
+        } else {
+            return instanceProperties.get(BULK_EXPORT_CLUSTER);
+        }
+    }
+
+    private static String getContainerName(boolean compactionTask) {
+        if (compactionTask) {
+            return COMPACTION_CONTAINER_NAME;
+        } else {
+            return BULK_EXPORT_CONTAINER_NAME;
+        }
+    }
+
+    private static String getFargateDefinitionFamily(InstanceProperties instanceProperties, boolean compactionTask) {
+        if (compactionTask) {
+            return instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY);
+        } else {
+            return instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY);
+        }
+    }
+
+    public static RunDataProcessingTasks createForCompactions(InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
+        return new RunDataProcessingTasks(instanceProperties, taskCounts, hostScaler, taskLauncher, true);
+    }
+
+    public static RunDataProcessingTasks createForCompactions(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+        return new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, true);
+
+    }
+
+    public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+        return new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, false);
+
+    }
+
     public static void main(String[] args) {
         if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <number-of-tasks>");
+            System.out.println("Usage: <instance-id> <number-of-tasks> <compaction-task>");
             return;
         }
         String instanceId = args[0];
         int numberOfTasks = Integer.parseInt(args[1]);
+        boolean compactionTask = Boolean.parseBoolean(args[2]);
         try (S3Client s3Client = S3Client.create();
                 EcsClient ecsClient = EcsClient.create();
                 AutoScalingClient asClient = AutoScalingClient.create();
                 Ec2Client ec2Client = Ec2Client.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client)
+            new RunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, compactionTask)
                     .runToMeetTargetTasks(numberOfTasks);
         }
     }
