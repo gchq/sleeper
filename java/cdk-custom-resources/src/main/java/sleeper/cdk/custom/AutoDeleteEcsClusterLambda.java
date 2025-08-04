@@ -25,6 +25,9 @@ import software.amazon.awssdk.services.ecs.model.ListContainerInstancesResponse;
 
 import java.util.Map;
 
+/**
+ * Deletes an ECS cluster.
+ */
 public class AutoDeleteEcsClusterLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(AutoDeleteEcsClusterLambda.class);
 
@@ -38,6 +41,12 @@ public class AutoDeleteEcsClusterLambda {
         this.ecsClient = ecsClient;
     }
 
+    /**
+     * Handles an event triggered by CloudFormation.
+     *
+     * @param event   the event to handle
+     * @param context the context
+     */
     public void handleEvent(CloudFormationCustomResourceEvent event, Context context) {
         Map<String, Object> resourceProperties = event.getResourceProperties();
         String clusterName = (String) resourceProperties.get("cluster");
