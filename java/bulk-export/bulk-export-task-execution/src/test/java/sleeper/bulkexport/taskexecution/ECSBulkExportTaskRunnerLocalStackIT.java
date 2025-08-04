@@ -246,7 +246,7 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
     private List<Row> readOutputFile(BulkExportLeafPartitionQuery query) {
         Path path = new Path(query.getOutputFile(instanceProperties));
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
-                new ParquetRowReaderFactory.Builder(path, schema).withConf(hadoopConf).build())) {
+                ParquetRowReaderFactory.parquetRowReaderBuilder(path, schema).withConf(hadoopConf).build())) {
             List<Row> rows = new ArrayList<>();
             reader.forEachRemaining(rows::add);
             return rows;

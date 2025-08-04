@@ -88,7 +88,7 @@ public class EstimateSplitPointsClient {
         return () -> {
             try {
                 return new LimitingIterator<>(maxRows,
-                        new ParquetReaderIterator(new ParquetRowReaderFactory.Builder(dataFile, schema)
+                        new ParquetReaderIterator(ParquetRowReaderFactory.parquetRowReaderBuilder(dataFile, schema)
                                 .withConf(conf)
                                 .build()));
             } catch (IOException e) {

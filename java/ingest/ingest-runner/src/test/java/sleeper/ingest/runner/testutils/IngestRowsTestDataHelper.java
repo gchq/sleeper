@@ -285,7 +285,7 @@ public class IngestRowsTestDataHelper {
     }
 
     public static List<Row> readRowsFromParquetFile(String filename, Schema schema) throws IOException {
-        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(new Path(filename), schema).build();
+        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build();
         List<Row> readRows = new ArrayList<>();
         Row row = reader.read();
         while (null != row) {

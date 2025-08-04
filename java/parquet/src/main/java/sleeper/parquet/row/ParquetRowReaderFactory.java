@@ -25,7 +25,7 @@ import sleeper.core.schema.Schema;
 import java.io.IOException;
 
 /**
- * Reads Parquet files. Uses {@link RowReadSupport}. TODO sort this
+ * Factory to create parquet reader for sleeper rows. Uses {@link RowReadSupport}.
  */
 public class ParquetRowReaderFactory {
 
@@ -33,7 +33,14 @@ public class ParquetRowReaderFactory {
     }
 
     public static ParquetReader<Row> createParquetRowReader(Path path, Schema schema) throws IOException {
-        return new ParquetReader<Row>(path, new RowReadSupport(schema));
+        return ParquetReader.builder(new RowReadSupport(schema), path).build();
+
+    }
+
+    public static ParquetReader.Builder<Row> parquetRowReaderBuilder(Path path, Schema schema) {
+        ParquetReader.Builder<Row> builder = ParquetReader.builder(new RowReadSupport(schema), path);
+        builder.useColumnIndexFilter(false);
+        return builder;
     }
 
     public static class Builder extends ParquetReader.Builder<Row> {

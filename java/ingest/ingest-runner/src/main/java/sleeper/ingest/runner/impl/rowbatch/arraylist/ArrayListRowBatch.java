@@ -248,7 +248,7 @@ public class ArrayListRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDAT
      * @throws IOException Thrown when the reader cannot be created
      */
     private ParquetReader<Row> createParquetReader(String inputFile) throws IOException {
-        ParquetReader.Builder<Row> builder = new ParquetRowReaderFactory.Builder(new Path(inputFile), sleeperSchema)
+        ParquetReader.Builder<Row> builder = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(inputFile), sleeperSchema)
                 .withConf(hadoopConfiguration);
         return builder.build();
     }

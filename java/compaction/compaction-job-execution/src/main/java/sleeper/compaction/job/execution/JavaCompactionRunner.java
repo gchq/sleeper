@@ -122,7 +122,7 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
         for (String file : compactionJob.getInputFiles()) {
-            ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(new Path(file), schema)
+            ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(file), schema)
                     .withConf(configuration)
                     .withFilter(partitionFilter)
                     .build();

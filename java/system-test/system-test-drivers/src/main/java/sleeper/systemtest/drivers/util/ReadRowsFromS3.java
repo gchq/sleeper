@@ -38,7 +38,7 @@ public class ReadRowsFromS3 {
     public static Stream<Row> getRows(String bucketName, String objectKey, Schema schema, Configuration conf) {
         String path = "s3a://" + bucketName + "/" + objectKey;
         List<Row> rows = new ArrayList<>();
-        try (ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(new Path(path), schema)
+        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(path), schema)
                 .withConf(conf).build();
                 ParquetReaderIterator iterator = new ParquetReaderIterator(reader)) {
             iterator.forEachRemaining(rows::add);

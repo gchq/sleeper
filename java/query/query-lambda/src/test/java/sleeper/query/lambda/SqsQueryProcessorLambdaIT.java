@@ -681,7 +681,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         RemoteIterator<LocatedFileStatus> outputFiles = FileSystem.get(new Configuration()).listFiles(new Path(outputDir), true);
         while (outputFiles.hasNext()) {
             LocatedFileStatus outputFile = outputFiles.next();
-            try (ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(outputFile.getPath(), SCHEMA).build();
+            try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(outputFile.getPath(), SCHEMA).build();
                     ParquetReaderIterator it = new ParquetReaderIterator(reader)) {
                 while (it.hasNext()) {
                     it.next();

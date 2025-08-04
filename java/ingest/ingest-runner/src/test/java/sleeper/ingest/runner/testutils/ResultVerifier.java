@@ -76,7 +76,7 @@ public class ResultVerifier {
             Path filePath,
             Configuration hadoopConfiguration) {
         try {
-            ParquetReader<Row> parquetReader = new ParquetRowReaderFactory.Builder(filePath, sleeperSchema)
+            ParquetReader<Row> parquetReader = ParquetRowReaderFactory.parquetRowReaderBuilder(filePath, sleeperSchema)
                     .withConf(hadoopConfiguration)
                     .build();
             return new ParquetReaderIterator(parquetReader);

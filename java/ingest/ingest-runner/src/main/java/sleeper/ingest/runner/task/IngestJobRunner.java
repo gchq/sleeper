@@ -131,7 +131,7 @@ public class IngestJobRunner implements IngestJobHandler {
             if (path.endsWith(".parquet")) {
                 inputIterators.add(() -> {
                     try {
-                        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(path, schema).withConf(hadoopConfiguration).build();
+                        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(path, schema).withConf(hadoopConfiguration).build();
                         return new ParquetReaderIterator(reader);
                     } catch (IOException e) {
                         throw new RuntimeException("Ingest job: " + job.getId() + " IOException creating reader for file "

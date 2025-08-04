@@ -645,7 +645,7 @@ public class FilterTranslatorIT {
     }
 
     private List<Row> readData(String dataFile, FilterPredicate filterPredicate) throws IOException {
-        ParquetReader<Row> reader = new ParquetRowReaderFactory.Builder(new Path(dataFile), SCHEMA)
+        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(dataFile), SCHEMA)
                 .withFilter(FilterCompat.get(filterPredicate))
                 .build();
 

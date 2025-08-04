@@ -139,7 +139,7 @@ public class LeafPartitionRowRetrieverImpl implements LeafPartitionRowRetriever 
     private ParquetReader<Row> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate) throws IOException {
         // NB Do not create a ParquetReaderIterator here as that forces the
         // opening of the file which needs to be done in parallel.
-        return new ParquetRowReaderFactory.Builder(new Path(fileName), readSchema)
+        return ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(fileName), readSchema)
                 .withConf(filesConfig)
                 .withFilter(FilterCompat.get(filterPredicate))
                 .useColumnIndexFilter(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED))
