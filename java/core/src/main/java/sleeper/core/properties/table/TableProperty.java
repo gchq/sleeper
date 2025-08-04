@@ -20,8 +20,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.model.CompressionCodec;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.model.IngestQueue;
@@ -35,7 +35,6 @@ import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPAC
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS;
-import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
@@ -61,6 +60,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMP
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
@@ -143,9 +143,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .editable(false)
             .includedInTemplate(false).build();
+    TableProperty DATA_ENGINE = Index.propertyBuilder("sleeper.table.data.engine")
+            .defaultProperty(DEFAULT_DATA_ENGINE)
+            .description("Select which data engine to use for the table. DataFusion support is experimental. " +
+                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
             .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
-                    "Defaults to nothing. May also have special value \"" + CompactionMethod.AGGREGATION_ITERATOR_NAME + "\" indicating the use of experimental " +
+                    "Defaults to nothing. May also have special value \"" + DataEngine.AGGREGATION_ITERATOR_NAME + "\" indicating the use of experimental " +
                     "iterators that are only usable with the DataFusion compactor. When this marker is present, attempting " +
                     "to compact with the table with the default Java compactor will fail.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
@@ -345,15 +351,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "concurrently per partition.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
-
-    TableProperty COMPACTION_METHOD = Index.propertyBuilder("sleeper.table.compaction.method")
-            .defaultProperty(DEFAULT_COMPACTION_METHOD)
-            .description("Select which compaction method to use for the table. DataFusion compaction support is " +
-                    "experimental.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(CompactionMethod.class))
-            .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
-
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
             .defaultValue("DynamoDBTransactionLogStateStore")
             .description("The name of the class used for the state store. " +

@@ -22,7 +22,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.iterator.WrappedIterator;
-import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -77,7 +77,7 @@ public class IteratorFactoryTest {
         CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
 
         // When
-        SortedRowIterator ageOffIterator = iteratorFactory.getIterator(CompactionMethod.AGGREGATION_ITERATOR_NAME, ";ageoff=value,1000,", schema);
+        SortedRowIterator ageOffIterator = iteratorFactory.getIterator(DataEngine.AGGREGATION_ITERATOR_NAME, ";ageoff=value,1000,", schema);
         List<Row> filtered = new ArrayList<>();
         ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
 
