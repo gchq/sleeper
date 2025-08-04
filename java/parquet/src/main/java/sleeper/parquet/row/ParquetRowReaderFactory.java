@@ -17,7 +17,6 @@ package sleeper.parquet.row;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.api.ReadSupport;
 
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
@@ -41,24 +40,5 @@ public class ParquetRowReaderFactory {
         ParquetReader.Builder<Row> builder = ParquetReader.builder(new RowReadSupport(schema), path);
         builder.useColumnIndexFilter(false);
         return builder;
-    }
-
-    public static class Builder extends ParquetReader.Builder<Row> {
-        private final Schema schema;
-
-        public Builder(String path, Schema schema) {
-            this(new Path(path), schema);
-        }
-
-        public Builder(Path path, Schema schema) {
-            super(path);
-            this.schema = schema;
-            useColumnIndexFilter(false);
-        }
-
-        @Override
-        protected ReadSupport<Row> getReadSupport() {
-            return new RowReadSupport(schema);
-        }
     }
 }
