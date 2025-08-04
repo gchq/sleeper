@@ -31,27 +31,12 @@ test = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-#arrow = { workspace = true, features = ["prettyprint"] }
-#aggregator_udfs = { path = "../aggregator_udfs" }
-#aws-config = { workspace = true }
-#aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
-##bytes = { workspace = true }
 aws-types = { workspace = true }
 chrono = { workspace = true }
 color-eyre = { workspace = true }
-#cxx = { workspace = true }
-#datafusion = { workspace = true }
 env_logger = { workspace = true }
-#filter_udfs = { path = "../filter_udfs" }
-#futures = { workspace = true }
 log = { workspace = true }
 libc = { workspace = true }
-#num-format = { workspace = true }
-#num-traits = { workspace = true }
-#object_store = { workspace = true }
-#objectstore_ext = { path = "../objectstore_ext" }
-#regex = { workspace = true }
-#rust_sketch = { path = "../rust_sketch" }
 sleeper_core = { path = "../sleeper_core" }
 tokio = { workspace = true, features = ["full"] }
 url = { workspace = true }

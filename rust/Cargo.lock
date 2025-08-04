@@ -1224,10 +1224,8 @@ dependencies = [
  "human-panic",
  "log",
  "num-format",
- "owo-colors",
  "predicates",
  "sleeper_core",
- "thiserror",
  "tokio",
  "url",
 ]
