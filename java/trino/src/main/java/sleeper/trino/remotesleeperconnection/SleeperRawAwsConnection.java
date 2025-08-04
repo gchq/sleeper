@@ -49,7 +49,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
+import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
@@ -278,9 +278,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 objectFactory,
                 tableProperties,
                 null,
-                new LeafPartitionRowRetrieverImpl(executorService,
-                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
-                        tableProperties));
+                new QueryEngineSelector(executorService, hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.splitIntoLeafPartitionQueries(query);
@@ -307,9 +305,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 this.objectFactory,
                 tableProperties,
                 stateStore,
-                new LeafPartitionRowRetrieverImpl(executorService,
-                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
-                        tableProperties));
+                new QueryEngineSelector(executorService,
+                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.execute(query);
     }

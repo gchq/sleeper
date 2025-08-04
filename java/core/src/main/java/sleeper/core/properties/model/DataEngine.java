@@ -18,23 +18,23 @@ package sleeper.core.properties.model;
 import org.apache.commons.lang3.EnumUtils;
 
 /**
- * Different compaction methods for Sleeper which support different capabilities and must be
+ * Different data engines for Sleeper which support different capabilities and must be
  * selected based on need.
  */
-public enum CompactionMethod {
-    /** Pure Java compaction implementation. */
+public enum DataEngine {
+    /** Pure Java implementations. */
     JAVA,
-    /** Uses a native library written in Rust to perform a compaction with Apache DataFusion. */
+    /** Uses a native library written in Rust to perform data operations with Apache DataFusion. */
     DATAFUSION;
 
     /**
-     * Checks if the value is a valid compaction method.
+     * Checks if the value is a valid choice.
      *
      * @param  value the value
      * @return       true if it is valid
      */
     public static boolean isValid(String value) {
-        return EnumUtils.isValidEnumIgnoreCase(CompactionMethod.class, value);
+        return EnumUtils.isValidEnumIgnoreCase(DataEngine.class, value);
     }
 
     /** Special iterator marker name indicating the use of aggregation iterators. */
