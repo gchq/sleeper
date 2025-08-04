@@ -98,7 +98,7 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = filterTranslator.toPredicate(recordsRequest.getConstraints().getSummary());
 
-        ParquetReader.Builder<Row> recordReaderBuilder = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(fileName), schema)
+        ParquetReader.Builder<Row> recordReaderBuilder = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(fileName), schema);
         recordReaderBuilder.withConf(getConfigurationForTable(tableProperties));
 
         if (filterPredicate != null) {
