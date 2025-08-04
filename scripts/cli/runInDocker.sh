@@ -38,17 +38,13 @@ run_in_docker() {
     RUN_PARAMS+=(-it)
   fi
   local TEMP_DIR=$(mktemp -d)
-  local CONTAINER_ID_PATH="$TEMP_DIR/container.id"
   mkdir -p "$HOME/.aws"
-  # We ensure the container ID is available as a file inside the container
-  # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
     --rm
-    --cidfile "$CONTAINER_ID_PATH"
-    -v "$CONTAINER_ID_PATH:/tmp/container.id"
     --add-host "host.docker.internal=host-gateway"
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
+    -v "$HOME/.ssh:$HOME_IN_IMAGE/.ssh"
     -e "IN_CLI_CONTAINER=true"
     -e AWS_ACCESS_KEY_ID
     -e AWS_SECRET_ACCESS_KEY
@@ -63,7 +59,6 @@ run_in_docker() {
     "$@"
   )
   docker run "${RUN_PARAMS[@]}"
-  rm "$CONTAINER_ID_PATH"
   rmdir "$TEMP_DIR"
 }
 
@@ -100,14 +95,13 @@ run_in_environment_docker() {
 
 run_in_builder_docker() {
   build_temp_runner_image sleeper-builder:current
-  # Builder directory is mounted twice to work around a problem with the Rust cross compiler in WSL, which causes it to
-  # look for the source code at its path in the host: https://github.com/cross-rs/cross/issues/728
   mkdir -p "$HOME/.sleeper/builder"
   mkdir -p "$HOME/.m2"
   run_in_docker \
-    -v "$HOME/.sleeper/builder:/sleeper-builder" \
-    -v "$HOME/.sleeper/builder:$HOME/.sleeper/builder" \
     -v "$HOME/.m2:$HOME_IN_IMAGE/.m2" \
+    -v "$HOME/.sleeper/builder:/sleeper-builder" \
+    -e HOST_MOUNT_PATH="$HOME/.sleeper/builder" \
+    -e CONTAINER_MOUNT_PATH=/sleeper-builder \
     "$TEMP_RUNNER_IMAGE" "$@"
   docker image remove "$TEMP_RUNNER_IMAGE" &> /dev/null
 }
