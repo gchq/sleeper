@@ -16,6 +16,7 @@
 package sleeper.ingest.runner.task;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,7 +132,7 @@ public class IngestJobRunner implements IngestJobHandler {
             if (path.endsWith(".parquet")) {
                 inputIterators.add(() -> {
                     try {
-                        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(path, schema).withConf(hadoopConfiguration).build();
+                        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(path), schema).withConf(hadoopConfiguration).build();
                         return new ParquetReaderIterator(reader);
                     } catch (IOException e) {
                         throw new RuntimeException("Ingest job: " + job.getId() + " IOException creating reader for file "
