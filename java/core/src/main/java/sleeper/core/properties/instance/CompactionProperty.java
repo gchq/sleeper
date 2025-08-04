@@ -18,7 +18,6 @@ package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.CompactionECSLaunchType;
-import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
@@ -26,7 +25,6 @@ import java.util.List;
 import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
-import static sleeper.core.properties.model.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
  * Definitions of instance properties relating to compaction.
@@ -408,14 +406,6 @@ public interface CompactionProperty {
                     "concurrently per partition. It can be overridden on a per-table basis.")
             .defaultValue("" + Integer.MAX_VALUE)
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-
-    UserDefinedInstanceProperty DEFAULT_COMPACTION_METHOD = Index.propertyBuilder("sleeper.default.table.compaction.method")
-            .description("Select which compaction method to use if not configured against a Sleeper table. DataFusion " +
-                    "compaction support is experimental.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(CompactionMethod.class))
-            .defaultValue(CompactionMethod.JAVA.toString())
-            .validationPredicate(CompactionMethod::isValid)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

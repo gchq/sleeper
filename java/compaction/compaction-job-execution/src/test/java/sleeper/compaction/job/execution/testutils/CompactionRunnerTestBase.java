@@ -24,7 +24,7 @@ import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
@@ -50,7 +50,7 @@ import java.util.function.Consumer;
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
@@ -70,7 +70,7 @@ public class CompactionRunnerTestBase {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dataFolderName);
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        instanceProperties.set(DEFAULT_COMPACTION_METHOD, CompactionMethod.JAVA.toString());
+        instanceProperties.set(DEFAULT_DATA_ENGINE, DataEngine.JAVA.toString());
     }
 
     protected CompactionJobFactory compactionFactory() {
