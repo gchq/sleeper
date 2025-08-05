@@ -309,7 +309,7 @@ impl DataSketchVariant {
 /// The data sketch serialisation might also throw errors from the underlying
 /// data sketch library.
 #[allow(clippy::cast_possible_truncation)]
-pub fn serialise_sketches(
+pub async fn serialise_sketches(
     store_factory: &ObjectStoreFactory,
     path: &Url,
     sketches: &[DataSketchVariant],
@@ -331,7 +331,7 @@ pub fn serialise_sketches(
     // Save to object store
     let store = store_factory.get_object_store(path)?;
 
-    futures::executor::block_on(store.put(&store_path, buf.into_inner().into()))?;
+    store.put(&store_path, buf.into_inner().into()).await?;
 
     info!(
         "Serialised {} ({} bytes) sketches to {}",

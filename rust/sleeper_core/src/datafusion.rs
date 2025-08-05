@@ -160,7 +160,7 @@ pub async fn compact(
         pqo,
     )
     .await?;
-    output_sketch(store_factory, output_path, &sketch_func, &stats)?;
+    output_sketch(store_factory, output_path, &sketch_func, &stats).await?;
 
     Ok(CompactionResult::from(&stats))
 }
@@ -193,7 +193,7 @@ fn set_dictionary_encoding(
 ///
 /// # Errors
 /// If the sketch couldn't be serialised.
-fn output_sketch(
+async fn output_sketch(
     store_factory: &ObjectStoreFactory,
     output_path: &Url,
     sketch_func: &Arc<ScalarUDF>,
@@ -223,6 +223,7 @@ fn output_sketch(
             &create_sketch_path(output_path),
             &func.get_sketch(),
         )
+        .await
         .map_err(|e| DataFusionError::External(e.into()))?;
     }
     Ok(())
