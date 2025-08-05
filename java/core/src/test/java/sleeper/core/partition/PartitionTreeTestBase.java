@@ -27,6 +27,8 @@ import java.util.List;
 
 public abstract class PartitionTreeTestBase {
 
+    private static final String KEY = "id";
+
     protected static final String ROOT = "root";
     protected static final String L1_LEFT = "l1_left";
     protected static final String L1_RIGHT = "l1_right";
@@ -37,63 +39,63 @@ public abstract class PartitionTreeTestBase {
 
     protected Schema schema = Schema.builder().rowKeyFields(new Field("id", new LongType())).build();
     protected Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-    protected Region rootRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
-    protected Partition root = Partition.builder()
-            .region(rootRegion)
+
+    protected Partition.Builder rootBase = Partition.builder()
+            .region(new Region(rangeFactory.createRange(KEY, Long.MIN_VALUE, true, null, false)))
             .id(ROOT)
-            .leafPartition(false)
+            .leafPartition(true)
             .parentPartitionId(null)
-            .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
-            .dimension(-1)
+            .childPartitionIds(List.of())
+            .dimension(-1);
+    protected Partition rootOnly = rootBase.build();
+    protected Partition rootWithChildren = rootBase
+            .leafPartition(false)
+            .childPartitionIds(List.of(L1_LEFT, L1_RIGHT))
+            .dimension(0)
             .build();
-    protected Region l1LeftRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false));
+
     protected Partition l1Left = Partition.builder()
-            .region(l1LeftRegion)
+            .region(new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, 0L, false)))
             .id(L1_LEFT)
             .leafPartition(false)
             .parentPartitionId(ROOT)
             .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
-            .dimension(-1)
+            .dimension(0)
             .build();
-    protected Region l1RightRegion = new Region(rangeFactory.createRange("id", 0L, true, null, false));
     protected Partition l1Right = Partition.builder()
-            .region(l1RightRegion)
+            .region(new Region(rangeFactory.createRange("id", 0L, true, null, false)))
             .id(L1_RIGHT)
             .leafPartition(false)
             .parentPartitionId(ROOT)
             .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
-            .dimension(-1)
+            .dimension(0)
             .build();
-    protected Region l2LeftOfL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false));
     protected Partition l2LeftOfL1L = Partition.builder()
-            .region(l2LeftOfL1LRegion)
+            .region(new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -1000000L, false)))
             .id(L2_LEFT_OF_L1L)
             .leafPartition(true)
             .parentPartitionId(L1_LEFT)
             .childPartitionIds(Collections.emptyList())
             .dimension(-1)
             .build();
-    protected Region l2RightOfL1LRegion = new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false));
     protected Partition l2RightOfL1L = Partition.builder()
-            .region(l2RightOfL1LRegion)
+            .region(new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false)))
             .id(L2_RIGHT_OF_L1L)
             .leafPartition(true)
             .parentPartitionId(L1_LEFT)
             .childPartitionIds(Collections.emptyList())
             .dimension(-1)
             .build();
-    protected Region l2LeftOfL1RRegion = new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false));
     protected Partition l2LeftOfL1R = Partition.builder()
-            .region(l2LeftOfL1RRegion)
+            .region(new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false)))
             .id(L2_LEFT_OF_L1R)
             .leafPartition(true)
             .parentPartitionId(L1_RIGHT)
             .childPartitionIds(Collections.emptyList())
             .dimension(-1)
             .build();
-    protected Region l2RightOfL1RRegion = new Region(rangeFactory.createRange("id", 123456789L, true, null, false));
     protected Partition l2RightOfL1R = Partition.builder()
-            .region(l2RightOfL1RRegion)
+            .region(new Region(rangeFactory.createRange("id", 123456789L, true, null, false)))
             .id(L2_RIGHT_OF_L1R)
             .leafPartition(true)
             .parentPartitionId(L1_RIGHT)
@@ -102,18 +104,33 @@ public abstract class PartitionTreeTestBase {
             .build();
 
     protected PartitionTree generateTreeToRootLevel() {
-        return new PartitionTree(List.of(adjustLeafStatus(root, true)));
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst(ROOT);
+        return builder.buildTree();
     }
 
-    protected PartitionTree generateTreeTo1Levels() {
-        return new PartitionTree(List.of(root, adjustLeafStatus(l1Left, true), adjustLeafStatus(l1Right, true)));
+    protected PartitionTree generateTreeTo1LevelsEvenSplit() {
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 50L);
+        return builder.buildTree();
     }
 
     protected PartitionTree generateTreeTo2Levels() {
-        return new PartitionTree(List.of(root, l1Left, l1Right, l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R));
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L);
+
+        return builder.buildTree();
     }
 
-    protected Partition adjustLeafStatus(Partition partitionIn, boolean leafStatus) {
-        return partitionIn.toBuilder().leafPartition(leafStatus).build();
+    protected Partition adjustToLeafStatus(Partition partitionIn) {
+        return partitionIn.toBuilder()
+                .leafPartition(true)
+                .childPartitionIds(List.of())
+                .dimension(-1)
+                .build();
     }
 }

@@ -18,6 +18,7 @@ package sleeper.core.partition;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
 
@@ -28,8 +29,8 @@ public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
         PartitionTree subTree = PartitionSubTreeFactory.createSubTree(generateTreeTo2Levels(), leafPartitionCount);
 
         // Then
-        Partition l1LeftAsLeaf = adjustLeafStatus(l1Left, true);
-        Partition l1RightAsLeaf = adjustLeafStatus(l1Right, true);
+        Partition l1LeftAsLeaf = adjustToLeafStatus(l1Left);
+        Partition l1RightAsLeaf = adjustToLeafStatus(l1Right);
         assertThat(subTree.getLeafPartitions()).contains(l1LeftAsLeaf, l1RightAsLeaf);
         assertThat(subTree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
     }
@@ -49,13 +50,22 @@ public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
+    //TODO Fix this test as should valid rootOnly
     void shouldCreateRootOnlySubTreeWhenGivenLeafPartitions() {
         // Given / When
         int leafPartitionCount = 0;
         PartitionTree subTree = PartitionSubTreeFactory.createSubTree(generateTreeTo2Levels(), leafPartitionCount);
 
         // Then
-        assertThat(subTree.getRootPartition()).isEqualTo(root);
-        assertThat(subTree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
+        assertThat(subTree.getRootPartition()).isEqualTo(rootOnly);
+
+        //Incremented to account for root now being the only leaf
+        assertThat(subTree.getLeafPartitions().size()).isEqualTo(leafPartitionCount + 1);
+    }
+
+    @Test
+    void shouldThrowExceptionIfRequestLeafCountGreaterThanOriginalTree() {
+        assertThatThrownBy(() -> PartitionSubTreeFactory.createSubTree(generateTreeTo1LevelsEvenSplit(), 7))
+                .isInstanceOf(RuntimeException.class);
     }
 }

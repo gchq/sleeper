@@ -59,8 +59,8 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
         // Then
         assertThat(ancestorsOfRootIds).isEmpty();
         assertThat(ancestorsOfRoot).isEmpty();
-        assertThat(ancestorsOfL2LOfL1LIds).containsExactly(l1Left.getId(), root.getId());
-        assertThat(ancestorsOfL2LOfL1L).containsExactly(l1Left, root);
+        assertThat(ancestorsOfL2LOfL1LIds).containsExactly(l1Left.getId(), rootWithChildren.getId());
+        assertThat(ancestorsOfL2LOfL1L).containsExactly(l1Left, rootWithChildren);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
 
         // Then 1
         assertThat(partition.isRowKeyInPartition(schema, Key.create(10L))).isTrue();
-        assertThat(partition).isEqualTo(adjustLeafStatus(root, true));
+        assertThat(partition).isEqualTo(rootOnly);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
                 .build();
 
         PartitionTree partitionTree = new PartitionTree(
-                List.of(root, l1Left, l1Right, l2LeftOfL1L, adjustLeafStatus(l2RightOfL1L, false), l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R, l3LeftOfL2LoL1L, l3RightOfL2LoL1L));
+                List.of(rootWithChildren, l1Left, l1Right, l2LeftOfL1L, setNonLeafNode(l2RightOfL1L), l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R, l3LeftOfL2LoL1L, l3RightOfL2LoL1L));
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(123456789L));
@@ -140,5 +140,12 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
         // Then 2
         assertThat(partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE))).isTrue();
         assertThat(partition).isEqualTo(l3LeftOfL2LoL1L);
+    }
+
+    private Partition setNonLeafNode(Partition partitionIn) {
+        return partitionIn
+                .toBuilder()
+                .leafPartition(false)
+                .build();
     }
 }

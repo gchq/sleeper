@@ -36,9 +36,13 @@ public class PartitionSubTreeFactory {
      * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
      * @return                    newly generated sub tree
      */
-    public static PartitionTree createSubTree(PartitionTree originalTree, int leafPartitionCount) {
+    public static PartitionTree createSubTree(PartitionTree originalTree, int leafPartitionCount) throws RuntimeException {
+        if (leafPartitionCount > originalTree.getAllPartitions().size()) {
+            throw new RuntimeException();
+        }
         ArrayList<String> resetLeafIds = new ArrayList<>();
         PartitionTree subTree = new PartitionTree(List.of(originalTree.getRootPartition()));
+        resetLeafIds.add(originalTree.getRootPartition().getId());
 
         // Check loop has count incremented by 1 to account for root partition that always must exist
         while (subTree.idToPartition.values().size() < leafPartitionCount + 1) {
@@ -55,14 +59,25 @@ public class PartitionSubTreeFactory {
             });
         }
 
-        // Last gathered selection of ids are set to be leaves of new tree.
+        // Last gathered selection of ids have their key details reset to act as leaves of new tree.
         resetLeafIds.forEach(leafId -> {
-            subTree.idToPartition.put(leafId, subTree.idToPartition.get(leafId)
-                    .toBuilder()
-                    .leafPartition(true)
-                    .build());
+            subTree.idToPartition.put(leafId, adjustToLeafStatus(subTree.idToPartition.get(leafId)));
+
         });
 
+        // If root is the only partition, return a new sub tree with root corrected for no leaves
+        if (subTree.getAllPartitions().size() == 1) {
+            return new PartitionTree(subTree.getAllPartitions());
+        }
+
         return subTree;
+    }
+
+    private static Partition adjustToLeafStatus(Partition partitionIn) {
+        return partitionIn.toBuilder()
+                .leafPartition(true)
+                .childPartitionIds(List.of())
+                .dimension(-1)
+                .build();
     }
 }
