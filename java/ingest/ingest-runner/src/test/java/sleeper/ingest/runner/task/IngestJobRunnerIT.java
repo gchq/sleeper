@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.utils.S3FileNotFoundException;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -65,6 +66,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
@@ -148,19 +150,15 @@ class IngestJobRunnerIT extends LocalStackTestBase {
         StateStore stateStore = initialiseStateStore();
 
         // When
-        runIngestJob(stateStore, files);
+        assertThatExceptionOfType(S3FileNotFoundException.class)
+                .isThrownBy(() -> runIngestJob(stateStore, files));
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
         List<Row> actualRows = readMergedRowsFromPartitionDataFiles(rowListAndSchema.sleeperSchema, actualFiles, hadoopConf);
-        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
         assertThat(localDir).isEmptyDirectory();
-        assertThat(actualFiles)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
-                .containsExactly(fileReferenceFactory.rootFile("anyfilename", 200));
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rowListAndSchema.rowList);
-        assertThat(SketchesDeciles.fromFileReferences(rowListAndSchema.sleeperSchema, actualFiles, sketchesStore))
-                .isEqualTo(SketchesDeciles.from(rowListAndSchema.sleeperSchema, rowListAndSchema.rowList));
+        assertThat(actualFiles).isEmpty();
+        assertThat(actualRows).isEmpty();
     }
 
     @Test

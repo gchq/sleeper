@@ -56,21 +56,19 @@ class S3ExpandDirectoriesIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldIgnoreCrcFiles() {
+        void shouldIgnoreNonParquetFiles() {
             // Given
             List<String> files = List.of(
-                    bucket + "/file-1.parquet",
+                    bucket + "/file-1",
                     bucket + "/file-2.crc",
                     bucket + "/file-3.parquet");
-            putObject(bucket, "file-1.parquet", "test-data");
+            putObject(bucket, "file-1", "test-data");
             putObject(bucket, "file-2.crc", "test-data");
             putObject(bucket, "file-3.parquet", "test-data");
 
             // When / Then
             assertThat(listPathsForJob(files))
-                    .containsExactlyInAnyOrder(
-                            bucket + "/file-1.parquet",
-                            bucket + "/file-3.parquet");
+                    .containsExactly(bucket + "/file-3.parquet");
         }
 
         @Test
