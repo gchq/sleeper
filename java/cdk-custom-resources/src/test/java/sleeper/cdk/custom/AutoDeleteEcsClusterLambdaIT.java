@@ -18,8 +18,6 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,27 +26,24 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.matching;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_DELETE_CLUSTER_OPERATION;
+import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_DEREGISTER_CONTAINER_OPERATION;
+import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_LIST_CONTAINERS_OPERATION;
+import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_LIST_TASKS_OPERATION;
+import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_STOP_TASK_OPERATION;
+import static sleeper.cdk.custom.WiremockTestHelper.OPERATION_HEADER;
+import static sleeper.cdk.custom.WiremockTestHelper.anyRequestedForEcs;
+import static sleeper.cdk.custom.WiremockTestHelper.deleteClusterRequestedFor;
+import static sleeper.cdk.custom.WiremockTestHelper.deregisterContainerRequestedFor;
+import static sleeper.cdk.custom.WiremockTestHelper.stopTaskRequestedFor;
 import static sleeper.cdk.custom.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
 public class AutoDeleteEcsClusterLambdaIT {
 
-    private static final String OPERATION_HEADER = "X-Amz-Target";
-    public static final StringValuePattern MATCHING_LIST_CONTAINERS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListContainerInstances");
-    public static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
-    public static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
-    private static final StringValuePattern MATCHING_DEREGISTER_CONTAINER_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.DeregisterContainerInstance");
-    private static final StringValuePattern MATCHING_DELETE_CLUSTER_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.DeleteCluster");
     private AutoDeleteEcsClusterLambda lambda;
 
     @BeforeEach
@@ -97,31 +92,6 @@ public class AutoDeleteEcsClusterLambdaIT {
 
     private AutoDeleteEcsClusterLambda lambda(WireMockRuntimeInfo runtimeInfo) {
         return new AutoDeleteEcsClusterLambda(wiremockEcsClient(runtimeInfo));
-    }
-
-    public static RequestPatternBuilder stopTaskRequestedFor(String clusterName, String taskArn) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
-                        .and(matchingJsonPath("$.task", equalTo(taskArn))));
-    }
-
-    public static RequestPatternBuilder deregisterContainerRequestedFor(String clusterName, String containerArn) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_DEREGISTER_CONTAINER_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
-                        .and(matchingJsonPath("$.containerInstance", equalTo(containerArn))));
-    }
-
-    public static RequestPatternBuilder deleteClusterRequestedFor(String clusterName) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_DELETE_CLUSTER_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
-    }
-
-    public static RequestPatternBuilder anyRequestedForEcs() {
-        return anyRequestedFor(anyUrl())
-                .withHeader(OPERATION_HEADER, matching("^AmazonEC2ContainerServiceV\\d+\\..*"));
     }
 
 }
