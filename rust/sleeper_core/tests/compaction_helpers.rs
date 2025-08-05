@@ -26,8 +26,7 @@ use datafusion::parquet::{
     basic::{Compression, ZstdLevel},
     file::properties::WriterProperties,
 };
-use sleeper_core::{ColRange, PartitionBound};
-use sleeper_core::{DataSketchVariant, deserialise_sketches};
+use sleeper_core::{ColRange, DataSketchVariant, PartitionBound, deserialise_sketches};
 use std::{collections::HashMap, fs::File, sync::Arc};
 use tempfile::TempDir;
 use url::Url;
