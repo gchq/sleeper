@@ -62,10 +62,23 @@ public class WiremockTestHelper {
                 .build();
     }
 
+    /**
+     * Creates a mocked ECS client.
+     *
+     * @param  runtimeInfo wire mocks runtime info
+     * @return             the ECS client
+     */
     public static EcsClient wiremockEcsClient(WireMockRuntimeInfo runtimeInfo) {
         return wiremockAwsV2Client(runtimeInfo, EcsClient.builder());
     }
 
+    /**
+     * Checks for an ECS stop task request.
+     *
+     * @param  clusterName the ECS cluster
+     * @param  taskArn     the task on the cluster
+     * @return             matching HTTP requests
+     */
     public static RequestPatternBuilder stopTaskRequestedFor(String clusterName, String taskArn) {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
@@ -73,6 +86,13 @@ public class WiremockTestHelper {
                         .and(matchingJsonPath("$.task", equalTo(taskArn))));
     }
 
+    /**
+     * Checks for an ECS de-register container request.
+     *
+     * @param  clusterName  the ECS cluster
+     * @param  containerArn the container on the cluster
+     * @return              matching HTTP requests
+     */
     public static RequestPatternBuilder deregisterContainerRequestedFor(String clusterName, String containerArn) {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER, MATCHING_DEREGISTER_CONTAINER_OPERATION)
@@ -80,12 +100,23 @@ public class WiremockTestHelper {
                         .and(matchingJsonPath("$.containerInstance", equalTo(containerArn))));
     }
 
+    /**
+     * Checks for an ECS delete cluster request.
+     *
+     * @param  clusterName the ECS cluster
+     * @return             matching HTTP requests
+     */
     public static RequestPatternBuilder deleteClusterRequestedFor(String clusterName) {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER, MATCHING_DELETE_CLUSTER_OPERATION)
                 .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
     }
 
+    /**
+     * Checks for any request that matches the pattern.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder anyRequestedForEcs() {
         return anyRequestedFor(anyUrl())
                 .withHeader(OPERATION_HEADER, matching("^AmazonEC2ContainerServiceV\\d+\\..*"));
