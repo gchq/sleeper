@@ -25,6 +25,8 @@ import software.amazon.awssdk.services.ecs.model.ListContainerInstancesResponse;
 
 import java.util.Map;
 
+import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
+
 /**
  * Deletes an ECS cluster.
  */
@@ -94,6 +96,9 @@ public class AutoDeleteEcsClusterLambda {
             ecsClient.listTasks(builder -> builder.cluster(clusterName)
                     .containerInstance(containerName)).taskArns().forEach(task -> {
                         LOGGER.info("Stopping task {} in container {} ", task, containerName);
+                        // Rate limit for ECS StopTask is 100 burst, 40 sustained:
+                        // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
+                        sleepForSustainedRatePerSecond(30);
                         ecsClient.stopTask(builder -> builder.cluster(clusterName)
                                 .task(task));
                     });
