@@ -50,7 +50,6 @@ public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
-    //TODO Fix this test as should valid rootOnly
     void shouldCreateRootOnlySubTreeWhenGivenLeafPartitions() {
         // Given / When
         int leafPartitionCount = 0;
