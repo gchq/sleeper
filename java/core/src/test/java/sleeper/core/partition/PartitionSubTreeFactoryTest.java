@@ -23,10 +23,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
 
     @Test
-    void shouldCreateSubTreeWithExactLeafPartitionCount() {
+    void shouldCreateBalancedSubTreeWithExactLeafPartitionCount() {
         // Given / When
         int leafPartitionCount = 2;
-        PartitionTree subTree = PartitionSubTreeFactory.createSubTree(generateTreeTo2Levels(), leafPartitionCount);
+        PartitionTree subTree = PartitionSubTreeFactory.createBalancedSubTree(generateTreeTo2Levels(), leafPartitionCount);
 
         // Then
         Partition l1LeftAsLeaf = adjustToLeafStatus(l1Left);
@@ -36,27 +36,25 @@ public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
-    void shouldCreateSubTreeWithLeafCountGreaterThanRequested() {
+    void shouldCreateBalancedSubTreeWithLeafCountGreaterThanRequested() {
         // Given / When
         int leafPartitionCount = 3;
-        PartitionTree subTree = PartitionSubTreeFactory.createSubTree(generateTreeTo2Levels(), 3);
+        PartitionTree subTree = PartitionSubTreeFactory.createBalancedSubTree(generateTreeTo3Levels(), 3);
 
         // Then
-        assertThat(subTree.getAllPartitions()).contains(l1Left, l1Right);
-        assertThat(subTree.getLeafPartitions()).doesNotContain(l1Left, l1Right);
-
-        assertThat(subTree.getLeafPartitions()).contains(l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R);
         assertThat(subTree.getLeafPartitions().size()).isGreaterThanOrEqualTo(leafPartitionCount);
+        assertThat(subTree.getLeafPartitions().size() % 2).isEqualTo(0);
+        assertThat(subTree).isEqualTo(generateTreeTo2Levels());
     }
 
     @Test
     void shouldCreateRootOnlySubTreeWhenGivenLeafPartitions() {
         // Given / When
         int leafPartitionCount = 0;
-        PartitionTree subTree = PartitionSubTreeFactory.createSubTree(generateTreeTo2Levels(), leafPartitionCount);
+        PartitionTree subTree = PartitionSubTreeFactory.createBalancedSubTree(generateTreeTo2Levels(), leafPartitionCount);
 
         // Then
-        assertThat(subTree.getRootPartition()).isEqualTo(rootOnly);
+        assertThat(subTree.getRootPartition()).isEqualTo(generateTreeToRootLevel());
 
         //Incremented to account for root now being the only leaf
         assertThat(subTree.getLeafPartitions().size()).isEqualTo(leafPartitionCount + 1);
@@ -68,32 +66,27 @@ public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
         int midPartitionCount = 4;
         int smallPartitionCount = 2;
 
-        Partition l1LeftAsLeaf = adjustToLeafStatus(l1Left);
-        Partition l1RightAsLeaf = adjustToLeafStatus(l1Right);
-
         PartitionTree originalTree = generateTreeTo3Levels();
 
         // When 1
-        PartitionTree midSubTree = PartitionSubTreeFactory.createSubTree(originalTree, midPartitionCount);
+        PartitionTree midSubTree = PartitionSubTreeFactory.createBalancedSubTree(originalTree, midPartitionCount);
 
         // Then 1
         assertThat(midSubTree.getLeafPartitions().size()).isEqualTo(midPartitionCount);
-        assertThat(midSubTree.getAllPartitions()).contains(rootWithChildren, l1Left, l1Right);
-        assertThat(midSubTree.getAllPartitions()).doesNotContain(l1LeftAsLeaf, l1RightAsLeaf);
-        assertThat(midSubTree.getLeafPartitions()).contains(l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R);
+        assertThat(midSubTree).isEqualTo(generateTreeTo2Levels());
 
         // When 2
-        PartitionTree smallSubTree = PartitionSubTreeFactory.createSubTree(originalTree, smallPartitionCount);
+        PartitionTree smallSubTree = PartitionSubTreeFactory.createBalancedSubTree(originalTree, smallPartitionCount);
 
         // Then 2
         assertThat(smallSubTree.getLeafPartitions().size()).isEqualTo(smallPartitionCount);
-        assertThat(smallSubTree.getLeafPartitions()).contains(l1LeftAsLeaf, l1RightAsLeaf);
+        assertThat(smallSubTree).isEqualTo(generateTreeTo1Level());
 
     }
 
     @Test
     void shouldThrowExceptionIfRequestLeafCountGreaterThanOriginalTree() {
-        assertThatThrownBy(() -> PartitionSubTreeFactory.createSubTree(generateTreeTo1LevelsEvenSplit(), 7))
+        assertThatThrownBy(() -> PartitionSubTreeFactory.createBalancedSubTree(generateTreeTo1Level(), 7))
                 .isInstanceOf(PartitionTreeException.class)
                 .hasMessageContaining("Requested size of 7 is greater than");
     }

@@ -194,10 +194,10 @@ public abstract class PartitionTreeTestBase {
         return builder.buildTree();
     }
 
-    protected PartitionTree generateTreeTo1LevelsEvenSplit() {
+    protected PartitionTree generateTreeTo1Level() {
         PartitionsBuilder builder = new PartitionsBuilder(schema)
                 .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 50L);
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L);
         return builder.buildTree();
     }
 
