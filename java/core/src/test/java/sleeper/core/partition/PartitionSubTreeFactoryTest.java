@@ -63,8 +63,38 @@ public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
+    void shouldCreateSeperateSubTreesFrom3LevelTree() {
+        // Given
+        int midPartitionCount = 4;
+        int smallPartitionCount = 2;
+
+        Partition l1LeftAsLeaf = adjustToLeafStatus(l1Left);
+        Partition l1RightAsLeaf = adjustToLeafStatus(l1Right);
+
+        PartitionTree originalTree = generateTreeTo3Levels();
+
+        // When 1
+        PartitionTree midSubTree = PartitionSubTreeFactory.createSubTree(originalTree, midPartitionCount);
+
+        // Then 1
+        assertThat(midSubTree.getLeafPartitions().size()).isEqualTo(midPartitionCount);
+        assertThat(midSubTree.getAllPartitions()).contains(rootWithChildren, l1Left, l1Right);
+        assertThat(midSubTree.getAllPartitions()).doesNotContain(l1LeftAsLeaf, l1RightAsLeaf);
+        assertThat(midSubTree.getLeafPartitions()).contains(l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R);
+
+        // When 2
+        PartitionTree smallSubTree = PartitionSubTreeFactory.createSubTree(originalTree, smallPartitionCount);
+
+        // Then 2
+        assertThat(smallSubTree.getLeafPartitions().size()).isEqualTo(smallPartitionCount);
+        assertThat(smallSubTree.getLeafPartitions()).contains(l1LeftAsLeaf, l1RightAsLeaf);
+
+    }
+
+    @Test
     void shouldThrowExceptionIfRequestLeafCountGreaterThanOriginalTree() {
         assertThatThrownBy(() -> PartitionSubTreeFactory.createSubTree(generateTreeTo1LevelsEvenSplit(), 7))
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(PartitionTreeException.class)
+                .hasMessageContaining("Requested size of 7 is greater than");
     }
 }

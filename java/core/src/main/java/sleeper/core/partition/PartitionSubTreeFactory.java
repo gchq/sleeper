@@ -17,6 +17,7 @@ package sleeper.core.partition;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,9 +37,9 @@ public class PartitionSubTreeFactory {
      * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
      * @return                    newly generated sub tree
      */
-    public static PartitionTree createSubTree(PartitionTree originalTree, int leafPartitionCount) throws RuntimeException {
+    public static PartitionTree createSubTree(PartitionTree originalTree, int leafPartitionCount) throws PartitionTreeException {
         if (leafPartitionCount > originalTree.getAllPartitions().size()) {
-            throw new RuntimeException();
+            throw new PartitionTreeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
         }
         ArrayList<String> resetLeafIds = new ArrayList<>();
         PartitionTree subTree = new PartitionTree(List.of(originalTree.getRootPartition()));
@@ -76,7 +77,7 @@ public class PartitionSubTreeFactory {
     private static Partition adjustToLeafStatus(Partition partitionIn) {
         return partitionIn.toBuilder()
                 .leafPartition(true)
-                .childPartitionIds(List.of())
+                .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
     }

@@ -18,10 +18,8 @@ package sleeper.core.partition;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
-import sleeper.core.range.Region;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,33 +97,15 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
     @Test
     public void shouldReturnCorrectLeafWhenAskedForLeafPartitionContainingKeyInThreeLevelTree() {
         // Given
-        Region l3LeftOfL2LoL1LRegion = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -9000000L, false));
-        Partition l3LeftOfL2LoL1L = Partition.builder()
-                .region(l3LeftOfL2LoL1LRegion)
-                .id(L3_LEFT_OF_L2_LEFT_OF_L1_LEFT)
-                .leafPartition(true)
-                .parentPartitionId(L2_LEFT_OF_L1L)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Region l3RightOfL2LoL1LRegion = new Region(rangeFactory.createRange("id", -9000000L, true, -1000000L, false));
-        Partition l3RightOfL2LoL1L = Partition.builder()
-                .region(l3RightOfL2LoL1LRegion)
-                .id(L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT)
-                .leafPartition(true)
-                .parentPartitionId(L2_LEFT_OF_L1L)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
 
         //Adjust the child partitions to include new elements
         l2LeftOfL1L = l2LeftOfL1L.toBuilder()
                 .leafPartition(false)
-                .childPartitionIds(Arrays.asList(L3_LEFT_OF_L2_LEFT_OF_L1_LEFT, L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT))
+                .childPartitionIds(Arrays.asList(L3_LEFT_OF_L2LL, L3_RIGHT_OF_L2LL))
                 .build();
 
         PartitionTree partitionTree = new PartitionTree(
-                List.of(rootWithChildren, l1Left, l1Right, l2LeftOfL1L, setNonLeafNode(l2RightOfL1L), l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R, l3LeftOfL2LoL1L, l3RightOfL2LoL1L));
+                List.of(rootWithChildren, l1Left, l1Right, l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R, l3LeftOfL2LL, l3RightOfL2LL));
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(123456789L));
@@ -139,13 +119,7 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
 
         // Then 2
         assertThat(partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE))).isTrue();
-        assertThat(partition).isEqualTo(l3LeftOfL2LoL1L);
+        assertThat(partition).isEqualTo(l3LeftOfL2LL);
     }
 
-    private Partition setNonLeafNode(Partition partitionIn) {
-        return partitionIn
-                .toBuilder()
-                .leafPartition(false)
-                .build();
-    }
 }
