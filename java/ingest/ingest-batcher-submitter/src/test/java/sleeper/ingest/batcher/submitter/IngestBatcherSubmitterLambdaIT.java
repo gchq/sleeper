@@ -107,7 +107,7 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldStoreFileThatHasNoExtension() {
+        void shouldNotStoreFileThatHasNoExtension() {
             // Given
             uploadFileToS3("test-file-1");
             String json = "{" +
@@ -119,10 +119,9 @@ public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
             lambda().handleMessage(json, RECEIVED_TIME);
 
             // Then
-            assertThat(batcherStore().getAllFilesNewestFirst())
-                    .containsExactly(
-                            fileRequest(testBucket + "/test-file-1"));
-            assertThat(receiveDeadLetters()).isEmpty();
+            assertThat(batcherStore().getAllFilesNewestFirst()).isEmpty();
+            assertThat(receiveDeadLetters())
+                    .containsExactly("{\"tableName\":\"test-table\",\"files\":[\"" + testBucket + "/test-file-1\"]}");
         }
 
         @Test
