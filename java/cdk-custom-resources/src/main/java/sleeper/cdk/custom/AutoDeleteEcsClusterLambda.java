@@ -65,13 +65,13 @@ public class AutoDeleteEcsClusterLambda {
 
     private void deleteCluster(String clusterName) {
         try {
-            LOGGER.info("Deleting cluster {}", clusterName);
             ecsClient.listContainerInstancesPaginator(builder -> builder.cluster(clusterName))
                     .stream()
                     .parallel()
                     .forEach(response -> {
                         deregisterContainer(clusterName, response);
                     });
+            LOGGER.info("Deleting cluster {}", clusterName);
             ecsClient.deleteCluster(request -> request.cluster(clusterName));
         } catch (ClusterNotFoundException e) {
             LOGGER.info("Cluster not found: {}", clusterName);
@@ -80,9 +80,9 @@ public class AutoDeleteEcsClusterLambda {
 
     private void deregisterContainer(String clusterName, ListContainerInstancesResponse response) {
         if (!response.containerInstanceArns().isEmpty()) {
-            LOGGER.info("De-registering {} containers", response.containerInstanceArns().size());
             response.containerInstanceArns().forEach(container -> {
                 stopContainerTasks(clusterName, container);
+                LOGGER.info("De-registering {} containers", response.containerInstanceArns().size());
                 ecsClient.deregisterContainerInstance(builder -> builder.cluster(clusterName)
                         .containerInstance(container));
             });
