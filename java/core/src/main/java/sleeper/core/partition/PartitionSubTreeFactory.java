@@ -38,7 +38,7 @@ public class PartitionSubTreeFactory {
      * @return                    newly generated sub tree
      */
     public static PartitionTree createSubTree(PartitionTree originalTree, int leafPartitionCount) throws PartitionTreeException {
-        if (leafPartitionCount > originalTree.getAllPartitions().size()) {
+        if (leafPartitionCount > originalTree.getLeafPartitions().size()) {
             throw new PartitionTreeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
         }
         ArrayList<String> resetLeafIds = new ArrayList<>();
