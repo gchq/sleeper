@@ -54,7 +54,7 @@ public class PartitionSubTreeFactoryTest extends PartitionTreeTestBase {
         PartitionTree subTree = PartitionSubTreeFactory.createBalancedSubTree(generateTreeTo2Levels(), leafPartitionCount);
 
         // Then
-        assertThat(subTree.getRootPartition()).isEqualTo(generateTreeToRootLevel());
+        assertThat(subTree).isEqualTo(generateTreeToRootLevel());
 
         //Incremented to account for root now being the only leaf
         assertThat(subTree.getLeafPartitions().size()).isEqualTo(leafPartitionCount + 1);
