@@ -424,7 +424,7 @@ public class RunDataProcessingTasksTest {
     }
 
     private TaskLauncher taskLauncher() {
-        return (numberOfTasks, checkAbort, compactionTask) -> launchTasksRequests.add(numberOfTasks);
+        return (numberOfTasks, checkAbort) -> launchTasksRequests.add(numberOfTasks);
     }
 
     private CheckAutoScalingGroup checkAutoScalingGroup() {
