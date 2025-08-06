@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Definitions of jar files used to deploy client functions.
+ * Definitions of client jar files.
  */
 public class ClientJar {
 
@@ -51,9 +51,9 @@ public class ClientJar {
     }
 
     /**
-     * This method formats the filename with the supplied version.
+     * Formats the filename with the supplied version.
      *
-     * @param  version the version of sleeper to use in the format
+     * @param  version the version of Sleeper to use in the format
      * @return         a formatted filename with the version in it
      */
     public String getFormattedFilename(String version) {

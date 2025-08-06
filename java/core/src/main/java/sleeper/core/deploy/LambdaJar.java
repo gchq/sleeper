@@ -125,9 +125,9 @@ public class LambdaJar {
     }
 
     /**
-     * This method formats the filename with the supplied version.
+     * Formats the filename with the supplied version.
      *
-     * @param  version the version of sleeper to use in the format
+     * @param  version the version of Sleeper to use in the format
      * @return         a formatted filename with the version in it
      */
     public String getFormattedFilename(String version) {
@@ -171,7 +171,7 @@ public class LambdaJar {
     }
 
     /**
-     * Builder for lamda jar objects.
+     * Builder for lambda jar objects.
      */
     public static class Builder {
         private String filenameFormat;
@@ -187,7 +187,7 @@ public class LambdaJar {
          * Sets the filename format string.
          * String.format is used to add the version to the filename.
          *
-         * @param  filenameFormat String format for filename with space for version
+         * @param  filenameFormat format for filename with space for version
          * @return                Builder
          */
         public Builder filenameFormat(String filenameFormat) {
@@ -207,9 +207,9 @@ public class LambdaJar {
         }
 
         /**
-         * The artifactId for the jar.
+         * Sets the artifactId for the jar.
          *
-         * @param  artifactId the ID of the Artefact
+         * @param  artifactId the ID of the artefact
          * @return            the builder for method chaining
          */
         public Builder artifactId(String artifactId) {
@@ -218,9 +218,9 @@ public class LambdaJar {
         }
 
         /**
-         * Sets the flag for if the jar is always deployed through docker.
+         * Sets the flag for if the jar is always deployed through Docker.
          *
-         * @param  alwaysDockerDeploy flag for if jar is always deployed through docker
+         * @param  alwaysDockerDeploy flag for if jar is always deployed through Docker
          * @return                    builder
          */
         public Builder alwaysDockerDeploy(boolean alwaysDockerDeploy) {

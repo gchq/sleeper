@@ -28,9 +28,7 @@ import java.util.List;
 import static java.util.Objects.requireNonNull;
 
 /**
- * This class is used to publish built jars to a maven repository.
- * It is called from the publishJarsToRepo.sh script in the scripts/deploy folder.
- * Version defaults to the current SleeperVersion but can be overwritten.
+ * Publishes built jars to a Maven repository.
  */
 public class PublishJarsToRepo {
     private final Path pathOfJarsDirectory;
@@ -55,13 +53,8 @@ public class PublishJarsToRepo {
         return new Builder();
     }
 
-    /**
-     * This method sets the path to the jar folder and the repository url then calls the upload method.
-     *
-     * @param args Should contain the path to the jars folder first and the repisotry url to publish the jars to second.
-     */
     public static void main(String[] args) throws Exception {
-        if (args.length < 3 || args.length > 3) {
+        if (args.length != 3) {
             throw new IllegalArgumentException("Usage: <jars-dir> <repository url> <m2 settings server id>");
         }
 
@@ -74,10 +67,10 @@ public class PublishJarsToRepo {
     }
 
     /**
-     * This method loops through the client jars and lambda jars, publishing each one to the supplied maven repository.
+     * Loops through the client jars and lambda jars, publishing each one to the supplied Maven repository.
      *
      * @throws InterruptedException if the current thread was interrupted
-     * @throws IOException          if soemthing goes wrong with running the maven commands
+     * @throws IOException          if soemthing goes wrong with running the Maven commands
      */
     public void upload() throws IOException, InterruptedException {
         for (ClientJar clientJar : clientJars) {
@@ -89,7 +82,6 @@ public class PublishJarsToRepo {
         }
     }
 
-    //Requires matching server with auth details in local m2 settings.xml <servers>
     private void deployJars(String filename, String artifactId) throws IOException, InterruptedException {
         commandRunner.run("mvn", "deploy:deploy-file", "-q",
                 "-Durl=" + repoUrl,
@@ -128,9 +120,9 @@ public class PublishJarsToRepo {
         }
 
         /**
-         * Sets the maven reposiotry url to publish to.
+         * Sets the Maven repository url to publish to.
          *
-         * @param  repoUrl the url of the maven repository to publish to
+         * @param  repoUrl the url of the Maven repository to publish to
          * @return         the builder for method chaining
          */
         public Builder repoUrl(String repoUrl) {
@@ -151,10 +143,10 @@ public class PublishJarsToRepo {
         }
 
         /**
-         * Sets the sleeper version to be used to find the correct jars in the jars folder.
-         * Defaults to the current sleeper version if not overwritten.
+         * Sets the Sleeper version to be used to find the correct jars in the jars folder.
+         * Defaults to the current Sleeper version if not overwritten.
          *
-         * @param  version the sleeper version of the jars to publish
+         * @param  version the Sleeper version of the jars to publish
          * @return         the builder for method chaining
          */
         public Builder version(String version) {
@@ -163,10 +155,10 @@ public class PublishJarsToRepo {
         }
 
         /**
-         * Sets the command runner for running the maven commands.
+         * Sets the command runner for running the Maven commands.
          * Defaults to a generic one unless overwritten.
          *
-         * @param  commandRunner the command runner for running maven commands
+         * @param  commandRunner the command runner for running Maven commands
          * @return               the builder for method chaining
          */
         public Builder commandRunner(CommandPipelineRunner commandRunner) {
@@ -186,9 +178,9 @@ public class PublishJarsToRepo {
         }
 
         /**
-         * Sets the list of client jars to be published.
+         * Sets the list of lambda jars to be published.
          *
-         * @param  lambdaJars the list of client jars to be used
+         * @param  lambdaJars the list of lambda jars to be used
          * @return            the builder for method chaining
          */
         public Builder lambdaJars(List<LambdaJar> lambdaJars) {
