@@ -20,18 +20,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod datafusion;
-
-use std::collections::HashMap;
-
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail, eyre};
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
+use std::collections::HashMap;
 use url::Url;
 
 pub use datafusion::sketch::{DataSketchVariant, deserialise_sketches};
+
+mod datafusion;
 
 /// Type safe variant for Sleeper partition boundary
 #[derive(Debug, Copy, Clone)]
@@ -42,6 +41,15 @@ pub enum PartitionBound<'a> {
     ByteArray(&'a [u8]),
     /// Represented by a NULL in Java
     Unbounded,
+}
+
+/// Defines a partition range of a single column.
+#[derive(Debug, Copy, Clone)]
+pub struct ColRange<'a> {
+    pub lower: PartitionBound<'a>,
+    pub lower_inclusive: bool,
+    pub upper: PartitionBound<'a>,
+    pub upper_inclusive: bool,
 }
 
 /// All the information for a a Sleeper compaction.
@@ -100,15 +108,6 @@ pub struct AwsConfig {
     pub access_key: String,
     pub secret_key: String,
     pub allow_http: bool,
-}
-
-/// Defines a partition range of a single column.
-#[derive(Debug, Copy, Clone)]
-pub struct ColRange<'a> {
-    pub lower: PartitionBound<'a>,
-    pub lower_inclusive: bool,
-    pub upper: PartitionBound<'a>,
-    pub upper_inclusive: bool,
 }
 
 /// Contains compaction results.
