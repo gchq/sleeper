@@ -20,6 +20,9 @@ use arrow::datatypes::DataType;
 use bytes::{Buf, BufMut};
 use color_eyre::eyre::eyre;
 use cxx::{Exception, UniquePtr};
+use datafusion::common::DFSchema;
+use datafusion::error::DataFusionError;
+use datafusion::logical_expr::ScalarUDF;
 use datafusion::parquet::data_type::AsBytes;
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -30,7 +33,11 @@ use rust_sketch::quantiles::str::{new_str_sketch, str_deserialize, string_sketch
 use std::fmt::Debug;
 use std::io::Write;
 use std::mem::size_of;
+use std::path::PathBuf;
+use std::sync::Arc;
 use url::Url;
+
+use crate::datafusion::sketch_udf::SketchUDF;
 
 /// Constant size for quantiles data sketches
 pub const K: u16 = 1024;
@@ -340,6 +347,74 @@ pub async fn serialise_sketches(
         path
     );
     Ok(())
+}
+
+/// Extract the Data Sketch result and write it out.
+///
+/// This function should be called after a `DataFusion` operation has completed. The sketch function will be asked for
+/// the current sketch.
+///
+/// # Errors
+/// If the sketch couldn't be serialised.
+pub async fn output_sketch(
+    store_factory: &ObjectStoreFactory,
+    output_path: &Url,
+    sketch_func: &Arc<ScalarUDF>,
+) -> Result<(), DataFusionError> {
+    let binding = sketch_func.inner();
+    let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
+    if let Some(func) = inner_function {
+        {
+            // Limit scope of MutexGuard
+            let first_sketch = &func.get_sketch()[0];
+            info!(
+                "Made {} calls to sketch UDF. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
+                func.get_invoke_count().to_formatted_string(&Locale::en),
+                first_sketch
+                    .get_num_retained()
+                    .to_formatted_string(&Locale::en),
+                first_sketch.get_n().to_formatted_string(&Locale::en),
+                first_sketch.get_k().to_formatted_string(&Locale::en)
+            );
+        }
+
+        // Serialise the sketch
+        serialise_sketches(
+            store_factory,
+            &create_sketch_path(output_path),
+            &func.get_sketch(),
+        )
+        .await
+        .map_err(|e| DataFusionError::External(e.into()))?;
+    }
+    Ok(())
+}
+
+/// Create a Data Sketches UDF from the given frame schema.
+///
+/// # Errors
+/// If the function couldn't be registered.
+pub fn create_sketch_udf(
+    row_key_cols: &[String],
+    schema: &DFSchema,
+) -> Result<Arc<ScalarUDF>, DataFusionError> {
+    Ok(Arc::new(ScalarUDF::from(SketchUDF::new(
+        schema,
+        row_key_cols,
+    ))))
+}
+
+/// Creates a file path suitable for writing sketches to.
+///
+#[must_use]
+pub fn create_sketch_path(output_path: &Url) -> Url {
+    let mut res = output_path.clone();
+    res.set_path(
+        &PathBuf::from(output_path.path())
+            .with_extension("sketches")
+            .to_string_lossy(),
+    );
+    res
 }
 
 #[allow(clippy::missing_errors_doc)]

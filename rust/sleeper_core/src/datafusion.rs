@@ -21,8 +21,7 @@ use crate::{
     ColRange, CompactionInput, CompactionResult, PartitionBound,
     datafusion::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
-        sketch::serialise_sketches,
-        sketch_udf::SketchUDF,
+        sketch::{create_sketch_udf, output_sketch},
     },
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
@@ -36,10 +35,10 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
-        FunctionRegistry, SessionState, config::SessionConfig, context::SessionContext,
+        SessionState, config::SessionConfig, context::SessionContext,
         options::ParquetReadOptions,
     },
-    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF, SortExpr},
+    logical_expr::{LogicalPlan, LogicalPlanBuilder, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
@@ -55,7 +54,7 @@ use log::{error, info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
 mod filter_aggregation_config;
@@ -110,7 +109,7 @@ pub async fn compact(
     frame = apply_general_row_filters(frame, filter_agg_conf.as_ref())?;
 
     // Create the sketch function
-    let sketch_func = create_sketch_udf(&input_data.row_key_cols, &frame)?;
+    let sketch_func = create_sketch_udf(&input_data.row_key_cols, frame.schema())?;
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
@@ -160,7 +159,7 @@ pub async fn compact(
         pqo,
     )
     .await?;
-    output_sketch(store_factory, output_path, &sketch_func, &stats).await?;
+    output_sketch(store_factory, output_path, &sketch_func).await?;
 
     Ok(CompactionResult::from(&stats))
 }
@@ -184,78 +183,6 @@ fn set_dictionary_encoding(
                 && !input_data.sort_key_cols.contains(col));
         col_opts.dictionary_enabled = Some(dict_encode);
     }
-}
-
-/// Extract the Data Sketch result and write it out.
-///
-/// This function should be called after a `DataFusion` operation has completed. The sketch function will be asked for
-/// the current sketch.
-///
-/// # Errors
-/// If the sketch couldn't be serialised.
-async fn output_sketch(
-    store_factory: &ObjectStoreFactory,
-    output_path: &Url,
-    sketch_func: &Arc<ScalarUDF>,
-    stats: &RowCounts,
-) -> Result<(), DataFusionError> {
-    let binding = sketch_func.inner();
-    let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
-    if let Some(func) = inner_function {
-        {
-            // Limit scope of MutexGuard
-            let first_sketch = &func.get_sketch()[0];
-            info!(
-                "Made {} calls to sketch UDF and processed {} rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
-                func.get_invoke_count().to_formatted_string(&Locale::en),
-                stats.rows_written.to_formatted_string(&Locale::en),
-                first_sketch
-                    .get_num_retained()
-                    .to_formatted_string(&Locale::en),
-                first_sketch.get_n().to_formatted_string(&Locale::en),
-                first_sketch.get_k().to_formatted_string(&Locale::en)
-            );
-        }
-
-        // Serialise the sketch
-        serialise_sketches(
-            store_factory,
-            &create_sketch_path(output_path),
-            &func.get_sketch(),
-        )
-        .await
-        .map_err(|e| DataFusionError::External(e.into()))?;
-    }
-    Ok(())
-}
-
-/// Create a Data Sketches UDF from the given frame schema.
-///
-/// # Errors
-/// If the function couldn't be registered.
-fn create_sketch_udf(
-    row_key_cols: &[String],
-    frame: &DataFrame,
-) -> Result<Arc<ScalarUDF>, DataFusionError> {
-    let sketch_func = Arc::new(ScalarUDF::from(sketch_udf::SketchUDF::new(
-        frame.schema(),
-        row_key_cols,
-    )));
-    frame.task_ctx().register_udf(sketch_func.clone())?;
-    Ok(sketch_func)
-}
-
-/// Creates a file path suitable for writing sketches to.
-///
-#[must_use]
-pub fn create_sketch_path(output_path: &Url) -> Url {
-    let mut res = output_path.clone();
-    res.set_path(
-        &PathBuf::from(output_path.path())
-            .with_extension("sketches")
-            .to_string_lossy(),
-    );
-    res
 }
 
 /// Apply any configured filters to the `DataFusion` operation if any are present.
