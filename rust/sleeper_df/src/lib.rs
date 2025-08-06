@@ -18,7 +18,9 @@ use chrono::Local;
 use color_eyre::eyre::eyre;
 use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
-use sleeper_core::{AwsConfig, ColRange, CompactionInput, PartitionBound, run_compaction};
+use sleeper_core::{
+    AwsConfig, ColRange, CompactionInput, PartitionBound, SleeperParquetOptions, run_compaction,
+};
 use std::{
     borrow::Borrow,
     collections::HashMap,
@@ -133,6 +135,22 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
         // Set option to None if config is empty
         .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
 
+        let parquet_options = SleeperParquetOptions {
+            max_row_group_size: params.max_row_group_size,
+            max_page_size: params.max_page_size,
+            compression: unsafe { CStr::from_ptr(params.compression) }
+                .to_str()?
+                .to_owned(),
+            writer_version: unsafe { CStr::from_ptr(params.writer_version) }
+                .to_str()?
+                .to_owned(),
+            column_truncate_length: params.column_truncate_length,
+            stats_truncate_length: params.stats_truncate_length,
+            dict_enc_row_keys: params.dict_enc_row_keys,
+            dict_enc_sort_keys: params.dict_enc_sort_keys,
+            dict_enc_values: params.dict_enc_values,
+        };
+
         Ok(Self {
             aws_config: unpack_aws_config(params)?,
             input_files: unpack_string_array(params.input_files, params.input_files_len)?
@@ -147,19 +165,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
                 .into_iter()
                 .map(String::from)
                 .collect(),
-            max_row_group_size: params.max_row_group_size,
-            max_page_size: params.max_page_size,
-            compression: unsafe { CStr::from_ptr(params.compression) }
-                .to_str()?
-                .to_owned(),
-            writer_version: unsafe { CStr::from_ptr(params.writer_version) }
-                .to_str()?
-                .to_owned(),
-            column_truncate_length: params.column_truncate_length,
-            stats_truncate_length: params.stats_truncate_length,
-            dict_enc_row_keys: params.dict_enc_row_keys,
-            dict_enc_sort_keys: params.dict_enc_sort_keys,
-            dict_enc_values: params.dict_enc_values,
+            parquet_options,
             region,
             iterator_config,
         })

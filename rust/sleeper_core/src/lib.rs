@@ -52,17 +52,9 @@ pub struct ColRange<'a> {
     pub upper_inclusive: bool,
 }
 
-/// All the information for a a Sleeper compaction.
+/// All Parquet output options supported by Sleeper.
 #[derive(Debug)]
-pub struct CompactionInput<'a> {
-    pub aws_config: Option<AwsConfig>,
-    // File URLs
-    pub input_files: Vec<Url>,
-    pub output_file: Url,
-    // Names of row & sort key columns
-    pub row_key_cols: Vec<String>,
-    pub sort_key_cols: Vec<String>,
-    // Parquet options
+pub struct SleeperParquetOptions {
     pub max_row_group_size: usize,
     pub max_page_size: usize,
     pub compression: String,
@@ -72,6 +64,34 @@ pub struct CompactionInput<'a> {
     pub dict_enc_row_keys: bool,
     pub dict_enc_sort_keys: bool,
     pub dict_enc_values: bool,
+}
+
+impl Default for SleeperParquetOptions {
+    fn default() -> Self {
+        Self {
+            max_row_group_size: 1_000_000,
+            max_page_size: 65535,
+            compression: "zstd".into(),
+            writer_version: "v2".into(),
+            column_truncate_length: usize::MAX,
+            stats_truncate_length: usize::MAX,
+            dict_enc_row_keys: true,
+            dict_enc_sort_keys: true,
+            dict_enc_values: true,
+        }
+    }
+}
+/// All the information for a Sleeper compaction.
+#[derive(Debug)]
+pub struct CompactionInput<'a> {
+    pub aws_config: Option<AwsConfig>,
+    // File URLs
+    pub input_files: Vec<Url>,
+    pub output_file: Url,
+    // Names of row & sort key columns
+    pub row_key_cols: Vec<String>,
+    pub sort_key_cols: Vec<String>,
+    pub parquet_options: SleeperParquetOptions,
     // Ranges for each column to filter input files
     pub region: HashMap<String, ColRange<'a>>,
     // Iterator config. Filters, aggregators, etc.
@@ -86,15 +106,7 @@ impl Default for CompactionInput<'_> {
             output_file: Url::parse("file:///").unwrap(),
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
-            max_row_group_size: 1_000_000,
-            max_page_size: 65535,
-            compression: "zstd".into(),
-            writer_version: "v2".into(),
-            column_truncate_length: usize::MAX,
-            stats_truncate_length: usize::MAX,
-            dict_enc_row_keys: true,
-            dict_enc_sort_keys: true,
-            dict_enc_values: true,
+            parquet_options: SleeperParquetOptions::default(),
             region: HashMap::default(),
             iterator_config: Option::default(),
         }

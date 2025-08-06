@@ -174,12 +174,13 @@ fn set_dictionary_encoding(
     pqo: &mut TableParquetOptions,
 ) {
     let col_names = schema.clone().strip_qualifiers().field_names();
+    let parquet_opts = &input_data.parquet_options;
     for col in &col_names {
         let col_opts = pqo.column_specific_options.entry(col.into()).or_default();
-        let dict_encode = (input_data.dict_enc_row_keys && input_data.row_key_cols.contains(col))
-            || (input_data.dict_enc_sort_keys && input_data.sort_key_cols.contains(col))
+        let dict_encode = (parquet_opts.dict_enc_row_keys && input_data.row_key_cols.contains(col))
+            || (parquet_opts.dict_enc_sort_keys && input_data.sort_key_cols.contains(col))
             // Check value columns
-            || (input_data.dict_enc_values
+            || (parquet_opts.dict_enc_values
                 && !input_data.row_key_cols.contains(col)
                 && !input_data.sort_key_cols.contains(col));
         col_opts.dictionary_enabled = Some(dict_encode);
@@ -458,20 +459,22 @@ fn create_session_cfg<T>(
     // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
     // together in wrong order.
     sf.options_mut().optimizer.repartition_aggregations = false;
-    sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
-    sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
-    sf.options_mut().execution.parquet.compression = Some(get_compression(&input_data.compression));
+    let parquet_opts = &input_data.parquet_options;
+    sf.options_mut().execution.parquet.max_row_group_size = parquet_opts.max_row_group_size;
+    sf.options_mut().execution.parquet.data_pagesize_limit = parquet_opts.max_page_size;
+    sf.options_mut().execution.parquet.compression =
+        Some(get_compression(&parquet_opts.compression));
     sf.options_mut().execution.objectstore_writer_buffer_size = upload_size;
     sf.options_mut().execution.parquet.writer_version =
-        get_parquet_writer_version(&input_data.writer_version);
+        get_parquet_writer_version(&parquet_opts.writer_version);
     sf.options_mut()
         .execution
         .parquet
-        .column_index_truncate_length = Some(input_data.column_truncate_length);
+        .column_index_truncate_length = Some(parquet_opts.column_truncate_length);
     sf.options_mut()
         .execution
         .parquet
-        .statistics_truncate_length = Some(input_data.stats_truncate_length);
+        .statistics_truncate_length = Some(parquet_opts.stats_truncate_length);
     sf.options_mut().explain.logical_plan_only = true;
     sf
 }
