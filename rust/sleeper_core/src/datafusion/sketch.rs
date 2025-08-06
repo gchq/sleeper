@@ -418,30 +418,30 @@ pub fn create_sketch_path(output_path: &Url) -> Url {
 }
 
 #[allow(clippy::missing_errors_doc)]
-pub fn deserialise_sketches(
+pub async fn deserialise_sketches(
     path: &Url,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
     let factory = ObjectStoreFactory::new(None);
-    deserialise_sketches_with_factory(&factory, path, key_types)
+    deserialise_sketches_with_factory(&factory, path, key_types).await
 }
 
-fn deserialise_sketches_with_factory(
+async fn deserialise_sketches_with_factory(
     store_factory: &ObjectStoreFactory,
     path: &Url,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
     let store_path = object_store::path::Path::from(path.path());
     let store = store_factory.get_object_store(path)?;
-    let result = futures::executor::block_on(store.get(&store_path))?;
-    read_sketches_from_result(result, key_types)
+    let result = store.get(&store_path).await?;
+    read_sketches_from_result(result, key_types).await
 }
 
-fn read_sketches_from_result(
+async fn read_sketches_from_result(
     result: object_store::GetResult,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let mut bytes = futures::executor::block_on(result.bytes())?;
+    let mut bytes = result.bytes().await?;
     let mut sketches: Vec<DataSketchVariant> = vec![];
     for key_type in key_types {
         let length = bytes.get_u32() as usize;

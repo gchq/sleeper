@@ -48,7 +48,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
     assert_eq!([result.rows_read, result.rows_written], [4, 4]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [1, 4]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 4]);
     Ok(())
 }
 
@@ -77,7 +77,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 2, 3]);
     assert_eq!([result.rows_read, result.rows_written], [4, 4]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [1, 3]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 3]);
     Ok(())
 }
 
@@ -106,7 +106,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![2, 3]);
     assert_eq!([result.rows_read, result.rows_written], [2, 2]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [2, 3]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [2, 3]);
     Ok(())
 }
 
@@ -147,7 +147,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
         vec![[2, 22], [3, 13]]
     );
     assert_eq!([result.rows_read, result.rows_written], [2, 2]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [2, 3]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [2, 3]);
     Ok(())
 }
 
@@ -185,6 +185,6 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
         vec![[9, 11], [8, 12], [7, 13], [54, 22], [23, 23], [44, 24]]
     );
     assert_eq!([result.rows_read, result.rows_written], [6, 6]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [11, 24]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [11, 24]);
     Ok(())
 }
