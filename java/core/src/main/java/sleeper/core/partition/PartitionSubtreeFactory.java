@@ -23,37 +23,36 @@ import java.util.List;
 /**
  * Utility class to generate subtree from given leaf partition requirements.
  */
-public class PartitionSubTreeFactory {
-    //private static final
+public class PartitionSubtreeFactory {
 
-    private PartitionSubTreeFactory() {
+    private PartitionSubtreeFactory() {
     }
 
     /**
-     * Generates a subTree from a given tree with a target leaf count. Actual result may exceed the count requested
+     * Generates a subtree from a given tree with a target leaf count. Actual result may exceed the count requested
      * as presently will go to a depth until the count is matched or exceeded.
      *
      * @param  originalTree       source from which the new sub tree is to be created
      * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
      * @return                    newly generated sub tree
      */
-    public static PartitionTree createBalancedSubTree(PartitionTree originalTree, int leafPartitionCount) throws PartitionTreeException {
+    public static PartitionTree createBalancedSubtree(PartitionTree originalTree, int leafPartitionCount) throws PartitionTreeException {
         if (leafPartitionCount > originalTree.getLeafPartitions().size()) {
             throw new PartitionTreeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
         }
         ArrayList<String> resetLeafIds = new ArrayList<>();
-        PartitionTree subTree = new PartitionTree(List.of(originalTree.getRootPartition()));
+        PartitionTree subtree = new PartitionTree(List.of(originalTree.getRootPartition()));
         resetLeafIds.add(originalTree.getRootPartition().getId());
 
         // Check loop has count incremented by 1 to account for root partition that always must exist
-        while (subTree.idToPartition.values().size() < leafPartitionCount + 1) {
+        while (subtree.idToPartition.values().size() < leafPartitionCount + 1) {
             resetLeafIds.clear();
-            Collection<Partition> presentBatch = List.copyOf(subTree.idToPartition.values());
+            Collection<Partition> presentBatch = List.copyOf(subtree.idToPartition.values());
             presentBatch.forEach(partition -> {
                 partition.getChildPartitionIds().forEach(
                         partitionId -> {
-                            if (!subTree.idToPartition.containsKey(partitionId)) {
-                                subTree.idToPartition.put(partitionId, originalTree.getPartition(partitionId));
+                            if (!subtree.idToPartition.containsKey(partitionId)) {
+                                subtree.idToPartition.put(partitionId, originalTree.getPartition(partitionId));
                                 resetLeafIds.add(partitionId);
                             }
                         });
@@ -62,16 +61,16 @@ public class PartitionSubTreeFactory {
 
         // Last gathered selection of ids have their key details reset to act as leaves of new tree.
         resetLeafIds.forEach(leafId -> {
-            subTree.idToPartition.put(leafId, adjustToLeafStatus(subTree.idToPartition.get(leafId)));
+            subtree.idToPartition.put(leafId, adjustToLeafStatus(subtree.idToPartition.get(leafId)));
 
         });
 
         // If root is the only partition, return a new sub tree with root corrected for no leaves
-        if (subTree.getAllPartitions().size() == 1) {
-            return new PartitionTree(subTree.getAllPartitions());
+        if (subtree.getAllPartitions().size() == 1) {
+            return new PartitionTree(subtree.getAllPartitions());
         }
 
-        return subTree;
+        return subtree;
     }
 
     private static Partition adjustToLeafStatus(Partition partitionIn) {
