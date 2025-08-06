@@ -15,29 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use arrow::array::ArrayAccessor;
-use arrow::datatypes::DataType;
+use crate::datafusion::sketch_udf::SketchUDF;
+use arrow::{array::ArrayAccessor, datatypes::DataType};
 use bytes::{Buf, BufMut};
 use color_eyre::eyre::eyre;
 use cxx::{Exception, UniquePtr};
-use datafusion::common::DFSchema;
-use datafusion::error::DataFusionError;
-use datafusion::logical_expr::ScalarUDF;
-use datafusion::parquet::data_type::AsBytes;
+use datafusion::{
+    common::DFSchema, error::DataFusionError, logical_expr::ScalarUDF, parquet::data_type::AsBytes,
+};
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
-use rust_sketch::quantiles::byte::{byte_deserialize, byte_sketch_t, new_byte_sketch};
-use rust_sketch::quantiles::i64::{i64_deserialize, i64_sketch_t, new_i64_sketch};
-use rust_sketch::quantiles::str::{new_str_sketch, str_deserialize, string_sketch_t};
-use std::fmt::Debug;
-use std::io::Write;
-use std::mem::size_of;
-use std::path::PathBuf;
-use std::sync::Arc;
+use rust_sketch::quantiles::{
+    byte::{byte_deserialize, byte_sketch_t, new_byte_sketch},
+    i64::{i64_deserialize, i64_sketch_t, new_i64_sketch},
+    str::{new_str_sketch, str_deserialize, string_sketch_t},
+};
+use std::{
+    fmt::Debug,
+    io::Write,
+    mem::size_of,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 use url::Url;
-
-use crate::datafusion::sketch_udf::SketchUDF;
 
 /// Constant size for quantiles data sketches
 pub const K: u16 = 1024;
@@ -319,17 +320,22 @@ impl DataSketchVariant {
 pub async fn serialise_sketches(
     store_factory: &ObjectStoreFactory,
     path: &Url,
-    sketches: &[DataSketchVariant],
+    sketches_mutex: &Mutex<Vec<DataSketchVariant>>,
 ) -> color_eyre::Result<()> {
     let mut buf = vec![].writer();
 
     let mut size = 0;
-    // for each sketch write the size i32, followed by bytes
-    for sketch in sketches {
-        let serialised = sketch.serialize(0)?;
-        buf.write_all(&(serialised.len() as u32).to_be_bytes())?;
-        buf.write_all(&serialised)?;
-        size += serialised.len() + size_of::<u32>();
+    let sketches_len;
+    {
+        let sketches = &*sketches_mutex.lock().unwrap();
+        sketches_len = sketches.len();
+        // for each sketch write the size i32, followed by bytes
+        for sketch in sketches {
+            let serialised = sketch.serialize(0)?;
+            buf.write_all(&(serialised.len() as u32).to_be_bytes())?;
+            buf.write_all(&serialised)?;
+            size += serialised.len() + size_of::<u32>();
+        }
     }
 
     //Path part of S3 URL
@@ -342,7 +348,7 @@ pub async fn serialise_sketches(
 
     info!(
         "Serialised {} ({} bytes) sketches to {}",
-        sketches.len(),
+        sketches_len,
         size.to_formatted_string(&Locale::en),
         path
     );
@@ -366,7 +372,7 @@ pub async fn output_sketch(
     if let Some(func) = inner_function {
         {
             // Limit scope of MutexGuard
-            let first_sketch = &func.get_sketch().await[0];
+            let first_sketch = &func.get_sketch().lock().unwrap()[0];
             info!(
                 "Made {} calls to sketch UDF. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
                 func.get_invoke_count().to_formatted_string(&Locale::en),
@@ -382,7 +388,7 @@ pub async fn output_sketch(
         serialise_sketches(
             store_factory,
             &create_sketch_path(output_path),
-            &func.get_sketch().await,
+            func.get_sketch(),
         )
         .await
         .map_err(|e| DataFusionError::External(e.into()))?;

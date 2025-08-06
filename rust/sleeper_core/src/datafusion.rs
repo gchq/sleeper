@@ -397,7 +397,7 @@ async fn explain_plan(
         .explain(false, false)?
         .collect()
         .await?;
-    info!("DataFusion plan:\n {}", pretty_format_batches(&explained)?);
+    info!("DataFusion plan:\n{}", pretty_format_batches(&explained)?);
     Ok(())
 }
 

@@ -22,7 +22,7 @@ use datafusion::{
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     prelude::SessionConfig,
 };
-use log::{error, info};
+use log::error;
 
 /// Keeps an ownerless reference to [`SleeperParquetOptions`].
 ///
@@ -64,7 +64,6 @@ impl ParquetWriterConfigurer<'_> {
     ) -> TableParquetOptions {
         for column in schema.columns() {
             let col_name = column.name().to_owned();
-            info!("TODO: REMOVE THIS {col_name}");
             let col_opts = opts
                 .column_specific_options
                 .entry(col_name.clone())
