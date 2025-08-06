@@ -20,6 +20,7 @@
 use crate::{
     CompactionInput, CompactionResult,
     datafusion::{
+        config::{ParquetWriterConfigurer, apply_sleeper_config},
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         region::region_filter,
         sketch::{create_sketch_udf, output_sketch},
@@ -29,7 +30,7 @@ use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
 use datafusion::{
     common::{
-        DFSchema, plan_err,
+        plan_err,
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     },
     config::{ExecutionOptions, TableParquetOptions},
@@ -39,7 +40,6 @@ use datafusion::{
         SessionState, config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
     },
     logical_expr::{LogicalPlan, LogicalPlanBuilder, SortExpr},
-    parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
         ExecutionPlan, accept,
@@ -50,13 +50,14 @@ use datafusion::{
     },
     prelude::*,
 };
-use log::{error, info, warn};
+use log::{info, warn};
 use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
+mod config;
 mod filter_aggregation_config;
 mod metrics;
 mod region;
@@ -84,8 +85,17 @@ pub async fn compact(
     let total_input_size = retrieve_input_size(input_paths, store_factory)
         .await
         .inspect_err(|e| warn!("Error getting total input size {e}"))?;
-    let upload_size = calculate_upload_size(total_input_size)?;
-    let sf = create_session_cfg(input_data, input_paths, upload_size);
+    // Use Sleeper Parquet options
+    let configurer = ParquetWriterConfigurer {
+        parquet_options: &input_data.parquet_options,
+    };
+    let sf = apply_sleeper_config(
+        SessionConfig::new(),
+        input_data,
+        Some(calculate_upload_size(total_input_size)?),
+    );
+    let sf = configurer.apply_parquet_config(sf);
+
     let mut ctx = SessionContext::new_with_config(sf);
     register_non_nullable_aggregate_udfs(&mut ctx);
 
@@ -139,9 +149,12 @@ pub async fn compact(
     frame = apply_aggregations(&input_data.row_key_cols, frame, filter_agg_conf.as_ref())?;
     frame = frame.select(col_names_expr)?;
 
-    let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded
-    set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
+    let pqo = configurer.apply_dictionary_encoding(
+        ctx.copied_table_options().parquet,
+        input_data,
+        frame.schema(),
+    );
 
     // Create column list of row keys and sort key cols
     let sorting_columns = input_data
@@ -163,28 +176,6 @@ pub async fn compact(
     output_sketch(store_factory, output_path, &sketch_func).await?;
 
     Ok(CompactionResult::from(&stats))
-}
-
-/// Configure the per column dictionary encoding based on the input configuration.
-///
-/// This ensure the output configuration matches what Sleeper is expecting.
-fn set_dictionary_encoding(
-    input_data: &CompactionInput<'_>,
-    schema: &DFSchema,
-    pqo: &mut TableParquetOptions,
-) {
-    let col_names = schema.clone().strip_qualifiers().field_names();
-    let parquet_opts = &input_data.parquet_options;
-    for col in &col_names {
-        let col_opts = pqo.column_specific_options.entry(col.into()).or_default();
-        let dict_encode = (parquet_opts.dict_enc_row_keys && input_data.row_key_cols.contains(col))
-            || (parquet_opts.dict_enc_sort_keys && input_data.sort_key_cols.contains(col))
-            // Check value columns
-            || (parquet_opts.dict_enc_values
-                && !input_data.row_key_cols.contains(col)
-                && !input_data.sort_key_cols.contains(col));
-        col_opts.dictionary_enabled = Some(dict_encode);
-    }
 }
 
 /// Apply any configured filters to the `DataFusion` operation if any are present.
@@ -308,7 +299,7 @@ async fn collect_stats(
     input_paths: &[Url],
     output_path: &Url,
     sorting_columns: &[&str],
-    pqo: datafusion::config::TableParquetOptions,
+    pqo: TableParquetOptions,
 ) -> Result<RowCounts, DataFusionError> {
     // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
     let task_ctx = frame.task_ctx();
@@ -408,75 +399,6 @@ async fn explain_plan(
         .await?;
     info!("DataFusion plan:\n {}", pretty_format_batches(&explained)?);
     Ok(())
-}
-
-/// Convert a Sleeper compression codec string to one `DataFusion` understands.
-fn get_compression(compression: &str) -> String {
-    match compression.to_lowercase().as_str() {
-        x @ ("uncompressed" | "snappy" | "lzo" | "lz4") => x.into(),
-        "gzip" => format!("gzip({})", GzipLevel::default().compression_level()),
-        "brotli" => format!("brotli({})", BrotliLevel::default().compression_level()),
-        "zstd" => format!("zstd({})", ZstdLevel::default().compression_level()),
-        x => {
-            error!(
-                "Unknown compression {x}, valid values: uncompressed, snappy, lzo, lz4, gzip, brotli, zstd"
-            );
-            unimplemented!(
-                "Unknown compression {x}, valid values: uncompressed, snappy, lzo, lz4, gzip, brotli, zstd"
-            );
-        }
-    }
-}
-
-/// Convert a Sleeper Parquet version to one `DataFusion` understands.
-fn get_parquet_writer_version(version: &str) -> String {
-    match version {
-        "v1" => "1.0".into(),
-        "v2" => "2.0".into(),
-        x => {
-            error!("Parquet writer version invalid {x}, valid values: v1, v2");
-            unimplemented!("Parquet writer version invalid {x}, valid values: v1, v2");
-        }
-    }
-}
-
-/// Create the `DataFusion` session configuration for a given compaction.
-///
-/// This sets as many parameters as possible from the given input data.
-///
-fn create_session_cfg<T>(
-    input_data: &CompactionInput,
-    input_paths: &[T],
-    upload_size: usize,
-) -> SessionConfig {
-    let mut sf = SessionConfig::new();
-    // In order to avoid a costly "Sort" stage in the physical plan, we must make
-    // sure the target partitions as at least as big as number of input files.
-    sf.options_mut().execution.target_partitions =
-        std::cmp::max(sf.options().execution.target_partitions, input_paths.len());
-    // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
-    sf.options_mut().execution.parquet.enable_page_index = false;
-    // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
-    // together in wrong order.
-    sf.options_mut().optimizer.repartition_aggregations = false;
-    let parquet_opts = &input_data.parquet_options;
-    sf.options_mut().execution.parquet.max_row_group_size = parquet_opts.max_row_group_size;
-    sf.options_mut().execution.parquet.data_pagesize_limit = parquet_opts.max_page_size;
-    sf.options_mut().execution.parquet.compression =
-        Some(get_compression(&parquet_opts.compression));
-    sf.options_mut().execution.objectstore_writer_buffer_size = upload_size;
-    sf.options_mut().execution.parquet.writer_version =
-        get_parquet_writer_version(&parquet_opts.writer_version);
-    sf.options_mut()
-        .execution
-        .parquet
-        .column_index_truncate_length = Some(parquet_opts.column_truncate_length);
-    sf.options_mut()
-        .execution
-        .parquet
-        .statistics_truncate_length = Some(parquet_opts.stats_truncate_length);
-    sf.options_mut().explain.logical_plan_only = true;
-    sf
 }
 
 /// Creates the sort order for a given schema.
