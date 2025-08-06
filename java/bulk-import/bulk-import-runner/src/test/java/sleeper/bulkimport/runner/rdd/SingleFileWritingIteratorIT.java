@@ -233,7 +233,7 @@ class SingleFileWritingIteratorIT {
     }
 
     private List<sleeper.core.row.Row> readRows(String path) {
-        try (ParquetReader<sleeper.core.row.Row> reader = ParquetRowReaderFactory.createParquetRowReader(new Path(path), schema)) {
+        try (ParquetReader<sleeper.core.row.Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(path), schema).build()) {
             List<sleeper.core.row.Row> rows = new ArrayList<>();
             sleeper.core.row.Row row = reader.read();
             while (null != row) {

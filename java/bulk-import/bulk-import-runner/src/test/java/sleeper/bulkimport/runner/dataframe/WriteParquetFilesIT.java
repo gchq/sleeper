@@ -155,7 +155,7 @@ class WriteParquetFilesIT {
     }
 
     private List<sleeper.core.row.Row> readRows(String filename, Schema schema) {
-        try (ParquetReader<sleeper.core.row.Row> reader = ParquetRowReaderFactory.createParquetRowReader(new Path(filename), schema)) {
+        try (ParquetReader<sleeper.core.row.Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build()) {
             List<sleeper.core.row.Row> rows = new ArrayList<>();
             for (sleeper.core.row.Row row = reader.read(); row != null; row = reader.read()) {
                 rows.add(new sleeper.core.row.Row(row));

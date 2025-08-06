@@ -263,7 +263,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
 
         // Then
         ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(
-                ParquetRowReaderFactory.createParquetRowReader(new Path(file), SCHEMA));
+                ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(file), SCHEMA).build());
         while (parquetReaderIterator.hasNext()) {
             parquetReaderIterator.next();
         }

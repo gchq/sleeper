@@ -21,19 +21,12 @@ import org.apache.parquet.hadoop.ParquetReader;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
-import java.io.IOException;
-
 /**
  * Factory to create parquet reader for sleeper rows. Uses {@link RowReadSupport}.
  */
 public class ParquetRowReaderFactory {
 
     private ParquetRowReaderFactory() {
-    }
-
-    public static ParquetReader<Row> createParquetRowReader(Path path, Schema schema) throws IOException {
-        return ParquetReader.builder(new RowReadSupport(schema), path).build();
-
     }
 
     public static ParquetReader.Builder<Row> parquetRowReaderBuilder(Path path, Schema schema) {

@@ -81,8 +81,8 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
         String path = "file://" + outputDir.resolve(queryId + ".txt");
         List<Row> rows = new ArrayList<>();
         try {
-            ParquetReader<Row> reader = ParquetRowReaderFactory.createParquetRowReader(new org.apache.hadoop.fs.Path(path),
-                    instance.getTableProperties().getSchema());
+            ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new org.apache.hadoop.fs.Path(path),
+                    instance.getTableProperties().getSchema()).build();
 
             Row row = reader.read();
             while (null != row) {
