@@ -54,13 +54,16 @@ public interface TableStateProperty {
                     "by this, e.g. see `sleeper.batch.table.lambdas.memory.mb`.")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .defaultValue("4096")
-            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB = Index.propertyBuilder("sleeper.batch.table.lambdas.memory.mb")
             .description("The amount of memory in MB for lambdas that create batches of tables to run some operation against, " +
                     "eg. create compaction jobs, run garbage collection, perform partition splitting.")
             .defaultValue("1024")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .runCdkDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.batch.table.lambdas.timeout.seconds")
             .description("The timeout in seconds for lambdas that create batches of tables to run some operation against, " +
