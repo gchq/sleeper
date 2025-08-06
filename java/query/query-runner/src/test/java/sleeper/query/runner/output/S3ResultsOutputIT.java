@@ -18,6 +18,7 @@ package sleeper.query.runner.output;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
@@ -164,7 +165,7 @@ class S3ResultsOutputIT {
     private List<Row> getRowsFromOutput(String path) {
         List<Row> rows = new ArrayList<>();
         try {
-            ParquetRowReader reader = new ParquetRowReader(path, schema);
+            ParquetReader<Row> reader = ParquetRowReaderFactory.createParquetRowReader(new org.apache.hadoop.fs.Path(path), schema);
 
             Row row = reader.read();
             while (null != row) {

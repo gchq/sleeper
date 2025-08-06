@@ -32,7 +32,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -98,8 +98,8 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
         FilterTranslator filterTranslator = new FilterTranslator(schema);
         FilterPredicate filterPredicate = filterTranslator.toPredicate(recordsRequest.getConstraints().getSummary());
 
-        ParquetReader.Builder<Row> recordReaderBuilder = new ParquetRowReader.Builder(new Path(fileName), schema)
-                .withConf(getConfigurationForTable(tableProperties));
+        ParquetReader.Builder<Row> recordReaderBuilder = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(fileName), schema);
+        recordReaderBuilder.withConf(getConfigurationForTable(tableProperties));
 
         if (filterPredicate != null) {
             recordReaderBuilder.withFilter(FilterCompat.get(filterPredicate));
