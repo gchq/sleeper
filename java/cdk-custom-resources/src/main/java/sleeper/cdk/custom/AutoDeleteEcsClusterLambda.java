@@ -55,6 +55,7 @@ public class AutoDeleteEcsClusterLambda {
 
         switch (event.getRequestType()) {
             case "Create":
+                break;
             case "Update":
                 break;
             case "Delete":
