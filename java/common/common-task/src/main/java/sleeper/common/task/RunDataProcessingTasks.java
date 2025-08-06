@@ -80,7 +80,6 @@ public class RunDataProcessingTasks {
         this.hostScaler = hostScaler;
         this.taskLauncher = taskLauncher;
         this.sqsJobQueueUrl = getSqsJobQueueUrl(instanceProperties, compactionTask);
-        this.compactionTask = compactionTask;
     }
 
     public static RunDataProcessingTasks createRunDataProcessingTasks(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client,
