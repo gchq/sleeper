@@ -12,25 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-[build.env]
-passthrough = [
-    "SCCACHE_ERROR_LOG",
-    "SCCACHE_LOG",
-    "SSCACHE_CACHE_SIZE",
-    "SCCACHE_GHA_ENABLED",
-    "ACTIONS_CACHE_URL",
-    "ACTIONS_RESULTS_URL",
-    "ACTIONS_RUNTIME_TOKEN",
-    "ACTIONS_CACHE_SERVICE_V2",
-    "CC=sccache clang-20",
-    "CXX=sccache clang++-20"
-]
+ARG BASE_IMAGE="sleeper-rust-builder-base:current"
+FROM ${BASE_IMAGE}
 
-[target.aarch64-unknown-linux-gnu]
-dockerfile = "Dockerfile.sccache.aarch64-unknown-linux-gnu"
+RUN rustup target add x86_64-unknown-linux-gnu
+RUN rustup toolchain install stable-x86_64-unknown-linux-gnu --profile minimal --force-non-host
 
-[target.x86_64-unknown-linux-gnu]
-dockerfile = "Dockerfile.sccache.x86_64-unknown-linux-gnu"
-
-[build]
-pre-build = "./cross-prebuild.sh"
+ENV CARGO_BUILD_TARGET="x86_64-unknown-linux-gnu"
+ENV SCCACHE_C_CUSTOM_CACHE_BUSTER="x86_64"
+ENV SCCACHE_GHA_VERSION="x86_64"

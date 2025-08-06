@@ -37,20 +37,17 @@
       "source": "${localEnv:HOME}/.ssh",
       "target": "/home/sleeper/.ssh",
       "type": "bind"
-    },
-    {
-      "source": "${localWorkspaceFolder}",
-      "target": "${localWorkspaceFolder}",
-      "type": "bind"
     }
   ],
   "containerEnv": {
     "AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
     "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
-    "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}"
+    "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}",
+    "IN_CLI_CONTAINER": "true",
+    "HOST_MOUNT_PATH": "${localWorkspaceFolder}",
+    "CONTAINER_MOUNT_PATH": "${containerWorkspaceFolder}"
   },
   "initializeCommand": "mkdir -p ${localEnv:HOME}/.aws ; mkdir -p ${localEnv:HOME}/.m2 ; mkdir -p ${localEnv:HOME}/.ssh",
-  "postStartCommand": "head -1 /proc/self/cgroup | cut -d/ -f3 | echo \"HOSTNAME=$(cat -)\" >> /home/sleeper/.bashrc",
   "remoteUser": "sleeper",
   "updateRemoteUserUID": true
 }

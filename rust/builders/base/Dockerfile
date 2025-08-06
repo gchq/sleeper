@@ -12,14 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-[target.aarch64-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/aarch64-unknown-linux-gnu:edge"
+FROM rust:1.88-bookworm
 
-[target.x86_64-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/x86_64-unknown-linux-gnu:edge"
+RUN apt-get update && apt-get install -y \
+    # Sleeper Rust build-time dependencies
+    build-essential libssl-dev \
+    # Clang installation dependencies
+    lsb-release wget software-properties-common gnupg \
+    && rm -rf /var/lib/apt/lists/*
 
-[build]
-pre-build =  "./cross-prebuild.sh"
+# Install Clang 20
+RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20 \
+    && rm -rf /var/lib/apt/lists/*
 
-[build.env]
-passthrough = ["CC=clang-20", "CXX=clang++-20"]
+ENV CC=clang-20
+ENV CXX=clang++-20
+
+WORKDIR /workspace
