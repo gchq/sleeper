@@ -22,12 +22,13 @@
  */
 mod datafusion;
 
+use std::collections::HashMap;
+
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail, eyre};
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
-use std::collections::HashMap;
 use url::Url;
 
 pub use datafusion::sketch::{DataSketchVariant, deserialise_sketches};
