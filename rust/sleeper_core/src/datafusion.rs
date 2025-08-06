@@ -120,7 +120,7 @@ pub async fn compact(
     frame = apply_general_row_filters(frame, filter_agg_conf.as_ref())?;
 
     // Create the sketch function
-    let sketch_func = create_sketch_udf(&input_data.row_key_cols, frame.schema())?;
+    let sketch_func = create_sketch_udf(&input_data.row_key_cols, frame.schema());
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();

@@ -1,4 +1,4 @@
-//! DataFusion configuration facilities. Used to configure Parquet writing options and setting default
+//! `DataFusion` configuration facilities. Used to configure Parquet writing options and setting default
 //! session configuration options.
 /*
 * Copyright 2022-2025 Crown Copyright

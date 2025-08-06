@@ -394,14 +394,8 @@ pub async fn output_sketch(
 ///
 /// # Errors
 /// If the function couldn't be registered.
-pub fn create_sketch_udf(
-    row_key_cols: &[String],
-    schema: &DFSchema,
-) -> Result<Arc<ScalarUDF>, DataFusionError> {
-    Ok(Arc::new(ScalarUDF::from(SketchUDF::new(
-        schema,
-        row_key_cols,
-    ))))
+pub fn create_sketch_udf(row_key_cols: &[String], schema: &DFSchema) -> Arc<ScalarUDF> {
+    Arc::new(ScalarUDF::from(SketchUDF::new(schema, row_key_cols)))
 }
 
 /// Creates a file path suitable for writing sketches to.
