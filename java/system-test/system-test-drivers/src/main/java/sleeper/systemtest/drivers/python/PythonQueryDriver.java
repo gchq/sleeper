@@ -18,9 +18,10 @@ package sleeper.systemtest.drivers.python;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.row.Row;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.python.PythonQueryTypesDriver;
@@ -80,8 +81,8 @@ public class PythonQueryDriver implements PythonQueryTypesDriver {
         String path = "file://" + outputDir.resolve(queryId + ".txt");
         List<Row> rows = new ArrayList<>();
         try {
-            ParquetRowReader reader = new ParquetRowReader(new org.apache.hadoop.fs.Path(path),
-                    instance.getTableProperties().getSchema());
+            ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new org.apache.hadoop.fs.Path(path),
+                    instance.getTableProperties().getSchema()).build();
 
             Row row = reader.read();
             while (null != row) {
