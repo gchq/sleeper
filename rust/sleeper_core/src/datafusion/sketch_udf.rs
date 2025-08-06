@@ -34,12 +34,8 @@ use datafusion::{
     },
     scalar::ScalarValue,
 };
-use std::{
-    any::Any,
-    fmt::Debug,
-    iter::zip,
-    sync::{Arc, Mutex, MutexGuard},
-};
+use std::{any::Any, fmt::Debug, iter::zip, sync::Arc};
+use tokio::sync::{Mutex, MutexGuard};
 
 /// A UDF for producing quantile sketches of Sleeper tables. It operates on row key columns.
 /// This function works by taking each row key column as an argument. It returns a clone of the 0'th column.
@@ -74,12 +70,12 @@ impl SketchUDF {
         }
     }
 
-    pub fn get_sketch(&self) -> MutexGuard<'_, Vec<DataSketchVariant>> {
-        self.sketch.lock().unwrap()
+    pub async fn get_sketch(&self) -> MutexGuard<'_, Vec<DataSketchVariant>> {
+        self.sketch.lock().await
     }
 
     pub fn get_invoke_count(&self) -> usize {
-        *self.invoke_count.lock().unwrap()
+        *self.invoke_count.blocking_lock()
     }
 }
 
@@ -149,9 +145,9 @@ impl ScalarUDFImpl for SketchUDF {
     }
 
     fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
-        *self.invoke_count.lock().unwrap() += 1;
+        *self.invoke_count.blocking_lock() += 1;
 
-        let mut sk_lock = self.sketch.lock().unwrap();
+        let mut sk_lock = self.sketch.blocking_lock();
 
         for (sketch, col) in zip(sk_lock.iter_mut(), &args.args) {
             match col {

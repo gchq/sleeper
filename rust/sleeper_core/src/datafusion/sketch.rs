@@ -366,7 +366,7 @@ pub async fn output_sketch(
     if let Some(func) = inner_function {
         {
             // Limit scope of MutexGuard
-            let first_sketch = &func.get_sketch()[0];
+            let first_sketch = &func.get_sketch().await[0];
             info!(
                 "Made {} calls to sketch UDF. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
                 func.get_invoke_count().to_formatted_string(&Locale::en),
@@ -382,7 +382,7 @@ pub async fn output_sketch(
         serialise_sketches(
             store_factory,
             &create_sketch_path(output_path),
-            &func.get_sketch(),
+            &func.get_sketch().await,
         )
         .await
         .map_err(|e| DataFusionError::External(e.into()))?;
