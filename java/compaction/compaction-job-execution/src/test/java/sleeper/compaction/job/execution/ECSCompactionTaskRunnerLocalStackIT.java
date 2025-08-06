@@ -549,7 +549,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private List<Row> readRows(String filename, Schema schema) {
-        try (ParquetReader<Row> reader = ParquetRowReaderFactory.createParquetRowReader(new Path(filename), schema)) {
+        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build()) {
             List<Row> rows = new ArrayList<>();
             for (Row row = reader.read(); row != null; row = reader.read()) {
                 rows.add(new Row(row));

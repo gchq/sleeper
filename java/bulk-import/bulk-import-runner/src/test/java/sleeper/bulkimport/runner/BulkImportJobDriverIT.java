@@ -308,7 +308,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
             relevantFiles.stream()
                     .map(af -> {
                         try {
-                            return ParquetRowReaderFactory.createParquetRowReader(new Path(af.getFilename()), schema);
+                            return ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(af.getFilename()), schema).build();
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
@@ -414,7 +414,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     }
 
     private static List<Row> readRows(String filename, Schema schema) {
-        try (ParquetReader<Row> reader = ParquetRowReaderFactory.createParquetRowReader(new Path(filename), schema)) {
+        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build()) {
             List<Row> readRows = new ArrayList<>();
             Row row = reader.read();
             while (null != row) {
