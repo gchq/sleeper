@@ -206,7 +206,9 @@ docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BA
 
 #### Publishing jars to Docker and Maven
 There is a script [here](/scripts/deploy/publishJars.sh) to publish the jars to a repository.
-It takes in one argument, the repository url to publish to.
+It takes in two arguments.
+    -   The repository url to publish.
+    -   The id of a server in a local m2 settings file which should contain authentication details.
 This script can be tested locally by using a repository url similar to file:/path/to/output that will publish these files locally.
 
 The development team are adding a way to retrieve and publish jars to AWS.
