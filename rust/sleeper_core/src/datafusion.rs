@@ -18,9 +18,8 @@
 * limitations under the License.
 */
 use crate::{
-    CompactionResult, OperationOutput, SleeperCompactionConfig,
+    CommonConfig, CompactionResult, OperationOutput, SleeperCompactionConfig,
     datafusion::{
-        config::apply_sleeper_config,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         sketch::{create_sketch_udf, output_sketch},
         util::{
@@ -65,6 +64,84 @@ mod util;
 pub use config::ParquetWriterConfigurer;
 pub use region::SleeperPartitionRegion;
 
+/// Drives common operations in processing of `DataFusion` for Sleeper.
+#[derive(Debug)]
+pub struct SleeperOperations<'a> {
+    config: &'a CommonConfig<'a>,
+}
+
+impl<'a> SleeperOperations<'a> {
+    /// Create a new `DataFusion` operations processor.
+    #[must_use]
+    pub fn new(config: &'a CommonConfig) -> Self {
+        Self { config }
+    }
+
+    /// Create the `DataFusion` session configuration for a given session.
+    ///
+    /// This sets as many parameters as possible from the given input data.
+    ///
+    pub async fn apply_config(
+        &self,
+        mut cfg: SessionConfig,
+        store_factory: &ObjectStoreFactory,
+    ) -> Result<SessionConfig, DataFusionError> {
+        // In order to avoid a costly "Sort" stage in the physical plan, we must make
+        // sure the target partitions as at least as big as number of input files.
+        cfg.options_mut().execution.target_partitions = std::cmp::max(
+            cfg.options().execution.target_partitions,
+            self.config.input_files.len(),
+        );
+        // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
+        cfg.options_mut().execution.parquet.enable_page_index = false;
+        // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
+        // together in wrong order.
+        cfg.options_mut().optimizer.repartition_aggregations = false;
+        // Set upload size if outputting to a file
+        if let OperationOutput::File {
+            output_file: _,
+            opts: _,
+        } = self.config.output
+        {
+            let total_input_size = retrieve_input_size(&self.config.input_files, store_factory)
+                .await
+                .inspect_err(|e| warn!("Error getting total input data size {e}"))?;
+            cfg.options_mut().execution.objectstore_writer_buffer_size =
+                calculate_upload_size(total_input_size)?;
+        }
+        Ok(cfg)
+    }
+
+    // Configure a [`SessionContext`].
+    pub fn apply_to_context(
+        &self,
+        mut ctx: SessionContext,
+        store_factory: &ObjectStoreFactory,
+    ) -> Result<SessionContext, DataFusionError> {
+        register_non_nullable_aggregate_udfs(&mut ctx);
+        // Register object stores for input files and output file
+        register_store(
+            store_factory,
+            &self.config.input_files,
+            match &self.config.output {
+                OperationOutput::ArrowRecordBatch => None,
+                OperationOutput::File {
+                    output_file,
+                    opts: _,
+                } => Some(&output_file),
+            },
+            &ctx,
+        )?;
+        Ok(ctx)
+    }
+}
+
+impl std::fmt::Display for SleeperOperations<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.config)
+    }
+}
+
 /// Starts a Sleeper compaction.
 ///
 /// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
@@ -73,20 +150,15 @@ pub use region::SleeperPartitionRegion;
 pub async fn compact(
     store_factory: &ObjectStoreFactory,
     input_data: &SleeperCompactionConfig<'_>,
-    input_paths: &[Url],
-    output_path: &Url,
 ) -> Result<CompactionResult, DataFusionError> {
-    info!(
-        "DataFusion compaction of files {:?}",
-        input_paths.iter().map(Url::as_str).collect::<Vec<_>>()
-    );
-    info!("DataFusion output file {}", output_path.as_str());
-    info!("Compaction partition region {:?}", input_data.region());
+    let ops = SleeperOperations::new(&input_data.common);
+    info!("DataFusion compaction: {ops}");
 
-    let total_input_size = retrieve_input_size(input_paths, store_factory)
-        .await
-        .inspect_err(|e| warn!("Error getting total input size {e}"))?;
+    let sf = ops
+        .apply_config(SessionConfig::new(), store_factory)
+        .await?;
 
+    // Retrieve Parquet output options
     let OperationOutput::File {
         output_file: _,
         opts: parquet_options,
@@ -94,28 +166,19 @@ pub async fn compact(
     else {
         return plan_err!("Sleeper compactions must output to a file");
     };
-
     let configurer = ParquetWriterConfigurer { parquet_options };
-    let sf = apply_sleeper_config(
-        SessionConfig::new(),
-        input_data,
-        Some(calculate_upload_size(total_input_size)?),
-    );
     let sf = configurer.apply_parquet_config(sf);
-
-    let mut ctx = SessionContext::new_with_config(sf);
-    register_non_nullable_aggregate_udfs(&mut ctx);
-
-    // Register object stores for input files and output file
-    register_store(store_factory, input_paths, output_path, &ctx)?;
+    let mut ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
 
     // Sort on row key columns then sort key columns (nulls last)
-    let sort_order = sort_order(input_data);
+    let sort_order = sort_order(&input_data.common);
     info!("Row key and sort key column order {sort_order:?}");
 
     // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
-    let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
+    let mut frame = ctx
+        .read_parquet(input_data.input_files().to_owned(), po)
+        .await?;
 
     // If we have a partition region, apply it first
     if let Some(expr) = Into::<Option<Expr>>::into(input_data.region()) {
@@ -184,13 +247,22 @@ pub async fn compact(
     // Write the frame out and collect stats
     let stats = collect_stats(
         frame.clone(),
-        input_paths,
-        output_path,
+        &input_data.input_files(),
+        input_data
+            .output_file()
+            .map_err(|e| DataFusionError::External(e.into()))?,
         &sorting_columns,
         pqo,
     )
     .await?;
-    output_sketch(store_factory, output_path, &sketch_func).await?;
+    output_sketch(
+        store_factory,
+        input_data
+            .output_file()
+            .map_err(|e| DataFusionError::External(e.into()))?,
+        &sketch_func,
+    )
+    .await?;
 
     Ok(CompactionResult::from(&stats))
 }
@@ -353,12 +425,11 @@ async fn collect_stats(
 ///
 /// This is a list of the row key columns followed by the sort key columns.
 ///
-fn sort_order(input_data: &SleeperCompactionConfig) -> Vec<SortExpr> {
-    input_data
-        .common
+fn sort_order(config: &CommonConfig) -> Vec<SortExpr> {
+    config
         .row_key_cols
         .iter()
-        .chain(input_data.common.sort_key_cols.iter())
+        .chain(config.sort_key_cols.iter())
         .map(|s| col(s).sort(true, false))
         .collect::<Vec<_>>()
 }

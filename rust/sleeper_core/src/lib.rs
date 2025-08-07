@@ -5,6 +5,8 @@
 //!
 //! We have an internal "details" module that encapsulates the internal workings. All the
 //! public API should be in this module.
+use std::fmt::Formatter;
+
 /*
  * Copyright 2022-2025 Crown Copyright
  *
@@ -20,7 +22,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use ::datafusion::{common::plan_err, error::DataFusionError};
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail, eyre};
@@ -103,6 +104,64 @@ pub struct CommonConfig<'a> {
     pub output: OperationOutput,
 }
 
+impl CommonConfig<'_> {
+    /// Convert all Java "s3a" URLs in input and output to "s3."
+    pub fn sanitise_java_s3_urls(&mut self) {
+        self.input_files.iter_mut().for_each(|t| {
+            if t.scheme() == "s3a" {
+                let _ = t.set_scheme("s3");
+            }
+        });
+
+        if let OperationOutput::File {
+            output_file,
+            opts: _,
+        } = &mut self.output
+            && output_file.scheme() == "s3a"
+        {
+            let _ = output_file.set_scheme("s3");
+        }
+    }
+
+    /// Checks for simple configuration errors
+    ///
+    /// # Errors
+    /// It is an error for input paths to be empty or for a length
+    /// mismatch between row key columns length and number of ranges in
+    /// partition region.
+    pub fn validate(&self) -> Result<()> {
+        if self.input_files.is_empty() {
+            bail!("No input paths supplied");
+        }
+        if self.row_key_cols.len() != self.region.len() {
+            bail!(
+                "Length mismatch between row keys {} and partition region bounds {}",
+                self.row_key_cols.len(),
+                self.region.len()
+            );
+        }
+        Ok(())
+    }
+}
+
+impl std::fmt::Display for CommonConfig<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "input files {:?}, partition region {:?}, ",
+            self.input_files.iter().map(Url::as_str).collect::<Vec<_>>(),
+            self.region
+        )?;
+        match &self.output {
+            OperationOutput::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
+            OperationOutput::File {
+                output_file,
+                opts: _,
+            } => write!(f, "output file {:?}", output_file),
+        }
+    }
+}
+
 /// Defines how operation output should be given.
 #[derive(Debug, Default)]
 pub enum OperationOutput {
@@ -134,12 +193,18 @@ impl SleeperCompactionConfig<'_> {
         &self.common.region
     }
 
+    /// Get input files for Sleeper compaction.
+    #[must_use]
+    pub fn input_files(&self) -> &Vec<Url> {
+        &self.common.input_files
+    }
+
     /// Get the output file for a Sleeper compaction.
     ///
     /// # Errors
     /// Since compactions must output to a file, an error will occur
     /// if Arrow stream output is selected.
-    pub fn output_file(&self) -> Result<&Url, DataFusionError> {
+    pub fn output_file(&self) -> Result<&Url> {
         if let OperationOutput::File {
             output_file,
             opts: _,
@@ -147,7 +212,7 @@ impl SleeperCompactionConfig<'_> {
         {
             Ok(output_file)
         } else {
-            plan_err!("Sleeper compactions must output to a file")
+            Err(eyre!("Sleeper compactions must output to a file"))
         }
     }
 }
@@ -208,50 +273,12 @@ pub struct CompactionResult {
 /// There must be at least one input file.
 ///
 pub async fn run_compaction(input_data: &SleeperCompactionConfig<'_>) -> Result<CompactionResult> {
-    // Read the schema from the first file
-    if input_data.common.input_files.is_empty() {
-        Err(eyre!("No input paths supplied"))
-    } else {
-        // Java tends to use s3a:// URI scheme instead of s3:// so map it here
-        let input_file_paths: Vec<Url> = input_data
-            .common
-            .input_files
-            .iter()
-            .map(|u| {
-                let mut t = u.clone();
-                if t.scheme() == "s3a" {
-                    let _ = t.set_scheme("s3");
-                }
-                t
-            })
-            .collect();
+    input_data.common.validate()?;
+    let store_factory = create_object_store_factory(input_data.common.aws_config.as_ref()).await;
 
-        // Change output file scheme
-        let mut output_file_path = input_data.output_file()?.clone();
-        if output_file_path.scheme() == "s3a" {
-            let _ = output_file_path.set_scheme("s3");
-        }
-
-        if input_data.common.row_key_cols.len() != input_data.region().len() {
-            bail!(
-                "Length mismatch between row keys {} and partition region bounds {}",
-                input_data.common.row_key_cols.len(),
-                input_data.region().len()
-            );
-        }
-
-        let store_factory =
-            create_object_store_factory(input_data.common.aws_config.as_ref()).await;
-
-        crate::datafusion::compact(
-            &store_factory,
-            input_data,
-            &input_file_paths,
-            &output_file_path,
-        )
+    crate::datafusion::compact(&store_factory, input_data)
         .await
         .map_err(Into::into)
-    }
 }
 
 async fn create_object_store_factory(

@@ -100,7 +100,7 @@ pub fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusi
 pub fn register_store(
     store_factory: &ObjectStoreFactory,
     input_paths: &[Url],
-    output_path: &Url,
+    output_path: Option<&Url>,
     ctx: &SessionContext,
 ) -> Result<(), DataFusionError> {
     for input_path in input_paths {
@@ -111,11 +111,12 @@ pub fn register_store(
             .register_object_store(input_path, in_store);
     }
 
-    let out_store = store_factory
-        .get_object_store(output_path)
-        .map_err(|e| DataFusionError::External(e.into()))?;
-    ctx.runtime_env()
-        .register_object_store(output_path, out_store);
+    if let Some(output) = output_path {
+        let out_store = store_factory
+            .get_object_store(output)
+            .map_err(|e| DataFusionError::External(e.into()))?;
+        ctx.runtime_env().register_object_store(output, out_store);
+    }
     Ok(())
 }
 

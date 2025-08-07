@@ -109,30 +109,3 @@ impl ParquetWriterConfigurer<'_> {
         }
     }
 }
-
-/// Create the `DataFusion` session configuration for a given session.
-///
-/// This sets as many parameters as possible from the given input data.
-///
-pub fn apply_sleeper_config(
-    mut cfg: SessionConfig,
-    input_data: &SleeperCompactionConfig,
-    upload_size: Option<usize>,
-) -> SessionConfig {
-    // In order to avoid a costly "Sort" stage in the physical plan, we must make
-    // sure the target partitions as at least as big as number of input files.
-    cfg.options_mut().execution.target_partitions = std::cmp::max(
-        cfg.options().execution.target_partitions,
-        input_data.common.input_files.len(),
-    );
-    // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
-    cfg.options_mut().execution.parquet.enable_page_index = false;
-    // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
-    // together in wrong order.
-    cfg.options_mut().optimizer.repartition_aggregations = false;
-    // Set upload size is specified
-    if let Some(size) = upload_size {
-        cfg.options_mut().execution.objectstore_writer_buffer_size = size;
-    }
-    cfg
-}
