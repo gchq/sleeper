@@ -38,34 +38,44 @@ public class LambdaJar {
             .imageName("athena-lambda")
             .artifactID("athena")
             .alwaysDockerDeploy(true).add();
-    public static final LambdaJar BULK_IMPORT_STARTER = builder().filenameFormat("bulk-import-starter-%s.jar")
+    public static final LambdaJar BULK_IMPORT_STARTER = builder()
+            .filenameFormat("bulk-import-starter-%s.jar")
             .imageName("bulk-import-starter-lambda")
             .artifactID("bulk-import-starter").add();
-    public static final LambdaJar BULK_EXPORT_PLANNER = builder().filenameFormat("bulk-export-planner-%s.jar")
+    public static final LambdaJar BULK_EXPORT_PLANNER = builder()
+            .filenameFormat("bulk-export-planner-%s.jar")
             .imageName("bulk-export-planner")
             .artifactID("bulk-export-planner").add();
-    public static final LambdaJar BULK_EXPORT_TASK_CREATOR = builder().filenameFormat("bulk-export-task-creator-%s.jar")
+    public static final LambdaJar BULK_EXPORT_TASK_CREATOR = builder()
+            .filenameFormat("bulk-export-task-creator-%s.jar")
             .imageName("bulk-export-task-creator")
             .artifactID("bulk-export-task-creator").add();
-    public static final LambdaJar INGEST_TASK_CREATOR = builder().filenameFormat("ingest-taskrunner-%s.jar")
+    public static final LambdaJar INGEST_TASK_CREATOR = builder()
+            .filenameFormat("ingest-taskrunner-%s.jar")
             .imageName("ingest-task-creator-lambda")
             .artifactID("ingest-taskrunner").add();
-    public static final LambdaJar INGEST_BATCHER_SUBMITTER = builder().filenameFormat("ingest-batcher-submitter-%s.jar")
+    public static final LambdaJar INGEST_BATCHER_SUBMITTER = builder()
+            .filenameFormat("ingest-batcher-submitter-%s.jar")
             .imageName("ingest-batcher-submitter-lambda")
             .artifactID("ingest-batcher-submitter").add();
-    public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = builder().filenameFormat("ingest-batcher-job-creator-%s.jar")
+    public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = builder()
+            .filenameFormat("ingest-batcher-job-creator-%s.jar")
             .imageName("ingest-batcher-job-creator-lambda")
             .artifactID("ingest-batcher-job-creator").add();
-    public static final LambdaJar GARBAGE_COLLECTOR = builder().filenameFormat("lambda-garbagecollector-%s.jar")
+    public static final LambdaJar GARBAGE_COLLECTOR = builder()
+            .filenameFormat("lambda-garbagecollector-%s.jar")
             .imageName("garbage-collector-lambda")
             .artifactID("garbage-collector").add();
-    public static final LambdaJar COMPACTION_JOB_CREATOR = builder().filenameFormat("lambda-jobSpecCreationLambda-%s.jar")
+    public static final LambdaJar COMPACTION_JOB_CREATOR = builder()
+            .filenameFormat("lambda-jobSpecCreationLambda-%s.jar")
             .imageName("compaction-job-creator-lambda")
             .artifactID("compaction-job-creation-lambda").add();
-    public static final LambdaJar COMPACTION_TASK_CREATOR = builder().filenameFormat("runningjobs-%s.jar")
+    public static final LambdaJar COMPACTION_TASK_CREATOR = builder()
+            .filenameFormat("runningjobs-%s.jar")
             .imageName("compaction-task-creator-lambda")
             .artifactID("compaction-task-creation").add();
-    public static final LambdaJar PARTITION_SPLITTER = builder().filenameFormat("lambda-splitter-%s.jar")
+    public static final LambdaJar PARTITION_SPLITTER = builder()
+            .filenameFormat("lambda-splitter-%s.jar")
             .imageName("partition-splitter-lambda")
             .artifactID("splitter-lambda").add();
 

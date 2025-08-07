@@ -26,9 +26,18 @@ public class ClientJar {
 
     private static final List<ClientJar> ALL = new ArrayList<>();
 
-    public static final ClientJar BULK_IMPORT_RUNNER = builder().filenameFormat("bulk-import-runner-%s.jar").artifactID("bulk-import-runner").add();
-    public static final ClientJar CDK = builder().filenameFormat("cdk-%s.jar").artifactID("cdk").add();
-    public static final ClientJar CLIENTS_UTILITY = builder().filenameFormat("clients-%s-utility.jar").artifactID("clients").add();
+    public static final ClientJar BULK_IMPORT_RUNNER = builder()
+            .filenameFormat("bulk-import-runner-%s.jar")
+            .artifactID("bulk-import-runner")
+            .add();
+    public static final ClientJar CDK = builder()
+            .filenameFormat("cdk-%s.jar")
+            .artifactID("cdk")
+            .add();
+    public static final ClientJar CLIENTS_UTILITY = builder()
+            .filenameFormat("clients-%s-utility.jar")
+            .artifactID("clients")
+            .add();
 
     private final String filenameFormat;
     private final String artifactID;
