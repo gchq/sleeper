@@ -23,8 +23,8 @@ use crate::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         sketch::{create_sketch_udf, output_sketch},
         util::{
-            calculate_upload_size, check_for_sort_exec, explain_plan, register_store,
-            retrieve_input_size,
+            calculate_upload_size, check_for_sort_exec, create_sort_order, explain_plan,
+            register_store, retrieve_input_size,
         },
     },
 };
@@ -39,7 +39,7 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{LogicalPlanBuilder, SortExpr},
+    logical_expr::{LogicalPlanBuilder, expr::Sort},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
         accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
@@ -134,6 +134,31 @@ impl<'a> SleeperOperations<'a> {
         )?;
         Ok(ctx)
     }
+
+    /// Create the initial [`DataFrame`] from the configuration.
+    ///
+    /// This frame's plan will load the input Parquet files and filter
+    /// according to the partition region.
+    ///
+    /// # Errors
+    /// If reading or filtering fail, then an error occurs.
+    pub async fn create_partitioned_frame(
+        &self,
+        ctx: &SessionContext,
+        sort_order: &Vec<Sort>,
+    ) -> Result<DataFrame, DataFusionError> {
+        let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
+        let frame = ctx
+            .read_parquet(self.config.input_files.to_owned(), po)
+            .await?;
+        Ok(
+            if let Some(expr) = Into::<Option<Expr>>::into(&self.config.region) {
+                frame.filter(expr)?
+            } else {
+                frame
+            },
+        )
+    }
 }
 
 impl std::fmt::Display for SleeperOperations<'_> {
@@ -168,22 +193,14 @@ pub async fn compact(
     };
     let configurer = ParquetWriterConfigurer { parquet_options };
     let sf = configurer.apply_parquet_config(sf);
-    let mut ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
+    let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
 
     // Sort on row key columns then sort key columns (nulls last)
-    let sort_order = sort_order(&input_data.common);
+    let sort_order = create_sort_order(&input_data.common);
     info!("Row key and sort key column order {sort_order:?}");
 
-    // Tell DataFusion that the row key columns and sort columns are already sorted
-    let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
-    let mut frame = ctx
-        .read_parquet(input_data.input_files().to_owned(), po)
-        .await?;
-
-    // If we have a partition region, apply it first
-    if let Some(expr) = Into::<Option<Expr>>::into(input_data.region()) {
-        frame = frame.filter(expr)?;
-    }
+    // Create initial DataFrame from input files
+    let mut frame = ops.create_partitioned_frame(&ctx, &sort_order).await?;
 
     // Parse Sleeper iterator configuration and apply
     let filter_agg_conf = parse_iterator_config(input_data.iterator_config.as_ref())?;
@@ -419,17 +436,4 @@ async fn collect_stats(
     accept(new_plan.as_ref(), &mut stats)?;
     stats.log_metrics();
     Ok(stats)
-}
-
-/// Creates the sort order for a given schema.
-///
-/// This is a list of the row key columns followed by the sort key columns.
-///
-fn sort_order(config: &CommonConfig) -> Vec<SortExpr> {
-    config
-        .row_key_cols
-        .iter()
-        .chain(config.sort_key_cols.iter())
-        .map(|s| col(s).sort(true, false))
-        .collect::<Vec<_>>()
 }
