@@ -20,6 +20,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use ::datafusion::{common::plan_err, error::DataFusionError};
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail, eyre};
@@ -98,6 +99,23 @@ pub struct CommonConfig<'a> {
     pub sort_key_cols: Vec<String>,
     /// Ranges for each column to filter input files
     pub region: SleeperPartitionRegion<'a>,
+    /// How output from operation should be returned
+    pub output: OperationOutput,
+}
+
+/// Defines how operation output should be given.
+#[derive(Debug, Default)]
+pub enum OperationOutput {
+    /// `DataFusion` results will be returned as a stream of Arrow [`RecordBatch`]es.
+    #[default]
+    ArrowRecordBatch,
+    /// `DataFusion` results will be written to a file with given Parquet options.
+    File {
+        /// Output file Url
+        output_file: Url,
+        /// Parquet output options
+        opts: SleeperParquetOptions,
+    },
 }
 
 /// All the information for a Sleeper compaction.
@@ -105,10 +123,6 @@ pub struct CommonConfig<'a> {
 pub struct SleeperCompactionConfig<'a> {
     /// Common configuration
     pub common: CommonConfig<'a>,
-    /// Output file Url
-    pub output_file: Url,
-    /// Parquet output options
-    pub parquet_options: SleeperParquetOptions,
     /// Iterator config. Filters, aggregators, etc.
     pub iterator_config: Option<String>,
 }
@@ -117,9 +131,26 @@ impl Default for SleeperCompactionConfig<'_> {
     fn default() -> Self {
         Self {
             common: CommonConfig::default(),
-            output_file: Url::parse("file:///").unwrap(),
-            parquet_options: SleeperParquetOptions::default(),
             iterator_config: Option::default(),
+        }
+    }
+}
+
+impl SleeperCompactionConfig<'_> {
+    /// Convenience function to return region.
+    pub fn region(&self) -> &SleeperPartitionRegion {
+        &self.common.region
+    }
+
+    pub fn output_file(&self) -> Result<&Url, DataFusionError> {
+        if let OperationOutput::File {
+            output_file,
+            opts: _,
+        } = &self.common.output
+        {
+            Ok(output_file)
+        } else {
+            plan_err!("Sleeper compactions must output to a file")
         }
     }
 }
@@ -197,8 +228,10 @@ pub async fn run_compaction(input_data: &SleeperCompactionConfig<'_>) -> Result<
             })
             .collect();
 
+        // Compactions must write back to a file
+
         // Change output file scheme
-        let mut output_file_path = input_data.output_file.clone();
+        let mut output_file_path = input_data.output_file()?.clone();
         if output_file_path.scheme() == "s3a" {
             let _ = output_file_path.set_scheme("s3");
         }

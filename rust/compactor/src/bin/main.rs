@@ -20,8 +20,8 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
-    ColRange, CommonConfig, PartitionBound, SleeperCompactionConfig, SleeperParquetOptions,
-    SleeperPartitionRegion, run_compaction,
+    ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperCompactionConfig,
+    SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
@@ -111,7 +111,7 @@ async fn main() -> color_eyre::Result<()> {
         .collect::<Result<Vec<_>, _>>()?;
 
     // Convert output URL
-    let output_url = Url::parse(&args.output)
+    let output_file = Url::parse(&args.output)
         .or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(&args.output))))?;
 
     if args.row_keys.len() != args.region_maxs.len() {
@@ -156,9 +156,11 @@ async fn main() -> color_eyre::Result<()> {
             row_key_cols: args.row_keys,
             sort_key_cols: args.sort_keys,
             region: SleeperPartitionRegion::new(map),
+            output: OperationOutput::File {
+                output_file,
+                opts: parquet_options,
+            },
         },
-        output_file: output_url,
-        parquet_options,
         iterator_config: args.iterator_config,
     };
 

@@ -18,7 +18,7 @@
 * limitations under the License.
 */
 use crate::{
-    SleeperCompactionConfig, CompactionResult,
+    CompactionResult, OperationOutput, SleeperCompactionConfig,
     datafusion::{
         config::apply_sleeper_config,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
@@ -29,7 +29,10 @@ use crate::{
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
 use datafusion::{
-    common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
+    common::{
+        plan_err,
+        tree_node::{Transformed, TreeNode, TreeNodeRecursion},
+    },
     config::TableParquetOptions,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
@@ -80,10 +83,16 @@ pub async fn compact(
     let total_input_size = retrieve_input_size(input_paths, store_factory)
         .await
         .inspect_err(|e| warn!("Error getting total input size {e}"))?;
-    // Use Sleeper Parquet options
-    let configurer = ParquetWriterConfigurer {
-        parquet_options: &input_data.parquet_options,
+
+    let OperationOutput::File {
+        output_file: _,
+        opts: parquet_options,
+    } = &input_data.common.output
+    else {
+        return plan_err!("Sleeper compactions must output to a file");
     };
+
+    let configurer = ParquetWriterConfigurer { parquet_options };
     let sf = apply_sleeper_config(
         SessionConfig::new(),
         input_data,

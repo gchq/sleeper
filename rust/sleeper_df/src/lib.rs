@@ -19,7 +19,7 @@ use color_eyre::eyre::eyre;
 use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, PartitionBound, SleeperCompactionConfig,
+    AwsConfig, ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperCompactionConfig,
     SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
 use std::{
@@ -138,7 +138,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for SleeperCompactionConfig<'a> {
         // Set option to None if config is empty
         .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
 
-        let parquet_options = SleeperParquetOptions {
+        let opts = SleeperParquetOptions {
             max_row_group_size: params.max_row_group_size,
             max_page_size: params.max_page_size,
             compression: unsafe { CStr::from_ptr(params.compression) }
@@ -167,11 +167,13 @@ impl<'a> TryFrom<&'a FFICompactionParams> for SleeperCompactionConfig<'a> {
                     .map(String::from)
                     .collect(),
                 region,
+                output: OperationOutput::File {
+                    output_file: unsafe { CStr::from_ptr(params.output_file) }
+                        .to_str()
+                        .map(Url::parse)??,
+                    opts,
+                },
             },
-            output_file: unsafe { CStr::from_ptr(params.output_file) }
-                .to_str()
-                .map(Url::parse)??,
-            parquet_options,
             iterator_config,
         })
     }
