@@ -102,7 +102,7 @@ pub struct CommonConfig<'a> {
 
 /// All the information for a Sleeper compaction.
 #[derive(Debug)]
-pub struct CompactionInput<'a> {
+pub struct SleeperCompactionConfig<'a> {
     /// Common configuration
     pub common: CommonConfig<'a>,
     /// Output file Url
@@ -113,7 +113,7 @@ pub struct CompactionInput<'a> {
     pub iterator_config: Option<String>,
 }
 
-impl Default for CompactionInput<'_> {
+impl Default for SleeperCompactionConfig<'_> {
     fn default() -> Self {
         Self {
             common: CommonConfig::default(),
@@ -178,7 +178,7 @@ pub struct CompactionResult {
 /// # Errors
 /// There must be at least one input file.
 ///
-pub async fn run_compaction(input_data: &CompactionInput<'_>) -> Result<CompactionResult> {
+pub async fn run_compaction(input_data: &SleeperCompactionConfig<'_>) -> Result<CompactionResult> {
     // Read the schema from the first file
     if input_data.common.input_files.is_empty() {
         Err(eyre!("No input paths supplied"))

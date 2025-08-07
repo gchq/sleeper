@@ -18,7 +18,7 @@
 * limitations under the License.
 */
 use crate::{
-    CompactionInput, CompactionResult,
+    SleeperCompactionConfig, CompactionResult,
     datafusion::{
         config::apply_sleeper_config,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
@@ -66,7 +66,7 @@ pub use region::SleeperPartitionRegion;
 /// the output file.
 pub async fn compact(
     store_factory: &ObjectStoreFactory,
-    input_data: &CompactionInput<'_>,
+    input_data: &SleeperCompactionConfig<'_>,
     input_paths: &[Url],
     output_path: &Url,
 ) -> Result<CompactionResult, DataFusionError> {
@@ -360,7 +360,7 @@ async fn collect_stats(
 ///
 /// This is a list of the row key columns followed by the sort key columns.
 ///
-fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
+fn sort_order(input_data: &SleeperCompactionConfig) -> Vec<SortExpr> {
     input_data
         .common
         .row_key_cols

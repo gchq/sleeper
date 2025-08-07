@@ -20,7 +20,7 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
-    ColRange, CommonConfig, CompactionInput, PartitionBound, SleeperParquetOptions,
+    ColRange, CommonConfig, PartitionBound, SleeperCompactionConfig, SleeperParquetOptions,
     SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, io::Write, path::Path};
@@ -149,7 +149,7 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_values: true,
     };
 
-    let details = CompactionInput {
+    let details = SleeperCompactionConfig {
         common: CommonConfig {
             aws_config: None,
             input_files: input_urls,

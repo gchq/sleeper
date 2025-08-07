@@ -19,8 +19,8 @@ use color_eyre::eyre::eyre;
 use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, CompactionInput, PartitionBound, SleeperParquetOptions,
-    SleeperPartitionRegion, run_compaction,
+    AwsConfig, ColRange, CommonConfig, PartitionBound, SleeperCompactionConfig,
+    SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
 use std::{
     borrow::Borrow,
@@ -105,10 +105,12 @@ pub struct FFICompactionParams {
     iterator_config: *const c_char,
 }
 
-impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
+impl<'a> TryFrom<&'a FFICompactionParams> for SleeperCompactionConfig<'a> {
     type Error = color_eyre::eyre::Report;
 
-    fn try_from(params: &'a FFICompactionParams) -> Result<CompactionInput<'a>, Self::Error> {
+    fn try_from(
+        params: &'a FFICompactionParams,
+    ) -> Result<SleeperCompactionConfig<'a>, Self::Error> {
         if params.iterator_config.is_null() {
             error!("FFICompactionsParams iterator_config is NULL");
         }
@@ -315,7 +317,7 @@ pub extern "C" fn merge_sorted_files(
         }
     };
 
-    let details = match TryInto::<CompactionInput>::try_into(params) {
+    let details = match TryInto::<SleeperCompactionConfig>::try_into(params) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {e}");

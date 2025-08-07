@@ -15,7 +15,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{CompactionInput, SleeperParquetOptions};
+use crate::{SleeperCompactionConfig, SleeperParquetOptions};
 use datafusion::{
     common::DFSchema,
     config::TableParquetOptions,
@@ -59,7 +59,7 @@ impl ParquetWriterConfigurer<'_> {
     pub fn apply_dictionary_encoding(
         &self,
         mut opts: TableParquetOptions,
-        input_data: &CompactionInput<'_>,
+        input_data: &SleeperCompactionConfig<'_>,
         schema: &DFSchema,
     ) -> TableParquetOptions {
         for column in schema.columns() {
@@ -116,7 +116,7 @@ impl ParquetWriterConfigurer<'_> {
 ///
 pub fn apply_sleeper_config(
     mut cfg: SessionConfig,
-    input_data: &CompactionInput,
+    input_data: &SleeperCompactionConfig,
     upload_size: Option<usize>,
 ) -> SessionConfig {
     // In order to avoid a costly "Sort" stage in the physical plan, we must make
