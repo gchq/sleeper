@@ -41,9 +41,16 @@ import static sleeper.clients.util.command.CommandPipeline.pipeline;
 public class PublishJarsToRepoTest {
     private final PublishJarsToRepo.Builder genericBuilder = generateGenericBuilder();
 
-    private final ClientJar clientJar1 = ClientJar.builder().filenameFormat("testClient1-%s.jar").artifactID("testClient1Artifact").build();
+    private final ClientJar clientJar1 = ClientJar.builder()
+            .filenameFormat("testClient1-%s.jar")
+            .artifactID("testClient1Artifact")
+            .build();
     private final CommandPipeline clientJarPipeline1 = generateMavenDeployFileCommand("testClient1-0.31.0.jar", "testClient1Artifact");
-    private final LambdaJar lambdaJar1 = LambdaJar.builder().filenameFormat("testLambda1-%s.jar").imageName("testLambda1Image").artifactID("testLambda1Artifact").build();
+    private final LambdaJar lambdaJar1 = LambdaJar.builder()
+            .filenameFormat("testLambda1-%s.jar")
+            .imageName("testLambda1Image")
+            .artifactID("testLambda1Artifact")
+            .build();
     private final CommandPipeline lambdaJarPipeline1 = generateMavenDeployFileCommand("testLambda1-0.31.0.jar", "testLambda1Artifact");
 
     private List<CommandPipeline> commandsThatRan;
@@ -88,15 +95,23 @@ public class PublishJarsToRepoTest {
     @Test
     public void shouldPublishAllJarsWhenMultipleClientAndLambda() throws Exception {
         //Given
-        ClientJar clientJar2 = ClientJar.builder().filenameFormat("testClient2-%s.jar").artifactID("testClient2Artifact").build();
+        ClientJar clientJar2 = ClientJar.builder()
+                .filenameFormat("testClient2-%s.jar")
+                .artifactID("testClient2Artifact")
+                .build();
         CommandPipeline clientJarPipeline2 = generateMavenDeployFileCommand("testClient2-0.31.0.jar", "testClient2Artifact");
-        LambdaJar lambdaJar2 = LambdaJar.builder().filenameFormat("testLambda2-%s.jar").imageName("testLambda2Image").artifactID("testLambda2Artifact").build();
+        LambdaJar lambdaJar2 = LambdaJar.builder()
+                .filenameFormat("testLambda2-%s.jar")
+                .imageName("testLambda2Image")
+                .artifactID("testLambda2Artifact")
+                .build();
         CommandPipeline lambdaJarPipeline2 = generateMavenDeployFileCommand("testLambda2-0.31.0.jar", "testLambda2Artifact");
 
         PublishJarsToRepo publishJarsToRepo = genericBuilder
                 .commandRunner(commandRunner)
                 .clientJars(List.of(clientJar1, clientJar2))
-                .lambdaJars(List.of(lambdaJar1, lambdaJar2)).build();
+                .lambdaJars(List.of(lambdaJar1, lambdaJar2))
+                .build();
 
         //When
         publishJarsToRepo.upload();
@@ -125,11 +140,15 @@ public class PublishJarsToRepoTest {
         //Given
         CommandPipelineRunner runner = mock(CommandPipelineRunner.class);
         when(runner.run(any(String[].class))).thenThrow(new IOException("Test message"));
-        ClientJar clientJar = ClientJar.builder().filenameFormat("testClient-%s.jar").artifactID("testClientArtifact").build();
+        ClientJar clientJar = ClientJar.builder()
+                .filenameFormat("testClient-%s.jar")
+                .artifactID("testClientArtifact")
+                .build();
         PublishJarsToRepo publishJarsToRepo = genericBuilder
                 .commandRunner(runner)
                 .clientJars(List.of(clientJar))
-                .lambdaJars(List.of()).build();
+                .lambdaJars(List.of())
+                .build();
 
         //When
         assertThatThrownBy(() -> publishJarsToRepo.upload())
