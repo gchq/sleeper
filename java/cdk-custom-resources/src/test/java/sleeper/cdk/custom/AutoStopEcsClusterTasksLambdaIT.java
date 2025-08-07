@@ -29,22 +29,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_DELETE_CLUSTER_OPERATION;
-import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_DEREGISTER_CONTAINER_OPERATION;
-import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_LIST_CONTAINERS_OPERATION;
-import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_LIST_TASKS_OPERATION;
-import static sleeper.cdk.custom.WiremockTestHelper.MATCHING_STOP_TASK_OPERATION;
-import static sleeper.cdk.custom.WiremockTestHelper.OPERATION_HEADER;
-import static sleeper.cdk.custom.WiremockTestHelper.anyRequestedForEcs;
-import static sleeper.cdk.custom.WiremockTestHelper.deleteClusterRequestedFor;
-import static sleeper.cdk.custom.WiremockTestHelper.deregisterContainerRequestedFor;
-import static sleeper.cdk.custom.WiremockTestHelper.stopTaskRequestedFor;
-import static sleeper.cdk.custom.WiremockTestHelper.wiremockEcsClient;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_LIST_TASKS_OPERATION;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_STOP_TASK_OPERATION;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.OPERATION_HEADER;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.anyRequestedForEcs;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.stopTaskRequestedFor;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.wiremockEcsClient;
 
 @WireMockTest
-public class AutoDeleteEcsClusterLambdaIT {
+public class AutoStopEcsClusterTasksLambdaIT {
 
-    private AutoDeleteEcsClusterLambda lambda;
+    private AutoStopEcsClusterTasksLambda lambda;
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
@@ -52,35 +47,24 @@ public class AutoDeleteEcsClusterLambdaIT {
     }
 
     @Test
-    @DisplayName("Shutdown ECS Cluster")
-    void shouldDeleteEcsCluster() {
+    @DisplayName("Stop tasks on ECS Cluster")
+    void shouldStopTasksOnEcsCluster() {
 
         // Given
         String clusterName = UUID.randomUUID().toString();
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_CONTAINERS_OPERATION)
-                .willReturn(aResponse().withStatus(200).withBody("{\"containerInstanceArns\":[\"test-container-arn\"],\"nextToken\":null}")));
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
         stubFor(post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                 .willReturn(aResponse().withStatus(200)));
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_DEREGISTER_CONTAINER_OPERATION)
-                .willReturn(aResponse().withStatus(200)));
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_DELETE_CLUSTER_OPERATION)
-                .willReturn(aResponse().withStatus(200)));
 
         //When
         lambda.handleEvent(deleteEventForCluster(clusterName), null);
 
         //Then
-        verify(5, anyRequestedForEcs());
+        verify(2, anyRequestedForEcs());
         verify(1, stopTaskRequestedFor(clusterName, "test-task"));
-        verify(1, deregisterContainerRequestedFor(clusterName, "test-container-arn"));
-        verify(1, deleteClusterRequestedFor(clusterName));
     }
 
     private CloudFormationCustomResourceEvent deleteEventForCluster(String clusterName) {
@@ -90,8 +74,8 @@ public class AutoDeleteEcsClusterLambdaIT {
                 .build();
     }
 
-    private AutoDeleteEcsClusterLambda lambda(WireMockRuntimeInfo runtimeInfo) {
-        return new AutoDeleteEcsClusterLambda(wiremockEcsClient(runtimeInfo));
+    private AutoStopEcsClusterTasksLambda lambda(WireMockRuntimeInfo runtimeInfo) {
+        return new AutoStopEcsClusterTasksLambda(wiremockEcsClient(runtimeInfo));
     }
 
 }
