@@ -40,11 +40,11 @@ public class PublishJarsToRepo {
     private final List<LambdaJar> lambdaJars;
 
     private PublishJarsToRepo(Builder builder) {
-        this.pathOfJarsDirectory = requireNonNull(builder.pathOfJarsDirectory, "File path must not be null");
+        this.pathOfJarsDirectory = requireNonNull(builder.pathOfJarsDirectory, "Jars directory path must not be null");
         this.repoUrl = requireNonNull(builder.repoUrl, "Repository URL must not be null");
-        this.m2SettingsServerId = requireNonNull(builder.m2SettingsServerId, "M2 settings server Id must not be null");
+        this.m2SettingsServerId = requireNonNull(builder.m2SettingsServerId, "M2 settings server ID must not be null");
         this.version = requireNonNull(builder.version, "Version to publish must not be null");
-        this.commandRunner = requireNonNull(builder.commandRunner, "Command Runner must not be null");
+        this.commandRunner = requireNonNull(builder.commandRunner, "Command runner must not be null");
         this.clientJars = requireNonNull(builder.clientJars, "Client jars must not be null");
         this.lambdaJars = requireNonNull(builder.lambdaJars, "Lambda jars must not be null");
     }
@@ -74,11 +74,11 @@ public class PublishJarsToRepo {
      */
     public void upload() throws IOException, InterruptedException {
         for (ClientJar clientJar : clientJars) {
-            deployJars(clientJar.getFormattedFilename(version), clientJar.getArtifactId());
+            deployJars(clientJar.getFormattedFilename(version), clientJar.getArtifactID());
         }
 
         for (LambdaJar lambdaJar : lambdaJars) {
-            deployJars(lambdaJar.getFormattedFilename(version), lambdaJar.getArtifactId());
+            deployJars(lambdaJar.getFormattedFilename(version), lambdaJar.getArtifactID());
         }
     }
 

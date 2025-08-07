@@ -39,14 +39,14 @@ public class PublishJarsToRepoTest {
             .version("0.31.0")
             .m2SettingsServerId("repo.id");
 
-    private final ClientJar clientJar1 = ClientJar.builder().filenameFormat("testClient1-%s.jar").artifactId("testClient1Artifact").build();
-    private final CommandPipeline clientJarPipeline1 = generateCommandPipeline("testClient1-0.31.0.jar", "testClient1Artifact");
-    private final ClientJar clientJar2 = ClientJar.builder().filenameFormat("testClient2-%s.jar").artifactId("testClient2Artifact").build();
-    private final CommandPipeline clientJarPipeline2 = generateCommandPipeline("testClient2-0.31.0.jar", "testClient2Artifact");
-    private final LambdaJar lambdaJar1 = LambdaJar.builder().filenameFormat("testLambda1-%s.jar").imageName("testLambda1Image").artifactId("testLambda1Artifact").build();
-    private final CommandPipeline lambdaJarPipeline1 = generateCommandPipeline("testLambda1-0.31.0.jar", "testLambda1Artifact");
-    private final LambdaJar lambdaJar2 = LambdaJar.builder().filenameFormat("testLambda2-%s.jar").imageName("testLambda2Image").artifactId("testLambda2Artifact").build();
-    private final CommandPipeline lambdaJarPipeline2 = generateCommandPipeline("testLambda2-0.31.0.jar", "testLambda2Artifact");
+    private final ClientJar clientJar1 = ClientJar.builder().filenameFormat("testClient1-%s.jar").artifactID("testClient1Artifact").build();
+    private final CommandPipeline clientJarPipeline1 = generateMavenDeployFileCommand("testClient1-0.31.0.jar", "testClient1Artifact");
+    private final ClientJar clientJar2 = ClientJar.builder().filenameFormat("testClient2-%s.jar").artifactID("testClient2Artifact").build();
+    private final CommandPipeline clientJarPipeline2 = generateMavenDeployFileCommand("testClient2-0.31.0.jar", "testClient2Artifact");
+    private final LambdaJar lambdaJar1 = LambdaJar.builder().filenameFormat("testLambda1-%s.jar").imageName("testLambda1Image").artifactID("testLambda1Artifact").build();
+    private final CommandPipeline lambdaJarPipeline1 = generateMavenDeployFileCommand("testLambda1-0.31.0.jar", "testLambda1Artifact");
+    private final LambdaJar lambdaJar2 = LambdaJar.builder().filenameFormat("testLambda2-%s.jar").imageName("testLambda2Image").artifactID("testLambda2Artifact").build();
+    private final CommandPipeline lambdaJarPipeline2 = generateMavenDeployFileCommand("testLambda2-0.31.0.jar", "testLambda2Artifact");
 
     @Test
     public void shouldPublishOneJarWhenJustOneClientJarNoLambda() throws Exception {
@@ -118,7 +118,7 @@ public class PublishJarsToRepoTest {
     public void shouldThrowNullPointerWhenPathOfJarsDirectoryIsNull() {
         assertThatThrownBy(() -> genericBuilder.pathOfJarsDirectory(null).build())
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("File path must not be null");
+                .hasMessage("Jars directory path must not be null");
     }
 
     @Test
@@ -132,7 +132,7 @@ public class PublishJarsToRepoTest {
     public void shouldThrowNullPointerWhenm2SettingsServerIdIsNull() {
         assertThatThrownBy(() -> genericBuilder.m2SettingsServerId(null).build())
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("M2 settings server Id must not be null");
+                .hasMessage("M2 settings server ID must not be null");
     }
 
     @Test
@@ -146,7 +146,7 @@ public class PublishJarsToRepoTest {
     public void shouldThrowNullPointerWhenCommandRunnerIsNull() {
         assertThatThrownBy(() -> genericBuilder.commandRunner(null).build())
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("Command Runner must not be null");
+                .hasMessage("Command runner must not be null");
     }
 
     @Test
@@ -163,7 +163,7 @@ public class PublishJarsToRepoTest {
                 .hasMessage("Lambda jars must not be null");
     }
 
-    private CommandPipeline generateCommandPipeline(String filename, String artifactId) {
+    private CommandPipeline generateMavenDeployFileCommand(String filename, String artifactId) {
         return pipeline(command("mvn", "deploy:deploy-file", "-q",
                 "-Durl=someUrl",
                 "-DrepositoryId=repo.id",

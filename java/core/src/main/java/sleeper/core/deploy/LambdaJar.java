@@ -36,68 +36,68 @@ public class LambdaJar {
     // It also uses AWS SDK v1, which takes up significant space in the jar when combined with AWS SDK v2 and Hadoop.
     public static final LambdaJar ATHENA = builder().filenameFormat("athena-%s.jar")
             .imageName("athena-lambda")
-            .artifactId("athena")
+            .artifactID("athena")
             .alwaysDockerDeploy(true).add();
     public static final LambdaJar BULK_IMPORT_STARTER = builder().filenameFormat("bulk-import-starter-%s.jar")
             .imageName("bulk-import-starter-lambda")
-            .artifactId("bulk-import-starter").add();
+            .artifactID("bulk-import-starter").add();
     public static final LambdaJar BULK_EXPORT_PLANNER = builder().filenameFormat("bulk-export-planner-%s.jar")
             .imageName("bulk-export-planner")
-            .artifactId("bulk-export-planner").add();
+            .artifactID("bulk-export-planner").add();
     public static final LambdaJar BULK_EXPORT_TASK_CREATOR = builder().filenameFormat("bulk-export-task-creator-%s.jar")
             .imageName("bulk-export-task-creator")
-            .artifactId("bulk-export-task-creator").add();
+            .artifactID("bulk-export-task-creator").add();
     public static final LambdaJar INGEST_TASK_CREATOR = builder().filenameFormat("ingest-taskrunner-%s.jar")
             .imageName("ingest-task-creator-lambda")
-            .artifactId("ingest-taskrunner").add();
+            .artifactID("ingest-taskrunner").add();
     public static final LambdaJar INGEST_BATCHER_SUBMITTER = builder().filenameFormat("ingest-batcher-submitter-%s.jar")
             .imageName("ingest-batcher-submitter-lambda")
-            .artifactId("ingest-batcher-submitter").add();
+            .artifactID("ingest-batcher-submitter").add();
     public static final LambdaJar INGEST_BATCHER_JOB_CREATOR = builder().filenameFormat("ingest-batcher-job-creator-%s.jar")
             .imageName("ingest-batcher-job-creator-lambda")
-            .artifactId("ingest-batcher-job-creator").add();
+            .artifactID("ingest-batcher-job-creator").add();
     public static final LambdaJar GARBAGE_COLLECTOR = builder().filenameFormat("lambda-garbagecollector-%s.jar")
             .imageName("garbage-collector-lambda")
-            .artifactId("garbage-collector").add();
+            .artifactID("garbage-collector").add();
     public static final LambdaJar COMPACTION_JOB_CREATOR = builder().filenameFormat("lambda-jobSpecCreationLambda-%s.jar")
             .imageName("compaction-job-creator-lambda")
-            .artifactId("compaction-job-creation-lambda").add();
+            .artifactID("compaction-job-creation-lambda").add();
     public static final LambdaJar COMPACTION_TASK_CREATOR = builder().filenameFormat("runningjobs-%s.jar")
             .imageName("compaction-task-creator-lambda")
-            .artifactId("compaction-task-creation").add();
+            .artifactID("compaction-task-creation").add();
     public static final LambdaJar PARTITION_SPLITTER = builder().filenameFormat("lambda-splitter-%s.jar")
             .imageName("partition-splitter-lambda")
-            .artifactId("splitter-lambda").add();
+            .artifactID("splitter-lambda").add();
 
     // The query module includes Hadoop, which makes the jar too big to deploy directly.
     // It seems difficult to reduce this significantly, but this may be unnecessary if we switch to using DataFusion
     // for queries.
     public static final LambdaJar QUERY = builder().filenameFormat("query-%s.jar")
             .imageName("query-lambda")
-            .artifactId("query-lambda")
+            .artifactID("query-lambda")
             .alwaysDockerDeploy(true).add();
     public static final LambdaJar CUSTOM_RESOURCES = builder().filenameFormat("cdk-custom-resources-%s.jar")
             .imageName("custom-resources-lambda")
-            .artifactId("cdk-custom-resources").add();
+            .artifactID("cdk-custom-resources").add();
     public static final LambdaJar METRICS = builder().filenameFormat("metrics-%s.jar")
             .imageName("metrics-lambda")
-            .artifactId("metrics").add();
+            .artifactID("metrics").add();
     public static final LambdaJar STATESTORE = builder().filenameFormat("statestore-lambda-%s.jar")
             .imageName("statestore-lambda")
-            .artifactId("statestore-lambda").add();
+            .artifactID("statestore-lambda").add();
 
     private final String filename;
     private final String imageName;
     private final boolean alwaysDockerDeploy;
     private final String filenameFormat;
-    private final String artifactId;
+    private final String artifactID;
 
     private LambdaJar(Builder builder) {
         this.filenameFormat = requireNonNull(builder.filenameFormat, "filename must not be null");
         this.filename = String.format(filenameFormat, SleeperVersion.getVersion());
         this.imageName = requireNonNull(builder.imageName, "imageName must not be null");
         this.alwaysDockerDeploy = requireNonNull(builder.alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
-        this.artifactId = requireNonNull(builder.artifactId, "Artifact Id must not be null");
+        this.artifactID = requireNonNull(builder.artifactID, "Artifact Id must not be null");
     }
 
     public static Builder builder() {
@@ -120,8 +120,8 @@ public class LambdaJar {
         return filenameFormat;
     }
 
-    public String getArtifactId() {
-        return artifactId;
+    public String getArtifactID() {
+        return artifactID;
     }
 
     /**
@@ -163,7 +163,7 @@ public class LambdaJar {
 
     @Override
     public String toString() {
-        return "LambdaJar{filename=" + filename + ", imageName=" + imageName + ", artifactId=" + artifactId + "}";
+        return "LambdaJar{filename=" + filename + ", imageName=" + imageName + ", artifactId=" + artifactID + "}";
     }
 
     public static List<LambdaJar> getAll() {
@@ -176,7 +176,7 @@ public class LambdaJar {
     public static class Builder {
         private String filenameFormat;
         private String imageName;
-        private String artifactId;
+        private String artifactID;
         private boolean alwaysDockerDeploy = false;
 
         private Builder() {
@@ -207,13 +207,13 @@ public class LambdaJar {
         }
 
         /**
-         * Sets the artifactId for the jar.
+         * Sets the artifactID for the jar.
          *
-         * @param  artifactId the ID of the artefact
+         * @param  artifactID the ID of the artefact
          * @return            the builder for method chaining
          */
-        public Builder artifactId(String artifactId) {
-            this.artifactId = artifactId;
+        public Builder artifactID(String artifactID) {
+            this.artifactID = artifactID;
             return this;
         }
 

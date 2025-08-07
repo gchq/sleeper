@@ -26,16 +26,16 @@ public class ClientJar {
 
     private static final List<ClientJar> ALL = new ArrayList<>();
 
-    public static final ClientJar BULK_IMPORT_RUNNER = builder().filenameFormat("bulk-import-runner-%s.jar").artifactId("bulk-import-runner").add();
-    public static final ClientJar CDK = builder().filenameFormat("cdk-%s.jar").artifactId("cdk").add();
-    public static final ClientJar CLIENTS_UTILITY = builder().filenameFormat("clients-%s-utility.jar").artifactId("clients").add();
+    public static final ClientJar BULK_IMPORT_RUNNER = builder().filenameFormat("bulk-import-runner-%s.jar").artifactID("bulk-import-runner").add();
+    public static final ClientJar CDK = builder().filenameFormat("cdk-%s.jar").artifactID("cdk").add();
+    public static final ClientJar CLIENTS_UTILITY = builder().filenameFormat("clients-%s-utility.jar").artifactID("clients").add();
 
     private final String filenameFormat;
-    private final String artifactId;
+    private final String artifactID;
 
     public ClientJar(Builder builder) {
         this.filenameFormat = builder.filenameFormat;
-        this.artifactId = builder.artifactId;
+        this.artifactID = builder.artifactID;
     }
 
     public static Builder builder() {
@@ -46,8 +46,8 @@ public class ClientJar {
         return filenameFormat;
     }
 
-    public String getArtifactId() {
-        return artifactId;
+    public String getArtifactID() {
+        return artifactID;
     }
 
     /**
@@ -62,7 +62,7 @@ public class ClientJar {
 
     @Override
     public String toString() {
-        return "ClientJar{filename=" + filenameFormat + ", imageName=" + artifactId + "}";
+        return "ClientJar{filename=" + filenameFormat + ", imageName=" + artifactID + "}";
     }
 
     public static List<ClientJar> getAll() {
@@ -74,7 +74,7 @@ public class ClientJar {
      */
     public static class Builder {
         private String filenameFormat;
-        private String artifactId;
+        private String artifactID;
 
         private Builder() {
 
@@ -95,11 +95,11 @@ public class ClientJar {
         /**
          * Sets the artifact ID for the jar.
          *
-         * @param  artifactId the ID of the artefact
+         * @param  artifactID the ID of the artefact
          * @return            the builder for method chaining
          */
-        public Builder artifactId(String artifactId) {
-            this.artifactId = artifactId;
+        public Builder artifactID(String artifactID) {
+            this.artifactID = artifactID;
             return this;
         }
 

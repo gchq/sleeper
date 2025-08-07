@@ -45,7 +45,7 @@ public class BuiltJarsIT extends LocalStackTestBase {
                 LambdaJar.builder()
                         .filenameFormat("test.jar")
                         .imageName("test-lambda")
-                        .artifactId("test-lambda").build()))
+                        .artifactID("test-lambda").build()))
                 .isEqualTo(versionId);
         assertThat(versionId).isNotNull();
     }

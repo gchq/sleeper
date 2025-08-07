@@ -16,7 +16,7 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 2 ] || [ "$#" -gt 2 ]; then
+if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <repository url> <m2 settings server id>"
   exit 1
 fi
