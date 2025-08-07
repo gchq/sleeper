@@ -164,7 +164,7 @@
         <httpclient4.version>4.5.14</httpclient4.version>
         <httpclient5.version>5.5</httpclient5.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>3.30.4</jline.version>
+        <jline.version>3.30.5</jline.version>
         <jetbrains-annotations.version>26.0.2</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
         <zstd-jni.version>1.5.7-4</zstd-jni.version>
@@ -184,7 +184,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
         <google.errorprone.version>2.41.0</google.errorprone.version>
-        <cdk.version>2.209.0</cdk.version>
+        <cdk.version>2.210.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.113.0</jsii.version>
