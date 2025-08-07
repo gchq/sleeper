@@ -205,8 +205,7 @@ public abstract class PartitionTreeTestBase {
         PartitionsBuilder builder = new PartitionsBuilder(schema)
                 .rootFirst(ROOT)
                 .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L);
 
         return builder.buildTree();
     }
