@@ -1,4 +1,4 @@
-//! Sleeper DataFusion utility functions.
+//! Sleeper `DataFusion` utility functions.
 use std::sync::Arc;
 
 use arrow::util::pretty::pretty_format_batches;

@@ -34,13 +34,21 @@ pub struct SleeperPartitionRegion<'a> {
 
 impl<'a> SleeperPartitionRegion<'a> {
     /// Create new region.
+    #[must_use]
     pub fn new(region: HashMap<String, ColRange<'a>>) -> Self {
         Self { region }
     }
 
     /// Number of dimensions in region.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.region.len()
+    }
+
+    /// Empty check
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.region.is_empty()
     }
 }
 

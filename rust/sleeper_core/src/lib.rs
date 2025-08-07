@@ -85,7 +85,7 @@ impl Default for SleeperParquetOptions {
     }
 }
 
-/// Common items necessary to perform any DataFusion related
+/// Common items necessary to perform any `DataFusion` related
 /// work for Sleeper.
 #[derive(Debug, Default)]
 pub struct CommonConfig<'a> {
@@ -119,7 +119,7 @@ pub enum OperationOutput {
 }
 
 /// All the information for a Sleeper compaction.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SleeperCompactionConfig<'a> {
     /// Common configuration
     pub common: CommonConfig<'a>,
@@ -127,21 +127,18 @@ pub struct SleeperCompactionConfig<'a> {
     pub iterator_config: Option<String>,
 }
 
-impl Default for SleeperCompactionConfig<'_> {
-    fn default() -> Self {
-        Self {
-            common: CommonConfig::default(),
-            iterator_config: Option::default(),
-        }
-    }
-}
-
 impl SleeperCompactionConfig<'_> {
     /// Convenience function to return region.
+    #[must_use]
     pub fn region(&self) -> &SleeperPartitionRegion {
         &self.common.region
     }
 
+    /// Get the output file for a Sleeper compaction.
+    ///
+    /// # Errors
+    /// Since compactions must output to a file, an error will occur
+    /// if Arrow stream output is selected.
     pub fn output_file(&self) -> Result<&Url, DataFusionError> {
         if let OperationOutput::File {
             output_file,
@@ -188,10 +185,11 @@ pub struct CompactionResult {
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
-/// # use crate::sleeper_core::{run_compaction, CompactionInput, PartitionBound, ColRange};
-/// let mut compaction_input = CompactionInput::default();
+/// # use crate::sleeper_core::{run_compaction, SleeperCompactionConfig, PartitionBound, ColRange,
+/// # OperationOutput, SleeperParquetOptions};
+/// let mut compaction_input = SleeperCompactionConfig::default();
 /// compaction_input.common.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
-/// compaction_input.output_file = Url::parse("file:///path/to/output").unwrap();
+/// compaction_input.common.output = OperationOutput::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
 /// compaction_input.common.row_key_cols = vec!["key".into()];
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -228,19 +226,17 @@ pub async fn run_compaction(input_data: &SleeperCompactionConfig<'_>) -> Result<
             })
             .collect();
 
-        // Compactions must write back to a file
-
         // Change output file scheme
         let mut output_file_path = input_data.output_file()?.clone();
         if output_file_path.scheme() == "s3a" {
             let _ = output_file_path.set_scheme("s3");
         }
 
-        if input_data.common.row_key_cols.len() != input_data.common.region.len() {
+        if input_data.common.row_key_cols.len() != input_data.region().len() {
             bail!(
                 "Length mismatch between row keys {} and partition region bounds {}",
                 input_data.common.row_key_cols.len(),
-                input_data.common.region.len()
+                input_data.region().len()
             );
         }
 

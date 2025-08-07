@@ -78,7 +78,7 @@ pub async fn compact(
         input_paths.iter().map(Url::as_str).collect::<Vec<_>>()
     );
     info!("DataFusion output file {}", output_path.as_str());
-    info!("Compaction partition region {:?}", input_data.common.region);
+    info!("Compaction partition region {:?}", input_data.region());
 
     let total_input_size = retrieve_input_size(input_paths, store_factory)
         .await
@@ -115,7 +115,7 @@ pub async fn compact(
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
 
     // If we have a partition region, apply it first
-    if let Some(expr) = Into::<Option<Expr>>::into(&input_data.common.region) {
+    if let Some(expr) = Into::<Option<Expr>>::into(input_data.region()) {
         frame = frame.filter(expr)?;
     }
 
