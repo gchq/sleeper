@@ -24,35 +24,27 @@ use crate::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         region::region_filter,
         sketch::{create_sketch_udf, output_sketch},
+        util::{calculate_upload_size, check_for_sort_exec, explain_plan, register_store},
     },
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
-use arrow::{compute::SortOptions, util::pretty::pretty_format_batches};
+use arrow::compute::SortOptions;
 use datafusion::{
-    common::{
-        plan_err,
-        tree_node::{Transformed, TreeNode, TreeNodeRecursion},
-    },
-    config::{ExecutionOptions, TableParquetOptions},
+    common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
+    config::TableParquetOptions,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
-    execution::{
-        SessionState, config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
-    },
-    logical_expr::{LogicalPlan, LogicalPlanBuilder, SortExpr},
+    execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
+    logical_expr::{LogicalPlanBuilder, SortExpr},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
-        ExecutionPlan, accept,
-        coalesce_partitions::CoalescePartitionsExec,
-        collect, displayable,
-        expressions::Column,
-        sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
+        accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
+        expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
     },
     prelude::*,
 };
 use log::{info, warn};
 use metrics::RowCounts;
-use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 use url::Url;
@@ -63,6 +55,7 @@ mod metrics;
 mod region;
 pub mod sketch;
 mod sketch_udf;
+mod util;
 
 /// Starts a Sleeper compaction.
 ///
@@ -254,21 +247,6 @@ fn parse_iterator_config(
     Ok(filter_agg_conf)
 }
 
-/// Calculate the upload size based on the total input data size. This prevents uploads to S3 failing due to uploading
-/// too many small parts. We conseratively set the upload size so that fewer, larger uploads are created.
-fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionError> {
-    let upload_size = std::cmp::max(
-        ExecutionOptions::default().objectstore_writer_buffer_size,
-        usize::try_from(total_input_size / 5000)
-            .map_err(|e| DataFusionError::External(Box::new(e)))?,
-    );
-    info!(
-        "Use upload buffer of {} bytes.",
-        upload_size.to_formatted_string(&Locale::en)
-    );
-    Ok(upload_size)
-}
-
 /// Calculate the total size of all `input_paths` objects.
 ///
 /// # Errors
@@ -366,41 +344,6 @@ async fn collect_stats(
     Ok(stats)
 }
 
-/// Checks if a physical plan contains a `SortExec` stage.
-///
-/// We must ensure the physical plans don't contains a full sort stage as this entails
-/// reading all input data before performing a sort which requires enough memory/disk space
-/// to contain all the data. By ensuring plans only contain streaming merge sort stages we
-/// will get a streaming merge of records for compaction.
-///
-/// # Errors
-/// If a `SortExec` stage is found in the given plan.
-fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusionError> {
-    let contains_sort_exec =
-        plan.exists(|node| Ok(node.as_any().downcast_ref::<SortExec>().is_some()))?;
-    if contains_sort_exec {
-        plan_err!("Physical plan contains SortExec stage. Please file a bug report.")
-    } else {
-        Ok(())
-    }
-}
-
-/// Write explanation of query plan to log output.
-///
-/// # Errors
-/// If explanation fails.
-async fn explain_plan(
-    session_state: SessionState,
-    logical_plan: LogicalPlan,
-) -> Result<(), DataFusionError> {
-    let explained = DataFrame::new(session_state, logical_plan)
-        .explain(false, false)?
-        .collect()
-        .await?;
-    info!("DataFusion plan:\n{}", pretty_format_batches(&explained)?);
-    Ok(())
-}
-
 /// Creates the sort order for a given schema.
 ///
 /// This is a list of the row key columns followed by the sort key columns.
@@ -412,35 +355,4 @@ fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
         .chain(input_data.sort_key_cols.iter())
         .map(|s| col(s).sort(true, false))
         .collect::<Vec<_>>()
-}
-
-/// Takes the urls in `input_paths` list and `output_path`
-/// and registers the appropriate [`object_store::ObjectStore`] for it.
-///
-/// `DataFusion` doesn't seem to like loading a single file set from different object stores
-/// so we only register the first one.
-///
-/// # Errors
-/// If we can't create an [`object_store::ObjectStore`] for a known URL then this will fail.
-///
-fn register_store(
-    store_factory: &ObjectStoreFactory,
-    input_paths: &[Url],
-    output_path: &Url,
-    ctx: &SessionContext,
-) -> Result<(), DataFusionError> {
-    for input_path in input_paths {
-        let in_store = store_factory
-            .get_object_store(input_path)
-            .map_err(|e| DataFusionError::External(e.into()))?;
-        ctx.runtime_env()
-            .register_object_store(input_path, in_store);
-    }
-
-    let out_store = store_factory
-        .get_object_store(output_path)
-        .map_err(|e| DataFusionError::External(e.into()))?;
-    ctx.runtime_env()
-        .register_object_store(output_path, out_store);
-    Ok(())
 }

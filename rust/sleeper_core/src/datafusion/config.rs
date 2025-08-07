@@ -130,8 +130,7 @@ pub fn apply_sleeper_config(
     // Disable repartition_aggregations to workaround sorting bug where DataFusion partitions are concatenated back
     // together in wrong order.
     cfg.options_mut().optimizer.repartition_aggregations = false;
-    // Physical plan explanation not needed here
-    cfg.options_mut().explain.logical_plan_only = true;
+    // Set upload size is specified
     if let Some(size) = upload_size {
         cfg.options_mut().execution.objectstore_writer_buffer_size = size;
     }
