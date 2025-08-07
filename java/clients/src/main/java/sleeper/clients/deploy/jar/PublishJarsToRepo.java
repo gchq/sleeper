@@ -33,7 +33,7 @@ import static java.util.Objects.requireNonNull;
 public class PublishJarsToRepo {
     private final Path jarsDirectory;
     private final String repoUrl;
-    private final String m2SettingsServerId;
+    private final String m2SettingsServerID;
     private final String version;
     private final CommandPipelineRunner commandRunner;
     private final List<ClientJar> clientJars;
@@ -42,7 +42,7 @@ public class PublishJarsToRepo {
     private PublishJarsToRepo(Builder builder) {
         this.jarsDirectory = requireNonNull(builder.jarsDirectory, "Jars directory path must not be null");
         this.repoUrl = requireNonNull(builder.repoUrl, "Repository URL must not be null");
-        this.m2SettingsServerId = requireNonNull(builder.m2SettingsServerId, "M2 settings server ID must not be null");
+        this.m2SettingsServerID = requireNonNull(builder.m2SettingsServerID, "M2 settings server ID must not be null");
         this.version = requireNonNull(builder.version, "Version to publish must not be null");
         this.commandRunner = requireNonNull(builder.commandRunner, "Command runner must not be null");
         this.clientJars = requireNonNull(builder.clientJars, "Client jars must not be null");
@@ -61,7 +61,7 @@ public class PublishJarsToRepo {
         builder()
                 .jarsDirectory(Path.of(args[0]))
                 .repoUrl(args[1])
-                .m2SettingsServerId(args[2])
+                .m2SettingsServerID(args[2])
                 .build()
                 .upload();
     }
@@ -85,7 +85,7 @@ public class PublishJarsToRepo {
     private void deployJars(String filename, String artifactId) throws IOException, InterruptedException {
         commandRunner.run("mvn", "deploy:deploy-file", "-q",
                 "-Durl=" + repoUrl,
-                "-DrepositoryId=" + m2SettingsServerId, //Requires matching server with auth details in local m2 settings.xml <servers>
+                "-DrepositoryId=" + m2SettingsServerID, //Requires matching server with auth details in local m2 settings.xml <servers>
                 "-Dfile=" + jarsDirectory.resolve(filename),
                 "-DgroupId=sleeper",
                 "-DartifactId=" + artifactId,
@@ -99,7 +99,7 @@ public class PublishJarsToRepo {
     public static final class Builder {
         private Path jarsDirectory;
         private String repoUrl;
-        private String m2SettingsServerId;
+        private String m2SettingsServerID;
         private String version = SleeperVersion.getVersion();
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private List<ClientJar> clientJars = ClientJar.getAll();
@@ -131,14 +131,14 @@ public class PublishJarsToRepo {
         }
 
         /**
-         * Sets the id of a server that will be found in a local m2 settings file.
+         * Sets the ID of a server that will be found in a local m2 settings file.
          * Used for authentication.
          *
-         * @param  m2SettingsServerId the id of the server in a local m2 settings
+         * @param  m2SettingsServerID the ID of the server in a local m2 settings
          * @return                    the builder for method chaining
          */
-        public Builder m2SettingsServerId(String m2SettingsServerId) {
-            this.m2SettingsServerId = m2SettingsServerId;
+        public Builder m2SettingsServerID(String m2SettingsServerID) {
+            this.m2SettingsServerID = m2SettingsServerID;
             return this;
         }
 

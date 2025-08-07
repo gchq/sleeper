@@ -164,7 +164,7 @@ public class PublishJarsToRepoTest {
                 .jarsDirectory(Path.of("/some/directory/"))
                 .repoUrl("someUrl")
                 .version("0.31.0")
-                .m2SettingsServerId("repo.id");
+                .m2SettingsServerID("repo.id");
     }
 
     private CommandPipeline generateMavenDeployFileCommand(String filename, String artifactId) {
