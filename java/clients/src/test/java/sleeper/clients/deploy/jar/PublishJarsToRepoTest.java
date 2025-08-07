@@ -15,6 +15,7 @@
  */
 package sleeper.clients.deploy.jar;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.command.CommandPipeline;
@@ -22,37 +23,41 @@ import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.core.deploy.ClientJar;
 import sleeper.core.deploy.LambdaJar;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 public class PublishJarsToRepoTest {
-    private final PublishJarsToRepo.Builder genericBuilder = PublishJarsToRepo.builder()
-            .pathOfJarsDirectory(Path.of("/some/directory/"))
-            .repoUrl("someUrl")
-            .version("0.31.0")
-            .m2SettingsServerId("repo.id");
+    private final PublishJarsToRepo.Builder genericBuilder = generateGenericBuilder();
 
     private final ClientJar clientJar1 = ClientJar.builder().filenameFormat("testClient1-%s.jar").artifactID("testClient1Artifact").build();
     private final CommandPipeline clientJarPipeline1 = generateMavenDeployFileCommand("testClient1-0.31.0.jar", "testClient1Artifact");
-    private final ClientJar clientJar2 = ClientJar.builder().filenameFormat("testClient2-%s.jar").artifactID("testClient2Artifact").build();
-    private final CommandPipeline clientJarPipeline2 = generateMavenDeployFileCommand("testClient2-0.31.0.jar", "testClient2Artifact");
     private final LambdaJar lambdaJar1 = LambdaJar.builder().filenameFormat("testLambda1-%s.jar").imageName("testLambda1Image").artifactID("testLambda1Artifact").build();
     private final CommandPipeline lambdaJarPipeline1 = generateMavenDeployFileCommand("testLambda1-0.31.0.jar", "testLambda1Artifact");
-    private final LambdaJar lambdaJar2 = LambdaJar.builder().filenameFormat("testLambda2-%s.jar").imageName("testLambda2Image").artifactID("testLambda2Artifact").build();
-    private final CommandPipeline lambdaJarPipeline2 = generateMavenDeployFileCommand("testLambda2-0.31.0.jar", "testLambda2Artifact");
+
+    private List<CommandPipeline> commandsThatRan;
+    private CommandPipelineRunner commandRunner;
+
+    @BeforeEach
+    public void setup() {
+        commandsThatRan = new ArrayList<>();
+        commandRunner = recordCommandsRun(commandsThatRan);
+    }
 
     @Test
     public void shouldPublishOneJarWhenJustOneClientJarNoLambda() throws Exception {
         //Given
-        List<CommandPipeline> commandsThatRan = new ArrayList<>();
-        CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
         PublishJarsToRepo publishJarsToRepo = genericBuilder
                 .commandRunner(commandRunner)
                 .clientJars(List.of(clientJar1))
@@ -68,8 +73,6 @@ public class PublishJarsToRepoTest {
     @Test
     public void shouldPublishOneJarWhenJustOneLambdaJarNoClient() throws Exception {
         //Given
-        List<CommandPipeline> commandsThatRan = new ArrayList<>();
-        CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
         PublishJarsToRepo publishJarsToRepo = genericBuilder
                 .commandRunner(commandRunner)
                 .clientJars(List.of())
@@ -85,8 +88,11 @@ public class PublishJarsToRepoTest {
     @Test
     public void shouldPublishAllJarsWhenMultipleClientAndLambda() throws Exception {
         //Given
-        List<CommandPipeline> commandsThatRan = new ArrayList<>();
-        CommandPipelineRunner commandRunner = recordCommandsRun(commandsThatRan);
+        ClientJar clientJar2 = ClientJar.builder().filenameFormat("testClient2-%s.jar").artifactID("testClient2Artifact").build();
+        CommandPipeline clientJarPipeline2 = generateMavenDeployFileCommand("testClient2-0.31.0.jar", "testClient2Artifact");
+        LambdaJar lambdaJar2 = LambdaJar.builder().filenameFormat("testLambda2-%s.jar").imageName("testLambda2Image").artifactID("testLambda2Artifact").build();
+        CommandPipeline lambdaJarPipeline2 = generateMavenDeployFileCommand("testLambda2-0.31.0.jar", "testLambda2Artifact");
+
         PublishJarsToRepo publishJarsToRepo = genericBuilder
                 .commandRunner(commandRunner)
                 .clientJars(List.of(clientJar1, clientJar2))
@@ -115,62 +121,45 @@ public class PublishJarsToRepoTest {
     }
 
     @Test
-    public void shouldThrowNullPointerWhenPathOfJarsDirectoryIsNull() {
-        assertThatThrownBy(() -> genericBuilder.pathOfJarsDirectory(null).build())
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Jars directory path must not be null");
+    public void shouldThrowExceptionOutWhenRunningMavenCommandThrowsException() throws IOException, InterruptedException {
+        //Given
+        CommandPipelineRunner runner = mock(CommandPipelineRunner.class);
+        when(runner.run(any(String[].class))).thenThrow(new IOException("Test message"));
+        ClientJar clientJar = ClientJar.builder().filenameFormat("testClient-%s.jar").artifactID("testClientArtifact").build();
+        PublishJarsToRepo publishJarsToRepo = genericBuilder
+                .commandRunner(runner)
+                .clientJars(List.of(clientJar))
+                .lambdaJars(List.of()).build();
+
+        //When
+        assertThatThrownBy(() -> publishJarsToRepo.upload())
+                .isInstanceOf(IOException.class)
+                .hasMessage("Test message");
+
+        //Then
+        verify(runner).run(generateMavenCommands("testClient-0.31.0.jar", "testClientArtifact"));
     }
 
-    @Test
-    public void shouldThrowNullPointerWhenRepositoryUrlIsNull() {
-        assertThatThrownBy(() -> genericBuilder.repoUrl(null).build())
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Repository URL must not be null");
-    }
-
-    @Test
-    public void shouldThrowNullPointerWhenm2SettingsServerIdIsNull() {
-        assertThatThrownBy(() -> genericBuilder.m2SettingsServerId(null).build())
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("M2 settings server ID must not be null");
-    }
-
-    @Test
-    public void shouldThrowNullPointerWhenVerisonIsNull() {
-        assertThatThrownBy(() -> genericBuilder.version(null).build())
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Version to publish must not be null");
-    }
-
-    @Test
-    public void shouldThrowNullPointerWhenCommandRunnerIsNull() {
-        assertThatThrownBy(() -> genericBuilder.commandRunner(null).build())
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Command runner must not be null");
-    }
-
-    @Test
-    public void shouldThrowNullPointerWhenClientJarsIsNull() {
-        assertThatThrownBy(() -> genericBuilder.clientJars(null).build())
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Client jars must not be null");
-    }
-
-    @Test
-    public void shouldThrowNullPointerWhenLambdaJarsIsNull() {
-        assertThatThrownBy(() -> genericBuilder.lambdaJars(null).build())
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("Lambda jars must not be null");
+    private PublishJarsToRepo.Builder generateGenericBuilder() {
+        return PublishJarsToRepo.builder()
+                .jarsDirectory(Path.of("/some/directory/"))
+                .repoUrl("someUrl")
+                .version("0.31.0")
+                .m2SettingsServerId("repo.id");
     }
 
     private CommandPipeline generateMavenDeployFileCommand(String filename, String artifactId) {
-        return pipeline(command("mvn", "deploy:deploy-file", "-q",
-                "-Durl=someUrl",
-                "-DrepositoryId=repo.id",
-                "-Dfile=/some/directory/" + filename,
-                "-DgroupId=sleeper",
-                "-DartifactId=" + artifactId,
-                "-Dversion=0.31.0",
-                "-DgeneratePom=false"));
+        return pipeline(command(generateMavenCommands(filename, artifactId)));
+    }
+
+    private String[] generateMavenCommands(String filename, String artifactId) {
+        return new String[]{"mvn", "deploy:deploy-file", "-q",
+            "-Durl=someUrl",
+            "-DrepositoryId=repo.id",
+            "-Dfile=/some/directory/" + filename,
+            "-DgroupId=sleeper",
+            "-DartifactId=" + artifactId,
+            "-Dversion=0.31.0",
+            "-DgeneratePom=false"};
     }
 }

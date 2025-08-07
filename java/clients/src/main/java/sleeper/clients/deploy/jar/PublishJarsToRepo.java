@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNull;
  * Publishes built jars to a Maven repository.
  */
 public class PublishJarsToRepo {
-    private final Path pathOfJarsDirectory;
+    private final Path jarsDirectory;
     private final String repoUrl;
     private final String m2SettingsServerId;
     private final String version;
@@ -40,7 +40,7 @@ public class PublishJarsToRepo {
     private final List<LambdaJar> lambdaJars;
 
     private PublishJarsToRepo(Builder builder) {
-        this.pathOfJarsDirectory = requireNonNull(builder.pathOfJarsDirectory, "Jars directory path must not be null");
+        this.jarsDirectory = requireNonNull(builder.jarsDirectory, "Jars directory path must not be null");
         this.repoUrl = requireNonNull(builder.repoUrl, "Repository URL must not be null");
         this.m2SettingsServerId = requireNonNull(builder.m2SettingsServerId, "M2 settings server ID must not be null");
         this.version = requireNonNull(builder.version, "Version to publish must not be null");
@@ -59,7 +59,7 @@ public class PublishJarsToRepo {
         }
 
         builder()
-                .pathOfJarsDirectory(Path.of(args[0]))
+                .jarsDirectory(Path.of(args[0]))
                 .repoUrl(args[1])
                 .m2SettingsServerId(args[2])
                 .build()
@@ -70,7 +70,7 @@ public class PublishJarsToRepo {
      * Loops through the client jars and lambda jars, publishing each one to the supplied Maven repository.
      *
      * @throws InterruptedException if the current thread was interrupted
-     * @throws IOException          if soemthing goes wrong with running the Maven commands
+     * @throws IOException          if something goes wrong with running the Maven commands
      */
     public void upload() throws IOException, InterruptedException {
         for (ClientJar clientJar : clientJars) {
@@ -86,7 +86,7 @@ public class PublishJarsToRepo {
         commandRunner.run("mvn", "deploy:deploy-file", "-q",
                 "-Durl=" + repoUrl,
                 "-DrepositoryId=" + m2SettingsServerId, //Requires matching server with auth details in local m2 settings.xml <servers>
-                "-Dfile=" + pathOfJarsDirectory.resolve(filename),
+                "-Dfile=" + jarsDirectory.resolve(filename),
                 "-DgroupId=sleeper",
                 "-DartifactId=" + artifactId,
                 "-Dversion=" + version,
@@ -97,7 +97,7 @@ public class PublishJarsToRepo {
      * Builder for publish jars to repo object.
      */
     public static final class Builder {
-        private Path pathOfJarsDirectory;
+        private Path jarsDirectory;
         private String repoUrl;
         private String m2SettingsServerId;
         private String version = SleeperVersion.getVersion();
@@ -111,11 +111,11 @@ public class PublishJarsToRepo {
         /**
          * Sets the path to the jars directory.
          *
-         * @param  pathOfJarsDirectory the path to the jars folder
-         * @return                     the builder for method chaining
+         * @param  jarsDirectory the path to the jars directory
+         * @return               the builder for method chaining
          */
-        public Builder pathOfJarsDirectory(Path pathOfJarsDirectory) {
-            this.pathOfJarsDirectory = pathOfJarsDirectory;
+        public Builder jarsDirectory(Path jarsDirectory) {
+            this.jarsDirectory = jarsDirectory;
             return this;
         }
 
