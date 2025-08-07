@@ -118,3 +118,22 @@ pub fn register_store(
         .register_object_store(output_path, out_store);
     Ok(())
 }
+
+/// Calculate the total size of all `input_paths` objects.
+///
+/// # Errors
+/// Fails if we can't obtain the size of the input files from the object store.
+pub async fn retrieve_input_size(
+    input_paths: &[Url],
+    store_factory: &ObjectStoreFactory,
+) -> Result<u64, DataFusionError> {
+    let mut total_input = 0u64;
+    for input_path in input_paths {
+        let store = store_factory
+            .get_object_store(input_path)
+            .map_err(|e| DataFusionError::External(e.into()))?;
+        let p = input_path.path();
+        total_input += store.head(&p.into()).await?.size;
+    }
+    Ok(total_input)
+}

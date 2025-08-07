@@ -23,7 +23,10 @@ use crate::{
         config::apply_sleeper_config,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         sketch::{create_sketch_udf, output_sketch},
-        util::{calculate_upload_size, check_for_sort_exec, explain_plan, register_store},
+        util::{
+            calculate_upload_size, check_for_sort_exec, explain_plan, register_store,
+            retrieve_input_size,
+        },
     },
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
@@ -266,25 +269,6 @@ fn parse_iterator_config(
         .map(|s| FilterAggregationConfig::try_from(s.as_str()))
         .transpose()?;
     Ok(filter_agg_conf)
-}
-
-/// Calculate the total size of all `input_paths` objects.
-///
-/// # Errors
-/// Fails if we can't obtain the size of the input files from the object store.
-async fn retrieve_input_size(
-    input_paths: &[Url],
-    store_factory: &ObjectStoreFactory,
-) -> Result<u64, DataFusionError> {
-    let mut total_input = 0u64;
-    for input_path in input_paths {
-        let store = store_factory
-            .get_object_store(input_path)
-            .map_err(|e| DataFusionError::External(e.into()))?;
-        let p = input_path.path();
-        total_input += store.head(&p.into()).await?.size;
-    }
-    Ok(total_input)
 }
 
 /// Write the frame out to the output path and collect statistics.
