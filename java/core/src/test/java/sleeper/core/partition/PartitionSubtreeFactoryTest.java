@@ -17,6 +17,8 @@ package sleeper.core.partition;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -26,7 +28,11 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     void shouldCreateBalancedSubtreeWithExactLeafPartitionCount() {
         // Given / When
         int leafPartitionCount = 2;
-        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(generateTreeTo2LevelsBalanced(), leafPartitionCount);
+        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(
+                new PartitionTree(List.of(rootWithChildren,
+                        l1Left, l1Right,
+                        l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R)),
+                leafPartitionCount);
 
         // Then
         Partition l1LeftAsLeaf = adjustToLeafStatus(l1Left);
@@ -39,7 +45,12 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     void shouldCreateBalancedSubtreeWithLeafCountCausingUnbalancedTreeLeftFocused() {
         // Given / When
         int leafPartitionCount = 3;
-        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(generateTreeTo3Levels(), 3);
+        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(
+                new PartitionTree(List.of(rootWithChildren,
+                        l1Left, l1Right,
+                        l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R,
+                        l3LeftOfL2LL, l3RightOfL2LL, l3LeftOfL2LR, l3RightOfL2LR, l3LeftOfL2RL, l3RightOfL2RL, l3LeftOfL2RR, l3RightOfL2RR)),
+                leafPartitionCount);
 
         // Then
         assertThat(subtree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
@@ -50,7 +61,11 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     void shouldCreateRootOnlySubtreeWhenGivenLeafPartitions() {
         // Given / When
         int leafPartitionCount = 0;
-        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(generateTreeTo2LevelsBalanced(), leafPartitionCount);
+        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(
+                new PartitionTree(List.of(rootWithChildren,
+                        l1Left, l1Right,
+                        l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R)),
+                leafPartitionCount);
 
         // Then
         assertThat(subtree).isEqualTo(generateTreeToRootLevel());
@@ -65,7 +80,10 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
         int midPartitionCount = 4;
         int smallPartitionCount = 2;
 
-        PartitionTree originalTree = generateTreeTo3Levels();
+        PartitionTree originalTree = new PartitionTree(List.of(rootWithChildren,
+                l1Left, l1Right,
+                l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R,
+                l3LeftOfL2LL, l3RightOfL2LL, l3LeftOfL2LR, l3RightOfL2LR, l3LeftOfL2RL, l3RightOfL2RL, l3LeftOfL2RR, l3RightOfL2RR));
 
         // When 1
         PartitionTree midSubtree = PartitionSubtreeFactory.createSubtree(originalTree, midPartitionCount);
