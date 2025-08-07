@@ -48,6 +48,10 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>ec2</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ecs</artifactId>
+        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>

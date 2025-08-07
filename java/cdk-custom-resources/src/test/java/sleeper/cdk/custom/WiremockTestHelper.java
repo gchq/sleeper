@@ -16,17 +16,11 @@
 package sleeper.cdk.custom;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 
-import java.net.URI;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 public class WiremockTestHelper {
-
-    public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
-    public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
 
     private WiremockTestHelper() {
     }
@@ -35,12 +29,4 @@ public class WiremockTestHelper {
         return wiremockAwsV2Client(runtimeInfo, Ec2Client.builder());
     }
 
-    public static <B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, T>, T> T wiremockAwsV2Client(WireMockRuntimeInfo runtimeInfo, B builder) {
-        return builder
-                .endpointOverride(URI.create(runtimeInfo.getHttpBaseUrl()))
-                .region(Region.AWS_GLOBAL)
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY)))
-                .build();
-    }
 }
