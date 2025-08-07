@@ -26,13 +26,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionTreeTest extends PartitionTreeTestBase {
 
-    private static final String L3_LEFT_OF_L2_LEFT_OF_L1_LEFT = "l3_left_of_l2_left_of_l1_left";
-    private static final String L3_RIGHT_OF_L2_LEFT_OF_L1_LEFT = "l3_right_of_l2_left_of_l1_left";
-
     @Test
     public void shouldReturnCorrectChildren() {
         // Given
-        PartitionTree partitionTree = generateTreeTo2Levels();
+        PartitionTree partitionTree = generateTreeTo2LevelsBalanced();
 
         // When
         List<String> children1 = partitionTree.getChildIds(ROOT);
@@ -46,7 +43,7 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
     @Test
     public void shouldReturnCorrectAncestors() {
         // Given
-        PartitionTree partitionTree = generateTreeTo2Levels();
+        PartitionTree partitionTree = generateTreeTo2LevelsBalanced();
 
         // When
         List<Partition> ancestorsOfRoot = partitionTree.getAllAncestors(ROOT);
@@ -77,7 +74,7 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
     @Test
     public void shouldReturnCorrectLeafWhenAskedForLeafPartitionContainingKeyInTwoLevelTree() {
         // Given
-        PartitionTree partitionTree = generateTreeTo2Levels();
+        PartitionTree partitionTree = generateTreeTo2LevelsBalanced();
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));

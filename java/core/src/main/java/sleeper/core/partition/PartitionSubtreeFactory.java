@@ -16,8 +16,8 @@
 package sleeper.core.partition;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -40,37 +40,51 @@ public class PartitionSubtreeFactory {
         if (leafPartitionCount > originalTree.getLeafPartitions().size()) {
             throw new PartitionTreeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
         }
-        ArrayList<String> resetLeafIds = new ArrayList<>();
-        PartitionTree subtree = new PartitionTree(List.of(originalTree.getRootPartition()));
-        resetLeafIds.add(originalTree.getRootPartition().getId());
 
-        // Check loop has count incremented by 1 to account for root partition that always must exist
-        while (subtree.idToPartition.values().size() < leafPartitionCount + 1) {
-            resetLeafIds.clear();
-            Collection<Partition> presentBatch = List.copyOf(subtree.idToPartition.values());
-            presentBatch.forEach(partition -> {
-                partition.getChildPartitionIds().forEach(
-                        partitionId -> {
-                            if (!subtree.idToPartition.containsKey(partitionId)) {
-                                subtree.idToPartition.put(partitionId, originalTree.getPartition(partitionId));
-                                resetLeafIds.add(partitionId);
-                            }
-                        });
-            });
+        PartitionTree subtree = new PartitionTree(List.of(originalTree.getRootPartition()));
+        List<Partition> lastAddedIds = new ArrayList<Partition>();
+        lastAddedIds.add(originalTree.getRootPartition());
+        int presentLeafCount = 1;
+
+        while (checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
+            Iterator<Partition> partitionIterator = getChildPartitionsFromIds(originalTree, lastAddedIds).iterator();
+            while (partitionIterator.hasNext() && checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
+                Partition presentPartion = partitionIterator.next();
+                subtree.idToPartition.put(presentPartion.getId(), presentPartion);
+                presentLeafCount++;
+
+                if (lastAddedIds.contains(subtree.getPartition(presentPartion.getParentPartitionId()))) {
+                    presentLeafCount--;
+                    lastAddedIds.remove(subtree.getPartition(presentPartion.getParentPartitionId()));
+                }
+                if (!presentPartion.isLeafPartition()) {
+                    lastAddedIds.add(presentPartion);
+                }
+            }
         }
 
-        // Last gathered selection of ids have their key details reset to act as leaves of new tree.
-        resetLeafIds.forEach(leafId -> {
-            subtree.idToPartition.put(leafId, adjustToLeafStatus(subtree.idToPartition.get(leafId)));
-
+        lastAddedIds.forEach(partition -> {
+            if (!partition.isLeafPartition()) {
+                subtree.idToPartition.put(partition.getId(), adjustToLeafStatus(partition));
+            }
         });
 
-        // If root is the only partition, return a new sub tree with root corrected for no leaves
-        if (subtree.getAllPartitions().size() == 1) {
-            return new PartitionTree(subtree.getAllPartitions());
-        }
-
         return subtree;
+    }
+
+    private static boolean checkIfLeafCountMet(int present, int target) {
+        return present < target;
+    }
+
+    private static List<Partition> getChildPartitionsFromIds(PartitionTree treeIn, List<Partition> parentIdsIn) {
+        List<Partition> outList = new ArrayList<Partition>();
+        parentIdsIn.forEach(partition -> {
+            partition.getChildPartitionIds().forEach(childId -> {
+                outList.add(treeIn.getPartition(childId));
+            });
+        });
+        //Sort orientation here!
+        return outList;
     }
 
     private static Partition adjustToLeafStatus(Partition partitionIn) {
