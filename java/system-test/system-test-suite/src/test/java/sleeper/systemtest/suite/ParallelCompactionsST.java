@@ -57,7 +57,7 @@ public class ParallelCompactionsST {
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "10",
+                COMPACTION_FILES_BATCH_SIZE, "2",
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString()));
         sleeper.partitioning().setPartitions(create8192StringPartitions(sleeper));
         // And we have rows spread across all partitions in many files per partition
@@ -70,7 +70,7 @@ public class ParallelCompactionsST {
 
         // When we run compaction
         sleeper.compaction()
-                .putTableOnlineWaitForJobCreation(8192,
+                .putTableOnlineWaitForJobCreation(40960,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(2)))
                 .waitForTasks(300)
@@ -82,7 +82,7 @@ public class ParallelCompactionsST {
 
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
-                .hasSize(8192)
+                .hasSize(40960)
                 .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRows).sum())
                         .isEqualTo(10_000_000))
                 .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
@@ -94,7 +94,7 @@ public class ParallelCompactionsST {
                         .isBetween(800L, 1600L));
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(statistics -> statistics.isAllFinishedOneRunEach(8192),
+                .matches(statistics -> statistics.isAllFinishedOneRunEach(40960),
                         "all jobs finished and ran once");
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
