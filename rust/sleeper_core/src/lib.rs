@@ -157,7 +157,7 @@ impl std::fmt::Display for CommonConfig<'_> {
             OperationOutput::File {
                 output_file,
                 opts: _,
-            } => write!(f, "output file {:?}", output_file),
+            } => write!(f, "output file {output_file:?}"),
         }
     }
 }

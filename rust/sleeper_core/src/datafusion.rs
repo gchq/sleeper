@@ -128,7 +128,7 @@ impl<'a> SleeperOperations<'a> {
                 OperationOutput::File {
                     output_file,
                     opts: _,
-                } => Some(&output_file),
+                } => Some(output_file),
             },
             &ctx,
         )?;
@@ -145,11 +145,11 @@ impl<'a> SleeperOperations<'a> {
     pub async fn create_partitioned_frame(
         &self,
         ctx: &SessionContext,
-        sort_order: &Vec<Sort>,
+        sort_order: &[Sort],
     ) -> Result<DataFrame, DataFusionError> {
-        let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
+        let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.to_owned()]);
         let frame = ctx
-            .read_parquet(self.config.input_files.to_owned(), po)
+            .read_parquet(self.config.input_files.clone(), po)
             .await?;
         Ok(
             if let Some(expr) = Into::<Option<Expr>>::into(&self.config.region) {
@@ -264,7 +264,7 @@ pub async fn compact(
     // Write the frame out and collect stats
     let stats = collect_stats(
         frame.clone(),
-        &input_data.input_files(),
+        input_data.input_files(),
         input_data
             .output_file()
             .map_err(|e| DataFusionError::External(e.into()))?,
