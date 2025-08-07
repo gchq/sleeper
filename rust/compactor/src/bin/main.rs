@@ -20,8 +20,8 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
-    ColRange, CompactionInput, PartitionBound, SleeperParquetOptions, SleeperPartitionRegion,
-    run_compaction,
+    ColRange, CommonConfig, CompactionInput, PartitionBound, SleeperParquetOptions,
+    SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
@@ -150,13 +150,15 @@ async fn main() -> color_eyre::Result<()> {
     };
 
     let details = CompactionInput {
-        aws_config: None,
-        input_files: input_urls,
+        common: CommonConfig {
+            aws_config: None,
+            input_files: input_urls,
+            row_key_cols: args.row_keys,
+            sort_key_cols: args.sort_keys,
+            region: SleeperPartitionRegion::new(map),
+        },
         output_file: output_url,
         parquet_options,
-        region: SleeperPartitionRegion::new(map),
-        row_key_cols: args.row_keys,
-        sort_key_cols: args.sort_keys,
         iterator_config: args.iterator_config,
     };
 

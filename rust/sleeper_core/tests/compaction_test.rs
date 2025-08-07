@@ -18,7 +18,7 @@ mod compaction_helpers;
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
 use compaction_helpers::*;
-use sleeper_core::{CompactionInput, SleeperPartitionRegion, run_compaction};
+use sleeper_core::{CommonConfig, CompactionInput, SleeperPartitionRegion, run_compaction};
 use std::{collections::HashMap, sync::Arc};
 use tempfile::tempdir;
 use test_log::test;
@@ -35,10 +35,13 @@ async fn should_merge_two_files() -> Result<(), Error> {
     write_file_of_ints(&file_2, "key", vec![2, 4])?;
 
     let input = CompactionInput {
-        input_files: Vec::from([file_1, file_2]),
+        common: CommonConfig {
+            input_files: Vec::from([file_1, file_2]),
+            row_key_cols: row_key_cols(["key"]),
+            region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
+            ..Default::default()
+        },
         output_file: output.clone(),
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
         ..Default::default()
     };
 
@@ -64,10 +67,13 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     write_file_of_ints(&file_2, "key", vec![2, 3])?;
 
     let input = CompactionInput {
-        input_files: Vec::from([file_1, file_2]),
+        common: CommonConfig {
+            input_files: Vec::from([file_1, file_2]),
+            row_key_cols: row_key_cols(["key"]),
+            region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
+            ..Default::default()
+        },
         output_file: output.clone(),
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
         ..Default::default()
     };
 
@@ -93,10 +99,13 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     write_file_of_ints(&file_2, "key", vec![3, 4])?;
 
     let input = CompactionInput {
-        input_files: Vec::from([file_1, file_2]),
+        common: CommonConfig {
+            input_files: Vec::from([file_1, file_2]),
+            row_key_cols: row_key_cols(["key"]),
+            region: SleeperPartitionRegion::new(single_int_range("key", 2, 4)),
+            ..Default::default()
+        },
         output_file: output.clone(),
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 2, 4)),
         ..Default::default()
     };
 
@@ -128,13 +137,16 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
     write_file(&file_2, &data_2)?;
 
     let input = CompactionInput {
-        input_files: Vec::from([file_1, file_2]),
+        common: CommonConfig {
+            input_files: Vec::from([file_1, file_2]),
+            row_key_cols: row_key_cols(["key1", "key2"]),
+            region: SleeperPartitionRegion::new(HashMap::from([
+                region_entry("key1", int_range(2, 4)),
+                region_entry("key2", int_range(13, 23)),
+            ])),
+            ..Default::default()
+        },
         output_file: output.clone(),
-        row_key_cols: row_key_cols(["key1", "key2"]),
-        region: SleeperPartitionRegion::new(HashMap::from([
-            region_entry("key1", int_range(2, 4)),
-            region_entry("key2", int_range(13, 23)),
-        ])),
         ..Default::default()
     };
 
@@ -169,13 +181,16 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
     write_file(&file_2, &data_2)?;
 
     let input = CompactionInput {
-        input_files: Vec::from([file_1, file_2]),
+        common: CommonConfig {
+            input_files: Vec::from([file_1, file_2]),
+            row_key_cols: row_key_cols(["key2"]),
+            region: SleeperPartitionRegion::new(HashMap::from([region_entry(
+                "key2",
+                int_range(11, 25),
+            )])),
+            ..Default::default()
+        },
         output_file: output.clone(),
-        row_key_cols: row_key_cols(["key2"]),
-        region: SleeperPartitionRegion::new(HashMap::from([region_entry(
-            "key2",
-            int_range(11, 25),
-        )])),
         ..Default::default()
     };
 

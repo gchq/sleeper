@@ -75,7 +75,7 @@ pub async fn compact(
         input_paths.iter().map(Url::as_str).collect::<Vec<_>>()
     );
     info!("DataFusion output file {}", output_path.as_str());
-    info!("Compaction partition region {:?}", input_data.region);
+    info!("Compaction partition region {:?}", input_data.common.region);
 
     let total_input_size = retrieve_input_size(input_paths, store_factory)
         .await
@@ -106,7 +106,7 @@ pub async fn compact(
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
 
     // If we have a partition region, apply it first
-    if let Some(expr) = Into::<Option<Expr>>::into(&input_data.region) {
+    if let Some(expr) = Into::<Option<Expr>>::into(&input_data.common.region) {
         frame = frame.filter(expr)?;
     }
 
@@ -115,11 +115,16 @@ pub async fn compact(
     frame = apply_general_row_filters(frame, filter_agg_conf.as_ref())?;
 
     // Create the sketch function
-    let sketch_func = create_sketch_udf(&input_data.row_key_cols, frame.schema());
+    let sketch_func = create_sketch_udf(&input_data.common.row_key_cols, frame.schema());
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
-    let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
+    let row_key_exprs = input_data
+        .common
+        .row_key_cols
+        .iter()
+        .map(col)
+        .collect::<Vec<_>>();
 
     // Iterate through column names, mapping each into an `Expr` of the name UNLESS
     // we find the first row key column which should be mapped to the sketch function
@@ -127,7 +132,7 @@ pub async fn compact(
         .iter()
         .map(|col_name| {
             // Have we found the first row key column?
-            if *col_name == input_data.row_key_cols[0] {
+            if *col_name == input_data.common.row_key_cols[0] {
                 // Map to the sketch function
                 sketch_func
                     // Sketch function needs to be called with each row key column
@@ -141,7 +146,11 @@ pub async fn compact(
 
     // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
     frame = frame.sort(sort_order)?;
-    frame = apply_aggregations(&input_data.row_key_cols, frame, filter_agg_conf.as_ref())?;
+    frame = apply_aggregations(
+        &input_data.common.row_key_cols,
+        frame,
+        filter_agg_conf.as_ref(),
+    )?;
     frame = frame.select(col_names_expr)?;
 
     // Figure out which columns should be dictionary encoded
@@ -153,9 +162,10 @@ pub async fn compact(
 
     // Create column list of row keys and sort key cols
     let sorting_columns = input_data
+        .common
         .row_key_cols
         .iter()
-        .chain(input_data.sort_key_cols.iter())
+        .chain(input_data.common.sort_key_cols.iter())
         .map(String::as_str)
         .collect::<Vec<_>>();
 
@@ -352,9 +362,10 @@ async fn collect_stats(
 ///
 fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
     input_data
+        .common
         .row_key_cols
         .iter()
-        .chain(input_data.sort_key_cols.iter())
+        .chain(input_data.common.sort_key_cols.iter())
         .map(|s| col(s).sort(true, false))
         .collect::<Vec<_>>()
 }

@@ -68,12 +68,12 @@ impl ParquetWriterConfigurer<'_> {
                 .column_specific_options
                 .entry(col_name.clone())
                 .or_default();
-            let dict_encode = (self.parquet_options.dict_enc_row_keys && input_data.row_key_cols.contains(&col_name))
-            || (self.parquet_options.dict_enc_sort_keys && input_data.sort_key_cols.contains(&col_name))
+            let dict_encode = (self.parquet_options.dict_enc_row_keys && input_data.common.row_key_cols.contains(&col_name))
+            || (self.parquet_options.dict_enc_sort_keys && input_data.common.sort_key_cols.contains(&col_name))
             // Check value columns
             || (self.parquet_options.dict_enc_values
-                && !input_data.row_key_cols.contains(&col_name)
-                && !input_data.sort_key_cols.contains(&col_name));
+                && !input_data.common.row_key_cols.contains(&col_name)
+                && !input_data.common.sort_key_cols.contains(&col_name));
             col_opts.dictionary_enabled = Some(dict_encode);
         }
         opts
@@ -123,7 +123,7 @@ pub fn apply_sleeper_config(
     // sure the target partitions as at least as big as number of input files.
     cfg.options_mut().execution.target_partitions = std::cmp::max(
         cfg.options().execution.target_partitions,
-        input_data.input_files.len(),
+        input_data.common.input_files.len(),
     );
     // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
     cfg.options_mut().execution.parquet.enable_page_index = false;

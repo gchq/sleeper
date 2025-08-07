@@ -19,7 +19,7 @@ use color_eyre::eyre::eyre;
 use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
 use sleeper_core::{
-    AwsConfig, ColRange, CompactionInput, PartitionBound, SleeperParquetOptions,
+    AwsConfig, ColRange, CommonConfig, CompactionInput, PartitionBound, SleeperParquetOptions,
     SleeperPartitionRegion, run_compaction,
 };
 use std::{
@@ -153,21 +153,23 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
         };
 
         Ok(Self {
-            aws_config: unpack_aws_config(params)?,
-            input_files: unpack_string_array(params.input_files, params.input_files_len)?
-                .into_iter()
-                .map(Url::parse)
-                .collect::<Result<Vec<_>, _>>()?,
+            common: CommonConfig {
+                aws_config: unpack_aws_config(params)?,
+                input_files: unpack_string_array(params.input_files, params.input_files_len)?
+                    .into_iter()
+                    .map(Url::parse)
+                    .collect::<Result<Vec<_>, _>>()?,
+                row_key_cols,
+                sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
+                    .into_iter()
+                    .map(String::from)
+                    .collect(),
+                region,
+            },
             output_file: unsafe { CStr::from_ptr(params.output_file) }
                 .to_str()
                 .map(Url::parse)??,
-            row_key_cols,
-            sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
-                .into_iter()
-                .map(String::from)
-                .collect(),
             parquet_options,
-            region,
             iterator_config,
         })
     }
