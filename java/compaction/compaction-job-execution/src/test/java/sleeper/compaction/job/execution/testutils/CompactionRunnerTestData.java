@@ -25,7 +25,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.LocalFileSystemSketchesStore;
@@ -168,7 +168,8 @@ public class CompactionRunnerTestData {
 
     public static List<Row> readDataFile(Schema schema, String filename) throws IOException {
         List<Row> results = new ArrayList<>();
-        try (ParquetReaderIterator reader = new ParquetReaderIterator(new ParquetRowReader(new Path(filename), schema))) {
+        try (ParquetReaderIterator reader = new ParquetReaderIterator(
+                ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build())) {
             while (reader.hasNext()) {
                 results.add(new Row(reader.next()));
             }
