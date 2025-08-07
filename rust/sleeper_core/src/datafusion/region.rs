@@ -22,31 +22,48 @@ use datafusion::{
 use log::error;
 use std::collections::HashMap;
 
+/// Represents a Sleeper partition region.
+///
+/// A [`Region`] is multi-dimension key range over row-key columns in Sleeper.
+/// If a table has only on row-key column then a region is a single row range. A region in a
+/// table with two row-key columns would be a rectangle, etc.
+#[derive(Debug, Default)]
+pub struct SleeperPartitionRegion<'a> {
+    pub region: HashMap<String, ColRange<'a>>,
+}
+
+impl<'a> SleeperPartitionRegion<'a> {
+    pub fn new(region: HashMap<String, ColRange<'a>>) -> Self {
+        Self { region }
+    }
+}
+
 /// Create the `DataFusion` filtering expression from a Sleeper region.
 ///
 /// For each column in the row keys, we look up the partition range for that
 /// column and create a expression tree that combines all the various filtering conditions.
-///
-pub fn region_filter(region: &HashMap<String, ColRange>) -> Option<Expr> {
-    let mut col_expr: Option<Expr> = None;
-    for (name, range) in region {
-        let lower_expr = lower_bound_expr(range, name);
-        let upper_expr = upper_bound_expr(range, name);
-        let expr = match (lower_expr, upper_expr) {
-            (Some(l), Some(u)) => Some(l.and(u)),
-            (Some(l), None) => Some(l),
-            (None, Some(u)) => Some(u),
-            (None, None) => None,
-        };
-        // Combine this column filter with any previous column filter
-        if let Some(e) = expr {
-            col_expr = match col_expr {
-                Some(original) => Some(original.and(e)),
-                None => Some(e),
+impl From<&SleeperPartitionRegion<'_>> for Option<Expr> {
+    fn from(value: &SleeperPartitionRegion<'_>) -> Self {
+        let mut col_expr: Option<Expr> = None;
+        for (name, range) in &value.region {
+            let lower_expr = lower_bound_expr(range, name);
+            let upper_expr = upper_bound_expr(range, name);
+            let expr = match (lower_expr, upper_expr) {
+                (Some(l), Some(u)) => Some(l.and(u)),
+                (Some(l), None) => Some(l),
+                (None, Some(u)) => Some(u),
+                (None, None) => None,
+            };
+            // Combine this column filter with any previous column filter
+            if let Some(e) = expr {
+                col_expr = match col_expr {
+                    Some(original) => Some(original.and(e)),
+                    None => Some(e),
+                }
             }
         }
+        col_expr
     }
-    col_expr
 }
 
 /// Calculate the upper bound expression on a given [`ColRange`].

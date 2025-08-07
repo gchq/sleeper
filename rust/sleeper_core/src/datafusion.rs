@@ -20,9 +20,8 @@
 use crate::{
     CompactionInput, CompactionResult,
     datafusion::{
-        config::{ParquetWriterConfigurer, apply_sleeper_config},
+        config::apply_sleeper_config,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
-        region::region_filter,
         sketch::{create_sketch_udf, output_sketch},
         util::{calculate_upload_size, check_for_sort_exec, explain_plan, register_store},
     },
@@ -56,6 +55,9 @@ mod region;
 pub mod sketch;
 mod sketch_udf;
 mod util;
+
+pub use config::ParquetWriterConfigurer;
+pub use region::SleeperPartitionRegion;
 
 /// Starts a Sleeper compaction.
 ///
@@ -104,7 +106,7 @@ pub async fn compact(
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
 
     // If we have a partition region, apply it first
-    if let Some(expr) = region_filter(&input_data.region) {
+    if let Some(expr) = Into::<Option<Expr>>::into(&input_data.region) {
         frame = frame.filter(expr)?;
     }
 

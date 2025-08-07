@@ -20,7 +20,8 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
-    ColRange, CompactionInput, PartitionBound, SleeperParquetOptions, run_compaction,
+    ColRange, CompactionInput, PartitionBound, SleeperParquetOptions, SleeperPartitionRegion,
+    run_compaction,
 };
 use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
@@ -153,7 +154,7 @@ async fn main() -> color_eyre::Result<()> {
         input_files: input_urls,
         output_file: output_url,
         parquet_options,
-        region: map,
+        region: SleeperPartitionRegion::new(map),
         row_key_cols: args.row_keys,
         sort_key_cols: args.sort_keys,
         iterator_config: args.iterator_config,

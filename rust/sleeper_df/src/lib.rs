@@ -19,7 +19,8 @@ use color_eyre::eyre::eyre;
 use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
 use sleeper_core::{
-    AwsConfig, ColRange, CompactionInput, PartitionBound, SleeperParquetOptions, run_compaction,
+    AwsConfig, ColRange, CompactionInput, PartitionBound, SleeperParquetOptions,
+    SleeperPartitionRegion, run_compaction,
 };
 use std::{
     borrow::Borrow,
@@ -209,7 +210,7 @@ fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<
 fn compute_region<'a, T: Borrow<str>>(
     params: &'a FFICompactionParams,
     row_key_cols: &[T],
-) -> color_eyre::Result<HashMap<String, ColRange<'a>>> {
+) -> color_eyre::Result<SleeperPartitionRegion<'a>> {
     let region_mins_inclusive = unpack_primitive_array(
         params.region_mins_inclusive,
         params.region_mins_inclusive_len,
@@ -244,7 +245,7 @@ fn compute_region<'a, T: Borrow<str>>(
             },
         );
     }
-    Ok(map)
+    Ok(SleeperPartitionRegion::new(map))
 }
 
 /// Contains all output data from a compaction operation.

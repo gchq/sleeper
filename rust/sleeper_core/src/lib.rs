@@ -25,10 +25,12 @@ use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail, eyre};
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
-use std::collections::HashMap;
 use url::Url;
 
-pub use datafusion::sketch::{DataSketchVariant, deserialise_sketches};
+pub use datafusion::{
+    SleeperPartitionRegion,
+    sketch::{DataSketchVariant, deserialise_sketches},
+};
 
 mod datafusion;
 
@@ -93,7 +95,7 @@ pub struct CompactionInput<'a> {
     pub sort_key_cols: Vec<String>,
     pub parquet_options: SleeperParquetOptions,
     // Ranges for each column to filter input files
-    pub region: HashMap<String, ColRange<'a>>,
+    pub region: SleeperPartitionRegion<'a>,
     // Iterator config. Filters, aggregators, etc.
     pub iterator_config: Option<String>,
 }
@@ -107,7 +109,7 @@ impl Default for CompactionInput<'_> {
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
             parquet_options: SleeperParquetOptions::default(),
-            region: HashMap::default(),
+            region: SleeperPartitionRegion::default(),
             iterator_config: Option::default(),
         }
     }
@@ -191,11 +193,11 @@ pub async fn run_compaction(input_data: &CompactionInput<'_>) -> Result<Compacti
             let _ = output_file_path.set_scheme("s3");
         }
 
-        if input_data.row_key_cols.len() != input_data.region.len() {
+        if input_data.row_key_cols.len() != input_data.region.region.len() {
             bail!(
                 "Length mismatch between row keys {} and partition region bounds {}",
                 input_data.row_key_cols.len(),
-                input_data.region.len()
+                input_data.region.region.len()
             );
         }
 
