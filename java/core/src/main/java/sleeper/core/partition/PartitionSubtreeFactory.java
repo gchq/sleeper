@@ -29,11 +29,11 @@ public class PartitionSubtreeFactory {
     }
 
     /**
-     * Generates a subtree from a given tree with a target leaf count. Actual result may exceed the count requested
-     * as presently will go to a depth until the count is matched or exceeded.
+     * Generates a subtree from a given tree with a target leaf count.
      *
      * @param  originalTree       source from which the new sub tree is to be created
      * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
+     * @param  bias               determines when creating a subtree which side of nodes to focus on first
      * @return                    newly generated sub tree
      */
     public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount, PartitionTreeBias bias) throws PartitionTreeException {

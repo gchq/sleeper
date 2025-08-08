@@ -32,40 +32,40 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionComparatorTest extends PartitionTreeTestBase {
 
-    List<Partition> level3_leftBias = List.of(
+    List<Partition> leftBiasLevel3 = List.of(
             l3LeftOfL2LL, l3RightOfL2LL, l3LeftOfL2LR, l3RightOfL2LR,
             l3LeftOfL2RL, l3RightOfL2RL, l3LeftOfL2RR, l3RightOfL2RR);
 
-    List<Partition> level3_rightBias = List.of(
+    List<Partition> rightBiasLevel3 = List.of(
             l3RightOfL2RR, l3LeftOfL2RR, l3RightOfL2RL, l3LeftOfL2RL,
             l3RightOfL2LR, l3LeftOfL2LR, l3RightOfL2LL, l3LeftOfL2LL);
 
     @Test
     void shouldVerifyLeftBiasedOrderingForLongs() {
         // Given
-        List<Partition> randomList = new ArrayList<Partition>(level3_rightBias);
+        List<Partition> randomList = new ArrayList<Partition>(rightBiasLevel3);
         Collections.shuffle(randomList);
 
         // When
-        assertThat(randomList).isNotEqualTo(level3_leftBias);
+        assertThat(randomList).isNotEqualTo(leftBiasLevel3);
         randomList.sort(new PartitionComparator());
 
         // Then
-        assertThat(randomList).isEqualTo(level3_leftBias);
+        assertThat(randomList).isEqualTo(leftBiasLevel3);
     }
 
     @Test
     void shouldVerifyRightBiasedOrderingForLongs() {
         // Given
-        List<Partition> randomList = new ArrayList<Partition>(level3_leftBias);
+        List<Partition> randomList = new ArrayList<Partition>(leftBiasLevel3);
         Collections.shuffle(randomList);
 
         // When
-        assertThat(randomList).isNotEqualTo(level3_rightBias);
+        assertThat(randomList).isNotEqualTo(rightBiasLevel3);
         randomList.sort(new PartitionComparator().reversed());
 
         // Then
-        assertThat(randomList).isEqualTo(level3_rightBias);
+        assertThat(randomList).isEqualTo(rightBiasLevel3);
     }
 
     @Test

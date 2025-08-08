@@ -30,16 +30,16 @@ public class PartitionComparator implements Comparator<Partition> {
         Object minA = partition1.getRegion().getRanges().get(0).getMin();
         Object minB = partition2.getRegion().getRanges().get(0).getMin();
 
-        if ((minA instanceof Long) && (minB instanceof Long)) {
-            return (((Long) minA).compareTo((Long) minB));
+        if (minA instanceof Long && minB instanceof Long) {
+            return ((Long) minA).compareTo((Long) minB);
         }
 
-        if ((minA instanceof Integer) && (minB instanceof Integer)) {
-            return (((Integer) minA).compareTo((Integer) minB));
+        if (minA instanceof Integer && minB instanceof Integer) {
+            return ((Integer) minA).compareTo((Integer) minB);
         }
 
-        if ((minA instanceof String) && (minB instanceof String)) {
-            return (((String) minA).compareTo((String) minB));
+        if (minA instanceof String && minB instanceof String) {
+            return ((String) minA).compareTo((String) minB);
         }
 
         //Need to handle byte[], string and event where both min and max are not the same object types
