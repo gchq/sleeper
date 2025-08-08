@@ -153,6 +153,7 @@ async fn main() -> color_eyre::Result<()> {
         common: CommonConfig {
             aws_config: None,
             input_files: input_urls,
+            input_files_sorted: true,
             row_key_cols: args.row_keys,
             sort_key_cols: args.sort_keys,
             region: SleeperPartitionRegion::new(map),
@@ -160,8 +161,8 @@ async fn main() -> color_eyre::Result<()> {
                 output_file,
                 opts: parquet_options,
             },
+            iterator_config: args.iterator_config,
         },
-        iterator_config: args.iterator_config,
     };
 
     let result = run_compaction(&details).await;

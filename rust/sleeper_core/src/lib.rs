@@ -95,6 +95,8 @@ pub struct CommonConfig<'a> {
     pub aws_config: Option<AwsConfig>,
     /// Input file URLs
     pub input_files: Vec<Url>,
+    /// Are input files individually sorted?
+    pub input_files_sorted: bool,
     /// Names of row-key columns
     pub row_key_cols: Vec<String>,
     /// Names of sort-key columns
@@ -103,6 +105,8 @@ pub struct CommonConfig<'a> {
     pub region: SleeperPartitionRegion<'a>,
     /// How output from operation should be returned
     pub output: OperationOutput,
+    /// Iterator config. Filters, aggregators, etc.
+    pub iterator_config: Option<String>,
 }
 
 impl CommonConfig<'_> {
@@ -183,8 +187,6 @@ pub enum OperationOutput {
 pub struct SleeperCompactionConfig<'a> {
     /// Common configuration
     pub common: CommonConfig<'a>,
-    /// Iterator config. Filters, aggregators, etc.
-    pub iterator_config: Option<String>,
 }
 
 impl SleeperCompactionConfig<'_> {
@@ -254,6 +256,7 @@ pub struct CompactionResult {
 /// # use crate::sleeper_core::{run_compaction, SleeperCompactionConfig, PartitionBound, ColRange,
 /// # OperationOutput, SleeperParquetOptions};
 /// let mut compaction_input = SleeperCompactionConfig::default();
+/// compaction_input.common.input_files_sorted = true;
 /// compaction_input.common.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
 /// compaction_input.common.output = OperationOutput::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
 /// compaction_input.common.row_key_cols = vec!["key".into()];

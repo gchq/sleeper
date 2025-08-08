@@ -22,7 +22,7 @@ use datafusion::{
     config::ExecutionOptions,
     error::DataFusionError,
     execution::SessionState,
-    logical_expr::{LogicalPlan, SortExpr, col},
+    logical_expr::LogicalPlan,
     physical_plan::{ExecutionPlan, sorts::sort::SortExec},
     prelude::{DataFrame, SessionContext},
 };
@@ -31,7 +31,6 @@ use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
 use url::Url;
 
-use crate::CommonConfig;
 
 /// Write explanation of logical query plan to log output.
 ///
@@ -139,17 +138,4 @@ pub async fn retrieve_input_size(
         total_input += store.head(&p.into()).await?.size;
     }
     Ok(total_input)
-}
-
-/// Creates the sort order for a given schema.
-///
-/// This is a list of the row key columns followed by the sort key columns.
-///
-pub fn create_sort_order(config: &CommonConfig) -> Vec<SortExpr> {
-    config
-        .row_key_cols
-        .iter()
-        .chain(config.sort_key_cols.iter())
-        .map(|s| col(s).sort(true, false))
-        .collect::<Vec<_>>()
 }

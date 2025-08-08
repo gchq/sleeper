@@ -43,6 +43,14 @@ pub struct FilterAggregationConfig {
     pub aggregation: Option<Vec<Aggregate>>,
 }
 
+impl FilterAggregationConfig {
+    /// Extract the filter configuration
+    #[must_use]
+    pub fn filter(&self) -> Option<&Filter> {
+        self.filter.as_ref()
+    }
+}
+
 /// Supported filters
 #[derive(Debug)]
 pub enum Filter {

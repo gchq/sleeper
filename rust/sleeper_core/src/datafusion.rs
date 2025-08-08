@@ -23,8 +23,8 @@ use crate::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         sketch::{create_sketch_udf, output_sketch},
         util::{
-            calculate_upload_size, check_for_sort_exec, create_sort_order, explain_plan,
-            register_store, retrieve_input_size,
+            calculate_upload_size, check_for_sort_exec, explain_plan, register_store,
+            retrieve_input_size,
         },
     },
 };
@@ -39,7 +39,7 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{LogicalPlanBuilder, expr::Sort},
+    logical_expr::{LogicalPlanBuilder, SortExpr},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
         accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
@@ -142,18 +142,73 @@ impl<'a> SleeperOperations<'a> {
     ///
     /// # Errors
     /// If reading or filtering fail, then an error occurs.
-    pub async fn create_partitioned_frame(
+    pub async fn create_initial_partitioned_read(
         &self,
         ctx: &SessionContext,
-        sort_order: &[Sort],
     ) -> Result<DataFrame, DataFusionError> {
-        let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.to_owned()]);
+        let po = if self.config.input_files_sorted {
+            let sort_order = self.create_sort_order();
+            info!("Row and sort key column order: {sort_order:?}");
+            ParquetReadOptions::default().file_sort_order(vec![sort_order.to_owned()])
+        } else {
+            warn!(
+                "Reading input files that are not individually sorted! Did you mean to set input_files_sorted to true instead?"
+            );
+            ParquetReadOptions::default()
+        };
+        // Read Parquet files and apply sort order
         let frame = ctx
             .read_parquet(self.config.input_files.clone(), po)
             .await?;
+        // Do we have partition bounds?
         Ok(
             if let Some(expr) = Into::<Option<Expr>>::into(&self.config.region) {
                 frame.filter(expr)?
+            } else {
+                frame
+            },
+        )
+    }
+
+    /// Creates the sort order for a given schema.
+    ///
+    /// This is a list of the row key columns followed by the sort key columns.
+    ///
+    pub fn create_sort_order(&self) -> Vec<SortExpr> {
+        self.config
+            .row_key_cols
+            .iter()
+            .chain(self.config.sort_key_cols.iter())
+            .map(|s| col(s).sort(true, false))
+            .collect::<Vec<_>>()
+    }
+
+    // Process the iterator configuration and create a filter and aggregation object from it.
+    //
+    // # Errors
+    // If there is an error in parsing the configuration string.
+    pub fn parse_iterator_config(
+        &self,
+    ) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
+        Ok(self
+            .config
+            .iterator_config
+            .as_ref()
+            .map(|s| FilterAggregationConfig::try_from(s.as_str()))
+            .transpose()?)
+    }
+
+    /// Apply any configured filters to the `DataFusion` operation if any are present.
+    fn apply_general_row_filters(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        Ok(
+            if let Some(filter) = self
+                .parse_iterator_config()?
+                .as_ref()
+                .map(FilterAggregationConfig::filter)
+                .flatten()
+            {
+                info!("Applying Sleeper filter iterator: {filter:?}");
+                frame.filter(filter.create_filter_expr()?)?
             } else {
                 frame
             },
@@ -195,16 +250,11 @@ pub async fn compact(
     let sf = configurer.apply_parquet_config(sf);
     let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
 
-    // Sort on row key columns then sort key columns (nulls last)
-    let sort_order = create_sort_order(&input_data.common);
-    info!("Row key and sort key column order {sort_order:?}");
-
     // Create initial DataFrame from input files
-    let mut frame = ops.create_partitioned_frame(&ctx, &sort_order).await?;
+    let frame = ops.create_initial_partitioned_read(&ctx).await?;
 
     // Parse Sleeper iterator configuration and apply
-    let filter_agg_conf = parse_iterator_config(input_data.iterator_config.as_ref())?;
-    frame = apply_general_row_filters(frame, filter_agg_conf.as_ref())?;
+    let frame = ops.apply_general_row_filters(frame)?;
 
     // Create the sketch function
     let sketch_func = create_sketch_udf(&input_data.common.row_key_cols, frame.schema());
@@ -237,13 +287,15 @@ pub async fn compact(
         .collect::<Vec<_>>();
 
     // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
-    frame = frame.sort(sort_order)?;
-    frame = apply_aggregations(
+    let sort_order = ops.create_sort_order();
+    let frame = frame.sort(sort_order)?;
+    let filter_agg_conf = ops.parse_iterator_config()?;
+    let frame = apply_aggregations(
         &input_data.common.row_key_cols,
         frame,
         filter_agg_conf.as_ref(),
     )?;
-    frame = frame.select(col_names_expr)?;
+    let frame = frame.select(col_names_expr)?;
 
     // Figure out which columns should be dictionary encoded
     let pqo = configurer.apply_dictionary_encoding(
@@ -282,26 +334,6 @@ pub async fn compact(
     .await?;
 
     Ok(CompactionResult::from(&stats))
-}
-
-/// Apply any configured filters to the `DataFusion` operation if any are present.
-fn apply_general_row_filters(
-    frame: DataFrame,
-    filter_agg_conf: Option<&FilterAggregationConfig>,
-) -> Result<DataFrame, DataFusionError> {
-    Ok(
-        if let Some(FilterAggregationConfig {
-            agg_cols: _,
-            filter: Some(f),
-            aggregation: _,
-        }) = filter_agg_conf
-        {
-            info!("Applying Sleeper filter iterator: {f:?}");
-            frame.filter(f.create_filter_expr()?)?
-        } else {
-            frame
-        },
-    )
 }
 
 /// If any are present, apply Sleeper aggregations to this `DataFusion` plan.
@@ -345,19 +377,6 @@ fn apply_aggregations(
             frame
         },
     )
-}
-
-// Process the iterator configuration and create a filter and aggregation object from it.
-//
-// # Errors
-// If there is an error in parsing the configuration string.
-fn parse_iterator_config(
-    iterator_config: Option<&String>,
-) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
-    let filter_agg_conf = iterator_config
-        .map(|s| FilterAggregationConfig::try_from(s.as_str()))
-        .transpose()?;
-    Ok(filter_agg_conf)
 }
 
 /// Write the frame out to the output path and collect statistics.

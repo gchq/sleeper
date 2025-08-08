@@ -161,6 +161,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for SleeperCompactionConfig<'a> {
                     .into_iter()
                     .map(Url::parse)
                     .collect::<Result<Vec<_>, _>>()?,
+                input_files_sorted: true,
                 row_key_cols,
                 sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
                     .into_iter()
@@ -173,8 +174,8 @@ impl<'a> TryFrom<&'a FFICompactionParams> for SleeperCompactionConfig<'a> {
                         .map(Url::parse)??,
                     opts,
                 },
+                iterator_config,
             },
-            iterator_config,
         })
     }
 }

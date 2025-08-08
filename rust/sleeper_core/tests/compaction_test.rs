@@ -40,6 +40,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     let input = SleeperCompactionConfig {
         common: CommonConfig {
             input_files: Vec::from([file_1, file_2]),
+            input_files_sorted: true,
             row_key_cols: row_key_cols(["key"]),
             region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
             output: OperationOutput::File {
@@ -75,6 +76,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     let input = SleeperCompactionConfig {
         common: CommonConfig {
             input_files: Vec::from([file_1, file_2]),
+            input_files_sorted: true,
             row_key_cols: row_key_cols(["key"]),
             region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
             output: OperationOutput::File {
@@ -110,6 +112,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     let input = SleeperCompactionConfig {
         common: CommonConfig {
             input_files: Vec::from([file_1, file_2]),
+            input_files_sorted: true,
             row_key_cols: row_key_cols(["key"]),
             region: SleeperPartitionRegion::new(single_int_range("key", 2, 4)),
             output: OperationOutput::File {
@@ -151,6 +154,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
     let input = SleeperCompactionConfig {
         common: CommonConfig {
             input_files: Vec::from([file_1, file_2]),
+            input_files_sorted: true,
             row_key_cols: row_key_cols(["key1", "key2"]),
             region: SleeperPartitionRegion::new(HashMap::from([
                 region_entry("key1", int_range(2, 4)),
@@ -198,6 +202,7 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
     let input = SleeperCompactionConfig {
         common: CommonConfig {
             input_files: Vec::from([file_1, file_2]),
+            input_files_sorted: true,
             row_key_cols: row_key_cols(["key2"]),
             region: SleeperPartitionRegion::new(HashMap::from([region_entry(
                 "key2",
