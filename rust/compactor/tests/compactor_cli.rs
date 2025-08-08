@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 use assert_cmd::prelude::*;
 use color_eyre::eyre::Result;
 use predicates::prelude::*; // Used for writing assertions

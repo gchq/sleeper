@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [package]
-name = "compactor"
-description = "Binary crate for running the data compactor from the command line."
-keywords = ["sleeper", "compaction"]
+name = "objectstore_ext"
+description = "ObjectStore extensions and wrappers for Sleeper."
+keywords = ["sleeper"]
 categories = ["science"]
 version = { workspace = true }
 edition = { workspace = true }
@@ -25,17 +25,23 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
+aws-config = { workspace = true }
+aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
+async-trait = { workspace = true }
+bytes = { workspace = true }
 chrono = { workspace = true }
-clap = { workspace = true, features = ["derive"] }
 color-eyre = { workspace = true }
-sleeper_core = { path = "../sleeper_core" }
-env_logger = { workspace = true }
-human-panic = { workspace = true }
-log = { workspace = true, features = ["release_max_level_debug"] }
+futures = { workspace = true }
+log = { workspace = true }
 num-format = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
+object_store = { workspace = true, features = [ "aws" ] }
+thiserror = { workspace = true }
 url = { workspace = true }
 
 [dev-dependencies]
-assert_cmd = { workspace = true }
-predicates = { workspace = true }
+object_store = { workspace = true, features = ["integration"] }
+tempfile = { workspace = true }
+test-log = { workspace = true }
+testing_logger = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-test = { workspace = true }
