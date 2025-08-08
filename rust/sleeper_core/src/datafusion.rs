@@ -38,7 +38,9 @@ use datafusion::{
     config::TableParquetOptions,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
-    execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
+    execution::{
+        TaskContext, config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
+    },
     logical_expr::{LogicalPlanBuilder, SortExpr},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
@@ -302,21 +304,8 @@ pub async fn compact(
     let sf = configurer.apply_parquet_config(sf);
     let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
 
-    // Create initial DataFrame from input files
-    let frame = ops.create_initial_partitioned_read(&ctx).await?;
-
-    // Apply Sleeper filter configuration if present
-    let frame = ops.apply_user_filters(frame)?;
-
-    // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
-    let frame = ops.apply_general_sort(frame)?;
-
-    // Apply Sleeper aggregation configuration if present
-    let frame = ops.apply_aggregations(frame)?;
-
-    // Ensure generation of quantile sketches
-    let sketcher = ops.create_sketcher(frame.schema());
-    let frame = sketcher.apply_sketch(frame)?;
+    // Make compaction DataFrame
+    let (sketcher, frame) = build_compaction_dataframe(&ops, &ctx).await?;
 
     // Figure out which columns should be dictionary encoded
     let pqo = configurer.apply_dictionary_encoding(
@@ -364,22 +353,6 @@ async fn collect_stats(
     sorting_columns: &[&str],
     pqo: TableParquetOptions,
 ) -> Result<RowCounts, DataFusionError> {
-    // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
-    let task_ctx = frame.task_ctx();
-    let plan_schema = frame.schema().as_arrow();
-    // Convert list of columns into physical sorting expressions
-    let ordering = LexOrdering::new(
-        sorting_columns
-            .iter()
-            .map(|col_name| {
-                Ok(PhysicalSortExpr::new(
-                    Arc::new(Column::new_with_schema(col_name, plan_schema)?),
-                    SortOptions::new(false, false),
-                ))
-            })
-            .collect::<Result<Vec<_>, DataFusionError>>()?,
-    );
-
     let (session_state, logical_plan) = frame.into_parts();
     let logical_plan = LogicalPlanBuilder::copy_to(
         logical_plan,
@@ -395,6 +368,20 @@ async fn collect_stats(
 
     // Optimise plan and generate physical plan
     let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
+
+    let plan_schema = frame.schema().as_arrow();
+    // Convert list of columns into physical sorting expressions
+    let ordering = LexOrdering::new(
+        sorting_columns
+            .iter()
+            .map(|col_name| {
+                Ok(PhysicalSortExpr::new(
+                    Arc::new(Column::new_with_schema(col_name, plan_schema)?),
+                    SortOptions::new(false, false),
+                ))
+            })
+            .collect::<Result<Vec<_>, DataFusionError>>()?,
+    );
 
     // Modify upper most CoalescePartitionsExec into a SortPreservingExec to avoid
     // sorting bug where partitions are re-merged out of order
@@ -422,9 +409,30 @@ async fn collect_stats(
     // Issue <https://github.com/gchq/sleeper/issues/5248>
     check_for_sort_exec(&new_plan)?;
 
-    let _ = collect(new_plan.clone(), Arc::new(task_ctx)).await?;
+    let _ = collect(
+        new_plan.clone(),
+        Arc::new(TaskContext::from(&session_state)),
+    )
+    .await?;
     let mut stats = RowCounts::new(input_paths);
     accept(new_plan.as_ref(), &mut stats)?;
     stats.log_metrics();
     Ok(stats)
+}
+
+/// Creates the dataframe for a compaction.
+///
+/// This applies necessary filtering, sorting and sketch creation
+/// steps to the plan.
+async fn build_compaction_dataframe<'a>(
+    ops: &'a SleeperOperations<'a>,
+    ctx: &'a SessionContext,
+) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
+    let mut frame = ops.create_initial_partitioned_read(ctx).await?;
+    frame = ops.apply_user_filters(frame)?;
+    frame = ops.apply_general_sort(frame)?;
+    frame = ops.apply_aggregations(frame)?;
+    let sketcher = ops.create_sketcher(frame.schema());
+    frame = sketcher.apply_sketch(frame)?;
+    Ok((sketcher, frame))
 }
