@@ -22,17 +22,18 @@ use std::fmt::Formatter;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#[cfg(doc)]
+use arrow::record_batch::RecordBatch;
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail, eyre};
-use object_store::aws::AmazonS3Builder;
-use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
-use url::Url;
-
 pub use datafusion::{
     SleeperPartitionRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
 };
+use object_store::aws::AmazonS3Builder;
+use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
+use url::Url;
 
 mod datafusion;
 
@@ -189,7 +190,7 @@ pub struct SleeperCompactionConfig<'a> {
 impl SleeperCompactionConfig<'_> {
     /// Convenience function to return region.
     #[must_use]
-    pub fn region(&self) -> &SleeperPartitionRegion {
+    pub fn region(&self) -> &SleeperPartitionRegion<'_> {
         &self.common.region
     }
 
