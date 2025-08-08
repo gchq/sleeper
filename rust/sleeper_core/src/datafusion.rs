@@ -32,14 +32,14 @@ use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
 use datafusion::{
     common::{
-        plan_err,
+        DFSchema, plan_err,
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     },
     config::TableParquetOptions,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{LogicalPlanBuilder, SortExpr},
+    logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
         accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
@@ -266,6 +266,42 @@ impl<'a> SleeperOperations<'a> {
             },
         )
     }
+
+    /// Creates a Apache data sketch quantile sketch for the given frame.
+    pub fn create_sketch_udf(&self, schema: &DFSchema) -> Arc<ScalarUDF> {
+        create_sketch_udf(&self.config.row_key_cols, schema)
+    }
+
+    pub fn enable_sketch_production(
+        &self,
+        frame: DataFrame,
+    ) -> Result<(Arc<ScalarUDF>, DataFrame), DataFusionError> {
+        // Create the sketch function
+        let sketch_func = self.create_sketch_udf(frame.schema());
+
+        // Extract all column names
+        let column_bind = frame.schema().columns();
+        let col_names = column_bind
+            .iter()
+            .map(datafusion::prelude::Column::name)
+            .collect::<Vec<_>>();
+
+        let row_key_exprs = self.config.row_key_cols.iter().map(col).collect::<Vec<_>>();
+
+        // Iterate through column names, mapping each into an `Expr`
+        let mut col_names_expr = Vec::new();
+        for col_name in col_names {
+            // Have we found the first row key column?
+            let expr = if self.config.row_key_cols[0] == *col_name {
+                // Sketch function needs to be called with each row key column
+                sketch_func.call(row_key_exprs.clone()).alias(col_name)
+            } else {
+                col(col_name)
+            };
+            col_names_expr.push(expr);
+        }
+        Ok((sketch_func, frame.select(col_names_expr)?))
+    }
 }
 
 impl std::fmt::Display for SleeperOperations<'_> {
@@ -316,37 +352,8 @@ pub async fn compact(
     // Apply Sleeper aggregation configuration if present
     let frame = ops.apply_aggregations(frame)?;
 
-    // Create the sketch function
-    let sketch_func = create_sketch_udf(&input_data.common.row_key_cols, frame.schema());
-
-    // Extract all column names
-    let col_names = frame.schema().clone().strip_qualifiers().field_names();
-    let row_key_exprs = input_data
-        .common
-        .row_key_cols
-        .iter()
-        .map(col)
-        .collect::<Vec<_>>();
-
-    // Iterate through column names, mapping each into an `Expr` of the name UNLESS
-    // we find the first row key column which should be mapped to the sketch function
-    let col_names_expr = col_names
-        .iter()
-        .map(|col_name| {
-            // Have we found the first row key column?
-            if *col_name == input_data.common.row_key_cols[0] {
-                // Map to the sketch function
-                sketch_func
-                    // Sketch function needs to be called with each row key column
-                    .call(row_key_exprs.clone())
-                    .alias(col_name)
-            } else {
-                col(col_name)
-            }
-        })
-        .collect::<Vec<_>>();
-
-    let frame = frame.select(col_names_expr)?;
+    // Ensure generation of quantile sketches
+    let (sketch_function, frame) = ops.enable_sketch_production(frame)?;
 
     // Figure out which columns should be dictionary encoded
     let pqo = configurer.apply_dictionary_encoding(
@@ -380,7 +387,7 @@ pub async fn compact(
         input_data
             .output_file()
             .map_err(|e| DataFusionError::External(e.into()))?,
-        &sketch_func,
+        &sketch_function,
     )
     .await?;
 
