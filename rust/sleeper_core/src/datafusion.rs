@@ -176,9 +176,7 @@ impl<'a> SleeperOperations<'a> {
     ///
     pub fn create_sort_order(&self) -> Vec<SortExpr> {
         self.config
-            .row_key_cols
-            .iter()
-            .chain(self.config.sort_key_cols.iter())
+            .sorting_columns_iter()
             .map(|s| col(s).sort(true, false))
             .collect::<Vec<_>>()
     }
@@ -243,13 +241,7 @@ impl<'a> SleeperOperations<'a> {
             {
                 info!("Applying Sleeper aggregations: {aggregations:?}");
                 // Grab row and sort key columns
-                let group_by_cols = self
-                    .config
-                    .row_key_cols
-                    .iter()
-                    .chain(&self.config.sort_key_cols)
-                    .map(String::as_str)
-                    .collect::<Vec<_>>();
+                let group_by_cols = self.config.sorting_columns();
 
                 // Check aggregations meet validity checks
                 validate_aggregations(&group_by_cols, frame.schema(), aggregations)?;
@@ -267,11 +259,17 @@ impl<'a> SleeperOperations<'a> {
         )
     }
 
-    /// Creates a Apache data sketch quantile sketch for the given frame.
-    pub fn create_sketch_udf(&self, schema: &DFSchema) -> Arc<ScalarUDF> {
-        create_sketch_udf(&self.config.row_key_cols, schema)
+    /// Create a sketching object to manage creation of quantile sketches.
+    #[must_use]
+    pub fn create_sketcher(&self) -> Sketcher {
+        Sketcher::new()
     }
 
+    /// Adds quantile sketch creation to the given frame.
+    ///
+    /// An extra SELECT stage is added to the frame's plan. The created sketch
+    /// function is also returned so sketches can be accessed after execution
+    /// of the frame's plan.
     pub fn enable_sketch_production(
         &self,
         frame: DataFrame,
@@ -363,13 +361,7 @@ pub async fn compact(
     );
 
     // Create column list of row keys and sort key cols
-    let sorting_columns = input_data
-        .common
-        .row_key_cols
-        .iter()
-        .chain(input_data.common.sort_key_cols.iter())
-        .map(String::as_str)
-        .collect::<Vec<_>>();
+    let sorting_columns = input_data.common.sorting_columns();
 
     // Write the frame out and collect stats
     let stats = collect_stats(

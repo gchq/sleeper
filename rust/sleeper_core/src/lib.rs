@@ -5,23 +5,21 @@
 //!
 //! We have an internal "details" module that encapsulates the internal workings. All the
 //! public API should be in this module.
-use std::fmt::Formatter;
-
 /*
- * Copyright 2022-2025 Crown Copyright
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2022-2025 Crown Copyright
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
 use aws_config::Region;
@@ -33,6 +31,7 @@ pub use datafusion::{
 };
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
+use std::fmt::Formatter;
 use url::Url;
 
 mod datafusion;
@@ -146,6 +145,19 @@ impl CommonConfig<'_> {
             );
         }
         Ok(())
+    }
+
+    /// Get iterator for row and sort key columns in order
+    pub fn sorting_columns_iter(&self) -> impl Iterator<Item = &str> {
+        self.row_key_cols
+            .iter()
+            .chain(&self.sort_key_cols)
+            .map(String::as_str)
+    }
+
+    /// List all roy and sort key columns in order
+    pub fn sorting_columns(&self) -> Vec<&str> {
+        self.sorting_columns_iter().collect::<Vec<_>>()
     }
 }
 

@@ -66,7 +66,7 @@ impl Debug for SketchUDF {
 impl SketchUDF {
     /// Create a new sketch function based on the schema of the row key fields.
     ///
-    pub fn new(schema: &DFSchema, row_keys: &[String]) -> Self {
+    pub fn new(schema: &DFSchema, row_keys: &[&str]) -> Self {
         Self {
             signature: Signature::exact(get_row_key_types(schema, row_keys), Volatility::Immutable),
             invoke_count: Mutex::default(),
@@ -87,7 +87,7 @@ impl SketchUDF {
 ///
 /// # Panics
 /// If a row key field can't be found in the schema.
-fn get_row_key_types(schema: &DFSchema, row_keys: &[String]) -> Vec<DataType> {
+fn get_row_key_types(schema: &DFSchema, row_keys: &[&str]) -> Vec<DataType> {
     row_keys
         .iter()
         .map(|name| {
@@ -108,10 +108,7 @@ fn get_row_key_types(schema: &DFSchema, row_keys: &[String]) -> Vec<DataType> {
 /// # Panics
 /// If a row key field can't be found in the schema.
 ///
-fn make_sketches_for_schema(
-    schema: &DFSchema,
-    row_key_fields: &[String],
-) -> Vec<DataSketchVariant> {
+fn make_sketches_for_schema(schema: &DFSchema, row_key_fields: &[&str]) -> Vec<DataSketchVariant> {
     row_key_fields
         .iter()
         .map(|name| {

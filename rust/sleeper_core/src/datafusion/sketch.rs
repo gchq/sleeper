@@ -307,6 +307,33 @@ impl DataSketchVariant {
     }
 }
 
+/// A sketching manager to handle creation of sketching functions.
+///
+/// This can create a User Defined Sketch function for `DataFusion` as
+/// and modify a [`DataFrame`] to add sketch generation to it.
+#[derive(Debug)]
+pub struct Sketcher<'a> {
+    row_keys: &'a [&'a str],
+    schema: &'a DFSchema,
+    sketch: Option<Arc<ScalarUDF>>,
+}
+
+impl<'a> Sketcher<'a> {
+    #[must_use]
+    pub fn new(row_keys: &'a [&'a str], schema: &'a DFSchema) -> Self {
+        Self {
+            row_keys,
+            schema,
+            sketch: None,
+        }
+    }
+
+    /// Creates a Apache data sketch quantile sketch for the given frame.
+    pub fn create_sketch_udf(&self) -> Arc<ScalarUDF> {
+        Arc::new(ScalarUDF::from(SketchUDF::new(self.schema, self.row_keys)))
+    }
+}
+
 /// Write the data sketches to the named file.
 ///
 /// For each sketch, the length of the serialised sketch is written in
@@ -400,9 +427,7 @@ pub async fn output_sketch(
 ///
 /// # Errors
 /// If the function couldn't be registered.
-pub fn create_sketch_udf(row_key_cols: &[String], schema: &DFSchema) -> Arc<ScalarUDF> {
-    Arc::new(ScalarUDF::from(SketchUDF::new(schema, row_key_cols)))
-}
+pub fn create_sketch_udf(row_key_cols: &[&str], schema: &DFSchema) -> Arc<ScalarUDF> {}
 
 /// Creates a file path suitable for writing sketches to.
 ///
