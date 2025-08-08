@@ -408,7 +408,7 @@ FindBugs Annotations (com.google.code.findbugs:jsr305:3.*)
 
 - Apache License, Version 2.0
 
-Checkstyle (com.puppycrawl.tools:checkstyle:10.*)
+Checkstyle (com.puppycrawl.tools:checkstyle:11.*)
 
 - GNU Lesser General Public License, version 2.1
 
