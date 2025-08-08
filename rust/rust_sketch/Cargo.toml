@@ -35,10 +35,3 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 rand = { workspace = true }
-
-# Ensure up to date image for cross compilation
-[package.metadata.cross.target.x86_64-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/x86_64-unknown-linux-gnu:edge"
-
-[package.metadata.cross.target.aarch64-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/aarch64-unknown-linux-gnu:edge"

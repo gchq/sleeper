@@ -62,12 +62,16 @@ public class S3ExpandDirectories {
                 .prefix(path.prefix())
                 .build());
         return response.contents().stream()
-                .filter(s3Object -> checkIsNotCrcFile(s3Object.key()))
+                .filter(s3Object -> checkIsParquetFile(s3Object.key()))
                 .map(s3Object -> new S3FileDetails(path.bucket(), s3Object.key(), s3Object.size()))
                 .toList();
     }
 
     private static boolean checkIsNotCrcFile(String key) {
         return !key.endsWith(".crc");
+    }
+
+    private static boolean checkIsParquetFile(String key) {
+        return key.endsWith(".parquet");
     }
 }

@@ -52,6 +52,7 @@ fn main() {
         .warnings_into_errors(true)
         .extra_warnings(true)
         .flag_if_supported("-std=c++17")
+        .flag_if_supported("-Wno-maybe-uninitialized")
         .includes(vec![
             path.join("datasketches-cpp/common/include"),
             path.join("datasketches-cpp/quantiles/include"),

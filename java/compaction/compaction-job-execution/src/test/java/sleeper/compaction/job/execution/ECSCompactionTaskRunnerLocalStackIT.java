@@ -73,7 +73,7 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -549,7 +549,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private List<Row> readRows(String filename, Schema schema) {
-        try (ParquetReader<Row> reader = new ParquetRowReader(new Path(filename), schema)) {
+        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build()) {
             List<Row> rows = new ArrayList<>();
             for (Row row = reader.read(); row != null; row = reader.read()) {
                 rows.add(new Row(row));
