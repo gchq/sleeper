@@ -44,7 +44,7 @@ use datafusion::{
     logical_expr::{LogicalPlanBuilder, SortExpr},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
-        accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
+        ExecutionPlan, accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
         expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
     },
     prelude::*,
@@ -266,6 +266,73 @@ impl<'a> SleeperOperations<'a> {
     pub fn create_sketcher(&self, schema: &DFSchema) -> Sketcher<'_> {
         Sketcher::new(&self.config.row_key_cols, schema)
     }
+
+    pub fn plan_with_parquet_output(
+        &self,
+        frame: DataFrame,
+        configurer: &ParquetWriterConfigurer<'_>,
+    ) -> Result<DataFrame, DataFusionError> {
+        let OperationOutput::File {
+            output_file,
+            opts: _,
+        } = &self.config.output
+        else {
+            return plan_err!("Parquet output not selected!");
+        };
+        let (session_state, logical_plan) = frame.into_parts();
+        // Figure out which columns should be dictionary encoded
+        let pqo = configurer.apply_dictionary_encoding(
+            session_state.default_table_options().parquet,
+            self.config,
+            logical_plan.schema(),
+        );
+        let logical_plan = LogicalPlanBuilder::copy_to(
+            logical_plan,
+            output_file.as_str().into(),
+            format_as_file_type(Arc::new(ParquetFormatFactory::new_with_options(pqo))),
+            HashMap::default(),
+            Vec::new(),
+        )?
+        .build()?;
+        Ok(DataFrame::new(session_state, logical_plan))
+    }
+
+    pub async fn to_modified_physical_plan(
+        &self,
+        frame: DataFrame,
+    ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
+        // Create lexical column ordering
+        let ordering = self.create_sort_expr_ordering(&frame)?;
+
+        // Consume frame and generate initial physical plan
+        let physical_plan = frame.create_physical_plan().await?;
+    }
+
+    ///Create a lexical ordering for sorting columns on a frame.
+    ///
+    /// The lexical ordering is based on the row-keys and sort-keys for the Sleeper
+    /// operation.
+    ///
+    /// # Errors
+    /// The columns in the schema must match the row and sort key column names.
+    pub fn create_sort_expr_ordering(
+        &self,
+        frame: &DataFrame,
+    ) -> Result<LexOrdering, DataFusionError> {
+        let plan_schema = frame.schema().as_arrow();
+        let sorting_columns = self.config.sorting_columns();
+        Ok(LexOrdering::new(
+            sorting_columns
+                .iter()
+                .map(|col_name| {
+                    Ok(PhysicalSortExpr::new(
+                        Arc::new(Column::new_with_schema(col_name, plan_schema)?),
+                        SortOptions::new(false, false),
+                    ))
+                })
+                .collect::<Result<Vec<_>, DataFusionError>>()?,
+        ))
+    }
 }
 
 impl std::fmt::Display for SleeperOperations<'_> {
@@ -286,10 +353,6 @@ pub async fn compact(
     let ops = SleeperOperations::new(&input_data.common);
     info!("DataFusion compaction: {ops}");
 
-    let sf = ops
-        .apply_config(SessionConfig::new(), store_factory)
-        .await?;
-
     // Retrieve Parquet output options
     let OperationOutput::File {
         output_file: _,
@@ -299,20 +362,14 @@ pub async fn compact(
         return plan_err!("Sleeper compactions must output to a file");
     };
 
-    // Create context for DataFusion
+    // Create Parquet configuration object based on requested output
     let configurer = ParquetWriterConfigurer { parquet_options };
-    let sf = configurer.apply_parquet_config(sf);
-    let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
 
     // Make compaction DataFrame
-    let (sketcher, frame) = build_compaction_dataframe(&ops, &ctx).await?;
+    let (sketcher, frame) = build_compaction_dataframe(&ops, &configurer, store_factory).await?;
 
-    // Figure out which columns should be dictionary encoded
-    let pqo = configurer.apply_dictionary_encoding(
-        ctx.copied_table_options().parquet,
-        input_data,
-        frame.schema(),
-    );
+    // Explain plan
+    explain_plan(&frame).await?;
 
     // Create column list of row keys and sort key cols
     let sorting_columns = input_data.common.sorting_columns();
@@ -353,36 +410,6 @@ async fn collect_stats(
     sorting_columns: &[&str],
     pqo: TableParquetOptions,
 ) -> Result<RowCounts, DataFusionError> {
-    let (session_state, logical_plan) = frame.into_parts();
-    let logical_plan = LogicalPlanBuilder::copy_to(
-        logical_plan,
-        output_path.as_str().into(),
-        format_as_file_type(Arc::new(ParquetFormatFactory::new_with_options(pqo))),
-        HashMap::default(),
-        Vec::new(),
-    )?
-    .build()?;
-
-    // Explain plan
-    explain_plan(session_state.clone(), logical_plan.clone()).await?;
-
-    // Optimise plan and generate physical plan
-    let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
-
-    let plan_schema = frame.schema().as_arrow();
-    // Convert list of columns into physical sorting expressions
-    let ordering = LexOrdering::new(
-        sorting_columns
-            .iter()
-            .map(|col_name| {
-                Ok(PhysicalSortExpr::new(
-                    Arc::new(Column::new_with_schema(col_name, plan_schema)?),
-                    SortOptions::new(false, false),
-                ))
-            })
-            .collect::<Result<Vec<_>, DataFusionError>>()?,
-    );
-
     // Modify upper most CoalescePartitionsExec into a SortPreservingExec to avoid
     // sorting bug where partitions are re-merged out of order
     let new_plan = physical_plan
@@ -426,13 +453,20 @@ async fn collect_stats(
 /// steps to the plan.
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
-    ctx: &'a SessionContext,
+    configurer: &'a ParquetWriterConfigurer<'a>,
+    store_factory: &ObjectStoreFactory,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
-    let mut frame = ops.create_initial_partitioned_read(ctx).await?;
+    let sf = ops
+        .apply_config(SessionConfig::new(), store_factory)
+        .await?;
+    let sf = configurer.apply_parquet_config(sf);
+    let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
+    let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
     frame = ops.apply_user_filters(frame)?;
     frame = ops.apply_general_sort(frame)?;
     frame = ops.apply_aggregations(frame)?;
     let sketcher = ops.create_sketcher(frame.schema());
     frame = sketcher.apply_sketch(frame)?;
+    frame = ops.plan_with_parquet_output(frame, &configurer)?;
     Ok((sketcher, frame))
 }

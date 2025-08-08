@@ -15,7 +15,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{SleeperCompactionConfig, SleeperParquetOptions};
+use crate::{CommonConfig, SleeperParquetOptions};
 use datafusion::{
     common::DFSchema,
     config::TableParquetOptions,
@@ -59,7 +59,7 @@ impl ParquetWriterConfigurer<'_> {
     pub fn apply_dictionary_encoding(
         &self,
         mut opts: TableParquetOptions,
-        input_data: &SleeperCompactionConfig<'_>,
+        common_config: &CommonConfig<'_>,
         schema: &DFSchema,
     ) -> TableParquetOptions {
         for column in schema.columns() {
@@ -68,12 +68,12 @@ impl ParquetWriterConfigurer<'_> {
                 .column_specific_options
                 .entry(col_name.clone())
                 .or_default();
-            let dict_encode = (self.parquet_options.dict_enc_row_keys && input_data.common.row_key_cols.contains(&col_name))
-            || (self.parquet_options.dict_enc_sort_keys && input_data.common.sort_key_cols.contains(&col_name))
+            let dict_encode = (self.parquet_options.dict_enc_row_keys && common_config.row_key_cols.contains(&col_name))
+            || (self.parquet_options.dict_enc_sort_keys && common_config.sort_key_cols.contains(&col_name))
             // Check value columns
             || (self.parquet_options.dict_enc_values
-                && !input_data.common.row_key_cols.contains(&col_name)
-                && !input_data.common.sort_key_cols.contains(&col_name));
+                && !common_config.row_key_cols.contains(&col_name)
+                && !common_config.sort_key_cols.contains(&col_name));
             col_opts.dictionary_enabled = Some(dict_encode);
         }
         opts

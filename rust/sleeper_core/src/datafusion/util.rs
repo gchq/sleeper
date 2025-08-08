@@ -21,7 +21,7 @@ use datafusion::{
     common::{plan_err, tree_node::TreeNode},
     config::ExecutionOptions,
     error::DataFusionError,
-    execution::SessionState,
+    execution::{SessionState, SessionStateBuilder},
     logical_expr::LogicalPlan,
     physical_plan::{ExecutionPlan, sorts::sort::SortExec},
     prelude::{DataFrame, SessionContext},
@@ -35,21 +35,19 @@ use url::Url;
 ///
 /// # Errors
 /// If explanation fails.
-pub async fn explain_plan(
-    session_state: SessionState,
-    logical_plan: LogicalPlan,
-) -> Result<(), DataFusionError> {
+pub async fn explain_plan(frame: &DataFrame) -> Result<(), DataFusionError> {
+    let mut config = frame.task_ctx().session_config().clone();
     // Ensure physical plan output is disabled
-    let mut temp_state = session_state.clone();
-    temp_state
-        .config_mut()
-        .options_mut()
-        .explain
-        .logical_plan_only = true;
-    let explained = DataFrame::new(temp_state, logical_plan)
-        .explain(false, false)?
-        .collect()
-        .await?;
+    config.options_mut().explain.logical_plan_only = true;
+    let explained = DataFrame::new(
+        SessionStateBuilder::new_with_default_features()
+            .with_config(config)
+            .build(),
+        frame.logical_plan().clone(),
+    )
+    .explain(false, false)?
+    .collect()
+    .await?;
     info!("DataFusion plan:\n{}", pretty_format_batches(&explained)?);
     Ok(())
 }
