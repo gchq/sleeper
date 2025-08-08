@@ -21,7 +21,11 @@ use bytes::{Buf, BufMut};
 use color_eyre::eyre::eyre;
 use cxx::{Exception, UniquePtr};
 use datafusion::{
-    common::DFSchema, error::DataFusionError, logical_expr::ScalarUDF, parquet::data_type::AsBytes,
+    common::DFSchema,
+    error::DataFusionError,
+    logical_expr::{ScalarUDF, col},
+    parquet::data_type::AsBytes,
+    prelude::DataFrame,
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -313,24 +317,56 @@ impl DataSketchVariant {
 /// and modify a [`DataFrame`] to add sketch generation to it.
 #[derive(Debug)]
 pub struct Sketcher<'a> {
-    row_keys: &'a [&'a str],
-    schema: &'a DFSchema,
-    sketch: Option<Arc<ScalarUDF>>,
+    /// Row key names
+    row_keys: &'a Vec<String>,
+    /// A created sketch function.
+    sketch: Arc<ScalarUDF>,
 }
 
 impl<'a> Sketcher<'a> {
-    #[must_use]
-    pub fn new(row_keys: &'a [&'a str], schema: &'a DFSchema) -> Self {
-        Self {
+    pub fn new(row_keys: &'a Vec<String>, schema: &DFSchema) -> Sketcher<'a> {
+        Sketcher {
             row_keys,
-            schema,
-            sketch: None,
+            sketch: Arc::new(ScalarUDF::from(SketchUDF::new(
+                schema,
+                &row_keys.iter().map(String::as_str).collect::<Vec<_>>(),
+            ))),
         }
     }
 
-    /// Creates a Apache data sketch quantile sketch for the given frame.
-    pub fn create_sketch_udf(&self) -> Arc<ScalarUDF> {
-        Arc::new(ScalarUDF::from(SketchUDF::new(self.schema, self.row_keys)))
+    // The created sketch UDF.
+    pub fn sketch(&self) -> &Arc<ScalarUDF> {
+        &self.sketch
+    }
+
+    /// Adds quantile sketch creation to the given frame.
+    ///
+    /// An extra SELECT stage is added to the frame's plan. The created sketch
+    /// function is also returned so sketches can be accessed after execution
+    /// of the frame's plan.
+    pub fn apply_sketch(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        // Extract all column names
+        let column_bind = frame.schema().columns();
+        let col_names = column_bind
+            .iter()
+            .map(datafusion::prelude::Column::name)
+            .collect::<Vec<_>>();
+
+        let row_key_exprs = self.row_keys.iter().map(col).collect::<Vec<_>>();
+
+        // Iterate through column names, mapping each into an `Expr`
+        let mut col_names_expr = Vec::new();
+        for col_name in col_names {
+            // Have we found the first row key column?
+            let expr = if self.row_keys[0] == *col_name {
+                // Sketch function needs to be called with each row key column
+                self.sketch.call(row_key_exprs.clone()).alias(col_name)
+            } else {
+                col(col_name)
+            };
+            col_names_expr.push(expr);
+        }
+        frame.select(col_names_expr)
     }
 }
 
@@ -422,12 +458,6 @@ pub async fn output_sketch(
     }
     Ok(())
 }
-
-/// Create a Data Sketches UDF from the given frame schema.
-///
-/// # Errors
-/// If the function couldn't be registered.
-pub fn create_sketch_udf(row_key_cols: &[&str], schema: &DFSchema) -> Arc<ScalarUDF> {}
 
 /// Creates a file path suitable for writing sketches to.
 ///

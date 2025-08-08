@@ -21,7 +21,7 @@ use crate::{
     CommonConfig, CompactionResult, OperationOutput, SleeperCompactionConfig,
     datafusion::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
-        sketch::{create_sketch_udf, output_sketch},
+        sketch::{Sketcher, output_sketch},
         util::{
             calculate_upload_size, check_for_sort_exec, explain_plan, register_store,
             retrieve_input_size,
@@ -39,7 +39,7 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
+    logical_expr::{LogicalPlanBuilder, SortExpr},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
         accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
@@ -261,44 +261,8 @@ impl<'a> SleeperOperations<'a> {
 
     /// Create a sketching object to manage creation of quantile sketches.
     #[must_use]
-    pub fn create_sketcher(&self) -> Sketcher {
-        Sketcher::new()
-    }
-
-    /// Adds quantile sketch creation to the given frame.
-    ///
-    /// An extra SELECT stage is added to the frame's plan. The created sketch
-    /// function is also returned so sketches can be accessed after execution
-    /// of the frame's plan.
-    pub fn enable_sketch_production(
-        &self,
-        frame: DataFrame,
-    ) -> Result<(Arc<ScalarUDF>, DataFrame), DataFusionError> {
-        // Create the sketch function
-        let sketch_func = self.create_sketch_udf(frame.schema());
-
-        // Extract all column names
-        let column_bind = frame.schema().columns();
-        let col_names = column_bind
-            .iter()
-            .map(datafusion::prelude::Column::name)
-            .collect::<Vec<_>>();
-
-        let row_key_exprs = self.config.row_key_cols.iter().map(col).collect::<Vec<_>>();
-
-        // Iterate through column names, mapping each into an `Expr`
-        let mut col_names_expr = Vec::new();
-        for col_name in col_names {
-            // Have we found the first row key column?
-            let expr = if self.config.row_key_cols[0] == *col_name {
-                // Sketch function needs to be called with each row key column
-                sketch_func.call(row_key_exprs.clone()).alias(col_name)
-            } else {
-                col(col_name)
-            };
-            col_names_expr.push(expr);
-        }
-        Ok((sketch_func, frame.select(col_names_expr)?))
+    pub fn create_sketcher(&self, schema: &DFSchema) -> Sketcher<'_> {
+        Sketcher::new(&self.config.row_key_cols, schema)
     }
 }
 
@@ -351,7 +315,8 @@ pub async fn compact(
     let frame = ops.apply_aggregations(frame)?;
 
     // Ensure generation of quantile sketches
-    let (sketch_function, frame) = ops.enable_sketch_production(frame)?;
+    let sketcher = ops.create_sketcher(frame.schema());
+    let frame = sketcher.apply_sketch(frame)?;
 
     // Figure out which columns should be dictionary encoded
     let pqo = configurer.apply_dictionary_encoding(
@@ -379,7 +344,7 @@ pub async fn compact(
         input_data
             .output_file()
             .map_err(|e| DataFusionError::External(e.into()))?,
-        &sketch_function,
+        sketcher.sketch(),
     )
     .await?;
 

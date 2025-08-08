@@ -156,6 +156,7 @@ impl CommonConfig<'_> {
     }
 
     /// List all roy and sort key columns in order
+    #[must_use]
     pub fn sorting_columns(&self) -> Vec<&str> {
         self.sorting_columns_iter().collect::<Vec<_>>()
     }
