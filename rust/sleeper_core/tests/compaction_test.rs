@@ -49,7 +49,6 @@ async fn should_merge_two_files() -> Result<(), Error> {
             },
             ..Default::default()
         },
-        ..Default::default()
     };
 
     // When
@@ -85,7 +84,6 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
             },
             ..Default::default()
         },
-        ..Default::default()
     };
 
     // When
@@ -121,7 +119,6 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
             },
             ..Default::default()
         },
-        ..Default::default()
     };
 
     // When
@@ -166,7 +163,6 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
             },
             ..Default::default()
         },
-        ..Default::default()
     };
 
     // When
@@ -214,7 +210,6 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
             },
             ..Default::default()
         },
-        ..Default::default()
     };
 
     // When

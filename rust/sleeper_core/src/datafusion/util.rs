@@ -31,7 +31,6 @@ use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
 use url::Url;
 
-
 /// Write explanation of logical query plan to log output.
 ///
 /// # Errors

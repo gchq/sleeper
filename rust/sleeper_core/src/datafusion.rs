@@ -149,7 +149,7 @@ impl<'a> SleeperOperations<'a> {
         let po = if self.config.input_files_sorted {
             let sort_order = self.create_sort_order();
             info!("Row and sort key column order: {sort_order:?}");
-            ParquetReadOptions::default().file_sort_order(vec![sort_order.to_owned()])
+            ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()])
         } else {
             warn!(
                 "Reading input files that are not individually sorted! Did you mean to set input_files_sorted to true instead?"
@@ -190,25 +190,77 @@ impl<'a> SleeperOperations<'a> {
     pub fn parse_iterator_config(
         &self,
     ) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
-        Ok(self
-            .config
+        self.config
             .iterator_config
             .as_ref()
             .map(|s| FilterAggregationConfig::try_from(s.as_str()))
-            .transpose()?)
+            .transpose()
     }
 
     /// Apply any configured filters to the `DataFusion` operation if any are present.
-    fn apply_general_row_filters(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+    ///
+    /// # Errors
+    /// An error will result if the frame cannot be filtered according to the given
+    /// expression.
+    fn apply_user_filters(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         Ok(
             if let Some(filter) = self
                 .parse_iterator_config()?
                 .as_ref()
-                .map(FilterAggregationConfig::filter)
-                .flatten()
+                .and_then(FilterAggregationConfig::filter)
             {
-                info!("Applying Sleeper filter iterator: {filter:?}");
+                info!("Applying Sleeper filters: {filter:?}");
                 frame.filter(filter.create_filter_expr()?)?
+            } else {
+                frame
+            },
+        )
+    }
+
+    /// Apply a general sort to the frame based on the sort ordering from row keys and
+    /// sort keys.
+    ///
+    /// If sort ordering is specified on the input files, then this should give a streaming
+    /// merge sort, not a full in memory sort.
+    ///
+    /// # Errors
+    /// If any errors result from adding the sort to the plan
+    pub fn apply_general_sort(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        frame.sort(self.create_sort_order())
+    }
+
+    /// If any are present, apply Sleeper aggregations to the given frame.
+    ///
+    /// # Errors
+    /// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified,
+    /// then an error will result.
+    fn apply_aggregations(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        Ok(
+            if let Some(aggregations) = self
+                .parse_iterator_config()?
+                .as_ref()
+                .and_then(FilterAggregationConfig::aggregation)
+            {
+                info!("Applying Sleeper aggregations: {aggregations:?}");
+                // Grab row and sort key columns
+                let group_by_cols = self
+                    .config
+                    .row_key_cols
+                    .iter()
+                    .chain(&self.config.sort_key_cols)
+                    .map(String::as_str)
+                    .collect::<Vec<_>>();
+
+                // Check aggregations meet validity checks
+                validate_aggregations(&group_by_cols, frame.schema(), aggregations)?;
+                let aggregations_to_apply = aggregations
+                    .iter()
+                    .map(|agg| agg.to_expr(&frame))
+                    .collect::<Result<Vec<_>, _>>()?;
+                frame.aggregate(
+                    group_by_cols.iter().map(|e| col(*e)).collect(),
+                    aggregations_to_apply,
+                )?
             } else {
                 frame
             },
@@ -246,6 +298,8 @@ pub async fn compact(
     else {
         return plan_err!("Sleeper compactions must output to a file");
     };
+
+    // Create context for DataFusion
     let configurer = ParquetWriterConfigurer { parquet_options };
     let sf = configurer.apply_parquet_config(sf);
     let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
@@ -253,8 +307,14 @@ pub async fn compact(
     // Create initial DataFrame from input files
     let frame = ops.create_initial_partitioned_read(&ctx).await?;
 
-    // Parse Sleeper iterator configuration and apply
-    let frame = ops.apply_general_row_filters(frame)?;
+    // Apply Sleeper filter configuration if present
+    let frame = ops.apply_user_filters(frame)?;
+
+    // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
+    let frame = ops.apply_general_sort(frame)?;
+
+    // Apply Sleeper aggregation configuration if present
+    let frame = ops.apply_aggregations(frame)?;
 
     // Create the sketch function
     let sketch_func = create_sketch_udf(&input_data.common.row_key_cols, frame.schema());
@@ -286,15 +346,6 @@ pub async fn compact(
         })
         .collect::<Vec<_>>();
 
-    // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
-    let sort_order = ops.create_sort_order();
-    let frame = frame.sort(sort_order)?;
-    let filter_agg_conf = ops.parse_iterator_config()?;
-    let frame = apply_aggregations(
-        &input_data.common.row_key_cols,
-        frame,
-        filter_agg_conf.as_ref(),
-    )?;
     let frame = frame.select(col_names_expr)?;
 
     // Figure out which columns should be dictionary encoded
@@ -334,49 +385,6 @@ pub async fn compact(
     .await?;
 
     Ok(CompactionResult::from(&stats))
-}
-
-/// If any are present, apply Sleeper aggregations to this `DataFusion` plan.
-///
-/// # Errors
-/// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified.
-fn apply_aggregations(
-    row_key_cols: &[String],
-    frame: DataFrame,
-    filter_agg_conf: Option<&FilterAggregationConfig>,
-) -> Result<DataFrame, DataFusionError> {
-    Ok(
-        if let Some(FilterAggregationConfig {
-            agg_cols,
-            filter: _,
-            aggregation: Some(aggregation),
-        }) = &filter_agg_conf
-        {
-            info!("Applying Sleeper aggregation: {aggregation:?}");
-            // Grab initial row key columns
-            let mut group_by_cols = row_key_cols;
-            let mut extra_agg_cols = vec![];
-            // If we have any extra "group by" columns, concatenate them all together
-            if let Some(more_columns) = agg_cols {
-                extra_agg_cols.extend(
-                    row_key_cols
-                        .iter()
-                        .chain(more_columns)
-                        .map(ToOwned::to_owned),
-                );
-                group_by_cols = &extra_agg_cols;
-            }
-            // Check aggregations meet validity checks
-            validate_aggregations(group_by_cols, frame.schema(), aggregation)?;
-            let aggregations = aggregation
-                .iter()
-                .map(|agg| agg.to_expr(&frame))
-                .collect::<Result<Vec<_>, _>>()?;
-            frame.aggregate(group_by_cols.iter().map(col).collect(), aggregations)?
-        } else {
-            frame
-        },
-    )
 }
 
 /// Write the frame out to the output path and collect statistics.
