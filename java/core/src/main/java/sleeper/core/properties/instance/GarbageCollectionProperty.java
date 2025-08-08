@@ -49,18 +49,21 @@ public interface GarbageCollectionProperty {
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the garbage collection lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.gc.concurrency.max")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the garbage collection lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.table.batch.size")
             .description("The number of tables to perform garbage collection for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
-            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
+            .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECT_OFFLINE_TABLES = Index.propertyBuilder("sleeper.gc.offline.enabled")
             .description("Whether to perform garbage collection for offline tables.")
             .defaultValue("false")
