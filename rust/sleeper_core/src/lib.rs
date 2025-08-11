@@ -25,16 +25,17 @@ use arrow::record_batch::RecordBatch;
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail, eyre};
-pub use datafusion::{
-    SleeperPartitionRegion,
-    sketch::{DataSketchVariant, deserialise_sketches},
-};
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
 use std::fmt::Formatter;
 use url::Url;
 
 mod datafusion;
+
+pub use datafusion::{
+    SleeperPartitionRegion,
+    sketch::{DataSketchVariant, deserialise_sketches},
+};
 
 /// Type safe variant for Sleeper partition boundary
 #[derive(Debug, Copy, Clone)]

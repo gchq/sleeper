@@ -1,7 +1,7 @@
-//! `DataFusion` contains the implementation for performing Sleeper compactions
+//! `DataFusion` contains the implementation for performing Sleeper operations
 //! using Apache `DataFusion`.
 //!
-//! This allows for multi-threaded compaction and optimised Parquet reading.
+//! This allows for multi-threaded data processing and optimised Parquet reading.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -18,13 +18,13 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, CompactionResult, OperationOutput, SleeperCompactionConfig,
+    CommonConfig, OperationOutput,
     datafusion::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
-        sketch::{Sketcher, output_sketch},
+        sketch::Sketcher,
         util::{
-            calculate_upload_size, check_for_sort_exec, collect_stats, explain_plan,
-            register_store, remove_coalesce_physical_stage, retrieve_input_size,
+            calculate_upload_size, check_for_sort_exec, register_store,
+            remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
 };
@@ -37,14 +37,14 @@ use datafusion::{
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
     logical_expr::{LogicalPlanBuilder, SortExpr},
     physical_expr::{LexOrdering, PhysicalSortExpr},
-    physical_plan::{ExecutionPlan, collect, displayable, expressions::Column},
+    physical_plan::{ExecutionPlan, expressions::Column},
     prelude::*,
 };
 use log::{info, warn};
-use metrics::RowCounts;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 
+mod compact;
 mod config;
 mod filter_aggregation_config;
 mod metrics;
@@ -53,6 +53,7 @@ pub mod sketch;
 mod sketch_udf;
 mod util;
 
+pub use compact::compact;
 pub use config::ParquetWriterConfigurer;
 pub use region::SleeperPartitionRegion;
 
@@ -291,6 +292,10 @@ impl<'a> SleeperOperations<'a> {
         Ok(DataFrame::new(session_state, logical_plan))
     }
 
+    /// Convert a frame to a physical plan.
+    ///
+    /// The physical will be modified to ensure the sort ordering
+    /// is maintained.
     pub async fn to_physical_plan(
         &self,
         frame: DataFrame,
@@ -340,98 +345,4 @@ impl std::fmt::Display for SleeperOperations<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.config)
     }
-}
-
-/// Starts a Sleeper compaction.
-///
-/// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
-/// from the input URLs and writing to the output URL. A sketch file will be produced for
-/// the output file.
-pub async fn compact(
-    store_factory: &ObjectStoreFactory,
-    input_data: &SleeperCompactionConfig<'_>,
-) -> Result<CompactionResult, DataFusionError> {
-    let ops = SleeperOperations::new(&input_data.common);
-    info!("DataFusion compaction: {ops}");
-
-    // Retrieve Parquet output options
-    let OperationOutput::File {
-        output_file: _,
-        opts: parquet_options,
-    } = &input_data.common.output
-    else {
-        return plan_err!("Sleeper compactions must output to a file");
-    };
-
-    // Create Parquet configuration object based on requested output
-    let configurer = ParquetWriterConfigurer { parquet_options };
-
-    // Make compaction DataFrame
-    let (sketcher, frame) = build_compaction_dataframe(&ops, &configurer, store_factory).await?;
-
-    // Explain logical plan
-    explain_plan(&frame).await?;
-
-    // Run plan
-    let stats = execute_compaction_plan(&ops, frame).await?;
-
-    // Write the frame out and collect stats
-    output_sketch(
-        store_factory,
-        input_data
-            .output_file()
-            .map_err(|e| DataFusionError::External(e.into()))?,
-        sketcher.sketch(),
-    )
-    .await?;
-
-    Ok(CompactionResult::from(&stats))
-}
-
-/// Creates the dataframe for a compaction.
-///
-/// This applies necessary filtering, sorting and sketch creation
-/// steps to the plan.
-///
-/// # Errors
-/// Each step of compaction may produce an error. Any are reported back to the caller.
-async fn build_compaction_dataframe<'a>(
-    ops: &'a SleeperOperations<'a>,
-    configurer: &'a ParquetWriterConfigurer<'a>,
-    store_factory: &ObjectStoreFactory,
-) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
-    let sf = ops
-        .apply_config(SessionConfig::new(), store_factory)
-        .await?;
-    let sf = configurer.apply_parquet_config(sf);
-    let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
-    let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
-    frame = ops.apply_user_filters(frame)?;
-    frame = ops.apply_general_sort(frame)?;
-    frame = ops.apply_aggregations(frame)?;
-    let sketcher = ops.create_sketcher(frame.schema());
-    frame = sketcher.apply_sketch(frame)?;
-    frame = ops.plan_with_parquet_output(frame, configurer)?;
-    Ok((sketcher, frame))
-}
-
-/// Runs the plan in the frame.
-///
-/// The plan will be optimised into a physical plan, then statistics collected and returned.
-///
-/// # Errors
-/// Any error that occurs during execution will be returned.
-async fn execute_compaction_plan(
-    ops: &SleeperOperations<'_>,
-    frame: DataFrame,
-) -> Result<RowCounts, DataFusionError> {
-    let task_ctx = Arc::new(frame.task_ctx());
-    let physical_plan = ops.to_physical_plan(frame).await?;
-    info!(
-        "Physical plan\n{}",
-        displayable(&*physical_plan).indent(true)
-    );
-    collect(physical_plan.clone(), task_ctx).await?;
-    let stats = collect_stats(&ops.config.input_files, &physical_plan)?;
-    Ok(stats)
 }

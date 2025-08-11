@@ -1,7 +1,4 @@
 //! Sleeper `DataFusion` utility functions.
-use std::sync::Arc;
-
-use arrow::util::pretty::pretty_format_batches;
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -17,6 +14,7 @@ use arrow::util::pretty::pretty_format_batches;
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
     common::{
         plan_err,
@@ -36,6 +34,7 @@ use datafusion::{
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
+use std::sync::Arc;
 use url::Url;
 
 use crate::datafusion::metrics::RowCounts;
