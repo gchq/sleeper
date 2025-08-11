@@ -15,6 +15,7 @@
  */
 package sleeper.core.partition;
 
+import java.util.Arrays;
 import java.util.Comparator;
 
 /**
@@ -42,7 +43,11 @@ public class PartitionComparator implements Comparator<Partition> {
             return ((String) minA).compareTo((String) minB);
         }
 
-        //Need to handle byte[], string and event where both min and max are not the same object types
-        return 0;
+        if (minA instanceof byte[] && minB instanceof byte[]) {
+            return Arrays.compare((byte[]) minA, (byte[]) minB);
+        }
+
+        throw new PartitionTreeException("Unable to compare partitions due to range elements being an " +
+                "unexpected class type. minA: " + minA.getClass() + ", minB: " + minB.getClass());
     }
 }

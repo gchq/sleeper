@@ -21,6 +21,7 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 
@@ -182,6 +183,65 @@ public class PartitionComparatorTest extends PartitionTreeTestBase {
                 l2RightOfL1L_string,
                 l2LeftOfL1R_string,
                 l2RightOfL1R_string));
+    }
+
+    @Test
+    void shouldVerifyPartitionSortingForSByteArray() {
+        // Given
+        Schema schemaByte = Schema.builder().rowKeyFields(new Field("id", new ByteArrayType())).build();
+        Range.RangeFactory rangeFactoryByte = new Range.RangeFactory(schemaByte);
+        Partition l2LeftOfL1L_byte = Partition.builder()
+                .region(new Region(rangeFactoryByte.createRange("id", new byte[]{}, true, new byte[]{1}, false)))
+                .id(L2_LEFT_OF_L1L)
+                .leafPartition(true)
+                .parentPartitionId(L1_LEFT)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+        Partition l2RightOfL1L_byte = Partition.builder()
+                .region(new Region(rangeFactoryByte.createRange("id", new byte[]{1}, true, new byte[]{2}, false)))
+                .id(L2_RIGHT_OF_L1L)
+                .leafPartition(true)
+                .parentPartitionId(L1_LEFT)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+        Partition l2LeftOfL1R_byte = Partition.builder()
+                .region(new Region(rangeFactoryByte.createRange("id", new byte[]{2}, true, new byte[]{3}, false)))
+                .id(L2_LEFT_OF_L1R)
+                .leafPartition(true)
+                .parentPartitionId(L1_RIGHT)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+        Partition l2RightOfL1R_byte = Partition.builder()
+                .region(new Region(rangeFactoryByte.createRange("id", new byte[]{3}, true, null, false)))
+                .id(L2_RIGHT_OF_L1R)
+                .leafPartition(true)
+                .parentPartitionId(L1_RIGHT)
+                .childPartitionIds(Collections.emptyList())
+                .dimension(-1)
+                .build();
+
+        PartitionTree byteArrayTree = new PartitionsBuilder(schemaByte)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, new byte[]{2})
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, new byte[]{1})
+                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, new byte[]{3})
+                .buildTree();
+
+        List<Partition> randomList = new ArrayList<Partition>(byteArrayTree.getLeafPartitions());
+        Collections.shuffle(randomList);
+
+        // When
+        randomList.sort(new PartitionComparator());
+
+        // Then
+        assertThat(randomList).isEqualTo(List.of(l2LeftOfL1L_byte,
+                l2RightOfL1L_byte,
+                l2LeftOfL1R_byte,
+                l2RightOfL1R_byte));
+
     }
 
 }
