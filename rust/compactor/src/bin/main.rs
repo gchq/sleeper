@@ -149,7 +149,7 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_values: true,
     };
 
-    let details = CommonConfig {
+    let mut details = CommonConfig {
         aws_config: None,
         input_files: input_urls,
         input_files_sorted: true,
@@ -162,6 +162,7 @@ async fn main() -> color_eyre::Result<()> {
         },
         iterator_config: args.iterator_config,
     };
+    details.sanitise_java_s3_urls();
 
     let result = run_compaction(&details).await;
     match result {

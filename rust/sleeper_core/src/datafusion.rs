@@ -47,6 +47,7 @@ use std::{collections::HashMap, sync::Arc};
 mod compact;
 mod config;
 mod filter_aggregation_config;
+mod leaf_partition_query;
 mod metrics;
 mod region;
 pub mod sketch;

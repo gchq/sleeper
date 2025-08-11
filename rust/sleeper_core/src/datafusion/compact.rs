@@ -74,9 +74,9 @@ pub async fn compact(
     Ok(CompactionResult::from(&stats))
 }
 
-/// Creates the dataframe for a compaction.
+/// Creates the [`DataFrame`] for a compaction.
 ///
-/// This applies necessary filtering, sorting and sketch creation
+/// This applies necessary loading, filtering, sorting, aggregation and sketch creation
 /// steps to the plan.
 ///
 /// # Errors
