@@ -104,6 +104,10 @@ public class RunDataProcessingTasks {
 
     }
 
+    public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+        return createRunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, false);
+    }
+
     public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
         return new RunDataProcessingTasks(instanceProperties, taskCounts, hostScaler, taskLauncher, false);
 
