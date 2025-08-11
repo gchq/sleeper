@@ -23,37 +23,27 @@ use crate::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         sketch::{Sketcher, output_sketch},
         util::{
-            calculate_upload_size, check_for_sort_exec, explain_plan, register_store,
-            retrieve_input_size,
+            calculate_upload_size, check_for_sort_exec, collect_stats, explain_plan,
+            register_store, remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
 use datafusion::{
-    common::{
-        DFSchema, plan_err,
-        tree_node::{Transformed, TreeNode, TreeNodeRecursion},
-    },
-    config::TableParquetOptions,
+    common::{DFSchema, plan_err},
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
-    execution::{
-        TaskContext, config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
-    },
+    execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
     logical_expr::{LogicalPlanBuilder, SortExpr},
     physical_expr::{LexOrdering, PhysicalSortExpr},
-    physical_plan::{
-        ExecutionPlan, accept, coalesce_partitions::CoalescePartitionsExec, collect, displayable,
-        expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
-    },
+    physical_plan::{ExecutionPlan, collect, displayable, expressions::Column},
     prelude::*,
 };
 use log::{info, warn};
 use metrics::RowCounts;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
-use url::Url;
 
 mod config;
 mod filter_aggregation_config;
@@ -297,15 +287,22 @@ impl<'a> SleeperOperations<'a> {
         Ok(DataFrame::new(session_state, logical_plan))
     }
 
-    pub async fn to_modified_physical_plan(
+    pub async fn to_physical_plan(
         &self,
         frame: DataFrame,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
-        // Create lexical column ordering
+        // Create sort ordering from schema and row key and sort key columns
         let ordering = self.create_sort_expr_ordering(&frame)?;
-
         // Consume frame and generate initial physical plan
         let physical_plan = frame.create_physical_plan().await?;
+        // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
+        let physical_plan = remove_coalesce_physical_stage(&ordering, physical_plan)?;
+        // Check physical plan is free of `SortExec` stages.
+        // Issue <https://github.com/gchq/sleeper/issues/5248>
+        if self.config.input_files_sorted {
+            check_for_sort_exec(&physical_plan)?;
+        }
+        Ok(physical_plan)
     }
 
     ///Create a lexical ordering for sorting columns on a frame.
@@ -368,23 +365,13 @@ pub async fn compact(
     // Make compaction DataFrame
     let (sketcher, frame) = build_compaction_dataframe(&ops, &configurer, store_factory).await?;
 
-    // Explain plan
+    // Explain logical plan
     explain_plan(&frame).await?;
 
-    // Create column list of row keys and sort key cols
-    let sorting_columns = input_data.common.sorting_columns();
+    // Run plan
+    let stats = execute_compaction_plan(&ops, frame).await?;
 
     // Write the frame out and collect stats
-    let stats = collect_stats(
-        frame.clone(),
-        input_data.input_files(),
-        input_data
-            .output_file()
-            .map_err(|e| DataFusionError::External(e.into()))?,
-        &sorting_columns,
-        pqo,
-    )
-    .await?;
     output_sketch(
         store_factory,
         input_data
@@ -397,60 +384,13 @@ pub async fn compact(
     Ok(CompactionResult::from(&stats))
 }
 
-/// Write the frame out to the output path and collect statistics.
-///
-/// The rows read and written are returned in the [`RowCounts`] object.
-/// These are read from different stages in the physical plan, rows read
-/// are determined by the number of filtered rows, output rows are determined
-/// from the number of rows coalsced before being written.
-async fn collect_stats(
-    frame: DataFrame,
-    input_paths: &[Url],
-    output_path: &Url,
-    sorting_columns: &[&str],
-    pqo: TableParquetOptions,
-) -> Result<RowCounts, DataFusionError> {
-    // Modify upper most CoalescePartitionsExec into a SortPreservingExec to avoid
-    // sorting bug where partitions are re-merged out of order
-    let new_plan = physical_plan
-        // Recurse down plan looking for specific node
-        .transform_down(|plan_node| {
-            Ok(
-                if let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
-                {
-                    // Swap it out for a SortPreservingMergeExec
-                    let replacement =
-                        SortPreservingMergeExec::new(ordering.clone(), coalesce.input().clone());
-                    // Stop searching down the query plan after making one replacement
-                    Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
-                } else {
-                    Transformed::no(plan_node)
-                },
-            )
-        })?
-        .data;
-
-    info!("Physical plan\n{}", displayable(&*new_plan).indent(true));
-
-    // Check physical plan is free of `SortExec` stages.
-    // Issue <https://github.com/gchq/sleeper/issues/5248>
-    check_for_sort_exec(&new_plan)?;
-
-    let _ = collect(
-        new_plan.clone(),
-        Arc::new(TaskContext::from(&session_state)),
-    )
-    .await?;
-    let mut stats = RowCounts::new(input_paths);
-    accept(new_plan.as_ref(), &mut stats)?;
-    stats.log_metrics();
-    Ok(stats)
-}
-
 /// Creates the dataframe for a compaction.
 ///
 /// This applies necessary filtering, sorting and sketch creation
 /// steps to the plan.
+///
+/// # Errors
+/// Each step of compaction may produce an error. Any are reported back to the caller.
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
     configurer: &'a ParquetWriterConfigurer<'a>,
@@ -467,6 +407,27 @@ async fn build_compaction_dataframe<'a>(
     frame = ops.apply_aggregations(frame)?;
     let sketcher = ops.create_sketcher(frame.schema());
     frame = sketcher.apply_sketch(frame)?;
-    frame = ops.plan_with_parquet_output(frame, &configurer)?;
+    frame = ops.plan_with_parquet_output(frame, configurer)?;
     Ok((sketcher, frame))
+}
+
+/// Runs the plan in the frame.
+///
+/// The plan will be optimised into a physical plan, then statistics collected and returned.
+///
+/// # Errors
+/// Any error that occurs during execution will be returned.
+async fn execute_compaction_plan(
+    ops: &SleeperOperations<'_>,
+    frame: DataFrame,
+) -> Result<RowCounts, DataFusionError> {
+    let task_ctx = Arc::new(frame.task_ctx());
+    let physical_plan = ops.to_physical_plan(frame).await?;
+    info!(
+        "Physical plan\n{}",
+        displayable(&*physical_plan).indent(true)
+    );
+    collect(physical_plan.clone(), task_ctx).await?;
+    let stats = collect_stats(&ops.config.input_files, &physical_plan)?;
+    Ok(stats)
 }

@@ -18,18 +18,27 @@ use arrow::util::pretty::pretty_format_batches;
 * limitations under the License.
 */
 use datafusion::{
-    common::{plan_err, tree_node::TreeNode},
+    common::{
+        plan_err,
+        tree_node::{Transformed, TreeNode, TreeNodeRecursion},
+    },
     config::ExecutionOptions,
     error::DataFusionError,
-    execution::{SessionState, SessionStateBuilder},
-    logical_expr::LogicalPlan,
-    physical_plan::{ExecutionPlan, sorts::sort::SortExec},
+    execution::SessionStateBuilder,
+    physical_expr::LexOrdering,
+    physical_plan::{
+        ExecutionPlan, accept,
+        coalesce_partitions::CoalescePartitionsExec,
+        sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
+    },
     prelude::{DataFrame, SessionContext},
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
 use url::Url;
+
+use crate::datafusion::metrics::RowCounts;
 
 /// Write explanation of logical query plan to log output.
 ///
@@ -135,4 +144,60 @@ pub async fn retrieve_input_size(
         total_input += store.head(&p.into()).await?.size;
     }
     Ok(total_input)
+}
+
+/// Searches down a physical plan and removes the top most [`CoalescePartitionsExec`] stage.
+/// The stage is replaced with a [`SortPreservingMergeExec`] stage.
+///
+/// This is a workaround for a sorting issue. After a [`SortPreservingMergeExec`] stage, if
+/// `DataFusion` parallelised the output into multiple streams, for example to make a projection
+/// stage quicker, it uses a [`CoalescePartitionsExec`] stage afterwards to re-merge the separate
+/// streams. This forgets the ordering of chunks of data, leading to them be re-merged out of order,
+/// thus breaking the overall order.
+///
+/// For example, if we had chunks `[A-F], [G-H], [I-M], ...` they might be parallelised into 2 streams for some
+/// other unrelated plan stage. Afterwards, they might be re-merged to `[A-F], [I-M], [G-H], ...` due to
+/// the coalescing stage not knowing the correct order. By using a secong sort preserving merge instead, we
+/// are guaranteed the chunks are sequenced back into a single stream with the correct ordering. Since the individual
+/// chunks are sorted, then this re-merging operation is exceedingly quick.
+///
+/// # Errors
+/// If the transformation walking of the tree fails, an error results.
+pub fn remove_coalesce_physical_stage(
+    ordering: &LexOrdering,
+    physical_plan: Arc<dyn ExecutionPlan>,
+) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
+    physical_plan
+        // Recurse down plan looking for specific node
+        .transform_down(|plan_node| {
+            Ok(
+                if let Some(coalesce) = plan_node.as_any().downcast_ref::<CoalescePartitionsExec>()
+                {
+                    // Swap it out for a SortPreservingMergeExec
+                    let replacement =
+                        SortPreservingMergeExec::new(ordering.clone(), coalesce.input().clone());
+                    // Stop searching down the query plan after making one replacement
+                    Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
+                } else {
+                    Transformed::no(plan_node)
+                },
+            )
+        })
+        .map(|v| v.data)
+}
+
+/// Collect statistics from an executed physical plan.
+///
+/// The rows read and written are returned in the [`RowCounts`] object.
+///
+/// # Errors
+/// The physical plan accepts a visitor to collect the statistics, if this can't be done
+/// an error will be returned.
+pub fn collect_stats(
+    input_paths: &[Url],
+    physical_plan: &Arc<dyn ExecutionPlan>,
+) -> Result<RowCounts, DataFusionError> {
+    let mut stats = RowCounts::new(input_paths);
+    accept(physical_plan.as_ref(), &mut stats)?;
+    Ok(stats)
 }
