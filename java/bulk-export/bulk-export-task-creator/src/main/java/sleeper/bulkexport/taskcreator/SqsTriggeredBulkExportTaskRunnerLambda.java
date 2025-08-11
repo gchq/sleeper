@@ -51,6 +51,8 @@ public class SqsTriggeredBulkExportTaskRunnerLambda {
         AutoScalingClient asClient = AutoScalingClient.create();
         Ec2Client ec2Client = Ec2Client.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
+
+        RunDataProcessingTasks.createForBulkExport(instanceProperties, taskCounts, hostScaler, taskLauncher)
         this.runTasks = RunDataProcessingTasks.createForBulkExport(instanceProperties, ecsClient, asClient, ec2Client);
         this.queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }

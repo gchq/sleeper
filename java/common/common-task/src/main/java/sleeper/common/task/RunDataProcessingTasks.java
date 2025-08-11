@@ -82,7 +82,7 @@ public class RunDataProcessingTasks {
         this.sqsJobQueueUrl = getSqsJobQueueUrl(instanceProperties, compactionTask);
     }
 
-    public static RunDataProcessingTasks createRunDataProcessingTasks(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client,
+    private static RunDataProcessingTasks createRunDataProcessingTasks(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client,
             boolean compactionTask) {
         clusterName = getClusterName(instanceProperties, compactionTask);
         containerName = getContainerName(compactionTask);
@@ -104,8 +104,8 @@ public class RunDataProcessingTasks {
 
     }
 
-    public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
-        return createRunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, false);
+    public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
+        return new RunDataProcessingTasks(instanceProperties, taskCounts, hostScaler, taskLauncher, false);
 
     }
 
@@ -206,7 +206,7 @@ public class RunDataProcessingTasks {
      */
     private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
 
-        // CHoose either compaction or export
+        // Choose either compaction or export
         TaskOverride override = createOverride(instanceProperties);
         RunTaskRequest.Builder runTaskRequest = RunTaskRequest.builder()
                 .cluster(clusterName)
@@ -298,7 +298,7 @@ public class RunDataProcessingTasks {
 
     public static void main(String[] args) {
         if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <number-of-tasks> <compaction-task>");
+            System.out.println("Usage: <instance-id> <number-of-tasks> <is-compaction-task>");
             return;
         }
         String instanceId = args[0];
