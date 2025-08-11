@@ -19,8 +19,7 @@ use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
 use compaction_helpers::*;
 use sleeper_core::{
-    CommonConfig, OperationOutput, SleeperCompactionConfig, SleeperParquetOptions,
-    SleeperPartitionRegion, run_compaction,
+    CommonConfig, OperationOutput, SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, sync::Arc};
 use tempfile::tempdir;
@@ -37,18 +36,16 @@ async fn should_merge_two_files() -> Result<(), Error> {
     write_file_of_ints(&file_1, "key", vec![1, 3])?;
     write_file_of_ints(&file_2, "key", vec![2, 4])?;
 
-    let input = SleeperCompactionConfig {
-        common: CommonConfig {
-            input_files: Vec::from([file_1, file_2]),
-            input_files_sorted: true,
-            row_key_cols: row_key_cols(["key"]),
-            region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
-            output: OperationOutput::File {
-                output_file: output.clone(),
-                opts: SleeperParquetOptions::default(),
-            },
-            ..Default::default()
+    let input = CommonConfig {
+        input_files: Vec::from([file_1, file_2]),
+        input_files_sorted: true,
+        row_key_cols: row_key_cols(["key"]),
+        region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
         },
+        ..Default::default()
     };
 
     // When
@@ -72,18 +69,16 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     write_file_of_ints(&file_1, "key", vec![1, 2])?;
     write_file_of_ints(&file_2, "key", vec![2, 3])?;
 
-    let input = SleeperCompactionConfig {
-        common: CommonConfig {
-            input_files: Vec::from([file_1, file_2]),
-            input_files_sorted: true,
-            row_key_cols: row_key_cols(["key"]),
-            region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
-            output: OperationOutput::File {
-                output_file: output.clone(),
-                opts: SleeperParquetOptions::default(),
-            },
-            ..Default::default()
+    let input = CommonConfig {
+        input_files: Vec::from([file_1, file_2]),
+        input_files_sorted: true,
+        row_key_cols: row_key_cols(["key"]),
+        region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
         },
+        ..Default::default()
     };
 
     // When
@@ -107,18 +102,16 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     write_file_of_ints(&file_1, "key", vec![1, 2])?;
     write_file_of_ints(&file_2, "key", vec![3, 4])?;
 
-    let input = SleeperCompactionConfig {
-        common: CommonConfig {
-            input_files: Vec::from([file_1, file_2]),
-            input_files_sorted: true,
-            row_key_cols: row_key_cols(["key"]),
-            region: SleeperPartitionRegion::new(single_int_range("key", 2, 4)),
-            output: OperationOutput::File {
-                output_file: output.clone(),
-                opts: SleeperParquetOptions::default(),
-            },
-            ..Default::default()
+    let input = CommonConfig {
+        input_files: Vec::from([file_1, file_2]),
+        input_files_sorted: true,
+        row_key_cols: row_key_cols(["key"]),
+        region: SleeperPartitionRegion::new(single_int_range("key", 2, 4)),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
         },
+        ..Default::default()
     };
 
     // When
@@ -148,21 +141,19 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
     write_file(&file_1, &data_1)?;
     write_file(&file_2, &data_2)?;
 
-    let input = SleeperCompactionConfig {
-        common: CommonConfig {
-            input_files: Vec::from([file_1, file_2]),
-            input_files_sorted: true,
-            row_key_cols: row_key_cols(["key1", "key2"]),
-            region: SleeperPartitionRegion::new(HashMap::from([
-                region_entry("key1", int_range(2, 4)),
-                region_entry("key2", int_range(13, 23)),
-            ])),
-            output: OperationOutput::File {
-                output_file: output.clone(),
-                opts: SleeperParquetOptions::default(),
-            },
-            ..Default::default()
+    let input = CommonConfig {
+        input_files: Vec::from([file_1, file_2]),
+        input_files_sorted: true,
+        row_key_cols: row_key_cols(["key1", "key2"]),
+        region: SleeperPartitionRegion::new(HashMap::from([
+            region_entry("key1", int_range(2, 4)),
+            region_entry("key2", int_range(13, 23)),
+        ])),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
         },
+        ..Default::default()
     };
 
     // When
@@ -195,21 +186,19 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
     write_file(&file_1, &data_1)?;
     write_file(&file_2, &data_2)?;
 
-    let input = SleeperCompactionConfig {
-        common: CommonConfig {
-            input_files: Vec::from([file_1, file_2]),
-            input_files_sorted: true,
-            row_key_cols: row_key_cols(["key2"]),
-            region: SleeperPartitionRegion::new(HashMap::from([region_entry(
-                "key2",
-                int_range(11, 25),
-            )])),
-            output: OperationOutput::File {
-                output_file: output.clone(),
-                opts: SleeperParquetOptions::default(),
-            },
-            ..Default::default()
+    let input = CommonConfig {
+        input_files: Vec::from([file_1, file_2]),
+        input_files_sorted: true,
+        row_key_cols: row_key_cols(["key2"]),
+        region: SleeperPartitionRegion::new(HashMap::from([region_entry(
+            "key2",
+            int_range(11, 25),
+        )])),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
         },
+        ..Default::default()
     };
 
     // When

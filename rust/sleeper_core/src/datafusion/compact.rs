@@ -1,7 +1,5 @@
 //! Contains the implementation for performing Sleeper compactions
 //! using Apache `DataFusion`.
-use std::sync::Arc;
-
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -18,7 +16,7 @@ use std::sync::Arc;
 * limitations under the License.
 */
 use crate::{
-    CompactionResult, OperationOutput, SleeperCompactionConfig,
+    CommonConfig, CompactionResult, OperationOutput,
     datafusion::{
         ParquetWriterConfigurer, SleeperOperations,
         metrics::RowCounts,
@@ -34,6 +32,7 @@ use datafusion::{
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
+use std::sync::Arc;
 
 /// Starts a Sleeper compaction.
 ///
@@ -42,16 +41,16 @@ use objectstore_ext::s3::ObjectStoreFactory;
 /// the output file.
 pub async fn compact(
     store_factory: &ObjectStoreFactory,
-    input_data: &SleeperCompactionConfig<'_>,
+    config: &CommonConfig<'_>,
 ) -> Result<CompactionResult, DataFusionError> {
-    let ops = SleeperOperations::new(&input_data.common);
+    let ops = SleeperOperations::new(config);
     info!("DataFusion compaction: {ops}");
 
     // Retrieve Parquet output options
     let OperationOutput::File {
-        output_file: _,
+        output_file,
         opts: parquet_options,
-    } = &input_data.common.output
+    } = &config.output
     else {
         return plan_err!("Sleeper compactions must output to a file");
     };
@@ -69,14 +68,7 @@ pub async fn compact(
     let stats = execute_compaction_plan(&ops, frame).await?;
 
     // Write the frame out and collect stats
-    output_sketch(
-        store_factory,
-        input_data
-            .output_file()
-            .map_err(|e| DataFusionError::External(e.into()))?,
-        sketcher.sketch(),
-    )
-    .await?;
+    output_sketch(store_factory, output_file, sketcher.sketch()).await?;
 
     stats.log_metrics();
     Ok(CompactionResult::from(&stats))

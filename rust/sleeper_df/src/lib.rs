@@ -19,8 +19,8 @@ use color_eyre::eyre::eyre;
 use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperCompactionConfig,
-    SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
+    AwsConfig, ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperParquetOptions,
+    SleeperPartitionRegion, run_compaction,
 };
 use std::{
     borrow::Borrow,
@@ -105,12 +105,10 @@ pub struct FFICompactionParams {
     iterator_config: *const c_char,
 }
 
-impl<'a> TryFrom<&'a FFICompactionParams> for SleeperCompactionConfig<'a> {
+impl<'a> TryFrom<&'a FFICompactionParams> for CommonConfig<'a> {
     type Error = color_eyre::eyre::Report;
 
-    fn try_from(
-        params: &'a FFICompactionParams,
-    ) -> Result<SleeperCompactionConfig<'a>, Self::Error> {
+    fn try_from(params: &'a FFICompactionParams) -> Result<CommonConfig<'a>, Self::Error> {
         if params.iterator_config.is_null() {
             error!("FFICompactionsParams iterator_config is NULL");
         }
@@ -155,27 +153,25 @@ impl<'a> TryFrom<&'a FFICompactionParams> for SleeperCompactionConfig<'a> {
         };
 
         Ok(Self {
-            common: CommonConfig {
-                aws_config: unpack_aws_config(params)?,
-                input_files: unpack_string_array(params.input_files, params.input_files_len)?
-                    .into_iter()
-                    .map(Url::parse)
-                    .collect::<Result<Vec<_>, _>>()?,
-                input_files_sorted: true,
-                row_key_cols,
-                sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
-                    .into_iter()
-                    .map(String::from)
-                    .collect(),
-                region,
-                output: OperationOutput::File {
-                    output_file: unsafe { CStr::from_ptr(params.output_file) }
-                        .to_str()
-                        .map(Url::parse)??,
-                    opts,
-                },
-                iterator_config,
+            aws_config: unpack_aws_config(params)?,
+            input_files: unpack_string_array(params.input_files, params.input_files_len)?
+                .into_iter()
+                .map(Url::parse)
+                .collect::<Result<Vec<_>, _>>()?,
+            input_files_sorted: true,
+            row_key_cols,
+            sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
+                .into_iter()
+                .map(String::from)
+                .collect(),
+            region,
+            output: OperationOutput::File {
+                output_file: unsafe { CStr::from_ptr(params.output_file) }
+                    .to_str()
+                    .map(Url::parse)??,
+                opts,
             },
+            iterator_config,
         })
     }
 }
@@ -320,7 +316,7 @@ pub extern "C" fn merge_sorted_files(
         }
     };
 
-    let details = match TryInto::<SleeperCompactionConfig>::try_into(params) {
+    let details = match TryInto::<CommonConfig>::try_into(params) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {e}");

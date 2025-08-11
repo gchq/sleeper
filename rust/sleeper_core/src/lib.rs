@@ -24,7 +24,7 @@
 use arrow::record_batch::RecordBatch;
 use aws_config::Region;
 use aws_credential_types::Credentials;
-use color_eyre::eyre::{Result, bail, eyre};
+use color_eyre::eyre::{Result, bail};
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
 use std::fmt::Formatter;
@@ -196,44 +196,6 @@ pub enum OperationOutput {
     },
 }
 
-/// All the information for a Sleeper compaction.
-#[derive(Debug, Default)]
-pub struct SleeperCompactionConfig<'a> {
-    /// Common configuration
-    pub common: CommonConfig<'a>,
-}
-
-impl SleeperCompactionConfig<'_> {
-    /// Convenience function to return region.
-    #[must_use]
-    pub fn region(&self) -> &SleeperPartitionRegion<'_> {
-        &self.common.region
-    }
-
-    /// Get input files for Sleeper compaction.
-    #[must_use]
-    pub fn input_files(&self) -> &Vec<Url> {
-        &self.common.input_files
-    }
-
-    /// Get the output file for a Sleeper compaction.
-    ///
-    /// # Errors
-    /// Since compactions must output to a file, an error will occur
-    /// if Arrow stream output is selected.
-    pub fn output_file(&self) -> Result<&Url> {
-        if let OperationOutput::File {
-            output_file,
-            opts: _,
-        } = &self.common.output
-        {
-            Ok(output_file)
-        } else {
-            Err(eyre!("Sleeper compactions must output to a file"))
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct AwsConfig {
     pub region: String,
@@ -267,13 +229,13 @@ pub struct CompactionResult {
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
-/// # use crate::sleeper_core::{run_compaction, SleeperCompactionConfig, PartitionBound, ColRange,
+/// # use crate::sleeper_core::{run_compaction, CommonConfig, PartitionBound, ColRange,
 /// # OperationOutput, SleeperParquetOptions};
-/// let mut compaction_input = SleeperCompactionConfig::default();
-/// compaction_input.common.input_files_sorted = true;
-/// compaction_input.common.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
-/// compaction_input.common.output = OperationOutput::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
-/// compaction_input.common.row_key_cols = vec!["key".into()];
+/// let mut compaction_input = CommonConfig::default();
+/// compaction_input.input_files_sorted = true;
+/// compaction_input.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
+/// compaction_input.output = OperationOutput::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
+/// compaction_input.row_key_cols = vec!["key".into()];
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
 ///     lower : PartitionBound::String("a"),
@@ -290,11 +252,11 @@ pub struct CompactionResult {
 /// # Errors
 /// There must be at least one input file.
 ///
-pub async fn run_compaction(input_data: &SleeperCompactionConfig<'_>) -> Result<CompactionResult> {
-    input_data.common.validate()?;
-    let store_factory = create_object_store_factory(input_data.common.aws_config.as_ref()).await;
+pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResult> {
+    config.validate()?;
+    let store_factory = create_object_store_factory(config.aws_config.as_ref()).await;
 
-    crate::datafusion::compact(&store_factory, input_data)
+    crate::datafusion::compact(&store_factory, config)
         .await
         .map_err(Into::into)
 }

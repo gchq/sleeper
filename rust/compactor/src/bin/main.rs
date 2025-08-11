@@ -20,8 +20,8 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
-    ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperCompactionConfig,
-    SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
+    ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperParquetOptions,
+    SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
@@ -149,20 +149,18 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_values: true,
     };
 
-    let details = SleeperCompactionConfig {
-        common: CommonConfig {
-            aws_config: None,
-            input_files: input_urls,
-            input_files_sorted: true,
-            row_key_cols: args.row_keys,
-            sort_key_cols: args.sort_keys,
-            region: SleeperPartitionRegion::new(map),
-            output: OperationOutput::File {
-                output_file,
-                opts: parquet_options,
-            },
-            iterator_config: args.iterator_config,
+    let details = CommonConfig {
+        aws_config: None,
+        input_files: input_urls,
+        input_files_sorted: true,
+        row_key_cols: args.row_keys,
+        sort_key_cols: args.sort_keys,
+        region: SleeperPartitionRegion::new(map),
+        output: OperationOutput::File {
+            output_file,
+            opts: parquet_options,
         },
+        iterator_config: args.iterator_config,
     };
 
     let result = run_compaction(&details).await;
