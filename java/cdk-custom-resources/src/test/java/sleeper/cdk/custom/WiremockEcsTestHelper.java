@@ -35,8 +35,11 @@ public class WiremockEcsTestHelper {
     public static final StringValuePattern MATCHING_LIST_CONTAINERS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListContainerInstances");
     public static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
     public static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
+    public static final StringValuePattern MATCHING_CREATE_CLUSTER_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.CreateCluster");
+    public static final StringValuePattern MATCHING_UPDATE_CLUSTER_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.UpdateCluster");
     public static final StringValuePattern MATCHING_DEREGISTER_CONTAINER_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.DeregisterContainerInstance");
     public static final StringValuePattern MATCHING_DELETE_CLUSTER_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.DeleteCluster");
+    public static final StringValuePattern MATCHING_TAG_RESOURCE_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.TagResource");
 
     private WiremockEcsTestHelper() {
     }
@@ -63,6 +66,30 @@ public class WiremockEcsTestHelper {
                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                 .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
                         .and(matchingJsonPath("$.task", equalTo(taskArn))));
+    }
+
+    /**
+     * Checks for an ECS create cluster request.
+     *
+     * @param  clusterName the ECS cluster
+     * @return             matching HTTP requests
+     */
+    public static RequestPatternBuilder createClusterRequestedFor(String clusterName) {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(OPERATION_HEADER, MATCHING_CREATE_CLUSTER_OPERATION)
+                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
+    }
+
+    /**
+     * Checks for an ECS update cluster request.
+     *
+     * @param  clusterName the ECS cluster
+     * @return             matching HTTP requests
+     */
+    public static RequestPatternBuilder updateClusterRequestedFor(String clusterName) {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(OPERATION_HEADER, MATCHING_UPDATE_CLUSTER_OPERATION)
+                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
     }
 
     /**

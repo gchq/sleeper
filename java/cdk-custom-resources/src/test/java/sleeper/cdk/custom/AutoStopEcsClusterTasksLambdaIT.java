@@ -29,11 +29,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_CREATE_CLUSTER_OPERATION;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_LIST_TASKS_OPERATION;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_STOP_TASK_OPERATION;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_TAG_RESOURCE_OPERATION;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_UPDATE_CLUSTER_OPERATION;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.OPERATION_HEADER;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.anyRequestedForEcs;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.createClusterRequestedFor;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.stopTaskRequestedFor;
+import static sleeper.cdk.custom.WiremockEcsTestHelper.updateClusterRequestedFor;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.wiremockEcsClient;
 
 @WireMockTest
@@ -60,16 +66,65 @@ public class AutoStopEcsClusterTasksLambdaIT {
                 .willReturn(aResponse().withStatus(200)));
 
         //When
-        lambda.handleEvent(deleteEventForCluster(clusterName), null);
+        lambda.handleEvent(eventHandlerForCluster(clusterName, "Delete"), null);
 
         //Then
         verify(2, anyRequestedForEcs());
         verify(1, stopTaskRequestedFor(clusterName, "test-task"));
     }
 
-    private CloudFormationCustomResourceEvent deleteEventForCluster(String clusterName) {
+    @Test
+    @DisplayName("Create ECS Cluster")
+    void shouldTakeNoActionOnCreateEcsCluster() {
+
+        // Given
+        String clusterName = UUID.randomUUID().toString();
+        stubFor(post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_CREATE_CLUSTER_OPERATION)
+                .willReturn(aResponse().withStatus(200)));
+
+        //When
+        lambda.handleEvent(eventHandlerForCluster(clusterName, "Create"), null);
+
+        //Then
+        verify(0, createClusterRequestedFor(clusterName));
+    }
+
+    @Test
+    @DisplayName("Update ECS Cluster")
+    void shouldTakeNoActionOnUpdateEcsCluster() {
+
+        // Given
+        String clusterName = UUID.randomUUID().toString();
+        stubFor(post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_UPDATE_CLUSTER_OPERATION)
+                .willReturn(aResponse().withStatus(200)));
+
+        //When
+        lambda.handleEvent(eventHandlerForCluster(clusterName, "Update"), null);
+
+        //Then
+        verify(0, updateClusterRequestedFor(clusterName));
+    }
+
+    @Test
+    @DisplayName("Test unsupported operation")
+    void shouldRaiseExceptionOnUnsupportedOperation() {
+
+        // Given
+        String clusterName = UUID.randomUUID().toString();
+        stubFor(post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_TAG_RESOURCE_OPERATION)
+                .willReturn(aResponse().withStatus(200)));
+
+        // When / Then
+        assertThatThrownBy(() -> lambda.handleEvent(eventHandlerForCluster(clusterName, "TagResource"), null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private CloudFormationCustomResourceEvent eventHandlerForCluster(String clusterName, String event) {
         return CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Delete")
+                .withRequestType(event)
                 .withResourceProperties(Map.of("cluster", clusterName))
                 .build();
     }
