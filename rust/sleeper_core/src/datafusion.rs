@@ -257,6 +257,10 @@ impl<'a> SleeperOperations<'a> {
         Sketcher::new(&self.config.row_key_cols, schema)
     }
 
+    /// Add a Parquet output stage on to a frame.
+    ///
+    /// # Errors
+    /// If the result logical plan could not be built.
     pub fn plan_with_parquet_output(
         &self,
         frame: DataFrame,
