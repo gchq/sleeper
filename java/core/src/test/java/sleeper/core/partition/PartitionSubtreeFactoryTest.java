@@ -16,13 +16,19 @@
 package sleeper.core.partition;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
+    public static final Logger LOGGER = LoggerFactory.getLogger(PartitionSubtreeFactoryTest.class);
 
     @Test
     void shouldCreateBalancedSubtreeWithExactLeafPartitionCount() {
@@ -44,14 +50,57 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
+    void shouldFindSubtreeDownTwoLevelsOfTreeWithThreeLevelsOfSplits() {
+        // Given
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 0L)
+                .splitToNewChildren("L", "LL", "LR", -100L)
+                .splitToNewChildren("R", "RL", "RR", 100L)
+                .splitToNewChildren("LL", "LLL", "LLR", -150L)
+                .splitToNewChildren("LR", "LRL", "LRR", -50L)
+                .splitToNewChildren("RL", "RLL", "RLR", 50L)
+                .splitToNewChildren("RR", "RRL", "RRR", 150L)
+                .buildTree();
+
+        // When
+        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 4, PartitionTreeBias.LEFT_BIAS);
+
+        // Then
+        assertThat(result).isEqualTo(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 0L)
+                .splitToNewChildren("L", "LL", "LR", -100L)
+                .splitToNewChildren("R", "RL", "RR", 100L)
+                .splitToNewChildren("LL", "LLL", "LLR", -150L)
+                .buildTree());
+    }
+
+    @Test
+    void shouldGetSubtreeForManyLeafPartitions() {
+        // Given
+        Instant start = Instant.now();
+        List<Object> splitPoints = LongStream.range(0, 100000).mapToObj(i -> (Object) i).toList();
+        PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, splitPoints);
+        Instant generated = Instant.now();
+
+        // When
+        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 50000, PartitionTreeBias.LEFT_BIAS);
+        Instant end = Instant.now();
+
+        // Then
+        assertThat(result.getLeafPartitions()).hasSize(50000);
+        LOGGER.info("Generated in {}, ran in {}", Duration.between(start, generated), Duration.between(generated, end));
+    }
+
+    @Test
     void shouldCreateBalancedSubtreeWithLeafCountCausingUnbalancedTreeLeftBias() {
         // Given / When
         int leafPartitionCount = 3;
         PartitionTree subtree = PartitionSubtreeFactory.createSubtree(
                 new PartitionTree(List.of(rootWithChildren,
                         l1Left, l1Right,
-                        l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R,
-                        l3LeftOfL2LL, l3RightOfL2LL, l3LeftOfL2LR, l3RightOfL2LR, l3LeftOfL2RL, l3RightOfL2RL, l3LeftOfL2RR, l3RightOfL2RR)),
+                        l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R)),
                 leafPartitionCount,
                 PartitionTreeBias.LEFT_BIAS);
 
@@ -67,8 +116,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
         PartitionTree subtree = PartitionSubtreeFactory.createSubtree(
                 new PartitionTree(List.of(rootWithChildren,
                         l1Left, l1Right,
-                        l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R,
-                        l3LeftOfL2LL, l3RightOfL2LL, l3LeftOfL2LR, l3RightOfL2LR, l3LeftOfL2RL, l3RightOfL2RL, l3LeftOfL2RR, l3RightOfL2RR)),
+                        l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R)),
                 leafPartitionCount,
                 PartitionTreeBias.RIGHT_BIAS);
 
