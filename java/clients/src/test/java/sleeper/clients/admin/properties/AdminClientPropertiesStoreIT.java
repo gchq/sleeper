@@ -53,8 +53,8 @@ import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
@@ -280,10 +280,10 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldLoadInvalidInstanceProperties() {
             // Given
-            updateInstanceProperty(instanceId, MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            updateInstanceProperty(instanceId, FORCE_RELOAD_PROPERTIES, "abc");
 
             // When / Then
-            assertThat(store().loadInstanceProperties(instanceId).get(MAXIMUM_CONNECTIONS_TO_S3))
+            assertThat(store().loadInstanceProperties(instanceId).get(FORCE_RELOAD_PROPERTIES))
                     .isEqualTo("abc");
         }
 

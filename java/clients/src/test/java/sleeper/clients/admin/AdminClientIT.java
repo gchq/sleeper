@@ -36,7 +36,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_S
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.core.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -101,7 +101,7 @@ class AdminClientIT extends AdminClientITBase {
         // Given
         InstanceProperties before = createValidInstanceProperties();
         InstanceProperties after = InstanceProperties.copyOf(before);
-        after.set(MAXIMUM_CONNECTIONS_TO_S3, "2");
+        after.set(S3_UPLOAD_BLOCK_SIZE, "64M");
 
         // When
         String output = editInstanceConfiguration(before, after)
@@ -115,7 +115,7 @@ class AdminClientIT extends AdminClientITBase {
                         DISPLAY_MAIN_SCREEN);
 
         InstanceProperties found = S3InstanceProperties.loadFromBucket(s3, before.get(CONFIG_BUCKET));
-        assertThat(found.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(2);
+        assertThat(found.get(S3_UPLOAD_BLOCK_SIZE)).isEqualTo("64M");
     }
 
     @Test
