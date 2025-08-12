@@ -55,7 +55,7 @@ public class PublishJarsToRepo {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 3) {
-            throw new IllegalArgumentException("Usage: <jars-dir> <repository url> <m2 settings server id>");
+            throw new IllegalArgumentException("Usage: <jars-dir> <repository url> <m2 settings server ID>");
         }
 
         builder()

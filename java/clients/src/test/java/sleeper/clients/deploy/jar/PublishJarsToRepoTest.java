@@ -136,17 +136,13 @@ public class PublishJarsToRepoTest {
     }
 
     private CommandPipeline generateMavenDeployFileCommand(String filename, String artifactId) {
-        return pipeline(command(generateMavenCommands(filename, artifactId)));
-    }
-
-    private String[] generateMavenCommands(String filename, String artifactId) {
-        return new String[]{"mvn", "deploy:deploy-file", "-q",
-            "-Durl=someUrl",
-            "-DrepositoryId=repo.id",
-            "-Dfile=/some/directory/" + filename,
-            "-DgroupId=sleeper",
-            "-DartifactId=" + artifactId,
-            "-Dversion=0.31.0",
-            "-DgeneratePom=false"};
+        return pipeline(command("mvn", "deploy:deploy-file", "-q",
+                "-Durl=someUrl",
+                "-DrepositoryId=repo.id",
+                "-Dfile=/some/directory/" + filename,
+                "-DgroupId=sleeper",
+                "-DartifactId=" + artifactId,
+                "-Dversion=0.31.0",
+                "-DgeneratePom=false"));
     }
 }

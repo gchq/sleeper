@@ -17,7 +17,7 @@ set -e
 unset CDPATH
 
 if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <repository url> <m2 settings server id>"
+  echo "Usage: $0 <repository url> <m2 settings server ID>"
   exit 1
 fi
 echo "Ensure you've ran the scripts/build/build.sh script before running this or it will fail to find the jars."
