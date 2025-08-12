@@ -37,6 +37,7 @@ pub use datafusion::{
     sketch::{DataSketchVariant, deserialise_sketches},
 };
 
+
 /// Type safe variant for Sleeper partition boundary
 #[derive(Debug, Copy, Clone)]
 pub enum PartitionBound<'a> {
@@ -195,6 +196,20 @@ pub enum OperationOutput {
         opts: SleeperParquetOptions,
     },
 }
+
+// impl OperationOutput {
+//     /// Create a [`Completer`] for this type of output.
+//     pub fn finisher(&self) -> Arc<dyn Completer> {
+//         Arc::new(match self {
+//             Self::ArrowRecordBatch => {
+//                 unimplemented!()
+//             }
+//             Self::File { output_file, opts } => {
+//                 unimplemented!()
+//             }
+//         })
+//     }
+// }
 
 #[derive(Debug)]
 pub struct AwsConfig {

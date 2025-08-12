@@ -49,6 +49,7 @@ mod config;
 mod filter_aggregation_config;
 mod leaf_partition_query;
 mod metrics;
+pub mod output;
 mod region;
 pub mod sketch;
 mod sketch_udf;
