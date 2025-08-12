@@ -97,14 +97,6 @@ public abstract class PartitionTreeTestBase {
             .childPartitionIds(Collections.emptyList())
             .dimension(-1)
             .build();
-    protected Partition l2RightOfL1L = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", -1000000L, true, 0L, false)))
-            .id(L2_RIGHT_OF_L1L)
-            .leafPartition(true)
-            .parentPartitionId(L1_LEFT)
-            .childPartitionIds(Collections.emptyList())
-            .dimension(-1)
-            .build();
     protected Partition l2LeftOfL1R = Partition.builder()
             .region(new Region(rangeFactory.createRange("id", 0L, true, 123456789L, false)))
             .id(L2_LEFT_OF_L1R)
@@ -131,116 +123,6 @@ public abstract class PartitionTreeTestBase {
             .childPartitionIds(Collections.emptyList())
             .dimension(-1)
             .build();
-    protected Partition l3RightOfL2LL = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", -2000000L, true, -1000000L, false)))
-            .id(L3_RIGHT_OF_L2LL)
-            .leafPartition(true)
-            .parentPartitionId(L1_RIGHT)
-            .childPartitionIds(Collections.emptyList())
-            .dimension(-1)
-            .build();
-    protected Partition l3LeftOfL2LR = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", -1000000L, true, -500000L, false)))
-            .id(L3_LEFT_OF_L2LR)
-            .leafPartition(true)
-            .parentPartitionId(L1_RIGHT)
-            .childPartitionIds(Collections.emptyList())
-            .dimension(-1)
-            .build();
-    protected Partition l3RightOfL2LR = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", -500000L, true, 0L, false)))
-            .id(L3_RIGHT_OF_L2LR)
-            .leafPartition(true)
-            .parentPartitionId(L1_RIGHT)
-            .childPartitionIds(Collections.emptyList())
-            .dimension(-1)
-            .build();
-    protected Partition l3LeftOfL2RL = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", 0L, true, 12345678L, false)))
-            .id(L3_LEFT_OF_L2RL)
-            .leafPartition(true)
-            .parentPartitionId(L1_RIGHT)
-            .childPartitionIds(Collections.emptyList())
-            .dimension(-1)
-            .build();
-    protected Partition l3RightOfL2RL = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", 12345678L, true, 123456789L, false)))
-            .id(L3_RIGHT_OF_L2RL)
-            .leafPartition(true)
-            .parentPartitionId(L1_RIGHT)
-            .childPartitionIds(Collections.emptyList())
-            .dimension(-1)
-            .build();
-    protected Partition l3LeftOfL2RR = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", 123456789L, true, 234567890L, false)))
-            .id(L3_LEFT_OF_L2RR)
-            .leafPartition(true)
-            .parentPartitionId(L1_RIGHT)
-            .childPartitionIds(Collections.emptyList())
-            .dimension(-1)
-            .build();
-    protected Partition l3RightOfL2RR = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", 234567890L, true, Long.MAX_VALUE, false)))
-            .id(L3_RIGHT_OF_L2RR)
-            .leafPartition(true)
-            .parentPartitionId(L1_RIGHT)
-            .childPartitionIds(Collections.emptyList())
-            .dimension(-1)
-            .build();
-
-    protected PartitionTree generateTreeToRootLevel() {
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .rootFirst(ROOT);
-        return builder.buildTree();
-    }
-
-    protected PartitionTree generateTreeTo1Level() {
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L);
-        return builder.buildTree();
-    }
-
-    protected PartitionTree generateTreeTo2LevelsBalanced() {
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L);
-
-        return builder.buildTree();
-    }
-
-    protected PartitionTree generateTreeTo2LevelsLeftBias() {
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L);
-
-        return builder.buildTree();
-    }
-
-    protected PartitionTree generateTreeTo2LevelsRightBias() {
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L);
-
-        return builder.buildTree();
-    }
-
-    protected PartitionTree generateTreeTo3Levels() {
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
-                .splitToNewChildren(L2_LEFT_OF_L1L, L3_LEFT_OF_L2LL, L3_RIGHT_OF_L2LL, -2000000L)
-                .splitToNewChildren(L2_RIGHT_OF_L1L, L3_LEFT_OF_L2LR, L3_RIGHT_OF_L2LR, -500000L)
-                .splitToNewChildren(L2_LEFT_OF_L1R, L3_LEFT_OF_L2RL, L3_RIGHT_OF_L2RL, 12345678L)
-                .splitToNewChildren(L2_RIGHT_OF_L1R, L3_LEFT_OF_L2RR, L3_RIGHT_OF_L2RR, 234567890L);
-        return builder.buildTree();
-    }
 
     protected Partition adjustToLeafStatus(Partition partitionIn) {
         return partitionIn.toBuilder()

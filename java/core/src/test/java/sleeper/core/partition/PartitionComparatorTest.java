@@ -33,11 +33,68 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionComparatorTest extends PartitionTreeTestBase {
 
-    List<Partition> leftBiasLevel3 = List.of(
+    private Partition l3RightOfL2LL = Partition.builder()
+            .region(new Region(rangeFactory.createRange("id", -2000000L, true, -1000000L, false)))
+            .id(L3_RIGHT_OF_L2LL)
+            .leafPartition(true)
+            .parentPartitionId(L2_LEFT_OF_L1L)
+            .childPartitionIds(Collections.emptyList())
+            .dimension(-1)
+            .build();
+    private Partition l3LeftOfL2LR = Partition.builder()
+            .region(new Region(rangeFactory.createRange("id", -1000000L, true, -500000L, false)))
+            .id(L3_LEFT_OF_L2LR)
+            .leafPartition(true)
+            .parentPartitionId(L2_RIGHT_OF_L1L)
+            .childPartitionIds(Collections.emptyList())
+            .dimension(-1)
+            .build();
+    private Partition l3RightOfL2LR = Partition.builder()
+            .region(new Region(rangeFactory.createRange("id", -500000L, true, 0L, false)))
+            .id(L3_RIGHT_OF_L2LR)
+            .leafPartition(true)
+            .parentPartitionId(L2_RIGHT_OF_L1L)
+            .childPartitionIds(Collections.emptyList())
+            .dimension(-1)
+            .build();
+    private Partition l3LeftOfL2RL = Partition.builder()
+            .region(new Region(rangeFactory.createRange("id", 0L, true, 12345678L, false)))
+            .id(L3_LEFT_OF_L2RL)
+            .leafPartition(true)
+            .parentPartitionId(L2_LEFT_OF_L1R)
+            .childPartitionIds(Collections.emptyList())
+            .dimension(-1)
+            .build();
+    private Partition l3RightOfL2RL = Partition.builder()
+            .region(new Region(rangeFactory.createRange("id", 12345678L, true, 123456789L, false)))
+            .id(L3_RIGHT_OF_L2RL)
+            .leafPartition(true)
+            .parentPartitionId(L2_LEFT_OF_L1R)
+            .childPartitionIds(Collections.emptyList())
+            .dimension(-1)
+            .build();
+    private Partition l3LeftOfL2RR = Partition.builder()
+            .region(new Region(rangeFactory.createRange("id", 123456789L, true, 234567890L, false)))
+            .id(L3_LEFT_OF_L2RR)
+            .leafPartition(true)
+            .parentPartitionId(L2_RIGHT_OF_L1R)
+            .childPartitionIds(Collections.emptyList())
+            .dimension(-1)
+            .build();
+    private Partition l3RightOfL2RR = Partition.builder()
+            .region(new Region(rangeFactory.createRange("id", 234567890L, true, Long.MAX_VALUE, false)))
+            .id(L3_RIGHT_OF_L2RR)
+            .leafPartition(true)
+            .parentPartitionId(L2_RIGHT_OF_L1R)
+            .childPartitionIds(Collections.emptyList())
+            .dimension(-1)
+            .build();
+
+    private List<Partition> leftBiasLevel3 = List.of(
             l3LeftOfL2LL, l3RightOfL2LL, l3LeftOfL2LR, l3RightOfL2LR,
             l3LeftOfL2RL, l3RightOfL2RL, l3LeftOfL2RR, l3RightOfL2RR);
 
-    List<Partition> rightBiasLevel3 = List.of(
+    private List<Partition> rightBiasLevel3 = List.of(
             l3RightOfL2RR, l3LeftOfL2RR, l3RightOfL2RL, l3LeftOfL2RL,
             l3RightOfL2LR, l3LeftOfL2LR, l3RightOfL2LL, l3LeftOfL2LL);
 
