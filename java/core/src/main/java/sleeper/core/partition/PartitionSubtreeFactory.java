@@ -33,9 +33,10 @@ public class PartitionSubtreeFactory {
      *
      * @param  originalTree       source from which the new sub tree is to be created
      * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
+     * @param  bias               determines when creating a subtree which side of nodes to focus on first
      * @return                    newly generated sub tree
      */
-    public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount) throws PartitionTreeException {
+    public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount, PartitionTreeBias bias) throws PartitionTreeException {
         if (leafPartitionCount > originalTree.getLeafPartitions().size()) {
             throw new PartitionTreeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
         }
@@ -46,7 +47,7 @@ public class PartitionSubtreeFactory {
         int presentLeafCount = 1;
 
         while (checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
-            Iterator<Partition> partitionIterator = getChildPartitionsFromIds(originalTree, lastAddedIds).iterator();
+            Iterator<Partition> partitionIterator = getChildPartitionsFromIds(originalTree, lastAddedIds, bias).iterator();
             while (partitionIterator.hasNext() && checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
                 Partition presentPartion = partitionIterator.next();
                 subtree.idToPartition.put(presentPartion.getId(), presentPartion);
@@ -75,13 +76,18 @@ public class PartitionSubtreeFactory {
         return present < target;
     }
 
-    private static List<Partition> getChildPartitionsFromIds(PartitionTree treeIn, List<Partition> parentIdsIn) {
+    private static List<Partition> getChildPartitionsFromIds(PartitionTree treeIn, List<Partition> parentIdsIn, PartitionTreeBias bias) {
         List<Partition> outList = new ArrayList<Partition>();
         parentIdsIn.forEach(partition -> {
             partition.getChildPartitionIds().forEach(childId -> {
                 outList.add(treeIn.getPartition(childId));
             });
         });
+        if (bias.equals(PartitionTreeBias.LEFT_BIAS)) {
+            outList.sort(new PartitionComparator());
+        } else if (bias.equals(PartitionTreeBias.RIGHT_BIAS)) {
+            outList.sort(new PartitionComparator().reversed());
+        }
 
         return outList;
     }
