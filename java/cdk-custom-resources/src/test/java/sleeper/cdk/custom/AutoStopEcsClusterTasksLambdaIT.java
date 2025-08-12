@@ -33,7 +33,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_CREATE_CLUSTER_OPERATION;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_LIST_TASKS_OPERATION;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_STOP_TASK_OPERATION;
-import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_TAG_RESOURCE_OPERATION;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.MATCHING_UPDATE_CLUSTER_OPERATION;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.OPERATION_HEADER;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.anyRequestedForEcs;
@@ -41,6 +40,7 @@ import static sleeper.cdk.custom.WiremockEcsTestHelper.createClusterRequestedFor
 import static sleeper.cdk.custom.WiremockEcsTestHelper.stopTaskRequestedFor;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.updateClusterRequestedFor;
 import static sleeper.cdk.custom.WiremockEcsTestHelper.wiremockEcsClient;
+import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
 @WireMockTest
 public class AutoStopEcsClusterTasksLambdaIT {
@@ -58,17 +58,22 @@ public class AutoStopEcsClusterTasksLambdaIT {
 
         // Given
         String clusterName = UUID.randomUUID().toString();
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-                .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
-                .willReturn(aResponse().withStatus(200)));
+        stubFor(
+                post("/")
+                        .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
+        stubFor(
+                post("/")
+                        .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
+                        .willReturn(aResponse().withStatus(200)));
 
-        //When
+        // When
         lambda.handleEvent(eventHandlerForCluster(clusterName, "Delete"), null);
 
-        //Then
+        // Then
         verify(2, anyRequestedForEcs());
         verify(1, stopTaskRequestedFor(clusterName, "test-task"));
     }
@@ -79,14 +84,15 @@ public class AutoStopEcsClusterTasksLambdaIT {
 
         // Given
         String clusterName = UUID.randomUUID().toString();
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_CREATE_CLUSTER_OPERATION)
-                .willReturn(aResponse().withStatus(200)));
+        stubFor(
+                post("/")
+                        .withHeader(OPERATION_HEADER, MATCHING_CREATE_CLUSTER_OPERATION)
+                        .willReturn(aResponse().withStatus(200)));
 
-        //When
+        // When
         lambda.handleEvent(eventHandlerForCluster(clusterName, "Create"), null);
 
-        //Then
+        // Then
         verify(0, createClusterRequestedFor(clusterName));
     }
 
@@ -96,14 +102,15 @@ public class AutoStopEcsClusterTasksLambdaIT {
 
         // Given
         String clusterName = UUID.randomUUID().toString();
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_UPDATE_CLUSTER_OPERATION)
-                .willReturn(aResponse().withStatus(200)));
+        stubFor(
+                post("/")
+                        .withHeader(OPERATION_HEADER, MATCHING_UPDATE_CLUSTER_OPERATION)
+                        .willReturn(aResponse().withStatus(200)));
 
-        //When
+        // When
         lambda.handleEvent(eventHandlerForCluster(clusterName, "Update"), null);
 
-        //Then
+        // Then
         verify(0, updateClusterRequestedFor(clusterName));
     }
 
@@ -113,16 +120,17 @@ public class AutoStopEcsClusterTasksLambdaIT {
 
         // Given
         String clusterName = UUID.randomUUID().toString();
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_TAG_RESOURCE_OPERATION)
-                .willReturn(aResponse().withStatus(200)));
 
         // When / Then
-        assertThatThrownBy(() -> lambda.handleEvent(eventHandlerForCluster(clusterName, "TagResource"), null))
+        verify(0, anyRequestedForEcs());
+        assertThatThrownBy(
+                () -> lambda.handleEvent(
+                        eventHandlerForCluster(clusterName, "TagResource"), null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    private CloudFormationCustomResourceEvent eventHandlerForCluster(String clusterName, String event) {
+    private CloudFormationCustomResourceEvent eventHandlerForCluster(
+            String clusterName, String event) {
         return CloudFormationCustomResourceEvent.builder()
                 .withRequestType(event)
                 .withResourceProperties(Map.of("cluster", clusterName))
@@ -130,7 +138,6 @@ public class AutoStopEcsClusterTasksLambdaIT {
     }
 
     private AutoStopEcsClusterTasksLambda lambda(WireMockRuntimeInfo runtimeInfo) {
-        return new AutoStopEcsClusterTasksLambda(wiremockEcsClient(runtimeInfo));
+        return new AutoStopEcsClusterTasksLambda(wiremockEcsClient(runtimeInfo), noWaits());
     }
-
 }

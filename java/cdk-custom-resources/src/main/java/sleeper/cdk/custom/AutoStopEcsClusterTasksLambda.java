@@ -21,24 +21,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
+import sleeper.core.util.ThreadSleep;
+
 import java.util.Map;
 
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
-/**
- * Deletes an ECS cluster.
- */
+/** Deletes an ECS cluster. */
 public class AutoStopEcsClusterTasksLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(AutoStopEcsClusterTasksLambda.class);
 
     private final EcsClient ecsClient;
+    private final ThreadSleep sleep;
 
     public AutoStopEcsClusterTasksLambda() {
-        this(EcsClient.create());
+        this(EcsClient.create(), Thread::sleep);
     }
 
-    public AutoStopEcsClusterTasksLambda(EcsClient ecsClient) {
+    public AutoStopEcsClusterTasksLambda(EcsClient ecsClient, ThreadSleep sleep) {
         this.ecsClient = ecsClient;
+        this.sleep = sleep;
     }
 
     /**
@@ -47,7 +49,8 @@ public class AutoStopEcsClusterTasksLambda {
      * @param event   the event to handle
      * @param context the context
      */
-    public void handleEvent(CloudFormationCustomResourceEvent event, Context context) {
+    public void handleEvent(
+            CloudFormationCustomResourceEvent event, Context context) {
         Map<String, Object> resourceProperties = event.getResourceProperties();
         String clusterName = (String) resourceProperties.get("cluster");
 
@@ -66,14 +69,14 @@ public class AutoStopEcsClusterTasksLambda {
 
     private void stopTasks(String clusterName) {
         ecsClient.listTasksPaginator(builder -> builder.cluster(clusterName))
-                .taskArns().forEach(task -> {
-                    LOGGER.info("Stopping task {} in cluster {} ", task, clusterName);
-                    // Rate limit for ECS StopTask is 100 burst, 40 sustained:
-                    // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
-                    sleepForSustainedRatePerSecond(30);
-                    ecsClient.stopTask(builder -> builder.cluster(clusterName)
-                            .task(task));
-                });
+                .taskArns()
+                .forEach(
+                        task -> {
+                            LOGGER.info("Stopping task {} in cluster {} ", task, clusterName);
+                            // Rate limit for ECS StopTask is 100 burst, 40 sustained:
+                            // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
+                            sleepForSustainedRatePerSecond(30, sleep);
+                            ecsClient.stopTask(builder -> builder.cluster(clusterName).task(task));
+                        });
     }
-
 }

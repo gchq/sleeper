@@ -92,31 +92,6 @@ public class WiremockEcsTestHelper {
                 .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
     }
 
-    /**
-     * Checks for an ECS de-register container request.
-     *
-     * @param  clusterName  the ECS cluster
-     * @param  containerArn the container on the cluster
-     * @return              matching HTTP requests
-     */
-    public static RequestPatternBuilder deregisterContainerRequestedFor(String clusterName, String containerArn) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_DEREGISTER_CONTAINER_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
-                        .and(matchingJsonPath("$.containerInstance", equalTo(containerArn))));
-    }
-
-    /**
-     * Checks for an ECS delete cluster request.
-     *
-     * @param  clusterName the ECS cluster
-     * @return             matching HTTP requests
-     */
-    public static RequestPatternBuilder deleteClusterRequestedFor(String clusterName) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_DELETE_CLUSTER_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
-    }
 
     /**
      * Checks for any request that matches the pattern.
