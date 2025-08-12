@@ -63,7 +63,7 @@ impl AgeOff {
         t >= self.threshold
     }
 
-    /// Attempts to create an [`AgeOff`] from a [`Filter`] relative to a time instant.
+    /// Attempts to create an [`AgeOff`] from a time relative to a time instant.
     ///
     /// The given time is used to create an age-off filter that will filter out
     /// values older than a duration relative to the given time.

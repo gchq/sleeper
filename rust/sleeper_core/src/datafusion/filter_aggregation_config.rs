@@ -18,7 +18,7 @@ use aggregator_udfs::{
     nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
 };
 use datafusion::{
-    common::{DFSchema, HashSet, plan_datafusion_err, plan_err},
+    common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
     error::{DataFusionError, Result},
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
     prelude::DataFrame,
@@ -35,12 +35,24 @@ pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 /// [`validate_aggregations`] function.
 #[derive(Debug, Default)]
 pub struct FilterAggregationConfig {
-    /// Extra columns beyond row key columns to aggregate
-    pub agg_cols: Option<Vec<String>>,
     /// Single filtering option
     pub filter: Option<Filter>,
     /// Aggregation columns. These must not include any row key columns or columns mentioned in `agg_cols`.
     pub aggregation: Option<Vec<Aggregate>>,
+}
+
+impl FilterAggregationConfig {
+    /// Get the filter configuration if present.
+    #[must_use]
+    pub fn filter(&self) -> Option<&Filter> {
+        self.filter.as_ref()
+    }
+
+    /// Aggregation configuration if present.
+    #[must_use]
+    pub fn aggregation(&self) -> Option<&Vec<Aggregate>> {
+        self.aggregation.as_ref()
+    }
 }
 
 /// Supported filters
@@ -117,20 +129,9 @@ impl TryFrom<&str> for FilterAggregationConfig {
     /// It is a really good example of how NOT to do it. This routine has some odd behaviour.
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         // split aggregation columns out
-        let (agg_cols, filter_agg) = value
+        let (_, filter_agg) = value
             .split_once(';')
             .ok_or(plan_datafusion_err!("No ; in aggregation configuration"))?;
-        // Convert to a vector of columns
-        let agg_cols = if agg_cols.is_empty() {
-            None
-        } else {
-            Some(
-                agg_cols
-                    .split(',')
-                    .map(|s| s.trim().to_owned())
-                    .collect::<Vec<_>>(),
-            )
-        };
 
         // Create list of strings delimited by comma as iterator
         let values = filter_agg.split(',').map(str::trim).collect::<Vec<_>>();
@@ -165,7 +166,6 @@ impl TryFrom<&str> for FilterAggregationConfig {
             Some(aggregation)
         };
         Ok(Self {
-            agg_cols,
             filter,
             aggregation,
         })
@@ -186,19 +186,20 @@ impl TryFrom<&str> for FilterAggregationConfig {
 ///
 /// Raise an error if this is not the case.
 pub fn validate_aggregations(
-    group_by_cols: &[String],
+    group_by_cols: &[&str],
     schema: &DFSchema,
     agg_conf: &[Aggregate],
 ) -> Result<()> {
     if !agg_conf.is_empty() {
         // List of columns
-        let all_cols = schema.clone().strip_qualifiers().field_names();
+        let all_cols_bind = schema.columns();
+        let all_cols = all_cols_bind.iter().map(Column::name).collect::<Vec<_>>();
         // Check for duplicate aggregation columns
         let mut dup_check = HashSet::new();
         for col in group_by_cols {
             // Has this "group by" column been specified multiple times? Or is it a row key column?
             // Row key columns are implicitly "group by" columns.
-            if !dup_check.insert(col) {
+            if !dup_check.insert(*col) {
                 return plan_err!(
                     "Grouping column \"{col}\" is already a row key column or has been specified multiple times"
                 );
@@ -212,24 +213,27 @@ pub fn validate_aggregations(
         let mut non_row_key_cols = all_cols.clone();
         non_row_key_cols.retain(|col| !group_by_cols.contains(col));
         // Columns with aggregators
-        let agg_cols = agg_conf.iter().map(|agg| &agg.0).collect::<Vec<_>>();
+        let agg_cols = agg_conf
+            .iter()
+            .map(|agg| agg.0.as_str())
+            .collect::<Vec<_>>();
         // Check for duplications in aggregation columns and row key aggregations
-        let mut col_checks: HashSet<&String> = HashSet::new();
+        let mut col_checks: HashSet<&str> = HashSet::new();
         for col in &agg_cols {
-            if group_by_cols.contains(*col) {
+            if group_by_cols.contains(col) {
                 return plan_err!(
                     "Row key/extra grouping column \"{col}\" cannot have an aggregation"
                 );
             }
-            if !col_checks.insert(*col) {
+            if !col_checks.insert(col) {
                 return plan_err!("Aggregation column \"{col}\" duplicated");
             }
-            if !non_row_key_cols.contains(*col) {
+            if !non_row_key_cols.contains(col) {
                 return plan_err!("Aggregation column \"{col}\" doesn't exist");
             }
         }
         // Check all non row key columns exist in aggregation column list
-        for col in &non_row_key_cols {
+        for col in non_row_key_cols {
             if !agg_cols.contains(&col) {
                 return plan_err!(
                     "Column \"{col}\" doesn't have a aggregation operator specified!"

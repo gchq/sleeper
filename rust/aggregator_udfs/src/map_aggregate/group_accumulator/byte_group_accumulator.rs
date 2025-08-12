@@ -1,4 +1,4 @@
-//! [`GroupAccumulator`] implementations for byte group map aggregation.
+//! [`GroupsAccumulator`] implementations for byte group map aggregation.
 /*
 * Copyright 2022-2025 Crown Copyright
 *

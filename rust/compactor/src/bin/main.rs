@@ -19,7 +19,10 @@ use color_eyre::eyre::bail;
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
-use sleeper_core::{ColRange, CompactionInput, PartitionBound, run_compaction};
+use sleeper_core::{
+    ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperParquetOptions,
+    SleeperPartitionRegion, run_compaction,
+};
 use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
 
@@ -108,7 +111,7 @@ async fn main() -> color_eyre::Result<()> {
         .collect::<Result<Vec<_>, _>>()?;
 
     // Convert output URL
-    let output_url = Url::parse(&args.output)
+    let output_file = Url::parse(&args.output)
         .or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(&args.output))))?;
 
     if args.row_keys.len() != args.region_maxs.len() {
@@ -133,10 +136,8 @@ async fn main() -> color_eyre::Result<()> {
             },
         );
     }
-    let details = CompactionInput {
-        aws_config: None,
-        input_files: input_urls,
-        output_file: output_url,
+
+    let parquet_options = SleeperParquetOptions {
         max_page_size: args.max_page_size,
         max_row_group_size: args.row_group_size,
         column_truncate_length: 1_048_576,
@@ -146,9 +147,19 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_row_keys: true,
         dict_enc_sort_keys: true,
         dict_enc_values: true,
-        region: map,
+    };
+
+    let details = CommonConfig {
+        aws_config: None,
+        input_files: input_urls,
+        input_files_sorted: true,
         row_key_cols: args.row_keys,
         sort_key_cols: args.sort_keys,
+        region: SleeperPartitionRegion::new(map),
+        output: OperationOutput::File {
+            output_file,
+            opts: parquet_options,
+        },
         iterator_config: args.iterator_config,
     };
 

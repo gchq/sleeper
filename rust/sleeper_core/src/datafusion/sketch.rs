@@ -15,21 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use arrow::array::ArrayAccessor;
-use arrow::datatypes::DataType;
+use crate::datafusion::sketch_udf::SketchUDF;
+use arrow::{array::ArrayAccessor, datatypes::DataType};
 use bytes::{Buf, BufMut};
 use color_eyre::eyre::eyre;
 use cxx::{Exception, UniquePtr};
-use datafusion::parquet::data_type::AsBytes;
+use datafusion::{
+    common::DFSchema,
+    error::DataFusionError,
+    logical_expr::{ScalarUDF, col},
+    parquet::data_type::AsBytes,
+    prelude::DataFrame,
+};
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
-use rust_sketch::quantiles::byte::{byte_deserialize, byte_sketch_t, new_byte_sketch};
-use rust_sketch::quantiles::i64::{i64_deserialize, i64_sketch_t, new_i64_sketch};
-use rust_sketch::quantiles::str::{new_str_sketch, str_deserialize, string_sketch_t};
-use std::fmt::Debug;
-use std::io::Write;
-use std::mem::size_of;
+use rust_sketch::quantiles::{
+    byte::{byte_deserialize, byte_sketch_t, new_byte_sketch},
+    i64::{i64_deserialize, i64_sketch_t, new_i64_sketch},
+    str::{new_str_sketch, str_deserialize, string_sketch_t},
+};
+use std::{
+    fmt::Debug,
+    io::Write,
+    mem::size_of,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 use url::Url;
 
 /// Constant size for quantiles data sketches
@@ -299,6 +311,65 @@ impl DataSketchVariant {
     }
 }
 
+/// A sketching manager to handle creation of sketching functions.
+///
+/// This can create a User Defined Sketch function for `DataFusion` as
+/// and modify a [`DataFrame`] to add sketch generation to it.
+#[derive(Debug)]
+pub struct Sketcher<'a> {
+    /// Row key names
+    row_keys: &'a Vec<String>,
+    /// A created sketch function.
+    sketch: Arc<ScalarUDF>,
+}
+
+impl<'a> Sketcher<'a> {
+    pub fn new(row_keys: &'a Vec<String>, schema: &DFSchema) -> Sketcher<'a> {
+        Sketcher {
+            row_keys,
+            sketch: Arc::new(ScalarUDF::from(SketchUDF::new(
+                schema,
+                &row_keys.iter().map(String::as_str).collect::<Vec<_>>(),
+            ))),
+        }
+    }
+
+    // The created sketch UDF.
+    pub fn sketch(&self) -> &Arc<ScalarUDF> {
+        &self.sketch
+    }
+
+    /// Adds quantile sketch creation to the given frame.
+    ///
+    /// An extra SELECT stage is added to the frame's plan. The created sketch
+    /// function is also returned so sketches can be accessed after execution
+    /// of the frame's plan.
+    pub fn apply_sketch(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        // Extract all column names
+        let column_bind = frame.schema().columns();
+        let col_names = column_bind
+            .iter()
+            .map(datafusion::prelude::Column::name)
+            .collect::<Vec<_>>();
+
+        let row_key_exprs = self.row_keys.iter().map(col).collect::<Vec<_>>();
+
+        // Iterate through column names, mapping each into an `Expr`
+        let mut col_names_expr = Vec::new();
+        for col_name in col_names {
+            // Have we found the first row key column?
+            let expr = if self.row_keys[0] == *col_name {
+                // Sketch function needs to be called with each row key column
+                self.sketch.call(row_key_exprs.clone()).alias(col_name)
+            } else {
+                col(col_name)
+            };
+            col_names_expr.push(expr);
+        }
+        frame.select(col_names_expr)
+    }
+}
+
 /// Write the data sketches to the named file.
 ///
 /// For each sketch, the length of the serialised sketch is written in
@@ -309,20 +380,25 @@ impl DataSketchVariant {
 /// The data sketch serialisation might also throw errors from the underlying
 /// data sketch library.
 #[allow(clippy::cast_possible_truncation)]
-pub fn serialise_sketches(
+pub async fn serialise_sketches(
     store_factory: &ObjectStoreFactory,
     path: &Url,
-    sketches: &[DataSketchVariant],
+    sketches_mutex: &Mutex<Vec<DataSketchVariant>>,
 ) -> color_eyre::Result<()> {
     let mut buf = vec![].writer();
 
     let mut size = 0;
-    // for each sketch write the size i32, followed by bytes
-    for sketch in sketches {
-        let serialised = sketch.serialize(0)?;
-        buf.write_all(&(serialised.len() as u32).to_be_bytes())?;
-        buf.write_all(&serialised)?;
-        size += serialised.len() + size_of::<u32>();
+    let sketches_len;
+    {
+        let sketches = &*sketches_mutex.lock().unwrap();
+        sketches_len = sketches.len();
+        // for each sketch write the size i32, followed by bytes
+        for sketch in sketches {
+            let serialised = sketch.serialize(0)?;
+            buf.write_all(&(serialised.len() as u32).to_be_bytes())?;
+            buf.write_all(&serialised)?;
+            size += serialised.len() + size_of::<u32>();
+        }
     }
 
     //Path part of S3 URL
@@ -331,42 +407,96 @@ pub fn serialise_sketches(
     // Save to object store
     let store = store_factory.get_object_store(path)?;
 
-    futures::executor::block_on(store.put(&store_path, buf.into_inner().into()))?;
+    store.put(&store_path, buf.into_inner().into()).await?;
 
     info!(
         "Serialised {} ({} bytes) sketches to {}",
-        sketches.len(),
+        sketches_len,
         size.to_formatted_string(&Locale::en),
         path
     );
     Ok(())
 }
 
+/// Extract the Data Sketch result and write it out.
+///
+/// This function should be called after a `DataFusion` operation has completed. The sketch function will be asked for
+/// the current sketch.
+///
+/// # Errors
+/// If the sketch couldn't be serialised.
+pub async fn output_sketch(
+    store_factory: &ObjectStoreFactory,
+    output_path: &Url,
+    sketch_func: &Arc<ScalarUDF>,
+) -> Result<(), DataFusionError> {
+    let binding = sketch_func.inner();
+    let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
+    if let Some(func) = inner_function {
+        {
+            // Limit scope of MutexGuard
+            let first_sketch = &func.get_sketch().lock().unwrap()[0];
+            info!(
+                "Made {} calls to sketch UDF. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
+                func.get_invoke_count().to_formatted_string(&Locale::en),
+                first_sketch
+                    .get_num_retained()
+                    .to_formatted_string(&Locale::en),
+                first_sketch.get_n().to_formatted_string(&Locale::en),
+                first_sketch.get_k().to_formatted_string(&Locale::en)
+            );
+        }
+
+        // Serialise the sketch
+        serialise_sketches(
+            store_factory,
+            &create_sketch_path(output_path),
+            func.get_sketch(),
+        )
+        .await
+        .map_err(|e| DataFusionError::External(e.into()))?;
+    }
+    Ok(())
+}
+
+/// Creates a file path suitable for writing sketches to.
+///
+#[must_use]
+pub fn create_sketch_path(output_path: &Url) -> Url {
+    let mut res = output_path.clone();
+    res.set_path(
+        &PathBuf::from(output_path.path())
+            .with_extension("sketches")
+            .to_string_lossy(),
+    );
+    res
+}
+
 #[allow(clippy::missing_errors_doc)]
-pub fn deserialise_sketches(
+pub async fn deserialise_sketches(
     path: &Url,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
     let factory = ObjectStoreFactory::new(None);
-    deserialise_sketches_with_factory(&factory, path, key_types)
+    deserialise_sketches_with_factory(&factory, path, key_types).await
 }
 
-fn deserialise_sketches_with_factory(
+async fn deserialise_sketches_with_factory(
     store_factory: &ObjectStoreFactory,
     path: &Url,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
     let store_path = object_store::path::Path::from(path.path());
     let store = store_factory.get_object_store(path)?;
-    let result = futures::executor::block_on(store.get(&store_path))?;
-    read_sketches_from_result(result, key_types)
+    let result = store.get(&store_path).await?;
+    read_sketches_from_result(result, key_types).await
 }
 
-fn read_sketches_from_result(
+async fn read_sketches_from_result(
     result: object_store::GetResult,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let mut bytes = futures::executor::block_on(result.bytes())?;
+    let mut bytes = result.bytes().await?;
     let mut sketches: Vec<DataSketchVariant> = vec![];
     for key_type in key_types {
         let length = bytes.get_u32() as usize;

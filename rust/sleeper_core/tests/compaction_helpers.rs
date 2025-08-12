@@ -26,8 +26,7 @@ use datafusion::parquet::{
     basic::{Compression, ZstdLevel},
     file::properties::WriterProperties,
 };
-use sleeper_core::{ColRange, PartitionBound};
-use sleeper_core::{DataSketchVariant, deserialise_sketches};
+use sleeper_core::{ColRange, DataSketchVariant, PartitionBound, deserialise_sketches};
 use std::{collections::HashMap, fs::File, sync::Arc};
 use tempfile::TempDir;
 use url::Url;
@@ -94,12 +93,12 @@ pub fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error
 
 #[allow(clippy::missing_panics_doc)]
 #[allow(clippy::missing_errors_doc)]
-pub fn read_sketch_min_max_ints(path: &Url) -> Result<[i32; 2], Error> {
-    Ok(min_max_ints(&read_sketch_of_ints(path)?))
+pub async fn read_sketch_min_max_ints(path: &Url) -> Result<[i32; 2], Error> {
+    Ok(min_max_ints(&read_sketch_of_ints(path).await?))
 }
 
-fn read_sketch_of_ints(path: &Url) -> Result<DataSketchVariant, Error> {
-    let mut sketches = deserialise_sketches(path, vec![DataType::Int32])?;
+async fn read_sketch_of_ints(path: &Url) -> Result<DataSketchVariant, Error> {
+    let mut sketches = deserialise_sketches(path, vec![DataType::Int32]).await?;
     sketches.pop().ok_or_eyre("Expected one sketch, found 0")
 }
 

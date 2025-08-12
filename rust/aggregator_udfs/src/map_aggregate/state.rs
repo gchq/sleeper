@@ -21,6 +21,9 @@ use arrow::{
 };
 use datafusion::logical_expr::EmitTo;
 
+#[cfg(doc)]
+use datafusion::physical_expr::NullState;
+
 #[derive(Debug)]
 pub struct MapNullState {
     /// Have we seen any non-filtered input values for `group_index`?
@@ -224,10 +227,10 @@ pub fn accumulate<F>(
                 .zip(group_indices.iter())
                 .zip(values.iter())
                 .for_each(|((filter_value, &group_index), new_value)| {
-                    if let Some(true) = filter_value {
-                        if let Some(new_value) = new_value {
-                            value_fn(group_index, new_value);
-                        }
+                    if let Some(true) = filter_value
+                        && let Some(new_value) = new_value
+                    {
+                        value_fn(group_index, new_value);
                     }
                 });
         }

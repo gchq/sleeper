@@ -18,7 +18,9 @@ mod compaction_helpers;
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
 use compaction_helpers::*;
-use sleeper_core::{CompactionInput, run_compaction};
+use sleeper_core::{
+    CommonConfig, OperationOutput, SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
+};
 use std::{collections::HashMap, sync::Arc};
 use tempfile::tempdir;
 use test_log::test;
@@ -34,11 +36,15 @@ async fn should_merge_two_files() -> Result<(), Error> {
     write_file_of_ints(&file_1, "key", vec![1, 3])?;
     write_file_of_ints(&file_2, "key", vec![2, 4])?;
 
-    let input = CompactionInput {
+    let input = CommonConfig {
         input_files: Vec::from([file_1, file_2]),
-        output_file: output.clone(),
+        input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
-        region: single_int_range("key", 0, 5),
+        region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
+        },
         ..Default::default()
     };
 
@@ -48,7 +54,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
     assert_eq!([result.rows_read, result.rows_written], [4, 4]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [1, 4]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 4]);
     Ok(())
 }
 
@@ -63,11 +69,15 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     write_file_of_ints(&file_1, "key", vec![1, 2])?;
     write_file_of_ints(&file_2, "key", vec![2, 3])?;
 
-    let input = CompactionInput {
+    let input = CommonConfig {
         input_files: Vec::from([file_1, file_2]),
-        output_file: output.clone(),
+        input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
-        region: single_int_range("key", 0, 5),
+        region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
+        },
         ..Default::default()
     };
 
@@ -77,7 +87,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 2, 3]);
     assert_eq!([result.rows_read, result.rows_written], [4, 4]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [1, 3]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 3]);
     Ok(())
 }
 
@@ -92,11 +102,15 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     write_file_of_ints(&file_1, "key", vec![1, 2])?;
     write_file_of_ints(&file_2, "key", vec![3, 4])?;
 
-    let input = CompactionInput {
+    let input = CommonConfig {
         input_files: Vec::from([file_1, file_2]),
-        output_file: output.clone(),
+        input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
-        region: single_int_range("key", 2, 4),
+        region: SleeperPartitionRegion::new(single_int_range("key", 2, 4)),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
+        },
         ..Default::default()
     };
 
@@ -106,7 +120,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![2, 3]);
     assert_eq!([result.rows_read, result.rows_written], [2, 2]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [2, 3]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [2, 3]);
     Ok(())
 }
 
@@ -127,14 +141,18 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
     write_file(&file_1, &data_1)?;
     write_file(&file_2, &data_2)?;
 
-    let input = CompactionInput {
+    let input = CommonConfig {
         input_files: Vec::from([file_1, file_2]),
-        output_file: output.clone(),
+        input_files_sorted: true,
         row_key_cols: row_key_cols(["key1", "key2"]),
-        region: HashMap::from([
+        region: SleeperPartitionRegion::new(HashMap::from([
             region_entry("key1", int_range(2, 4)),
             region_entry("key2", int_range(13, 23)),
-        ]),
+        ])),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
+        },
         ..Default::default()
     };
 
@@ -147,7 +165,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
         vec![[2, 22], [3, 13]]
     );
     assert_eq!([result.rows_read, result.rows_written], [2, 2]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [2, 3]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [2, 3]);
     Ok(())
 }
 
@@ -168,11 +186,18 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
     write_file(&file_1, &data_1)?;
     write_file(&file_2, &data_2)?;
 
-    let input = CompactionInput {
+    let input = CommonConfig {
         input_files: Vec::from([file_1, file_2]),
-        output_file: output.clone(),
+        input_files_sorted: true,
         row_key_cols: row_key_cols(["key2"]),
-        region: HashMap::from([region_entry("key2", int_range(11, 25))]),
+        region: SleeperPartitionRegion::new(HashMap::from([region_entry(
+            "key2",
+            int_range(11, 25),
+        )])),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
+        },
         ..Default::default()
     };
 
@@ -185,6 +210,6 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
         vec![[9, 11], [8, 12], [7, 13], [54, 22], [23, 23], [44, 24]]
     );
     assert_eq!([result.rows_read, result.rows_written], [6, 6]);
-    assert_eq!(read_sketch_min_max_ints(&sketches)?, [11, 24]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [11, 24]);
     Ok(())
 }
