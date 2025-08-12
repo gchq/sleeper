@@ -66,6 +66,21 @@ public class PartitionTree {
     }
 
     /**
+     * Retrieves the partitions that were split from a given parent partition.
+     *
+     * @param  partitionId the ID of the parent partition
+     * @return             the child partitions
+     */
+    public List<Partition> getChildPartitions(String partitionId) {
+        List<Partition> outList = new ArrayList<>();
+        getChildIds(partitionId).forEach(childId -> {
+            outList.add(idToPartition.get(childId));
+        });
+
+        return outList;
+    }
+
+    /**
      * Retrieves IDs of all partitions that were split to result in the given partition. Starts with the most recent
      * parent, and includes all ancestors of that parent ending with the root partition.
      *

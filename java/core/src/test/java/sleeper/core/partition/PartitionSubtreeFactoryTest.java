@@ -64,7 +64,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .buildTree();
 
         // When
-        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 4, PartitionTreeBias.LEFT_BIAS);
+        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 5, PartitionTreeBias.LEFT_BIAS);
 
         // Then
         assertThat(result).isEqualTo(new PartitionsBuilder(schema)

@@ -17,8 +17,10 @@ package sleeper.core.partition;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Utility class to generate subtree from given leaf partition requirements.
@@ -33,7 +35,6 @@ public class PartitionSubtreeFactory {
      *
      * @param  originalTree       source from which the new sub tree is to be created
      * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
-     * @param  bias               determines when creating a subtree which side of nodes to focus on first
      * @return                    newly generated sub tree
      */
     public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount, PartitionTreeBias bias) throws PartitionTreeException {
@@ -41,54 +42,58 @@ public class PartitionSubtreeFactory {
             throw new PartitionTreeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
         }
 
-        PartitionTree subtree = new PartitionTree(List.of(originalTree.getRootPartition()));
-        List<Partition> lastAddedIds = new ArrayList<Partition>();
-        lastAddedIds.add(originalTree.getRootPartition());
+        HashMap<String, Partition> partitionsToBuildSubTree = new HashMap<String, Partition>();
+        HashMap<String, Partition> nextLevelToEvaluate = new HashMap<String, Partition>();
+
+        partitionsToBuildSubTree.put(originalTree.getRootPartition().getId(), originalTree.getRootPartition());
+        nextLevelToEvaluate.put(originalTree.getRootPartition().getId(), originalTree.getRootPartition());
         int presentLeafCount = 1;
 
         while (checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
-            Iterator<Partition> partitionIterator = getChildPartitionsFromIds(originalTree, lastAddedIds, bias).iterator();
-            while (partitionIterator.hasNext() && checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
-                Partition presentPartion = partitionIterator.next();
-                subtree.idToPartition.put(presentPartion.getId(), presentPartion);
-                presentLeafCount++;
+            Iterator<String> nextNodeIterator = getChildPartitionsFromIds(originalTree, nextLevelToEvaluate.keySet(), bias).iterator();
+            while (nextNodeIterator.hasNext() && checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
+                Partition nextPartition = originalTree.getPartition(nextNodeIterator.next());
+                partitionsToBuildSubTree.put(nextPartition.getId(), nextPartition);
 
-                if (lastAddedIds.contains(subtree.getPartition(presentPartion.getParentPartitionId()))) {
-                    presentLeafCount--;
-                    lastAddedIds.remove(subtree.getPartition(presentPartion.getParentPartitionId()));
+                if (nextLevelToEvaluate.containsKey(nextPartition.getParentPartitionId())) {
+                    nextLevelToEvaluate.remove(nextPartition.getParentPartitionId());
+                } else {
+                    presentLeafCount++;
                 }
-                if (!presentPartion.isLeafPartition()) {
-                    lastAddedIds.add(presentPartion);
-                }
+
+                nextLevelToEvaluate.put(nextPartition.getId(), nextPartition);
             }
         }
-
-        lastAddedIds.forEach(partition -> {
-            if (!partition.isLeafPartition()) {
-                subtree.idToPartition.put(partition.getId(), adjustToLeafStatus(partition));
+        nextLevelToEvaluate.keySet().forEach(remainingNodeId -> {
+            if (!nextLevelToEvaluate.get(remainingNodeId).isLeafPartition()) {
+                partitionsToBuildSubTree.put(remainingNodeId, adjustToLeafStatus(partitionsToBuildSubTree.get(remainingNodeId)));
             }
         });
 
-        return subtree;
+        return new PartitionTree(partitionsToBuildSubTree.values());
     }
 
     private static boolean checkIfLeafCountMet(int present, int target) {
         return present < target;
     }
 
-    private static List<Partition> getChildPartitionsFromIds(PartitionTree treeIn, List<Partition> parentIdsIn, PartitionTreeBias bias) {
-        List<Partition> outList = new ArrayList<Partition>();
-        parentIdsIn.forEach(partition -> {
-            partition.getChildPartitionIds().forEach(childId -> {
-                outList.add(treeIn.getPartition(childId));
+    private static List<String> getChildPartitionsFromIds(PartitionTree treeIn, Set<String> parentIdsIn, PartitionTreeBias bias) {
+        List<Partition> sortList = new ArrayList<Partition>();
+        parentIdsIn.forEach(parentId -> {
+            treeIn.getChildPartitions(parentId).forEach(childId -> {
+                sortList.add(childId);
             });
         });
         if (bias.equals(PartitionTreeBias.LEFT_BIAS)) {
-            outList.sort(new PartitionComparator());
+            sortList.sort(new PartitionComparator());
         } else if (bias.equals(PartitionTreeBias.RIGHT_BIAS)) {
-            outList.sort(new PartitionComparator().reversed());
+            sortList.sort(new PartitionComparator().reversed());
         }
 
+        List<String> outList = new ArrayList<String>();
+        sortList.forEach(partition -> {
+            outList.add(partition.getId());
+        });
         return outList;
     }
 
