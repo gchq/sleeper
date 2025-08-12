@@ -15,6 +15,8 @@
  */
 package sleeper.core.partition;
 
+import sleeper.core.schema.Schema;
+
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -23,13 +25,17 @@ import java.util.Comparator;
  */
 public class PartitionComparator implements Comparator<Partition> {
 
-    PartitionComparator() {
+    private Schema schema;
+
+    PartitionComparator(Schema schema) {
+        this.schema = schema;
     }
 
     @Override
     public int compare(Partition partition1, Partition partition2) {
-        Object minA = partition1.getRegion().getRanges().get(0).getMin();
-        Object minB = partition2.getRegion().getRanges().get(0).getMin();
+        String rowKey = schema.getRowKeyFields().get(0).getName();
+        Object minA = partition1.getRegion().getRange(rowKey).getMin();
+        Object minB = partition2.getRegion().getRange(rowKey).getMin();
 
         if (minA instanceof Long && minB instanceof Long) {
             return ((Long) minA).compareTo((Long) minB);

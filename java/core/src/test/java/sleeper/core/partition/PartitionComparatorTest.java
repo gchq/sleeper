@@ -49,7 +49,7 @@ public class PartitionComparatorTest extends PartitionTreeTestBase {
 
         // When
         assertThat(randomList).isNotEqualTo(leftBiasLevel3);
-        randomList.sort(new PartitionComparator());
+        randomList.sort(new PartitionComparator(schema));
 
         // Then
         assertThat(randomList).isEqualTo(leftBiasLevel3);
@@ -63,7 +63,7 @@ public class PartitionComparatorTest extends PartitionTreeTestBase {
 
         // When
         assertThat(randomList).isNotEqualTo(rightBiasLevel3);
-        randomList.sort(new PartitionComparator().reversed());
+        randomList.sort(new PartitionComparator(schema).reversed());
 
         // Then
         assertThat(randomList).isEqualTo(rightBiasLevel3);
@@ -118,7 +118,7 @@ public class PartitionComparatorTest extends PartitionTreeTestBase {
         Collections.shuffle(randomList);
 
         // When
-        randomList.sort(new PartitionComparator());
+        randomList.sort(new PartitionComparator(schemaInteger));
 
         // Then
         assertThat(randomList).isEqualTo(List.of(l2LeftOfL1L_integer,
@@ -176,7 +176,7 @@ public class PartitionComparatorTest extends PartitionTreeTestBase {
         Collections.shuffle(randomList);
 
         // When
-        randomList.sort(new PartitionComparator());
+        randomList.sort(new PartitionComparator(schemaString));
 
         // Then
         assertThat(randomList).isEqualTo(List.of(l2LeftOfL1L_string,
@@ -234,7 +234,7 @@ public class PartitionComparatorTest extends PartitionTreeTestBase {
         Collections.shuffle(randomList);
 
         // When
-        randomList.sort(new PartitionComparator());
+        randomList.sort(new PartitionComparator(schemaByte));
 
         // Then
         assertThat(randomList).isEqualTo(List.of(l2LeftOfL1L_byte,

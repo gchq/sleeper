@@ -127,7 +127,7 @@ public abstract class PartitionTreeTestBase {
             .region(new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, -2000000L, false)))
             .id(L3_LEFT_OF_L2LL)
             .leafPartition(true)
-            .parentPartitionId(L1_RIGHT)
+            .parentPartitionId(L2_LEFT_OF_L1L)
             .childPartitionIds(Collections.emptyList())
             .dimension(-1)
             .build();

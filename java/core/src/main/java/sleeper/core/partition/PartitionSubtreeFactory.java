@@ -15,6 +15,8 @@
  */
 package sleeper.core.partition;
 
+import sleeper.core.schema.Schema;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,9 +37,11 @@ public class PartitionSubtreeFactory {
      *
      * @param  originalTree       source from which the new sub tree is to be created
      * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
+     * @param  schema             schema of the sleeper table
+     * @param  bias               determines which way to order the elements to be added to the tree
      * @return                    newly generated sub tree
      */
-    public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount, PartitionTreeBias bias) throws PartitionTreeException {
+    public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount, Schema schema, PartitionTreeBias bias) throws PartitionTreeException {
         if (leafPartitionCount > originalTree.getLeafPartitions().size()) {
             throw new PartitionTreeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
         }
@@ -50,7 +54,7 @@ public class PartitionSubtreeFactory {
         int presentLeafCount = 1;
 
         while (checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
-            Iterator<String> nextNodeIterator = getChildPartitionsFromIds(originalTree, nextLevelToEvaluate.keySet(), bias).iterator();
+            Iterator<String> nextNodeIterator = getChildPartitionsFromIds(originalTree, nextLevelToEvaluate.keySet(), schema, bias).iterator();
             while (nextNodeIterator.hasNext() && checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
                 Partition nextPartition = originalTree.getPartition(nextNodeIterator.next());
                 partitionsToBuildSubTree.put(nextPartition.getId(), nextPartition);
@@ -77,7 +81,7 @@ public class PartitionSubtreeFactory {
         return present < target;
     }
 
-    private static List<String> getChildPartitionsFromIds(PartitionTree treeIn, Set<String> parentIdsIn, PartitionTreeBias bias) {
+    private static List<String> getChildPartitionsFromIds(PartitionTree treeIn, Set<String> parentIdsIn, Schema schema, PartitionTreeBias bias) {
         List<Partition> sortList = new ArrayList<Partition>();
         parentIdsIn.forEach(parentId -> {
             treeIn.getChildPartitions(parentId).forEach(childId -> {
@@ -85,9 +89,9 @@ public class PartitionSubtreeFactory {
             });
         });
         if (bias.equals(PartitionTreeBias.LEFT_BIAS)) {
-            sortList.sort(new PartitionComparator());
+            sortList.sort(new PartitionComparator(schema));
         } else if (bias.equals(PartitionTreeBias.RIGHT_BIAS)) {
-            sortList.sort(new PartitionComparator().reversed());
+            sortList.sort(new PartitionComparator(schema).reversed());
         }
 
         List<String> outList = new ArrayList<String>();

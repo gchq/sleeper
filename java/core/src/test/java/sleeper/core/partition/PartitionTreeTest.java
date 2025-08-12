@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +28,12 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
     @Test
     public void shouldReturnCorrectChildren() {
         // Given
-        PartitionTree partitionTree = generateTreeTo2LevelsBalanced();
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
+                .buildTree();
 
         // When
         List<String> children1 = partitionTree.getChildIds(ROOT);
@@ -43,7 +47,12 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
     @Test
     public void shouldReturnCorrectAncestors() {
         // Given
-        PartitionTree partitionTree = generateTreeTo2LevelsBalanced();
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
+                .buildTree();
 
         // When
         List<Partition> ancestorsOfRoot = partitionTree.getAllAncestors(ROOT);
@@ -61,7 +70,9 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
     @Test
     public void shouldReturnRootIfOnlyPartitionAndAskedForLeafPartitionContainingKey() {
         // Given
-        PartitionTree partitionTree = generateTreeToRootLevel();
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .buildTree();
 
         // When
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
@@ -74,7 +85,12 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
     @Test
     public void shouldReturnCorrectLeafWhenAskedForLeafPartitionContainingKeyInTwoLevelTree() {
         // Given
-        PartitionTree partitionTree = generateTreeTo2LevelsBalanced();
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
+                .buildTree();
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(10L));
@@ -94,15 +110,13 @@ public class PartitionTreeTest extends PartitionTreeTestBase {
     @Test
     public void shouldReturnCorrectLeafWhenAskedForLeafPartitionContainingKeyInThreeLevelTree() {
         // Given
-
-        //Adjust the child partitions to include new elements
-        l2LeftOfL1L = l2LeftOfL1L.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList(L3_LEFT_OF_L2LL, L3_RIGHT_OF_L2LL))
-                .build();
-
-        PartitionTree partitionTree = new PartitionTree(
-                List.of(rootWithChildren, l1Left, l1Right, l2LeftOfL1L, l2RightOfL1L, l2LeftOfL1R, l2RightOfL1R, l3LeftOfL2LL, l3RightOfL2LL));
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
+                .splitToNewChildren(L2_LEFT_OF_L1L, L3_LEFT_OF_L2LL, L3_RIGHT_OF_L2LL, -2000000L)
+                .buildTree();
 
         // When 1
         Partition partition = partitionTree.getLeafPartition(schema, Key.create(123456789L));
