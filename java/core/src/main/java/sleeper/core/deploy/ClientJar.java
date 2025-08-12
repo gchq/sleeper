@@ -28,23 +28,23 @@ public class ClientJar {
 
     public static final ClientJar BULK_IMPORT_RUNNER = builder()
             .filenameFormat("bulk-import-runner-%s.jar")
-            .artifactID("bulk-import-runner")
+            .artifactId("bulk-import-runner")
             .add();
     public static final ClientJar CDK = builder()
             .filenameFormat("cdk-%s.jar")
-            .artifactID("cdk")
+            .artifactId("cdk")
             .add();
     public static final ClientJar CLIENTS_UTILITY = builder()
             .filenameFormat("clients-%s-utility.jar")
-            .artifactID("clients")
+            .artifactId("clients")
             .add();
 
     private final String filenameFormat;
-    private final String artifactID;
+    private final String artifactId;
 
     public ClientJar(Builder builder) {
         this.filenameFormat = builder.filenameFormat;
-        this.artifactID = builder.artifactID;
+        this.artifactId = builder.artifactId;
     }
 
     public static Builder builder() {
@@ -55,8 +55,8 @@ public class ClientJar {
         return filenameFormat;
     }
 
-    public String getArtifactID() {
-        return artifactID;
+    public String getArtifactId() {
+        return artifactId;
     }
 
     /**
@@ -71,7 +71,7 @@ public class ClientJar {
 
     @Override
     public String toString() {
-        return "ClientJar{filename=" + filenameFormat + ", imageName=" + artifactID + "}";
+        return "ClientJar{filename=" + filenameFormat + ", imageName=" + artifactId + "}";
     }
 
     public static List<ClientJar> getAll() {
@@ -83,7 +83,7 @@ public class ClientJar {
      */
     public static class Builder {
         private String filenameFormat;
-        private String artifactID;
+        private String artifactId;
 
         private Builder() {
 
@@ -104,11 +104,11 @@ public class ClientJar {
         /**
          * Sets the artifact ID for the jar.
          *
-         * @param  artifactID the ID of the artefact
+         * @param  artifactId the ID of the artefact
          * @return            the builder for method chaining
          */
-        public Builder artifactID(String artifactID) {
-            this.artifactID = artifactID;
+        public Builder artifactId(String artifactId) {
+            this.artifactId = artifactId;
             return this;
         }
 

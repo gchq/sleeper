@@ -204,14 +204,16 @@ This command should replace the `docker build` and `docker push` commands docume
 docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BASE_DIR/<image directory>
 ```
 
-#### Publishing jars to Docker and Maven
+#### Publishing jars to Maven
 There is a script [here](/scripts/deploy/publishJars.sh) to publish the jars to a repository.
 It takes in two arguments.
     -   The repository url to publish.
-    -   The id of a server in a local m2 settings file which should contain authentication details.
+    -   The ID of a server in a local m2 settings file which should contain authentication details.
 This script can be tested locally by using a repository url similar to file:/path/to/output that will publish these files locally.
 
-The development team are adding a way to retrieve and publish jars to AWS.
+To setup the local m2 settings file this guide can be followed: [Link to Baeldung](https://www.baeldung.com/maven-settings-xml#5-servers)
+
+The development team are adding a way to retrieve and publish jars to AWS. Right now we only support uploading the jars to AWS if they were built locally, but in the future you will be able to upload jars from a Maven repository as well
 
 #### Upload the jars to a bucket
 
