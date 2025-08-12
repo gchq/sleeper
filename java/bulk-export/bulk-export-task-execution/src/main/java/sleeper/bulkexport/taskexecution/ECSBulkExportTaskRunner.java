@@ -31,20 +31,16 @@ import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.sketches.store.NoSketchesStore;
-import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -156,8 +152,6 @@ public class ECSBulkExportTaskRunner {
             Configuration hadoopConf) throws IOException, IteratorCreationException, ObjectFactoryException {
         LOGGER.info("Starting compaction for table ID: {}, partition ID: {}",
                 bulkExportLeafPartitionQuery.getTableId(), bulkExportLeafPartitionQuery.getLeafPartitionId());
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client,
-                dynamoDBClient);
 
         String outputFile = bulkExportLeafPartitionQuery.getOutputFile(instanceProperties);
         LOGGER.debug("Output file path: {}", outputFile);
@@ -176,11 +170,9 @@ public class ECSBulkExportTaskRunner {
         LOGGER.debug("Compaction job details: {}", job);
 
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
-        Partition partition = stateStore.getPartition(bulkExportLeafPartitionQuery.getLeafPartitionId());
 
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition.getRegion());
+        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, bulkExportLeafPartitionQuery.getPartitionRegion());
         LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
                 bulkExportLeafPartitionQuery.getTableId(),
                 bulkExportLeafPartitionQuery.getLeafPartitionId(),
