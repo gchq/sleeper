@@ -22,7 +22,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionParams;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
@@ -78,10 +77,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
+    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
-        DataFusionCompactionParams params = createCompactionParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
+        DataFusionCompactionParams params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
 
