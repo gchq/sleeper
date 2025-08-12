@@ -42,9 +42,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                         .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
                         .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
                         .buildTree(),
-                leafPartitionCount,
-                schema,
-                PartitionTreeBias.LEFT_BIAS);
+                leafPartitionCount);
 
         // Then
         Partition l1LeftAsLeaf = adjustToLeafStatus(l1Left);
@@ -68,7 +66,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .buildTree();
 
         // When
-        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 5, schema, PartitionTreeBias.LEFT_BIAS);
+        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 5);
 
         // Then
         assertThat(result).isEqualTo(new PartitionsBuilder(schema)
@@ -89,7 +87,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
         Instant generated = Instant.now();
 
         // When
-        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 50000, schema, PartitionTreeBias.LEFT_BIAS);
+        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 50000);
         Instant end = Instant.now();
 
         // Then
@@ -108,9 +106,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                         .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
                         .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
                         .buildTree(),
-                leafPartitionCount,
-                schema,
-                PartitionTreeBias.LEFT_BIAS);
+                leafPartitionCount);
 
         // Then
         assertThat(subtree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
@@ -118,30 +114,6 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .rootFirst(ROOT)
                 .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
                 .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-                .buildTree());
-    }
-
-    @Test
-    void shouldCreateBalancedSubtreeWithLeafCountCausingUnbalancedTreeRightBias() {
-        // Given / When
-        int leafPartitionCount = 3;
-        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(
-                new PartitionsBuilder(schema)
-                        .rootFirst(ROOT)
-                        .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                        .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-                        .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
-                        .buildTree(),
-                leafPartitionCount,
-                schema,
-                PartitionTreeBias.RIGHT_BIAS);
-
-        // Then
-        assertThat(subtree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
-        assertThat(subtree).isEqualTo(new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
                 .buildTree());
     }
 
@@ -155,9 +127,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
                 .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
                 .buildTree(),
-                leafPartitionCount,
-                schema,
-                PartitionTreeBias.LEFT_BIAS);
+                leafPartitionCount);
 
         // Then
         assertThat(subtree).isEqualTo(new PartitionsBuilder(schema)
@@ -187,10 +157,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .buildTree();
 
         // When 1
-        PartitionTree largeSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal,
-                largePartitionCount,
-                schema,
-                PartitionTreeBias.LEFT_BIAS);
+        PartitionTree largeSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal, largePartitionCount);
 
         // Then 1
         assertThat(largeSubtree.getLeafPartitions().size()).isEqualTo(largePartitionCount);
@@ -204,10 +171,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .buildTree());
 
         // When 2
-        PartitionTree midSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal,
-                midPartitionCount,
-                schema,
-                PartitionTreeBias.LEFT_BIAS);
+        PartitionTree midSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal, midPartitionCount);
 
         // Then 2
         assertThat(midSubtree.getLeafPartitions().size()).isEqualTo(midPartitionCount);
@@ -219,10 +183,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .buildTree());
 
         // When 3
-        PartitionTree smallSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal,
-                smallPartitionCount,
-                schema,
-                PartitionTreeBias.LEFT_BIAS);
+        PartitionTree smallSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal, smallPartitionCount);
 
         // Then 3
         assertThat(smallSubtree.getLeafPartitions().size()).isEqualTo(smallPartitionCount);
@@ -239,9 +200,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .rootFirst(ROOT)
                 .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
                 .buildTree(),
-                7,
-                schema,
-                PartitionTreeBias.RIGHT_BIAS))
+                7))
                 .isInstanceOf(PartitionTreeException.class)
                 .hasMessageContaining("Requested size of 7 is greater than");
     }

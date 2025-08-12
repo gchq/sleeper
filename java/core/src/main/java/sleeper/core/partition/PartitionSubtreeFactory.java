@@ -15,12 +15,10 @@
  */
 package sleeper.core.partition;
 
-import sleeper.core.schema.Schema;
-
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -37,24 +35,22 @@ public class PartitionSubtreeFactory {
      *
      * @param  originalTree       source from which the new sub tree is to be created
      * @param  leafPartitionCount amount of leaves to be contained in the new tree at a minimum
-     * @param  schema             schema of the sleeper table
-     * @param  bias               determines which way to order the elements to be added to the tree
      * @return                    newly generated sub tree
      */
-    public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount, Schema schema, PartitionTreeBias bias) throws PartitionTreeException {
+    public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount) throws PartitionTreeException {
         if (leafPartitionCount > originalTree.getLeafPartitions().size()) {
             throw new PartitionTreeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
         }
 
-        HashMap<String, Partition> partitionsToBuildSubTree = new HashMap<String, Partition>();
-        HashMap<String, Partition> nextLevelToEvaluate = new HashMap<String, Partition>();
+        LinkedHashMap<String, Partition> partitionsToBuildSubTree = new LinkedHashMap<String, Partition>();
+        LinkedHashMap<String, Partition> nextLevelToEvaluate = new LinkedHashMap<String, Partition>();
 
         partitionsToBuildSubTree.put(originalTree.getRootPartition().getId(), originalTree.getRootPartition());
         nextLevelToEvaluate.put(originalTree.getRootPartition().getId(), originalTree.getRootPartition());
         int presentLeafCount = 1;
 
         while (checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
-            Iterator<String> nextNodeIterator = getChildPartitionsFromIds(originalTree, nextLevelToEvaluate.keySet(), schema, bias).iterator();
+            Iterator<String> nextNodeIterator = getChildPartitionsFromIds(originalTree, nextLevelToEvaluate.keySet()).iterator();
             while (nextNodeIterator.hasNext() && checkIfLeafCountMet(presentLeafCount, leafPartitionCount)) {
                 Partition nextPartition = originalTree.getPartition(nextNodeIterator.next());
                 partitionsToBuildSubTree.put(nextPartition.getId(), nextPartition);
@@ -81,22 +77,12 @@ public class PartitionSubtreeFactory {
         return present < target;
     }
 
-    private static List<String> getChildPartitionsFromIds(PartitionTree treeIn, Set<String> parentIdsIn, Schema schema, PartitionTreeBias bias) {
-        List<Partition> sortList = new ArrayList<Partition>();
-        parentIdsIn.forEach(parentId -> {
-            treeIn.getChildPartitions(parentId).forEach(childId -> {
-                sortList.add(childId);
-            });
-        });
-        if (bias.equals(PartitionTreeBias.LEFT_BIAS)) {
-            sortList.sort(new PartitionComparator(schema));
-        } else if (bias.equals(PartitionTreeBias.RIGHT_BIAS)) {
-            sortList.sort(new PartitionComparator(schema).reversed());
-        }
-
+    private static List<String> getChildPartitionsFromIds(PartitionTree treeIn, Set<String> parentIdsIn) {
         List<String> outList = new ArrayList<String>();
-        sortList.forEach(partition -> {
-            outList.add(partition.getId());
+        parentIdsIn.forEach(parentId -> {
+            treeIn.getChildIds(parentId).forEach(childId -> {
+                outList.add(childId);
+            });
         });
         return outList;
     }
