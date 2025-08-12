@@ -20,7 +20,7 @@ use datafusion::{
     common::DFSchema,
     config::TableParquetOptions,
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
-    prelude::SessionConfig,
+    execution::config::SessionConfig,
 };
 use log::error;
 

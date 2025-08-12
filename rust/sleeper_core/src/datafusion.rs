@@ -32,13 +32,13 @@ use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
 use datafusion::{
     common::{DFSchema, plan_err},
+    dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{LogicalPlanBuilder, SortExpr},
+    logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
-    prelude::*,
 };
 use log::{info, warn};
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -107,7 +107,7 @@ impl<'a> SleeperOperations<'a> {
     }
 
     // Configure a [`SessionContext`].
-    pub fn apply_to_context(
+    pub fn configure_context(
         &self,
         mut ctx: SessionContext,
         store_factory: &ObjectStoreFactory,
@@ -156,7 +156,7 @@ impl<'a> SleeperOperations<'a> {
             .await?;
         // Do we have partition bounds?
         Ok(
-            if let Some(expr) = Into::<Option<Expr>>::into(&self.config.region) {
+            if let Some(expr) = Option::<Expr>::from(&self.config.region) {
                 frame.filter(expr)?
             } else {
                 frame

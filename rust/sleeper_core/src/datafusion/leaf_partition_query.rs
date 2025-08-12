@@ -17,13 +17,17 @@
 */
 use crate::{
     CommonConfig, OperationOutput, SleeperPartitionRegion,
-    datafusion::{ParquetWriterConfigurer, SleeperOperations},
+    datafusion::{
+        ParquetWriterConfigurer, SleeperOperations, sketch::Sketcher, util::explain_plan,
+    },
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
+use datafusion::{common::plan_err, logical_expr::Expr};
 use datafusion::{
+    dataframe::DataFrame,
     error::DataFusionError,
-    prelude::{DataFrame, SessionConfig, SessionContext},
+    execution::{config::SessionConfig, context::SessionContext},
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -52,64 +56,128 @@ impl Display for LeafPartitionQueryConfig<'_> {
     }
 }
 
-/// Contains the query output result.
-#[derive(Debug, Default)]
-pub enum LeafQueryOutput {
-    /// Results are returned via an iterator of Arrow [`RecordBatch`]es.
-    #[default]
-    ArrowBatches,
-    /// Results have been written to a Parquet file.
-    ParquetFile,
+/// Manages and executes a Sleeper leaf partition query.
+#[derive(Debug)]
+pub struct LeafPartitionQuery<'a> {
+    /// The configuration information for the leaf query
+    config: &'a LeafPartitionQueryConfig<'a>,
+    /// Used to create object store implementations
+    store_factory: &'a ObjectStoreFactory,
 }
 
-/// Executes a Sleeper leaf partition query.
-///
-/// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
-/// from the input URLs and writing to the output URL.
-pub async fn query(
-    store_factory: &ObjectStoreFactory,
-    config: &LeafPartitionQueryConfig<'_>,
-) -> Result<LeafQueryOutput, DataFusionError> {
-    let ops = SleeperOperations::new(&config.common);
-    info!("DataFusion compaction: {ops}");
+impl<'a> LeafPartitionQuery<'a> {
+    pub fn new(
+        config: &'a LeafPartitionQueryConfig<'a>,
+        store_factory: &'a ObjectStoreFactory,
+    ) -> LeafPartitionQuery<'a> {
+        Self {
+            config,
+            store_factory,
+        }
+    }
 
-    todo!();
+    /// Executes a Sleeper leaf partition query.
+    ///
+    /// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
+    /// from the input URLs and writing to the output URL (if writing results to a file).
+    pub async fn run_query(&self) -> Result<(), DataFusionError> {
+        let ops = SleeperOperations::new(&self.config.common);
+        info!("DataFusion compaction: {ops}");
+        // Create query frame an sketches if it has been enabled
+        let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
+
+        if self.config.explain_plans {
+            explain_plan(&frame).await?;
+        }
+        todo!();
+    }
+
+    /// Adds a quantile sketch to a query plan if sketch generation is enabled.
+    ///
+    /// # Errors
+    /// If sketch output is requested, then file output must be chosen in the query config.
+    fn maybe_add_sketch_output(
+        &self,
+        ops: &'a SleeperOperations<'a>,
+        frame: DataFrame,
+    ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
+        if self.config.write_quantile_sketch {
+            match self.config.common.output {
+                OperationOutput::File {
+                    output_file: _,
+                    opts: _,
+                } => {
+                    let sketcher = ops.create_sketcher(frame.schema());
+                    let frame = sketcher.apply_sketch(frame)?;
+                    Ok((Some(sketcher), frame))
+                }
+                OperationOutput::ArrowRecordBatch => plan_err!(
+                    "Quantile sketch output cannot be enabled if file output not selected"
+                ),
+            }
+        } else {
+            Ok((None, frame))
+        }
+    }
+
+    /// Creates the [`DataFrame`] for a leaf partition query.
+    ///
+    /// This reads the Parquet and configures the frame's plan
+    /// to sort, filter and aggregate as necessary
+    ///
+    /// # Errors
+    /// Each step of query may produce an error. Any are reported back to the caller.
+    async fn build_query_dataframe(
+        &self,
+        ops: &'a SleeperOperations<'a>,
+    ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
+        let sf = prepare_session_config(ops, self.store_factory).await?;
+        let ctx = ops.configure_context(SessionContext::new_with_config(sf), self.store_factory)?;
+        let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
+        frame = self.apply_query_regions(frame)?;
+        frame = ops.apply_user_filters(frame)?;
+        frame = ops.apply_general_sort(frame)?;
+        frame = ops.apply_aggregations(frame)?;
+        self.maybe_add_sketch_output(ops, frame)
+    }
 }
 
-/// Creates the [`DataFrame`] for a leaf partition query.
-///
-/// This reads the Parquet and configures the frame's plan
-/// to sort, filter and aggregate as necessary
-///
-/// # Errors
-/// Each step of query may produce an error. Any are reported back to the caller.
-async fn build_query_dataframe<'a>(
-    ops: &'a SleeperOperations<'a>,
-    store_factory: &ObjectStoreFactory,
-) -> Result<DataFrame, DataFusionError> {
-    let sf = prepare_session_config(ops, store_factory).await?;
-    let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
-    let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
-    frame = ops.apply_user_filters(frame)?;
-    frame = ops.apply_general_sort(frame)?;
-    frame = ops.apply_aggregations(frame)?;
-    let sketcher = ops.create_sketcher(frame.schema());
-    frame = sketcher.apply_sketch(frame)?;
-
-    Ok(frame)
+impl LeafPartitionQuery<'_> {
+    /// Apply the query regions to the frame.
+    ///
+    /// The list of query regions are created and then OR'd together and
+    /// added to the [`DataFrame`], this will ultimately be AND'd with the
+    /// initial Sleeper partition region.
+    pub fn apply_query_regions(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        let mut query_expr: Option<Expr> = None;
+        for region in &self.config.ranges {
+            if let Some(expr) = Option::<Expr>::from(region) {
+                query_expr = match query_expr {
+                    Some(original) => Some(original.or(expr)),
+                    None => Some(expr),
+                }
+            }
+        }
+        // If we have any filters apply to frame (will AND with any previous filter)
+        Ok(if let Some(expr) = query_expr {
+            frame.filter(expr)?
+        } else {
+            frame
+        })
+    }
 }
 
 /// Create the [`SessionConfig`] for a query.
 async fn prepare_session_config<'a>(
-    ops: &'a SleeperOperations<'a>,
-    store_factory: &ObjectStoreFactory,
+    ops: &SleeperOperations<'a>,
+    store_factory: &'a ObjectStoreFactory,
 ) -> Result<SessionConfig, DataFusionError> {
     let sf = ops
         .apply_config(SessionConfig::new(), store_factory)
         .await?;
     Ok(
         if let OperationOutput::File {
-            output_file,
+            output_file: _,
             opts: parquet_options,
         } = &ops.config.output
         {

@@ -26,9 +26,11 @@ use crate::{
 };
 use datafusion::{
     common::plan_err,
+    dataframe::DataFrame,
     error::DataFusionError,
+    execution::config::SessionConfig,
+    execution::context::SessionContext,
     physical_plan::{collect, displayable},
-    prelude::{DataFrame, SessionConfig, SessionContext},
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -90,7 +92,7 @@ async fn build_compaction_dataframe<'a>(
         .apply_config(SessionConfig::new(), store_factory)
         .await?;
     let sf = configurer.apply_parquet_config(sf);
-    let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
+    let ctx = ops.configure_context(SessionContext::new_with_config(sf), store_factory)?;
     let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
     frame = ops.apply_user_filters(frame)?;
     frame = ops.apply_general_sort(frame)?;
