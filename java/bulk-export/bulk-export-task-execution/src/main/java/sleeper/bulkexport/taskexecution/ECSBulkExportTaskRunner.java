@@ -180,7 +180,7 @@ public class ECSBulkExportTaskRunner {
         CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
         Partition partition = stateStore.getPartition(bulkExportLeafPartitionQuery.getLeafPartitionId());
 
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition);
+        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition.getRegion());
         LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
                 bulkExportLeafPartitionQuery.getTableId(),
                 bulkExportLeafPartitionQuery.getLeafPartitionId(),

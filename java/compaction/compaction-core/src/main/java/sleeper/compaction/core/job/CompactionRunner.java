@@ -16,8 +16,8 @@
 package sleeper.compaction.core.job;
 
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.range.Region;
 import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.io.IOException;
@@ -25,5 +25,5 @@ import java.io.IOException;
 @FunctionalInterface
 public interface CompactionRunner extends CompactionRunnerDetails {
 
-    RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException, IteratorCreationException;
+    RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException;
 }

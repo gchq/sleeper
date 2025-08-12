@@ -106,7 +106,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
 
     protected RowsProcessed compact(CompactionJob job) throws Exception {
         CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig());
-        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
+        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
     }
 
     private static AwsConfig createAwsConfig() {

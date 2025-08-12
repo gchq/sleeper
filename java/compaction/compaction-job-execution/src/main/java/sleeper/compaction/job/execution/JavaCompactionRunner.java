@@ -30,8 +30,8 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRowIterator;
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
@@ -65,11 +65,11 @@ public class JavaCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Partition partition) throws IOException, IteratorCreationException {
+    public RowsProcessed compact(CompactionJob compactionJob, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException {
         Schema schema = tableProperties.getSchema();
 
         // Create a reader for each file
-        List<CloseableIterator<Row>> inputIterators = createInputIterators(compactionJob, partition, schema);
+        List<CloseableIterator<Row>> inputIterators = createInputIterators(compactionJob, region, schema);
 
         CloseableIterator<Row> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
         // Merge these iterator into one sorted iterator
@@ -117,10 +117,10 @@ public class JavaCompactionRunner implements CompactionRunner {
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
 
-    private List<CloseableIterator<Row>> createInputIterators(CompactionJob compactionJob, Partition partition, Schema schema) throws IOException {
+    private List<CloseableIterator<Row>> createInputIterators(CompactionJob compactionJob, Region region, Schema schema) throws IOException {
         List<CloseableIterator<Row>> inputIterators = new ArrayList<>();
 
-        FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(partition));
+        FilterCompat.Filter partitionFilter = FilterCompat.get(RangeQueryUtils.getFilterPredicate(region));
         for (String file : compactionJob.getInputFiles()) {
             ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(file), schema)
                     .withConf(configuration)
@@ -130,7 +130,7 @@ public class JavaCompactionRunner implements CompactionRunner {
             inputIterators.add(rowIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
             LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),
-                    partition.getRegion().getRanges().toString());
+                    region.getRanges().toString());
         }
         return inputIterators;
     }
