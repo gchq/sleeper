@@ -213,7 +213,7 @@ This script can be tested locally by using a repository url similar to file:/pat
 
 To setup the local m2 settings file this guide can be followed: [Link to Baeldung](https://www.baeldung.com/maven-settings-xml#5-servers)
 
-The development team are adding a way to retrieve and publish jars to AWS. Right now we only support uploading the jars to AWS if they were built locally, but in the future you will be able to upload jars from a Maven repository as well
+The development team are adding a way to retrieve and publish jars to AWS. Right now we only support uploading the jars to AWS if they were built locally, but in the future you will be able to upload jars from a Maven repository as well.
 
 #### Upload the jars to a bucket
 

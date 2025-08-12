@@ -111,7 +111,7 @@ public class PublishJarsToRepoTest {
     @Test
     public void shouldThrowExceptionOutWhenRunningMavenCommandReturnsNonZero() throws IOException, InterruptedException {
         //Given
-        CommandPipelineRunner runner = returnExitCode(1);
+        CommandPipelineRunner runner = recordCommandsRun(commandsThatRan, returnExitCode(1));
 
         PublishJarsToRepo publishJarsToRepo = genericBuilder
                 .commandRunner(runner)
@@ -123,7 +123,8 @@ public class PublishJarsToRepoTest {
         assertThatThrownBy(() -> publishJarsToRepo.upload())
                 .isInstanceOf(CommandFailedException.class);
 
-        assertThat(commandsThatRan).isEmpty();
+        assertThat(commandsThatRan)
+                .containsExactly(clientJarPipeline1);
     }
 
     private PublishJarsToRepo.Builder generateGenericBuilder() {

@@ -243,7 +243,7 @@ public class LambdaJar {
         }
 
         /**
-         * Builds the lambda jar object and adds it to the ALL List.
+         * Builds the lambda jar object and adds it to the ALL list.
          *
          * @return the lambda jar
          */
