@@ -37,8 +37,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * partition, partitions that are either parents of the partition, or grandparents, or great-grandparents.
  */
 public class PartitionTree {
-    protected final Map<String, Partition> idToPartition;
-    protected final Partition rootPartition;
+    private final Map<String, Partition> idToPartition;
+    private final Partition rootPartition;
 
     public PartitionTree(Collection<Partition> partitions) {
         this.idToPartition = new TreeMap<>();
