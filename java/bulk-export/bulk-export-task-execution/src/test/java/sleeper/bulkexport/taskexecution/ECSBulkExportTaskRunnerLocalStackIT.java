@@ -96,7 +96,6 @@ public class ECSBulkExportTaskRunnerLocalStackIT extends LocalStackTestBase {
         createBucket(instanceProperties.get(BULK_EXPORT_S3_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        update(stateStore()).initialise(partitions.getAllPartitions());
     }
 
     @Test
