@@ -87,7 +87,7 @@ pub async fn compact(
 /// Each step of compaction may produce an error. Any are reported back to the caller.
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
-    completer: &Arc<dyn Completer<'a> + 'a>,
+    completer: &Arc<dyn Completer + 'a>,
     configurer: &ParquetWriterConfigurer<'a>,
     store_factory: &ObjectStoreFactory,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {

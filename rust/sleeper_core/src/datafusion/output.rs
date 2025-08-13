@@ -54,7 +54,7 @@ pub enum CompletionOptions {
 impl CompletionOptions {
     /// Create a [`Completer`] for this type of output.
     #[must_use]
-    pub fn finisher<'a>(&self, ops: &'a SleeperOperations<'a>) -> Arc<dyn Completer<'a> + 'a> {
+    pub fn finisher<'a>(&self, ops: &'a SleeperOperations<'a>) -> Arc<dyn Completer + 'a> {
         Arc::new(match self {
             Self::ArrowRecordBatch => {
                 unimplemented!()
@@ -93,7 +93,7 @@ impl Debug for CompletedOutput {
 /// is finished. Sometimes we want to output the results to file(s) and sometimes
 /// we need a stream of processed records back.
 #[async_trait]
-pub trait Completer<'a> {
+pub trait Completer {
     /// Modify the given [`DataFrame`] as necessary for the desired output.
     ///
     /// # Errors
@@ -125,7 +125,7 @@ impl<'a> FileOutputCompleter<'a> {
 }
 
 #[async_trait]
-impl<'a> Completer<'a> for FileOutputCompleter<'a> {
+impl<'a> Completer for FileOutputCompleter<'a> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         match &self.ops.config.output {
             CompletionOptions::File {
@@ -165,7 +165,7 @@ impl<'a> ArrowOutputCompleter<'a> {
 }
 
 #[async_trait]
-impl<'a> Completer<'a> for ArrowOutputCompleter<'a> {
+impl<'a> Completer for ArrowOutputCompleter<'a> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         match &self.ops.config.output {
             CompletionOptions::File {
