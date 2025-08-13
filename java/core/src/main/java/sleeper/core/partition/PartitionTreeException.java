@@ -18,14 +18,22 @@ package sleeper.core.partition;
 /**
  * Custom exception of illegal events concerning partition trees.
  */
-public class PartitionTreeException extends RuntimeException {
+public class PartitionTreeException extends Exception {
 
-    public PartitionTreeException(String message, Throwable e) {
+    final PartitionTree originalTree;
+
+    public PartitionTreeException(String message, PartitionTree originalTree, Throwable e) {
         super(message, e);
+        this.originalTree = originalTree;
     }
 
-    public PartitionTreeException(String message) {
+    public PartitionTreeException(String message, PartitionTree originalTree) {
         super(message);
+        this.originalTree = originalTree;
+    }
+
+    public PartitionTree getOriginalPartitionTree() {
+        return originalTree;
     }
 
 }

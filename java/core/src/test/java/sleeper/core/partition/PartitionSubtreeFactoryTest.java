@@ -25,13 +25,12 @@ import java.util.List;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     public static final Logger LOGGER = LoggerFactory.getLogger(PartitionSubtreeFactoryTest.class);
 
     @Test
-    void shouldCreateBalancedSubtreeWithExactLeafPartitionCount() {
+    void shouldCreateBalancedSubtreeWithExactLeafPartitionCount() throws PartitionTreeException {
         // Given / When
         int leafPartitionCount = 2;
 
@@ -52,7 +51,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
-    void shouldFindSubtreeDownTwoLevelsOfTreeWithThreeLevelsOfSplits() {
+    void shouldFindSubtreeDownTwoLevelsOfTreeWithThreeLevelsOfSplits() throws PartitionTreeException {
         // Given
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -79,7 +78,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
-    void shouldGetSubtreeForManyLeafPartitions() {
+    void shouldGetSubtreeForManyLeafPartitions() throws PartitionTreeException {
         // Given
         Instant start = Instant.now();
         List<Object> splitPoints = LongStream.range(0, 100000).mapToObj(i -> (Object) i).toList();
@@ -96,7 +95,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
-    void shouldCreateBalancedSubtreeWithLeafCountCausingUnbalancedTreeLeftBias() {
+    void shouldCreateBalancedSubtreeWithLeafCountCausingUnbalancedTreeLeftBias() throws PartitionTreeException {
         // Given / When
         int leafPartitionCount = 3;
         PartitionTree subtree = PartitionSubtreeFactory.createSubtree(
@@ -118,7 +117,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
-    void shouldCreateRootOnlySubtreeWhenGivenLeafPartitions() {
+    void shouldCreateRootOnlySubtreeWhenGivenLeafPartitions() throws PartitionTreeException {
         // Given / When
         int leafPartitionCount = 0;
         PartitionTree subtree = PartitionSubtreeFactory.createSubtree(new PartitionsBuilder(schema)
@@ -139,7 +138,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
     }
 
     @Test
-    void shouldCreateSeperateSubtreesFrom3LevelTree() {
+    void shouldCreateSeperateSubtreesFrom3LevelTree() throws PartitionTreeException {
         // Given
         int largePartitionCount = 6;
         int midPartitionCount = 4;
@@ -196,12 +195,21 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
 
     @Test
     void shouldThrowExceptionIfRequestLeafCountGreaterThanOriginalTree() {
-        assertThatThrownBy(() -> PartitionSubtreeFactory.createSubtree(new PartitionsBuilder(schema)
+        // Given
+        PartitionTree originalTree = new PartitionsBuilder(schema)
                 .rootFirst(ROOT)
                 .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .buildTree(),
-                7))
-                .isInstanceOf(PartitionTreeException.class)
-                .hasMessageContaining("Requested size of 7 is greater than");
+                .buildTree();
+
+        // When
+        try {
+            PartitionSubtreeFactory.createSubtree(originalTree, 7);
+        } catch (Exception e) {
+            //Then
+            assertThat(e).isInstanceOf(PartitionTreeException.class);
+            assertThat(e).hasMessageContaining("Requested size of 7 is greater than");
+            assertThat(((PartitionTreeException) e).getOriginalPartitionTree()).isEqualTo(originalTree);
+        }
+
     }
 }
