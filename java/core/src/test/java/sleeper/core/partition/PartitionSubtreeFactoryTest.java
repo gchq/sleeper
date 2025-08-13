@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.testutils.printers.PartitionsPrinter;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -34,26 +36,27 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
         // Given / When
         int leafPartitionCount = 2;
 
-        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(
-                new PartitionsBuilder(schema)
-                        .rootFirst(ROOT)
-                        .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                        .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-                        .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
-                        .buildTree(),
-                leafPartitionCount);
+        PartitionTree originalTree = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
+                .buildTree();
+        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(originalTree, leafPartitionCount);
 
         // Then
-        assertThat(subtree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
-        assertThat(subtree).isEqualTo(new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L).buildTree());
+        assertThat(subtree)
+                .withRepresentation(tree -> PartitionsPrinter.printPartitions(schema, (PartitionTree) tree))
+                .isEqualTo(new PartitionsBuilder(schema)
+                        .rootFirst(ROOT)
+                        .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L).buildTree());
+        assertThat(subtree.getLeafPartitionIds()).containsExactly(L1_LEFT, L1_RIGHT);
     }
 
     @Test
     void shouldFindSubtreeDownTwoLevelsOfTreeWithThreeLevelsOfSplits() throws PartitionTreeException {
         // Given
-        PartitionTree tree = new PartitionsBuilder(schema)
+        PartitionTree originalTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 0L)
                 .splitToNewChildren("L", "LL", "LR", -100L)
@@ -65,33 +68,19 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .buildTree();
 
         // When
-        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 5);
+        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(originalTree, 5);
 
         // Then
-        assertThat(result).isEqualTo(new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 0L)
-                .splitToNewChildren("L", "LL", "LR", -100L)
-                .splitToNewChildren("R", "RL", "RR", 100L)
-                .splitToNewChildren("LL", "LLL", "LLR", -150L)
-                .buildTree());
-    }
-
-    @Test
-    void shouldGetSubtreeForManyLeafPartitions() throws PartitionTreeException {
-        // Given
-        Instant start = Instant.now();
-        List<Object> splitPoints = LongStream.range(0, 100000).mapToObj(i -> (Object) i).toList();
-        PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, splitPoints);
-        Instant generated = Instant.now();
-
-        // When
-        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 50000);
-        Instant end = Instant.now();
-
-        // Then
-        assertThat(result.getLeafPartitions()).hasSize(50000);
-        LOGGER.info("Generated in {}, ran in {}", Duration.between(start, generated), Duration.between(generated, end));
+        assertThat(subtree)
+                .withRepresentation(tree -> PartitionsPrinter.printPartitions(schema, (PartitionTree) tree))
+                .isEqualTo(new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "L", "R", 0L)
+                        .splitToNewChildren("L", "LL", "LR", -100L)
+                        .splitToNewChildren("R", "RL", "RR", 100L)
+                        .splitToNewChildren("LL", "LLL", "LLR", -150L)
+                        .buildTree());
+        assertThat(subtree.getLeafPartitionIds()).containsExactly("LLL", "LLR", "LR", "RL", "RR");
     }
 
     @Test
@@ -108,12 +97,16 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 leafPartitionCount);
 
         // Then
-        assertThat(subtree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
-        assertThat(subtree).isEqualTo(new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-                .buildTree());
+        assertThat(subtree)
+                .withRepresentation(tree -> PartitionsPrinter.printPartitions(schema, (PartitionTree) tree))
+                .isEqualTo(new PartitionsBuilder(schema)
+                        .rootFirst(ROOT)
+                        .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                        .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                        .buildTree());
+        assertThat(subtree.getLeafPartitionIds())
+                .containsExactly(L1_RIGHT,
+                        L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L);
     }
 
     @Test
@@ -129,12 +122,15 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 leafPartitionCount);
 
         // Then
-        assertThat(subtree).isEqualTo(new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .buildTree());
+        assertThat(subtree)
+                .withRepresentation(tree -> PartitionsPrinter.printPartitions(schema, (PartitionTree) tree))
+                .isEqualTo(new PartitionsBuilder(schema)
+                        .rootFirst(ROOT)
+                        .buildTree());
 
         //Incremented to account for root now being the only leaf
         assertThat(subtree.getLeafPartitions().size()).isEqualTo(leafPartitionCount + 1);
+        assertThat(subtree.getLeafPartitionIds()).containsExactly(ROOT);
     }
 
     @Test
@@ -159,37 +155,46 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
         PartitionTree largeSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal, largePartitionCount);
 
         // Then 1
-        assertThat(largeSubtree.getLeafPartitions().size()).isEqualTo(largePartitionCount);
-        assertThat(largeSubtree).isEqualTo(new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
-                .splitToNewChildren(L2_LEFT_OF_L1L, L3_LEFT_OF_L2LL, L3_RIGHT_OF_L2LL, -2000000L)
-                .splitToNewChildren(L2_RIGHT_OF_L1L, L3_LEFT_OF_L2LR, L3_RIGHT_OF_L2LR, -500000L)
-                .buildTree());
+        assertThat(largeSubtree)
+                .withRepresentation(tree -> PartitionsPrinter.printPartitions(schema, (PartitionTree) tree))
+                .isEqualTo(new PartitionsBuilder(schema)
+                        .rootFirst(ROOT)
+                        .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                        .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                        .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
+                        .splitToNewChildren(L2_LEFT_OF_L1L, L3_LEFT_OF_L2LL, L3_RIGHT_OF_L2LL, -2000000L)
+                        .splitToNewChildren(L2_RIGHT_OF_L1L, L3_LEFT_OF_L2LR, L3_RIGHT_OF_L2LR, -500000L)
+                        .buildTree());
+        assertThat(largeSubtree.getLeafPartitionIds())
+                .containsExactly(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R,
+                        L3_LEFT_OF_L2LL, L3_LEFT_OF_L2LR, L3_RIGHT_OF_L2LL, L3_RIGHT_OF_L2LR);
 
         // When 2
         PartitionTree midSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal, midPartitionCount);
 
         // Then 2
         assertThat(midSubtree.getLeafPartitions().size()).isEqualTo(midPartitionCount);
-        assertThat(midSubtree).isEqualTo(new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
-                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
-                .buildTree());
+        assertThat(midSubtree)
+                .withRepresentation(tree -> PartitionsPrinter.printPartitions(schema, (PartitionTree) tree))
+                .isEqualTo(new PartitionsBuilder(schema)
+                        .rootFirst(ROOT)
+                        .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                        .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                        .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
+                        .buildTree());
+        assertThat(midSubtree.getLeafPartitionIds()).containsExactly(L2_LEFT_OF_L1L, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1L, L2_RIGHT_OF_L1R);
 
         // When 3
         PartitionTree smallSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal, smallPartitionCount);
 
         // Then 3
-        assertThat(smallSubtree.getLeafPartitions().size()).isEqualTo(smallPartitionCount);
-        assertThat(smallSubtree).isEqualTo(new PartitionsBuilder(schema)
-                .rootFirst(ROOT)
-                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
-                .buildTree());
+        assertThat(smallSubtree)
+                .withRepresentation(tree -> PartitionsPrinter.printPartitions(schema, (PartitionTree) tree))
+                .isEqualTo(new PartitionsBuilder(schema)
+                        .rootFirst(ROOT)
+                        .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                        .buildTree());
+        assertThat(smallSubtree.getLeafPartitionIds()).containsExactly(L1_LEFT, L1_RIGHT);
 
     }
 
@@ -210,6 +215,22 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
             assertThat(e).hasMessageContaining("Requested size of 7 is greater than");
             assertThat(((PartitionTreeException) e).getOriginalPartitionTree()).isEqualTo(originalTree);
         }
+    }
 
+    @Test
+    void shouldGetSubtreeForManyLeafPartitions() throws PartitionTreeException {
+        // Given
+        Instant start = Instant.now();
+        List<Object> splitPoints = LongStream.range(0, 100000).mapToObj(i -> (Object) i).toList();
+        PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, splitPoints);
+        Instant generated = Instant.now();
+
+        // When
+        PartitionTree result = PartitionSubtreeFactory.createSubtree(tree, 50000);
+        Instant end = Instant.now();
+
+        // Then
+        assertThat(result.getLeafPartitions()).hasSize(50000);
+        LOGGER.info("Generated in {}, ran in {}", Duration.between(start, generated), Duration.between(generated, end));
     }
 }
