@@ -14,11 +14,44 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::{SleeperOperations, metrics::RowCounts};
+use crate::{
+    SleeperParquetOptions,
+    datafusion::{SleeperOperations, metrics::RowCounts},
+};
 use datafusion::{
     error::DataFusionError, execution::SendableRecordBatchStream, prelude::DataFrame,
 };
 use std::fmt::{Debug, Formatter};
+use url::Url;
+
+/// Defines how operation output should be given.
+#[derive(Debug, Default)]
+pub enum OperationOutput {
+    /// `DataFusion` results will be returned as a stream of Arrow [`RecordBatch`]es.
+    #[default]
+    ArrowRecordBatch,
+    /// `DataFusion` results will be written to a file with given Parquet options.
+    File {
+        /// Output file Url
+        output_file: Url,
+        /// Parquet output options
+        opts: SleeperParquetOptions,
+    },
+}
+
+// impl OperationOutput {
+//     /// Create a [`Completer`] for this type of output.
+//     pub fn finisher(&self) -> Arc<dyn Completer> {
+//         Arc::new(match self {
+//             Self::ArrowRecordBatch => {
+//                 unimplemented!()
+//             }
+//             Self::File { output_file, opts } => {
+//                 unimplemented!()
+//             }
+//         })
+//     }
+// }
 
 pub enum CompletedOutput {
     ArrowRecordBatch(SendableRecordBatchStream),

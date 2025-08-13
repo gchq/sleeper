@@ -33,10 +33,9 @@ use url::Url;
 mod datafusion;
 
 pub use datafusion::{
-    SleeperPartitionRegion,
+    OperationOutput, SleeperPartitionRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
 };
-
 
 /// Type safe variant for Sleeper partition boundary
 #[derive(Debug, Copy, Clone)]
@@ -90,7 +89,7 @@ impl Default for SleeperParquetOptions {
 
 /// Common items necessary to perform any `DataFusion` related
 /// work for Sleeper.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CommonConfig<'a> {
     /// Aws credentials configuration
     pub aws_config: Option<AwsConfig>,
@@ -110,45 +109,101 @@ pub struct CommonConfig<'a> {
     pub iterator_config: Option<String>,
 }
 
-impl CommonConfig<'_> {
-    /// Convert all Java "s3a" URLs in input and output to "s3."
-    pub fn sanitise_java_s3_urls(&mut self) {
-        self.input_files.iter_mut().for_each(|t| {
-            if t.scheme() == "s3a" {
-                let _ = t.set_scheme("s3");
-            }
-        });
-
-        if let OperationOutput::File {
-            output_file,
-            opts: _,
-        } = &mut self.output
-            && output_file.scheme() == "s3a"
-        {
-            let _ = output_file.set_scheme("s3");
+impl Default for CommonConfig<'_> {
+    fn default() -> Self {
+        Self {
+            aws_config: Option::default(),
+            input_files: Vec::default(),
+            input_files_sorted: true,
+            row_key_cols: Vec::default(),
+            sort_key_cols: Vec::default(),
+            region: SleeperPartitionRegion::default(),
+            output: OperationOutput::default(),
+            iterator_config: Option::default(),
         }
     }
+}
 
-    /// Checks for simple configuration errors
+impl<'a> CommonConfig<'a> {
+    /// Creates a new configuration object.
     ///
     /// # Errors
-    /// It is an error for input paths to be empty or for a length
-    /// mismatch between row key columns length and number of ranges in
-    /// partition region.
-    pub fn validate(&self) -> Result<()> {
-        if self.input_files.is_empty() {
-            bail!("No input paths supplied");
+    /// The configuration must validate. Input files mustn't be empty
+    /// and the number of row key columns must match the number of region
+    /// dimensions.
+    #[allow(clippy::too_many_arguments)]
+    pub fn try_new(
+        aws_config: Option<AwsConfig>,
+        input_files: Vec<Url>,
+        input_files_sorted: bool,
+        row_key_cols: Vec<String>,
+        sort_key_cols: Vec<String>,
+        region: SleeperPartitionRegion<'a>,
+        output: OperationOutput,
+        iterator_config: Option<String>,
+    ) -> Result<Self> {
+        validate(&input_files, &row_key_cols, &region)?;
+        // Convert Java s3a schema to s3
+        let (input_files, output) = normalise_s3a_urls(input_files, output);
+        Ok(Self {
+            aws_config,
+            input_files,
+            input_files_sorted,
+            row_key_cols,
+            sort_key_cols,
+            region,
+            output,
+            iterator_config,
+        })
+    }
+}
+
+/// Change all input and output URLS from s3a to s3 scheme.
+fn normalise_s3a_urls(
+    mut input_files: Vec<Url>,
+    mut output: OperationOutput,
+) -> (Vec<Url>, OperationOutput) {
+    for t in &mut input_files {
+        if t.scheme() == "s3a" {
+            let _ = t.set_scheme("s3");
         }
-        if self.row_key_cols.len() != self.region.len() {
-            bail!(
-                "Length mismatch between row keys {} and partition region bounds {}",
-                self.row_key_cols.len(),
-                self.region.len()
-            );
-        }
-        Ok(())
     }
 
+    if let OperationOutput::File {
+        output_file,
+        opts: _,
+    } = &mut output
+        && output_file.scheme() == "s3a"
+    {
+        let _ = output_file.set_scheme("s3");
+    }
+    (input_files, output)
+}
+
+/// Performs validity checks on parameters.
+///
+/// # Errors
+/// There must be at least one input file.
+/// The length of `row_key_cols` must match the number of region dimensions.
+fn validate(
+    input_files: &[Url],
+    row_key_cols: &[String],
+    region: &SleeperPartitionRegion<'_>,
+) -> Result<()> {
+    if input_files.is_empty() {
+        bail!("No input paths supplied");
+    }
+    if row_key_cols.len() != region.len() {
+        bail!(
+            "Length mismatch between row keys {} and partition region bounds {}",
+            row_key_cols.len(),
+            region.len()
+        );
+    }
+    Ok(())
+}
+
+impl CommonConfig<'_> {
     /// Get iterator for row and sort key columns in order
     pub fn sorting_columns_iter(&self) -> impl Iterator<Item = &str> {
         self.row_key_cols
@@ -181,35 +236,6 @@ impl Display for CommonConfig<'_> {
         }
     }
 }
-
-/// Defines how operation output should be given.
-#[derive(Debug, Default)]
-pub enum OperationOutput {
-    /// `DataFusion` results will be returned as a stream of Arrow [`RecordBatch`]es.
-    #[default]
-    ArrowRecordBatch,
-    /// `DataFusion` results will be written to a file with given Parquet options.
-    File {
-        /// Output file Url
-        output_file: Url,
-        /// Parquet output options
-        opts: SleeperParquetOptions,
-    },
-}
-
-// impl OperationOutput {
-//     /// Create a [`Completer`] for this type of output.
-//     pub fn finisher(&self) -> Arc<dyn Completer> {
-//         Arc::new(match self {
-//             Self::ArrowRecordBatch => {
-//                 unimplemented!()
-//             }
-//             Self::File { output_file, opts } => {
-//                 unimplemented!()
-//             }
-//         })
-//     }
-// }
 
 #[derive(Debug)]
 pub struct AwsConfig {
@@ -268,7 +294,6 @@ pub struct CompactionResult {
 /// There must be at least one input file.
 ///
 pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResult> {
-    config.validate()?;
     let store_factory = create_object_store_factory(config.aws_config.as_ref()).await;
 
     crate::datafusion::compact(&store_factory, config)

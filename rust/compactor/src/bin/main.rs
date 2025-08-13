@@ -149,20 +149,19 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_values: true,
     };
 
-    let mut details = CommonConfig {
-        aws_config: None,
-        input_files: input_urls,
-        input_files_sorted: true,
-        row_key_cols: args.row_keys,
-        sort_key_cols: args.sort_keys,
-        region: SleeperPartitionRegion::new(map),
-        output: OperationOutput::File {
+    let details = CommonConfig::try_new(
+        None,
+        input_urls,
+        true,
+        args.row_keys,
+        args.sort_keys,
+        SleeperPartitionRegion::new(map),
+        OperationOutput::File {
             output_file,
             opts: parquet_options,
         },
-        iterator_config: args.iterator_config,
-    };
-    details.sanitise_java_s3_urls();
+        args.iterator_config,
+    )?;
 
     let result = run_compaction(&details).await;
     match result {

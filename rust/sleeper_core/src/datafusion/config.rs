@@ -19,8 +19,8 @@ use crate::{CommonConfig, SleeperParquetOptions};
 use datafusion::{
     common::DFSchema,
     config::TableParquetOptions,
-    parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     execution::config::SessionConfig,
+    parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
 };
 use log::error;
 

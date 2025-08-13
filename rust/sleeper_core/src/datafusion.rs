@@ -18,7 +18,7 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, OperationOutput,
+    CommonConfig,
     datafusion::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         sketch::Sketcher,
@@ -57,6 +57,7 @@ mod util;
 
 pub use compact::compact;
 pub use config::ParquetWriterConfigurer;
+pub use output::OperationOutput;
 pub use region::SleeperPartitionRegion;
 
 /// Drives common operations in processing of `DataFusion` for Sleeper.
