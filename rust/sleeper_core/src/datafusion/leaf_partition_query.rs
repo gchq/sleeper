@@ -18,12 +18,16 @@
 use crate::{
     CommonConfig, CompletionOptions, SleeperPartitionRegion,
     datafusion::{
-        ParquetWriterConfigurer, SleeperOperations, sketch::Sketcher, util::explain_plan,
+        SleeperOperations, output::CompletedOutput, sketch::Sketcher,
+        util::explain_plan,
     },
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
-use datafusion::{common::plan_err, logical_expr::Expr};
+use datafusion::{
+    common::plan_err, execution::SendableRecordBatchStream, logical_expr::Expr,
+    physical_plan::displayable,
+};
 use datafusion::{
     dataframe::DataFrame,
     error::DataFusionError,
@@ -31,7 +35,10 @@ use datafusion::{
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    sync::Arc,
+};
 
 /// All information needed for a Sleeper leaf partition query.
 #[derive(Debug, Default)]
@@ -80,16 +87,35 @@ impl<'a> LeafPartitionQuery<'a> {
     ///
     /// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
     /// from the input URLs and writing to the output URL (if writing results to a file).
-    pub async fn run_query(&self) -> Result<(), DataFusionError> {
+    pub async fn run_query(&self) -> Result<SendableRecordBatchStream, DataFusionError> {
         let ops = SleeperOperations::new(&self.config.common);
-        info!("DataFusion compaction: {ops}");
-        // Create query frame an sketches if it has been enabled
+        info!("DataFusion query: {ops}");
+        // Create query frame and sketches if it has been enabled
         let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
 
         if self.config.explain_plans {
             explain_plan(&frame).await?;
         }
-        todo!();
+
+        // Convert to physical plan
+        let completer = ops.create_output_completer();
+        let frame = completer.complete_frame(frame)?;
+        let task_ctx = Arc::new(frame.task_ctx());
+        let physical_plan = ops.to_physical_plan(frame).await?;
+
+        if self.config.explain_plans {
+            info!(
+                "Physical plan\n{}",
+                displayable(&*physical_plan).indent(true)
+            );
+        }
+
+        match completer.execute_frame(physical_plan, task_ctx).await? {
+            CompletedOutput::ArrowRecordBatch(stream) => Ok(stream),
+            CompletedOutput::File(_) => {
+                panic!("ArrowOutputCompleter did not return a CompletedOutput::ArrowRecordBatch")
+            }
+        }
     }
 
     /// Adds a quantile sketch to a query plan if sketch generation is enabled.
@@ -132,7 +158,7 @@ impl<'a> LeafPartitionQuery<'a> {
         ops: &'a SleeperOperations<'a>,
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
         let sf = ops
-            .apply_config(SessionConfig::new(), &self.store_factory)
+            .apply_config(SessionConfig::new(), self.store_factory)
             .await?;
         let ctx = ops.configure_context(SessionContext::new_with_config(sf), self.store_factory)?;
         let mut frame = ops.create_initial_partitioned_read(&ctx).await?;

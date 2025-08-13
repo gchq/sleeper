@@ -125,7 +125,7 @@ impl<'a> FileOutputCompleter<'a> {
 }
 
 #[async_trait]
-impl<'a> Completer for FileOutputCompleter<'a> {
+impl Completer for FileOutputCompleter<'_> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         match &self.ops.config.output {
             CompletionOptions::File {
@@ -165,7 +165,7 @@ impl<'a> ArrowOutputCompleter<'a> {
 }
 
 #[async_trait]
-impl<'a> Completer for ArrowOutputCompleter<'a> {
+impl Completer for ArrowOutputCompleter<'_> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         match &self.ops.config.output {
             CompletionOptions::File {

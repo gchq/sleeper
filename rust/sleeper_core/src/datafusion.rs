@@ -21,6 +21,7 @@ use crate::{
     CommonConfig,
     datafusion::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
+        output::Completer,
         sketch::Sketcher,
         util::{
             calculate_upload_size, check_for_sort_exec, register_store,
@@ -104,9 +105,7 @@ impl<'a> SleeperOperations<'a> {
                 calculate_upload_size(total_input_size)?;
 
             // Create Parquet configuration object based on requested output
-            let configurer = ParquetWriterConfigurer {
-                parquet_options: &parquet_options,
-            };
+            let configurer = ParquetWriterConfigurer { parquet_options };
             cfg = configurer.apply_parquet_config(cfg);
         }
         Ok(cfg)
@@ -345,6 +344,12 @@ impl<'a> SleeperOperations<'a> {
                 })
                 .collect::<Result<Vec<_>, DataFusionError>>()?,
         ))
+    }
+
+    /// Create appropriate output completer.
+    #[must_use]
+    pub fn create_output_completer(&self) -> Arc<dyn Completer + '_> {
+        self.config.output.finisher(self)
     }
 }
 

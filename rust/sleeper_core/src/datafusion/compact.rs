@@ -18,11 +18,11 @@
 use crate::{
     CommonConfig, CompactionResult, CompletionOptions,
     datafusion::{
-        ParquetWriterConfigurer, SleeperOperations,
+        SleeperOperations,
         metrics::RowCounts,
         output::{CompletedOutput, Completer},
         sketch::{Sketcher, output_sketch},
-        util::{collect_stats, explain_plan},
+        util::explain_plan,
     },
 };
 use datafusion::{
@@ -31,7 +31,7 @@ use datafusion::{
     error::DataFusionError,
     execution::config::SessionConfig,
     execution::context::SessionContext,
-    physical_plan::{collect, displayable},
+    physical_plan::displayable,
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -71,6 +71,7 @@ pub async fn compact(
     // Write the frame out and collect stats
     output_sketch(store_factory, output_file, sketcher.sketch()).await?;
 
+    // Dump input file metrics to logging console
     stats.log_metrics();
     Ok(CompactionResult::from(&stats))
 }
