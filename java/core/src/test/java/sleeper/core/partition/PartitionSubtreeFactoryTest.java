@@ -45,10 +45,10 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 leafPartitionCount);
 
         // Then
-        Partition l1LeftAsLeaf = adjustToLeafStatus(l1Left);
-        Partition l1RightAsLeaf = adjustToLeafStatus(l1Right);
-        assertThat(subtree.getLeafPartitions()).contains(l1LeftAsLeaf, l1RightAsLeaf);
         assertThat(subtree.getLeafPartitions().size()).isEqualTo(leafPartitionCount);
+        assertThat(subtree).isEqualTo(new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L).buildTree());
     }
 
     @Test

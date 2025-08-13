@@ -79,14 +79,6 @@ public abstract class PartitionTreeTestBase {
             .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L))
             .dimension(0)
             .build();
-    protected Partition l1Right = Partition.builder()
-            .region(new Region(rangeFactory.createRange("id", 0L, true, null, false)))
-            .id(L1_RIGHT)
-            .leafPartition(false)
-            .parentPartitionId(ROOT)
-            .childPartitionIds(Arrays.asList(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R))
-            .dimension(0)
-            .build();
 
     // Level 2 nodes
     protected Partition l2LeftOfL1L = Partition.builder()
