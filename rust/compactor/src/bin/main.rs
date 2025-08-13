@@ -20,7 +20,7 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
-    ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperParquetOptions,
+    ColRange, CommonConfig, CompletionOptions, PartitionBound, SleeperParquetOptions,
     SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, io::Write, path::Path};
@@ -156,7 +156,7 @@ async fn main() -> color_eyre::Result<()> {
         args.row_keys,
         args.sort_keys,
         SleeperPartitionRegion::new(map),
-        OperationOutput::File {
+        CompletionOptions::File {
             output_file,
             opts: parquet_options,
         },

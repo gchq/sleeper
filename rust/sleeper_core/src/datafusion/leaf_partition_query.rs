@@ -16,7 +16,7 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, OperationOutput, SleeperPartitionRegion,
+    CommonConfig, CompletionOptions, SleeperPartitionRegion,
     datafusion::{
         ParquetWriterConfigurer, SleeperOperations, sketch::Sketcher, util::explain_plan,
     },
@@ -103,7 +103,7 @@ impl<'a> LeafPartitionQuery<'a> {
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
         if self.config.write_quantile_sketch {
             match self.config.common.output {
-                OperationOutput::File {
+                CompletionOptions::File {
                     output_file: _,
                     opts: _,
                 } => {
@@ -111,7 +111,7 @@ impl<'a> LeafPartitionQuery<'a> {
                     let frame = sketcher.apply_sketch(frame)?;
                     Ok((Some(sketcher), frame))
                 }
-                OperationOutput::ArrowRecordBatch => plan_err!(
+                CompletionOptions::ArrowRecordBatch => plan_err!(
                     "Quantile sketch output cannot be enabled if file output not selected"
                 ),
             }
@@ -176,7 +176,7 @@ async fn prepare_session_config<'a>(
         .apply_config(SessionConfig::new(), store_factory)
         .await?;
     Ok(
-        if let OperationOutput::File {
+        if let CompletionOptions::File {
             output_file: _,
             opts: parquet_options,
         } = &ops.config.output

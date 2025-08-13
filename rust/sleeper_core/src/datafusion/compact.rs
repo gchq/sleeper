@@ -16,10 +16,11 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, CompactionResult, OperationOutput,
+    CommonConfig, CompactionResult, CompletionOptions,
     datafusion::{
         ParquetWriterConfigurer, SleeperOperations,
         metrics::RowCounts,
+        output::Completer,
         sketch::{Sketcher, output_sketch},
         util::{collect_stats, explain_plan},
     },
@@ -49,7 +50,7 @@ pub async fn compact(
     info!("DataFusion compaction: {ops}");
 
     // Retrieve Parquet output options
-    let OperationOutput::File {
+    let CompletionOptions::File {
         output_file,
         opts: parquet_options,
     } = &config.output
@@ -57,11 +58,12 @@ pub async fn compact(
         return plan_err!("Sleeper compactions must output to a file");
     };
 
-    // Create Parquet configuration object based on requested output
     let configurer = ParquetWriterConfigurer { parquet_options };
+    let completer = config.output.finisher(&ops);
 
     // Make compaction DataFrame
-    let (sketcher, frame) = build_compaction_dataframe(&ops, &configurer, store_factory).await?;
+    let (sketcher, frame) =
+        build_compaction_dataframe(&ops, &completer, &configurer, store_factory).await?;
 
     // Explain logical plan
     explain_plan(&frame).await?;
@@ -85,7 +87,8 @@ pub async fn compact(
 /// Each step of compaction may produce an error. Any are reported back to the caller.
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
-    configurer: &'a ParquetWriterConfigurer<'a>,
+    completer: &Arc<dyn Completer<'a> + 'a>,
+    configurer: &ParquetWriterConfigurer<'a>,
     store_factory: &ObjectStoreFactory,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
     let sf = ops
@@ -99,7 +102,8 @@ async fn build_compaction_dataframe<'a>(
     frame = ops.apply_aggregations(frame)?;
     let sketcher = ops.create_sketcher(frame.schema());
     frame = sketcher.apply_sketch(frame)?;
-    frame = ops.plan_with_parquet_output(frame, configurer)?;
+    frame = completer.complete_frame(frame)?;
+    // frame = ops.plan_with_parquet_output(frame, configurer)?;
     Ok((sketcher, frame))
 }
 

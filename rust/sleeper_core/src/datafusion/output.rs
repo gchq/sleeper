@@ -16,17 +16,29 @@
 */
 use crate::{
     SleeperParquetOptions,
-    datafusion::{SleeperOperations, metrics::RowCounts},
+    datafusion::{
+        ParquetWriterConfigurer, SleeperOperations, metrics::RowCounts, util::collect_stats,
+    },
 };
+#[cfg(doc)]
+use arrow::record_batch::RecordBatch;
+use async_trait::async_trait;
 use datafusion::{
-    error::DataFusionError, execution::SendableRecordBatchStream, prelude::DataFrame,
+    common::plan_err,
+    error::DataFusionError,
+    execution::{SendableRecordBatchStream, TaskContext},
+    physical_plan::{ExecutionPlan, collect},
+    prelude::DataFrame,
 };
-use std::fmt::{Debug, Formatter};
+use std::{
+    fmt::{Debug, Formatter},
+    sync::Arc,
+};
 use url::Url;
 
 /// Defines how operation output should be given.
 #[derive(Debug, Default)]
-pub enum OperationOutput {
+pub enum CompletionOptions {
     /// `DataFusion` results will be returned as a stream of Arrow [`RecordBatch`]es.
     #[default]
     ArrowRecordBatch,
@@ -39,22 +51,31 @@ pub enum OperationOutput {
     },
 }
 
-// impl OperationOutput {
-//     /// Create a [`Completer`] for this type of output.
-//     pub fn finisher(&self) -> Arc<dyn Completer> {
-//         Arc::new(match self {
-//             Self::ArrowRecordBatch => {
-//                 unimplemented!()
-//             }
-//             Self::File { output_file, opts } => {
-//                 unimplemented!()
-//             }
-//         })
-//     }
-// }
+impl CompletionOptions {
+    /// Create a [`Completer`] for this type of output.
+    pub fn finisher<'a>(&self, ops: &'a SleeperOperations<'a>) -> Arc<dyn Completer<'a> + 'a> {
+        Arc::new(match self {
+            Self::ArrowRecordBatch => {
+                unimplemented!()
+            }
+            Self::File {
+                output_file: _,
+                opts: _,
+            } => FileOutputCompleter::new(ops),
+        })
+    }
+}
 
+/// The result of executing a [`DataFrame`] with a [`Completer`].
+///
+/// A completer will return a different variant depending on the
+/// [`CompletionOptions`] the plan was configured with.
 pub enum CompletedOutput {
+    /// Results of plan are returned as a asynchronous stream
+    /// of Arrow [`RecordBatch`]es.
     ArrowRecordBatch(SendableRecordBatchStream),
+    /// Results of plan have been written to a file(s) and
+    /// the row counts are returned.
     File(RowCounts),
 }
 
@@ -67,28 +88,65 @@ impl Debug for CompletedOutput {
     }
 }
 
-pub trait Completer {
-    fn complete(
-        ops: &SleeperOperations<'_>,
-        frame: DataFrame,
+/// A `Completer` object governs how the final stages of a Sleeper operation
+/// is finished. Sometimes we want to output the results to file(s) and sometimes
+/// we need a stream of processed records back.
+#[async_trait]
+pub trait Completer<'a> {
+    /// Modify the given [`DataFrame`] as necessary for the desired output.
+    ///
+    /// # Errors
+    /// An error will occur if the frame cannot be modified or if this [`Completer`]
+    /// is not suitable for use with the configured `ops`.
+    fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError>;
+    /// Runs the plan.
+    ///
+    /// # Errors
+    /// If any part of the conversion to physical plan or execution fails, then the error
+    /// is returned.
+    async fn execute_frame(
+        &self,
+        physical_plan: Arc<dyn ExecutionPlan>,
+        task_ctx: Arc<TaskContext>,
     ) -> Result<CompletedOutput, DataFusionError>;
 }
 
-// #[derive(Debug)]
-// pub struct RecordBatchCompleter {}
-
-// impl Completer for RecordBatchCompleter {}
-
+/// Writes output of frames to a Parquet file.
 #[derive(Debug)]
-pub struct FileOutputCompleter {}
+pub struct FileOutputCompleter<'a> {
+    ops: &'a SleeperOperations<'a>,
+}
 
-impl FileOutputCompleter {}
+impl<'a> FileOutputCompleter<'a> {
+    pub fn new(ops: &'a SleeperOperations<'a>) -> Self {
+        Self { ops }
+    }
+}
 
-impl Completer for FileOutputCompleter {
-    fn complete(
-        ops: &SleeperOperations<'_>,
-        frame: DataFrame,
+#[async_trait]
+impl<'a> Completer<'a> for FileOutputCompleter<'a> {
+    fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        match &self.ops.config.output {
+            CompletionOptions::File {
+                output_file: _,
+                opts: parquet_options,
+            } => {
+                let configurer = ParquetWriterConfigurer { parquet_options };
+                self.ops.plan_with_parquet_output(frame, &configurer)
+            }
+            CompletionOptions::ArrowRecordBatch => {
+                plan_err!("Can't use FileOutputCompleter with CompletionOptions::ArrowRecordBatch")
+            }
+        }
+    }
+
+    async fn execute_frame(
+        &self,
+        physical_plan: Arc<dyn ExecutionPlan>,
+        task_ctx: Arc<TaskContext>,
     ) -> Result<CompletedOutput, DataFusionError> {
-        todo!()
+        collect(physical_plan.clone(), task_ctx).await?;
+        let stats = collect_stats(&self.ops.config.input_files, &physical_plan)?;
+        Ok(CompletedOutput::File(stats))
     }
 }

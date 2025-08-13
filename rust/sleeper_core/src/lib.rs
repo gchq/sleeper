@@ -33,7 +33,7 @@ use url::Url;
 mod datafusion;
 
 pub use datafusion::{
-    OperationOutput, SleeperPartitionRegion,
+    CompletionOptions, SleeperPartitionRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
 };
 
@@ -104,7 +104,7 @@ pub struct CommonConfig<'a> {
     /// Ranges for each column to filter input files
     pub region: SleeperPartitionRegion<'a>,
     /// How output from operation should be returned
-    pub output: OperationOutput,
+    pub output: CompletionOptions,
     /// Iterator config. Filters, aggregators, etc.
     pub iterator_config: Option<String>,
 }
@@ -118,7 +118,7 @@ impl Default for CommonConfig<'_> {
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
             region: SleeperPartitionRegion::default(),
-            output: OperationOutput::default(),
+            output: CompletionOptions::default(),
             iterator_config: Option::default(),
         }
     }
@@ -139,7 +139,7 @@ impl<'a> CommonConfig<'a> {
         row_key_cols: Vec<String>,
         sort_key_cols: Vec<String>,
         region: SleeperPartitionRegion<'a>,
-        output: OperationOutput,
+        output: CompletionOptions,
         iterator_config: Option<String>,
     ) -> Result<Self> {
         validate(&input_files, &row_key_cols, &region)?;
@@ -161,15 +161,15 @@ impl<'a> CommonConfig<'a> {
 /// Change all input and output URLS from s3a to s3 scheme.
 fn normalise_s3a_urls(
     mut input_files: Vec<Url>,
-    mut output: OperationOutput,
-) -> (Vec<Url>, OperationOutput) {
+    mut output: CompletionOptions,
+) -> (Vec<Url>, CompletionOptions) {
     for t in &mut input_files {
         if t.scheme() == "s3a" {
             let _ = t.set_scheme("s3");
         }
     }
 
-    if let OperationOutput::File {
+    if let CompletionOptions::File {
         output_file,
         opts: _,
     } = &mut output
@@ -228,8 +228,8 @@ impl Display for CommonConfig<'_> {
             self.region
         )?;
         match &self.output {
-            OperationOutput::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
-            OperationOutput::File {
+            CompletionOptions::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
+            CompletionOptions::File {
                 output_file,
                 opts: _,
             } => write!(f, "output file {output_file:?}"),

@@ -19,7 +19,7 @@ use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
 use compaction_helpers::*;
 use sleeper_core::{
-    CommonConfig, OperationOutput, SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
+    CommonConfig, CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, sync::Arc};
 use tempfile::tempdir;
@@ -41,7 +41,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
-        output: OperationOutput::File {
+        output: CompletionOptions::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
         },
@@ -74,7 +74,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
-        output: OperationOutput::File {
+        output: CompletionOptions::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
         },
@@ -107,7 +107,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 2, 4)),
-        output: OperationOutput::File {
+        output: CompletionOptions::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
         },
@@ -149,7 +149,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
             region_entry("key1", int_range(2, 4)),
             region_entry("key2", int_range(13, 23)),
         ])),
-        output: OperationOutput::File {
+        output: CompletionOptions::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
         },
@@ -194,7 +194,7 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
             "key2",
             int_range(11, 25),
         )])),
-        output: OperationOutput::File {
+        output: CompletionOptions::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
         },

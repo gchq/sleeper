@@ -19,7 +19,7 @@ use color_eyre::eyre::{bail, eyre};
 use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperParquetOptions,
+    AwsConfig, ColRange, CommonConfig, CompletionOptions, PartitionBound, SleeperParquetOptions,
     SleeperPartitionRegion, run_compaction,
 };
 use std::{
@@ -166,7 +166,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CommonConfig<'a> {
                 .map(String::from)
                 .collect(),
             region,
-            OperationOutput::File {
+            CompletionOptions::File {
                 output_file: unsafe { CStr::from_ptr(params.output_file) }
                     .to_str()
                     .map(Url::parse)??,
