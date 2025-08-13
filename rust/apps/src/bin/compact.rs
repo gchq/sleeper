@@ -1,18 +1,19 @@
 /*
- * Copyright 2022-2025 Crown Copyright
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Copyright 2022-2025 Crown Copyright
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+use apps::path_absolute;
 use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
@@ -23,10 +24,10 @@ use sleeper_core::{
     ColRange, CommonConfig, CompletionOptions, PartitionBound, SleeperParquetOptions,
     SleeperPartitionRegion, run_compaction,
 };
-use std::{collections::HashMap, io::Write, path::Path};
+use std::{collections::HashMap, io::Write};
 use url::Url;
 
-/// Implements a Sleeper compaction algorithm in Rust.
+/// Runs a Sleeper compaction algorithm.
 ///
 /// A sequence of Parquet files is read and compacted into a single output Parquet file. The input
 /// files must be individually sorted according to the row key columns and then the sort columns. A sketches file containing
@@ -61,16 +62,6 @@ struct CmdLineArgs {
     /// Sleeper iterator configuration
     #[arg(short = 'i', long, required = false, num_args = 1)]
     iterator_config: Option<String>,
-}
-
-/// Converts a [`Path`] reference to an absolute path (if not already absolute)
-/// and returns it as a String.
-///
-/// # Panics
-/// If the path can't be made absolute due to not being able to get the current
-/// directory or the path is not valid.
-fn path_absolute<T: ?Sized + AsRef<Path>>(path: &T) -> String {
-    std::path::absolute(path).unwrap().to_str().unwrap().into()
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -163,65 +154,12 @@ async fn main() -> color_eyre::Result<()> {
         args.iterator_config,
     )?;
 
-    let result = run_compaction(&details).await;
-    match result {
-        Ok(r) => {
-            info!(
-                "Compaction read {} rows and wrote {} rows",
-                r.rows_read.to_formatted_string(&Locale::en),
-                r.rows_written.to_formatted_string(&Locale::en)
-            );
-        }
-        Err(e) => {
-            bail!(e);
-        }
-    }
+    let result = run_compaction(&details).await?;
+    info!(
+        "Compaction read {} rows and wrote {} rows",
+        result.rows_read.to_formatted_string(&Locale::en),
+        result.rows_written.to_formatted_string(&Locale::en)
+    );
+
     Ok(())
-}
-
-#[cfg(test)]
-mod path_test {
-    use crate::path_absolute;
-
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    fn cd_to_tmp() {
-        std::env::set_current_dir("/tmp").unwrap();
-    }
-
-    #[test]
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    fn relative_path_converts() {
-        cd_to_tmp();
-        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("foo/bar/baz.txt"));
-    }
-
-    #[test]
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    fn relative_path_converts_with_one_dot() {
-        cd_to_tmp();
-        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("./foo/bar/baz.txt"));
-    }
-
-    #[test]
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    fn relative_path_converts_with_double_dot() {
-        cd_to_tmp();
-        assert_eq!(
-            "/tmp/../foo/bar/baz.txt",
-            path_absolute("../foo/bar/baz.txt")
-        );
-    }
-
-    #[test]
-    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    fn absolute_path_unchanged() {
-        cd_to_tmp();
-        assert_eq!("/tmp/foo/bar", path_absolute("/tmp/foo/bar"));
-    }
-
-    #[test]
-    #[should_panic(expected = "cannot make an empty path absolute")]
-    fn empty_path_panic() {
-        let _ = path_absolute("");
-    }
 }
