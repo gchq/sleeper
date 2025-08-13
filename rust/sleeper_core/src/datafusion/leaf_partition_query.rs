@@ -18,7 +18,9 @@
 use crate::{
     CommonConfig, CompletionOptions, SleeperPartitionRegion,
     datafusion::{
-        SleeperOperations, output::CompletedOutput, sketch::Sketcher,
+        SleeperOperations,
+        output::CompletedOutput,
+        sketch::{Sketcher, output_sketch},
         util::explain_plan,
     },
 };
@@ -87,7 +89,7 @@ impl<'a> LeafPartitionQuery<'a> {
     ///
     /// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
     /// from the input URLs and writing to the output URL (if writing results to a file).
-    pub async fn run_query(&self) -> Result<SendableRecordBatchStream, DataFusionError> {
+    pub async fn run_query(&self) -> Result<CompletedOutput, DataFusionError> {
         let ops = SleeperOperations::new(&self.config.common);
         info!("DataFusion query: {ops}");
         // Create query frame and sketches if it has been enabled
@@ -110,12 +112,29 @@ impl<'a> LeafPartitionQuery<'a> {
             );
         }
 
-        match completer.execute_frame(physical_plan, task_ctx).await? {
-            CompletedOutput::ArrowRecordBatch(stream) => Ok(stream),
-            CompletedOutput::File(_) => {
-                panic!("ArrowOutputCompleter did not return a CompletedOutput::ArrowRecordBatch")
+        // Run query
+        let result = completer.execute_frame(physical_plan, task_ctx).await?;
+
+        // Do we have some sketch output to write?
+        if let Some(sketch_func) = sketcher
+            && self.config.write_quantile_sketch
+        {
+            match &self.config.common.output {
+                CompletionOptions::File {
+                    output_file,
+                    opts: _,
+                } => {
+                    output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
+                }
+                CompletionOptions::ArrowRecordBatch => {
+                    return plan_err!(
+                        "Quantile sketch output cannot be enabled if file output not selected"
+                    );
+                }
             }
         }
+
+        Ok(result)
     }
 
     /// Adds a quantile sketch to a query plan if sketch generation is enabled.
