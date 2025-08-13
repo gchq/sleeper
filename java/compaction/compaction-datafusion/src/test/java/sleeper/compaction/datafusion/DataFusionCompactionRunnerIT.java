@@ -333,7 +333,7 @@ public class DataFusionCompactionRunnerIT {
 
     private RowsProcessed compact(CompactionJob job) throws Exception {
         CompactionRunner runner = new DataFusionCompactionRunner();
-        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
+        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
     }
 
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {

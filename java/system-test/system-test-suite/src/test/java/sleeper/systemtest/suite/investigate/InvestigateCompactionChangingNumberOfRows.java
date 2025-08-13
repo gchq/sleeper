@@ -115,7 +115,7 @@ public class InvestigateCompactionChangingNumberOfRows {
         String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
         CompactionJob compactionJob = job.asCompactionJobToNewFile(check.tableProperties().get(TABLE_ID), outputFile);
         JavaCompactionRunner compactionRunner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConf, new LocalFileSystemSketchesStore());
-        RowsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
+        RowsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition.getRegion());
         long actualOutputRows = countActualRows(outputFile, hadoopConf);
         LOGGER.info("Counted {} actual rows in compaction output, reported {}", actualOutputRows, processed);
         LOGGER.info("Compation job: {}", new CompactionJobSerDe().toJson(compactionJob));
