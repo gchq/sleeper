@@ -145,7 +145,7 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.38.8</aws-crt.version>
+        <aws-crt.version>0.38.9</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>2.2.1</aws-lambda-powertools.version>
