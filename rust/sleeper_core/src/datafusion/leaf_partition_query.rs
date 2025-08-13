@@ -86,7 +86,13 @@ impl<'a> LeafPartitionQuery<'a> {
     ///
     /// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
     /// from the input URLs and writing to the output URL (if writing results to a file).
+    ///
+    /// # Errors
+    /// There must be at least one query region specified.
     pub async fn run_query(&self) -> Result<CompletedOutput, DataFusionError> {
+        if self.config.ranges.is_empty() {
+            return plan_err!("No query regions specified");
+        }
         let ops = SleeperOperations::new(&self.config.common);
         info!("DataFusion query: {ops}");
         // Create query frame and sketches if it has been enabled

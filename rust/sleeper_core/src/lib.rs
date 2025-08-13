@@ -260,10 +260,7 @@ pub struct CompactionResult {
     pub rows_written: usize,
 }
 
-/// Merges the given Parquet files and reads the schema from the first.
-///
-/// This function reads the schema from the first file, then calls
-/// `merge_sorted_files_with_schema(...)`.
+/// Compacts the given Parquet files and reads the schema from the first.
 ///
 /// The `aws_creds` are optional if you are not attempting to read/write files from S3.
 ///
@@ -273,7 +270,7 @@ pub struct CompactionResult {
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_compaction, CommonConfig, PartitionBound, ColRange,
-/// # CompletionOptions, SleeperParquetOptions};
+/// # CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion};
 /// let mut compaction_input = CommonConfig::default();
 /// compaction_input.input_files_sorted = true;
 /// compaction_input.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
@@ -286,6 +283,7 @@ pub struct CompactionResult {
 ///     upper: PartitionBound::String("h"),
 ///     upper_inclusive: true,
 /// });
+/// compaction_input.region = SleeperPartitionRegion::new(region);
 ///
 /// # tokio_test::block_on(async {
 /// let result = run_compaction(&compaction_input).await;
@@ -303,6 +301,52 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
         .map_err(Into::into)
 }
 
+/// Runs the given Sleeper leaf partition query on the given Parquet files and reads the schema from the first.
+///
+/// The `aws_creds` are optional if you are not attempting to read/write files from S3.
+///
+/// # Examples
+/// ```no_run
+/// # use url::Url;
+/// # use aws_types::region::Region;
+/// # use std::collections::HashMap;
+/// # use crate::sleeper_core::{run_query, CommonConfig, PartitionBound, ColRange,
+/// # CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion};
+/// # use sleeper_core::LeafPartitionQueryConfig;
+/// let mut common = CommonConfig::default();
+/// common.input_files_sorted = true;
+/// common.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
+/// common.output = CompletionOptions::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
+/// common.row_key_cols = vec!["key".into()];
+/// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
+/// region.insert("key".into(), ColRange {
+///     lower : PartitionBound::String("a"),
+///     lower_inclusive: true,
+///     upper: PartitionBound::String("h"),
+///     upper_inclusive: true,
+/// });
+/// common.region = SleeperPartitionRegion::new(region);
+///
+/// let mut leaf_config = LeafPartitionQueryConfig::default();
+/// leaf_config.common = common;
+/// let mut query_region : HashMap<String, ColRange<'_>> = HashMap::new();
+/// query_region.insert("key".into(), ColRange {
+///     lower : PartitionBound::String("a"),
+///     lower_inclusive: true,
+///     upper: PartitionBound::String("h"),
+///     upper_inclusive: true,
+/// });
+/// leaf_config.ranges = vec![SleeperPartitionRegion::new(query_region)];
+///
+/// # tokio_test::block_on(async {
+/// let result = run_query(&leaf_config).await;
+/// # })
+/// ```
+///
+/// # Errors
+/// There must be at least one input file.
+/// There must be at least one query region specified.
+///
 pub async fn run_query(config: &LeafPartitionQueryConfig<'_>) -> Result<CompletedOutput> {
     let store_factory = create_object_store_factory(config.common.aws_config.as_ref()).await;
 
