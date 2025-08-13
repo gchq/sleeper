@@ -27,7 +27,7 @@ use datafusion::{
     common::plan_err,
     error::DataFusionError,
     execution::{SendableRecordBatchStream, TaskContext},
-    physical_plan::{ExecutionPlan, collect},
+    physical_plan::{ExecutionPlan, collect, execute_stream},
     prelude::DataFrame,
 };
 use std::{
@@ -53,6 +53,7 @@ pub enum CompletionOptions {
 
 impl CompletionOptions {
     /// Create a [`Completer`] for this type of output.
+    #[must_use]
     pub fn finisher<'a>(&self, ops: &'a SleeperOperations<'a>) -> Arc<dyn Completer<'a> + 'a> {
         Arc::new(match self {
             Self::ArrowRecordBatch => {
@@ -113,7 +114,7 @@ pub trait Completer<'a> {
 
 /// Writes output of frames to a Parquet file.
 #[derive(Debug)]
-pub struct FileOutputCompleter<'a> {
+struct FileOutputCompleter<'a> {
     ops: &'a SleeperOperations<'a>,
 }
 
@@ -148,5 +149,43 @@ impl<'a> Completer<'a> for FileOutputCompleter<'a> {
         collect(physical_plan.clone(), task_ctx).await?;
         let stats = collect_stats(&self.ops.config.input_files, &physical_plan)?;
         Ok(CompletedOutput::File(stats))
+    }
+}
+
+/// Returns completed output as Arrow [`RecordBatch`]es.
+#[derive(Debug)]
+struct ArrowOutputCompleter<'a> {
+    ops: &'a SleeperOperations<'a>,
+}
+
+impl<'a> ArrowOutputCompleter<'a> {
+    pub fn new(ops: &'a SleeperOperations<'a>) -> Self {
+        Self { ops }
+    }
+}
+
+#[async_trait]
+impl<'a> Completer<'a> for ArrowOutputCompleter<'a> {
+    fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        match &self.ops.config.output {
+            CompletionOptions::File {
+                output_file: _,
+                opts: _,
+            } => {
+                plan_err!("Can't use ArrowOutputCompleter with CompletionOptions::File")
+            }
+            CompletionOptions::ArrowRecordBatch => Ok(frame),
+        }
+    }
+
+    async fn execute_frame(
+        &self,
+        physical_plan: Arc<dyn ExecutionPlan>,
+        task_ctx: Arc<TaskContext>,
+    ) -> Result<CompletedOutput, DataFusionError> {
+        Ok(CompletedOutput::ArrowRecordBatch(execute_stream(
+            physical_plan,
+            task_ctx,
+        )?))
     }
 }
