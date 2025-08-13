@@ -57,16 +57,17 @@ pub async fn compact(
 
     // Make compaction DataFrame
     let completer = config.output.finisher(&ops);
-    let (sketcher, frame) = build_compaction_dataframe(&ops, &completer, store_factory).await?;
+    let (sketcher, frame) =
+        build_compaction_dataframe(&ops, completer.as_ref(), store_factory).await?;
 
     // Explain logical plan
     explain_plan(&frame).await?;
 
     // Run plan
-    let stats = execute_compaction_plan(&ops, &completer, frame).await?;
+    let stats = execute_compaction_plan(&ops, completer.as_ref(), frame).await?;
 
     // Write the frame out and collect stats
-    output_sketch(store_factory, &output_file, sketcher.sketch()).await?;
+    output_sketch(store_factory, output_file, sketcher.sketch()).await?;
 
     // Dump input file metrics to logging console
     stats.log_metrics();
@@ -82,7 +83,7 @@ pub async fn compact(
 /// Each step of compaction may produce an error. Any are reported back to the caller.
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
-    completer: &Box<dyn Completer + 'a>,
+    completer: &(dyn Completer + 'a),
     store_factory: &ObjectStoreFactory,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
     let sf = ops
@@ -107,7 +108,7 @@ async fn build_compaction_dataframe<'a>(
 /// Any error that occurs during execution will be returned.
 async fn execute_compaction_plan<'a>(
     ops: &SleeperOperations<'_>,
-    completer: &Box<dyn Completer + 'a>,
+    completer: &(dyn Completer + 'a),
     frame: DataFrame,
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
