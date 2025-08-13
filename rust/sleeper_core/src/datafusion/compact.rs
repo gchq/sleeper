@@ -20,7 +20,7 @@ use crate::{
     datafusion::{
         ParquetWriterConfigurer, SleeperOperations,
         metrics::RowCounts,
-        output::Completer,
+        output::{CompletedOutput, Completer},
         sketch::{Sketcher, output_sketch},
         util::{collect_stats, explain_plan},
     },
@@ -58,18 +58,15 @@ pub async fn compact(
         return plan_err!("Sleeper compactions must output to a file");
     };
 
-    let configurer = ParquetWriterConfigurer { parquet_options };
-    let completer = config.output.finisher(&ops);
-
     // Make compaction DataFrame
-    let (sketcher, frame) =
-        build_compaction_dataframe(&ops, &completer, &configurer, store_factory).await?;
+    let completer = config.output.finisher(&ops);
+    let (sketcher, frame) = build_compaction_dataframe(&ops, &completer, store_factory).await?;
 
     // Explain logical plan
     explain_plan(&frame).await?;
 
     // Run plan
-    let stats = execute_compaction_plan(&ops, frame).await?;
+    let stats = execute_compaction_plan(&ops, &completer, frame).await?;
 
     // Write the frame out and collect stats
     output_sketch(store_factory, output_file, sketcher.sketch()).await?;
@@ -88,13 +85,11 @@ pub async fn compact(
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
     completer: &Arc<dyn Completer + 'a>,
-    configurer: &ParquetWriterConfigurer<'a>,
     store_factory: &ObjectStoreFactory,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
     let sf = ops
         .apply_config(SessionConfig::new(), store_factory)
         .await?;
-    let sf = configurer.apply_parquet_config(sf);
     let ctx = ops.configure_context(SessionContext::new_with_config(sf), store_factory)?;
     let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
     frame = ops.apply_user_filters(frame)?;
@@ -103,7 +98,6 @@ async fn build_compaction_dataframe<'a>(
     let sketcher = ops.create_sketcher(frame.schema());
     frame = sketcher.apply_sketch(frame)?;
     frame = completer.complete_frame(frame)?;
-    // frame = ops.plan_with_parquet_output(frame, configurer)?;
     Ok((sketcher, frame))
 }
 
@@ -113,8 +107,9 @@ async fn build_compaction_dataframe<'a>(
 ///
 /// # Errors
 /// Any error that occurs during execution will be returned.
-async fn execute_compaction_plan(
+async fn execute_compaction_plan<'a>(
     ops: &SleeperOperations<'_>,
+    completer: &Arc<dyn Completer + 'a>,
     frame: DataFrame,
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
@@ -123,7 +118,10 @@ async fn execute_compaction_plan(
         "Physical plan\n{}",
         displayable(&*physical_plan).indent(true)
     );
-    collect(physical_plan.clone(), task_ctx).await?;
-    let stats = collect_stats(&ops.config.input_files, &physical_plan)?;
-    Ok(stats)
+    match completer.execute_frame(physical_plan, task_ctx).await? {
+        CompletedOutput::File(stats) => Ok(stats),
+        CompletedOutput::ArrowRecordBatch(_) => {
+            panic!("FileOutputCompleter did not return a CompletedOutput::File")
+        }
+    }
 }

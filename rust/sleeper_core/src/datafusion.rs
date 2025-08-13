@@ -73,9 +73,7 @@ impl<'a> SleeperOperations<'a> {
         Self { config }
     }
 
-    /// Create the `DataFusion` session configuration for a given session.
-    ///
-    /// This sets as many parameters as possible from the given input data.
+    /// Sets as many parameters as possible from the given input data.
     ///
     pub async fn apply_config(
         &self,
@@ -96,14 +94,20 @@ impl<'a> SleeperOperations<'a> {
         // Set upload size if outputting to a file
         if let CompletionOptions::File {
             output_file: _,
-            opts: _,
-        } = self.config.output
+            opts: parquet_options,
+        } = &self.config.output
         {
             let total_input_size = retrieve_input_size(&self.config.input_files, store_factory)
                 .await
                 .inspect_err(|e| warn!("Error getting total input data size {e}"))?;
             cfg.options_mut().execution.objectstore_writer_buffer_size =
                 calculate_upload_size(total_input_size)?;
+
+            // Create Parquet configuration object based on requested output
+            let configurer = ParquetWriterConfigurer {
+                parquet_options: &parquet_options,
+            };
+            cfg = configurer.apply_parquet_config(cfg);
         }
         Ok(cfg)
     }

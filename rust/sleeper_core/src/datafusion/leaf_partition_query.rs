@@ -131,7 +131,9 @@ impl<'a> LeafPartitionQuery<'a> {
         &self,
         ops: &'a SleeperOperations<'a>,
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
-        let sf = prepare_session_config(ops, self.store_factory).await?;
+        let sf = ops
+            .apply_config(SessionConfig::new(), &self.store_factory)
+            .await?;
         let ctx = ops.configure_context(SessionContext::new_with_config(sf), self.store_factory)?;
         let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
         frame = self.apply_query_regions(frame)?;
@@ -165,27 +167,4 @@ impl LeafPartitionQuery<'_> {
             frame
         })
     }
-}
-
-/// Create the [`SessionConfig`] for a query.
-async fn prepare_session_config<'a>(
-    ops: &SleeperOperations<'a>,
-    store_factory: &'a ObjectStoreFactory,
-) -> Result<SessionConfig, DataFusionError> {
-    let sf = ops
-        .apply_config(SessionConfig::new(), store_factory)
-        .await?;
-    Ok(
-        if let CompletionOptions::File {
-            output_file: _,
-            opts: parquet_options,
-        } = &ops.config.output
-        {
-            // Create Parquet configuration object based on requested output
-            let configurer = ParquetWriterConfigurer { parquet_options };
-            configurer.apply_parquet_config(sf)
-        } else {
-            sf
-        },
-    )
 }
