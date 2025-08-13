@@ -26,10 +26,7 @@ use crate::{
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
-use datafusion::{
-    common::plan_err, execution::SendableRecordBatchStream, logical_expr::Expr,
-    physical_plan::displayable,
-};
+use datafusion::{common::plan_err, logical_expr::Expr, physical_plan::displayable};
 use datafusion::{
     dataframe::DataFrame,
     error::DataFusionError,

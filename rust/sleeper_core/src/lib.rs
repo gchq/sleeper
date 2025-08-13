@@ -32,8 +32,10 @@ use url::Url;
 
 mod datafusion;
 
+use crate::datafusion::LeafPartitionQuery;
+pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
-    CompletionOptions, SleeperPartitionRegion,
+    CompletionOptions, LeafPartitionQueryConfig, SleeperPartitionRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
 };
 
@@ -271,11 +273,11 @@ pub struct CompactionResult {
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_compaction, CommonConfig, PartitionBound, ColRange,
-/// # OperationOutput, SleeperParquetOptions};
+/// # CompletionOptions, SleeperParquetOptions};
 /// let mut compaction_input = CommonConfig::default();
 /// compaction_input.input_files_sorted = true;
 /// compaction_input.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
-/// compaction_input.output = OperationOutput::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
+/// compaction_input.output = CompletionOptions::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
 /// compaction_input.row_key_cols = vec!["key".into()];
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -297,6 +299,15 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
     let store_factory = create_object_store_factory(config.aws_config.as_ref()).await;
 
     crate::datafusion::compact(&store_factory, config)
+        .await
+        .map_err(Into::into)
+}
+
+pub async fn run_query(config: &LeafPartitionQueryConfig<'_>) -> Result<CompletedOutput> {
+    let store_factory = create_object_store_factory(config.common.aws_config.as_ref()).await;
+
+    LeafPartitionQuery::new(config, &store_factory)
+        .run_query()
         .await
         .map_err(Into::into)
 }
