@@ -16,9 +16,9 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, CompactionResult, CompletionOptions,
+    CommonConfig, CompactionResult,
     datafusion::{
-        SleeperOperations,
+        CompletionOptions, SleeperOperations,
         metrics::RowCounts,
         output::{CompletedOutput, Completer},
         sketch::{Sketcher, output_sketch},
@@ -26,11 +26,8 @@ use crate::{
     },
 };
 use datafusion::{
-    common::plan_err,
-    dataframe::DataFrame,
-    error::DataFusionError,
-    execution::config::SessionConfig,
-    execution::context::SessionContext,
+    common::plan_err, dataframe::DataFrame, error::DataFusionError,
+    execution::config::SessionConfig, execution::context::SessionContext,
     physical_plan::displayable,
 };
 use log::info;
@@ -52,7 +49,7 @@ pub async fn compact(
     // Retrieve Parquet output options
     let CompletionOptions::File {
         output_file,
-        opts: parquet_options,
+        opts: _,
     } = &config.output
     else {
         return plan_err!("Sleeper compactions must output to a file");
@@ -69,7 +66,7 @@ pub async fn compact(
     let stats = execute_compaction_plan(&ops, &completer, frame).await?;
 
     // Write the frame out and collect stats
-    output_sketch(store_factory, output_file, sketcher.sketch()).await?;
+    output_sketch(store_factory, &output_file, sketcher.sketch()).await?;
 
     // Dump input file metrics to logging console
     stats.log_metrics();
@@ -85,7 +82,7 @@ pub async fn compact(
 /// Each step of compaction may produce an error. Any are reported back to the caller.
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
-    completer: &Arc<dyn Completer + 'a>,
+    completer: &Box<dyn Completer + 'a>,
     store_factory: &ObjectStoreFactory,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
     let sf = ops
@@ -110,7 +107,7 @@ async fn build_compaction_dataframe<'a>(
 /// Any error that occurs during execution will be returned.
 async fn execute_compaction_plan<'a>(
     ops: &SleeperOperations<'_>,
-    completer: &Arc<dyn Completer + 'a>,
+    completer: &Box<dyn Completer + 'a>,
     frame: DataFrame,
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());

@@ -54,16 +54,14 @@ pub enum CompletionOptions {
 impl CompletionOptions {
     /// Create a [`Completer`] for this type of output.
     #[must_use]
-    pub fn finisher<'a>(&self, ops: &'a SleeperOperations<'a>) -> Arc<dyn Completer + 'a> {
-        Arc::new(match self {
-            Self::ArrowRecordBatch => {
-                unimplemented!()
-            }
+    pub fn finisher<'a>(&self, ops: &'a SleeperOperations<'a>) -> Box<dyn Completer + 'a> {
+        match self {
+            Self::ArrowRecordBatch => Box::new(ArrowOutputCompleter::new(ops)),
             Self::File {
                 output_file: _,
                 opts: _,
-            } => FileOutputCompleter::new(ops),
-        })
+            } => Box::new(FileOutputCompleter::new(ops)),
+        }
     }
 }
 

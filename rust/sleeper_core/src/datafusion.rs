@@ -58,6 +58,7 @@ mod util;
 
 pub use compact::compact;
 pub use config::ParquetWriterConfigurer;
+pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};
 pub use output::CompletionOptions;
 pub use region::SleeperPartitionRegion;
 
@@ -348,7 +349,7 @@ impl<'a> SleeperOperations<'a> {
 
     /// Create appropriate output completer.
     #[must_use]
-    pub fn create_output_completer(&self) -> Arc<dyn Completer + '_> {
+    pub fn create_output_completer(&self) -> Box<dyn Completer + '_> {
         self.config.output.finisher(self)
     }
 }

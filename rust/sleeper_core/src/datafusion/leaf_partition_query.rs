@@ -16,9 +16,9 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, CompletionOptions, SleeperPartitionRegion,
+    CommonConfig, SleeperPartitionRegion,
     datafusion::{
-        SleeperOperations,
+        CompletionOptions, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
         util::explain_plan,
