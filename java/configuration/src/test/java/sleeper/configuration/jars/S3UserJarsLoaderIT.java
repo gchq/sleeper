@@ -54,10 +54,10 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
             "import sleeper.core.row.Row;\n" +
             "import sleeper.core.schema.Schema;\n" +
             "import sleeper.core.iterator.CloseableIterator;\n" +
-            "import sleeper.core.iterator.SortedRowIterator;\n" +
+            "import sleeper.core.iterator.ConfigStringIterator;\n" +
             "import java.util.List;\n" +
             "\n" +
-            "public class MyIterator implements SortedRowIterator {\n" +
+            "public class MyIterator implements ConfigStringIterator {\n" +
             "    public MyIterator() {}\n" +
             "\n" +
             "    @Override\n" +
