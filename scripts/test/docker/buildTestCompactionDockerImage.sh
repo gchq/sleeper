@@ -22,10 +22,9 @@ PROJECT_ROOT=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
 
 "$SCRIPTS_DIR/build/build.sh"
 
-export DOCKER_IMAGE="compaction-job-execution:test"
-docker build -t "$DOCKER_IMAGE" "$SCRIPTS_DIR/docker/compaction-job-execution/"
+docker build -t "compaction-job-execution:test" "$SCRIPTS_DIR/docker/compaction-job-execution/"
 
 pushd "$PROJECT_ROOT/java"
 echo "Running..."
-mvn verify -PsystemTest -pl system-test/system-test-data-generation -DskipRust=true -DrunIT=TestCompactionDockerImage
+mvn verify -PsystemTest -DskipRust=true -pl system-test/system-test-data-generation "-DrunIT=DockerImageTest*"
 popd

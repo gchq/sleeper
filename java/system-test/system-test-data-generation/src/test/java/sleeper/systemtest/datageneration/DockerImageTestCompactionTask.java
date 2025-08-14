@@ -67,7 +67,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class TestCompactionDockerImage extends LocalStackTestBase {
+public class DockerImageTestCompactionTask extends LocalStackTestBase {
 
     String dockerImage = "compaction-job-execution:test";
     InstanceProperties instanceProperties = createTestInstanceProperties();
