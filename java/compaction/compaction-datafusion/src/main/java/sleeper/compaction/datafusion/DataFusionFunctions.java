@@ -21,6 +21,7 @@ import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
+import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIArray;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.bridge.ForeignFunctions;
@@ -62,7 +63,7 @@ public interface DataFusionFunctions extends ForeignFunctions {
         public final Struct.Boolean aws_allow_http = new Struct.Boolean();
         /** Array of input files to compact. */
         public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
-        /** Are the input files individually sorted based on row key and the sort key columns? */
+        /** States if the input files individually sorted based on row key and the sort key columns. */
         public final Struct.Boolean input_files_sorted = new Struct.Boolean();
         /** Output file name. */
         public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
@@ -90,19 +91,25 @@ public interface DataFusionFunctions extends ForeignFunctions {
         public final Struct.Boolean dict_enc_sort_keys = new Struct.Boolean();
         /** Should value columns use dictionary encoding in output Parquet. */
         public final Struct.Boolean dict_enc_values = new Struct.Boolean();
-        /** Compaction partition region minimums. MUST BE SAME LENGTH AS row_key_cols. */
-        public final FFIArray<Object> region_mins = new FFIArray<>(this);
-        /** Compaction partition region maximums. MUST BE SAME LENGTH AS row_key_cols. */
-        public final FFIArray<Object> region_maxs = new FFIArray<>(this);
-        /** Compaction partition region minimums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
-        public final FFIArray<java.lang.Boolean> region_mins_inclusive = new FFIArray<>(this);
-        /** Compaction partition region maximums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
-        public final FFIArray<java.lang.Boolean> region_maxs_inclusive = new FFIArray<>(this);
+        /** The Sleeper compaction region. */
+        public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
+        /** Strong reference to prevent GC. */
+        public FFISleeperRegion regionRef;
         /** Compaction iterator configuration. This is optional. */
         public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
 
         public DataFusionCommonConfig(jnr.ffi.Runtime runtime) {
             super(runtime);
+        }
+
+        /**
+         * Set the Sleeper partition region.
+         *
+         * @param newRegion region to transfer across to foreign function
+         */
+        public void setRegion(FFISleeperRegion newRegion) {
+            this.regionRef = newRegion;
+            this.region.set(newRegion);
         }
 
         /**
@@ -115,34 +122,17 @@ public interface DataFusionFunctions extends ForeignFunctions {
             row_key_cols.validate();
             row_key_schema.validate();
             sort_key_cols.validate();
-            region_mins.validate();
-            region_maxs.validate();
-            region_mins_inclusive.validate();
-            region_maxs_inclusive.validate();
-
+            if (regionRef != null) {
+                regionRef.validate();
+            }
+            if (row_key_cols.length() != row_key_schema.length()) {
+                throw new IllegalStateException("row_key_schema has length " + row_key_schema.length() + " but there are " + row_key_cols.length() + " row key columns");
+            }
             // Check strings non null
             Objects.requireNonNull(output_file.get(), "Output file is null");
             Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
             Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
             Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
-
-            // Check lengths
-            long rowKeys = row_key_cols.length();
-            if (rowKeys != row_key_schema.length()) {
-                throw new IllegalStateException("row key schema array has length " + row_key_schema.length() + " but there are " + rowKeys + " row key columns");
-            }
-            if (rowKeys != region_mins.length()) {
-                throw new IllegalStateException("region mins has length " + region_mins.length() + " but there are " + rowKeys + " row key columns");
-            }
-            if (rowKeys != region_maxs.length()) {
-                throw new IllegalStateException("region maxs has length " + region_maxs.length() + " but there are " + rowKeys + " row key columns");
-            }
-            if (rowKeys != region_mins_inclusive.length()) {
-                throw new IllegalStateException("region mins inclusives has length " + region_mins_inclusive.length() + " but there are " + rowKeys + " row key columns");
-            }
-            if (rowKeys != region_maxs_inclusive.length()) {
-                throw new IllegalStateException("region maxs inclusives has length " + region_maxs_inclusive.length() + " but there are " + rowKeys + " row key columns");
-            }
         }
     }
 

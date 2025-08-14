@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.datafusion;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
 
@@ -49,6 +51,7 @@ import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
+@SuppressFBWarnings("UUF_UNUSED_FIELD")
 public class DataFusionCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionCompactionRunner.class);
 
@@ -142,27 +145,29 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } else {
             params.iterator_config.set("");
         }
+        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
             Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
-            params.region_mins.populate(regionMins, false);
+            partitionRegion.region_mins.populate(regionMins, false);
         }
         {
             Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
                     .toArray(Boolean[]::new);
-            params.region_mins_inclusive.populate(regionMinInclusives, false);
+            partitionRegion.region_mins_inclusive.populate(regionMinInclusives, false);
         }
         {
             // This array can contain nulls
             Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
-            params.region_maxs.populate(regionMaxs, true);
+            partitionRegion.region_maxs.populate(regionMaxs, true);
         }
         {
             Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
                     .toArray(Boolean[]::new);
-            params.region_maxs_inclusive.populate(regionMaxInclusives, false);
+            partitionRegion.region_maxs_inclusive.populate(regionMaxInclusives, false);
         }
+        params.setRegion(partitionRegion);
         params.validate();
         return params;
     }

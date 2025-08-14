@@ -39,6 +39,11 @@
             <artifactId>native-lib-loader</artifactId>
             <version>${scijava.native.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>${spotbugs.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
