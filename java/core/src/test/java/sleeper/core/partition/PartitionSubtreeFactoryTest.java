@@ -213,7 +213,6 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
             //Then
             assertThat(e).isInstanceOf(PartitionTreeException.class);
             assertThat(e).hasMessageContaining("Requested size of 7 is greater than");
-            assertThat(((PartitionTreeException) e).getOriginalPartitionTree()).isEqualTo(originalTree);
         }
     }
 

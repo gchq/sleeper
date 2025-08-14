@@ -20,20 +20,11 @@ package sleeper.core.partition;
  */
 public class PartitionTreeException extends Exception {
 
-    final PartitionTree originalTree;
-
-    public PartitionTreeException(String message, PartitionTree originalTree, Throwable e) {
+    public PartitionTreeException(String message, Throwable e) {
         super(message, e);
-        this.originalTree = originalTree;
     }
 
-    public PartitionTreeException(String message, PartitionTree originalTree) {
+    public PartitionTreeException(String message) {
         super(message);
-        this.originalTree = originalTree;
     }
-
-    public PartitionTree getOriginalPartitionTree() {
-        return originalTree;
-    }
-
 }
