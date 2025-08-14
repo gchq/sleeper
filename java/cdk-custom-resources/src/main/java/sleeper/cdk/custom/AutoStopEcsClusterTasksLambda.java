@@ -33,14 +33,16 @@ public class AutoStopEcsClusterTasksLambda {
 
     private final EcsClient ecsClient;
     private final ThreadSleep sleep;
+    private final int maxResults;
 
     public AutoStopEcsClusterTasksLambda() {
-        this(EcsClient.create(), Thread::sleep);
+        this(EcsClient.create(), Thread::sleep, 100);
     }
 
-    public AutoStopEcsClusterTasksLambda(EcsClient ecsClient, ThreadSleep sleep) {
+    public AutoStopEcsClusterTasksLambda(EcsClient ecsClient, ThreadSleep sleep, int maxResults) {
         this.ecsClient = ecsClient;
         this.sleep = sleep;
+        this.maxResults = maxResults;
     }
 
     /**
@@ -68,8 +70,9 @@ public class AutoStopEcsClusterTasksLambda {
     }
 
     private void stopTasks(String clusterName) {
-        ecsClient.listTasksPaginator(builder -> builder.cluster(clusterName))
+        ecsClient.listTasksPaginator(builder -> builder.cluster(clusterName).maxResults(maxResults))
                 .taskArns()
+                .stream()
                 .forEach(
                         task -> {
                             LOGGER.info("Stopping task {} in cluster {} ", task, clusterName);

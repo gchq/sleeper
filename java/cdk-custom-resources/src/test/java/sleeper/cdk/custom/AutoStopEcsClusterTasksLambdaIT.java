@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.notMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
@@ -76,6 +79,46 @@ public class AutoStopEcsClusterTasksLambdaIT {
         // Then
         verify(2, anyRequestedForEcs());
         verify(1, stopTaskRequestedFor(clusterName, "test-task"));
+    }
+
+    @Test
+    @DisplayName("Stop paged tasks on ECS Cluster")
+    void shouldStopPagedTasksOnEcsCluster() {
+
+        // Given
+        String clusterName = UUID.randomUUID().toString();
+        stubFor(
+                post("/")
+                        .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
+                        .withRequestBody(notMatching(".*nexttoken.*"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withBody(
+
+                                                "{\"nextToken\":\"NEXT_TOKEN\",\"taskArns\":[\"test-task-1\"]}")));
+        stubFor(
+                post("/")
+                        .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
+                        .withRequestBody(matchingJsonPath("$.nextToken", equalTo("NEXT_TOKEN")))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withBody(
+                                                "{\"nextToken\":null,\"taskArns\":[\"test-task-2\"]}")));
+
+        stubFor(
+                post("/")
+                        .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
+                        .willReturn(aResponse().withStatus(200)));
+
+        // When
+        lambda.handleEvent(eventHandlerForCluster(clusterName, "Delete"), null);
+
+        // Then
+        verify(4, anyRequestedForEcs());
+        verify(1, stopTaskRequestedFor(clusterName, "test-task-1"));
+        verify(1, stopTaskRequestedFor(clusterName, "test-task-2"));
     }
 
     @Test
@@ -138,6 +181,6 @@ public class AutoStopEcsClusterTasksLambdaIT {
     }
 
     private AutoStopEcsClusterTasksLambda lambda(WireMockRuntimeInfo runtimeInfo) {
-        return new AutoStopEcsClusterTasksLambda(wiremockEcsClient(runtimeInfo), noWaits());
+        return new AutoStopEcsClusterTasksLambda(wiremockEcsClient(runtimeInfo), noWaits(), 10);
     }
 }
