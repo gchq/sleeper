@@ -388,6 +388,10 @@ AspectJ (org.aspectj:aspectjrt:1.*, org.aspectj:aspectjtools:1.*)
 
 - Eclipse Public License (EPL) 2.0
 
+Pty4J (org.jetbrains.pty4j:pty4j:0.*)
+
+- Eclipse Public License (EPL) 1.0
+
 AspectJ Maven Plugin (dev.aspectj:aspectj-maven-plugin:1.*)
 
 - MIT License

@@ -82,8 +82,8 @@ public class TestCompactionDockerImage extends LocalStackTestBase {
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.DATAFUSION);
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.DATAFUSION);
         instanceProperties.set(COMPACTION_TRACKER_ENABLED, "false");
         instanceProperties.set(COMPACTION_TASK_WAIT_TIME_IN_SECONDS, "0");
         instanceProperties.set(COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS, "0");
