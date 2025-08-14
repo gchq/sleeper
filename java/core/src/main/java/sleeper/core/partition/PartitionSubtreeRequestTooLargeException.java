@@ -16,15 +16,15 @@
 package sleeper.core.partition;
 
 /**
- * Custom exception of illegal events concerning partition trees.
+ * Custom exception for when requested subtree exceeds the size of the original partition tree.
  */
-public class PartitionTreeException extends Exception {
+public class PartitionSubtreeRequestTooLargeException extends Exception {
 
-    public PartitionTreeException(String message, Throwable e) {
+    public PartitionSubtreeRequestTooLargeException(String message, Throwable e) {
         super(message, e);
     }
 
-    public PartitionTreeException(String message) {
+    public PartitionSubtreeRequestTooLargeException(String message) {
         super(message);
     }
 }
