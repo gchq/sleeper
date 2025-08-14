@@ -18,7 +18,6 @@ package sleeper.clients.images;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import sleeper.clients.util.command.CommandUtils;
@@ -37,6 +36,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.EnvironmentUtils;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
@@ -46,13 +46,12 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.Command.envAndCommand;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -73,9 +72,6 @@ public class DockerImageTestCompactionTask extends LocalStackTestBase {
     InstanceProperties instanceProperties = createTestInstanceProperties();
     Schema schema = createSchemaWithKey("key", new LongType());
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-
-    @TempDir
-    Path tempDir;
     StateStore stateStore;
 
     @BeforeEach
@@ -108,13 +104,24 @@ public class DockerImageTestCompactionTask extends LocalStackTestBase {
         update(stateStore).assignJobId("test-job", List.of(file));
 
         // When
-        CommandUtils.runCommandLogOutputWithPty(command(
-                "docker", "run", "--rm", "-it",
-                "--env", "AWS_ENDPOINT_URL=" + localStackContainer.getEndpoint(),
-                dockerImage, instanceProperties.get(CONFIG_BUCKET)));
+        runDockerImage();
 
         // Then
         assertThat(readOutputFile(job)).containsExactlyElementsOf(rows);
+    }
+
+    private void runDockerImage() throws Exception {
+        List<String> command = new ArrayList<>();
+        command.addAll(List.of("docker", "run", "--rm", "-it"));
+
+        Map<String, String> environment = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
+        environment.put("AWS_ENDPOINT_URL", localStackContainer.getEndpoint().toString());
+        environment.keySet().forEach(variable -> command.addAll(List.of("--env", variable)));
+        environment.putAll(System.getenv());
+
+        command.addAll(List.of(dockerImage, instanceProperties.get(CONFIG_BUCKET)));
+
+        CommandUtils.runCommandLogOutputWithPty(envAndCommand(environment, command.toArray(String[]::new)));
     }
 
     private FileReference addFileAtRoot(String name, List<Row> rows) {
