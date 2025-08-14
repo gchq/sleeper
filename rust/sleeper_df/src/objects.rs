@@ -225,6 +225,10 @@ pub struct FFICompactionResult {
 pub struct FFILeafPartitionQueryConfig {
     /// Common configuration
     pub common: *const FFICommonConfig,
+    /// Length of query region array
+    pub query_regions_len: usize,
+    /// Pointers to query regions,
+    pub query_regions: *const c_void,
     /// Should quantile data sketches be written out?
     pub write_quantile_sketch: bool,
     /// Should logical and physical query plans be written to log?
