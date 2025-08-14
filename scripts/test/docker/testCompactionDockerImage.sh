@@ -20,7 +20,9 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 PROJECT_ROOT=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
 
-docker build -t "compaction-job-execution:test" "$SCRIPTS_DIR/docker/compaction-job-execution/"
+COMPACTION_DOCKER_DIR="$SCRIPTS_DIR/docker/compaction-job-execution"
+cp "$PROJECT_ROOT/java/compaction/compaction-job-execution/docker/Dockerfile" "$COMPACTION_DOCKER_DIR"
+docker build -t "compaction-job-execution:test" "$COMPACTION_DOCKER_DIR"
 
 pushd "$PROJECT_ROOT/java"
 echo "Running..."

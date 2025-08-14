@@ -32,7 +32,7 @@ jobs:
         run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify -Pquick -T 1C -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn --batch-mode install -Pquick -T 1C -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Copy build output
         working-directory: ./scripts/build
@@ -42,4 +42,4 @@ jobs:
         run: docker build -t compaction-job-execution:test .
       - name: Docker image tests
         working-directory: ./java
-        run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=DockerImageTest*"
+        run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=DockerImageTest*" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
