@@ -84,7 +84,7 @@ public class CompactionRunnerTestBase {
     protected RowsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), conf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
-        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()));
+        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
     }
 
     protected SketchesStore createSketchesStore() {

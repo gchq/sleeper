@@ -59,6 +59,10 @@ public class RangeQueryUtils {
         return getFilterPredicateNoCanonicalise(partition.getRegion());
     }
 
+    public static FilterPredicate getFilterPredicate(Region region) {
+        return getFilterPredicateNoCanonicalise(region);
+    }
+
     private static FilterPredicate getFilterPredicate(List<Region> regions) {
         List<FilterPredicate> filters = new ArrayList<>();
         for (Region region : regions) {

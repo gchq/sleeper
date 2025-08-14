@@ -1,10 +1,4 @@
-//! The `compaction` crate implements all the core functionality for running Sleeper
-//! Parquet data compaction in Rust. We provide a C library interface wrapper which
-//! will serve as the interface from Java code in Sleeper. We are careful to adhere to C style
-//! conventions here such as libc error codes.
-//!
-//! We have an internal "details" module that encapsulates the internal workings. All the
-//! public API should be in this module.
+//! All Foreign Function Interface logic is in this crate.
 /*
  * Copyright 2022-2025 Crown Copyright
  *
@@ -20,31 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-mod datafusion;
-mod details;
-mod readahead;
-mod s3;
-mod store;
-
 use chrono::Local;
-use color_eyre::eyre::eyre;
-use details::AwsConfig;
-use libc::{EFAULT, EINVAL, EIO, c_void, size_t};
+use color_eyre::eyre::{bail, eyre};
+use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::io::Write;
-use std::str::Utf8Error;
-use std::sync::Once;
+use sleeper_core::{
+    AwsConfig, ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperParquetOptions,
+    SleeperPartitionRegion, run_compaction,
+};
 use std::{
-    ffi::{CStr, c_char, c_int},
+    borrow::Borrow,
+    collections::HashMap,
+    ffi::{CStr, c_char, c_int, c_void},
+    io::Write,
     slice,
+    sync::Once,
 };
 use url::Url;
-
-pub use datafusion::sketch::{DataSketchVariant, deserialise_sketches};
-pub use details::{ColRange, CompactionInput, CompactionResult, PartitionBound, run_compaction};
 
 /// An object guaranteed to only initialise once. Thread safe.
 static LOG_CFG: Once = Once::new();
@@ -118,21 +104,23 @@ pub struct FFICompactionParams {
     iterator_config: *const c_char,
 }
 
-impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
+impl<'a> TryFrom<&'a FFICompactionParams> for CommonConfig<'a> {
     type Error = color_eyre::eyre::Report;
 
-    fn try_from(params: &'a FFICompactionParams) -> Result<CompactionInput<'a>, Self::Error> {
+    fn try_from(
+        params: &'a FFICompactionParams,
+    ) -> color_eyre::Result<CommonConfig<'a>, Self::Error> {
         if params.iterator_config.is_null() {
-            error!("FFICompactionsParams iterator_config is NULL");
+            bail!("FFICompactionsParams iterator_config is NULL");
         }
         if params.output_file.is_null() {
-            error!("FFICompactionParams output_file is NULL");
+            bail!("FFICompactionParams output_file is NULL");
         }
         if params.compression.is_null() {
-            error!("FFICompactionParams compression is NULL");
+            bail!("FFICompactionParams compression is NULL");
         }
         if params.writer_version.is_null() {
-            error!("FFICompactionParams writer_version is NULL");
+            bail!("FFICompactionParams writer_version is NULL");
         }
         // We do this separately since we need the values for computing the region
         let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
@@ -149,20 +137,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
         // Set option to None if config is empty
         .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
 
-        Ok(Self {
-            aws_config: unpack_aws_config(params)?,
-            input_files: unpack_string_array(params.input_files, params.input_files_len)?
-                .into_iter()
-                .map(Url::parse)
-                .collect::<Result<Vec<_>, _>>()?,
-            output_file: unsafe { CStr::from_ptr(params.output_file) }
-                .to_str()
-                .map(Url::parse)??,
-            row_key_cols,
-            sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
-                .into_iter()
-                .map(String::from)
-                .collect(),
+        let opts = SleeperParquetOptions {
             max_row_group_size: params.max_row_group_size,
             max_page_size: params.max_page_size,
             compression: unsafe { CStr::from_ptr(params.compression) }
@@ -176,7 +151,27 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
             dict_enc_row_keys: params.dict_enc_row_keys,
             dict_enc_sort_keys: params.dict_enc_sort_keys,
             dict_enc_values: params.dict_enc_values,
+        };
+
+        Ok(Self {
+            aws_config: unpack_aws_config(params)?,
+            input_files: unpack_string_array(params.input_files, params.input_files_len)?
+                .into_iter()
+                .map(Url::parse)
+                .collect::<Result<Vec<_>, _>>()?,
+            input_files_sorted: true,
+            row_key_cols,
+            sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
+                .into_iter()
+                .map(String::from)
+                .collect(),
             region,
+            output: OperationOutput::File {
+                output_file: unsafe { CStr::from_ptr(params.output_file) }
+                    .to_str()
+                    .map(Url::parse)??,
+                opts,
+            },
             iterator_config,
         })
     }
@@ -185,16 +180,16 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
 fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<AwsConfig>> {
     Ok(if params.override_aws_config {
         if params.aws_region.is_null() {
-            error!("FFICompactionsParams aws_region pointer is NULL");
+            bail!("FFICompactionsParams aws_region pointer is NULL");
         }
         if params.aws_endpoint.is_null() {
-            error!("FFICompactionsParams aws_endpoint pointer is NULL");
+            bail!("FFICompactionsParams aws_endpoint pointer is NULL");
         }
         if params.aws_access_key.is_null() {
-            error!("FFICompactionsParams aws_access_key pointer is NULL");
+            bail!("FFICompactionsParams aws_access_key pointer is NULL");
         }
         if params.aws_secret_key.is_null() {
-            error!("FFICompactionsParams aws_secret_key pointer is NULL");
+            bail!("FFICompactionsParams aws_secret_key pointer is NULL");
         }
         Some(AwsConfig {
             region: unsafe { CStr::from_ptr(params.aws_region) }
@@ -219,16 +214,16 @@ fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<
 fn compute_region<'a, T: Borrow<str>>(
     params: &'a FFICompactionParams,
     row_key_cols: &[T],
-) -> color_eyre::Result<HashMap<String, ColRange<'a>>> {
+) -> color_eyre::Result<SleeperPartitionRegion<'a>> {
     let region_mins_inclusive = unpack_primitive_array(
         params.region_mins_inclusive,
         params.region_mins_inclusive_len,
-    );
+    )?;
     let region_maxs_inclusive = unpack_primitive_array(
         params.region_maxs_inclusive,
         params.region_maxs_inclusive_len,
-    );
-    let schema_types = unpack_primitive_array(params.row_key_schema, params.row_key_schema_len);
+    )?;
+    let schema_types = unpack_primitive_array(params.row_key_schema, params.row_key_schema_len)?;
     let region_mins = unpack_variant_array(
         params.region_mins,
         params.region_mins_len,
@@ -254,7 +249,7 @@ fn compute_region<'a, T: Borrow<str>>(
             },
         );
     }
-    Ok(map)
+    Ok(SleeperPartitionRegion::new(map))
 }
 
 /// Contains all output data from a compaction operation.
@@ -322,7 +317,7 @@ pub extern "C" fn merge_sorted_files(
         }
     };
 
-    let details = match TryInto::<CompactionInput>::try_into(params) {
+    let mut details = match TryInto::<CommonConfig>::try_into(params) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {e}");
@@ -331,7 +326,8 @@ pub extern "C" fn merge_sorted_files(
     };
 
     // Run compaction
-    let result = rt.block_on(details::run_compaction(&details));
+    details.sanitise_java_s3_urls();
+    let result = rt.block_on(run_compaction(&details));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_data.as_mut() } {
@@ -358,55 +354,61 @@ fn unpack_string_array(
     array_base: *const *const c_char,
     len: usize,
 ) -> color_eyre::Result<Vec<&'static str>> {
+    if len == 0 {
+        return Ok(Vec::new());
+    }
     if array_base.is_null() {
-        error!("NULL pointer for array_base in string array");
+        bail!("NULL pointer for array_base in string array");
     }
     unsafe {
         // create a slice from the pointer
         slice::from_raw_parts(array_base, len)
     }
     .iter()
-    .inspect(|p| {
-        if p.is_null() {
-            error!("Found NULL pointer in string array");
-        }
-    })
     // transform pointer to a non-owned string
     .map(|s| {
-        //unpack length (signed because it's from Java)
-        // This will have been allocated in Java so alignment will be ok
-        #[allow(clippy::cast_ptr_alignment)]
-        let str_len = unsafe { *(*s).cast::<i32>() };
-        if str_len < 0 {
-            return Err(eyre!("Illegal string length in FFI array: {str_len}"));
+        if s.is_null() {
+            Err(eyre!("Found NULL pointer in string array"))
+        } else {
+            //unpack length (signed because it's from Java)
+            // This will have been allocated in Java so alignment will be ok
+            #[allow(clippy::cast_ptr_alignment)]
+            let str_len = unsafe { *(*s).cast::<i32>() };
+            if str_len < 0 {
+                bail!("Illegal string length in FFI array: {str_len}");
+            }
+            // convert to string and check it's valid
+            std::str::from_utf8(unsafe {
+                #[allow(clippy::cast_sign_loss)]
+                slice::from_raw_parts(s.byte_add(4).cast::<u8>(), str_len as usize)
+            })
+            .map_err(Into::into)
         }
-        // convert to string and check it's valid
-        std::str::from_utf8(unsafe {
-            #[allow(clippy::cast_sign_loss)]
-            slice::from_raw_parts(s.byte_add(4).cast::<u8>(), str_len as usize)
-        })
-        .map_err(Into::into)
     })
     // now convert to a vector if all strings OK, else Err
-    .collect::<Result<Vec<_>, _>>()
+    .collect()
 }
 
 /// Create a vector of a primitive array type.
 ///
 /// # Errors
 /// If the array length is invalid, then behaviour is undefined.
-fn unpack_primitive_array<T: Copy>(array_base: *const *const T, len: usize) -> Vec<T> {
+fn unpack_primitive_array<T: Copy>(
+    array_base: *const *const T,
+    len: usize,
+) -> color_eyre::Result<Vec<T>> {
     if array_base.is_null() {
-        error!("NULL pointer for array_base in primitive array");
+        bail!("NULL pointer for array_base in primitive array");
     }
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
-        .inspect(|p| {
+        .map(|p| {
             if p.is_null() {
-                error!("Found NULL pointer in primitive array");
+                Err(eyre!("Found NULL pointer in primitive array"))
+            } else {
+                Ok(unsafe { **p })
             }
         })
-        .map(|&bptr| unsafe { *bptr })
         .collect()
 }
 
@@ -427,64 +429,67 @@ fn unpack_variant_array<'a>(
     len: usize,
     schema_types: &[i32],
     nulls_present: bool,
-) -> Result<Vec<PartitionBound<'a>>, Utf8Error> {
+) -> color_eyre::Result<Vec<PartitionBound<'a>>> {
     assert_eq!(len, schema_types.len());
     if array_base.is_null() {
-        error!("NULL pointer for array_base in variant array");
+        bail!("NULL pointer for array_base in variant array");
     }
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
-        .inspect(|p| {
-            if !nulls_present && p.is_null() {
-                error!("Found NULL pointer in variant array");
-            }
-        })
         .zip(schema_types.iter())
-        .map(|(&bptr, type_id)| match type_id {
-            1 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
-                Some(v) => PartitionBound::Int32(*v),
-                None => PartitionBound::Unbounded,
-            }),
-            2 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
-                Some(v) => PartitionBound::Int64(*v),
-                None => PartitionBound::Unbounded,
-            }),
-            3 => {
-                match unsafe { bptr.cast::<i32>().as_ref() } {
-                    //unpack length (signed because it's from Java)
-                    Some(str_len) => {
-                        if *str_len < 0 {
-                            error!("Illegal variant length in FFI array: {str_len}");
-                            panic!("Illegal variant length in FFI array: {str_len}");
+        .map(|(&bptr, type_id)| {
+            if !nulls_present && bptr.is_null() {
+                Err(eyre!("Found NULL pointer in variant array"))
+            } else {
+                match type_id {
+                    1 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
+                        Some(v) => PartitionBound::Int32(*v),
+                        None => PartitionBound::Unbounded,
+                    }),
+                    2 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
+                        Some(v) => PartitionBound::Int64(*v),
+                        None => PartitionBound::Unbounded,
+                    }),
+                    3 => {
+                        match unsafe { bptr.cast::<i32>().as_ref() } {
+                            //unpack length (signed because it's from Java)
+                            Some(str_len) => {
+                                if *str_len < 0 {
+                                    bail!("Illegal variant length in FFI array: {str_len}");
+                                }
+                                std::str::from_utf8(unsafe {
+                                    #[allow(clippy::cast_sign_loss)]
+                                    slice::from_raw_parts(
+                                        bptr.byte_add(4).cast::<u8>(),
+                                        *str_len as usize,
+                                    )
+                                })
+                                .map_err(color_eyre::eyre::Report::from)
+                                .map(PartitionBound::String)
+                            }
+                            None => Ok(PartitionBound::Unbounded),
                         }
-                        std::str::from_utf8(unsafe {
-                            #[allow(clippy::cast_sign_loss)]
-                            slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), *str_len as usize)
-                        })
-                        .map(PartitionBound::String)
                     }
-                    None => Ok(PartitionBound::Unbounded),
-                }
-            }
-            4 => {
-                match unsafe { bptr.cast::<i32>().as_ref() } {
-                    //unpack length (signed because it's from Java)
-                    Some(byte_len) => {
-                        if *byte_len < 0 {
-                            error!("Illegal byte array length in FFI array: {byte_len}");
-                            panic!("Illegal byte array length in FFI array: {byte_len}");
+                    4 => {
+                        match unsafe { bptr.cast::<i32>().as_ref() } {
+                            //unpack length (signed because it's from Java)
+                            Some(byte_len) => {
+                                if *byte_len < 0 {
+                                    bail!("Illegal byte array length in FFI array: {byte_len}");
+                                }
+                                Ok(PartitionBound::ByteArray(unsafe {
+                                    #[allow(clippy::cast_sign_loss)]
+                                    slice::from_raw_parts(
+                                        bptr.byte_add(4).cast::<u8>(),
+                                        *byte_len as usize,
+                                    )
+                                }))
+                            }
+                            None => Ok(PartitionBound::Unbounded),
                         }
-                        Ok(PartitionBound::ByteArray(unsafe {
-                            #[allow(clippy::cast_sign_loss)]
-                            slice::from_raw_parts(bptr.byte_add(4).cast::<u8>(), *byte_len as usize)
-                        }))
                     }
-                    None => Ok(PartitionBound::Unbounded),
+                    x => Err(eyre!("Unexpected type id {x}")),
                 }
-            }
-            x => {
-                error!("Unexpected type id {x}");
-                panic!("Unexpected type id {x}");
             }
         })
         .collect()
