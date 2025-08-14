@@ -45,6 +45,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 
@@ -136,7 +137,7 @@ public class IngestBatcherStack extends NestedStack {
         String submitterName = String.join("-", "sleeper", instanceId, "ingest-batcher-submit-files");
         String jobCreatorName = String.join("-", "sleeper", instanceId, "ingest-batcher-create-jobs");
 
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
         IFunction submitterLambda = lambdaCode.buildFunction(this, LambdaHandler.INGEST_BATCHER_SUBMITTER, "SubmitToIngestBatcherLambda", builder -> builder
                 .functionName(submitterName)

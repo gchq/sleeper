@@ -43,6 +43,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -101,7 +102,7 @@ public class BulkExportStack extends NestedStack {
                         .memorySize(instanceProperties.getInt(BULK_EXPORT_LAMBDA_MEMORY_IN_MB))
                         .timeout(Duration.seconds(instanceProperties.getInt(
                                 BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS)))
-                        .environment(Utils.createDefaultEnvironment(instanceProperties))
+                        .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
