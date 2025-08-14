@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.datafusion;
 
+/**
+ * AWS configuration overrides to pass to Rust DataFusion code.
+ */
 public class DataFusionAwsConfig {
     private final String region;
     private final String endpoint;
@@ -34,6 +37,12 @@ public class DataFusionAwsConfig {
         return new Builder();
     }
 
+    /**
+     * Creates the default AWS configuration. Usually this will be null. Applies configuration from environment
+     * variables if set.
+     *
+     * @return the configuration, if set
+     */
     public static DataFusionAwsConfig getDefault() {
         String endpoint = System.getenv("AWS_ENDPOINT_URL");
         if (endpoint != null) {
@@ -43,6 +52,12 @@ public class DataFusionAwsConfig {
         }
     }
 
+    /**
+     * Creates a configuration to run against a LocalStack endpoint.
+     *
+     * @param  endpoint the endpoint
+     * @return          the configuration
+     */
     public static DataFusionAwsConfig overrideEndpoint(String endpoint) {
         return builder()
                 .endpoint(endpoint)
@@ -73,6 +88,9 @@ public class DataFusionAwsConfig {
         return allowHttp;
     }
 
+    /**
+     * Builder for DataFusion AWS configuration objects.
+     */
     public static class Builder {
         private String region;
         private String endpoint;
@@ -83,26 +101,56 @@ public class DataFusionAwsConfig {
         private Builder() {
         }
 
+        /**
+         * Sets the AWS region.
+         *
+         * @param  region the region
+         * @return        the builder for chaining
+         */
         public Builder region(String region) {
             this.region = region;
             return this;
         }
 
+        /**
+         * Sets the AWS endpoint.
+         *
+         * @param  endpoint the endpoint
+         * @return          the builder for chaining
+         */
         public Builder endpoint(String endpoint) {
             this.endpoint = endpoint;
             return this;
         }
 
+        /**
+         * Sets the access key.
+         *
+         * @param  accessKey the access key
+         * @return           the builder for chaining
+         */
         public Builder accessKey(String accessKey) {
             this.accessKey = accessKey;
             return this;
         }
 
+        /**
+         * Sets the secret key.
+         *
+         * @param  secretKey the secret key
+         * @return           the builder for chaining
+         */
         public Builder secretKey(String secretKey) {
             this.secretKey = secretKey;
             return this;
         }
 
+        /**
+         * Sets whether or not an AWS client should allow connecting with HTTP instead of HTTPS.
+         *
+         * @param  allowHttp true if HTTP should be allowed
+         * @return           the builder for chaining
+         */
         public Builder allowHttp(boolean allowHttp) {
             this.allowHttp = allowHttp;
             return this;
