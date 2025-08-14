@@ -40,6 +40,8 @@ public class PartitionSubtreeFactory {
     public static PartitionTree createSubtree(PartitionTree originalTree, int leafPartitionCount) throws PartitionSubtreeRequestTooLargeException {
         if (leafPartitionCount > originalTree.getLeafPartitions().size()) {
             throw new PartitionSubtreeRequestTooLargeException("Requested size of " + leafPartitionCount + " is greater than input tree capacity");
+        } else if (leafPartitionCount == originalTree.getLeafPartitions().size()) {
+            return originalTree;
         }
 
         LinkedHashMap<String, Partition> partitionsToBuildSubTree = new LinkedHashMap<String, Partition>();

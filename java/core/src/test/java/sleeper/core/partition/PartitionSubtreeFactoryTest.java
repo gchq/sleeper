@@ -33,7 +33,7 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
 
     @Test
     void shouldCreateBalancedSubtreeWithExactLeafPartitionCount() throws PartitionSubtreeRequestTooLargeException {
-        // Given / When
+        // Given
         int leafPartitionCount = 2;
 
         PartitionTree originalTree = new PartitionsBuilder(schema)
@@ -42,6 +42,8 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
                 .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
                 .buildTree();
+
+        // When
         PartitionTree subtree = PartitionSubtreeFactory.createSubtree(originalTree, leafPartitionCount);
 
         // Then
@@ -208,6 +210,30 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .extracting(Partition::getId)
                 .containsExactly(L1_LEFT, L1_RIGHT);
 
+    }
+
+    @Test
+    void shouldReturnExactMatchForTreeWhenRequestCountIsSameAsOriginalTree() throws PartitionSubtreeRequestTooLargeException {
+        // Given
+        int leafPartitionCount = 4;
+
+        PartitionTree originalTree = new PartitionsBuilder(schema)
+                .rootFirst(ROOT)
+                .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
+                .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
+                .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
+                .buildTree();
+
+        // When
+        PartitionTree subtree = PartitionSubtreeFactory.createSubtree(originalTree, leafPartitionCount);
+
+        // Then
+        assertThat(subtree)
+                .withRepresentation(tree -> PartitionsPrinter.printPartitions(schema, (PartitionTree) tree))
+                .isEqualTo(originalTree);
+        assertThat(subtree.getLeafPartitions())
+                .extracting(Partition::getId)
+                .containsExactly(L2_LEFT_OF_L1L, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1L, L2_RIGHT_OF_L1R);
     }
 
     @Test
