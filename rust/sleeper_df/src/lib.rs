@@ -14,60 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use chrono::Local;
-use color_eyre::eyre::{bail, eyre};
+use ::log::{error, warn};
+use color_eyre::eyre::bail;
 use libc::{EFAULT, EINVAL, EIO, size_t};
-use log::{LevelFilter, error, warn};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, CompletionOptions, PartitionBound, SleeperParquetOptions,
+    ColRange, CommonConfig, CompletionOptions, SleeperParquetOptions,
     SleeperPartitionRegion, run_compaction,
 };
 use std::{
     borrow::Borrow,
     collections::HashMap,
     ffi::{CStr, c_char, c_int, c_void},
-    io::Write,
-    slice,
-    sync::Once,
 };
 use url::Url;
 
-/// An object guaranteed to only initialise once. Thread safe.
-static LOG_CFG: Once = Once::new();
+use crate::{
+    log::maybe_cfg_log,
+    unpack::{
+        unpack_aws_config, unpack_primitive_array, unpack_string_array, unpack_variant_array,
+    },
+};
 
-/// A one time initialisation of the logging library.
-///
-/// This function uses a [`Once`] object to ensure
-/// initialisation only happens once. This is safe even
-/// if called from multiple threads.
-fn maybe_cfg_log() {
-    LOG_CFG.call_once(|| {
-        // Install and configure environment logger
-        env_logger::builder()
-            .format(|buf, record| {
-                writeln!(
-                    buf,
-                    "{} [{}] {}:{} - {}",
-                    Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                    record.level(),
-                    record.file().unwrap_or("??"),
-                    record.line().unwrap_or(0),
-                    record.args()
-                )
-            })
-            .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
-            .format_target(false)
-            .filter_level(LevelFilter::Info)
-            .init();
-    });
-}
+mod log;
+mod unpack;
 
 /// Contains all the input data for setting up a compaction.
 ///
 /// See java/compaction/compaction-rust/src/main/java/sleeper/compaction/jobexecution/RustBridge.java
 /// for details. Field ordering and types MUST match between the two definitions!
 #[repr(C)]
-pub struct FFICompactionParams {
+pub struct FFICommonConfig {
     override_aws_config: bool,
     aws_region: *const c_char,
     aws_endpoint: *const c_char,
@@ -104,12 +80,10 @@ pub struct FFICompactionParams {
     iterator_config: *const c_char,
 }
 
-impl<'a> TryFrom<&'a FFICompactionParams> for CommonConfig<'a> {
+impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
     type Error = color_eyre::eyre::Report;
 
-    fn try_from(
-        params: &'a FFICompactionParams,
-    ) -> color_eyre::Result<CommonConfig<'a>, Self::Error> {
+    fn try_from(params: &'a FFICommonConfig) -> color_eyre::Result<CommonConfig<'a>, Self::Error> {
         if params.iterator_config.is_null() {
             bail!("FFICompactionsParams iterator_config is NULL");
         }
@@ -177,42 +151,8 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CommonConfig<'a> {
     }
 }
 
-fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<AwsConfig>> {
-    Ok(if params.override_aws_config {
-        if params.aws_region.is_null() {
-            bail!("FFICompactionsParams aws_region pointer is NULL");
-        }
-        if params.aws_endpoint.is_null() {
-            bail!("FFICompactionsParams aws_endpoint pointer is NULL");
-        }
-        if params.aws_access_key.is_null() {
-            bail!("FFICompactionsParams aws_access_key pointer is NULL");
-        }
-        if params.aws_secret_key.is_null() {
-            bail!("FFICompactionsParams aws_secret_key pointer is NULL");
-        }
-        Some(AwsConfig {
-            region: unsafe { CStr::from_ptr(params.aws_region) }
-                .to_str()?
-                .to_owned(),
-            endpoint: unsafe { CStr::from_ptr(params.aws_endpoint) }
-                .to_str()?
-                .to_owned(),
-            access_key: unsafe { CStr::from_ptr(params.aws_access_key) }
-                .to_str()?
-                .to_owned(),
-            secret_key: unsafe { CStr::from_ptr(params.aws_secret_key) }
-                .to_str()?
-                .to_owned(),
-            allow_http: params.aws_allow_http,
-        })
-    } else {
-        None
-    })
-}
-
 fn compute_region<'a, T: Borrow<str>>(
-    params: &'a FFICompactionParams,
+    params: &'a FFICommonConfig,
     row_key_cols: &[T],
 ) -> color_eyre::Result<SleeperPartitionRegion<'a>> {
     let region_mins_inclusive = unpack_primitive_array(
@@ -293,7 +233,7 @@ pub struct FFICompactionResult {
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
 pub extern "C" fn merge_sorted_files(
-    input_data: *mut FFICompactionParams,
+    input_data: *mut FFICommonConfig,
     output_data: *mut FFICompactionResult,
 ) -> c_int {
     maybe_cfg_log();
@@ -343,153 +283,4 @@ pub extern "C" fn merge_sorted_files(
             -1
         }
     }
-}
-
-/// Create a vector from a C pointer to an array of strings.
-///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-fn unpack_string_array(
-    array_base: *const *const c_char,
-    len: usize,
-) -> color_eyre::Result<Vec<&'static str>> {
-    if len == 0 {
-        return Ok(Vec::new());
-    }
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in string array");
-    }
-    unsafe {
-        // create a slice from the pointer
-        slice::from_raw_parts(array_base, len)
-    }
-    .iter()
-    // transform pointer to a non-owned string
-    .map(|s| {
-        if s.is_null() {
-            Err(eyre!("Found NULL pointer in string array"))
-        } else {
-            //unpack length (signed because it's from Java)
-            // This will have been allocated in Java so alignment will be ok
-            #[allow(clippy::cast_ptr_alignment)]
-            let str_len = unsafe { *(*s).cast::<i32>() };
-            if str_len < 0 {
-                bail!("Illegal string length in FFI array: {str_len}");
-            }
-            // convert to string and check it's valid
-            std::str::from_utf8(unsafe {
-                #[allow(clippy::cast_sign_loss)]
-                slice::from_raw_parts(s.byte_add(4).cast::<u8>(), str_len as usize)
-            })
-            .map_err(Into::into)
-        }
-    })
-    // now convert to a vector if all strings OK, else Err
-    .collect()
-}
-
-/// Create a vector of a primitive array type.
-///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-fn unpack_primitive_array<T: Copy>(
-    array_base: *const *const T,
-    len: usize,
-) -> color_eyre::Result<Vec<T>> {
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in primitive array");
-    }
-    unsafe { slice::from_raw_parts(array_base, len) }
-        .iter()
-        .map(|p| {
-            if p.is_null() {
-                Err(eyre!("Found NULL pointer in primitive array"))
-            } else {
-                Ok(unsafe { **p })
-            }
-        })
-        .collect()
-}
-
-/// Create a vector of a variant array type. Each element may be a
-/// i32, i64, String or byte array. The schema types define what decoding is attempted.
-///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-/// If the schema types are incorrect, then behaviour is undefined.
-///
-/// # Panics
-/// If the length of the `schema_types` array doesn't match the length specified.
-/// If `nulls_present` is false and a null pointer is found.
-///
-/// Also panics if a negative array length is found in decoding byte arrays or strings.
-fn unpack_variant_array<'a>(
-    array_base: *const *const c_void,
-    len: usize,
-    schema_types: &[i32],
-    nulls_present: bool,
-) -> color_eyre::Result<Vec<PartitionBound<'a>>> {
-    assert_eq!(len, schema_types.len());
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in variant array");
-    }
-    unsafe { slice::from_raw_parts(array_base, len) }
-        .iter()
-        .zip(schema_types.iter())
-        .map(|(&bptr, type_id)| {
-            if !nulls_present && bptr.is_null() {
-                Err(eyre!("Found NULL pointer in variant array"))
-            } else {
-                match type_id {
-                    1 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
-                        Some(v) => PartitionBound::Int32(*v),
-                        None => PartitionBound::Unbounded,
-                    }),
-                    2 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
-                        Some(v) => PartitionBound::Int64(*v),
-                        None => PartitionBound::Unbounded,
-                    }),
-                    3 => {
-                        match unsafe { bptr.cast::<i32>().as_ref() } {
-                            //unpack length (signed because it's from Java)
-                            Some(str_len) => {
-                                if *str_len < 0 {
-                                    bail!("Illegal variant length in FFI array: {str_len}");
-                                }
-                                std::str::from_utf8(unsafe {
-                                    #[allow(clippy::cast_sign_loss)]
-                                    slice::from_raw_parts(
-                                        bptr.byte_add(4).cast::<u8>(),
-                                        *str_len as usize,
-                                    )
-                                })
-                                .map_err(color_eyre::eyre::Report::from)
-                                .map(PartitionBound::String)
-                            }
-                            None => Ok(PartitionBound::Unbounded),
-                        }
-                    }
-                    4 => {
-                        match unsafe { bptr.cast::<i32>().as_ref() } {
-                            //unpack length (signed because it's from Java)
-                            Some(byte_len) => {
-                                if *byte_len < 0 {
-                                    bail!("Illegal byte array length in FFI array: {byte_len}");
-                                }
-                                Ok(PartitionBound::ByteArray(unsafe {
-                                    #[allow(clippy::cast_sign_loss)]
-                                    slice::from_raw_parts(
-                                        bptr.byte_add(4).cast::<u8>(),
-                                        *byte_len as usize,
-                                    )
-                                }))
-                            }
-                            None => Ok(PartitionBound::Unbounded),
-                        }
-                    }
-                    x => Err(eyre!("Unexpected type id {x}")),
-                }
-            }
-        })
-        .collect()
 }
