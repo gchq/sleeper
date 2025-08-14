@@ -9,7 +9,7 @@ assignees: ''
 
 ### User Story
 
-As a *[type of user]*, I want *[some feature]*, so that *[some benefit]*.<br>
+As a *[type of user]*, I want *[some feature]*, so that *[some benefit]*.
 *Example:* As a returning customer, I want to save multiple addresses, so I can check out faster.
 
 ### Description / Background
@@ -29,8 +29,8 @@ when [...]".
 
 Gherkin format example:
 
-**Given** I set filters and aggregations on a query object<br>
-**When** I query the table with those settings<br>
+**Given** I set filters and aggregations on a query object
+**When** I query the table with those settings
 **Then** the results have those filters and aggregations applied
 
 ### Technical Notes / Implementation Details
