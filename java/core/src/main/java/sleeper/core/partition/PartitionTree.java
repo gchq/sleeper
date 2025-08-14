@@ -151,20 +151,6 @@ public class PartitionTree {
     }
 
     /**
-     * Expands the leaf partition call to only return the ids of the partitions.
-     *
-     * @return list containing all the leaf partition ids
-     */
-    public List<String> getLeafPartitionIds() {
-        List<String> outList = new ArrayList<String>();
-        getLeafPartitions().forEach(leafPartition -> {
-            outList.add(leafPartition.getId());
-        });
-
-        return outList;
-    }
-
-    /**
      * Retrieves the leaf partition that includes the given key.
      *
      * @param  schema schema of the Sleeper table

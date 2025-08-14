@@ -50,7 +50,9 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                 .isEqualTo(new PartitionsBuilder(schema)
                         .rootFirst(ROOT)
                         .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L).buildTree());
-        assertThat(subtree.getLeafPartitionIds()).containsExactly(L1_LEFT, L1_RIGHT);
+        assertThat(subtree.getLeafPartitions())
+                .extracting(Partition::getId)
+                .containsExactly(L1_LEFT, L1_RIGHT);
     }
 
     @Test
@@ -80,7 +82,9 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                         .splitToNewChildren("R", "RL", "RR", 100L)
                         .splitToNewChildren("LL", "LLL", "LLR", -150L)
                         .buildTree());
-        assertThat(subtree.getLeafPartitionIds()).containsExactly("LLL", "LLR", "LR", "RL", "RR");
+        assertThat(subtree.getLeafPartitions())
+                .extracting(Partition::getId)
+                .containsExactly("LLL", "LLR", "LR", "RL", "RR");
     }
 
     @Test
@@ -104,7 +108,8 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                         .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
                         .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
                         .buildTree());
-        assertThat(subtree.getLeafPartitionIds())
+        assertThat(subtree.getLeafPartitions())
+                .extracting(Partition::getId)
                 .containsExactly(L1_RIGHT,
                         L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L);
     }
@@ -130,7 +135,9 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
 
         //Incremented to account for root now being the only leaf
         assertThat(subtree.getLeafPartitions().size()).isEqualTo(leafPartitionCount + 1);
-        assertThat(subtree.getLeafPartitionIds()).containsExactly(ROOT);
+        assertThat(subtree.getLeafPartitions())
+                .extracting(Partition::getId)
+                .containsExactly(ROOT);
     }
 
     @Test
@@ -165,7 +172,8 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                         .splitToNewChildren(L2_LEFT_OF_L1L, L3_LEFT_OF_L2LL, L3_RIGHT_OF_L2LL, -2000000L)
                         .splitToNewChildren(L2_RIGHT_OF_L1L, L3_LEFT_OF_L2LR, L3_RIGHT_OF_L2LR, -500000L)
                         .buildTree());
-        assertThat(largeSubtree.getLeafPartitionIds())
+        assertThat(largeSubtree.getLeafPartitions())
+                .extracting(Partition::getId)
                 .containsExactly(L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R,
                         L3_LEFT_OF_L2LL, L3_LEFT_OF_L2LR, L3_RIGHT_OF_L2LL, L3_RIGHT_OF_L2LR);
 
@@ -182,7 +190,9 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                         .splitToNewChildren(L1_LEFT, L2_LEFT_OF_L1L, L2_RIGHT_OF_L1L, -1000000L)
                         .splitToNewChildren(L1_RIGHT, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1R, 123456789L)
                         .buildTree());
-        assertThat(midSubtree.getLeafPartitionIds()).containsExactly(L2_LEFT_OF_L1L, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1L, L2_RIGHT_OF_L1R);
+        assertThat(midSubtree.getLeafPartitions())
+                .extracting(Partition::getId)
+                .containsExactly(L2_LEFT_OF_L1L, L2_LEFT_OF_L1R, L2_RIGHT_OF_L1L, L2_RIGHT_OF_L1R);
 
         // When 3
         PartitionTree smallSubtree = PartitionSubtreeFactory.createSubtree(level3TreeOriginal, smallPartitionCount);
@@ -194,7 +204,9 @@ public class PartitionSubtreeFactoryTest extends PartitionTreeTestBase {
                         .rootFirst(ROOT)
                         .splitToNewChildren(ROOT, L1_LEFT, L1_RIGHT, 0L)
                         .buildTree());
-        assertThat(smallSubtree.getLeafPartitionIds()).containsExactly(L1_LEFT, L1_RIGHT);
+        assertThat(smallSubtree.getLeafPartitions())
+                .extracting(Partition::getId)
+                .containsExactly(L1_LEFT, L1_RIGHT);
 
     }
 
