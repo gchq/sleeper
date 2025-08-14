@@ -38,7 +38,6 @@ import software.amazon.awssdk.utils.BinaryUtils;
 import sleeper.athena.FilterTranslator;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
@@ -260,16 +259,14 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         if (iteratorClass == null) {
             return mergingIterator;
         }
-        String iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
 
-        ConfigStringIterator sortedRowIterator = IteratorFactory.builder()
+        return IteratorFactory.builder()
                 .inner(objectFactory)
                 .iteratorClassName(iteratorClass)
-                .iteratorConfig(iteratorConfig)
+                .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
                 .schema(schema)
                 .build()
-                .getIterator();
-
-        return sortedRowIterator.apply(mergingIterator);
+                .getIterator()
+                .apply(mergingIterator);
     }
 }

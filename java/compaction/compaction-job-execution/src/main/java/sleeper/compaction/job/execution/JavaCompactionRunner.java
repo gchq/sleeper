@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.properties.table.TableProperties;
@@ -142,15 +141,14 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
-            ConfigStringIterator iterator;
-            IteratorFactory iterFactory = IteratorFactory.builder()
+            mergingIterator = IteratorFactory.builder()
                     .inner(objectFactory)
                     .iteratorClassName(compactionJob.getIteratorClassName())
                     .iteratorConfig(compactionJob.getIteratorConfig())
                     .schema(schema)
-                    .build();
-            iterator = iterFactory.getIterator();
-            mergingIterator = iterator.apply(mergingIterator);
+                    .build()
+                    .getIterator()
+                    .apply(mergingIterator);
         }
         return mergingIterator;
     }
