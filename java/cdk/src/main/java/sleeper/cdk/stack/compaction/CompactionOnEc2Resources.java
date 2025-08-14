@@ -60,6 +60,7 @@ import sleeper.core.ContainerConstants;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.CompactionTaskRequirements;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -206,7 +207,7 @@ public class CompactionOnEc2Resources {
     private IFunction lambdaForCustomTerminationPolicy(CoreStacks coreStacks, LambdaCode lambdaCode) {
 
         // Run tasks function
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-custom-termination");

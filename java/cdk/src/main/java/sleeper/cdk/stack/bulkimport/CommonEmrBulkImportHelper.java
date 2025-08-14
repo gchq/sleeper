@@ -39,6 +39,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,7 @@ public class CommonEmrBulkImportHelper {
     public IFunction createJobStarterFunction(
             Queue jobQueue, LambdaCode lambdaCode, IBucket importBucket, LogGroupRef logGroupRef,
             List<IRole> passRoles) {
-        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", platform.toString());
 
         String functionName = String.join("-", "sleeper",
