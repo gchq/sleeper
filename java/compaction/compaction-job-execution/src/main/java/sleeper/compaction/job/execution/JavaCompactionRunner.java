@@ -27,9 +27,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.MergingIterator;
-import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
@@ -142,7 +142,7 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
-            SortedRowIterator iterator;
+            ConfigStringIterator iterator;
             IteratorFactory iterFactory = new IteratorFactory(objectFactory);
             iterator = iterFactory.getIterator(compactionJob.getIteratorClassName(), compactionJob.getIteratorConfig(), schema);
             mergingIterator = iterator.apply(mergingIterator);

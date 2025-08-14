@@ -15,22 +15,20 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.row.Row;
-
-import java.util.List;
-import java.util.function.Function;
+import sleeper.core.schema.Schema;
 
 /**
  * A function to transform an iterator of rows. For example, this may exclude some rows, perform an aggregation,
  * or perform some computation on the values to produce or remove fields.
  */
-public interface SortedRowIterator extends Function<CloseableIterator<Row>, CloseableIterator<Row>> {
+public interface ConfigStringIterator extends SortedRowIterator {
 
     /**
-     * This should provide a list of fields which will be read by the iterator. This is to ensure that those fields will
-     * be read from Sleeper, even if a client requested a limited set of fields which does not include them.
+     * Configures the iterator to accept rows.
      *
-     * @return names of fields that must be loaded
+     * @param configString configuration specific to the iterator which may be set before the iterator is used
+     * @param schema       the schema of the Sleeper table being processed
      */
-    List<String> getRequiredValueFields();
+    void init(String configString, Schema schema);
+
 }
