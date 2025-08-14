@@ -95,7 +95,6 @@ public class AutoStopEcsClusterTasksLambdaIT {
                                 aResponse()
                                         .withStatus(200)
                                         .withBody(
-
                                                 "{\"nextToken\":\"NEXT_TOKEN\",\"taskArns\":[\"test-task-1\"]}")));
         stubFor(
                 post("/")
