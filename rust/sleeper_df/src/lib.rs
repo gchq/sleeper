@@ -15,26 +15,19 @@
  * limitations under the License.
  */
 use crate::{
-    ffi_objects::{FFICommonConfig, FFICompactionResult},
+    context::FFIContext,
     log::maybe_cfg_log,
-    unpack::{
-        unpack_primitive_array, unpack_variant_array,
-    },
+    objects::{FFICommonConfig, FFICompactionResult},
+    unpack::{unpack_primitive_array, unpack_variant_array},
 };
 use ::log::{error, warn};
-use libc::{EFAULT, EINVAL, EIO};
-use sleeper_core::{
-    ColRange, CommonConfig, SleeperPartitionRegion,
-    run_compaction,
-};
-use std::{
-    borrow::Borrow,
-    collections::HashMap,
-    ffi::c_int,
-};
+use libc::{EFAULT, EINVAL};
+use sleeper_core::{ColRange, CommonConfig, SleeperPartitionRegion, run_compaction};
+use std::{borrow::Borrow, collections::HashMap, ffi::c_int};
 
-mod ffi_objects;
+mod context;
 mod log;
+mod objects;
 mod unpack;
 
 fn compute_region<'a, T: Borrow<str>>(
@@ -80,8 +73,9 @@ fn compute_region<'a, T: Borrow<str>>(
 
 /// Provides the C FFI interface to calling the [`merge_sorted_files`] function.
 ///
-/// This function takes an `FFICompactionParams` struct which contains all the  This function validates the pointers are valid strings (or
-/// at least attempts to), but undefined behaviour will result if bad pointers are passed.
+/// This function takes an [`FFICommonConfig`] struct which contains all the  This function validates the
+/// pointers are valid strings (or at least attempts to), but undefined behaviour will result if bad pointers
+/// are passed.
 ///
 /// It is also undefined behaviour to specify and incorrect array length for any array.
 ///
@@ -105,33 +99,28 @@ fn compute_region<'a, T: Borrow<str>>(
 /// | EFAULT | if pointers are null
 /// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
 /// | EINVAL | if row key column numbers or sort column numbers are empty |
-/// | EIO    | if Rust tokio runtime couldn't be created |
 ///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
 pub extern "C" fn merge_sorted_files(
     input_data: *mut FFICommonConfig,
     output_data: *mut FFICompactionResult,
+    ctx_ptr: *const FFIContext,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
         warn!("Couldn't install color_eyre error handler {e}");
     }
-    let Some(params) = (unsafe { input_data.as_ref() }) else {
-        error!("input data pointer is null");
+
+    // Null check the context pointer
+    let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
+        error!("Null context pointer");
         return EFAULT;
     };
 
-    // Start async runtime
-    let rt = match tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-    {
-        Ok(v) => v,
-        Err(e) => {
-            error!("Couldn't create Rust tokio runtime {e}");
-            return EIO;
-        }
+    let Some(params) = (unsafe { input_data.as_ref() }) else {
+        error!("input data pointer is null");
+        return EFAULT;
     };
 
     let details = match TryInto::<CommonConfig>::try_into(params) {
@@ -143,7 +132,7 @@ pub extern "C" fn merge_sorted_files(
     };
 
     // Run compaction
-    let result = rt.block_on(run_compaction(&details));
+    let result = context.rt.block_on(run_compaction(&details));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_data.as_mut() } {
