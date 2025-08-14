@@ -42,4 +42,4 @@ jobs:
         run: docker build -t compaction-job-execution:test .
       - name: Docker image tests
         working-directory: ./java
-        run: mvn verify -PsystemTest -DskipRust=true -pl system-test/system-test-data-generation "-DrunIT=DockerImageTest*"
+        run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=DockerImageTest*"
