@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionParams;
+import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCommonConfig;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
@@ -80,7 +80,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
-        DataFusionCompactionParams params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+        DataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
 
@@ -105,10 +105,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static DataFusionCompactionParams createCompactionParams(CompactionJob job, TableProperties tableProperties,
+    private static DataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, AwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        DataFusionCompactionParams params = new DataFusionCompactionParams(runtime);
+        DataFusionCommonConfig params = new DataFusionCommonConfig(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
             params.aws_region.set(awsConfig.region);
@@ -200,7 +200,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     public static RowsProcessed invokeDataFusion(CompactionJob job,
-            DataFusionCompactionParams compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+            DataFusionCommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction

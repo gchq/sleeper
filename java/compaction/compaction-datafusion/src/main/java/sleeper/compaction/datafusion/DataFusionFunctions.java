@@ -50,7 +50,7 @@ public interface DataFusionFunctions extends ForeignFunctions {
      */
     @SuppressWarnings(value = {"checkstyle:membername"})
     @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    class DataFusionCompactionParams extends Struct {
+    class DataFusionCommonConfig extends Struct {
         /** Optional AWS configuration. */
         public final Struct.Boolean override_aws_config = new Struct.Boolean();
         public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
@@ -97,7 +97,7 @@ public interface DataFusionFunctions extends ForeignFunctions {
         /** Compaction iterator configuration. This is optional. */
         public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
 
-        public DataFusionCompactionParams(jnr.ffi.Runtime runtime) {
+        public DataFusionCommonConfig(jnr.ffi.Runtime runtime) {
             super(runtime);
         }
 
@@ -143,5 +143,5 @@ public interface DataFusionFunctions extends ForeignFunctions {
     }
 
     @SuppressWarnings(value = "checkstyle:parametername")
-    int merge_sorted_files(@In DataFusionCompactionParams input, @Out DataFusionCompactionResult result);
+    int merge_sorted_files(@In DataFusionCommonConfig input, @Out DataFusionCompactionResult result);
 }
