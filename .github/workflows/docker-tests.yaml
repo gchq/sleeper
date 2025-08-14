@@ -49,4 +49,4 @@ jobs:
         run: docker build -t compaction-job-execution:test .
       - name: Docker image tests
         working-directory: ./java
-        run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=DockerImageTest*" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=*DockerImageST" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository

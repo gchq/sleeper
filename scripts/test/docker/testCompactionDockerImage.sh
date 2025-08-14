@@ -26,5 +26,5 @@ docker build -t "compaction-job-execution:test" "$COMPACTION_DOCKER_DIR"
 
 pushd "$PROJECT_ROOT/java"
 echo "Running..."
-mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=DockerImageTest*"
+mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=*DockerImageST"
 popd
