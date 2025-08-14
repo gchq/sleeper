@@ -18,6 +18,11 @@ unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+PROJECT_ROOT=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
 
-"$SCRIPTS_DIR/build/build.sh"
-"$THIS_DIR/testCompactionDockerImage.sh"
+docker build -t "compaction-job-execution:test" "$SCRIPTS_DIR/docker/compaction-job-execution/"
+
+pushd "$PROJECT_ROOT/java"
+echo "Running..."
+mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=DockerImageTest*"
+popd
