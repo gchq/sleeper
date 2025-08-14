@@ -31,9 +31,19 @@ public class IteratorFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(IteratorFactory.class);
 
     private final ObjectFactory inner;
+    private final String iteratorClassName;
+    private final String iteratorConfig;
+    private final Schema schema;
 
-    public IteratorFactory(ObjectFactory inner) {
-        this.inner = inner;
+    public IteratorFactory(Builder builder) {
+        inner = builder.inner;
+        this.iteratorClassName = builder.iteratorClassName;
+        this.iteratorConfig = builder.iteratorConfig;
+        this.schema = builder.schema;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -44,15 +54,12 @@ public class IteratorFactory {
      * {@link DataEngine#AGGREGATION_ITERATOR_NAME},
      * then an aggregation iterator is created and initialised.
      *
-     * @param  iteratorClassName         the fully qualified iterator class name or aggregation keyword
-     * @param  iteratorConfig            the iterator configuration string
-     * @param  schema                    the schema the iterator should be configured for
      * @return                           an initialised iterator
      * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
      *                                   found
      * @see                              AggregationFilteringIterator
      */
-    public ConfigStringIterator getIterator(String iteratorClassName, String iteratorConfig, Schema schema) throws IteratorCreationException {
+    public ConfigStringIterator getIterator() throws IteratorCreationException {
         try {
             ConfigStringIterator iterator;
 
@@ -68,6 +75,67 @@ public class IteratorFactory {
             return iterator;
         } catch (ObjectFactoryException exc) {
             throw new IteratorCreationException(exc);
+        }
+    }
+
+    /**
+     * Builder for iterator factory object.
+     */
+    public static final class Builder {
+        private ObjectFactory inner;
+        private String iteratorClassName;
+        private String iteratorConfig;
+        private Schema schema;
+
+        private Builder() {
+        }
+
+        /**
+         * Sets the object factory to be used for certain iterators.
+         *
+         * @param  inner the object factory to be used
+         * @return       builder for method chaining
+         */
+        public Builder inner(ObjectFactory inner) {
+            this.inner = inner;
+            return this;
+        }
+
+        /**
+         * Sets the iterator class name.
+         *
+         * @param  iteratorClassName the name of the iterator class to build
+         * @return                   builder for method chaining
+         */
+        public Builder iteratorClassName(String iteratorClassName) {
+            this.iteratorClassName = iteratorClassName;
+            return this;
+        }
+
+        /**
+         * Sets the iterator config.
+         *
+         * @param  iteratorConfig the config string to be used for the iterator
+         * @return                builder for method chaining
+         */
+        public Builder iteratorConfig(String iteratorConfig) {
+            this.iteratorConfig = iteratorConfig;
+            return this;
+        }
+
+        /**
+         * Sets the schema for the iterator to use.
+         *
+         * @param  schema the schema for the iterator to use
+         * @return        builder for method chaining
+         */
+        public Builder schema(Schema schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        public IteratorFactory build() {
+            return new IteratorFactory(this);
         }
     }
 }

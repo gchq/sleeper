@@ -261,7 +261,14 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
             return mergingIterator;
         }
         String iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
-        ConfigStringIterator sortedRowIterator = new IteratorFactory(objectFactory).getIterator(iteratorClass, iteratorConfig, schema);
+
+        ConfigStringIterator sortedRowIterator = IteratorFactory.builder()
+                .inner(objectFactory)
+                .iteratorClassName(iteratorClass)
+                .iteratorConfig(iteratorConfig)
+                .schema(schema)
+                .build()
+                .getIterator();
 
         return sortedRowIterator.apply(mergingIterator);
     }

@@ -140,7 +140,13 @@ public class LeafPartitionQueryExecutor {
         if (iteratorClassName == null) {
             return null;
         } else {
-            return new IteratorFactory(objectFactory).getIterator(iteratorClassName, iteratorConfig, schema);
+            return IteratorFactory.builder()
+                    .inner(objectFactory)
+                    .iteratorClassName(iteratorClassName)
+                    .iteratorConfig(iteratorConfig)
+                    .schema(schema)
+                    .build()
+                    .getIterator();
         }
     }
 }

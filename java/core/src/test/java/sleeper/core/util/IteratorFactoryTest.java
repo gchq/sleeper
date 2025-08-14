@@ -40,12 +40,16 @@ public class IteratorFactoryTest {
     @Test
     public void shouldInitialiseIterator() throws IteratorCreationException {
         // Given
-        ObjectFactory objectFactory = new ObjectFactory(IteratorFactoryTest.class.getClassLoader());
-        IteratorFactory iteratorFactory = new IteratorFactory(objectFactory);
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
+        ConfigStringIterator ageOffIterator = IteratorFactory.builder()
+                .inner(new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .iteratorClassName(AgeOffIterator.class.getName())
+                .iteratorConfig("value,1000")
+                .schema(Schema.builder()
+                        .rowKeyFields(new Field("key", new IntType()))
+                        .valueFields(new Field("value", new LongType()))
+                        .build())
+                .build()
+                .getIterator();
 
         List<Row> rows = List.of(
                 new Row(Map.of("key", "test", "value", 10L)),
@@ -53,7 +57,6 @@ public class IteratorFactoryTest {
         CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
 
         // When
-        ConfigStringIterator ageOffIterator = iteratorFactory.getIterator(AgeOffIterator.class.getName(), "value,1000", schema);
         List<Row> filtered = new ArrayList<>();
         ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
 
@@ -64,12 +67,16 @@ public class IteratorFactoryTest {
     @Test
     public void shouldCreateAggregatingIterator() throws IteratorCreationException {
         // Given
-        ObjectFactory objectFactory = new ObjectFactory(IteratorFactoryTest.class.getClassLoader());
-        IteratorFactory iteratorFactory = new IteratorFactory(objectFactory);
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
+        ConfigStringIterator ageOffIterator = IteratorFactory.builder()
+                .inner(new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                .iteratorConfig(";ageoff=value,1000,")
+                .schema(Schema.builder()
+                        .rowKeyFields(new Field("key", new IntType()))
+                        .valueFields(new Field("value", new LongType()))
+                        .build())
+                .build()
+                .getIterator();
 
         List<Row> rows = List.of(
                 new Row(Map.of("key", "test", "value", 10L)),
@@ -77,7 +84,6 @@ public class IteratorFactoryTest {
         CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
 
         // When
-        ConfigStringIterator ageOffIterator = iteratorFactory.getIterator(DataEngine.AGGREGATION_ITERATOR_NAME, ";ageoff=value,1000,", schema);
         List<Row> filtered = new ArrayList<>();
         ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
 

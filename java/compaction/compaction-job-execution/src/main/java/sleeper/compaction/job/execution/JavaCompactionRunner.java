@@ -143,8 +143,13 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
             ConfigStringIterator iterator;
-            IteratorFactory iterFactory = new IteratorFactory(objectFactory);
-            iterator = iterFactory.getIterator(compactionJob.getIteratorClassName(), compactionJob.getIteratorConfig(), schema);
+            IteratorFactory iterFactory = IteratorFactory.builder()
+                    .inner(objectFactory)
+                    .iteratorClassName(compactionJob.getIteratorClassName())
+                    .iteratorConfig(compactionJob.getIteratorConfig())
+                    .schema(schema)
+                    .build();
+            iterator = iterFactory.getIterator();
             mergingIterator = iterator.apply(mergingIterator);
         }
         return mergingIterator;
