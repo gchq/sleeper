@@ -20,9 +20,6 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 BASE_DIR=$(cd "$THIS_DIR" && cd "../../" && pwd)
 MAVEN_DIR="$BASE_DIR/java"
 SCRIPTS_DIR="$BASE_DIR/scripts"
-JARS_DIR="$SCRIPTS_DIR/jars"
-DOCKER_DIR="$SCRIPTS_DIR/docker"
-VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_BUILD_TIME=$(record_time)
