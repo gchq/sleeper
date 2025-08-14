@@ -18,64 +18,22 @@ use crate::{
     context::FFIContext,
     log::maybe_cfg_log,
     objects::{FFICommonConfig, FFICompactionResult},
-    unpack::{unpack_primitive_array, unpack_variant_array},
 };
 use ::log::{error, warn};
 use libc::{EFAULT, EINVAL};
-use sleeper_core::{ColRange, CommonConfig, SleeperPartitionRegion, run_compaction};
-use std::{borrow::Borrow, collections::HashMap, ffi::c_int};
+use sleeper_core::{CommonConfig, run_compaction};
+use std::ffi::c_int;
 
 mod context;
 mod log;
 mod objects;
 mod unpack;
 
-fn compute_region<'a, T: Borrow<str>>(
-    params: &'a FFICommonConfig,
-    row_key_cols: &[T],
-) -> color_eyre::Result<SleeperPartitionRegion<'a>> {
-    let region_mins_inclusive = unpack_primitive_array(
-        params.region_mins_inclusive,
-        params.region_mins_inclusive_len,
-    )?;
-    let region_maxs_inclusive = unpack_primitive_array(
-        params.region_maxs_inclusive,
-        params.region_maxs_inclusive_len,
-    )?;
-    let schema_types = unpack_primitive_array(params.row_key_schema, params.row_key_schema_len)?;
-    let region_mins = unpack_variant_array(
-        params.region_mins,
-        params.region_mins_len,
-        &schema_types,
-        false,
-    )?;
-    let region_maxs = unpack_variant_array(
-        params.region_maxs,
-        params.region_maxs_len,
-        &schema_types,
-        true,
-    )?;
-
-    let mut map = HashMap::with_capacity(row_key_cols.len());
-    for (idx, row_key) in row_key_cols.iter().enumerate() {
-        map.insert(
-            String::from(row_key.borrow()),
-            ColRange {
-                lower: region_mins[idx],
-                lower_inclusive: region_mins_inclusive[idx],
-                upper: region_maxs[idx],
-                upper_inclusive: region_maxs_inclusive[idx],
-            },
-        );
-    }
-    Ok(SleeperPartitionRegion::new(map))
-}
-
 /// Provides the C FFI interface to calling the [`merge_sorted_files`] function.
 ///
-/// This function takes an [`FFICommonConfig`] struct which contains all the  This function validates the
-/// pointers are valid strings (or at least attempts to), but undefined behaviour will result if bad pointers
-/// are passed.
+/// This function takes an [`FFICommonConfig`] struct which contains all the information needed for a compaction.
+/// This function validates the pointers are valid strings (or at least attempts to), but undefined behaviour will
+/// result if bad pointers are passed.
 ///
 /// It is also undefined behaviour to specify and incorrect array length for any array.
 ///

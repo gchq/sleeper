@@ -16,7 +16,6 @@
  */
 
 use std::sync::Arc;
-
 use tokio::runtime::Runtime;
 
 /// Creates a Tokio [`Runtime`].

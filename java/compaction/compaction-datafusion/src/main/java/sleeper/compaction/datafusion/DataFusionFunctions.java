@@ -62,6 +62,8 @@ public interface DataFusionFunctions extends ForeignFunctions {
         public final Struct.Boolean aws_allow_http = new Struct.Boolean();
         /** Array of input files to compact. */
         public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
+        /** Are the input files individually sorted based on row key and the sort key columns? */
+        public final Struct.Boolean input_files_sorted = new Struct.Boolean();
         /** Output file name. */
         public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
         /** Names of Sleeper row key columns from schema. */
