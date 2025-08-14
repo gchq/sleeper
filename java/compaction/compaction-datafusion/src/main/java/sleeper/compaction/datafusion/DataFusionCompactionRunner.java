@@ -34,6 +34,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.bridge.FFIBridge;
+import sleeper.foreign.bridge.FFIContext;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -204,12 +205,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction
-        int result = NATIVE_COMPACTION.merge_sorted_files(compactionParams, compactionData);
-
-        // Check result
-        if (result != 0) {
-            LOGGER.error("DataFusion compaction failed, return code: {}", result);
-            throw new IOException("DataFusion compaction failed with return code " + result);
+        try (FFIContext context = new FFIContext(NATIVE_COMPACTION)) {
+            int result = NATIVE_COMPACTION.compact(context, compactionParams, compactionData);
+            // Check result
+            if (result != 0) {
+                LOGGER.error("DataFusion compaction failed, return code: {}", result);
+                throw new IOException("DataFusion compaction failed with return code " + result);
+            }
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();

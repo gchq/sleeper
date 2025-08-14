@@ -102,10 +102,10 @@ fn compute_region<'a, T: Borrow<str>>(
 ///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
-pub extern "C" fn merge_sorted_files(
+pub extern "C" fn native_compact(
+    ctx_ptr: *const FFIContext,
     input_data: *mut FFICommonConfig,
     output_data: *mut FFICompactionResult,
-    ctx_ptr: *const FFIContext,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {

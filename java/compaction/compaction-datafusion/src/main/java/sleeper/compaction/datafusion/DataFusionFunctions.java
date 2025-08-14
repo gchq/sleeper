@@ -16,11 +16,13 @@
 package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jnr.ffi.Pointer;
 import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
 import sleeper.foreign.bridge.FFIArray;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.bridge.ForeignFunctions;
 
 import java.util.Objects;
@@ -142,6 +144,22 @@ public interface DataFusionFunctions extends ForeignFunctions {
         }
     }
 
+    /**
+     * Invokes a native compaction.
+     *
+     * The provided context object must be open.
+     * The return code will be 0 if successful.
+     *
+     * @param  context               Java context object
+     * @param  input                 compaction input configuration
+     * @param  result                compaction result if successful
+     * @return                       indication of success
+     * @throws IllegalStateException if the context has already been closed
+     */
+    default int compact(FFIContext context, DataFusionCommonConfig input, DataFusionCompactionResult result) {
+        return native_compact(context.getForeignContext(), input, result);
+    }
+
     @SuppressWarnings(value = "checkstyle:parametername")
-    int merge_sorted_files(@In DataFusionCommonConfig input, @Out DataFusionCompactionResult result);
+    int native_compact(Pointer context, @In DataFusionCommonConfig input, @Out DataFusionCompactionResult result);
 }
