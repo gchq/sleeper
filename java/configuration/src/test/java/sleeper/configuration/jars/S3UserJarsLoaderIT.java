@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.core.sync.RequestBody;
 
-import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactory;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -90,7 +90,7 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
         instanceProperties.set(USER_JARS, "iterator.jar");
 
         // When
-        SortedRowIterator sri = objectFactory().getObject("MyIterator", SortedRowIterator.class);
+        ConfigStringIterator sri = objectFactory().getObject("MyIterator", ConfigStringIterator.class);
 
         // Then
         assertThat(sri).hasToString("MyIterator");
@@ -101,10 +101,10 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
         // Given
         writeJarToBucket("iterator.jar", JAR_BYTES);
         instanceProperties.set(USER_JARS, "iterator.jar");
-        objectFactory().getObject("MyIterator", SortedRowIterator.class);
+        objectFactory().getObject("MyIterator", ConfigStringIterator.class);
 
         // When
-        SortedRowIterator sri = objectFactory().getObject("MyIterator", SortedRowIterator.class);
+        ConfigStringIterator sri = objectFactory().getObject("MyIterator", ConfigStringIterator.class);
 
         // Then
         assertThat(sri).hasToString("MyIterator");
