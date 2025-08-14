@@ -94,7 +94,7 @@ public class CompactionTaskDockerImageST extends LocalStackTestBase {
     }
 
     @Test
-    void shouldRunCompaction() throws Exception {
+    void shouldRunCompactionWithDockerImage() throws Exception {
         // Given
         List<Row> rows = List.of(
                 new Row(Map.of("key", 10L)),
