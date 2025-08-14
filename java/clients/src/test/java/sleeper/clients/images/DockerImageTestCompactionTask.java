@@ -112,7 +112,7 @@ public class DockerImageTestCompactionTask extends LocalStackTestBase {
 
     private void runDockerImage() throws Exception {
         List<String> command = new ArrayList<>();
-        command.addAll(List.of("docker", "run", "--rm", "-it"));
+        command.addAll(List.of("docker", "run", "--rm", "-it", "--network=host"));
 
         Map<String, String> environment = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         environment.put("AWS_ENDPOINT_URL", localStackContainer.getEndpoint().toString());
