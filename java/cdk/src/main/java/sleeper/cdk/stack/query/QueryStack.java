@@ -56,6 +56,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -132,7 +133,7 @@ public class QueryStack extends NestedStack {
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries")
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_EXECUTOR)));
 
         attachPolicy(lambda, "Query");
@@ -175,7 +176,7 @@ public class QueryStack extends NestedStack {
                 .description("When a query arrives on the query SQS queue, this lambda is invoked to execute the query")
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_LEAF_PARTITION)));
 
         attachPolicy(lambda, "LeafPartition");

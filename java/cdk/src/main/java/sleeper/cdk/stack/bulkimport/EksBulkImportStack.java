@@ -70,6 +70,7 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -133,7 +134,7 @@ public final class EksBulkImportStack extends NestedStack {
         bulkImportJobQueue.grantSendMessages(coreStacks.getIngestByQueuePolicyForGrants());
         bulkImportJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
 
-        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
         IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);

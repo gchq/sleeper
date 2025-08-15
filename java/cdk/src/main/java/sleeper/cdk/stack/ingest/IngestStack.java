@@ -54,6 +54,7 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -210,7 +211,7 @@ public class IngestStack extends NestedStack {
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(Utils.createECSContainerLogDriver(coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .build();
         taskDefinition.addContainer("IngestContainer", containerDefinitionOptions);
 
@@ -249,7 +250,7 @@ public class IngestStack extends NestedStack {
                 .description("If there are ingest jobs on queue create tasks to run them")
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.INGEST_CREATE_TASKS)));
 

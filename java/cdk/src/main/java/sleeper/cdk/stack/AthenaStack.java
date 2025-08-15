@@ -41,6 +41,7 @@ import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -104,7 +105,7 @@ public class AthenaStack extends NestedStack {
 
         String functionName = String.join("-", "sleeper", instanceId, simpleClassName, "athena-handler");
 
-        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         env.put("spill_bucket", spillBucket.getBucketName());
         env.put("kms_key_id", spillMasterKey.getKeyId());
 
