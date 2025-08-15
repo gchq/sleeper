@@ -44,27 +44,26 @@ public class IteratorFactory {
      * {@link DataEngine#AGGREGATION_ITERATOR_NAME},
      * then an aggregation iterator is created and initialised.
      *
-     * @param  iteratorClassName         the fully qualified iterator class name or aggregation keyword
-     * @param  iteratorConfig            the iterator configuration string
-     * @param  schema                    the schema the iterator should be configured for
+     * @param  iteratorConfig            config object holding iterator details
      * @return                           an initialised iterator
      * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
      *                                   found
      * @see                              AggregationFilteringIterator
      */
-    public ConfigStringIterator getIterator(String iteratorClassName, String iteratorConfig, Schema schema) throws IteratorCreationException {
+    public ConfigStringIterator getIterator(IteratorConfig iteratorConfig) throws IteratorCreationException {
         try {
             ConfigStringIterator iterator;
+            String className = iteratorConfig.getIteratorClassName();
 
             // If aggregation keyword is used, create specific iterator
-            if (iteratorClassName.equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
+            if (className.equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
                 iterator = new AggregationFilteringIterator();
             } else {
-                iterator = inner.getObject(iteratorClassName, ConfigStringIterator.class);
+                iterator = inner.getObject(className, ConfigStringIterator.class);
             }
-            LOGGER.debug("Created iterator of class {}", iteratorClassName);
-            iterator.init(iteratorConfig, schema);
-            LOGGER.debug("Initialised iterator with config {}", iteratorConfig);
+            LOGGER.debug("Created iterator of class {}", className);
+            iterator.init(iteratorConfig.getIteratorConfigString(), iteratorConfig.getSchema());
+            LOGGER.debug("Initialised iterator with config {}", iteratorConfig.getIteratorConfigString());
             return iterator;
         } catch (ObjectFactoryException exc) {
             throw new IteratorCreationException(exc);
