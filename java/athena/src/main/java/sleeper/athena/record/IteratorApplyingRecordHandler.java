@@ -48,6 +48,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -259,14 +260,12 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         if (iteratorClass == null) {
             return mergingIterator;
         }
-
-        return IteratorFactory.builder()
-                .inner(objectFactory)
-                .iteratorClassName(iteratorClass)
-                .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
-                .schema(schema)
-                .build()
-                .getIterator()
+        return new IteratorFactory(objectFactory)
+                .getIterator(IteratorConfig.builder()
+                        .iteratorClassName(iteratorClass)
+                        .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
+                        .schema(schema)
+                        .build())
                 .apply(mergingIterator);
     }
 }

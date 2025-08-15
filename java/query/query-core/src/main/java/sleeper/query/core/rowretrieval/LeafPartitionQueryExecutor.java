@@ -26,6 +26,7 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -140,13 +141,12 @@ public class LeafPartitionQueryExecutor {
         if (iteratorClassName == null) {
             return null;
         } else {
-            return IteratorFactory.builder()
-                    .inner(objectFactory)
-                    .iteratorClassName(iteratorClassName)
-                    .iteratorConfig(iteratorConfig)
-                    .schema(schema)
-                    .build()
-                    .getIterator();
+            return new IteratorFactory(objectFactory)
+                    .getIterator(IteratorConfig.builder()
+                            .iteratorClassName(iteratorClassName)
+                            .iteratorConfigString(iteratorConfig)
+                            .schema(schema)
+                            .build());
         }
     }
 }

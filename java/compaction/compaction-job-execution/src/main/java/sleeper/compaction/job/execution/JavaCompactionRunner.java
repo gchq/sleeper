@@ -34,6 +34,7 @@ import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.row.ParquetReaderIterator;
@@ -141,13 +142,12 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
-            mergingIterator = IteratorFactory.builder()
-                    .inner(objectFactory)
-                    .iteratorClassName(compactionJob.getIteratorClassName())
-                    .iteratorConfig(compactionJob.getIteratorConfig())
-                    .schema(schema)
-                    .build()
-                    .getIterator()
+            mergingIterator = new IteratorFactory(objectFactory)
+                    .getIterator(IteratorConfig.builder()
+                            .iteratorClassName(compactionJob.getIteratorClassName())
+                            .iteratorConfigString(compactionJob.getIteratorConfig())
+                            .schema(schema)
+                            .build())
                     .apply(mergingIterator);
         }
         return mergingIterator;

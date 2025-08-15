@@ -31,19 +31,9 @@ public class IteratorFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(IteratorFactory.class);
 
     private final ObjectFactory inner;
-    private final String iteratorClassName;
-    private final String iteratorConfig;
-    private final Schema schema;
 
-    public IteratorFactory(Builder builder) {
-        inner = builder.inner;
-        this.iteratorClassName = builder.iteratorClassName;
-        this.iteratorConfig = builder.iteratorConfig;
-        this.schema = builder.schema;
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    public IteratorFactory(ObjectFactory inner) {
+        this.inner = inner;
     }
 
     /**
@@ -54,88 +44,28 @@ public class IteratorFactory {
      * {@link DataEngine#AGGREGATION_ITERATOR_NAME},
      * then an aggregation iterator is created and initialised.
      *
+     * @param  iteratorConfig            config object holding iterator details
      * @return                           an initialised iterator
      * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
      *                                   found
      * @see                              AggregationFilteringIterator
      */
-    public ConfigStringIterator getIterator() throws IteratorCreationException {
+    public ConfigStringIterator getIterator(IteratorConfig iteratorConfig) throws IteratorCreationException {
         try {
             ConfigStringIterator iterator;
 
             // If aggregation keyword is used, create specific iterator
-            if (iteratorClassName.equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
+            if (iteratorConfig.getIteratorClassName().equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
                 iterator = new AggregationFilteringIterator();
             } else {
-                iterator = inner.getObject(iteratorClassName, ConfigStringIterator.class);
+                iterator = inner.getObject(iteratorConfig.getIteratorClassName(), ConfigStringIterator.class);
             }
-            LOGGER.debug("Created iterator of class {}", iteratorClassName);
-            iterator.init(iteratorConfig, schema);
-            LOGGER.debug("Initialised iterator with config {}", iteratorConfig);
+            LOGGER.debug("Created iterator of class {}", iteratorConfig.getIteratorClassName());
+            iterator.init(iteratorConfig.getIteratorConfigString(), iteratorConfig.getSchema());
+            LOGGER.debug("Initialised iterator with config {}", iteratorConfig.getIteratorConfigString());
             return iterator;
         } catch (ObjectFactoryException exc) {
             throw new IteratorCreationException(exc);
-        }
-    }
-
-    /**
-     * Builder for iterator factory object.
-     */
-    public static final class Builder {
-        private ObjectFactory inner;
-        private String iteratorClassName;
-        private String iteratorConfig;
-        private Schema schema;
-
-        private Builder() {
-        }
-
-        /**
-         * Sets the object factory to be used for certain iterators.
-         *
-         * @param  inner the object factory to be used
-         * @return       builder for method chaining
-         */
-        public Builder inner(ObjectFactory inner) {
-            this.inner = inner;
-            return this;
-        }
-
-        /**
-         * Sets the iterator class name.
-         *
-         * @param  iteratorClassName the name of the iterator class to build
-         * @return                   builder for method chaining
-         */
-        public Builder iteratorClassName(String iteratorClassName) {
-            this.iteratorClassName = iteratorClassName;
-            return this;
-        }
-
-        /**
-         * Sets the iterator config.
-         *
-         * @param  iteratorConfig the config string to be used for the iterator
-         * @return                builder for method chaining
-         */
-        public Builder iteratorConfig(String iteratorConfig) {
-            this.iteratorConfig = iteratorConfig;
-            return this;
-        }
-
-        /**
-         * Sets the schema for the iterator to use.
-         *
-         * @param  schema the schema for the iterator to use
-         * @return        builder for method chaining
-         */
-        public Builder schema(Schema schema) {
-            this.schema = schema;
-            return this;
-        }
-
-        public IteratorFactory build() {
-            return new IteratorFactory(this);
         }
     }
 }
