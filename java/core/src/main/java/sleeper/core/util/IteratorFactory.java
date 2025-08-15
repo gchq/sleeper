@@ -53,14 +53,15 @@ public class IteratorFactory {
     public ConfigStringIterator getIterator(IteratorConfig iteratorConfig) throws IteratorCreationException {
         try {
             ConfigStringIterator iterator;
+            String className = iteratorConfig.getIteratorClassName();
 
             // If aggregation keyword is used, create specific iterator
-            if (iteratorConfig.getIteratorClassName().equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
+            if (className.equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
                 iterator = new AggregationFilteringIterator();
             } else {
-                iterator = inner.getObject(iteratorConfig.getIteratorClassName(), ConfigStringIterator.class);
+                iterator = inner.getObject(className, ConfigStringIterator.class);
             }
-            LOGGER.debug("Created iterator of class {}", iteratorConfig.getIteratorClassName());
+            LOGGER.debug("Created iterator of class {}", className);
             iterator.init(iteratorConfig.getIteratorConfigString(), iteratorConfig.getSchema());
             LOGGER.debug("Initialised iterator with config {}", iteratorConfig.getIteratorConfigString());
             return iterator;
