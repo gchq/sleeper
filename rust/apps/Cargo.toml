@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [package]
-name = "compactor"
-description = "Binary crate for running the data compactor from the command line."
+name = "apps"
+description = "Binary crate for running the Sleeper apps from the command line."
+default-run = "compact"
 keywords = ["sleeper", "compaction"]
 categories = ["science"]
 version = { workspace = true }
@@ -25,11 +26,13 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
+arrow = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 color-eyre = { workspace = true }
 sleeper_core = { path = "../sleeper_core" }
 env_logger = { workspace = true }
+futures = { workspace = true }
 human-panic = { workspace = true }
 log = { workspace = true, features = ["release_max_level_debug"] }
 num-format = { workspace = true }

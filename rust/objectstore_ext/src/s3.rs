@@ -107,6 +107,7 @@ fn extract_bucket(src: &Url) -> color_eyre::Result<String> {
 
 /// Creates [`object_store::ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
+#[derive(Debug)]
 pub struct ObjectStoreFactory {
     s3_config: Option<AmazonS3Builder>,
     store_map: RefCell<HashMap<String, Arc<dyn ObjectStore>>>,

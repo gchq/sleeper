@@ -22,10 +22,10 @@ use color_eyre::eyre::eyre;
 use cxx::{Exception, UniquePtr};
 use datafusion::{
     common::DFSchema,
+    dataframe::DataFrame,
     error::DataFusionError,
     logical_expr::{ScalarUDF, col},
     parquet::data_type::AsBytes,
-    prelude::DataFrame,
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};
@@ -349,7 +349,7 @@ impl<'a> Sketcher<'a> {
         let column_bind = frame.schema().columns();
         let col_names = column_bind
             .iter()
-            .map(datafusion::prelude::Column::name)
+            .map(datafusion::common::Column::name)
             .collect::<Vec<_>>();
 
         let row_key_exprs = self.row_keys.iter().map(col).collect::<Vec<_>>();
