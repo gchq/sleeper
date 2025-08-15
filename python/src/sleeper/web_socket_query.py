@@ -19,14 +19,13 @@ import hmac
 import json
 import logging
 import time
-import uuid
 import urllib.parse
 from enum import Enum
 
 import boto3
 import websockets
 
-from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty
+from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
 from sleeper.properties.instance_properties import InstanceProperties
 
 logger = logging.getLogger(__name__)
