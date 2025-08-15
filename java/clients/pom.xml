@@ -75,6 +75,10 @@
             <artifactId>Java-WebSocket</artifactId>
             <version>${java-websocket.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains.pty4j</groupId>
+            <artifactId>pty4j</artifactId>
+        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
