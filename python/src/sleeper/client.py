@@ -194,14 +194,14 @@ class SleeperClient:
         results = []
         for key in keys.keys():
             for value in keys.get(key):
-                query = WebSocketQuery(
-                    table_name=table_name, query_id=query_id, key=key, max_value=value, min_value=value, strings_base64_encoded=strings_base64_encoded)
+                query = WebSocketQuery(table_name=table_name, query_id=query_id, key=key, max_value=value, min_value=value, strings_base64_encoded=strings_base64_encoded)
                 logger.debug(f"Web Socket Query {query.to_json()}")
-                results.extend(await WebSocketQueryProcessor(
-                    instance_properties=self._instance_properties).process_query(query))
+                results.extend(await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query))
         return results
 
-    async def web_socket_range_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False) -> list:
+    async def web_socket_range_key_query(
+        self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
+    ) -> list:
         """
         Asynchronously performs web socket queries on a Sleeper table for rows where the key is within specified ranges.
         This method iterates over a list of query dictionaries, each containing keys with associated 'min' and 'max' values.
@@ -224,10 +224,17 @@ class SleeperClient:
                 min_value = query.get(key).get("min")
                 max_value = query.get(key).get("max")
                 query = WebSocketQuery(
-                    table_name=table_name, query_id=query_id, key=key, max_value=max_value, min_value=min_value, max_inclusive=max_inclusive, min_inclusive=min_inclusive, strings_base64_encoded=strings_base64_encoded)
+                    table_name=table_name,
+                    query_id=query_id,
+                    key=key,
+                    max_value=max_value,
+                    min_value=min_value,
+                    max_inclusive=max_inclusive,
+                    min_inclusive=min_inclusive,
+                    strings_base64_encoded=strings_base64_encoded,
+                )
                 logger.debug(f"Web Socket Query {query.to_json()}")
-                results.extend(await WebSocketQueryProcessor(
-                    instance_properties=self._instance_properties).process_query(query))
+                results.extend(await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query))
         return results
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:

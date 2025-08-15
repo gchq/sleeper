@@ -124,19 +124,12 @@ class WebSocketQuery:
 
 
 class WebSocketQueryProcessor:
-
-    def __init__(self,
-                 instance_properties: InstanceProperties = None,
-                 endpoint: str = None,
-                 region: str = None):
+    def __init__(self, instance_properties: InstanceProperties = None, endpoint: str = None, region: str = None):
         # Validate input
-        if (instance_properties is None and (endpoint is None or region is None)) or \
-           (instance_properties is not None and (endpoint is not None or region is not None)):
-            raise ValueError(
-                "Either 'instance_properties' must be provided, or both 'endpoint' and 'region' must be provided.")
+        if (instance_properties is None and (endpoint is None or region is None)) or (instance_properties is not None and (endpoint is not None or region is not None)):
+            raise ValueError("Either 'instance_properties' must be provided, or both 'endpoint' and 'region' must be provided.")
         if instance_properties:
-            self.endpoint = instance_properties.get(
-                QueryCdkProperty.QUERY_WEBSOCKET_URL)
+            self.endpoint = instance_properties.get(QueryCdkProperty.QUERY_WEBSOCKET_URL)
             self.region = instance_properties.get(CommonCdkProperty.REGION)
         else:
             self.endpoint = endpoint
@@ -155,14 +148,10 @@ class WebSocketQueryProcessor:
         Returns:
             bytes: The derived signing key.
         """
-        k_date = hmac.new(f"AWS4{key}".encode(
-            "utf-8"), date_stamp.encode("utf-8"), hashlib.sha256).digest()
-        k_region = hmac.new(k_date, region_name.encode(
-            "utf-8"), hashlib.sha256).digest()
-        k_service = hmac.new(k_region, service_name.encode(
-            "utf-8"), hashlib.sha256).digest()
-        k_signing = hmac.new(k_service, b"aws4_request",
-                             hashlib.sha256).digest()
+        k_date = hmac.new(f"AWS4{key}".encode("utf-8"), date_stamp.encode("utf-8"), hashlib.sha256).digest()
+        k_region = hmac.new(k_date, region_name.encode("utf-8"), hashlib.sha256).digest()
+        k_service = hmac.new(k_region, service_name.encode("utf-8"), hashlib.sha256).digest()
+        k_signing = hmac.new(k_service, b"aws4_request", hashlib.sha256).digest()
         return k_signing
 
     def _get_websocket_auth_header(self) -> str:
@@ -210,17 +199,14 @@ class WebSocketQueryProcessor:
         string_to_sign = f"{algorithm}\n{amz_date}\n{credential_scope}\n{hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()}"
 
         # Calculate signature
-        signing_key = self._get_signature_key(
-            credentials.secret_key, date_stamp, self.region, "execute-api")
-        signature = hmac.new(signing_key, string_to_sign.encode(
-            "utf-8"), hashlib.sha256).hexdigest()
+        signing_key = self._get_signature_key(credentials.secret_key, date_stamp, self.region, "execute-api")
+        signature = hmac.new(signing_key, string_to_sign.encode("utf-8"), hashlib.sha256).hexdigest()
 
         # Create authorization header
         authorization_header = f"{algorithm} Credential={credentials.access_key}/{credential_scope}, SignedHeaders={signed_headers}, Signature={signature}"
 
         # Create headers for WebSocket connection
-        headers = {"X-Amz-Date": amz_date,
-                   "Authorization": authorization_header}
+        headers = {"X-Amz-Date": amz_date, "Authorization": authorization_header}
 
         if credentials.token:
             headers["X-Amz-Security-Token"] = credentials.token
@@ -252,8 +238,7 @@ class WebSocketQueryProcessor:
                 try:
                     response = await asyncio.wait_for(websocket.recv(), timeout=30)
                 except asyncio.TimeoutError:
-                    logger.error(
-                        "Timeout occurred while waiting for response.")
+                    logger.error("Timeout occurred while waiting for response.")
                     break
                 except websocket.exception.ConnectClosedError:
                     logger.error("Connection closed")
