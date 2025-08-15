@@ -22,6 +22,7 @@ setup(
         "boto3",
         "s3fs",
         "boto3-stubs[essential]",
+        "websockets",
         "jproperties",
         "ruff",
         "pytest",

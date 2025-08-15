@@ -12,6 +12,7 @@ class IngestCdkProperty:
 
 class QueryCdkProperty:
     QUERY_QUEUE_URL = InstanceProperty("sleeper.query.queue.url")
+    QUERY_WEBSOCKET_URL= InstanceProperty("sleeper.query.websocket.api.url")
     QUERY_RESULTS_BUCKET = InstanceProperty("sleeper.query.results.bucket")
     QUERY_TRACKER_TABLE = InstanceProperty("sleeper.query.tracker.table.name")
     BULK_EXPORT_QUEUE_URL = InstanceProperty("sleeper.bulk.export.queue.url")
@@ -20,6 +21,7 @@ class QueryCdkProperty:
 class CommonCdkProperty:
     CONFIG_BUCKET = InstanceProperty("sleeper.config.bucket")
     DATA_BUCKET = InstanceProperty("sleeper.data.bucket")
+    REGION = InstanceProperty("sleeper.region")
 
 
 def queue_name_from_url(queue_url: str) -> str:
