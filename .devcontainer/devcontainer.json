@@ -18,7 +18,8 @@
         "donjayamanne.python-environment-manager",
         "njpwerner.autodocstring",
         "mhutchie.git-graph",
-        "scala-lang.scala"
+        "scala-lang.scala",
+        "dotjoshjohnson.xml"
       ]
     }
   },
