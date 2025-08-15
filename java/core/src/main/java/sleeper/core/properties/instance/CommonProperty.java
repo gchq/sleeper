@@ -114,7 +114,6 @@ public interface CommonProperty {
                     "If there is no S3 endpoint then the NAT costs can be very significant.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty SUBNETS = Index.propertyBuilder("sleeper.subnets")
             .description("A comma separated list of subnets to deploy to. ECS tasks will be run across multiple " +
@@ -145,8 +144,7 @@ public interface CommonProperty {
                     "See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html")
             .defaultValue("100")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true).build();
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty S3_UPLOAD_BLOCK_SIZE = Index.propertyBuilder("sleeper.fs.s3a.upload.block.size")
             .description("Used to set the value of fs.s3a.block.size on the Hadoop configuration. Uploads to S3 " +
                     "happen in blocks, and this sets the size of blocks. If a larger value is used, then more data " +

@@ -63,7 +63,7 @@ import java.util.stream.Stream;
  * We may decide to expand the list of allowable operations. Additional
  * aggregation filters should be comma separated.
  */
-public class AggregationFilteringIterator implements SortedRowIterator {
+public class AggregationFilteringIterator implements ConfigStringIterator {
     /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
     public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
 

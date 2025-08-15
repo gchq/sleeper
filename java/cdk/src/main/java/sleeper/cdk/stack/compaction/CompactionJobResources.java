@@ -39,6 +39,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -188,7 +189,7 @@ public class CompactionJobResources {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-trigger");
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-handler");
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
         IFunction triggerFunction = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_JOB_CREATOR_TRIGGER, "CompactionJobsCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
@@ -253,7 +254,7 @@ public class CompactionJobResources {
                 .description("Sends batches of compaction jobs created by the job creation lambda")
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_DISPATCHER)));
 
@@ -343,7 +344,7 @@ public class CompactionJobResources {
                         "Used when committing compaction jobs asynchronously.")
                 .memorySize(instanceProperties.getInt(COMPACTION_COMMIT_BATCHER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_COMMIT_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getIntOrNull(COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_COMMIT_BATCHER)));
 

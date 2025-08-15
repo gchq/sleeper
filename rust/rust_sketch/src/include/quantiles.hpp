@@ -23,7 +23,6 @@
  * @copyright Copyright 2022-2025 Crown Copyright
  *
  */
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>

@@ -1,0 +1,47 @@
+# Copyright 2022-2025 Crown Copyright
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+[package]
+name = "objectstore_ext"
+description = "ObjectStore extensions and wrappers for Sleeper."
+keywords = ["sleeper"]
+categories = ["science"]
+version = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+authors = { workspace = true }
+rust-version = { workspace = true }
+publish = { workspace = true }
+
+[dependencies]
+aws-config = { workspace = true }
+aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
+async-trait = { workspace = true }
+bytes = { workspace = true }
+chrono = { workspace = true }
+color-eyre = { workspace = true }
+futures = { workspace = true }
+log = { workspace = true }
+num-format = { workspace = true }
+object_store = { workspace = true, features = [ "aws" ] }
+thiserror = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+object_store = { workspace = true, features = ["integration"] }
+tempfile = { workspace = true }
+test-log = { workspace = true }
+testing_logger = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-test = { workspace = true }

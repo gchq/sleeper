@@ -52,15 +52,32 @@ public class DockerImagesTestBase {
                     .createEmrServerlessPolicy(true)
                     .build());
     private static final List<LambdaHandler> LAMBDA_HANDLERS = List.of(
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("statestore.jar", "statestore-lambda"))
+            LambdaHandler.builder()
+                    .jar(LambdaJar.builder()
+                            .filenameFormat("statestore.jar")
+                            .imageName("statestore-lambda")
+                            .artifactId("statestore-lambda").build())
                     .handler("StateStoreCommitterLambda").core().build(),
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("ingest.jar", "ingest-task-creator-lambda"))
+            LambdaHandler.builder()
+                    .jar(LambdaJar.builder()
+                            .filenameFormat("ingest.jar")
+                            .imageName("ingest-task-creator-lambda")
+                            .artifactId("ingest-task-creator-lambda").build())
                     .handler("IngestTaskCreatorLambda")
                     .optionalStack(OptionalStack.IngestStack).build(),
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImage("bulk-import-starter.jar", "bulk-import-starter-lambda"))
+            LambdaHandler.builder()
+                    .jar(LambdaJar.builder()
+                            .filenameFormat("bulk-import-starter.jar")
+                            .imageName("bulk-import-starter-lambda")
+                            .artifactId("bulk-import-starter-lambda").build())
                     .handler("BulkImportStarterLambda")
                     .optionalStacks(List.of(OptionalStack.EksBulkImportStack, OptionalStack.EmrServerlessBulkImportStack)).build(),
-            LambdaHandler.builder().jar(LambdaJar.withFormatAndImageDeployWithDocker("athena.jar", "athena-lambda"))
+            LambdaHandler.builder()
+                    .jar(LambdaJar.builder()
+                            .filenameFormat("athena.jar")
+                            .imageName("athena-lambda")
+                            .artifactId("athena-lambda")
+                            .alwaysDockerDeploy(true).build())
                     .handler("AthenaLambda")
                     .optionalStacks(List.of(OptionalStack.AthenaStack)).build());
 

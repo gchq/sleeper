@@ -100,9 +100,9 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.31.1</protobuf.version>
+        <protobuf.version>4.32.0</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.4.1</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.4.2</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -117,7 +117,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
         -->
-        <kotlin.version>2.2.0</kotlin.version>
+        <kotlin.version>2.2.10</kotlin.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
@@ -131,7 +131,7 @@
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
-        <aws-java-sdk-v2.version>2.32.19</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.32.23</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -145,10 +145,10 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.38.8</aws-crt.version>
+        <aws-crt.version>0.38.9</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>2.2.1</aws-lambda-powertools.version>
+        <aws-lambda-powertools.version>2.3.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-codec.version>1.19.0</commons-codec.version>
         <commons-io.version>2.20.0</commons-io.version>
@@ -179,12 +179,12 @@
         <zookeeper.version>3.9.3</zookeeper.version>
         <jackson.version>2.19.2</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
-        <jjwt.build.version>0.12.6</jjwt.build.version>
+        <jjwt.build.version>0.12.7</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
         <google.errorprone.version>2.41.0</google.errorprone.version>
-        <cdk.version>2.210.0</cdk.version>
+        <cdk.version>2.211.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.113.0</jsii.version>
@@ -202,7 +202,7 @@
         <jersey.version>2.45</jersey.version>
         <jakarta.ws.version>2.1.6</jakarta.ws.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.2.3.Final</netty.version>
+        <netty.version>4.2.4.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
         <netty-tcnative.version>2.0.72.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
@@ -263,6 +263,7 @@
         <site.plugin.version>3.21.0</site.plugin.version>
         <exec.plugin.version>3.5.1</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>
+        <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
