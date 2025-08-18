@@ -109,7 +109,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static DataFusionCompactionParams createCompactionParams(CompactionJob job, TableProperties tableProperties,
+    private static DataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         DataFusionCommonConfig params = new DataFusionCommonConfig(runtime);
