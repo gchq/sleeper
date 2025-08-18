@@ -221,7 +221,7 @@
         <!-- Testing -->
         <junit.version>5.13.4</junit.version>
         <junit.platform.version>1.13.4</junit.platform.version>
-        <mockito.version>5.18.0</mockito.version>
+        <mockito.version>5.19.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <wiremock.version>3.13.1</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
