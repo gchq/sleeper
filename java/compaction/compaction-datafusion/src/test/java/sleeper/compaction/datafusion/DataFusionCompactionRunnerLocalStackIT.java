@@ -36,6 +36,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.row.ParquetReaderIterator;

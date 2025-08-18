@@ -21,8 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCommonConfig;
-import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
+import sleeper.compaction.datafusion.DataFusionCompactionFunctions.DataFusionCompactionResult;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
@@ -37,6 +36,8 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
+import sleeper.foreign.datafusion.FFIDataFusionCommonConfig;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -60,13 +61,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     private final DataFusionAwsConfig awsConfig;
 
-    private static final DataFusionFunctions NATIVE_COMPACTION;
+    private static final DataFusionCompactionFunctions NATIVE_COMPACTION;
 
     static {
         // Obtain native library. This throws an exception if native library can't be
         // loaded and linked
         try {
-            NATIVE_COMPACTION = FFIBridge.createForeignInterface(DataFusionFunctions.class);
+            NATIVE_COMPACTION = FFIBridge.createForeignInterface(DataFusionCompactionFunctions.class);
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -84,7 +85,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
-        DataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+        FFIDataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
 
@@ -109,10 +110,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static DataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
+    private static FFIDataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        DataFusionCommonConfig params = new DataFusionCommonConfig(runtime);
+        FFIDataFusionCommonConfig params = new FFIDataFusionCommonConfig(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
             params.aws_region.set(awsConfig.getRegion());
@@ -150,22 +151,22 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         {
             // This array can't contain nulls
             Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
-            partitionRegion.region_mins.populate(regionMins, false);
+            partitionRegion.mins.populate(regionMins, false);
         }
         {
             Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
                     .toArray(Boolean[]::new);
-            partitionRegion.region_mins_inclusive.populate(regionMinInclusives, false);
+            partitionRegion.mins_inclusive.populate(regionMinInclusives, false);
         }
         {
             // This array can contain nulls
             Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
-            partitionRegion.region_maxs.populate(regionMaxs, true);
+            partitionRegion.maxs.populate(regionMaxs, true);
         }
         {
             Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
                     .toArray(Boolean[]::new);
-            partitionRegion.region_maxs_inclusive.populate(regionMaxInclusives, false);
+            partitionRegion.maxs_inclusive.populate(regionMaxInclusives, false);
         }
         params.setRegion(partitionRegion);
         params.validate();
@@ -208,7 +209,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     public static RowsProcessed invokeDataFusion(CompactionJob job,
-            DataFusionCommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+            FFIDataFusionCommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction

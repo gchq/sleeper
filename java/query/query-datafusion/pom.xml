@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>query</artifactId>
         <groupId>sleeper</groupId>
@@ -26,6 +27,21 @@
     <artifactId>query-datafusion</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>query-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>foreign-bridge</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Sleeper dependencies -->
         <!-- Test dependencies -->
     </dependencies>
