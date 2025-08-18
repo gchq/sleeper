@@ -104,12 +104,12 @@ pub fn stream_to_ffi_arrow_stream(
 ) -> FFI_ArrowArrayStream {
     let schema = stream.schema().clone();
 
-    // 1. The stream is asynchronous, so first convert stream to a blocking synchronous iterator
+    // The stream is asynchronous, so first convert stream to a blocking synchronous iterator
     let adapter = IterableStreamAdapter::new(stream, rt).to_arrow_error();
 
-    // 2. Next make iterator into something that implements RecordBatchReader as required by the FFI array stream
+    // Next make iterator into something that implements RecordBatchReader as required by the FFI array stream
     let batch_iterator = RecordBatchIterator::new(adapter, schema);
 
-    // 3. This can now be made into the FFI compatible wrapper
+    // This can now be made into the FFI compatible wrapper
     FFI_ArrowArrayStream::new(Box::new(batch_iterator))
 }
