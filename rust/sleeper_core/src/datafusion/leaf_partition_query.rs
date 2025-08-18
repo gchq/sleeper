@@ -46,8 +46,6 @@ pub struct LeafPartitionQueryConfig<'a> {
     pub common: CommonConfig<'a>,
     /// Query ranges
     pub ranges: Vec<SleeperPartitionRegion<'a>>,
-    /// Should sketches be produced?
-    pub write_quantile_sketch: bool,
     /// Should logical/physical plan explanation be logged?
     pub explain_plans: bool,
 }
