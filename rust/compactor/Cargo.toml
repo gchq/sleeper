@@ -28,13 +28,11 @@ publish = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 color-eyre = { workspace = true }
-sleeper_df = { path = "../sleeper_df" }
+sleeper_core = { path = "../sleeper_core" }
 env_logger = { workspace = true }
 human-panic = { workspace = true }
 log = { workspace = true, features = ["release_max_level_debug"] }
 num-format = { workspace = true }
-owo-colors = { workspace = true }
-thiserror = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 url = { workspace = true }
 

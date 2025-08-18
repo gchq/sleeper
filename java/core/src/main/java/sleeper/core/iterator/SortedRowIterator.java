@@ -16,7 +16,6 @@
 package sleeper.core.iterator;
 
 import sleeper.core.row.Row;
-import sleeper.core.schema.Schema;
 
 import java.util.List;
 import java.util.function.Function;
@@ -26,14 +25,6 @@ import java.util.function.Function;
  * or perform some computation on the values to produce or remove fields.
  */
 public interface SortedRowIterator extends Function<CloseableIterator<Row>, CloseableIterator<Row>> {
-
-    /**
-     * Configures the iterator to accept rows.
-     *
-     * @param configString configuration specific to the iterator which may be set before the iterator is used
-     * @param schema       the schema of the Sleeper table being processed
-     */
-    void init(String configString, Schema schema);
 
     /**
      * This should provide a list of fields which will be read by the iterator. This is to ensure that those fields will

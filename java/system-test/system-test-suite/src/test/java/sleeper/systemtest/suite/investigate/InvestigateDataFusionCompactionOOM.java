@@ -75,7 +75,7 @@ public class InvestigateDataFusionCompactionOOM {
         Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
         CompactionRunner runner = new DataFusionCompactionRunner();
-        runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()));
+        runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()).getRegion());
     }
 
 }

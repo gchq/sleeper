@@ -7,9 +7,9 @@ assignees: ''
 
 ---
 
-### Description
+### Description / Background
 
-Describe what's going wrong.
+Describe what's going wrong. Please provide context for how you came across the problem.
 
 ### Steps to reproduce
 
@@ -22,10 +22,10 @@ Describe what's going wrong.
 
 Describe what you expected to happen.
 
+### Technical Notes / Implementation Details
+
+Include any insights on what could be done to fix it, and any relevant files in the code.
+
 ### Screenshots/Logs
 
 If applicable, add screenshots or log files to help explain your problem.
-
-### Background
-
-Add any other context about the problem here.

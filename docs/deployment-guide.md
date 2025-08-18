@@ -116,6 +116,15 @@ to an S3 bucket, and some Docker images need to be uploaded to an ECR repository
 
 Details of images to be uploaded can be found [here](/docs/deployment/images-to-upload.md).
 
+#### Publishing Docker images to a repository
+There is a script [here](/scripts/deploy/deployToDockerRepository.sh) to publish the Docker images to a repository.\
+It takes in two arguments:
+*   The repository prefix path.
+*   An optional boolean to create the images that should be built for multiple platforms, this defaults to true.
+        See [StackDockerImage.java](/java/clients/src/main/java/sleeper/clients/deploy/container/StackDockerImage.java) for more details.
+
+The development team are adding a way to retrieve and publish Docker images to AWS. Right now we only support uploading the images to AWS if they were built locally, but in the future you will be able to upload images from an external repository as well.
+
 #### Upload the Docker images to ECR
 
 There are multiple ECR images that need to be created and pushed to an ECR repo, depending on the stacks you want to
@@ -203,6 +212,17 @@ This command should replace the `docker build` and `docker push` commands docume
 ```bash
 docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BASE_DIR/<image directory>
 ```
+
+#### Publishing jars to Maven
+There is a script [here](/scripts/deploy/publishJars.sh) to publish the jars to a repository.
+It takes in two arguments.
+    -   The repository url to publish.
+    -   The ID of a server in a local m2 settings file which should contain authentication details.
+This script can be tested locally by using a repository url similar to file:/path/to/output that will publish these files locally.
+
+To setup the local m2 settings file this guide can be followed: [Link to Baeldung](https://www.baeldung.com/maven-settings-xml#5-servers)
+
+The development team are adding a way to retrieve and publish jars to AWS. Right now we only support uploading the jars to AWS if they were built locally, but in the future you will be able to upload jars from a Maven repository as well.
 
 #### Upload the jars to a bucket
 

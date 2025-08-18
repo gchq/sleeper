@@ -16,12 +16,10 @@
 set -e
 unset CDPATH
 
-BASE_DIR=$(cd "$(dirname "$0")" && cd "../../" && pwd)
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+BASE_DIR=$(cd "$THIS_DIR" && cd "../../" && pwd)
 MAVEN_DIR="$BASE_DIR/java"
 SCRIPTS_DIR="$BASE_DIR/scripts"
-JARS_DIR="$SCRIPTS_DIR/jars"
-DOCKER_DIR="$SCRIPTS_DIR/docker"
-VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_BUILD_TIME=$(record_time)
@@ -35,17 +33,9 @@ echo "For the first build, this should take up to 20-50 minutes. Subsequent buil
 echo "Rust compilation can be skipped to speed up the process by passing the argument -DskipRust."
 echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-SCRIPTS_DISTRIBUTION_DIR="$MAVEN_DIR/distribution/target/distribution-$VERSION-bin/scripts"
 mvn clean install -q -Pquick -T 1C "$@"
 
-mkdir -p "$JARS_DIR"
-mkdir -p "$DOCKER_DIR"
-rm -rf "${JARS_DIR:?}"/*
-rm -rf "${DOCKER_DIR:?}"/*
-cp  "$SCRIPTS_DISTRIBUTION_DIR/jars"/* "$JARS_DIR"
-cp -r "$SCRIPTS_DISTRIBUTION_DIR/docker"/* "$DOCKER_DIR"
-cp  "$SCRIPTS_DISTRIBUTION_DIR/templates/version.txt" "$VERSION_FILE"
+"$THIS_DIR/copyBuildOutput.sh"
 
 END_BUILD_TIME=$(record_time)
 echo "Finished build at $(recorded_time_str "$END_BUILD_TIME"), took $(elapsed_time_str "$START_BUILD_TIME" "$END_BUILD_TIME")"

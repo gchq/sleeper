@@ -18,7 +18,6 @@ package sleeper.core.partition;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
@@ -27,39 +26,44 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PartitionTreeNearestCommonAncestorTest {
+    Schema schema = createSchemaWithKey("key1", new StringType());
 
     @Test
-    public void shouldTellWhenBothPartitionsAreTheSame() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
+    public void shouldTellWhenKeysAreOnSamePartition() {
+        // Given
         PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Collections.emptyList());
 
+        // When / Then
         assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("b")))
                 .isEqualTo(tree.getRootPartition());
     }
 
     @Test
-    public void shouldGetRootPartitionForTwoImmediatelyBeneathIt() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
+    public void shouldGetRootPartitionWhenKeysAreOnDifferentChildPartitions() {
+        // Given
         PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Collections.singletonList("abc"));
 
+        // When / Then
         assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("b")))
                 .isEqualTo(tree.getRootPartition());
     }
 
     @Test
-    public void shouldGetRootPartitionForTwoOutsideMaxAndMinSplitPoints() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
+    public void shouldGetRootPartitionWhenKeysAreOnNestedPartitionsOutsideMaxAndMinSplitPoints() {
+        // Given
         PartitionTree tree = PartitionsFromSplitPoints.treeFrom(schema, Arrays.asList("abc", "def"));
 
+        // When / Then
         assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("z")))
                 .isEqualTo(tree.getRootPartition());
     }
 
     @Test
     public void shouldGetMidPartitionForPartitionsWithSameMidParent() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
+        // Given
         PartitionTree tree = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
                 List.of("A", "B", "C"),
                 List.of("abc", "def"))
@@ -67,13 +71,14 @@ public class PartitionTreeNearestCommonAncestorTest {
                 .parentJoining("E", "D", "C")
                 .buildTree();
 
+        // When / Then
         assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("d")))
                 .isEqualTo(tree.getPartition("D"));
     }
 
     @Test
     public void shouldGetMidPartitionForPartitionsWithSeparatedMidAncestor() {
-        Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
+        // Given
         PartitionTree tree = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
                 List.of("A", "B", "C", "D"),
                 List.of("abc", "def", "ghi"))
@@ -82,6 +87,7 @@ public class PartitionTreeNearestCommonAncestorTest {
                 .parentJoining("G", "F", "D")
                 .buildTree();
 
+        // When / Then
         assertThat(tree.getNearestCommonAncestor(schema, Key.create("a"), Key.create("f")))
                 .isEqualTo(tree.getPartition("F"));
     }

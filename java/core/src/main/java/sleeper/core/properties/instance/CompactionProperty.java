@@ -115,7 +115,7 @@ public interface CompactionProperty {
                     "will check whether this idle time has elapsed since the last time it finished a job. If so, the " +
                     "task will terminate.")
             .defaultValue("60")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES = Index.propertyBuilder("sleeper.compaction.task.max.consecutive.failures")
             .description("The maximum number of times that a compaction task can fail to process consecutive " +

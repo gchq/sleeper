@@ -22,7 +22,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionParams;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
@@ -55,7 +54,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     /** Maximum number of rows in a Parquet row group. */
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    private final AwsConfig awsConfig;
+    private final DataFusionAwsConfig awsConfig;
 
     private static final DataFusionFunctions NATIVE_COMPACTION;
 
@@ -70,18 +69,18 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     public DataFusionCompactionRunner() {
-        this(null);
+        this(DataFusionAwsConfig.getDefault());
     }
 
-    public DataFusionCompactionRunner(AwsConfig awsConfig) {
+    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig) {
         this.awsConfig = awsConfig;
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
+    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
-        DataFusionCompactionParams params = createCompactionParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
+        DataFusionCompactionParams params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
 
@@ -107,16 +106,16 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
     private static DataFusionCompactionParams createCompactionParams(CompactionJob job, TableProperties tableProperties,
-            Region region, AwsConfig awsConfig, jnr.ffi.Runtime runtime) {
+            Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         DataFusionCompactionParams params = new DataFusionCompactionParams(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
-            params.aws_region.set(awsConfig.region);
-            params.aws_endpoint.set(awsConfig.endpoint);
-            params.aws_allow_http.set(awsConfig.allowHttp);
-            params.aws_access_key.set(awsConfig.accessKey);
-            params.aws_secret_key.set(awsConfig.secretKey);
+            params.aws_region.set(awsConfig.getRegion());
+            params.aws_endpoint.set(awsConfig.getEndpoint());
+            params.aws_allow_http.set(awsConfig.isAllowHttp());
+            params.aws_access_key.set(awsConfig.getAccessKey());
+            params.aws_secret_key.set(awsConfig.getSecretKey());
         } else {
             params.override_aws_config.set(false);
         }
@@ -225,65 +224,5 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     @Override
     public String implementationLanguage() {
         return "Rust";
-    }
-
-    public static class AwsConfig {
-        private final String region;
-        private final String endpoint;
-        private final String accessKey;
-        private final String secretKey;
-        private final boolean allowHttp;
-
-        private AwsConfig(Builder builder) {
-            region = builder.region;
-            endpoint = builder.endpoint;
-            accessKey = builder.accessKey;
-            secretKey = builder.secretKey;
-            allowHttp = builder.allowHttp;
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder {
-            private String region;
-            private String endpoint;
-            private String accessKey;
-            private String secretKey;
-            private boolean allowHttp;
-
-            private Builder() {
-            }
-
-            public Builder region(String region) {
-                this.region = region;
-                return this;
-            }
-
-            public Builder endpoint(String endpoint) {
-                this.endpoint = endpoint;
-                return this;
-            }
-
-            public Builder accessKey(String accessKey) {
-                this.accessKey = accessKey;
-                return this;
-            }
-
-            public Builder secretKey(String secretKey) {
-                this.secretKey = secretKey;
-                return this;
-            }
-
-            public Builder allowHttp(boolean allowHttp) {
-                this.allowHttp = allowHttp;
-                return this;
-            }
-
-            public AwsConfig build() {
-                return new AwsConfig(this);
-            }
-        }
     }
 }

@@ -19,13 +19,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -75,8 +76,8 @@ public class LeafPartitionQueryExecutor {
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
-        SortedRowIterator compactionIterator;
-        SortedRowIterator queryIterator;
+        ConfigStringIterator compactionIterator;
+        ConfigStringIterator queryIterator;
 
         try {
             compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig);
@@ -104,7 +105,7 @@ public class LeafPartitionQueryExecutor {
         }
     }
 
-    private Schema createSchemaForDataRead(LeafPartitionQuery query, Schema schema, SortedRowIterator compactionIterator, SortedRowIterator queryIterator) {
+    private Schema createSchemaForDataRead(LeafPartitionQuery query, Schema schema, ConfigStringIterator compactionIterator, ConfigStringIterator queryIterator) {
         List<String> requestedValueFields = query.getRequestedValueFields();
         if (requestedValueFields == null) {
             return schema;
@@ -132,7 +133,7 @@ public class LeafPartitionQueryExecutor {
                 .build();
     }
 
-    private SortedRowIterator createIterator(
+    private ConfigStringIterator createIterator(
             Schema schema,
             ObjectFactory objectFactory,
             String iteratorClassName,
@@ -140,7 +141,12 @@ public class LeafPartitionQueryExecutor {
         if (iteratorClassName == null) {
             return null;
         } else {
-            return new IteratorFactory(objectFactory).getIterator(iteratorClassName, iteratorConfig, schema);
+            return new IteratorFactory(objectFactory)
+                    .getIterator(IteratorConfig.builder()
+                            .iteratorClassName(iteratorClassName)
+                            .iteratorConfigString(iteratorConfig)
+                            .schema(schema)
+                            .build());
         }
     }
 }
