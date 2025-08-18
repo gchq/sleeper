@@ -17,7 +17,7 @@
 use crate::unpack::{
     unpack_aws_config, unpack_primitive_array, unpack_string_array, unpack_variant_array,
 };
-use color_eyre::eyre::bail;
+use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
     ColRange, CommonConfig, CompletionOptions, LeafPartitionQueryConfig, SleeperParquetOptions,
     SleeperPartitionRegion,
@@ -25,7 +25,7 @@ use sleeper_core::{
 use std::{
     borrow::Borrow,
     collections::HashMap,
-    ffi::{CStr, c_char, c_int, c_void},
+    ffi::{CStr, c_char, c_void},
 };
 use url::Url;
 
@@ -54,11 +54,35 @@ pub struct FFISleeperRegion {
     pub region_maxs_inclusive: *const *const bool,
 }
 
+/// Column type for row key columns in Sleeper schema.
+/// Encoded as integer type for FFI compatibility.
+#[derive(Copy, Clone)]
+pub enum FFIRowKeySchemaType {
+    Int32 = 1,
+    Int64 = 2,
+    String = 3,
+    ByteArray = 4,
+}
+
+impl TryFrom<&usize> for FFIRowKeySchemaType {
+    type Error = color_eyre::eyre::Report;
+
+    fn try_from(ordinal: &usize) -> Result<Self, Self::Error> {
+        match ordinal {
+            1 => Ok(FFIRowKeySchemaType::Int32),
+            2 => Ok(FFIRowKeySchemaType::Int64),
+            3 => Ok(FFIRowKeySchemaType::String),
+            4 => Ok(FFIRowKeySchemaType::ByteArray),
+            _ => Err(eyre!("Invalid FFIRowKeySchemaType ordinal value")),
+        }
+    }
+}
+
 impl<'a> FFISleeperRegion {
     fn to_sleeper_region<T: Borrow<str>>(
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
-        schema_types: &Vec<i32>,
+        schema_types: &Vec<FFIRowKeySchemaType>,
     ) -> Result<SleeperPartitionRegion<'a>, color_eyre::eyre::Report> {
         if region.region_mins_len != region.region_maxs_len
             || region.region_mins_len != region.region_mins_inclusive_len
@@ -124,7 +148,7 @@ pub struct FFICommonConfig {
     pub row_key_cols_len: usize,
     pub row_key_cols: *const *const c_char,
     pub row_key_schema_len: usize,
-    pub row_key_schema: *const *const c_int,
+    pub row_key_schema: *const *const usize,
     pub sort_key_cols_len: usize,
     pub sort_key_cols: *const *const c_char,
     pub max_row_group_size: usize,
@@ -167,7 +191,10 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
 
         // Contains numeric types to indicate schema types
         let schema_types =
-            unpack_primitive_array(params.row_key_schema, params.row_key_schema_len)?;
+            unpack_primitive_array(params.row_key_schema, params.row_key_schema_len)?
+                .iter()
+                .map(FFIRowKeySchemaType::try_from)
+                .collect::<Result<Vec<_>, _>>()?;
 
         let ffi_region = unsafe { params.region.as_ref() }.unwrap();
         let region = FFISleeperRegion::to_sleeper_region(ffi_region, &row_key_cols, &schema_types)?;
@@ -236,15 +263,15 @@ pub struct FFILeafPartitionQueryConfig {
     pub explain_plans: bool,
 }
 
-impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'a> {
-    type Error = color_eyre::eyre::Report;
+// impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'a> {
+//     type Error = color_eyre::eyre::Report;
 
-    fn try_from(config: &'a FFILeafPartitionQueryConfig) -> Result<Self, Self::Error> {
-        let Some(ffi_common) = (unsafe { config.common.as_ref() }) else {
-            bail!("FFILeafPartitionQueryConfig common is NULL");
-        };
-        let common = TryInto::<CommonConfig>::try_into(ffi_common)?;
+//     fn try_from(config: &'a FFILeafPartitionQueryConfig) -> Result<Self, Self::Error> {
+//         let Some(ffi_common) = (unsafe { config.common.as_ref() }) else {
+//             bail!("FFILeafPartitionQueryConfig common is NULL");
+//         };
+//         let common = TryInto::<CommonConfig>::try_into(ffi_common)?;
 
-        //TODO: unpack query regions
-    }
-}
+//         //TODO: unpack query regions
+//     }
+// }
