@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.AgeOffIterator;
-import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -85,12 +85,12 @@ class IngestRowsResultIT extends IngestRowsTestBase {
     }
 
     private IngestResult ingestWithTableIterator(
-            Class<? extends SortedRowIterator> iteratorClass, List<Row> rows) throws Exception {
+            Class<? extends ConfigStringIterator> iteratorClass, List<Row> rows) throws Exception {
         return ingestWithTableIterator(iteratorClass, null, rows);
     }
 
     private IngestResult ingestWithTableIterator(
-            Class<? extends SortedRowIterator> iteratorClass, String iteratorConfig, List<Row> rows) throws Exception {
+            Class<? extends ConfigStringIterator> iteratorClass, String iteratorConfig, List<Row> rows) throws Exception {
         tableProperties.set(ITERATOR_CLASS_NAME, iteratorClass.getName());
         tableProperties.set(ITERATOR_CONFIG, iteratorConfig);
         StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());

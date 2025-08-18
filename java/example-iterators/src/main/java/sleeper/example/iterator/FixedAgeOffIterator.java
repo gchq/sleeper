@@ -16,8 +16,8 @@
 package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.FilteringIterator;
-import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
@@ -25,9 +25,9 @@ import java.util.List;
 
 /**
  * Filter to exclude rows from before a certain date. This is an example implementation of
- * {@link SortedRowIterator}.
+ * {@link ConfigStringIterator}.
  */
-public class FixedAgeOffIterator implements SortedRowIterator {
+public class FixedAgeOffIterator implements ConfigStringIterator {
     private String fieldName;
     private long minValue;
 

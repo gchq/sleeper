@@ -30,7 +30,7 @@ else
 fi
 
 if [[ -z $1 ]]; then
-  BUILD_COMMAND=(cargo build --release)
+  BUILD_COMMAND=(cargo build --release --package sleeper_df)
 else
   BUILD_COMMAND=("$@")
 fi

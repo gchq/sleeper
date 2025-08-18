@@ -25,7 +25,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.datafusion.DataFusionCompactionRunner.AwsConfig;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -55,7 +54,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
@@ -109,15 +107,9 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
     }
 
-    private static AwsConfig createAwsConfig() {
+    private static DataFusionAwsConfig createAwsConfig() {
         LocalStackContainer container = SleeperLocalStackContainer.INSTANCE;
-        return AwsConfig.builder()
-                .region(container.getRegion())
-                .endpoint(container.getEndpointOverride(S3).toString())
-                .accessKey(container.getAccessKey())
-                .secretKey(container.getSecretKey())
-                .allowHttp(true)
-                .build();
+        return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint().toString());
     }
 
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {
