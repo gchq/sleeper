@@ -41,6 +41,7 @@ import sleeper.cdk.stack.ingest.IngestTrackerResources;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
@@ -138,7 +139,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getIntOrNull(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(logGroup));
 

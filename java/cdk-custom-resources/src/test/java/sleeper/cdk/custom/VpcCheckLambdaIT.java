@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +35,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.cdk.custom.WiremockTestHelper.wiremockEc2Client;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 class VpcCheckLambdaIT {
@@ -45,7 +46,7 @@ class VpcCheckLambdaIT {
         stubFor(describeVpcEndpoints().willReturn(noVpcEndpointsResponse()));
 
         // When
-        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockEc2Client(runtimeInfo));
+        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockAwsV2Client(runtimeInfo, Ec2Client.builder()));
         CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(new HashMap<>()).build();
@@ -62,7 +63,7 @@ class VpcCheckLambdaIT {
         stubFor(describeVpcEndpoints().willReturn(singleVpcEndpointResponse()));
 
         // When
-        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockEc2Client(runtimeInfo));
+        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockAwsV2Client(runtimeInfo, Ec2Client.builder()));
         CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(new HashMap<>()).build();
@@ -82,7 +83,7 @@ class VpcCheckLambdaIT {
         properties.put("region", "my-region-1");
 
         // When
-        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockEc2Client(runtimeInfo));
+        VpcCheckLambda vpcCheckLambda = new VpcCheckLambda(wiremockAwsV2Client(runtimeInfo, Ec2Client.builder()));
         vpcCheckLambda.handleEvent(CloudFormationCustomResourceEvent.builder()
                 .withRequestType("Create")
                 .withResourceProperties(properties).build(), null);

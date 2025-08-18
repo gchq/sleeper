@@ -47,6 +47,7 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -93,7 +94,7 @@ public class BulkExportTaskResources {
                         .description("If there are leaf partition bulk export jobs on queue create tasks to run them")
                         .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                         .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                        .environment(Utils.createDefaultEnvironment(instanceProperties))
+                        .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_TASKS_CREATOR)));
 
@@ -146,7 +147,7 @@ public class BulkExportTaskResources {
                 DockerDeployment.BULK_EXPORT.getEcrRepositoryName(instanceProperties));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
         ITaskDefinition taskDefinition = new BulkExportOnFargateResources(

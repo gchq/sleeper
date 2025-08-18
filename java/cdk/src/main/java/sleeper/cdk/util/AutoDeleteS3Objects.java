@@ -26,6 +26,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
 
@@ -46,7 +47,7 @@ public class AutoDeleteS3Objects {
         IFunction lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
-                .environment(Utils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));

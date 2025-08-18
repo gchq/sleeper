@@ -41,6 +41,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
@@ -73,7 +74,7 @@ public class TableMetricsStack extends NestedStack {
         IFunction tableMetricsTrigger = lambdaCode.buildFunction(this, LambdaHandler.METRICS_TRIGGER, "MetricsTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to calculate metrics for and puts them on a queue to be published")
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
@@ -81,7 +82,7 @@ public class TableMetricsStack extends NestedStack {
         IFunction tableMetricsPublisher = lambdaCode.buildFunction(this, LambdaHandler.METRICS, "MetricsPublisher", builder -> builder
                 .functionName(publishFunctionName)
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getIntOrNull(METRICS_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
