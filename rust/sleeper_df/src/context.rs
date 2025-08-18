@@ -99,8 +99,7 @@ pub extern "C" fn create_context() -> *mut FFIContext {
     // Create new context and leak the pointer
     let content = Box::new(FFIContext::new(rt));
     // Rust is no longer reponsible for lifetime of this object
-    let ptr = Box::into_raw(content);
-    ptr
+    Box::into_raw(content)
 }
 
 /// Destroy and free all resources previously allocated for a context.

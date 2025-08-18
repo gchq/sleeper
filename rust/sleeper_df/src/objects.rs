@@ -45,15 +45,15 @@ pub struct FFICompactionResult {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
-    pub region_mins_len: usize,
-    pub region_mins: *const *const c_void,
-    pub region_maxs_len: usize,
+    pub mins_len: usize,
+    pub mins: *const *const c_void,
+    pub maxs_len: usize,
     // The region_maxs array may contain null pointers!!
-    pub region_maxs: *const *const c_void,
-    pub region_mins_inclusive_len: usize,
-    pub region_mins_inclusive: *const *const bool,
-    pub region_maxs_inclusive_len: usize,
-    pub region_maxs_inclusive: *const *const bool,
+    pub maxs: *const *const c_void,
+    pub mins_inclusive_len: usize,
+    pub mins_inclusive: *const *const bool,
+    pub maxs_inclusive_len: usize,
+    pub maxs_inclusive: *const *const bool,
 }
 
 /// Column type for row key columns in Sleeper schema.
@@ -84,36 +84,22 @@ impl<'a> FFISleeperRegion {
     fn to_sleeper_region<T: Borrow<str>>(
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
-        schema_types: &Vec<FFIRowKeySchemaType>,
+        schema_types: &[FFIRowKeySchemaType],
     ) -> Result<SleeperPartitionRegion<'a>, color_eyre::Report> {
-        if region.region_mins_len != region.region_maxs_len
-            || region.region_mins_len != region.region_mins_inclusive_len
-            || region.region_mins_len != region.region_maxs_inclusive_len
+        if region.mins_len != region.maxs_len
+            || region.mins_len != region.mins_inclusive_len
+            || region.mins_len != region.maxs_inclusive_len
         {
             bail!("All array lengths in a SleeperRegion must be same length");
         }
-        let region_mins_inclusive = unpack_typed_array(
-            region.region_mins_inclusive,
-            region.region_mins_inclusive_len,
-        )?;
-        let region_maxs_inclusive = unpack_typed_array(
-            region.region_maxs_inclusive,
-            region.region_maxs_inclusive_len,
-        )?;
+        let region_mins_inclusive =
+            unpack_typed_array(region.mins_inclusive, region.mins_inclusive_len)?;
+        let region_maxs_inclusive =
+            unpack_typed_array(region.maxs_inclusive, region.maxs_inclusive_len)?;
 
-        let region_mins = unpack_variant_array(
-            region.region_mins,
-            region.region_mins_len,
-            &schema_types,
-            false,
-        )?;
+        let region_mins = unpack_variant_array(region.mins, region.mins_len, schema_types, false)?;
 
-        let region_maxs = unpack_variant_array(
-            region.region_maxs,
-            region.region_maxs_len,
-            &schema_types,
-            true,
-        )?;
+        let region_maxs = unpack_variant_array(region.maxs, region.maxs_len, schema_types, true)?;
 
         let mut map = HashMap::with_capacity(row_key_cols.len());
         for (idx, row_key) in row_key_cols.iter().enumerate() {
@@ -131,7 +117,7 @@ impl<'a> FFISleeperRegion {
     }
 }
 
-/// Contains all the common input data for setting up a Sleeper DataFusion operation.
+/// Contains all the common input data for setting up a Sleeper `DataFusion` operation.
 ///
 /// See `java/compaction/compaction-datafusion/src/main/java/sleeper/compaction/datafusion/DataFusionFunctions.java`
 /// for details. Field ordering and types MUST match between the two definitions!
@@ -297,7 +283,7 @@ impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'
                 let Some(ffi_reg) = (unsafe { ffi_reg.as_ref() }) else {
                     bail!("NULL pointer found in query ranges")
                 };
-                FFISleeperRegion::to_sleeper_region(&ffi_reg, &row_key_cols, &schema_types)
+                FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols, &schema_types)
             })
             .collect::<Result<Vec<_>, _>>()?;
 
