@@ -60,7 +60,7 @@ class WebSocketQuery:
         max_value (str): The maximum value for the query region.
         min_inclusive (bool): Whether the minimum bound is inclusive.
         max_inclusive (bool): Whether the maximum bound is inclusive.
-        strings_base64_encoded (bool): Whether string values are base64 encoded.
+        strings_base64_encoded (bool): Whether string values in Sleeper are base64 encoded.
     """
 
     def __init__(
@@ -84,7 +84,7 @@ class WebSocketQuery:
             max_value (str): The maximum value for the query region.
             min_inclusive (bool): Whether the minimum bound is inclusive.
             max_inclusive (bool): Whether the maximum bound is inclusive.
-            strings_base64_encoded (bool): Whether strings are encoded in base64.
+            strings_base64_encoded (bool): Whether strings in Sleeper are encoded in base64.
         """
         self.query_id = query_id
         self.table_name = table_name
@@ -157,6 +157,7 @@ class WebSocketQueryProcessor:
     def _get_websocket_auth_header(self) -> str:
         """
         Generate a signed WebSocket URL with SigV4 authentication and corresponding headers.
+
         Returns:
             Tuple containing:
                 - The signed WebSocket URL (str)

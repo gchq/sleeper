@@ -186,6 +186,7 @@ class SleeperClient:
 
         :param table_name: The name of the table to query.
         :param keys: A dictionary where each key is a column name and each value is a list of values to query for.
+                     Example: {"key":["a", "z"]}
         :param query_id: An optional query ID; defaults to a new UUID if not provided.
         :param strings_base64_encoded: Boolean indicating if string values are base64 encoded.
 
@@ -210,7 +211,7 @@ class SleeperClient:
 
         :param table_name: The name of the table to query.
         :param keys: A list of dictionaries, each mapping a key to a range dict with 'min' and 'max' keys.
-                     Example: [{'column1': {'min': 1, 'max': 10}}, {'column2': {'min': 5, 'max': 15}}]
+                     Example: [{'key1': {'min': 1, 'max': 10}}, {'key2': {'min': 5, 'max': 15}}]
         :param query_id: An optional query ID; defaults to a new UUID if not provided.
         :param min_inclusive: Boolean indicating if the minimum boundary is inclusive.
         :param max_inclusive: Boolean indicating if the maximum boundary is inclusive.
