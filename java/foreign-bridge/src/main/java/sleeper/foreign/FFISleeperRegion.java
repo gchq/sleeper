@@ -47,6 +47,7 @@ public class FFISleeperRegion extends Struct {
      * @param  runtime               FFI runtime
      * @throws IllegalStateException when the region data is invalid
      */
+    @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
     public FFISleeperRegion(jnr.ffi.Runtime runtime, Region region) {
         super(runtime);
         // Extra braces: Make sure wrong array isn't populated to wrong pointers

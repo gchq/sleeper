@@ -122,29 +122,6 @@ pub fn unpack_typed_array<T: Copy>(array_base: *const *const T, len: usize) -> R
         .collect()
 }
 
-/// Create a vector of pointers to a generic type.
-///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-pub fn unpack_typed_ref_array<T: Copy>(
-    array_base: *const *const T,
-    len: usize,
-) -> Result<Vec<*const T>> {
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in generic typed array");
-    }
-    unsafe { slice::from_raw_parts(array_base, len) }
-        .iter()
-        .map(|p| {
-            if p.is_null() {
-                Err(eyre!("Found NULL pointer in generic typed array"))
-            } else {
-                Ok(*p)
-            }
-        })
-        .collect()
-}
-
 /// Create a vector of a variant array type. Each element may be a
 /// i32, i64, String or byte array. The schema types define what decoding is attempted.
 ///

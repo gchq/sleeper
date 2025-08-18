@@ -15,8 +15,7 @@
  * limitations under the License.
  */
 use crate::unpack::{
-    unpack_aws_config, unpack_string_array, unpack_typed_array, unpack_typed_ref_array,
-    unpack_variant_array,
+    unpack_aws_config, unpack_string_array, unpack_typed_array, unpack_variant_array,
 };
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
@@ -27,6 +26,7 @@ use std::{
     borrow::Borrow,
     collections::HashMap,
     ffi::{CStr, c_char, c_void},
+    slice,
 };
 use url::Url;
 
@@ -132,6 +132,7 @@ pub struct FFICommonConfig {
     pub input_files_len: usize,
     pub input_files: *const *const c_char,
     pub input_files_sorted: bool,
+    pub file_output_enabled: bool,
     pub output_file: *const c_char,
     pub row_key_cols_len: usize,
     pub row_key_cols: *const *const c_char,
@@ -182,8 +183,8 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
         if params.iterator_config.is_null() {
             bail!("FFICommonConfig iterator_config is NULL");
         }
-        if params.output_file.is_null() {
-            bail!("FFICommonConfig output_file is NULL");
+        if params.file_output_enabled && params.output_file.is_null() {
+            bail!("FFICommonConfig output_file is NULL, file output selected");
         }
         if params.compression.is_null() {
             bail!("FFICommonConfig compression is NULL");
@@ -211,20 +212,30 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
         // Set option to None if config is empty
         .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
 
-        let opts = SleeperParquetOptions {
-            max_row_group_size: params.max_row_group_size,
-            max_page_size: params.max_page_size,
-            compression: unsafe { CStr::from_ptr(params.compression) }
-                .to_str()?
-                .to_owned(),
-            writer_version: unsafe { CStr::from_ptr(params.writer_version) }
-                .to_str()?
-                .to_owned(),
-            column_truncate_length: params.column_truncate_length,
-            stats_truncate_length: params.stats_truncate_length,
-            dict_enc_row_keys: params.dict_enc_row_keys,
-            dict_enc_sort_keys: params.dict_enc_sort_keys,
-            dict_enc_values: params.dict_enc_values,
+        let output = if params.file_output_enabled {
+            let opts = SleeperParquetOptions {
+                max_row_group_size: params.max_row_group_size,
+                max_page_size: params.max_page_size,
+                compression: unsafe { CStr::from_ptr(params.compression) }
+                    .to_str()?
+                    .to_owned(),
+                writer_version: unsafe { CStr::from_ptr(params.writer_version) }
+                    .to_str()?
+                    .to_owned(),
+                column_truncate_length: params.column_truncate_length,
+                stats_truncate_length: params.stats_truncate_length,
+                dict_enc_row_keys: params.dict_enc_row_keys,
+                dict_enc_sort_keys: params.dict_enc_sort_keys,
+                dict_enc_values: params.dict_enc_values,
+            };
+            CompletionOptions::File {
+                output_file: unsafe { CStr::from_ptr(params.output_file) }
+                    .to_str()
+                    .map(Url::parse)??,
+                opts,
+            }
+        } else {
+            CompletionOptions::ArrowRecordBatch
         };
 
         Self::try_new(
@@ -240,12 +251,7 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
                 .map(String::from)
                 .collect(),
             region,
-            CompletionOptions::File {
-                output_file: unsafe { CStr::from_ptr(params.output_file) }
-                    .to_str()
-                    .map(Url::parse)??,
-                opts,
-            },
+            output,
             iterator_config,
         )
     }
@@ -259,10 +265,10 @@ pub struct FFILeafPartitionQueryConfig {
     /// Length of query region array
     pub query_regions_len: usize,
     /// Pointers to query regions,
-    pub query_regions: *const *const FFISleeperRegion,
+    pub query_regions: *const FFISleeperRegion,
     /// Should quantile data sketches be written out?
     pub write_quantile_sketch: bool,
-    /// Should logical and physical query plans be written to log?
+    /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,
 }
 
@@ -277,15 +283,17 @@ impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'
         let row_key_cols = ffi_common.row_key_cols()?;
         let schema_types = ffi_common.schema_types()?;
 
-        let ranges = unpack_typed_ref_array(config.query_regions, config.query_regions_len)?
-            .iter()
-            .map(|ffi_reg| {
-                let Some(ffi_reg) = (unsafe { ffi_reg.as_ref() }) else {
-                    bail!("NULL pointer found in query ranges")
-                };
-                FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols, &schema_types)
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        let Some(_) = (unsafe { config.query_regions.as_ref() }) else {
+            bail!("FFILeafPartitionQueryConfig query_regions is NULL");
+        };
+
+        let ranges =
+            unsafe { slice::from_raw_parts(config.query_regions, config.query_regions_len) }
+                .iter()
+                .map(|ffi_reg| {
+                    FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols, &schema_types)
+                })
+                .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Self {
             common,

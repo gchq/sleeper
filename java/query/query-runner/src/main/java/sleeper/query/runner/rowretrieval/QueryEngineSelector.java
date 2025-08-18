@@ -21,6 +21,7 @@ import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -42,12 +43,11 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     }
 
     @Override
-    @SuppressWarnings("fallthrough")
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
             case DATAFUSION:
-                // Not implemented yet : fall through
+                return new DataFusionLeafPartitionRowRetriever();
             case JAVA:
             default:
                 return new LeafPartitionRowRetrieverImpl(executorService, configuration, tableProperties);

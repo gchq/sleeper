@@ -37,7 +37,7 @@ import java.util.Optional;
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
 @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class FFIDataFusionCommonConfig extends Struct {
+public class FFICommonConfig extends Struct {
     /** Optional AWS configuration. */
     public final Struct.Boolean override_aws_config = new Struct.Boolean();
     public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
@@ -49,6 +49,8 @@ public class FFIDataFusionCommonConfig extends Struct {
     public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
     /** States if the input files individually sorted based on row key and the sort key columns. */
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
+    /** States if the query output should be to a file. */
+    public final Struct.Boolean file_output_enabled = new Struct.Boolean();
     /** Output file name. */
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
     /** Names of Sleeper row key columns from schema. */
@@ -80,7 +82,7 @@ public class FFIDataFusionCommonConfig extends Struct {
     /** Compaction iterator configuration. This is optional. */
     public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
 
-    public FFIDataFusionCommonConfig(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> awsConfig) {
+    public FFICommonConfig(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> awsConfig) {
         super(runtime);
         this.setAWSCredentials(awsConfig);
     }

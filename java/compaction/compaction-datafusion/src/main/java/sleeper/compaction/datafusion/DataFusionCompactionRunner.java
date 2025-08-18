@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.datafusion.DataFusionCompactionFunctions.DataFusionCompactionResult;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
@@ -31,7 +30,7 @@ import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
-import sleeper.foreign.datafusion.FFIDataFusionCommonConfig;
+import sleeper.foreign.datafusion.FFICommonConfig;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -49,13 +48,12 @@ import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LE
 @SuppressFBWarnings("UUF_UNUSED_FIELD")
 public class DataFusionCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionCompactionRunner.class);
-
-    /** Maximum number of rows in a Parquet row group. */
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    private final DataFusionAwsConfig awsConfig;
-
+    /** Maximum number of rows in a Parquet row group. */
     private static final DataFusionCompactionFunctions NATIVE_COMPACTION;
+
+    private final DataFusionAwsConfig awsConfig;
 
     static {
         // Obtain native library. This throws an exception if native library can't be
@@ -79,7 +77,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
-        FFIDataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+        FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
 
@@ -103,17 +101,17 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @param  runtime         FFI runtime
      * @return                 object to pass to FFI layer
      */
-    @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static FFIDataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
+    private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        FFIDataFusionCommonConfig params = new FFIDataFusionCommonConfig(runtime, Optional.ofNullable(awsConfig));
+        FFICommonConfig params = new FFICommonConfig(runtime, Optional.ofNullable(awsConfig));
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
+        params.file_output_enabled.set(true);
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
-        params.row_key_schema.populate(FFIDataFusionCommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
+        params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
         params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(new String[0]), false);
         params.max_row_group_size.set(DATAFUSION_MAX_ROW_GROUP_ROWS);
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
@@ -147,9 +145,9 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     public static RowsProcessed invokeDataFusion(CompactionJob job,
-            FFIDataFusionCommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+            FFICommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
-        DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
+        FFICompactionResult compactionData = new FFICompactionResult(runtime);
         // Perform compaction
         try (FFIContext context = new FFIContext(NATIVE_COMPACTION)) {
             int result = NATIVE_COMPACTION.compact(context, compactionParams, compactionData);
