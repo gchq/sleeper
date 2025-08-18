@@ -296,7 +296,6 @@ pub struct CompactionResult {
 ///
 pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResult> {
     let store_factory = create_object_store_factory(config.aws_config.as_ref()).await;
-
     crate::datafusion::compact(&store_factory, config)
         .await
         .map_err(Into::into)

@@ -33,7 +33,6 @@ import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
@@ -101,10 +100,10 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
         queryConfig.common.set(common);
-        FFISleeperRegion[] ffi_regions = query.getRegions().stream().map(region -> new FFISleeperRegion(runtime, region)).collect(Collectors.toList()).toArray(FFISleeperRegion[]::new);
+        FFISleeperRegion[] ffi_regions = query.getRegions().stream().map(region -> new FFISleeperRegion(runtime, region)).toArray(FFISleeperRegion[]::new);
         queryConfig.setQueryRegions(ffi_regions);
         queryConfig.write_quantile_sketch.set(false);
         queryConfig.explain_plans.set(true);
         return queryConfig;
-    }=
+    }
 }

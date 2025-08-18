@@ -22,6 +22,8 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.foreign.bridge.FFIArray;
 
+import java.util.Objects;
+
 /**
  * A C ABI compatible representation of a Sleeper region. If you updated
  * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
@@ -41,6 +43,10 @@ public class FFISleeperRegion extends Struct {
     /** Region partition region maximums are inclusive? MUST BE SAME LENGTH AS region_mins. */
     public final FFIArray<java.lang.Boolean> maxs_inclusive = new FFIArray<>(this);
 
+    public FFISleeperRegion(jnr.ffi.Runtime runtime) {
+        this(runtime, null);
+    }
+
     /**
      * Creates and validates Sleeper region into an FFI compatible form.
      *
@@ -50,6 +56,19 @@ public class FFISleeperRegion extends Struct {
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
     public FFISleeperRegion(jnr.ffi.Runtime runtime, Region region) {
         super(runtime);
+        if (region != null) {
+            populateRegion(region);
+        }
+    }
+
+    /**
+     * Set the region data in this FFI object.
+     * 
+     * @param region               region data to copy into FFI object
+     * @param NullPointerException if {@code region} is {@code null}
+     */
+    public void populateRegion(Region region) {
+        Objects.requireNonNull(region, "region");
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
