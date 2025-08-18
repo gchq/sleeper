@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 use crate::unpack::{
-    unpack_aws_config, unpack_primitive_array, unpack_string_array, unpack_variant_array,
+    unpack_aws_config, unpack_string_array, unpack_typed_array, unpack_typed_ref_array,
+    unpack_variant_array,
 };
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
@@ -42,6 +43,7 @@ pub struct FFICompactionResult {
 ///
 /// Java arrays are transferred with a length. They should all be the same length in this struct.
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
     pub region_mins_len: usize,
     pub region_mins: *const *const c_void,
@@ -65,7 +67,7 @@ pub enum FFIRowKeySchemaType {
 }
 
 impl TryFrom<&usize> for FFIRowKeySchemaType {
-    type Error = color_eyre::eyre::Report;
+    type Error = color_eyre::Report;
 
     fn try_from(ordinal: &usize) -> Result<Self, Self::Error> {
         match ordinal {
@@ -83,18 +85,18 @@ impl<'a> FFISleeperRegion {
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
         schema_types: &Vec<FFIRowKeySchemaType>,
-    ) -> Result<SleeperPartitionRegion<'a>, color_eyre::eyre::Report> {
+    ) -> Result<SleeperPartitionRegion<'a>, color_eyre::Report> {
         if region.region_mins_len != region.region_maxs_len
             || region.region_mins_len != region.region_mins_inclusive_len
             || region.region_mins_len != region.region_maxs_inclusive_len
         {
             bail!("All array lengths in a SleeperRegion must be same length");
         }
-        let region_mins_inclusive = unpack_primitive_array(
+        let region_mins_inclusive = unpack_typed_array(
             region.region_mins_inclusive,
             region.region_mins_inclusive_len,
         )?;
-        let region_maxs_inclusive = unpack_primitive_array(
+        let region_maxs_inclusive = unpack_typed_array(
             region.region_maxs_inclusive,
             region.region_maxs_inclusive_len,
         )?;
@@ -164,8 +166,31 @@ pub struct FFICommonConfig {
     pub iterator_config: *const c_char,
 }
 
+impl FFICommonConfig {
+    /// The schema types for the row key columns in this Sleeper schema.
+    ///
+    /// # Errors
+    /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`FFIRowKeySchemaType`].
+    pub fn schema_types(&self) -> Result<Vec<FFIRowKeySchemaType>, color_eyre::Report> {
+        unpack_typed_array(self.row_key_schema, self.row_key_schema_len)?
+            .iter()
+            .map(FFIRowKeySchemaType::try_from)
+            .collect::<Result<Vec<_>, _>>()
+    }
+
+    /// Get row key column names.
+    pub fn row_key_cols(&self) -> Result<Vec<String>, color_eyre::Report> {
+        Ok(
+            unpack_string_array(self.row_key_cols, self.row_key_cols_len)?
+                .into_iter()
+                .map(String::from)
+                .collect::<Vec<_>>(),
+        )
+    }
+}
+
 impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
-    type Error = color_eyre::eyre::Report;
+    type Error = color_eyre::Report;
 
     fn try_from(params: &'a FFICommonConfig) -> Result<CommonConfig<'a>, Self::Error> {
         if params.iterator_config.is_null() {
@@ -184,17 +209,9 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
             bail!("FFICommonConfig region is NULL");
         }
         // We do this separately since we need the values for computing the region
-        let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
-            .into_iter()
-            .map(String::from)
-            .collect::<Vec<_>>();
-
+        let row_key_cols = params.row_key_cols()?;
         // Contains numeric types to indicate schema types
-        let schema_types =
-            unpack_primitive_array(params.row_key_schema, params.row_key_schema_len)?
-                .iter()
-                .map(FFIRowKeySchemaType::try_from)
-                .collect::<Result<Vec<_>, _>>()?;
+        let schema_types = params.schema_types()?;
 
         let ffi_region = unsafe { params.region.as_ref() }.unwrap();
         let region = FFISleeperRegion::to_sleeper_region(ffi_region, &row_key_cols, &schema_types)?;
@@ -256,22 +273,39 @@ pub struct FFILeafPartitionQueryConfig {
     /// Length of query region array
     pub query_regions_len: usize,
     /// Pointers to query regions,
-    pub query_regions: *const c_void,
+    pub query_regions: *const *const FFISleeperRegion,
     /// Should quantile data sketches be written out?
     pub write_quantile_sketch: bool,
     /// Should logical and physical query plans be written to log?
     pub explain_plans: bool,
 }
 
-// impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'a> {
-//     type Error = color_eyre::eyre::Report;
+impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'a> {
+    type Error = color_eyre::Report;
 
-//     fn try_from(config: &'a FFILeafPartitionQueryConfig) -> Result<Self, Self::Error> {
-//         let Some(ffi_common) = (unsafe { config.common.as_ref() }) else {
-//             bail!("FFILeafPartitionQueryConfig common is NULL");
-//         };
-//         let common = TryInto::<CommonConfig>::try_into(ffi_common)?;
+    fn try_from(config: &'a FFILeafPartitionQueryConfig) -> Result<Self, Self::Error> {
+        let Some(ffi_common) = (unsafe { config.common.as_ref() }) else {
+            bail!("FFILeafPartitionQueryConfig common is NULL");
+        };
+        let common = CommonConfig::try_from(ffi_common)?;
+        let row_key_cols = ffi_common.row_key_cols()?;
+        let schema_types = ffi_common.schema_types()?;
 
-//         //TODO: unpack query regions
-//     }
-// }
+        let ranges = unpack_typed_ref_array(config.query_regions, config.query_regions_len)?
+            .iter()
+            .map(|ffi_reg| {
+                let Some(ffi_reg) = (unsafe { ffi_reg.as_ref() }) else {
+                    bail!("NULL pointer found in query ranges")
+                };
+                FFISleeperRegion::to_sleeper_region(&ffi_reg, &row_key_cols, &schema_types)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(Self {
+            common,
+            ranges,
+            explain_plans: config.explain_plans,
+            write_quantile_sketch: config.write_quantile_sketch,
+        })
+    }
+}

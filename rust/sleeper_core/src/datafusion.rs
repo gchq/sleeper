@@ -45,6 +45,7 @@ use log::{info, warn};
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 
+mod arrow_stream;
 mod compact;
 mod config;
 mod filter_aggregation_config;
@@ -56,6 +57,7 @@ pub mod sketch;
 mod sketch_udf;
 mod util;
 
+pub use arrow_stream::stream_to_ffi_arrow_stream;
 pub use compact::compact;
 pub use config::ParquetWriterConfigurer;
 pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};

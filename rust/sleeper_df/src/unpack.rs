@@ -102,21 +102,44 @@ pub fn unpack_string_array(
     .collect()
 }
 
-/// Create a vector of a primitive array type.
+/// Create a vector of a generic type.
 ///
 /// # Errors
 /// If the array length is invalid, then behaviour is undefined.
-pub fn unpack_primitive_array<T: Copy>(array_base: *const *const T, len: usize) -> Result<Vec<T>> {
+pub fn unpack_typed_array<T: Copy>(array_base: *const *const T, len: usize) -> Result<Vec<T>> {
     if array_base.is_null() {
-        bail!("NULL pointer for array_base in primitive array");
+        bail!("NULL pointer for array_base in generic typed array");
     }
     unsafe { slice::from_raw_parts(array_base, len) }
         .iter()
         .map(|p| {
             if p.is_null() {
-                Err(eyre!("Found NULL pointer in primitive array"))
+                Err(eyre!("Found NULL pointer in generic typed array"))
             } else {
                 Ok(unsafe { **p })
+            }
+        })
+        .collect()
+}
+
+/// Create a vector of pointers to a generic type.
+///
+/// # Errors
+/// If the array length is invalid, then behaviour is undefined.
+pub fn unpack_typed_ref_array<T: Copy>(
+    array_base: *const *const T,
+    len: usize,
+) -> Result<Vec<*const T>> {
+    if array_base.is_null() {
+        bail!("NULL pointer for array_base in generic typed array");
+    }
+    unsafe { slice::from_raw_parts(array_base, len) }
+        .iter()
+        .map(|p| {
+            if p.is_null() {
+                Err(eyre!("Found NULL pointer in generic typed array"))
+            } else {
+                Ok(*p)
             }
         })
         .collect()
@@ -131,7 +154,7 @@ pub fn unpack_primitive_array<T: Copy>(array_base: *const *const T, len: usize) 
 ///
 /// # Panics
 /// If the length of the `schema_types` array doesn't match the length specified.
-/// If `nulls_present` is false and a null pointer is found.
+/// If `nulls_present` is false and a NULL pointer is found.
 ///
 /// Also panics if a negative array length is found in decoding byte arrays or strings.
 pub fn unpack_variant_array<'a>(

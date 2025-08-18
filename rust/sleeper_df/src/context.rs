@@ -121,7 +121,7 @@ pub extern "C" fn create_context() -> *mut FFIContext {
 /// will result in undefined behaviour.
 ///
 /// # Errors
-/// If a null pointer is passed to this function.
+/// If a NULL pointer is passed to this function.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn destroy_context(ctx: *mut FFIContext) {
     if let Some(ctx_ref) = unsafe { ctx.as_mut() } {

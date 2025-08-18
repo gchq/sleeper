@@ -349,6 +349,7 @@ version = "55.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73a47aa0c771b5381de2b7f16998d351a6f4eb839f1e13d48353e17e873d969b"
 dependencies = [
+ "bitflags",
  "serde",
  "serde_json",
 ]
@@ -4267,6 +4268,7 @@ dependencies = [
 name = "sleeper_df"
 version = "0.33.0-SNAPSHOT"
 dependencies = [
+ "arrow",
  "aws-types",
  "chrono",
  "color-eyre",
