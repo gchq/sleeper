@@ -32,10 +32,10 @@ from pq.parquet_serial import ParquetSerialiser
 from sleeper.bulk_export import BulkExportQuery, BulkExportSender
 from sleeper.ingest import IngestJob, IngestJobSender
 from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitRequest
-from sleeper.web_socket_query import WebSocketQueryProcessor, WebSocketQuery
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
 from sleeper.properties.config_bucket import load_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.web_socket_query import WebSocketQuery, WebSocketQueryProcessor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
