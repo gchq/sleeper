@@ -46,6 +46,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -68,7 +69,7 @@ public final class WebSocketQueryStack extends NestedStack {
 
     private void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode lambdaCode,
             CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
-        Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "query-websocket-handler");
         IFunction webSocketApiHandler = lambdaCode.buildFunction(this, LambdaHandler.WEB_SOCKET_QUERY, "WebSocketApiHandler", builder -> builder

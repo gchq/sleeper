@@ -19,6 +19,7 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 
@@ -78,7 +79,11 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
             CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
         if (null != sleeperIteratorClassName) {
             return new IteratorFactory(objectFactory)
-                    .getIterator(sleeperIteratorClassName, sleeperIteratorConfig, sleeperSchema)
+                    .getIterator(IteratorConfig.builder()
+                            .iteratorClassName(sleeperIteratorClassName)
+                            .iteratorConfigString(sleeperIteratorConfig)
+                            .schema(sleeperSchema)
+                            .build())
                     .apply(sourceIterator);
         }
         return sourceIterator;

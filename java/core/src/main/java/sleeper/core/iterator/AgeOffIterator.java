@@ -23,9 +23,9 @@ import java.util.List;
 
 /**
  * Filters out rows older than a specified age. If the specified timestamp field is more than a certain length of
- * time ago then the row is removed. This is an example implementation of {@link SortedRowIterator}.
+ * time ago then the row is removed. This is an example implementation of {@link ConfigStringIterator}.
  */
-public class AgeOffIterator implements SortedRowIterator {
+public class AgeOffIterator implements ConfigStringIterator {
     private String fieldName;
     private long ageOff;
 

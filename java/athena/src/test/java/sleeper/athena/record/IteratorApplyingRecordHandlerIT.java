@@ -38,7 +38,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -415,7 +415,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
     /**
      * Simple iterator which adds the count of the previous row to the current one.
      */
-    public static class CountAggregator implements SortedRowIterator {
+    public static class CountAggregator implements ConfigStringIterator {
 
         @Override
         public void init(String configString, Schema schema) {

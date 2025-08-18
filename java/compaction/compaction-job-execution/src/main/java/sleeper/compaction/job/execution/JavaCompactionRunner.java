@@ -29,12 +29,12 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.MergingIterator;
-import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.row.ParquetReaderIterator;
@@ -142,10 +142,13 @@ public class JavaCompactionRunner implements CompactionRunner {
 
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
-            SortedRowIterator iterator;
-            IteratorFactory iterFactory = new IteratorFactory(objectFactory);
-            iterator = iterFactory.getIterator(compactionJob.getIteratorClassName(), compactionJob.getIteratorConfig(), schema);
-            mergingIterator = iterator.apply(mergingIterator);
+            mergingIterator = new IteratorFactory(objectFactory)
+                    .getIterator(IteratorConfig.builder()
+                            .iteratorClassName(compactionJob.getIteratorClassName())
+                            .iteratorConfigString(compactionJob.getIteratorConfig())
+                            .schema(schema)
+                            .build())
+                    .apply(mergingIterator);
         }
         return mergingIterator;
     }

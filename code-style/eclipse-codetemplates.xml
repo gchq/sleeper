@@ -1,4 +1,6 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><templates><template autoinsert="false" context="newtype_context" deleted="false" description="Newly created files" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.newtype" name="newtype">/*
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<templates>
+    <template autoinsert="false" context="newtype_context" deleted="false" description="Newly created files" enabled="true" id="org.eclipse.jdt.ui.text.codetemplates.newtype" name="newtype">/*
  * Copyright 2022-${year} Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,4 +20,5 @@ ${filecomment}
 ${package_declaration}
 
 ${typecomment}
-${type_declaration}</template></templates>
+${type_declaration}</template>
+</templates>
