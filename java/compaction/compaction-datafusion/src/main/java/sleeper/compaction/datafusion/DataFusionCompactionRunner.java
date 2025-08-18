@@ -24,14 +24,8 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionCompactionFunctions.DataFusionCompactionResult;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
@@ -41,7 +35,7 @@ import sleeper.foreign.datafusion.FFIDataFusionCommonConfig;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Optional;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -113,23 +107,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private static FFIDataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        FFIDataFusionCommonConfig params = new FFIDataFusionCommonConfig(runtime);
-        if (awsConfig != null) {
-            params.override_aws_config.set(true);
-            params.aws_region.set(awsConfig.getRegion());
-            params.aws_endpoint.set(awsConfig.getEndpoint());
-            params.aws_allow_http.set(awsConfig.isAllowHttp());
-            params.aws_access_key.set(awsConfig.getAccessKey());
-            params.aws_secret_key.set(awsConfig.getSecretKey());
-        } else {
-            params.override_aws_config.set(false);
-        }
+        FFIDataFusionCommonConfig params = new FFIDataFusionCommonConfig(runtime, Optional.ofNullable(awsConfig));
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
-        params.row_key_schema.populate(getKeyTypes(schema.getRowKeyTypes()), false);
+        params.row_key_schema.populate(FFIDataFusionCommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
         params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(new String[0]), false);
         params.max_row_group_size.set(DATAFUSION_MAX_ROW_GROUP_ROWS);
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
@@ -146,56 +130,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } else {
             params.iterator_config.set("");
         }
-        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
-        // Extra braces: Make sure wrong array isn't populated to wrong pointers
-        {
-            // This array can't contain nulls
-            Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
-            partitionRegion.mins.populate(regionMins, false);
-        }
-        {
-            Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
-                    .toArray(Boolean[]::new);
-            partitionRegion.mins_inclusive.populate(regionMinInclusives, false);
-        }
-        {
-            // This array can contain nulls
-            Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
-            partitionRegion.maxs.populate(regionMaxs, true);
-        }
-        {
-            Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
-                    .toArray(Boolean[]::new);
-            partitionRegion.maxs_inclusive.populate(regionMaxInclusives, false);
-        }
+        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, region);
         params.setRegion(partitionRegion);
         params.validate();
         return params;
-    }
-
-    /**
-     * Convert a list of Sleeper primitive types to a number indicating their type
-     * for FFI translation.
-     *
-     * @param  keyTypes              list of primitive types of columns
-     * @return                       array of type IDs
-     * @throws IllegalStateException if unsupported type found
-     */
-    public static Integer[] getKeyTypes(List<PrimitiveType> keyTypes) {
-        return keyTypes.stream().mapToInt(type -> {
-            if (type instanceof IntType) {
-                return 1;
-            } else if (type instanceof LongType) {
-                return 2;
-            } else if (type instanceof StringType) {
-                return 3;
-            } else if (type instanceof ByteArrayType) {
-                return 4;
-            } else {
-                throw new IllegalStateException("Unsupported column type found " + type.getClass());
-            }
-        }).boxed()
-                .toArray(Integer[]::new);
     }
 
     /**

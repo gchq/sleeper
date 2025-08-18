@@ -18,10 +18,17 @@ package sleeper.foreign.datafusion;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.type.StringType;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIArray;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * The compaction input data that will be populated from the Java side. If you updated
@@ -70,13 +77,12 @@ public class FFIDataFusionCommonConfig extends Struct {
     public final Struct.Boolean dict_enc_values = new Struct.Boolean();
     /** The Sleeper compaction region. */
     public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
-    /** Strong reference to prevent GC. */
-    public FFISleeperRegion regionRef;
     /** Compaction iterator configuration. This is optional. */
     public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
 
-    public FFIDataFusionCommonConfig(jnr.ffi.Runtime runtime) {
+    public FFIDataFusionCommonConfig(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> awsConfig) {
         super(runtime);
+        this.setAWSCredentials(awsConfig);
     }
 
     /**
@@ -85,8 +91,26 @@ public class FFIDataFusionCommonConfig extends Struct {
      * @param newRegion region to transfer across to foreign function
      */
     public void setRegion(FFISleeperRegion newRegion) {
-        this.regionRef = newRegion;
+        newRegion.validate();
         this.region.set(newRegion);
+    }
+
+    /**
+     * Configure the AWS credentials.
+     *
+     * @param credentials the optional AWS credentials
+     */
+    public void setAWSCredentials(Optional<DataFusionAwsConfig> config) {
+        config.ifPresentOrElse(awsConfig -> {
+            this.override_aws_config.set(true);
+            this.aws_region.set(awsConfig.getRegion());
+            this.aws_endpoint.set(awsConfig.getEndpoint());
+            this.aws_allow_http.set(awsConfig.isAllowHttp());
+            this.aws_access_key.set(awsConfig.getAccessKey());
+            this.aws_secret_key.set(awsConfig.getSecretKey());
+        }, () -> {
+            this.override_aws_config.set(false);
+        });
     }
 
     /**
@@ -99,9 +123,6 @@ public class FFIDataFusionCommonConfig extends Struct {
         row_key_cols.validate();
         row_key_schema.validate();
         sort_key_cols.validate();
-        if (regionRef != null) {
-            regionRef.validate();
-        }
         if (row_key_cols.length() != row_key_schema.length()) {
             throw new IllegalStateException("row_key_schema has length " + row_key_schema.length() + " but there are " + row_key_cols.length() + " row key columns");
         }
@@ -110,5 +131,33 @@ public class FFIDataFusionCommonConfig extends Struct {
         Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
         Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
         Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
+    }
+
+    /**
+     * Convert a list of Sleeper primitive types to an ordinal indicating their type
+     * for FFI translation.
+     *
+     * @param  keyTypes              list of primitive types of columns
+     * @return                       array of type IDs
+     * @throws IllegalStateException if unsupported type found
+     */
+    public static Integer[] getKeyTypes(List<PrimitiveType> keyTypes) {
+        /*
+         * IMPORTANT: These must match the ordinals defined in rust/sleeper_df/src/objects.rs
+         */
+        return keyTypes.stream().mapToInt(type -> {
+            if (type instanceof IntType) {
+                return 1;
+            } else if (type instanceof LongType) {
+                return 2;
+            } else if (type instanceof StringType) {
+                return 3;
+            } else if (type instanceof ByteArrayType) {
+                return 4;
+            } else {
+                throw new IllegalStateException("Unsupported column type found " + type.getClass());
+            }
+        }).boxed()
+                .toArray(Integer[]::new);
     }
 }

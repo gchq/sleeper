@@ -18,6 +18,8 @@ package sleeper.foreign;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
 import sleeper.foreign.bridge.FFIArray;
 
 /**
@@ -39,8 +41,36 @@ public class FFISleeperRegion extends Struct {
     /** Region partition region maximums are inclusive? MUST BE SAME LENGTH AS region_mins. */
     public final FFIArray<java.lang.Boolean> maxs_inclusive = new FFIArray<>(this);
 
-    public FFISleeperRegion(jnr.ffi.Runtime runtime) {
+    /**
+     * Creates and validates Sleeper region into an FFI compatible form.
+     *
+     * @param  runtime               FFI runtime
+     * @throws IllegalStateException when the region data is invalid
+     */
+    public FFISleeperRegion(jnr.ffi.Runtime runtime, Region region) {
         super(runtime);
+        // Extra braces: Make sure wrong array isn't populated to wrong pointers
+        {
+            // This array can't contain nulls
+            Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
+            this.mins.populate(regionMins, false);
+        }
+        {
+            java.lang.Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
+                    .toArray(java.lang.Boolean[]::new);
+            this.mins_inclusive.populate(regionMinInclusives, false);
+        }
+        {
+            // This array can contain nulls
+            Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
+            this.maxs.populate(regionMaxs, true);
+        }
+        {
+            java.lang.Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
+                    .toArray(java.lang.Boolean[]::new);
+            this.maxs_inclusive.populate(regionMaxInclusives, false);
+        }
+        validate();
     }
 
     /**
