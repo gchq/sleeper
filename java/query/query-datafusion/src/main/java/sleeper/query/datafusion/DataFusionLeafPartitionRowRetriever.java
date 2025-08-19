@@ -21,6 +21,7 @@ import org.apache.arrow.c.Data;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.ipc.ArrowReader;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +91,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
             ArrowReader reader = Data.importArrayStream(alloc, stream);
 
         }
-
+        throw new NotImplementedException();
     }
 
     /**

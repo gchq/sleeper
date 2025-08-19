@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.rowbatch.arrow;
+package sleeper.core.rowbatch.arrow;
 
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.Types;
-import org.apache.arrow.vector.util.Text;
+import org.w3c.dom.Text;
 
 import sleeper.core.row.Row;
 
