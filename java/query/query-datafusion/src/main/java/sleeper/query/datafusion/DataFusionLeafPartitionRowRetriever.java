@@ -40,6 +40,9 @@ import sleeper.query.core.rowretrieval.RowRetrievalException;
 import java.io.IOException;
 import java.util.Optional;
 
+/**
+ * Implements a Sleeper row retriever based on Apache DataFusion using native code.
+ */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
 
@@ -118,10 +121,11 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * input files, compaction
      * region etc.
      *
-     * @param  query     all details for this leaf partition query
-     * @param  awsConfig settings to access AWS, or null to use defaults
-     * @param  runtime   FFI runtime
-     * @return           object to pass to FFI layer
+     * @param  query          all details for this leaf partition query
+     * @param  dataReadSchema the input schema to read
+     * @param  awsConfig      settings to access AWS, or null to use defaults
+     * @param  runtime        FFI runtime
+     * @return                object to pass to FFI layer
      */
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         FFICommonConfig common = new FFICommonConfig(runtime, Optional.of(awsConfig));
@@ -141,8 +145,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
         queryConfig.common.set(common);
-        FFISleeperRegion[] ffi_regions = query.getRegions().stream().map(region -> new FFISleeperRegion(runtime, region)).toArray(FFISleeperRegion[]::new);
-        queryConfig.setQueryRegions(ffi_regions);
+        FFISleeperRegion[] ffiRegions = query.getRegions().stream().map(region -> new FFISleeperRegion(runtime, region)).toArray(FFISleeperRegion[]::new);
+        queryConfig.setQueryRegions(ffiRegions);
         queryConfig.write_quantile_sketch.set(false);
         queryConfig.explain_plans.set(true);
         return queryConfig;

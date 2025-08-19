@@ -35,7 +35,7 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      *
      * @param  context               Java context object
      * @param  input                 query input configuration
-     * @param  result                compaction result if successful
+     * @param  result                stream of results if successful
      * @return                       indication of success
      * @throws IllegalStateException if the context has already been closed
      */
@@ -43,6 +43,17 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
         return native_query(context.getForeignContext(), input, result);
     }
 
+    /**
+     * FFI method to call to foreign code.
+     *
+     * The provided context object must be open.
+     * The return code will be 0 if successful.
+     *
+     * @param  context        pointer to opaque context object
+     * @param  input          query input configuration
+     * @param  output_results stream of results if successful
+     * @return                indication of success
+     */
     @SuppressWarnings(value = "checkstyle:parametername")
     int native_query(@In Pointer context, @In FFILeafPartitionQueryConfig input, @Out Pointer output_results);
 }
