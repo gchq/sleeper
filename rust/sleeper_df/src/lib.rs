@@ -17,10 +17,9 @@
 use crate::{
     context::FFIContext,
     log::maybe_cfg_log,
-    objects::{FFICommonConfig, FFICompactionResult, FFILeafPartitionQueryConfig},
+    objects::{FFICommonConfig, FFICompactionResult, FFILeafPartitionQueryConfig, FFIQueryResults},
 };
 use ::log::{error, warn};
-use arrow::ffi_stream::FFI_ArrowArrayStream;
 use libc::{EFAULT, EINVAL};
 use sleeper_core::{
     CompletedOutput, LeafPartitionQueryConfig, run_compaction, run_query,
@@ -121,7 +120,7 @@ pub extern "C" fn native_compact(
 /// The resulting stream of Arrow [`RecordBatch`]es is wrapped into an FFI
 /// compatible Arrow stream and the output pointer is set to it.
 ///
-/// The `output_results` is an "out" parameter.
+/// The `query_results` is an "out" parameter.
 /// No assumptions about the value of the pointer object is assumed upon entry to
 /// this function and the contents are overwritten on successful query.
 /// This function is intended to be callable by an external language via FFI,
@@ -165,13 +164,12 @@ pub extern "C" fn native_compact(
 /// | EFAULT | if pointers are NULL
 /// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
 /// | EINVAL | if row key column numbers or sort column numbers are empty |
-///
 #[allow(clippy::not_unsafe_ptr_arg_deref, unused_assignments, unused_variables)]
 #[unsafe(no_mangle)]
 pub extern "C" fn native_query_stream(
     ctx_ptr: *const FFIContext,
     input_data: *const FFILeafPartitionQueryConfig,
-    mut output_results: *mut FFI_ArrowArrayStream,
+    query_results: *mut FFIQueryResults,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
@@ -189,6 +187,12 @@ pub extern "C" fn native_query_stream(
         return EFAULT;
     };
 
+    // Null check the results object pointer
+    let Some(query_results) = (unsafe { query_results.as_mut() }) else {
+        eprintln!("query_results pointer is NULL");
+        return EFAULT;
+    };
+
     let details = match TryInto::<LeafPartitionQueryConfig>::try_into(params) {
         Ok(d) => d,
         Err(e) => {
@@ -196,6 +200,8 @@ pub extern "C" fn native_query_stream(
             return EINVAL;
         }
     };
+
+    println!("{:?}", details);
 
     // Run compaction
     let result = context.rt.block_on(run_query(&details));
@@ -209,7 +215,8 @@ pub extern "C" fn native_query_stream(
                 Box::new(stream_to_ffi_arrow_stream(batch_stream, context.rt.clone()));
             // Leak pointer from Box. At this point Rust gives up ownership management of that object
             let leaked_ptr = Box::into_raw(ffi_arrow_stream);
-            output_results = leaked_ptr;
+            println!("RUST HAS THIS POINTER THAT JAVA NEEDS {:p}", leaked_ptr);
+            query_results.arrow_array_stream_ptr = leaked_ptr;
             0
         }
         Err(e) => {

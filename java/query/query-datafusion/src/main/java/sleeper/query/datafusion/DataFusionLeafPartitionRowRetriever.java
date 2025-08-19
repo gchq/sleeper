@@ -15,7 +15,6 @@
  */
 package sleeper.query.datafusion;
 
-import jnr.ffi.Pointer;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.memory.BufferAllocator;
@@ -73,11 +72,11 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_QUERY);
         FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, awsConfig, runtime);
 
-        Pointer outputStream = Pointer.wrap(runtime, 0);
+        FFIQueryResults results = new FFIQueryResults(runtime);
         // Perform native query
         try (FFIContext context = new FFIContext(NATIVE_QUERY)) {
             // Create NULL pointer which will be set by the FFI call upon return
-            int result = NATIVE_QUERY.query(context, params, outputStream);
+            int result = NATIVE_QUERY.query(context, params, results);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion query failed, return code: {}", result);
@@ -88,7 +87,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
             // Convert pointer from Rust to Java FFI Arrow array stream.
             // At this point Java assumes ownership of the stream and must release it when no longer
             // needed.
-            CloseableIterator<Row> rowConversion = new RowIteratorFromArrowReader(Data.importArrayStream(alloc, ArrowArrayStream.wrap(outputStream.address())));
+            System.out.format("THIS IS JAVA AND I HAVE THIS POINTER VALUE 0x%08X %n", results.arrowArrayStreamPtr.longValue());
+            CloseableIterator<Row> rowConversion = new RowIteratorFromArrowReader(Data.importArrayStream(alloc, ArrowArrayStream.wrap(results.arrowArrayStreamPtr.longValue())));
 
             return new CloseableIterator<Row>() {
 
@@ -128,7 +128,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * @return                object to pass to FFI layer
      */
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
-        FFICommonConfig common = new FFICommonConfig(runtime, Optional.of(awsConfig));
+        FFICommonConfig common = new FFICommonConfig(runtime, Optional.ofNullable(awsConfig));
         common.input_files.populate(query.getFiles().toArray(String[]::new), false);
         // Files are always sorted for queries
         common.input_files_sorted.set(true);

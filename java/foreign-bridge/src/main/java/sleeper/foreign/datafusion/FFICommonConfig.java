@@ -80,6 +80,10 @@ public class FFICommonConfig extends Struct {
     /** Compaction iterator configuration. This is optional. */
     public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
 
+    public FFICommonConfig(jnr.ffi.Runtime runtime) {
+        this(runtime, Optional.empty());
+    }
+
     public FFICommonConfig(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> awsConfig) {
         super(runtime);
         this.setAWSCredentials(runtime, awsConfig);

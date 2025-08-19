@@ -84,6 +84,8 @@ impl<'a> SleeperOperations<'a> {
         mut cfg: SessionConfig,
         store_factory: &ObjectStoreFactory,
     ) -> Result<SessionConfig, DataFusionError> {
+        // Java's Arrow FFI layer can't handle string views, so expand them at output
+        cfg.options_mut().optimizer.expand_views_at_output = true;
         // In order to avoid a costly "Sort" stage in the physical plan, we must make
         // sure the target partitions as at least as big as number of input files.
         cfg.options_mut().execution.target_partitions = std::cmp::max(

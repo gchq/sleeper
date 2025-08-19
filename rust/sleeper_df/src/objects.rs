@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 use crate::unpack::{unpack_string_array, unpack_typed_array, unpack_variant_array};
+use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
     AwsConfig, ColRange, CommonConfig, CompletionOptions, LeafPartitionQueryConfig,
@@ -367,5 +368,36 @@ impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'
             explain_plans: config.explain_plans,
             write_quantile_sketch: config.write_quantile_sketch,
         })
+    }
+}
+
+/// This is a simple struct that contains a single pointer to the [`FFI_ArrowArrayStream`].
+///
+/// The consumer should create one of these objects and then pass it to
+/// a query function which will populate the pointer.
+///
+/// As the contents of this struct are read and written by external code,
+/// we need it to be FFI compatible, so we apply the `#[repr(C)]` attribute
+/// to ensure Rust uses C compatible ordering, alignment and padding.
+///
+/// # Safety
+/// The Rust side of this function, should NOT read incoming value of
+/// [`arrow_array_stream_ptr`](QueryResults::arrow_array_stream_ptr) as it is undefined.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/query/query-datafusion/src/main/java/sleeper/query/datafusion/FFIQueryResults.java.
+/// The order and types of the fields must match exactly.
+#[repr(C)]
+#[derive(Debug)]
+pub struct FFIQueryResults {
+    /// Pointer to an Arrow array stream for use by consumer of function [`run_query`].
+    pub arrow_array_stream_ptr: *const FFI_ArrowArrayStream,
+}
+
+impl Default for FFIQueryResults {
+    fn default() -> Self {
+        Self {
+            arrow_array_stream_ptr: std::ptr::null(),
+        }
     }
 }
