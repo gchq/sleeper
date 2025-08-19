@@ -41,9 +41,8 @@ public interface ForeignFunctions {
      * {@link ForeignFunctions#destroy_context(Pointer)} when this context is no
      * longer required, otherwise the resources attached to this context will leak.
      *
-     * @see    FFIContext
-     *
      * @return a handle to the created context
+     * @see    FFIContext
      */
     Pointer create_context();
 
