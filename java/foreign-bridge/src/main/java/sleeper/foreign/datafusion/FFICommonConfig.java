@@ -49,8 +49,6 @@ public class FFICommonConfig extends Struct {
     public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
     /** States if the input files individually sorted based on row key and the sort key columns. */
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
-    /** States if the query output should be to a file. */
-    public final Struct.Boolean file_output_enabled = new Struct.Boolean();
     /** Output file name. */
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
     /** Names of Sleeper row key columns from schema. */
@@ -85,6 +83,16 @@ public class FFICommonConfig extends Struct {
     public FFICommonConfig(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> awsConfig) {
         super(runtime);
         this.setAWSCredentials(awsConfig);
+        setDefaults();
+    }
+
+    /** Set to sensible defaults all members that don't have them. */
+    protected void setDefaults() {
+        // Primitives will all default to false/zero, FFIArrays also have safe defaults.
+        output_file.set("");
+        compression.set("");
+        writer_version.set("");
+        iterator_config.set("");
     }
 
     /**

@@ -84,7 +84,6 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.input_files.populate(query.getFiles().toArray(new String[0]), false);
         // Files are always sorted for queries
         common.input_files_sorted.set(true);
-        common.file_output_enabled.set(false);
         common.row_key_cols.populate(dataReadSchema.getRowKeyFieldNames().toArray(new String[0]), false);
         common.row_key_schema.populate(FFICommonConfig.getKeyTypes(dataReadSchema.getRowKeyTypes()), false);
         common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(new String[0]), false);

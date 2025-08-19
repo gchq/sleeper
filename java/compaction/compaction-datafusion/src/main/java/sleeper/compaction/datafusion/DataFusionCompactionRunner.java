@@ -108,7 +108,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
-        params.file_output_enabled.set(true);
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
         params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);

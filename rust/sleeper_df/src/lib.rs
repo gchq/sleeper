@@ -23,7 +23,7 @@ use ::log::{error, warn};
 use arrow::ffi_stream::FFI_ArrowArrayStream;
 use libc::{EFAULT, EINVAL};
 use sleeper_core::{
-    CommonConfig, CompletedOutput, LeafPartitionQueryConfig, run_compaction, run_query,
+    CompletedOutput, LeafPartitionQueryConfig, run_compaction, run_query,
     stream_to_ffi_arrow_stream,
 };
 use std::ffi::c_int;
@@ -85,7 +85,7 @@ pub extern "C" fn native_compact(
         return EFAULT;
     };
 
-    let details = match TryInto::<CommonConfig>::try_into(params) {
+    let details = match params.try_to(true) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {e}");
