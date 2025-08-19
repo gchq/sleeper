@@ -15,7 +15,12 @@
  */
 package sleeper.query.datafusion;
 
-import org.apache.commons.lang3.NotImplementedException;
+import jnr.ffi.Pointer;
+import org.apache.arrow.c.ArrowArrayStream;
+import org.apache.arrow.c.Data;
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.ipc.ArrowReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +30,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -63,7 +69,28 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_QUERY);
         FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, awsConfig, runtime);
-        throw new NotImplementedException();
+
+        Pointer outputStream = Pointer.wrap(runtime, 0);
+        // Perform native query
+        try (FFIContext context = new FFIContext(NATIVE_QUERY)) {
+            // Create NULL pointer which will be set by the FFI call upon return
+            int result = NATIVE_QUERY.query(context, params, outputStream);
+            // Check result
+            if (result != 0) {
+                LOGGER.error("DataFusion query failed, return code: {}", result);
+                throw new RowRetrievalException("DataFusion query failed with return code " + result);
+            }
+
+            BufferAllocator alloc = new RootAllocator();
+            // Convert pointer from Rust to Java FFI Arrow array stream.
+            // At this point Java assumes ownership of the stream and must release it when no longer
+            // needed.
+            ArrowArrayStream stream = ArrowArrayStream.wrap(outputStream.address());
+            // Convert that to Java Arrow reader
+            ArrowReader reader = Data.importArrayStream(alloc, stream);
+
+        }
+
     }
 
     /**
@@ -80,18 +107,16 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * @return           object to pass to FFI layer
      */
     private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
-        FFICommonConfig common = new FFICommonConfig(runtime, Optional.ofNullable(awsConfig));
-        common.input_files.populate(query.getFiles().toArray(new String[0]), false);
+        FFICommonConfig common = new FFICommonConfig(runtime, Optional.of(awsConfig));
+        common.input_files.populate(query.getFiles().toArray(String[]::new), false);
         // Files are always sorted for queries
         common.input_files_sorted.set(true);
-        common.row_key_cols.populate(dataReadSchema.getRowKeyFieldNames().toArray(new String[0]), false);
+        common.row_key_cols.populate(dataReadSchema.getRowKeyFieldNames().toArray(String[]::new), false);
         common.row_key_schema.populate(FFICommonConfig.getKeyTypes(dataReadSchema.getRowKeyTypes()), false);
-        common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(new String[0]), false);
+        common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
         // Is there an aggregation/filtering iterator set?
         if (DataEngine.AGGREGATION_ITERATOR_NAME.equals(query.getQueryTimeIteratorClassName())) {
             common.iterator_config.set(query.getQueryTimeIteratorConfig());
-        } else {
-            common.iterator_config.set("");
         }
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, query.getPartitionRegion());
         common.setRegion(partitionRegion);

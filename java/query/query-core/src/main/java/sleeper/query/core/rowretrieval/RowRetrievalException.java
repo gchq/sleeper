@@ -20,6 +20,10 @@ package sleeper.query.core.rowretrieval;
  */
 public class RowRetrievalException extends Exception {
 
+    public RowRetrievalException(String msg) {
+        super(msg);
+    }
+
     public RowRetrievalException(String msg, Throwable cause) {
         super(msg, cause);
     }

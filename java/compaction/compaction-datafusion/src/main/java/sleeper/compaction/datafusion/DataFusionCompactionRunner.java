@@ -105,13 +105,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         FFICommonConfig params = new FFICommonConfig(runtime, Optional.ofNullable(awsConfig));
-        params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
+        params.input_files.populate(job.getInputFiles().toArray(String[]::new), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
         params.output_file.set(job.getOutputFile());
-        params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
+        params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);
         params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
-        params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(new String[0]), false);
+        params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(String[]::new), false);
         params.max_row_group_size.set(DATAFUSION_MAX_ROW_GROUP_ROWS);
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
         params.compression.set(tableProperties.get(COMPRESSION_CODEC));
@@ -124,8 +124,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Is there an aggregation/filtering iterator set?
         if (DataEngine.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName())) {
             params.iterator_config.set(job.getIteratorConfig());
-        } else {
-            params.iterator_config.set("");
         }
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, region);
         params.setRegion(partitionRegion);

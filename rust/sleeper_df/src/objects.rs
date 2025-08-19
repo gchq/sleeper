@@ -130,43 +130,41 @@ impl<'a> FFISleeperRegion {
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFIAwsConfig {
-    pub aws_region: *const c_char,
-    pub aws_endpoint: *const c_char,
-    pub aws_access_key: *const c_char,
-    pub aws_secret_key: *const c_char,
-    pub aws_allow_http: bool,
+    pub region: *const c_char,
+    pub endpoint: *const c_char,
+    pub access_key: *const c_char,
+    pub secret_key: *const c_char,
+    pub allow_http: bool,
 }
 
 impl TryFrom<&FFIAwsConfig> for AwsConfig {
     type Error = color_eyre::Report;
 
     fn try_from(value: &FFIAwsConfig) -> Result<Self, Self::Error> {
-        if value.aws_region.is_null() {
-            bail!("FFIAwsConfig aws_region pointer is NULL");
+        if value.region.is_null() {
+            bail!("FFIAwsConfig region pointer is NULL");
         }
-        if value.aws_endpoint.is_null() {
-            bail!("FFIAwsConfig aws_endpoint pointer is NULL");
+        if value.endpoint.is_null() {
+            bail!("FFIAwsConfig endpoint pointer is NULL");
         }
-        if value.aws_access_key.is_null() {
-            bail!("FFIAwsConfig aws_access_key pointer is NULL");
+        if value.access_key.is_null() {
+            bail!("FFIAwsConfig access_key pointer is NULL");
         }
-        if value.aws_secret_key.is_null() {
-            bail!("FFIAwsConfig aws_secret_key pointer is NULL");
+        if value.secret_key.is_null() {
+            bail!("FFIAwsConfig secret_key pointer is NULL");
         }
         Ok(AwsConfig {
-            region: unsafe { CStr::from_ptr(value.aws_region) }
+            region: unsafe { CStr::from_ptr(value.region) }.to_str()?.to_owned(),
+            endpoint: unsafe { CStr::from_ptr(value.endpoint) }
                 .to_str()?
                 .to_owned(),
-            endpoint: unsafe { CStr::from_ptr(value.aws_endpoint) }
+            access_key: unsafe { CStr::from_ptr(value.access_key) }
                 .to_str()?
                 .to_owned(),
-            access_key: unsafe { CStr::from_ptr(value.aws_access_key) }
+            secret_key: unsafe { CStr::from_ptr(value.secret_key) }
                 .to_str()?
                 .to_owned(),
-            secret_key: unsafe { CStr::from_ptr(value.aws_secret_key) }
-                .to_str()?
-                .to_owned(),
-            allow_http: value.aws_allow_http,
+            allow_http: value.allow_http,
         })
     }
 }

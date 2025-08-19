@@ -27,6 +27,7 @@ import sleeper.foreign.datafusion.FFICommonConfig;
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.
  */
+@SuppressWarnings(value = {"checkstyle:membername"})
 public class FFILeafPartitionQueryConfig extends Struct {
     /** Basic configuration for query. */
     public final Struct.StructRef<FFICommonConfig> common = new StructRef<>(FFICommonConfig.class);
@@ -43,6 +44,11 @@ public class FFILeafPartitionQueryConfig extends Struct {
         super(runtime);
     }
 
+    /**
+     * Sets query region field and length.
+     *
+     * @param regions query regions
+     */
     public void setQueryRegions(FFISleeperRegion[] regions) {
         for (int i = 0; i < regions.length; i++) {
             regions[i].validate();

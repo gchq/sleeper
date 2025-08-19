@@ -53,9 +53,9 @@ public class FFISleeperRegion extends Struct {
      * Creates and validates Sleeper region into an FFI compatible form.
      *
      * @param  runtime               FFI runtime
+     * @param  region                the Sleeper partition region
      * @throws IllegalStateException when the region data is invalid
      */
-    @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
     public FFISleeperRegion(jnr.ffi.Runtime runtime, Region region) {
         super(runtime);
         if (region != null) {
@@ -66,9 +66,10 @@ public class FFISleeperRegion extends Struct {
     /**
      * Set the region data in this FFI object.
      *
-     * @param region               region data to copy into FFI object
-     * @param NullPointerException if {@code region} is {@code null}
+     * @param  region               region data to copy into FFI object
+     * @throws NullPointerException if {@code region} is {@code null}
      */
+    @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
     public void populateRegion(Region region) {
         Objects.requireNonNull(region, "region");
         // Extra braces: Make sure wrong array isn't populated to wrong pointers

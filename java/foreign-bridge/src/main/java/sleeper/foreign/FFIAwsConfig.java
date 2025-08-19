@@ -24,18 +24,19 @@ import jnr.ffi.Struct;
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.
  */
+@SuppressWarnings(value = "checkstyle:memberName")
 public class FFIAwsConfig extends Struct {
-    public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_endpoint = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_access_key = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_secret_key = new Struct.UTF8StringRef();
-    public final Struct.Boolean aws_allow_http = new Struct.Boolean();
+    public final Struct.UTF8StringRef region = new Struct.UTF8StringRef();
+    public final Struct.UTF8StringRef endpoint = new Struct.UTF8StringRef();
+    public final Struct.UTF8StringRef access_key = new Struct.UTF8StringRef();
+    public final Struct.UTF8StringRef secret_key = new Struct.UTF8StringRef();
+    public final Struct.Boolean allow_http = new Struct.Boolean();
 
     public FFIAwsConfig(jnr.ffi.Runtime runtime) {
         super(runtime);
-        aws_region.set("");
-        aws_endpoint.set("");
-        aws_access_key.set("");
-        aws_secret_key.set("");
+        region.set("");
+        endpoint.set("");
+        access_key.set("");
+        secret_key.set("");
     }
 }

@@ -108,17 +108,18 @@ public class FFICommonConfig extends Struct {
     /**
      * Configure the AWS credentials.
      *
-     * @param credentials the optional AWS credentials
+     * @param runtime the JNR runtime
+     * @param config  the optional AWS credentials
      */
     public void setAWSCredentials(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> config) {
         config.ifPresentOrElse(awsConfig -> {
             this.override_aws_config.set(true);
             FFIAwsConfig ffiAwsConfig = new FFIAwsConfig(runtime);
-            ffiAwsConfig.aws_region.set(awsConfig.getRegion());
-            ffiAwsConfig.aws_endpoint.set(awsConfig.getEndpoint());
-            ffiAwsConfig.aws_allow_http.set(awsConfig.isAllowHttp());
-            ffiAwsConfig.aws_access_key.set(awsConfig.getAccessKey());
-            ffiAwsConfig.aws_secret_key.set(awsConfig.getSecretKey());
+            ffiAwsConfig.region.set(awsConfig.getRegion());
+            ffiAwsConfig.endpoint.set(awsConfig.getEndpoint());
+            ffiAwsConfig.allow_http.set(awsConfig.isAllowHttp());
+            ffiAwsConfig.access_key.set(awsConfig.getAccessKey());
+            ffiAwsConfig.secret_key.set(awsConfig.getSecretKey());
             this.aws_config.set(ffiAwsConfig);
         }, () -> {
             this.override_aws_config.set(false);
