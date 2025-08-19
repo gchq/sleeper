@@ -175,7 +175,6 @@ fn normalise_s3a_urls(
     if let CompletionOptions::File {
         output_file,
         opts: _,
-        sketches_enabled: _,
     } = &mut output
         && output_file.scheme() == "s3a"
     {
@@ -236,11 +235,7 @@ impl Display for CommonConfig<'_> {
             CompletionOptions::File {
                 output_file,
                 opts: _,
-                sketches_enabled,
-            } => write!(
-                f,
-                "output file {output_file:?} quantile sketches {sketches_enabled}"
-            ),
+            } => write!(f, "output file {output_file:?}"),
         }
     }
 }

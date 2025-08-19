@@ -48,6 +48,8 @@ pub struct LeafPartitionQueryConfig<'a> {
     pub ranges: Vec<SleeperPartitionRegion<'a>>,
     /// Should logical/physical plan explanation be logged?
     pub explain_plans: bool,
+    /// Should quantile sketches be written to a file?
+    pub write_quantile_sketch: bool,
 }
 
 impl Display for LeafPartitionQueryConfig<'_> {

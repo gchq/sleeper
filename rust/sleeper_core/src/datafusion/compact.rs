@@ -50,7 +50,6 @@ pub async fn compact(
     let CompletionOptions::File {
         output_file,
         opts: _,
-        sketches_enabled,
     } = &config.output
     else {
         return plan_err!("Sleeper compactions must output to a file");

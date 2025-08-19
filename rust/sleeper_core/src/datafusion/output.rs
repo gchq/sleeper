@@ -48,8 +48,6 @@ pub enum CompletionOptions {
         output_file: Url,
         /// Parquet output options
         opts: SleeperParquetOptions,
-        /// Quantile sketch production
-        sketches_enabled: bool,
     },
 }
 
@@ -62,7 +60,6 @@ impl CompletionOptions {
             Self::File {
                 output_file: _,
                 opts: _,
-                sketches_enabled: _,
             } => Box::new(FileOutputCompleter::new(ops)),
         }
     }
@@ -172,7 +169,6 @@ impl Completer for ArrowOutputCompleter<'_> {
             CompletionOptions::File {
                 output_file: _,
                 opts: _,
-                sketches_enabled: _,
             } => {
                 plan_err!("Can't use ArrowOutputCompleter with CompletionOptions::File")
             }
