@@ -16,7 +16,7 @@
 package sleeper.core.rowbatch.arrow;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.ArrowStreamReader;
+import org.apache.arrow.vector.ipc.ArrowReader;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Row;
@@ -26,29 +26,29 @@ import java.util.NoSuchElementException;
 
 /**
  * Reads through rows read into memory with Arrow. This is a {@link CloseableIterator} of {@link Row}s, where
- * those rows are read from a {@link ArrowStreamReader}.
+ * those rows are read from a {@link ArrowReader}.
  * <p>
  * The rows are read from the file in small batches, which correspond to the small batches that were used when the file
  * was orginally written.
  */
-class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
-    private final ArrowStreamReader arrowStreamReader;
+public class RowIteratorFromArrowReader implements CloseableIterator<Row> {
+    private final ArrowReader arrowReader;
     private int currentRowNumInBatch;
     private boolean nextBatchLoaded;
 
-    RowIteratorFromArrowStreamReader(ArrowStreamReader arrowStreamReader) throws IOException {
-        this.arrowStreamReader = arrowStreamReader;
+    public RowIteratorFromArrowReader(ArrowReader arrowReader) throws IOException {
+        this.arrowReader = arrowReader;
         this.loadNextBatch();
     }
 
     /**
-     * Read the next small batch of rows from the source file. Instruct the {@link ArrowStreamReader} to read into its
+     * Read the next small batch of rows from the source file. Instruct the {@link ArrowReader} to read into its
      * internal {@link VectorSchemaRoot}.
      *
      * @throws IOException if there was a failure reading a batch from the source file
      */
     private void loadNextBatch() throws IOException {
-        nextBatchLoaded = arrowStreamReader.loadNextBatch();
+        nextBatchLoaded = arrowReader.loadNextBatch();
         currentRowNumInBatch = 0;
     }
 
@@ -56,7 +56,7 @@ class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
     public boolean hasNext() {
         try {
             // The most recent batch must have been loaded and it must have at least one row
-            return nextBatchLoaded && arrowStreamReader.getVectorSchemaRoot().getRowCount() > 0;
+            return nextBatchLoaded && arrowReader.getVectorSchemaRoot().getRowCount() > 0;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -70,7 +70,7 @@ class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
         try {
             // Retrieve the current small batch from within the ArrowStreamReader, read the values from the
             // vector and use these values to construct a row object.
-            VectorSchemaRoot smallBatchVectorSchemaRoot = arrowStreamReader.getVectorSchemaRoot();
+            VectorSchemaRoot smallBatchVectorSchemaRoot = arrowReader.getVectorSchemaRoot();
             Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(smallBatchVectorSchemaRoot, currentRowNumInBatch);
             currentRowNumInBatch++;
             // Load a new batch when this one has been read fully
@@ -85,6 +85,6 @@ class RowIteratorFromArrowStreamReader implements CloseableIterator<Row> {
 
     @Override
     public void close() throws IOException {
-        arrowStreamReader.close();
+        arrowReader.close();
     }
 }

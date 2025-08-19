@@ -20,14 +20,13 @@ import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.ipc.ArrowReader;
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
+import sleeper.core.rowbatch.arrow.RowIteratorFromArrowReader;
 import sleeper.core.schema.Schema;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
@@ -86,12 +85,29 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
             // Convert pointer from Rust to Java FFI Arrow array stream.
             // At this point Java assumes ownership of the stream and must release it when no longer
             // needed.
-            ArrowArrayStream stream = ArrowArrayStream.wrap(outputStream.address());
-            // Convert that to Java Arrow reader
-            ArrowReader reader = Data.importArrayStream(alloc, stream);
+            CloseableIterator<Row> rowConversion = new RowIteratorFromArrowReader(Data.importArrayStream(alloc, ArrowArrayStream.wrap(outputStream.address())));
 
+            return new CloseableIterator<Row>() {
+
+                @Override
+                public boolean hasNext() {
+                    return rowConversion.hasNext();
+                }
+
+                @Override
+                public Row next() {
+                    return rowConversion.next();
+                }
+
+                @Override
+                public void close() throws IOException {
+                    rowConversion.close();
+                    alloc.close();
+                }
+            };
+        } catch (IOException e) {
+            throw new RowRetrievalException(e.getMessage(), e);
         }
-        throw new NotImplementedException();
     }
 
     /**

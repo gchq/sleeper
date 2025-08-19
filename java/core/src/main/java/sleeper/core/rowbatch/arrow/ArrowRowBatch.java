@@ -291,7 +291,7 @@ public class ArrowRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDATATYP
             String localArrowFileName) throws IOException {
         FileChannel inputFileChannel = FileChannel.open(Paths.get(localArrowFileName), StandardOpenOption.READ);
         ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputFileChannel, bufferAllocator);
-        return new RowIteratorFromArrowStreamReader(arrowStreamReader);
+        return new RowIteratorFromArrowReader(arrowStreamReader);
     }
 
     /**
