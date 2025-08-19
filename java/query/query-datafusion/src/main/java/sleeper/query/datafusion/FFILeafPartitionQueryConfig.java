@@ -21,9 +21,11 @@ import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.datafusion.FFICommonConfig;
 
 /**
- * The leaf query data that will be populated from the Java side. If you updated
- * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
- * in rust/sleeper_df/src/objects.rs. The order and types of the fields must match exactly.
+ * The leaf query data that will be populated from the Java side.
+ *
+ * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * the fields must match exactly.
  */
 public class FFILeafPartitionQueryConfig extends Struct {
     /** Basic configuration for query. */

@@ -25,11 +25,13 @@ import sleeper.foreign.bridge.FFIArray;
 import java.util.Objects;
 
 /**
- * A C ABI compatible representation of a Sleeper region. If you updated
- * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
- * in rust/sleeper_df/src/objects.rs. The order and types of the fields must match exactly.
+ * A C ABI compatible representation of a Sleeper region.
  *
  * All arrays MUST be same length.
+ *
+ * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
 @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -63,7 +65,7 @@ public class FFISleeperRegion extends Struct {
 
     /**
      * Set the region data in this FFI object.
-     * 
+     *
      * @param region               region data to copy into FFI object
      * @param NullPointerException if {@code region} is {@code null}
      */

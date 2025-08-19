@@ -14,13 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::unpack::{
-    unpack_aws_config, unpack_string_array, unpack_typed_array, unpack_variant_array,
-};
+use crate::unpack::{unpack_string_array, unpack_typed_array, unpack_variant_array};
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
-    ColRange, CommonConfig, CompletionOptions, LeafPartitionQueryConfig, SleeperParquetOptions,
-    SleeperPartitionRegion,
+    AwsConfig, ColRange, CommonConfig, CompletionOptions, LeafPartitionQueryConfig,
+    SleeperParquetOptions, SleeperPartitionRegion,
 };
 use std::{
     borrow::Borrow,
@@ -31,6 +29,10 @@ use std::{
 use url::Url;
 
 /// Contains all output data from a compaction operation.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/compaction/compaction-datafusion/src/main/java/sleeper/compaction/datafusion/FFICompactionResult.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICompactionResult {
     /// The total number of rows read by a compaction.
@@ -42,6 +44,10 @@ pub struct FFICompactionResult {
 /// Represents a Sleeper region in a C ABI struct.
 ///
 /// Java arrays are transferred with a length. They should all be the same length in this struct.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFISleeperRegion.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
@@ -117,18 +123,63 @@ impl<'a> FFISleeperRegion {
     }
 }
 
-/// Contains all the common input data for setting up a Sleeper `DataFusion` operation.
+/// Contains the FFI compatible configuration data for AWS.
 ///
-/// See `java/compaction/compaction-datafusion/src/main/java/sleeper/compaction/datafusion/DataFusionFunctions.java`
-/// for details. Field ordering and types MUST match between the two definitions!
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIAwsConfig.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
-pub struct FFICommonConfig {
-    pub override_aws_config: bool,
+pub struct FFIAwsConfig {
     pub aws_region: *const c_char,
     pub aws_endpoint: *const c_char,
     pub aws_access_key: *const c_char,
     pub aws_secret_key: *const c_char,
     pub aws_allow_http: bool,
+}
+
+impl TryFrom<&FFIAwsConfig> for AwsConfig {
+    type Error = color_eyre::Report;
+
+    fn try_from(value: &FFIAwsConfig) -> Result<Self, Self::Error> {
+        if value.aws_region.is_null() {
+            bail!("FFIAwsConfig aws_region pointer is NULL");
+        }
+        if value.aws_endpoint.is_null() {
+            bail!("FFIAwsConfig aws_endpoint pointer is NULL");
+        }
+        if value.aws_access_key.is_null() {
+            bail!("FFIAwsConfig aws_access_key pointer is NULL");
+        }
+        if value.aws_secret_key.is_null() {
+            bail!("FFIAwsConfig aws_secret_key pointer is NULL");
+        }
+        Ok(AwsConfig {
+            region: unsafe { CStr::from_ptr(value.aws_region) }
+                .to_str()?
+                .to_owned(),
+            endpoint: unsafe { CStr::from_ptr(value.aws_endpoint) }
+                .to_str()?
+                .to_owned(),
+            access_key: unsafe { CStr::from_ptr(value.aws_access_key) }
+                .to_str()?
+                .to_owned(),
+            secret_key: unsafe { CStr::from_ptr(value.aws_secret_key) }
+                .to_str()?
+                .to_owned(),
+            allow_http: value.aws_allow_http,
+        })
+    }
+}
+
+/// Contains all the common input data for setting up a Sleeper `DataFusion` operation.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/datafusion/FFICommonConfig.java.
+/// The order and types of the fields must match exactly.
+#[repr(C)]
+pub struct FFICommonConfig {
+    pub override_aws_config: bool,
+    pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
     pub input_files: *const *const c_char,
     pub input_files_sorted: bool,
@@ -242,8 +293,17 @@ impl FFICommonConfig {
             CompletionOptions::ArrowRecordBatch
         };
 
+        let aws_config = if self.override_aws_config {
+            let Some(ffi_aws) = (unsafe { self.aws_config.as_ref() }) else {
+                bail!("override_aws_config is true, but aws_config pointer is NULL");
+            };
+            AwsConfig::try_from(ffi_aws).ok()
+        } else {
+            None
+        };
+
         CommonConfig::try_new(
-            unpack_aws_config(self)?,
+            aws_config,
             unpack_string_array(self.input_files, self.input_files_len)?
                 .into_iter()
                 .map(Url::parse)
@@ -262,6 +322,10 @@ impl FFICommonConfig {
 }
 
 /// Contains all information needed for a Sleeper leaf partition query from a foreign function.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/query/query-datafusion/src/main/java/sleeper/query/datafusion/FFILeafPartitionQueryConfig.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFILeafPartitionQueryConfig {
     /// Common configuration

@@ -1,0 +1,41 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.foreign;
+
+import jnr.ffi.Struct;
+
+/**
+ * The compaction input data that will be populated from the Java side.
+ *
+ * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * the fields must match exactly.
+ */
+public class FFIAwsConfig extends Struct {
+    public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
+    public final Struct.UTF8StringRef aws_endpoint = new Struct.UTF8StringRef();
+    public final Struct.UTF8StringRef aws_access_key = new Struct.UTF8StringRef();
+    public final Struct.UTF8StringRef aws_secret_key = new Struct.UTF8StringRef();
+    public final Struct.Boolean aws_allow_http = new Struct.Boolean();
+
+    public FFIAwsConfig(jnr.ffi.Runtime runtime) {
+        super(runtime);
+        aws_region.set("");
+        aws_endpoint.set("");
+        aws_access_key.set("");
+        aws_secret_key.set("");
+    }
+}

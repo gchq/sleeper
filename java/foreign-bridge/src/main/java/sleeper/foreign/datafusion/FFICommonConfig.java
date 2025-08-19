@@ -23,6 +23,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.foreign.FFIAwsConfig;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIArray;
 
@@ -31,20 +32,19 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * The compaction input data that will be populated from the Java side. If you updated
- * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
- * in rust/sleeper_df/src/objects.rs. The order and types of the fields must match exactly.
+ * The common DataFusion input data that will be populated from the Java side.
+ *
+ * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
 @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class FFICommonConfig extends Struct {
-    /** Optional AWS configuration. */
+    /** Specifies AWS default configuration been overriden. */
     public final Struct.Boolean override_aws_config = new Struct.Boolean();
-    public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_endpoint = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_access_key = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_secret_key = new Struct.UTF8StringRef();
-    public final Struct.Boolean aws_allow_http = new Struct.Boolean();
+    /** Optional AWS configuration. */
+    public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
     /** Array of input files to compact. */
     public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
     /** States if the input files individually sorted based on row key and the sort key columns. */
@@ -82,7 +82,7 @@ public class FFICommonConfig extends Struct {
 
     public FFICommonConfig(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> awsConfig) {
         super(runtime);
-        this.setAWSCredentials(awsConfig);
+        this.setAWSCredentials(runtime, awsConfig);
         setDefaults();
     }
 
@@ -110,14 +110,16 @@ public class FFICommonConfig extends Struct {
      *
      * @param credentials the optional AWS credentials
      */
-    public void setAWSCredentials(Optional<DataFusionAwsConfig> config) {
+    public void setAWSCredentials(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> config) {
         config.ifPresentOrElse(awsConfig -> {
             this.override_aws_config.set(true);
-            this.aws_region.set(awsConfig.getRegion());
-            this.aws_endpoint.set(awsConfig.getEndpoint());
-            this.aws_allow_http.set(awsConfig.isAllowHttp());
-            this.aws_access_key.set(awsConfig.getAccessKey());
-            this.aws_secret_key.set(awsConfig.getSecretKey());
+            FFIAwsConfig ffiAwsConfig = new FFIAwsConfig(runtime);
+            ffiAwsConfig.aws_region.set(awsConfig.getRegion());
+            ffiAwsConfig.aws_endpoint.set(awsConfig.getEndpoint());
+            ffiAwsConfig.aws_allow_http.set(awsConfig.isAllowHttp());
+            ffiAwsConfig.aws_access_key.set(awsConfig.getAccessKey());
+            ffiAwsConfig.aws_secret_key.set(awsConfig.getSecretKey());
+            this.aws_config.set(ffiAwsConfig);
         }, () -> {
             this.override_aws_config.set(false);
         });
