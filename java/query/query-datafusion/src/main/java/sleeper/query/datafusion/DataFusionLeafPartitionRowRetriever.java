@@ -87,7 +87,6 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
             // Convert pointer from Rust to Java FFI Arrow array stream.
             // At this point Java assumes ownership of the stream and must release it when no longer
             // needed.
-            System.out.format("THIS IS JAVA AND I HAVE THIS POINTER VALUE 0x%08X %n", results.arrowArrayStreamPtr.longValue());
             CloseableIterator<Row> rowConversion = new RowIteratorFromArrowReader(Data.importArrayStream(alloc, ArrowArrayStream.wrap(results.arrowArrayStreamPtr.longValue())));
 
             return new CloseableIterator<Row>() {

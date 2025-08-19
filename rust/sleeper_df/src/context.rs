@@ -56,12 +56,6 @@ impl FFIContext {
     }
 }
 
-impl Drop for FFIContext {
-    fn drop(&mut self) {
-        println!("DEBUG DEBUG DEBUG DEBUG DEBUG. FFIContext dropped on Rust side!");
-    }
-}
-
 /// Creates the context needed to enable further FFI calls.
 ///
 /// The needed state is allocated and initialised so that
