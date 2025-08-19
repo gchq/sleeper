@@ -107,7 +107,7 @@ public class FFIContext implements AutoCloseable {
 
     /**
      * Gets a pointer to the foreign context object.
-     * 
+     *
      * @return                       foreign pointer
      * @throws IllegalStateException if this context has already been closed
      */
