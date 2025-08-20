@@ -25,7 +25,7 @@ use crate::{
         sketch::Sketcher,
         util::{
             calculate_upload_size, check_for_sort_exec, register_store,
-            remove_coalesce_physical_stage, retrieve_input_size,
+            remove_coalesce_physical_stage, retrieve_input_size, unalias_view_projection_columns,
         },
     },
 };
@@ -39,7 +39,9 @@ use datafusion::{
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
     logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
-    physical_plan::{ExecutionPlan, expressions::Column},
+    physical_plan::{
+        ExecutionPlan, expressions::Column, sorts::sort_preserving_merge::SortPreservingMergeExec,
+    },
 };
 use log::{info, warn};
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -84,8 +86,10 @@ impl<'a> SleeperOperations<'a> {
         mut cfg: SessionConfig,
         store_factory: &ObjectStoreFactory,
     ) -> Result<SessionConfig, DataFusionError> {
-        // Java's Arrow FFI layer can't handle string views, so expand them at output
-        cfg.options_mut().optimizer.expand_views_at_output = true;
+        if matches!(self.config.output, CompletionOptions::ArrowRecordBatch) {
+            // Java's Arrow FFI layer can't handle view types, so expand them at output
+            cfg.options_mut().optimizer.expand_views_at_output = true;
+        }
         // In order to avoid a costly "Sort" stage in the physical plan, we must make
         // sure the target partitions as at least as big as number of input files.
         cfg.options_mut().execution.target_partitions = std::cmp::max(
@@ -315,6 +319,8 @@ impl<'a> SleeperOperations<'a> {
         let ordering = self.create_sort_expr_ordering(&frame)?;
         // Consume frame and generate initial physical plan
         let physical_plan = frame.create_physical_plan().await?;
+        // Unalias column names if this is going to be Arrow output
+        let physical_plan = self.remove_aliased_columns(physical_plan, &ordering)?;
         // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
         let physical_plan = remove_coalesce_physical_stage(&ordering, physical_plan)?;
         // Check physical plan is free of `SortExec` stages.
@@ -323,6 +329,31 @@ impl<'a> SleeperOperations<'a> {
             check_for_sort_exec(&physical_plan)?;
         }
         Ok(physical_plan)
+    }
+
+    /// Remove any potentially aliased column names.
+    ///
+    /// This will look for the first projection and remove any column names aliasing
+    /// it might have introduced. This ensures the client asking for Arrow output gets
+    /// the correct column names.
+    fn remove_aliased_columns(
+        &self,
+        physical_plan: Arc<dyn ExecutionPlan>,
+        ordering: &LexOrdering,
+    ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
+        Ok(
+            if matches!(self.config.output, CompletionOptions::ArrowRecordBatch) {
+                // Remove aliased column names to make things look correct for Java
+                let physical_plan = unalias_view_projection_columns(physical_plan)?;
+                // This may have been done in parallel, which will break sort order, so add a SortPreservingMergeExec stage
+                Arc::new(SortPreservingMergeExec::new(
+                    ordering.clone(),
+                    physical_plan,
+                ))
+            } else {
+                physical_plan
+            },
+        )
     }
 
     ///Create a lexical ordering for sorting columns on a frame.

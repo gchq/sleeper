@@ -18,7 +18,7 @@ package sleeper.core.rowbatch.arrow;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.Types;
-import org.w3c.dom.Text;
+import org.apache.arrow.vector.util.Text;
 
 import sleeper.core.row.Row;
 

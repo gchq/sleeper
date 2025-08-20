@@ -103,7 +103,7 @@ pub extern "C" fn native_compact(
             0
         }
         Err(e) => {
-            error!("merging error {e}");
+            error!("compacting error {e}");
             -1
         }
     }
@@ -214,7 +214,7 @@ pub extern "C" fn native_query_stream(
             0
         }
         Err(e) => {
-            error!("merging error {e}");
+            error!("query error {e}");
             -1
         }
     }
@@ -309,7 +309,7 @@ pub extern "C" fn native_query_file(
             0
         }
         Err(e) => {
-            error!("merging error {e}");
+            error!("query error {e}");
             -1
         }
     }

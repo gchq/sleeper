@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::util::pretty::pretty_format_batches;
+use arrow::{datatypes::SchemaRef, util::pretty::pretty_format_batches};
 use datafusion::{
     common::{
         plan_err,
@@ -28,13 +28,14 @@ use datafusion::{
     physical_plan::{
         ExecutionPlan, accept,
         coalesce_partitions::CoalescePartitionsExec,
+        projection::ProjectionExec,
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
-use std::sync::Arc;
+use std::{cmp::Reverse, sync::Arc};
 use url::Url;
 
 use crate::datafusion::metrics::RowCounts;
@@ -175,6 +176,58 @@ pub fn remove_coalesce_physical_stage(
                     // Swap it out for a SortPreservingMergeExec
                     let replacement =
                         SortPreservingMergeExec::new(ordering.clone(), coalesce.input().clone());
+                    // Stop searching down the query plan after making one replacement
+                    Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
+                } else {
+                    Transformed::no(plan_node)
+                },
+            )
+        })
+        .map(|v| v.data)
+}
+
+/// Returns string from schema that most closely matches qualified name.
+pub fn unalias(qualified_name: &str, original_schema: &SchemaRef) -> String {
+    let mut col_names = original_schema
+        .fields()
+        .iter()
+        .map(|f| f.name())
+        .collect::<Vec<_>>();
+    // Need keys in reverse length order
+    col_names.sort_by_key(|s| Reverse(s.len()));
+    // Find first that matches
+    col_names
+        .iter()
+        .find(|&&s| qualified_name.ends_with(s))
+        .expect("Can't find unaliased column name")
+        .to_string()
+}
+
+/// Unalias column names that were changed due to a [`ProjectionExec`].
+///
+/// The Java Arrow FFI library can't handle view types, so we tell DataFusion to expand view types
+/// in queries. However, the projection in the plan renames columns when we do this. This function
+/// transforms a physical plan to remove that aliasing.
+pub fn unalias_view_projection_columns(
+    physical_plan: Arc<dyn ExecutionPlan>,
+) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
+    physical_plan
+        // Recurse down plan looking for specific node
+        .transform_down(|plan_node| {
+            Ok(
+                if let Some(projection) = plan_node.as_any().downcast_ref::<ProjectionExec>() {
+                    // Schema of stage before projection
+                    let schema = projection.input().schema();
+                    // Unalias column names
+                    let phys_exprs = projection
+                        .expr()
+                        .iter()
+                        .map(|(expr, name)| (expr.clone(), unalias(name, &schema)))
+                        .collect::<Vec<_>>();
+
+                    // Make replacement stage
+                    let replacement =
+                        ProjectionExec::try_new(phys_exprs, projection.input().clone())?;
                     // Stop searching down the query plan after making one replacement
                     Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Stop)
                 } else {
