@@ -19,6 +19,9 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.ecs.ICluster;
+import software.amazon.awscdk.services.iam.IRole;
+import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.constructs.Construct;
@@ -28,7 +31,9 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class AutoStopEcsClusterTasks {
 
@@ -51,6 +56,16 @@ public class AutoStopEcsClusterTasks {
                 .description("Lambda for auto-stopping ECS tasks")
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
+
+        // Grant this function permission to list tasks and stop tasks
+        PolicyStatement policyStatement = PolicyStatement.Builder
+                .create()
+                .resources(List.of("*"))
+                .actions(List.of("ecs:ListTasks", "ecs:StopTask", "iam:PassRole"))
+                .build();
+        IRole role = Objects.requireNonNull(lambda.getRole());
+        role.addToPrincipalPolicy(policyStatement);
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         Provider propertiesWriterProvider = Provider.Builder.create(scope, id + "Provider")
                 .onEventHandler(lambda)
