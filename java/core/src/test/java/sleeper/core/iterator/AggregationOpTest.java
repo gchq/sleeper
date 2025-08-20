@@ -15,6 +15,8 @@
  */
 package sleeper.core.iterator;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -23,88 +25,236 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 public class AggregationOpTest {
+
     @SuppressWarnings("unchecked")
-    @Test
-    public void shouldApplySum() {
+    @Nested
+    @DisplayName("Sum operation tests")
+    class SumOperationTest {
         // Given
         AggregationOp sum = AggregationOp.SUM;
 
-        // When
-        Object intResult = sum.apply(1, 2);
-        Object longResult = sum.apply(1L, 2L);
-        Object stringResult = sum.apply("one string", "two string");
-        Object byteArrayResult = sum.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10});
-        Map<String, Integer> mapIntResult = (Map<String, Integer>) sum.apply(Map.of("key1", 1, "key2", 3), Map.of("key2", 4, "key3", 6));
-        Map<String, Long> mapLongResult = (Map<String, Long>) sum.apply(Map.of("key1", 1L, "key2", 3L), Map.of("key2", 4L, "key3", 6L));
-        Map<String, String> mapStringResult = (Map<String, String>) sum.apply(Map.of("key1", "test", "key2", "one string"), Map.of("key2", "two string", "key3", "other"));
-        Map<String, byte[]> mapByteArrayResult = (Map<String, byte[]>) sum.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
-                Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+        @Test
+        public void shouldApplySumInt() {
+            // When / Then
+            assertThat(sum.apply(1, 2))
+                    .isEqualTo(3);
+        }
 
-        // Then
-        assertThat(intResult).isEqualTo(3);
-        assertThat(longResult).isEqualTo(3L);
-        assertThat(stringResult).isEqualTo("one stringtwo string");
-        assertThat(byteArrayResult).isEqualTo(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-        assertThat(mapIntResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 7, "key3", 6));
-        assertThat(mapLongResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 7L, "key3", 6L));
-        assertThat(mapStringResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "one stringtwo string", "key3", "other"));
-        assertThat(mapByteArrayResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4, 5, 6}, "key3", new byte[]{7, 8}));
+        @Test
+        public void shouldApplySumLong() {
+            // When / Then
+            assertThat(sum.apply(1L, 2L))
+                    .isEqualTo(3L);
+        }
+
+        @Test
+        public void shouldApplySumString() {
+            // When / Then
+            assertThat(sum.apply("one string", "two string"))
+                    .isEqualTo("one stringtwo string");
+        }
+
+        @Test
+        public void shouldApplySumByteArray() {
+            // When / Then
+            assertThat(sum.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10}))
+                    .isEqualTo(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        }
+
+        @Test
+        public void shouldApplySumMapInt() {
+            // When
+            Object mapIntResult = sum.apply(Map.of("key1", 1, "key2", 3),
+                    Map.of("key2", 4, "key3", 6));
+            // Then
+            assertThat((Map<String, Integer>) mapIntResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 7, "key3", 6));
+        }
+
+        @Test
+        public void shouldApplySumMapLong() {
+            // When
+            Object mapLongResult = sum.apply(Map.of("key1", 1L, "key2", 3L),
+                    Map.of("key2", 4L, "key3", 6L));
+
+            //Then
+            assertThat((Map<String, Long>) mapLongResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 7L, "key3", 6L));
+        }
+
+        @Test
+        public void shouldApplySumMapString() {
+            // When
+            Object mapStringResult = sum.apply(Map.of("key1", "test", "key2", "one string"),
+                    Map.of("key2", "two string", "key3", "other"));
+
+            // Then
+            assertThat((Map<String, String>) mapStringResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "one stringtwo string", "key3", "other"));
+        }
+
+        @Test
+        public void shouldApplySumMapByteArray() {
+            // When
+            Object mapByteArrayResult = sum.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
+                    Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+            // THen
+            assertThat((Map<String, byte[]>) mapByteArrayResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4, 5, 6}, "key3", new byte[]{7, 8}));
+        }
     }
 
     @SuppressWarnings("unchecked")
-    @Test
-    public void shouldApplyMin() {
+    @Nested
+    @DisplayName("Min operation tests")
+    class MinOperationTest {
         // Given
         AggregationOp min = AggregationOp.MIN;
 
-        // When
-        Object intResult = min.apply(1, 2);
-        Object longResult = min.apply(1L, 2L);
-        Object stringResult = min.apply("one string", "two string");
-        Object byteArrayResult = min.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10});
-        Map<String, Integer> mapIntResult = (Map<String, Integer>) min.apply(Map.of("key1", 1, "key2", 3), Map.of("key2", 4, "key3", 6));
-        Map<String, Long> mapLongResult = (Map<String, Long>) min.apply(Map.of("key1", 1L, "key2", 3L), Map.of("key2", 4L, "key3", 6L));
-        Map<String, String> mapStringResult = (Map<String, String>) min.apply(Map.of("key1", "test", "key2", "one string"), Map.of("key2", "two string", "key3", "other"));
-        Map<String, byte[]> mapByteArrayResult = (Map<String, byte[]>) min.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
-                Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+        @Test
+        public void shouldApplyMinInt() {
+            // When / Then
+            assertThat(min.apply(1, 2))
+                    .isEqualTo(1);
+        }
 
-        // Then
-        assertThat(intResult).isEqualTo(1);
-        assertThat(longResult).isEqualTo(1L);
-        assertThat(stringResult).isEqualTo("one string");
-        assertThat(byteArrayResult).isEqualTo(new byte[]{1, 2, 3, 4, 5});
-        assertThat(mapIntResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 3, "key3", 6));
-        assertThat(mapLongResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 3L, "key3", 6L));
-        assertThat(mapStringResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "one string", "key3", "other"));
-        assertThat(mapByteArrayResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}, "key3", new byte[]{7, 8}));
+        @Test
+        public void shouldApplyMinLong() {
+            // When / Then
+            assertThat(min.apply(1L, 2L))
+                    .isEqualTo(1L);
+        }
+
+        @Test
+        public void shouldApplyMinString() {
+            // When / Then
+            assertThat(min.apply("one string", "two string"))
+                    .isEqualTo("one string");
+        }
+
+        @Test
+        public void shouldApplyMinByteArray() {
+            // When / Then
+            assertThat(min.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10}))
+                    .isEqualTo(new byte[]{1, 2, 3, 4, 5});
+        }
+
+        @Test
+        public void shouldApplyMinMapInt() {
+            // When
+            Object mapIntResult = min.apply(Map.of("key1", 1, "key2", 3),
+                    Map.of("key2", 4, "key3", 6));
+            // Then
+            assertThat((Map<String, Integer>) mapIntResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 3, "key3", 6));
+        }
+
+        @Test
+        public void shouldApplyMinMapLong() {
+            // When
+            Object mapLongResult = min.apply(Map.of("key1", 1L, "key2", 3L),
+                    Map.of("key2", 4L, "key3", 6L));
+            // Then
+            assertThat((Map<String, Long>) mapLongResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 3L, "key3", 6L));
+        }
+
+        @Test
+        public void shouldApplyMinMapString() {
+            // When
+            Object mapStringResult = min.apply(Map.of("key1", "test", "key2", "one string"),
+                    Map.of("key2", "two string", "key3", "other"));
+            // Then
+            assertThat((Map<String, String>) mapStringResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "one string", "key3", "other"));
+        }
+
+        @Test
+        public void shouldApplyMinMapByteArray() {
+            // When
+            Object mapByteArrayResult = min.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
+                    Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+            // Then
+            assertThat((Map<String, byte[]>) mapByteArrayResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}, "key3", new byte[]{7, 8}));
+        }
     }
 
     @SuppressWarnings("unchecked")
-    @Test
-    public void shouldApplyMax() {
+    @Nested
+    @DisplayName("Max operation tests")
+    class MaxOperationTest {
         // Given
         AggregationOp max = AggregationOp.MAX;
 
-        // When
-        Object intResult = max.apply(1, 2);
-        Object longResult = max.apply(1L, 2L);
-        Object stringResult = max.apply("one string", "two string");
-        Object byteArrayResult = max.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10});
-        Map<String, Integer> mapIntResult = (Map<String, Integer>) max.apply(Map.of("key1", 1, "key2", 3), Map.of("key2", 4, "key3", 6));
-        Map<String, Long> mapLongResult = (Map<String, Long>) max.apply(Map.of("key1", 1L, "key2", 3L), Map.of("key2", 4L, "key3", 6L));
-        Map<String, String> mapStringResult = (Map<String, String>) max.apply(Map.of("key1", "test", "key2", "one string"), Map.of("key2", "two string", "key3", "other"));
-        Map<String, byte[]> mapByteArrayResult = (Map<String, byte[]>) max.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
-                Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+        @Test
+        public void shouldApplyMaxInt() {
+            // When / Then
+            assertThat(max.apply(1, 2))
+                    .isEqualTo(2);
+        }
 
-        // Then
-        assertThat(intResult).isEqualTo(2);
-        assertThat(longResult).isEqualTo(2L);
-        assertThat(stringResult).isEqualTo("two string");
-        assertThat(byteArrayResult).isEqualTo(new byte[]{6, 7, 8, 9, 10});
-        assertThat(mapIntResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 4, "key3", 6));
-        assertThat(mapLongResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 4L, "key3", 6L));
-        assertThat(mapStringResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "two string", "key3", "other"));
-        assertThat(mapByteArrayResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+        @Test
+        public void shouldApplyMaxLong() {
+            // When / Then
+            assertThat(max.apply(1L, 2L))
+                    .isEqualTo(2L);
+        }
+
+        @Test
+        public void shouldApplyMaxString() {
+            // When / Then
+            assertThat(max.apply("one string", "two string"))
+                    .isEqualTo("two string");
+        }
+
+        @Test
+        public void shouldApplyMaxByteArray() {
+            // When / Then
+            assertThat(max.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10}))
+                    .isEqualTo(new byte[]{6, 7, 8, 9, 10});
+        }
+
+        @Test
+        public void shouldApplyMaxMapInt() {
+            // When
+            Object mapIntResult = max.apply(Map.of("key1", 1, "key2", 3),
+                    Map.of("key2", 4, "key3", 6));
+            // Then
+            assertThat((Map<String, Integer>) mapIntResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 4, "key3", 6));
+        }
+
+        @Test
+        public void shouldApplyMaxMapLong() {
+            // When
+            Object mapLongResult = max.apply(Map.of("key1", 1L, "key2", 3L),
+                    Map.of("key2", 4L, "key3", 6L));
+
+            // Then
+            assertThat((Map<String, Long>) mapLongResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 4L, "key3", 6L));
+        }
+
+        @Test
+        public void shouldApplyMaxMapString() {
+            // When
+            Object mapStringResult = max.apply(Map.of("key1", "test", "key2", "one string"),
+                    Map.of("key2", "two string", "key3", "other"));
+
+            // Then
+            assertThat((Map<String, String>) mapStringResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "two string", "key3", "other"));
+        }
+
+        @Test
+        public void shouldApplyMaxMapByteArray() {
+            // When
+            Object mapByteArrayResult = max.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
+                    Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+            // Then
+            assertThat((Map<String, byte[]>) mapByteArrayResult)
+                    .containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+        }
     }
 
     @Test
