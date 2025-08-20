@@ -44,37 +44,66 @@ public class ArrowToRowConversionUtils {
         Row row = new Row();
         for (int fieldNo = 0; fieldNo < noOfFields; fieldNo++) {
             FieldVector fieldVector = vectorSchemaRoot.getVector(fieldNo);
-            Object value = fieldVector.getObject(rowNo);
-            if (value instanceof Text) {
-                // The Parquet writer does not handle Text fields and so convert to a String
-                value = value.toString();
-            }
-            if (fieldVector.getMinorType() == Types.MinorType.LIST) {
-                // Arrow list fields may store genuine lists, or instead store a map as a list of structs
-                boolean isActuallyMap = fieldVector.getChildrenFromFields().size() == 1 &&
-                        fieldVector.getChildrenFromFields().get(0).getMinorType() == Types.MinorType.STRUCT &&
-                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().size() == 2 &&
-                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRowBatch.MAP_KEY_FIELD_NAME) &&
-                        fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRowBatch.MAP_VALUE_FIELD_NAME);
-                if (isActuallyMap) {
-                    // Convert the list of structs into a map
-                    value = ((List<?>) value).stream()
-                            .map(obj -> (Map<?, ?>) obj)
-                            .map(map -> new AbstractMap.SimpleEntry<>(
-                                    map.get(ArrowRowBatch.MAP_KEY_FIELD_NAME),
-                                    map.get(ArrowRowBatch.MAP_VALUE_FIELD_NAME)))
-                            .collect(Collectors.toMap(
-                                    entry -> (entry.getKey() instanceof Text) ? entry.getKey().toString() : entry.getKey(),
-                                    entry -> (entry.getValue() instanceof Text) ? entry.getValue().toString() : entry.getValue()));
-                } else {
-                    // Convert any text elements into strings
-                    value = ((List<?>) value).stream()
-                            .map(v -> (v instanceof Text) ? v.toString() : v)
-                            .collect(Collectors.toList());
-                }
-            }
+            Object value = convertValueFromArrow(fieldVector, fieldVector.getObject(rowNo));
             row.put(fieldVector.getName(), value);
         }
         return row;
+    }
+
+    /**
+     * Convert a given Arrow value to a Java value.
+     *
+     * If the value is a primitive, it will remain unchanged. Instances of {@link Text} will be converted
+     * to {@link String}. Maps and lists will be converted to Java {@link Map} and {@link List} instances.
+     *
+     * This function will recurse into deeper nested structures.
+     *
+     * @param  fieldVector the column being converted
+     * @param  value       value to convert
+     * @return             plain Java value
+     */
+    public static Object convertValueFromArrow(FieldVector fieldVector, Object value) {
+        if (value instanceof Text) {
+            // The Parquet writer does not handle Text fields and so convert to a String
+            return value.toString();
+        } else if (fieldVector.getMinorType() == Types.MinorType.LIST) {
+            // Arrow list fields may store genuine lists, or instead store a map as a list of structs
+            boolean isActuallyMap = fieldVector.getChildrenFromFields().size() == 1 &&
+                    fieldVector.getChildrenFromFields().get(0).getMinorType() == Types.MinorType.STRUCT &&
+                    fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().size() == 2 &&
+                    fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRowBatch.MAP_KEY_FIELD_NAME) &&
+                    fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRowBatch.MAP_VALUE_FIELD_NAME);
+            if (isActuallyMap) {
+                return arrowToMap(fieldVector, (List<?>) value);
+            } else {
+                // Convert any text elements into strings
+                return ((List<?>) value).stream()
+                        .map(v -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0), value))
+                        .collect(Collectors.toList());
+            }
+        } else if (fieldVector.getMinorType() == Types.MinorType.MAP) {
+            return arrowToMap(fieldVector, (List<?>) value);
+        } else {
+            return value;
+        }
+    }
+
+    /**
+     * Converts a Arrow map column to a Java map.
+     *
+     * @param  fieldVector the Arrow map vector
+     * @param  value       Arrow map
+     * @return             Java map instance
+     */
+    private static Map<Object, Object> arrowToMap(FieldVector fieldVector, List<?> value) {
+        // Convert the list of structs into a map
+        return value.stream()
+                .map(obj -> (Map<?, ?>) obj)
+                .map(map -> new AbstractMap.SimpleEntry<>(
+                        map.get(ArrowRowBatch.MAP_KEY_FIELD_NAME),
+                        map.get(ArrowRowBatch.MAP_VALUE_FIELD_NAME)))
+                .collect(Collectors.toMap(
+                        entry -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0), entry.getKey()),
+                        entry -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1), entry.getValue())));
     }
 }
