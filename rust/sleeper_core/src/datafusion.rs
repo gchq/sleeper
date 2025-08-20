@@ -60,7 +60,7 @@ mod sketch_udf;
 mod util;
 
 pub use arrow_stream::stream_to_ffi_arrow_stream;
-pub use compact::compact;
+pub use compact::{CompactionResult, compact};
 pub use config::ParquetWriterConfigurer;
 pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};
 pub use output::CompletionOptions;

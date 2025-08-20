@@ -26,6 +26,7 @@ use crate::{
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
+use datafusion::logical_expr::col;
 use datafusion::{common::plan_err, logical_expr::Expr, physical_plan::displayable};
 use datafusion::{
     dataframe::DataFrame,
@@ -46,6 +47,8 @@ pub struct LeafPartitionQueryConfig<'a> {
     pub common: CommonConfig<'a>,
     /// Query ranges
     pub ranges: Vec<SleeperPartitionRegion<'a>>,
+    /// Requested value columns for Sleeper query
+    pub requested_value_fields: Option<Vec<String>>,
     /// Should logical/physical plan explanation be logged?
     pub explain_plans: bool,
     /// Should quantile sketches be written to a file?
@@ -168,6 +171,23 @@ impl<'a> LeafPartitionQuery<'a> {
         }
     }
 
+    /// If only certain value columns have been requested, then project them.
+    ///
+    /// Row key and sort key columns are always projected.
+    fn maybe_project_columns(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        if let Some(value_fields) = &self.config.requested_value_fields {
+            let project_colums = self
+                .config
+                .common
+                .sorting_columns_iter()
+                .chain(value_fields.iter().map(String::as_str))
+                .map(col);
+            frame.select(project_colums)
+        } else {
+            Ok(frame)
+        }
+    }
+
     /// Creates the [`DataFrame`] for a leaf partition query.
     ///
     /// This reads the Parquet and configures the frame's plan
@@ -188,6 +208,7 @@ impl<'a> LeafPartitionQuery<'a> {
         frame = ops.apply_user_filters(frame)?;
         frame = ops.apply_general_sort(frame)?;
         frame = ops.apply_aggregations(frame)?;
+        frame = self.maybe_project_columns(frame)?;
         self.maybe_add_sketch_output(ops, frame)
     }
 }

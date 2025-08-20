@@ -350,7 +350,7 @@ public class AggregationFilteringIterator implements ConfigStringIterator {
 
     @Override
     public List<String> getRequiredValueFields() {
-        return Stream.concat(config.groupingColumns.stream(), config.aggregations.stream().map(Aggregation::column)).toList();
+        return config.aggregations.stream().map(Aggregation::column).toList();
     }
 
     /**

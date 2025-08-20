@@ -20,7 +20,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::LeafPartitionQuery;
+use crate::datafusion::{CompactionResult, LeafPartitionQuery};
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
 use aws_config::Region;
@@ -247,18 +247,6 @@ pub struct AwsConfig {
     pub access_key: String,
     pub secret_key: String,
     pub allow_http: bool,
-}
-
-/// Contains compaction results.
-///
-/// This provides the details of compaction results that Sleeper
-/// will use to update its record keeping.
-///
-pub struct CompactionResult {
-    /// The total number of rows read by a compaction.
-    pub rows_read: usize,
-    /// The total number of rows written by a compaction.
-    pub rows_written: usize,
 }
 
 /// Compacts the given Parquet files and reads the schema from the first.

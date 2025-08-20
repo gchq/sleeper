@@ -18,6 +18,7 @@ package sleeper.query.datafusion;
 import jnr.ffi.Struct;
 
 import sleeper.foreign.FFISleeperRegion;
+import sleeper.foreign.bridge.FFIArray;
 import sleeper.foreign.datafusion.FFICommonConfig;
 
 /**
@@ -34,6 +35,10 @@ public class FFILeafPartitionQueryConfig extends Struct {
     public final Struct.size_t query_region_len = new Struct.size_t();
     /** The list of query regions. */
     public final Struct.StructRef<FFISleeperRegion> query_regions = new StructRef<>(FFISleeperRegion.class);
+    /** Specifies if there are any requested value fields. */
+    public final Struct.Boolean requested_value_fields_set = new Struct.Boolean();
+    /** Requested value columns. */
+    public final FFIArray<java.lang.String> requested_value_fields = new FFIArray<>(this);
     /** Specifies quantile sketches be written out to a file. */
     public final Struct.Boolean write_quantile_sketch = new Struct.Boolean();
     /** Specifies if logical and physical DataFusion query plans should be written to a log output. */
@@ -55,5 +60,14 @@ public class FFILeafPartitionQueryConfig extends Struct {
         }
         query_region_len.set(regions.length);
         query_regions.set(regions);
+    }
+
+    /**
+     * Validate state of struct.
+     *
+     * @throws IllegalStateException when a invariant fails
+     */
+    public void validate() {
+        requested_value_fields.validate();
     }
 }

@@ -333,6 +333,12 @@ pub struct FFILeafPartitionQueryConfig {
     pub query_regions_len: usize,
     /// Pointers to query regions,
     pub query_regions: *const FFISleeperRegion,
+    /// Are there any requested value fields? This is different to there being zero.
+    pub requested_value_fields_set: bool,
+    /// Length of requested value columns
+    pub requested_value_fields_len: usize,
+    /// Requested value columns.
+    pub requested_value_fields: *const *const c_char,
     /// Should quantile data sketches be written out?
     pub write_quantile_sketch: bool,
     /// Should logical and physical query plans be written to logging output?
@@ -368,9 +374,21 @@ impl FFILeafPartitionQueryConfig {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
+        let requested_value_columns = if self.requested_value_fields_set {
+            Some(
+                unpack_string_array(self.requested_value_fields, self.requested_value_fields_len)?
+                    .into_iter()
+                    .map(String::from)
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
         Ok(LeafPartitionQueryConfig {
             common,
             ranges,
+            requested_value_fields: requested_value_columns,
             explain_plans: self.explain_plans,
             write_quantile_sketch: self.write_quantile_sketch,
         })
