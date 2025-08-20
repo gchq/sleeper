@@ -29,16 +29,16 @@ use std::{
 };
 use url::Url;
 
-/// Contains all output data from a compaction operation.
+/// Contains all output data from a file output operation.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/compaction/compaction-datafusion/src/main/java/sleeper/compaction/datafusion/FFICompactionResult.java.
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIFileResult.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
-pub struct FFICompactionResult {
-    /// The total number of rows read by a compaction.
+pub struct FFIFileResult {
+    /// The total number of rows read by a query/compaction.
     pub rows_read: usize,
-    /// The total number of rows written by a compaction.
+    /// The total number of rows written by a query/compaction.
     pub rows_written: usize,
 }
 
@@ -230,7 +230,7 @@ impl FFICommonConfig {
     ///
     /// # Errors
     /// Errors if: any pointer is NULL, any array lengths invalid, region invalid, etc.
-    pub fn try_to<'a>(
+    pub fn to_common_config<'a>(
         &self,
         file_output_enabled: bool,
     ) -> Result<CommonConfig<'a>, color_eyre::Report> {
@@ -339,34 +339,40 @@ pub struct FFILeafPartitionQueryConfig {
     pub explain_plans: bool,
 }
 
-impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'a> {
-    type Error = color_eyre::Report;
-
-    fn try_from(config: &'a FFILeafPartitionQueryConfig) -> Result<Self, Self::Error> {
-        let Some(ffi_common) = (unsafe { config.common.as_ref() }) else {
+impl FFILeafPartitionQueryConfig {
+    /// Convert to a Rust native struct.
+    ///
+    /// All pointers must be valid. Pointers are NULL checked, but we can't vouch for validity.
+    ///
+    /// # Errors
+    /// Errors if: any pointer is NULL, any array lengths invalid, region invalid, etc.
+    pub fn to_leaf_config<'a>(
+        &self,
+        file_output_enabled: bool,
+    ) -> Result<LeafPartitionQueryConfig<'a>, color_eyre::Report> {
+        let Some(ffi_common) = (unsafe { self.common.as_ref() }) else {
             bail!("FFILeafPartitionQueryConfig common is NULL");
         };
-        let common = ffi_common.try_to(false)?;
+        let common = ffi_common.to_common_config(file_output_enabled)?;
         let row_key_cols = ffi_common.row_key_cols()?;
         let schema_types = ffi_common.schema_types()?;
 
-        let Some(_) = (unsafe { config.query_regions.as_ref() }) else {
+        let Some(_) = (unsafe { self.query_regions.as_ref() }) else {
             bail!("FFILeafPartitionQueryConfig query_regions is NULL");
         };
 
-        let ranges =
-            unsafe { slice::from_raw_parts(config.query_regions, config.query_regions_len) }
-                .iter()
-                .map(|ffi_reg| {
-                    FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols, &schema_types)
-                })
-                .collect::<Result<Vec<_>, _>>()?;
+        let ranges = unsafe { slice::from_raw_parts(self.query_regions, self.query_regions_len) }
+            .iter()
+            .map(|ffi_reg| {
+                FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols, &schema_types)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Self {
+        Ok(LeafPartitionQueryConfig {
             common,
             ranges,
-            explain_plans: config.explain_plans,
-            write_quantile_sketch: config.write_quantile_sketch,
+            explain_plans: self.explain_plans,
+            write_quantile_sketch: self.write_quantile_sketch,
         })
     }
 }

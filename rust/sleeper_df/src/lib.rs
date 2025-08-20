@@ -17,14 +17,11 @@
 use crate::{
     context::FFIContext,
     log::maybe_cfg_log,
-    objects::{FFICommonConfig, FFICompactionResult, FFILeafPartitionQueryConfig, FFIQueryResults},
+    objects::{FFICommonConfig, FFIFileResult, FFILeafPartitionQueryConfig, FFIQueryResults},
 };
 use ::log::{error, warn};
 use libc::{EFAULT, EINVAL};
-use sleeper_core::{
-    CompletedOutput, LeafPartitionQueryConfig, run_compaction, run_query,
-    stream_to_ffi_arrow_stream,
-};
+use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
 use std::ffi::c_int;
 
 mod context;
@@ -66,7 +63,7 @@ mod unpack;
 pub extern "C" fn native_compact(
     ctx_ptr: *const FFIContext,
     input_data: *mut FFICommonConfig,
-    output_data: *mut FFICompactionResult,
+    output_data: *mut FFIFileResult,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
@@ -84,7 +81,7 @@ pub extern "C" fn native_compact(
         return EFAULT;
     };
 
-    let details = match params.try_to(true) {
+    let details = match params.to_common_config(true) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {e}");
@@ -100,7 +97,7 @@ pub extern "C" fn native_compact(
                 data.rows_read = res.rows_read;
                 data.rows_written = res.rows_written;
             } else {
-                error!("output data pointer is NULL");
+                error!("output_data pointer is NULL");
                 return EFAULT;
             }
             0
@@ -160,7 +157,7 @@ pub extern "C" fn native_compact(
 /// | Code | Meaning |
 /// |-|-|
 /// | 0 | Success |
-/// | -1 | Arrow error (see log) |
+/// | -1 | Arrow/DataFusion error (see log) |
 /// | EFAULT | if pointers are NULL
 /// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
 /// | EINVAL | if row key column numbers or sort column numbers are empty |
@@ -193,7 +190,7 @@ pub extern "C" fn native_query_stream(
         return EFAULT;
     };
 
-    let details = match TryInto::<LeafPartitionQueryConfig>::try_into(params) {
+    let details = match params.to_leaf_config(false) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {e}");
@@ -201,14 +198,12 @@ pub extern "C" fn native_query_stream(
         }
     };
 
-    println!("{:?}", details);
-
     // Run compaction
     let result = context.rt.block_on(run_query(&details));
     match result {
         Ok(res) => {
             let CompletedOutput::ArrowRecordBatch(batch_stream) = res else {
-                panic!("Expected ArrowRecordBatch results from query");
+                panic!("Expected CompletedOutput::ArrowRecordBatch results from query");
             };
             // Convert the DataFusion stream of data to an FFI compatible Arrow stream
             let ffi_arrow_stream =
@@ -216,6 +211,101 @@ pub extern "C" fn native_query_stream(
             // Leak pointer from Box. At this point Rust gives up ownership management of that object
             let leaked_ptr = Box::into_raw(ffi_arrow_stream);
             query_results.arrow_array_stream = leaked_ptr;
+            0
+        }
+        Err(e) => {
+            error!("merging error {e}");
+            -1
+        }
+    }
+}
+
+/// Provides the C FFI interface to calling the [`run_query`] function.
+///
+/// This function takes an [`FFILeafPartitionQueryConfig`] struct which contains all the information needed for a Sleeper
+/// leaf partition query.
+///
+/// The `output_data` field is an out parameter. It is assumed the caller has allocated valid
+/// memory at the address pointed to!
+///
+/// This function is intended to be callable by an external language via FFI,
+/// therefore it is marked as `#[unsafe(no_mangle)]` to ensure the function
+/// name is not changed and as `extern "C"` to ensure C linkage rules are followed.
+///
+/// # Safety
+///
+/// It is the callers responsibility to ensure all pointers are valid and point
+/// to valid data before calling this function. While null pointers are detected,
+/// invalid pointers cannot be.
+///
+/// It is undefined behaviour to specify an incorrect array length for any array.
+///
+/// The `ctx_ptr` value must point to a valid [`FFI_Context`] which contains
+/// an active runtime.
+///
+/// It is safe to release the [`FFI_Context`] object (see [`destroy_context`](crate::destroy_context)) even
+/// if this stream is still being read from. The underlying Tokio runtime will not be released
+/// until all remaining [`FFI_ArrowArrayStream`]s created by this function are
+/// released.
+///
+/// # Panics
+/// If we are unable to transfer vector ownership to foreign code properly.
+///
+/// # Errors
+/// The following result codes are returned.
+///
+/// | Code | Meaning |
+/// |-|-|
+/// | 0 | Success |
+/// | -1 | Arrow/DataFusion error (see log) |
+/// | EFAULT | if pointers are NULL
+/// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
+/// | EINVAL | if row key column numbers or sort column numbers are empty |
+#[allow(clippy::not_unsafe_ptr_arg_deref, unused_assignments, unused_variables)]
+#[unsafe(no_mangle)]
+pub extern "C" fn native_query_file(
+    ctx_ptr: *const FFIContext,
+    input_data: *const FFILeafPartitionQueryConfig,
+    output_data: *mut FFIFileResult,
+) -> c_int {
+    maybe_cfg_log();
+    if let Err(e) = color_eyre::install() {
+        warn!("Couldn't install color_eyre error handler {e}");
+    }
+
+    // Null check the context pointer
+    let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
+        error!("NULL context pointer");
+        return EFAULT;
+    };
+
+    let Some(params) = (unsafe { input_data.as_ref() }) else {
+        error!("input data pointer is NULL");
+        return EFAULT;
+    };
+
+    let details = match params.to_leaf_config(true) {
+        Ok(d) => d,
+        Err(e) => {
+            error!("Couldn't convert compaction input data {e}");
+            return EINVAL;
+        }
+    };
+
+    // Run compaction
+    let result = context.rt.block_on(run_query(&details));
+    match result {
+        Ok(res) => {
+            let CompletedOutput::File(row_counts) = res else {
+                panic!("Expected CompletedOutput::File results from query");
+            };
+            if let Some(data) = unsafe { output_data.as_mut() } {
+                data.rows_read = row_counts.rows_read;
+                data.rows_written = row_counts.rows_written;
+            } else {
+                error!("output_data pointer is NULL");
+                return EFAULT;
+            }
             0
         }
         Err(e) => {

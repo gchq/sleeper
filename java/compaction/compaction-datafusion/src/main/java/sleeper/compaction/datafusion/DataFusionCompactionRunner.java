@@ -26,6 +26,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
@@ -144,7 +145,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public static RowsProcessed invokeDataFusion(CompactionJob job,
             FFICommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
-        FFICompactionResult compactionData = new FFICompactionResult(runtime);
+        FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
         try (FFIContext context = new FFIContext(NATIVE_COMPACTION)) {
             int result = NATIVE_COMPACTION.compact(context, compactionParams, compactionData);
