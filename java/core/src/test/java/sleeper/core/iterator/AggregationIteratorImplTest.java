@@ -17,9 +17,6 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.AggregationFilteringIterator.Aggregation;
-import sleeper.core.iterator.AggregationFilteringIterator.AggregationOp;
-import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 import sleeper.core.row.Row;
 
 import java.util.List;

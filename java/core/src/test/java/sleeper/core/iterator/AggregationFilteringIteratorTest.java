@@ -17,8 +17,6 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.AggregationFilteringIterator.AggregationOp;
-import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -195,7 +193,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldCreateAgeOffFilter() throws Exception {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -223,7 +221,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldReturnValueFields() {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -240,7 +238,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldFailValidationWhenGroupingByRowKey() {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -258,7 +256,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldFailValidationWhenDuplicatingGroupBySortKey() {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -276,7 +274,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldFailValidationWhenGroupingByNonExistentColumn() {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -294,7 +292,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldFailValidationWhenAggregatingRowKey() {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -312,7 +310,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldFailValidationWhenAggregatingNonExistentColumn() {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -330,7 +328,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldFailValidationWhenAggregatingColumnTwice() {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -348,7 +346,7 @@ public class AggregationFilteringIteratorTest {
     @Test
     public void shouldFailValidationWhenOneColumnIsNotAggregated() {
         // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("timestamp", new LongType()))
@@ -535,7 +533,7 @@ public class AggregationFilteringIteratorTest {
                 .sortKeyFields(new Field("sort_key", new IntType()), new Field("sort_key2", new IntType()))
                 .valueFields(new Field("value1", new StringType()), new Field("value2", new IntType()))
                 .build();
-        AggregationFilteringIterator aggregationIterator = new AggregationFilteringIterator();
+        ConfigStringAggregationFilteringIterator aggregationIterator = new ConfigStringAggregationFilteringIterator();
         aggregationIterator.init("sort_key,sort_key2;,sum(value1),min(value2)", schema);
 
         try (CloseableIterator<Row> aggregator = aggregationIterator.apply(it)) {
