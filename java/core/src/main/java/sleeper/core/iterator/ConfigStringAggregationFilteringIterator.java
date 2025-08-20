@@ -33,15 +33,19 @@ import java.util.stream.Stream;
 /**
  * Implements a row aggregating iterator similiar to the DataFusion
  * aggregation functionality.
+ * <p>
  *
  * The format for the iterator's configuration string mirrors that of the
  * DataFusion code. It should follow this format:
- * {@code <extra aggregation columns>;<filter>,<aggregation>}. Any of the
- * components may be empty. The extra aggregation
+ * <p>
+ * {@code <extra aggregation columns>;<filter>,<aggregation>}.
+ * <p>
+ * Any of the components may be empty. The extra aggregation
  * columns should be a comma separated list of columns beyond the row_key
  * columns to aggregate over. Note the semi-colon
  * after the last column before the filter component. The filter component will
  * expose one possible filter: age off.
+ * <p>
  * Only one filter will be specifiable at a time on a table (this is a minimum
  * reasonable effort!).
  * <ul>
@@ -75,15 +79,6 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
         return iterator.apply(t);
     }
 
-    /**
-     * Configures the iterator.
-     *
-     * The configuration string will be validated and the internal state of the
-     * iterator will be initialised.
-     *
-     * @throws IllegalArgumentException if {@code configString} is not a valid
-     *                                  configuration
-     */
     @Override
     public void init(String configString, Schema schema) {
         FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());

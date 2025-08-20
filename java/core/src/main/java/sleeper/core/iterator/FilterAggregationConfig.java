@@ -24,7 +24,7 @@ import java.util.Optional;
  *
  * @param  groupingColumns           the columns that the aggregation will "group by"
  * @param  ageOffColumn              the optional column to have an age-off filter applied
- * @param  maxAge                    the maximum age in seconds for rows
+ * @param  maxAge                    the maximum age in seconds for rows if an age off filter is to be applied
  * @param  aggregations              the list of aggregations to apply
  * @throws IllegalArgumentExpception if {@code groupingColumns} is empty
  */

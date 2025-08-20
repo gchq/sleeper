@@ -24,82 +24,82 @@ import java.util.function.BinaryOperator;
 public enum AggregationOp implements BinaryOperator<Object> {
     SUM {
         @Override
-        public int op(int lhs, int rhs) {
-            return lhs + rhs;
+        public int op(int leftHandSide, int rightHandSide) {
+            return leftHandSide + rightHandSide;
         }
 
         @Override
-        public long op(long lhs, long rhs) {
-            return lhs + rhs;
+        public long op(long leftHandSide, long rightHandSide) {
+            return leftHandSide + rightHandSide;
         }
 
         @Override
-        public String op(String lhs, String rhs) {
-            return lhs + rhs;
+        public String op(String leftHandSide, String rightHandSide) {
+            return leftHandSide + rightHandSide;
         }
 
         @Override
-        public byte[] op(byte[] lhs, byte[] rhs) {
-            byte[] concatenated = Arrays.copyOf(lhs, lhs.length + rhs.length);
-            System.arraycopy(rhs, 0, concatenated, lhs.length, rhs.length);
+        public byte[] op(byte[] leftHandSide, byte[] rightHandSide) {
+            byte[] concatenated = Arrays.copyOf(leftHandSide, leftHandSide.length + rightHandSide.length);
+            System.arraycopy(rightHandSide, 0, concatenated, leftHandSide.length, rightHandSide.length);
             return concatenated;
         }
     },
     MIN {
         @Override
-        public int op(int lhs, int rhs) {
-            return Math.min(lhs, rhs);
+        public int op(int leftHandSide, int rightHandSide) {
+            return Math.min(leftHandSide, rightHandSide);
         }
 
         @Override
-        public long op(long lhs, long rhs) {
-            return Math.min(lhs, rhs);
+        public long op(long leftHandSide, long rightHandSide) {
+            return Math.min(leftHandSide, rightHandSide);
         }
 
         @Override
-        public String op(String lhs, String rhs) {
-            if (lhs.compareTo(rhs) <= 0) {
-                return lhs;
+        public String op(String leftHandSide, String rightHandSide) {
+            if (leftHandSide.compareTo(rightHandSide) <= 0) {
+                return leftHandSide;
             } else {
-                return rhs;
+                return rightHandSide;
             }
         }
 
         @Override
-        public byte[] op(byte[] lhs, byte[] rhs) {
-            if (Arrays.compareUnsigned(lhs, rhs) <= 0) {
-                return lhs;
+        public byte[] op(byte[] leftHandSide, byte[] rightHandSide) {
+            if (Arrays.compareUnsigned(leftHandSide, rightHandSide) <= 0) {
+                return leftHandSide;
             } else {
-                return rhs;
+                return rightHandSide;
             }
         }
     },
     MAX {
         @Override
-        public int op(int lhs, int rhs) {
-            return Math.max(lhs, rhs);
+        public int op(int leftHandSide, int rightHandSide) {
+            return Math.max(leftHandSide, rightHandSide);
         }
 
         @Override
-        public long op(long lhs, long rhs) {
-            return Math.max(lhs, rhs);
+        public long op(long leftHandSide, long rightHandSide) {
+            return Math.max(leftHandSide, rightHandSide);
         }
 
         @Override
-        public String op(String lhs, String rhs) {
-            if (lhs.compareTo(rhs) > 0) {
-                return lhs;
+        public String op(String leftHandSide, String rightHandSide) {
+            if (leftHandSide.compareTo(rightHandSide) > 0) {
+                return leftHandSide;
             } else {
-                return rhs;
+                return rightHandSide;
             }
         }
 
         @Override
-        public byte[] op(byte[] lhs, byte[] rhs) {
-            if (Arrays.compareUnsigned(lhs, rhs) > 0) {
-                return lhs;
+        public byte[] op(byte[] leftHandSide, byte[] rightHandSide) {
+            if (Arrays.compareUnsigned(leftHandSide, rightHandSide) > 0) {
+                return leftHandSide;
             } else {
-                return rhs;
+                return rightHandSide;
             }
         }
     };
@@ -107,106 +107,110 @@ public enum AggregationOp implements BinaryOperator<Object> {
     /**
      * Perform aggregation operation on integer arguments.
      *
-     * @param  lhs left hand operand
-     * @param  rhs right hand operand
-     * @return     combined value
+     * @param  leftHandSide  left hand operand
+     * @param  rightHandSide right hand operand
+     * @return               combined value
      */
-    public abstract int op(int lhs, int rhs);
+    public abstract int op(int leftHandSide, int rightHandSide);
 
     /**
      * Perform aggregation operation on long arguments.
      *
-     * @param  lhs left hand operand
-     * @param  rhs right hand operand
-     * @return     combined value
+     * @param  leftHandSide  left hand operand
+     * @param  rightHandSide right hand operand
+     * @return               combined value
      */
-    public abstract long op(long lhs, long rhs);
+    public abstract long op(long leftHandSide, long rightHandSide);
 
     /**
      * Perform aggregation operation on String arguments.
      *
-     * @param  lhs left hand operand
-     * @param  rhs right hand operand
-     * @return     combined value
+     * @param  leftHandSide  left hand operand
+     * @param  rightHandSide right hand operand
+     * @return               combined value
      */
-    public abstract String op(String lhs, String rhs);
+    public abstract String op(String leftHandSide, String rightHandSide);
 
     /**
      * Perform aggregation operation on byte array arguments.
      *
-     * @param  lhs left hand operand
-     * @param  rhs right hand operand
-     * @return     combined value
+     * @param  leftHandSide  left hand operand
+     * @param  rightHandSide right hand operand
+     * @return               combined value
      */
-    public abstract byte[] op(byte[] lhs, byte[] rhs);
+    public abstract byte[] op(byte[] leftHandSide, byte[] rightHandSide);
 
     @Override
-    public Object apply(Object lhs, Object rhs) {
-        if (!(lhs instanceof Map && rhs instanceof Map) && lhs.getClass() != rhs.getClass()) {
-            throw new IllegalArgumentException("different operands, lhs type: " + lhs.getClass() + " rhs type: " + rhs.getClass());
+    public Object apply(Object leftHandSide, Object rightHandSide) {
+        if (!(leftHandSide instanceof Map && rightHandSide instanceof Map) && leftHandSide.getClass() != rightHandSide.getClass()) {
+            throw new IllegalArgumentException("different operands, leftHandSide type: " + leftHandSide.getClass() + " rightHandSide type: " + rightHandSide.getClass());
         }
-        if (lhs instanceof Integer) {
-            return op((Integer) lhs, (Integer) rhs);
-        } else if (lhs instanceof Long) {
-            return op((Long) lhs, (Long) rhs);
-        } else if (lhs instanceof String) {
-            return op((String) lhs, (String) rhs);
-        } else if (lhs instanceof byte[]) {
-            return op((byte[]) lhs, (byte[]) rhs);
-        } else if (lhs instanceof Map) {
-            // Clone the map to avoid aliasing problems: don't want to alter map in previous row
-            Map<?, ?> mapLhs = new HashMap<>((Map<?, ?>) lhs);
-            // Find first value of RHS if there is one
-            Object testValue = ((Map<?, ?>) rhs).values().stream().findFirst().orElse(null);
-            if (testValue != null) {
-                // Loop over right hand side entry set, determine value class and then delegate to primitive operations.
-                if (testValue instanceof Integer) {
-                    @SuppressWarnings("unchecked")
-                    Map<Object, Integer> castLhs = (Map<Object, Integer>) mapLhs;
-                    @SuppressWarnings("unchecked")
-                    Map<Object, Integer> castRhs = (Map<Object, Integer>) rhs;
-                    for (Map.Entry<Object, Integer> entry : castRhs.entrySet()) {
-                        castLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
-                            return op(lhs_value, rhs_value);
-                        });
-                    }
-                } else if (testValue instanceof Long) {
-                    @SuppressWarnings("unchecked")
-                    Map<Object, Long> castLhs = (Map<Object, Long>) mapLhs;
-                    @SuppressWarnings("unchecked")
-                    Map<Object, Long> castRhs = (Map<Object, Long>) rhs;
-                    for (Map.Entry<Object, Long> entry : castRhs.entrySet()) {
-                        castLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
-                            return op(lhs_value, rhs_value);
-                        });
-                    }
-                } else if (testValue instanceof String) {
-                    @SuppressWarnings("unchecked")
-                    Map<Object, String> castLhs = (Map<Object, String>) mapLhs;
-                    @SuppressWarnings("unchecked")
-                    Map<Object, String> castRhs = (Map<Object, String>) rhs;
-                    for (Map.Entry<Object, String> entry : castRhs.entrySet()) {
-                        castLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
-                            return op(lhs_value, rhs_value);
-                        });
-                    }
-                } else if (testValue instanceof byte[]) {
-                    @SuppressWarnings("unchecked")
-                    Map<Object, byte[]> castLhs = (Map<Object, byte[]>) mapLhs;
-                    @SuppressWarnings("unchecked")
-                    Map<Object, byte[]> castRhs = (Map<Object, byte[]>) rhs;
-                    for (Map.Entry<Object, byte[]> entry : castRhs.entrySet()) {
-                        castLhs.merge(entry.getKey(), entry.getValue(), (lhs_value, rhs_value) -> {
-                            return op(lhs_value, rhs_value);
-                        });
-                    }
-                } else {
-                    throw new IllegalArgumentException("Value type not implemented " + testValue.getClass());
-                }
-            }
-            return mapLhs;
+        if (leftHandSide instanceof Integer) {
+            return op((Integer) leftHandSide, (Integer) rightHandSide);
+        } else if (leftHandSide instanceof Long) {
+            return op((Long) leftHandSide, (Long) rightHandSide);
+        } else if (leftHandSide instanceof String) {
+            return op((String) leftHandSide, (String) rightHandSide);
+        } else if (leftHandSide instanceof byte[]) {
+            return op((byte[]) leftHandSide, (byte[]) rightHandSide);
+        } else if (leftHandSide instanceof Map) {
+            return handleMap((Map<?, ?>) leftHandSide, rightHandSide);
         } else {
-            throw new IllegalArgumentException("Value type not implemented " + lhs.getClass());
+            throw new IllegalArgumentException("Value type not implemented " + leftHandSide.getClass());
         }
+    }
+
+    private Map<?, ?> handleMap(Map<?, ?> leftHandSide, Object rightHandSide) {
+        // Clone the map to avoid aliasing problems: don't want to alter map in previous row
+        Map<?, ?> mapLeftHandSide = new HashMap<>(leftHandSide);
+        // Find first value of RHS if there is one
+        Object testValue = ((Map<?, ?>) rightHandSide).values().stream().findFirst().orElse(null);
+        if (testValue != null) {
+            // Loop over right hand side entry set, determine value class and then delegate to primitive operations.
+            if (testValue instanceof Integer) {
+                @SuppressWarnings("unchecked")
+                Map<Object, Integer> castLeftHandSide = (Map<Object, Integer>) mapLeftHandSide;
+                @SuppressWarnings("unchecked")
+                Map<Object, Integer> castRightHandSide = (Map<Object, Integer>) rightHandSide;
+                for (Map.Entry<Object, Integer> entry : castRightHandSide.entrySet()) {
+                    castLeftHandSide.merge(entry.getKey(), entry.getValue(), (leftHandSide_value, rightHandSide_value) -> {
+                        return op(leftHandSide_value, rightHandSide_value);
+                    });
+                }
+            } else if (testValue instanceof Long) {
+                @SuppressWarnings("unchecked")
+                Map<Object, Long> castLeftHandSide = (Map<Object, Long>) mapLeftHandSide;
+                @SuppressWarnings("unchecked")
+                Map<Object, Long> castRightHandSide = (Map<Object, Long>) rightHandSide;
+                for (Map.Entry<Object, Long> entry : castRightHandSide.entrySet()) {
+                    castLeftHandSide.merge(entry.getKey(), entry.getValue(), (leftHandSide_value, rightHandSide_value) -> {
+                        return op(leftHandSide_value, rightHandSide_value);
+                    });
+                }
+            } else if (testValue instanceof String) {
+                @SuppressWarnings("unchecked")
+                Map<Object, String> castLeftHandSide = (Map<Object, String>) mapLeftHandSide;
+                @SuppressWarnings("unchecked")
+                Map<Object, String> castRightHandSide = (Map<Object, String>) rightHandSide;
+                for (Map.Entry<Object, String> entry : castRightHandSide.entrySet()) {
+                    castLeftHandSide.merge(entry.getKey(), entry.getValue(), (leftHandSide_value, rightHandSide_value) -> {
+                        return op(leftHandSide_value, rightHandSide_value);
+                    });
+                }
+            } else if (testValue instanceof byte[]) {
+                @SuppressWarnings("unchecked")
+                Map<Object, byte[]> castLeftHandSide = (Map<Object, byte[]>) mapLeftHandSide;
+                @SuppressWarnings("unchecked")
+                Map<Object, byte[]> castRightHandSide = (Map<Object, byte[]>) rightHandSide;
+                for (Map.Entry<Object, byte[]> entry : castRightHandSide.entrySet()) {
+                    castLeftHandSide.merge(entry.getKey(), entry.getValue(), (leftHandSide_value, rightHandSide_value) -> {
+                        return op(leftHandSide_value, rightHandSide_value);
+                    });
+                }
+            } else {
+                throw new IllegalArgumentException("Value type not implemented " + testValue.getClass());
+            }
+        }
+        return mapLeftHandSide;
     }
 }
