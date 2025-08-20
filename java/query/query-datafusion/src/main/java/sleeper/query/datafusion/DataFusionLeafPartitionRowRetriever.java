@@ -37,17 +37,38 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
+import java.lang.ref.Cleaner;
 import java.util.Optional;
 
 /**
  * Implements a Sleeper row retriever based on Apache DataFusion using native code.
  */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
+    private static final Cleaner CLEANER = Cleaner.create();
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
 
-    private static final DataFusionQueryFunctions NATIVE_QUERY;
+    protected static final DataFusionQueryFunctions NATIVE_QUERY;
 
-    private final DataFusionAwsConfig awsConfig;
+    protected final DataFusionAwsConfig awsConfig;
+    protected final BufferAllocator allocator;
+    protected final FFIContext context;
+
+    /** Store link to allocated resources to be cleaned before being garbage collected. */
+    static class CleanState implements Runnable {
+        private final FFIContext context;
+        private final BufferAllocator allocator;
+
+        CleanState(FFIContext context, BufferAllocator allocator) {
+            this.allocator = allocator;
+            this.context = context;
+        }
+
+        public void run() {
+            try (context; allocator) {
+                // no-op just close() resources
+            }
+        }
+    }
 
     static {
         // Obtain native library. This throws an exception if native library can't be
@@ -59,12 +80,16 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         }
     }
 
-    public DataFusionLeafPartitionRowRetriever() {
-        this(DataFusionAwsConfig.getDefault());
+    private DataFusionLeafPartitionRowRetriever(Builder builder) {
+        this.awsConfig = builder.awsConfig;
+        this.allocator = builder.allocator;
+        this.context = new FFIContext(NATIVE_QUERY);
+        CLEANER.register(this, new CleanState(context, allocator));
     }
 
-    public DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig awsConfig) {
-        this.awsConfig = awsConfig;
+    // Public builder() method for external code to start building an instance
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -74,7 +99,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFIQueryResults results = new FFIQueryResults(runtime);
         // Perform native query
-        try (FFIContext context = new FFIContext(NATIVE_QUERY)) {
+        try {
             // Create NULL pointer which will be set by the FFI call upon return
             int result = NATIVE_QUERY.query(context, params, results);
             // Check result
@@ -83,30 +108,15 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
                 throw new RowRetrievalException("DataFusion query failed with return code " + result);
             }
 
-            BufferAllocator alloc = new RootAllocator();
+            // A zeroed (NULL) results pointer is NEVER correct here
+            if (results.arrowArrayStream.longValue() == 0) {
+                throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
+            }
+
             // Convert pointer from Rust to Java FFI Arrow array stream.
             // At this point Java assumes ownership of the stream and must release it when no longer
             // needed.
-            CloseableIterator<Row> rowConversion = new RowIteratorFromArrowReader(Data.importArrayStream(alloc, ArrowArrayStream.wrap(results.arrowArrayStreamPtr.longValue())));
-
-            return new CloseableIterator<Row>() {
-
-                @Override
-                public boolean hasNext() {
-                    return rowConversion.hasNext();
-                }
-
-                @Override
-                public Row next() {
-                    return rowConversion.next();
-                }
-
-                @Override
-                public void close() throws IOException {
-                    rowConversion.close();
-                    alloc.close();
-                }
-            };
+            return new RowIteratorFromArrowReader(Data.importArrayStream(allocator, ArrowArrayStream.wrap(results.arrowArrayStream.longValue())));
         } catch (IOException e) {
             throw new RowRetrievalException(e.getMessage(), e);
         }
@@ -144,10 +154,81 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
         queryConfig.common.set(common);
+
         FFISleeperRegion[] ffiRegions = query.getRegions().stream().map(region -> new FFISleeperRegion(runtime, region)).toArray(FFISleeperRegion[]::new);
         queryConfig.setQueryRegions(ffiRegions);
         queryConfig.write_quantile_sketch.set(false);
         queryConfig.explain_plans.set(true);
         return queryConfig;
+    }
+
+    /**
+     * Builder for creating instances of outer class.
+     *
+     * This builder allows configuration of:
+     * <ul>
+     * <li>An optional object for AWS integration</li>
+     * <li>An optional object for Apache Arrow memory management</li>
+     * </ul>
+     *
+     * If no allocator is explicitly provided via {@link #allocator(BufferAllocator)},
+     * a new {@link RootAllocator} will be created when {@link #build()} is called.
+     *
+     * Example usage:
+     *
+     * <pre>
+     * DataFusionLeafPartitionRowRetriever retriever = DataFusionLeafPartitionRowRetriever.builder()
+     *         .awsConfig(myAwsConfig)
+     *         // .allocator(customAllocator) // Optional — defaults to new RootAllocator()
+     *         .build();
+     * </pre>
+     */
+    public static class Builder {
+        /** AWS configuration used by the retriever. */
+        private DataFusionAwsConfig awsConfig = DataFusionAwsConfig.getDefault();
+
+        /**
+         * Buffer allocator for managing Arrow memory.
+         *
+         * If null at build time, defaults to a new {@link RootAllocator}.
+         */
+        private BufferAllocator allocator;
+
+        /**
+         * Sets the AWS configuration for the retriever.
+         *
+         * @param  awsConfig the {@link DataFusionAwsConfig} to use
+         * @return           this {@code Builder} instance for method chaining
+         */
+        public Builder awsConfig(DataFusionAwsConfig awsConfig) {
+            this.awsConfig = awsConfig;
+            return this;
+        }
+
+        /**
+         * Sets the Apache Arrow allocator for the retriever.
+         *
+         * If not set, a {@link RootAllocator} will be created automatically during build.
+         *
+         * @param  allocator the allocator to use; may be {@code null} to accept the default
+         * @return           this {@code Builder} instance for method chaining
+         */
+        public Builder allocator(BufferAllocator allocator) {
+            this.allocator = allocator;
+            return this;
+        }
+
+        /**
+         * Builds a new instance using the configuration provided to this builder.
+         *
+         * @return a fully constructed {@link DataFusionLeafPartitionRowRetriever}
+         */
+        public DataFusionLeafPartitionRowRetriever build() {
+            if (allocator == null) {
+                allocator = new RootAllocator();
+            }
+
+            return new DataFusionLeafPartitionRowRetriever(this);
+        }
     }
 }

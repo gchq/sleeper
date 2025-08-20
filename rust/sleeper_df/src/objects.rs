@@ -391,13 +391,13 @@ impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'
 #[derive(Debug)]
 pub struct FFIQueryResults {
     /// Pointer to an Arrow array stream for use by consumer of function [`run_query`].
-    pub arrow_array_stream_ptr: *const FFI_ArrowArrayStream,
+    pub arrow_array_stream: *const FFI_ArrowArrayStream,
 }
 
 impl Default for FFIQueryResults {
     fn default() -> Self {
         Self {
-            arrow_array_stream_ptr: std::ptr::null(),
+            arrow_array_stream: std::ptr::null(),
         }
     }
 }

@@ -215,7 +215,7 @@ pub extern "C" fn native_query_stream(
                 Box::new(stream_to_ffi_arrow_stream(batch_stream, context.rt.clone()));
             // Leak pointer from Box. At this point Rust gives up ownership management of that object
             let leaked_ptr = Box::into_raw(ffi_arrow_stream);
-            query_results.arrow_array_stream_ptr = leaked_ptr;
+            query_results.arrow_array_stream = leaked_ptr;
             0
         }
         Err(e) => {

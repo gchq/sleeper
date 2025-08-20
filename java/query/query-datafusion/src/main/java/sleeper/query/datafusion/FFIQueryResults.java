@@ -33,7 +33,7 @@ public class FFIQueryResults extends Struct {
      * The pointer to where the Arrow FFI Array stream has been allocated
      * on the Rust side of the FFI boundary.
      */
-    public final Struct.Pointer arrowArrayStreamPtr = new Struct.Pointer();
+    public final Struct.Pointer arrowArrayStream = new Struct.Pointer();
 
     /**
      * Create a holder for results data from the FFI side of the boundary.
