@@ -18,7 +18,7 @@ package sleeper.core.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.AggregationFilteringIterator;
+import sleeper.core.iterator.ConfigStringAggregationFilteringIterator;
 import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.model.DataEngine;
@@ -48,7 +48,7 @@ public class IteratorFactory {
      * @return                           an initialised iterator
      * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
      *                                   found
-     * @see                              AggregationFilteringIterator
+     * @see                              ConfigStringAggregationFilteringIterator
      */
     public ConfigStringIterator getIterator(IteratorConfig iteratorConfig) throws IteratorCreationException {
         try {
@@ -57,7 +57,7 @@ public class IteratorFactory {
 
             // If aggregation keyword is used, create specific iterator
             if (className.equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
-                iterator = new AggregationFilteringIterator();
+                iterator = new ConfigStringAggregationFilteringIterator();
             } else {
                 iterator = inner.getObject(className, ConfigStringIterator.class);
             }
