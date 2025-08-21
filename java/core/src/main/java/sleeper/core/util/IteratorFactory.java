@@ -15,14 +15,21 @@
  */
 package sleeper.core.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.iterator.AggregationFilteringIterator;
 import sleeper.core.iterator.ConfigStringAggregationFilteringIterator;
 import sleeper.core.iterator.ConfigStringIterator;
+import sleeper.core.iterator.FilterAggregationConfig;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.schema.Schema;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * A factory class for Sleeper iterators.
@@ -50,23 +57,49 @@ public class IteratorFactory {
      *                                   found
      * @see                              ConfigStringAggregationFilteringIterator
      */
-    public ConfigStringIterator getIterator(IteratorConfig iteratorConfig) throws IteratorCreationException {
+    public SortedRowIterator getIterator(IteratorConfig iteratorConfig) throws IteratorCreationException {
         try {
-            ConfigStringIterator iterator;
-            String className = iteratorConfig.getIteratorClassName();
+            if (iteratorConfig.getFilters() == null) {
+                ConfigStringIterator iterator;
+                String className = iteratorConfig.getIteratorClassName();
 
-            // If aggregation keyword is used, create specific iterator
-            if (className.equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
-                iterator = new ConfigStringAggregationFilteringIterator();
+                // If aggregation keyword is used, create specific iterator
+                if (className.equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
+                    iterator = new ConfigStringAggregationFilteringIterator();
+                } else {
+                    iterator = inner.getObject(className, ConfigStringIterator.class);
+                }
+                LOGGER.debug("Created iterator of class {}", className);
+                iterator.init(iteratorConfig.getIteratorConfigString(), iteratorConfig.getSchema());
+                LOGGER.debug("Initialised iterator with config {}", iteratorConfig.getIteratorConfigString());
+                return iterator;
             } else {
-                iterator = inner.getObject(className, ConfigStringIterator.class);
+                AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+                iterator.setFilterAggregationConfig(getConfigFromProperties(iteratorConfig));
+                iterator.setSchema(iteratorConfig.getSchema());
+                return iterator;
             }
-            LOGGER.debug("Created iterator of class {}", className);
-            iterator.init(iteratorConfig.getIteratorConfigString(), iteratorConfig.getSchema());
-            LOGGER.debug("Initialised iterator with config {}", iteratorConfig.getIteratorConfigString());
-            return iterator;
         } catch (ObjectFactoryException exc) {
             throw new IteratorCreationException(exc);
+        }
+    }
+
+    /**
+     * Gets the filter aggregation config when set by table properties.
+     * Currently just gets the filter ageoff(column,age)
+     * 
+     * @param  iteratorConfig
+     * @return
+     */
+    private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig) {
+        String[] filterParts = iteratorConfig.getFilters().split("(");
+        if ("ageoff".equals(filterParts[0].toLowerCase())) {
+            String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Remove the trailing ')'
+            Optional<String> filterColumn = Optional.of(filterInput[0]);
+            long maxAge = Long.valueOf(filterInput[1]);
+            return new FilterAggregationConfig(List.of(), filterColumn, maxAge, List.of());
+        } else {
+            throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
         }
     }
 }
