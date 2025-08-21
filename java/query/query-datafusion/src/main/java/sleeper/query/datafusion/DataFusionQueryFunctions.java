@@ -69,12 +69,12 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      *
      * @param  context               Java context object
      * @param  input                 query input configuration
-     * @param  outputStream          stream of results if successful
+     * @param  outputResult          stream of results if successful
      * @return                       indication of success
      * @throws IllegalStateException if the context has already been closed
      */
-    default int query_file(FFIContext context, FFILeafPartitionQueryConfig input, FFIQueryResults outputStream) {
-        return native_query_stream(context.getForeignContext(), input, outputStream);
+    default int query_file(FFIContext context, FFILeafPartitionQueryConfig input, FFIFileResult outputResult) {
+        return native_query_file(context.getForeignContext(), input, outputResult);
     }
 
     /**
@@ -88,9 +88,9 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      *
      * @param  context      pointer to opaque context object
      * @param  input        query input configuration
-     * @param  outputStream stream of results if successful
+     * @param  outputResult stream of results if successful
      * @return              indication of success
      */
     @SuppressWarnings(value = "checkstyle:parametername")
-    int native_query_file(@In Pointer context, @In FFILeafPartitionQueryConfig input, @Out FFIFileResult outputResults);
+    int native_query_file(@In Pointer context, @In FFILeafPartitionQueryConfig input, @Out FFIFileResult outputResult);
 }
