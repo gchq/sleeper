@@ -15,12 +15,13 @@
  */
 package sleeper.compaction.datafusion;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionParams;
+import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCommonConfig;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
@@ -33,7 +34,9 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
+import sleeper.foreign.bridge.FFIContext;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -48,6 +51,7 @@ import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
+@SuppressFBWarnings("UUF_UNUSED_FIELD")
 public class DataFusionCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionCompactionRunner.class);
 
@@ -80,7 +84,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
 
-        DataFusionCompactionParams params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+        DataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
 
@@ -105,10 +109,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static DataFusionCompactionParams createCompactionParams(CompactionJob job, TableProperties tableProperties,
+    private static DataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        DataFusionCompactionParams params = new DataFusionCompactionParams(runtime);
+        DataFusionCommonConfig params = new DataFusionCommonConfig(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
             params.aws_region.set(awsConfig.getRegion());
@@ -120,6 +124,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
             params.override_aws_config.set(false);
         }
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
+        // Files are always sorted for compactions
+        params.input_files_sorted.set(true);
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
         params.row_key_schema.populate(getKeyTypes(schema.getRowKeyTypes()), false);
@@ -139,27 +145,29 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } else {
             params.iterator_config.set("");
         }
+        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
             Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
-            params.region_mins.populate(regionMins, false);
+            partitionRegion.region_mins.populate(regionMins, false);
         }
         {
             Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
                     .toArray(Boolean[]::new);
-            params.region_mins_inclusive.populate(regionMinInclusives, false);
+            partitionRegion.region_mins_inclusive.populate(regionMinInclusives, false);
         }
         {
             // This array can contain nulls
             Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
-            params.region_maxs.populate(regionMaxs, true);
+            partitionRegion.region_maxs.populate(regionMaxs, true);
         }
         {
             Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
                     .toArray(Boolean[]::new);
-            params.region_maxs_inclusive.populate(regionMaxInclusives, false);
+            partitionRegion.region_maxs_inclusive.populate(regionMaxInclusives, false);
         }
+        params.setRegion(partitionRegion);
         params.validate();
         return params;
     }
@@ -200,16 +208,17 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     public static RowsProcessed invokeDataFusion(CompactionJob job,
-            DataFusionCompactionParams compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+            DataFusionCommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction
-        int result = NATIVE_COMPACTION.merge_sorted_files(compactionParams, compactionData);
-
-        // Check result
-        if (result != 0) {
-            LOGGER.error("DataFusion compaction failed, return code: {}", result);
-            throw new IOException("DataFusion compaction failed with return code " + result);
+        try (FFIContext context = new FFIContext(NATIVE_COMPACTION)) {
+            int result = NATIVE_COMPACTION.compact(context, compactionParams, compactionData);
+            // Check result
+            if (result != 0) {
+                LOGGER.error("DataFusion compaction failed, return code: {}", result);
+                throw new IOException("DataFusion compaction failed with return code " + result);
+            }
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();
