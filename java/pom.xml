@@ -178,7 +178,7 @@
         <zookeeper.version>3.9.3</zookeeper.version>
         <jackson.version>2.19.2</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
-        <jjwt.build.version>0.12.7</jjwt.build.version>
+        <jjwt.build.version>0.13.0</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
