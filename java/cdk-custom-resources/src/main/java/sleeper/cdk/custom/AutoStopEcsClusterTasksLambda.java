@@ -78,6 +78,7 @@ public class AutoStopEcsClusterTasksLambda {
             sleepForSustainedRatePerSecond(30, sleep);
             ecs.stopTask(builder -> builder.cluster(clusterName).task(taskArn)
                     .reason("Cleaning up before cdk destroy"));
+            LOGGER.info("Stopped task {} in ECS cluster {}", taskArn, clusterName);
         });
     }
 

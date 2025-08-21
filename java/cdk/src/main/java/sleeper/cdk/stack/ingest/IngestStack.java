@@ -245,8 +245,8 @@ public class IngestStack extends NestedStack {
         if (removalPolicy == RemovalPolicy.DESTROY) {
             AutoStopEcsClusterTasks.autoStopTasksOnEcsCluster(this, instanceProperties, lambdaCode,
                     cluster, clusterName,
-                    coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTODELETE),
-                    coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTODELETE_PROVIDER));
+                    coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
+                    coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
         }
 
         return cluster;
