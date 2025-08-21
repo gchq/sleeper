@@ -78,7 +78,7 @@ public class AutoStopEcsClusterTasksLambda {
                             LOGGER.info("Stopping task {} in cluster {} ", task, clusterName);
                             // Rate limit for ECS StopTask is 100 burst, 40 sustained:
                             // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
-                            sleepForSustainedRatePerSecond(30, sleep);
+                            sleepForSustainedRatePerSecond(30);
                             ecsClient.stopTask(builder -> builder.cluster(clusterName).task(task));
                         });
     }
