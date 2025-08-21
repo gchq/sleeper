@@ -124,7 +124,7 @@ public class QueryClient extends QueryCommandLineClient {
         Schema schema = tableProperties.getSchema();
 
         CloseableIterator<Row> rows;
-        Instant startTime = Instant.now();
+        Instant startTime = Instant.now()
         try {
             rows = runQuery(query);
         } catch (QueryException e) {
@@ -135,7 +135,8 @@ public class QueryClient extends QueryCommandLineClient {
         out.println("Returned Rows:");
         long count = 0L;
         while (rows.hasNext()) {
-            out.println(rows.next().toString(schema));
+            // out.println(rows.next().toString(schema));
+            rows.next().toString(schema);
             count++;
         }
 

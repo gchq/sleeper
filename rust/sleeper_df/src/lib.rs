@@ -20,6 +20,8 @@ use crate::{
     objects::{FFICommonConfig, FFIFileResult, FFILeafPartitionQueryConfig, FFIQueryResults},
 };
 use ::log::{error, warn};
+#[cfg(doc)]
+use arrow::{ffi_stream::FFI_ArrowArrayStream, record_batch::RecordBatch};
 use libc::{EFAULT, EINVAL};
 use sleeper_core::{CompletedOutput, run_compaction, run_query, stream_to_ffi_arrow_stream};
 use std::ffi::c_int;
@@ -140,10 +142,10 @@ pub extern "C" fn native_compact(
 ///
 /// It is undefined behaviour to specify an incorrect array length for any array.
 ///
-/// The `ctx_ptr` value must point to a valid [`FFI_Context`] which contains
+/// The `ctx_ptr` value must point to a valid [`FFIContext`] which contains
 /// an active runtime.
 ///
-/// It is safe to release the [`FFI_Context`] object (see [`destroy_context`](crate::destroy_context)) even
+/// It is safe to release the [`FFIContext`] object (see [`destroy_context`](crate::context::destroy_context)) even
 /// if this stream is still being read from. The underlying Tokio runtime will not be released
 /// until all remaining [`FFI_ArrowArrayStream`]s created by this function are
 /// released.
@@ -240,10 +242,10 @@ pub extern "C" fn native_query_stream(
 ///
 /// It is undefined behaviour to specify an incorrect array length for any array.
 ///
-/// The `ctx_ptr` value must point to a valid [`FFI_Context`] which contains
+/// The `ctx_ptr` value must point to a valid [`FFIContext`] which contains
 /// an active runtime.
 ///
-/// It is safe to release the [`FFI_Context`] object (see [`destroy_context`](crate::destroy_context)) even
+/// It is safe to release the [`FFIContext`] object (see [`destroy_context`](crate::context::destroy_context)) even
 /// if this stream is still being read from. The underlying Tokio runtime will not be released
 /// until all remaining [`FFI_ArrowArrayStream`]s created by this function are
 /// released.

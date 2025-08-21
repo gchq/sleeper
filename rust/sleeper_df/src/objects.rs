@@ -406,7 +406,7 @@ impl FFILeafPartitionQueryConfig {
 ///
 /// # Safety
 /// The Rust side of this function, should NOT read incoming value of
-/// [`arrow_array_stream_ptr`](QueryResults::arrow_array_stream_ptr) as it is undefined.
+/// [`arrow_array_stream`](FFIQueryResults::arrow_array_stream) as it is undefined.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
 /// you MUST update the corresponding Java definition in java/query/query-datafusion/src/main/java/sleeper/query/datafusion/FFIQueryResults.java.
@@ -414,7 +414,7 @@ impl FFILeafPartitionQueryConfig {
 #[repr(C)]
 #[derive(Debug)]
 pub struct FFIQueryResults {
-    /// Pointer to an Arrow array stream for use by consumer of function [`run_query`].
+    /// Pointer to an Arrow array stream for use by consumer.
     pub arrow_array_stream: *const FFI_ArrowArrayStream,
 }
 
