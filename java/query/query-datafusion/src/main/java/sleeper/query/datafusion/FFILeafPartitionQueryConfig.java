@@ -15,6 +15,7 @@
  */
 package sleeper.query.datafusion;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
 import sleeper.foreign.FFISleeperRegion;
@@ -29,6 +30,7 @@ import sleeper.foreign.datafusion.FFICommonConfig;
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
+@SuppressFBWarnings(value = {"PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE"})
 public class FFILeafPartitionQueryConfig extends Struct {
     /** Basic configuration for query. */
     public final Struct.StructRef<FFICommonConfig> common = new StructRef<>(FFICommonConfig.class);
