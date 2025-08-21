@@ -50,6 +50,7 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
             Schema sleeperSchema,
             String sleeperIteratorClassName,
             String sleeperIteratorConfig,
+            String sleeperFiltersConfig,
             CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
         this.inputIterator = requireNonNull(sourceIterator);
         this.outputIterator = applyIterator(
@@ -57,6 +58,7 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
                 sleeperSchema,
                 sleeperIteratorClassName,
                 sleeperIteratorConfig,
+                sleeperFiltersConfig,
                 this.inputIterator);
     }
 
@@ -76,12 +78,14 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
             Schema sleeperSchema,
             String sleeperIteratorClassName,
             String sleeperIteratorConfig,
+            String sleeperFiltersConfig,
             CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
         if (null != sleeperIteratorClassName) {
             return new IteratorFactory(objectFactory)
                     .getIterator(IteratorConfig.builder()
                             .iteratorClassName(sleeperIteratorClassName)
                             .iteratorConfigString(sleeperIteratorConfig)
+                            .filters(sleeperFiltersConfig)
                             .schema(sleeperSchema)
                             .build())
                     .apply(sourceIterator);

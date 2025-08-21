@@ -76,12 +76,13 @@ public class LeafPartitionQueryExecutor {
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
+        String compactionFilters = tableProperties.get(TableProperty.FILTERS_CONFIG);
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
 
         try {
-            compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig);
-            queryIterator = createIterator(tableSchema, objectFactory, leafPartitionQuery.getQueryTimeIteratorClassName(), leafPartitionQuery.getQueryTimeIteratorConfig());
+            compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig, compactionFilters);
+            queryIterator = createIterator(tableSchema, objectFactory, leafPartitionQuery.getQueryTimeIteratorClassName(), leafPartitionQuery.getQueryTimeIteratorConfig(), compactionFilters);
         } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);
         }
@@ -137,7 +138,8 @@ public class LeafPartitionQueryExecutor {
             Schema schema,
             ObjectFactory objectFactory,
             String iteratorClassName,
-            String iteratorConfig) throws IteratorCreationException {
+            String iteratorConfig,
+            String filters) throws IteratorCreationException {
         if (iteratorClassName == null) {
             return null;
         } else {
@@ -145,6 +147,7 @@ public class LeafPartitionQueryExecutor {
                     .getIterator(IteratorConfig.builder()
                             .iteratorClassName(iteratorClassName)
                             .iteratorConfigString(iteratorConfig)
+                            .filters(filters)
                             .schema(schema)
                             .build());
         }
