@@ -29,6 +29,7 @@ import sleeper.core.properties.model.DataEngine;
 import sleeper.core.schema.Schema;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -86,17 +87,18 @@ public class IteratorFactory {
 
     /**
      * Gets the filter aggregation config when set by table properties.
-     * Currently just gets the filter ageoff(column,age)
-     * 
-     * @param  iteratorConfig
-     * @return
+     * Currently just gets the filter ageoff(column,age).
+     * Currently only uses filters from input but eventually will build aggregations from it too.
+     *
+     * @param  iteratorConfig config for an iterator that should have filters set in it
+     * @return                filter aggregation config to be used in an iterator
      */
     private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig) {
-        String[] filterParts = iteratorConfig.getFilters().split("(");
-        if ("ageoff".equals(filterParts[0].toLowerCase())) {
+        String[] filterParts = iteratorConfig.getFilters().split("\\(");
+        if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
             String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Remove the trailing ')'
             Optional<String> filterColumn = Optional.of(filterInput[0]);
-            long maxAge = Long.valueOf(filterInput[1]);
+            long maxAge = Long.parseLong(filterInput[1]);
             return new FilterAggregationConfig(List.of(), filterColumn, maxAge, List.of());
         } else {
             throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
