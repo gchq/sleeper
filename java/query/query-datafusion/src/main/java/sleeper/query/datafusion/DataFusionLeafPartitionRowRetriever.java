@@ -101,7 +101,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         // Perform native query
         try {
             // Create NULL pointer which will be set by the FFI call upon return
-            int result = NATIVE_QUERY.query(context, params, results);
+            int result = NATIVE_QUERY.query_stream(context, params, results);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion query failed, return code: {}", result);
