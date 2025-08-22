@@ -26,8 +26,6 @@ import sleeper.core.util.ThreadSleep;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
-
 /** Deletes an ECS cluster. */
 public class AutoStopEcsClusterTasksLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(AutoStopEcsClusterTasksLambda.class);
@@ -75,7 +73,7 @@ public class AutoStopEcsClusterTasksLambda {
         forEachTaskArn(ecs, clusterName, maxResults, taskArn -> {
             // Rate limit for ECS StopTask is 100 burst, 40 sustained:
             // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
-            sleepForSustainedRatePerSecond(30, sleep);
+            //sleepForSustainedRatePerSecond(30, sleep);
             ecs.stopTask(builder -> builder.cluster(clusterName).task(taskArn)
                     .reason("Cleaning up before cdk destroy"));
             LOGGER.info("Stopped task {} in ECS cluster {}", taskArn, clusterName);
