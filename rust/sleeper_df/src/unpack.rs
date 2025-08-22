@@ -135,7 +135,7 @@ pub fn unpack_variant_array<'a>(
                             //unpack length (signed because it's from Java)
                             Some(str_len) => {
                                 if *str_len < 0 {
-                                    bail!("Illegal variant length in FFI array: {str_len}");
+                                    bail!("Illegal string variant length in FFI array: {str_len}");
                                 }
                                 std::str::from_utf8(unsafe {
                                     #[allow(clippy::cast_sign_loss)]
@@ -155,7 +155,9 @@ pub fn unpack_variant_array<'a>(
                             //unpack length (signed because it's from Java)
                             Some(byte_len) => {
                                 if *byte_len < 0 {
-                                    bail!("Illegal byte array length in FFI array: {byte_len}");
+                                    bail!(
+                                        "Illegal byte array variant length in FFI array: {byte_len}"
+                                    );
                                 }
                                 Ok(PartitionBound::ByteArray(unsafe {
                                     #[allow(clippy::cast_sign_loss)]
