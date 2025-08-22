@@ -93,16 +93,17 @@ public class DataFusionCompactionRunnerIT {
     @Test
     void shouldMergeFilesWithStringAndLongKey() throws Exception {
         // Given
-        Schema schema = createSchemaWithMultipleKeys("string_key", new StringType(), "long_key", new LongType());
+        Schema schema = createSchemaWithMultipleKeys("foo1", new StringType(), "bar1", new LongType());
         tableProperties.setSchema(schema);
         update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-        Row row1 = new Row(Map.of("string_key", "row-1", "long_key", 1_000_000L));
-        Row row2 = new Row(Map.of("string_key", "row-2", "long_key", 1_000_000L));
+        Row row1 = new Row(Map.of("foo1", "row-1", "bar1", 1_000_000L));
+        Row row2 = new Row(Map.of("foo1", "row-2", "bar1", 1_000_000L));
         String file1 = writeFileForPartition("root", List.of(row1));
         String file2 = writeFileForPartition("root", List.of(row2));
         CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+        Region region = new Region(List.of(new Range(new Field("foo1", new StringType()), "aaaa", null),
+                new Range(new Field("bar1", new LongType()), 500_000L, 999_999_999L)));
 
-        Region region = new Region(List.of(new Range(new Field("string_key", new StringType()), "aaaaaaaa", "zzzzzzzz"), new Range(new Field("long_key", new LongType()), 500_000L, 999_999_999L)));
         // When
         RowsProcessed summary = compactWithRegion(job, region);
 
