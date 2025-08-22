@@ -20,8 +20,10 @@ import jnr.ffi.Struct;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
+import sleeper.core.schema.Schema;
 import sleeper.foreign.bridge.FFIArray;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -46,50 +48,55 @@ public class FFISleeperRegion extends Struct {
     public final FFIArray<java.lang.Boolean> maxs_inclusive = new FFIArray<>(this);
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
-        this(runtime, null);
+        this(runtime, null, null);
     }
 
     /**
      * Creates and validates Sleeper region into an FFI compatible form.
      *
      * @param  runtime               FFI runtime
+     * @param  schema                the table schema
      * @param  region                the Sleeper partition region
      * @throws IllegalStateException when the region data is invalid
      */
-    public FFISleeperRegion(jnr.ffi.Runtime runtime, Region region) {
+    public FFISleeperRegion(jnr.ffi.Runtime runtime, Schema schema, Region region) {
         super(runtime);
         if (region != null) {
-            populateRegion(region);
+            populateRegion(schema, region);
         }
     }
 
     /**
      * Set the region data in this FFI object.
      *
+     * @param  schema               the table schema
      * @param  region               region data to copy into FFI object
      * @throws NullPointerException if {@code region} is {@code null}
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    public void populateRegion(Region region) {
+    public void populateRegion(Schema schema, Region region) {
+        Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(region, "region");
+        List<java.lang.String> rowKeysOrdered = schema.getRowKeyFieldNames();
+        List<Range> orderedRanges = rowKeysOrdered.stream().map(rowKeyName -> region.getRange(rowKeyName)).toList();
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
-            Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
+            Object[] regionMins = orderedRanges.stream().map(Range::getMin).toArray();
             this.mins.populate(regionMins, false);
         }
         {
-            java.lang.Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
+            java.lang.Boolean[] regionMinInclusives = orderedRanges.stream().map(Range::isMinInclusive)
                     .toArray(java.lang.Boolean[]::new);
             this.mins_inclusive.populate(regionMinInclusives, false);
         }
         {
             // This array can contain nulls
-            Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
+            Object[] regionMaxs = orderedRanges.stream().map(Range::getMax).toArray();
             this.maxs.populate(regionMaxs, true);
         }
         {
-            java.lang.Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
+            java.lang.Boolean[] regionMaxInclusives = orderedRanges.stream().map(Range::isMaxInclusive)
                     .toArray(java.lang.Boolean[]::new);
             this.maxs_inclusive.populate(regionMaxInclusives, false);
         }

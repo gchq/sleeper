@@ -126,7 +126,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         if (DataEngine.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName())) {
             params.iterator_config.set(job.getIteratorConfig());
         }
-        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, region);
+        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, schema, region);
         params.setRegion(partitionRegion);
         params.validate();
         return params;
