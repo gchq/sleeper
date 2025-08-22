@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
@@ -40,7 +40,7 @@ public class IteratorFactoryTest {
     @Test
     public void shouldInitialiseIterator() throws IteratorCreationException {
         // Given
-        ConfigStringIterator ageOffIterator = new IteratorFactory(
+        SortedRowIterator ageOffIterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
                         .iteratorClassName(AgeOffIterator.class.getName())
@@ -67,7 +67,7 @@ public class IteratorFactoryTest {
     @Test
     public void shouldCreateAggregatingIterator() throws IteratorCreationException {
         // Given
-        ConfigStringIterator ageOffIterator = new IteratorFactory(
+        SortedRowIterator ageOffIterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
                         .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)

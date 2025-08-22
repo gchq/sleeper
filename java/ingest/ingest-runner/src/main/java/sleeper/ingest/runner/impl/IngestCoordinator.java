@@ -105,6 +105,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final Schema sleeperSchema;
     private final String sleeperIteratorClassName;
     private final String sleeperIteratorConfig;
+    private final String sleeperFiltersConfig;
     private final int ingestPartitionRefreshFrequencyInSeconds;
     private final RowBatchFactory<INCOMINGDATATYPE> rowBatchFactory;
     private final PartitionFileWriterFactory partitionFileWriterFactory;
@@ -128,6 +129,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.sleeperSchema = requireNonNull(builder.schema);
         this.sleeperIteratorClassName = builder.iteratorClassName;
         this.sleeperIteratorConfig = builder.iteratorConfig;
+        this.sleeperFiltersConfig = builder.filtersConfig;
         this.ingestPartitionRefreshFrequencyInSeconds = builder.ingestPartitionRefreshFrequencyInSeconds;
         this.rowBatchFactory = requireNonNull(builder.rowBatchFactory);
 
@@ -179,6 +181,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                             sleeperSchema,
                             sleeperIteratorClassName,
                             sleeperIteratorConfig,
+                            sleeperFiltersConfig,
                             orderedRowIteratorFromBatch)) {
                 // Create a future which completes once the partitions are created, the rows ingested
                 // and the state store updated.
@@ -358,6 +361,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private Schema schema;
         private String iteratorClassName;
         private String iteratorConfig;
+        private String filtersConfig;
         private int ingestPartitionRefreshFrequencyInSeconds;
         private RowBatchFactory<T> rowBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
@@ -429,6 +433,17 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          */
         public Builder<T> iteratorConfig(String iteratorConfig) {
             this.iteratorConfig = iteratorConfig;
+            return this;
+        }
+
+        /**
+         * The Sleeper filters configuration.
+         *
+         * @param  filtersConfig the configuration
+         * @return               the builder for call chaining
+         */
+        public Builder<T> filtersConfig(String filtersConfig) {
+            this.filtersConfig = filtersConfig;
             return this;
         }
 

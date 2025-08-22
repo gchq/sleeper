@@ -21,11 +21,13 @@ import sleeper.core.schema.Schema;
 public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
+    private final String filters;
     private final Schema schema;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
+        this.filters = builder.filters;
         this.schema = builder.schema;
     }
 
@@ -41,6 +43,10 @@ public class IteratorConfig {
         return iteratorConfigString;
     }
 
+    public String getFilters() {
+        return filters;
+    }
+
     public Schema getSchema() {
         return schema;
     }
@@ -51,6 +57,7 @@ public class IteratorConfig {
     public static final class Builder {
         private String iteratorClassName;
         private String iteratorConfigString;
+        private String filters;
         private Schema schema;
 
         private Builder() {
@@ -75,6 +82,17 @@ public class IteratorConfig {
          */
         public Builder iteratorConfigString(String iteratorConfigString) {
             this.iteratorConfigString = iteratorConfigString;
+            return this;
+        }
+
+        /**
+         * Sets the filters string.
+         *
+         * @param  filters the filters string to be used for the iterator
+         * @return         builder for method chaining
+         */
+        public Builder filters(String filters) {
+            this.filters = filters;
             return this;
         }
 
