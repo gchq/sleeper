@@ -21,6 +21,7 @@ import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -35,6 +36,8 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     private final ExecutorService executorService;
     /** Hadoop configuration needed to Java based query code. */
     private final Configuration configuration;
+    /** Temporary DF query enabling environmental variable. */
+    private static final String EXPERIMENT_ENV_VAR = "DF_QUERY";
 
     public QueryEngineSelector(ExecutorService executorService, Configuration configuration) {
         this.executorService = Objects.requireNonNull(executorService, "executorService");
@@ -42,12 +45,15 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     }
 
     @Override
-    @SuppressWarnings("fallthrough")
+    @SuppressWarnings(value = "checkstyle:fallThrough")
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
             case DATAFUSION:
-                // Not implemented yet : fall through
+                // Since DF queries are still experimental, we require a environment variable to be set
+                if (System.getenv(EXPERIMENT_ENV_VAR) != null) {
+                    return DataFusionLeafPartitionRowRetriever.builder().build();
+                }
             case JAVA:
             default:
                 return new LeafPartitionRowRetrieverImpl(executorService, configuration, tableProperties);

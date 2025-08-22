@@ -163,6 +163,7 @@ async fn main() -> color_eyre::Result<()> {
     let query_config = LeafPartitionQueryConfig {
         common,
         ranges: vec![SleeperPartitionRegion::new(query_map)],
+        requested_value_fields: None,
         explain_plans: true,
         write_quantile_sketch: false,
     };

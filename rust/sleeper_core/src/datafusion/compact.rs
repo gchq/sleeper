@@ -16,7 +16,7 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, CompactionResult,
+    CommonConfig,
     datafusion::{
         CompletionOptions, SleeperOperations,
         metrics::RowCounts,
@@ -33,6 +33,18 @@ use datafusion::{
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
+
+/// Contains compaction results.
+///
+/// This provides the details of compaction results that Sleeper
+/// will use to update its record keeping.
+///
+pub struct CompactionResult {
+    /// The total number of rows read by a compaction.
+    pub rows_read: usize,
+    /// The total number of rows written by a compaction.
+    pub rows_written: usize,
+}
 
 /// Starts a Sleeper compaction.
 ///

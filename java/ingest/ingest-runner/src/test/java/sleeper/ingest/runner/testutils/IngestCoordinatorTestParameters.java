@@ -23,14 +23,14 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
+import sleeper.core.rowbatch.arrow.ArrowRowBatchFactory;
+import sleeper.core.rowbatch.arrow.ArrowRowWriter;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatchFactory;
-import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriter;
 
 import java.util.List;
 import java.util.Objects;

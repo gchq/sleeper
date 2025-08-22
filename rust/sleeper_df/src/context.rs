@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#[cfg(doc)]
+use crate::native_query_stream;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -38,7 +39,7 @@ fn make_runtime() -> Runtime {
 ///
 /// This struct is NOT marked as `#[repr(C)]` because it is not intended
 /// for access by other languages. Although the [`create_context`] function
-/// returns a pointer to an [`FFI_Context`], it should be treated as an
+/// returns a pointer to an [`FFIContext`], it should be treated as an
 /// [opaque pointer](https://en.wikipedia.org/wiki/Opaque_pointer).
 /// Passing a pointer back across an FFI layer is safe as long as the
 /// consumer simply treats it as a meangingless handle.
@@ -70,7 +71,7 @@ impl FFIContext {
 /// it is no longer needed by calling [`destroy_context`]. If this
 /// context is destroyed while functions are still running with it,
 /// some internal resources may not be freed until all remaining
-/// references are themselves freed. E.g. if you have called [`run_query`]
+/// references are themselves freed. E.g. if you have called [`native_query_stream`]
 /// and still hold references to the returned stream, you may
 /// safely call [`destroy_context`] and still use the existing stream.
 ///
