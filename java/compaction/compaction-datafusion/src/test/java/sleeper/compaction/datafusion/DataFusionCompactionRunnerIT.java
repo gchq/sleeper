@@ -33,6 +33,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -69,6 +71,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithMultipleKeys;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class DataFusionCompactionRunnerIT {
@@ -85,6 +88,32 @@ public class DataFusionCompactionRunnerIT {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, createTempDirectory(tempDir, null).toString());
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+    }
+
+    @Test
+    void shouldMergeFilesWithStringAndLongKey() throws Exception {
+        // Given
+        Schema schema = createSchemaWithMultipleKeys("foo1", new StringType(), "bar1", new LongType());
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        Row row1 = new Row(Map.of("foo1", "row-1", "bar1", 1_000_000L));
+        Row row2 = new Row(Map.of("foo1", "row-2", "bar1", 1_000_000L));
+        String file1 = writeFileForPartition("root", List.of(row1));
+        String file2 = writeFileForPartition("root", List.of(row2));
+        CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+        Region region = new Region(List.of(new Range(new Field("foo1", new StringType()), "aaaa", null),
+                new Range(new Field("bar1", new LongType()), 500_000L, 999_999_999L)));
+
+        // When
+        RowsProcessed summary = compactWithRegion(job, region);
+
+        // Then
+        assertThat(summary.getRowsRead()).isEqualTo(2);
+        assertThat(summary.getRowsWritten()).isEqualTo(2);
+        assertThat(readDataFile(schema, job.getOutputFile()))
+                .containsExactly(row1, row2);
+        assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
     }
 
     @Nested
@@ -334,6 +363,11 @@ public class DataFusionCompactionRunnerIT {
     private RowsProcessed compact(CompactionJob job) throws Exception {
         CompactionRunner runner = new DataFusionCompactionRunner();
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
+    }
+
+    private RowsProcessed compactWithRegion(CompactionJob job, Region region) throws Exception {
+        CompactionRunner runner = new DataFusionCompactionRunner();
+        return runner.compact(job, tableProperties, region);
     }
 
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {

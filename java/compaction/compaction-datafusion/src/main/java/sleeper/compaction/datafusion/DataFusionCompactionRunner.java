@@ -139,28 +139,31 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } else {
             params.iterator_config.set("");
         }
+        List<String> rowKeysOrdered = schema.getRowKeyFieldNames();
+        List<Range> orderedRanges = rowKeysOrdered.stream().map(rowKeyName -> region.getRange(rowKeyName)).toList();
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
-            Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
+            Object[] regionMins = orderedRanges.stream().map(Range::getMin).toArray();
             params.region_mins.populate(regionMins, false);
         }
         {
-            Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
+            Boolean[] regionMinInclusives = orderedRanges.stream().map(Range::isMinInclusive)
                     .toArray(Boolean[]::new);
             params.region_mins_inclusive.populate(regionMinInclusives, false);
         }
         {
             // This array can contain nulls
-            Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
+            Object[] regionMaxs = orderedRanges.stream().map(Range::getMax).toArray();
             params.region_maxs.populate(regionMaxs, true);
         }
         {
-            Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
+            Boolean[] regionMaxInclusives = orderedRanges.stream().map(Range::isMaxInclusive)
                     .toArray(Boolean[]::new);
             params.region_maxs_inclusive.populate(regionMaxInclusives, false);
         }
         params.validate();
+
         return params;
     }
 
