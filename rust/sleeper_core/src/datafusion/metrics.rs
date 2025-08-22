@@ -45,6 +45,7 @@ pub const FILE_METRICS: [&str; 10] = [
 ];
 
 /// Simple struct used for storing the collected statistics from an execution plan.
+#[derive(Debug)]
 pub struct RowCounts {
     pub rows_read: usize,
     pub rows_written: usize,

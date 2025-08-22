@@ -19,9 +19,9 @@ use aggregator_udfs::{
 };
 use datafusion::{
     common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
+    dataframe::DataFrame,
     error::{DataFusionError, Result},
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
-    prelude::DataFrame,
 };
 use filter_udfs::ageoff::AgeOff;
 use regex::Regex;
