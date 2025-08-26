@@ -18,7 +18,6 @@ package sleeper.systemtest.datageneration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
@@ -50,8 +49,7 @@ public class ECSSystemTestTask {
 
     public static void main(String[] args) {
         try (StsClient stsClient = StsClient.create();
-                S3Client s3Client = S3Client.create();
-                SqsClient sqsClient = SqsClient.create()) {
+                S3Client s3Client = S3Client.create()) {
             CommandLineFactory factory = new CommandLineFactory(stsClient, s3Client);
             if (args.length > 4 || args.length < 3) {
                 throw new RuntimeException(
