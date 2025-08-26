@@ -46,16 +46,15 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     }
 
     @Override
-    public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll) {
-        List<Task> tasks = startTasks(jobs);
+    public void runDataGenerationJobs(int numberOfJobs, SystemTestDataGenerationJob jobSpec, PollWithRetries poll) {
+        List<Task> tasks = startTasks(numberOfJobs, jobSpec);
 
         waitForTasks(tasks, poll);
     }
 
-    private List<Task> startTasks(List<SystemTestDataGenerationJob> jobs) {
-        RunWriteRandomDataTaskOnECS taskStarter = taskStarter();
-        return jobs.stream()
-                .flatMap(job -> taskStarter.runTasks(job, 1).stream())
+    private List<Task> startTasks(int numberOfJobs, SystemTestDataGenerationJob jobSpec) {
+        return taskStarter()
+                .runTasks(numberOfJobs, jobSpec).stream()
                 .flatMap(response -> response.tasks().stream())
                 .toList();
     }

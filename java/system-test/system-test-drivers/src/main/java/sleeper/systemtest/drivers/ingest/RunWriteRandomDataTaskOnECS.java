@@ -92,7 +92,7 @@ public class RunWriteRandomDataTaskOnECS {
         this.loadConfigRoleArn = null;
     }
 
-    public List<RunTaskResponse> runTasks(SystemTestDataGenerationJob jobSpec, int numberOfTasks) {
+    public List<RunTaskResponse> runTasks(int numberOfTasks, SystemTestDataGenerationJob jobSpec) {
         String jobObjectKey = jobWriter.writeJobGetObjectKey(jobSpec);
         List<String> args = new ArrayList<>(List.of(deployType, jobObjectKey, configBucket));
         if (loadConfigRoleArn != null) {
@@ -146,7 +146,7 @@ public class RunWriteRandomDataTaskOnECS {
             TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
             RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient, s3Client);
             SystemTestDataGenerationJob job = SystemTestDataGenerationJob.getDefaultJob(systemTestProperties, tableProperties);
-            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.runTasks(job, systemTestProperties.getInt(NUMBER_OF_WRITERS));
+            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.runTasks(systemTestProperties.getInt(NUMBER_OF_WRITERS), job);
             if (args.length > 2) {
                 TasksJson.writeToFile(results, Paths.get(args[2]));
             }
