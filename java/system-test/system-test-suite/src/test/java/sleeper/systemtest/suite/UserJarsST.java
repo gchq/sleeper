@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -77,6 +78,20 @@ public class UserJarsST {
     }
 
     @Test
+    void shouldApplyTableIteratorFromPropertiesDuringIngest(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
+        sleeper.updateTableProperties(Map.of(FILTERS_CONFIG, "ageOff(timestamp,50)"));
+
+        // When
+        sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
+
+        // Then
+        assertThat(sleeper.query().byQueue().allRowsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
+    }
+
+    @Test
     void shouldApplyTableIteratorFromUserJarDuringCompaction(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
@@ -93,12 +108,40 @@ public class UserJarsST {
     }
 
     @Test
+    void shouldApplyTableIteratorFromPropetiesDuringCompaction(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
+        sleeper.updateTableProperties(Map.of(FILTERS_CONFIG, "ageOff(timestamp,50)"));
+
+        // When
+        sleeper.compaction().forceCreateJobs(1);
+
+        // Then
+        assertThat(sleeper.query().byQueue().allRowsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
+    }
+
+    @Test
     void shouldApplyTableIteratorFromUserJarDuringQuery(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
                 ITERATOR_CONFIG, "timestamp,50"));
+
+        // When
+        List<Row> rows = sleeper.query().byQueue().allRowsInTable();
+
+        // Then
+        assertThat(rows)
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.range(50, 100)));
+    }
+
+    @Test
+    void shouldApplyTableIteratorFromPropertiesDuringQuery(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
+        sleeper.updateTableProperties(Map.of(FILTERS_CONFIG, "ageOff(timestamp,50)"));
 
         // When
         List<Row> rows = sleeper.query().byQueue().allRowsInTable();

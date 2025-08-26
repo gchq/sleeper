@@ -96,7 +96,7 @@ public class IteratorFactory {
     private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig) {
         String[] filterParts = iteratorConfig.getFilters().split("\\(");
         if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
-            String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Remove the trailing ')'
+            String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
             Optional<String> filterColumn = Optional.of(filterInput[0]);
             long maxAge = Long.parseLong(filterInput[1]);
             return new FilterAggregationConfig(List.of("TODO in 5477"), filterColumn, maxAge, List.of());
@@ -104,4 +104,5 @@ public class IteratorFactory {
             throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
         }
     }
+
 }
