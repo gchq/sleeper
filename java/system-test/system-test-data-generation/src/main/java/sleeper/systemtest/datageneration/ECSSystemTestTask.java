@@ -17,17 +17,14 @@ package sleeper.systemtest.datageneration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
-import sleeper.common.job.action.ActionException;
-import sleeper.common.job.action.MessageReference;
-import sleeper.common.job.action.thread.PeriodicActionRunnable;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -39,120 +36,94 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
 public class ECSSystemTestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(ECSSystemTestTask.class);
     private final SystemTestPropertyValues properties;
-    private final SqsClient sqsClient;
+    private final S3Client s3Client;
+    private final String jobObjectKey;
     private final Consumer<SystemTestDataGenerationJob> jobRunner;
 
-    public ECSSystemTestTask(SystemTestPropertyValues properties, SqsClient sqsClient, Consumer<SystemTestDataGenerationJob> jobRunner) {
+    public ECSSystemTestTask(SystemTestPropertyValues properties, S3Client s3Client, String jobObjectKey, Consumer<SystemTestDataGenerationJob> jobRunner) {
         this.properties = properties;
-        this.sqsClient = sqsClient;
+        this.s3Client = s3Client;
+        this.jobObjectKey = jobObjectKey;
         this.jobRunner = jobRunner;
     }
 
     public static void main(String[] args) {
         try (StsClient stsClient = StsClient.create();
+                S3Client s3Client = S3Client.create();
                 SqsClient sqsClient = SqsClient.create()) {
-            CommandLineFactory factory = new CommandLineFactory(stsClient, sqsClient);
-            if (args.length > 3 || args.length < 2) {
-                throw new RuntimeException("Wrong number of arguments detected. Usage: ECSSystemTestTask <standalone-or-combined> <config bucket> <optional role ARN to load combined config as>");
+            CommandLineFactory factory = new CommandLineFactory(stsClient, s3Client);
+            if (args.length > 4 || args.length < 3) {
+                throw new RuntimeException(
+                        "Wrong number of arguments detected. Usage: ECSSystemTestTask <standalone-or-combined> <job-object-key> <config bucket> <optional role ARN to load combined config as>");
             }
             String deployType = args[0];
-            String configBucket = args[1];
+            String jobObjectKey = args[1];
+            String configBucket = args[2];
             ECSSystemTestTask ingestRandomData;
             if ("standalone".equalsIgnoreCase(deployType)) {
-                ingestRandomData = factory.standalone(configBucket);
-            } else if (args.length == 3) {
-                ingestRandomData = factory.withLoadConfigRole(configBucket, args[2]);
+                ingestRandomData = factory.standalone(jobObjectKey, configBucket);
+            } else if (args.length == 4) {
+                ingestRandomData = factory.withLoadConfigRole(jobObjectKey, configBucket, args[3]);
             } else {
-                ingestRandomData = factory.noLoadConfigRole(configBucket);
+                ingestRandomData = factory.noLoadConfigRole(jobObjectKey, configBucket);
             }
             ingestRandomData.run();
         }
     }
 
     public void run() {
-        String queueUrl = properties.get(SYSTEM_TEST_JOBS_QUEUE_URL);
-        ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
-                .queueUrl(queueUrl)
-                .maxNumberOfMessages(1)
-                .waitTimeSeconds(20)
-                .build();
-        ReceiveMessageResponse receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
-        List<Message> messages = receiveMessageResult.messages();
-        if (messages.isEmpty()) {
-            LOGGER.info("Finishing as no jobs have been received");
-            return;
-        }
-        Message message = messages.get(0);
-        LOGGER.info("Received message {}", message.body());
-        SystemTestDataGenerationJob job = new SystemTestDataGenerationJobSerDe().fromJson(message.body());
-
-        MessageReference messageReference = new MessageReference(sqsClient, queueUrl,
-                "Data generation job " + job.getJobId(), message.receiptHandle());
-        // Create background thread to keep messages alive
-        PeriodicActionRunnable keepAliveRunnable = new PeriodicActionRunnable(
-                messageReference.changeVisibilityTimeoutAction(properties.getInt(SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)),
-                properties.getInt(SYSTEM_TEST_KEEP_ALIVE_PERIOD_IN_SECONDS));
-        keepAliveRunnable.start();
-        try {
-            jobRunner.accept(job);
-            messageReference.deleteAction().call();
-        } catch (ActionException e) {
-            throw new RuntimeException(e);
-        } finally {
-            keepAliveRunnable.stop();
-        }
+        ResponseBytes<GetObjectResponse> response = s3Client.getObjectAsBytes(GetObjectRequest.builder()
+                .bucket(properties.get(SYSTEM_TEST_BUCKET_NAME))
+                .key(jobObjectKey)
+                .build());
+        SystemTestDataGenerationJob job = new SystemTestDataGenerationJobSerDe().fromJson(response.asUtf8String());
+        LOGGER.info("Running job: {}", job);
+        jobRunner.accept(job);
     }
 
     private static class CommandLineFactory {
         private final StsClient stsClient;
-        private final SqsClient sqsClient;
+        private final S3Client s3Client;
 
-        CommandLineFactory(StsClient stsClient, SqsClient sqsClient) {
+        CommandLineFactory(StsClient stsClient, S3Client s3Client) {
             this.stsClient = stsClient;
-            this.sqsClient = sqsClient;
+            this.s3Client = s3Client;
         }
 
-        ECSSystemTestTask noLoadConfigRole(String configBucket) {
-            try (S3Client s3Client = S3Client.builder().build()) {
-                return combinedInstance(configBucket, s3Client);
+        ECSSystemTestTask noLoadConfigRole(String jobObjectKey, String configBucket) {
+            return combinedInstance(jobObjectKey, configBucket, s3Client);
+        }
+
+        ECSSystemTestTask withLoadConfigRole(String jobObjectKey, String configBucket, String loadConfigRoleArn) {
+            try (S3Client loadConfigS3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsSdk(stsClient).buildClient(S3Client.builder())) {
+                return combinedInstance(jobObjectKey, configBucket, loadConfigS3Client);
             }
         }
 
-        ECSSystemTestTask withLoadConfigRole(String configBucket, String loadConfigRoleArn) {
-            try (S3Client s3Client = AssumeSleeperRole.fromArn(loadConfigRoleArn).forAwsSdk(stsClient).buildClient(S3Client.builder())) {
-                return combinedInstance(configBucket, s3Client);
-            }
+        ECSSystemTestTask standalone(String jobObjectKey, String systemTestBucket) {
+            SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
+            return new ECSSystemTestTask(systemTestProperties, s3Client, jobObjectKey, job -> {
+                try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsSdk(stsClient).buildClient(S3Client.builder())) {
+                    InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
+                    IngestRandomData ingestData = ingestRandomData(instanceProperties, systemTestProperties);
+                    ingestData.run(job);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
         }
 
-        ECSSystemTestTask standalone(String systemTestBucket) {
-            try (S3Client s3Client = S3Client.builder().build()) {
-                SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, systemTestBucket);
-                return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
-                    try (S3Client instanceS3Client = AssumeSleeperRole.fromArn(job.getRoleArnToLoadConfig()).forAwsSdk(stsClient).buildClient(S3Client.builder())) {
-                        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(instanceS3Client, job.getConfigBucket());
-                        IngestRandomData ingestData = ingestRandomData(instanceProperties, systemTestProperties);
-                        ingestData.run(job);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
-            }
-        }
-
-        ECSSystemTestTask combinedInstance(String configBucket, S3Client s3Client) {
-            SystemTestProperties properties = SystemTestProperties.loadFromBucket(s3Client, configBucket);
+        ECSSystemTestTask combinedInstance(String jobObjectKey, String configBucket, S3Client loadConfigS3Client) {
+            SystemTestProperties properties = SystemTestProperties.loadFromBucket(loadConfigS3Client, configBucket);
             IngestRandomData ingestData = ingestRandomData(properties, properties.testPropertiesOnly());
-            return new ECSSystemTestTask(properties.testPropertiesOnly(), sqsClient, job -> {
+            return new ECSSystemTestTask(properties.testPropertiesOnly(), s3Client, jobObjectKey, job -> {
                 try {
                     ingestData.run(job);
                 } catch (IOException e) {
