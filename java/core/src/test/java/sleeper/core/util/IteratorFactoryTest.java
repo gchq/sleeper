@@ -16,6 +16,8 @@
 package sleeper.core.util;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class IteratorFactoryTest {
 
@@ -89,5 +92,69 @@ public class IteratorFactoryTest {
 
         // Then
         assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"ageoff", "AGEOFF", "ageOff"})
+    public void shouldApplyAgeOffFilterFromProperties(String filters) throws IteratorCreationException {
+        // Given
+        SortedRowIterator ageOffIterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters(filters + "(value,1000)")
+                        .schema(Schema.builder()
+                                .rowKeyFields(new Field("key", new IntType()))
+                                .valueFields(new Field("value", new LongType()))
+                                .build())
+                        .build());
+
+        List<Row> rows = List.of(
+                new Row(Map.of("key", "test", "value", 10L)),
+                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+        CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
+
+        // When
+        List<Row> filtered = new ArrayList<>();
+        ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
+
+        // Then
+        assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+    }
+
+    @Test
+    public void shouldThowExceptionWhenUnknownFilterApplied() throws IteratorCreationException {
+        // Given
+        IteratorConfig config = IteratorConfig.builder()
+                .filters("someother(value,1000)")
+                .schema(Schema.builder()
+                        .rowKeyFields(new Field("key", new IntType()))
+                        .valueFields(new Field("value", new LongType()))
+                        .build())
+                .build();
+
+        //Then
+        assertThatThrownBy(() -> new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(config))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Sleeper table filter not set to match ageOff(column,age), was: someother");
+    }
+
+    @Test
+    public void shouldThowExceptionWhenCantPassFilterValue() throws IteratorCreationException {
+        // Given
+        IteratorConfig config = IteratorConfig.builder()
+                .filters("ageoff(value,oops)")
+                .schema(Schema.builder()
+                        .rowKeyFields(new Field("key", new IntType()))
+                        .valueFields(new Field("value", new LongType()))
+                        .build())
+                .build();
+
+        //Then
+        assertThatThrownBy(() -> new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(config))
+                .isInstanceOf(NumberFormatException.class);
     }
 }
