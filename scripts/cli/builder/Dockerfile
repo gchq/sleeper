@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y \
     uuid-runtime \
     sudo \
     # Rust build time dependencies
-    build-essential libssl-dev \
+    build-essential pkg-config libssl-dev \
     # Clang installation dependencies
     lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
