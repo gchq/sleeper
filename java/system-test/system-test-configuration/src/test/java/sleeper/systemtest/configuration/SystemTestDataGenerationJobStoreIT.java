@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.configuration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.UUID;
 
@@ -30,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
-public class SystemTestDataGenerationJobWriterIT extends LocalStackTestBase {
+public class SystemTestDataGenerationJobStoreIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     SystemTestStandaloneProperties testProperties = new SystemTestStandaloneProperties();
@@ -58,8 +55,8 @@ public class SystemTestDataGenerationJobWriterIT extends LocalStackTestBase {
                 .isEqualTo(job);
     }
 
-    private SystemTestDataGenerationJobWriter writer() {
-        return new SystemTestDataGenerationJobWriter(testProperties, s3Client);
+    private SystemTestDataGenerationJobStore writer() {
+        return new SystemTestDataGenerationJobStore(testProperties, s3Client);
     }
 
     private SystemTestDataGenerationJob getJobFromBucket(String objectKey) {

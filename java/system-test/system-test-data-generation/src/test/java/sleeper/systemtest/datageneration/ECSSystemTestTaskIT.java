@@ -27,8 +27,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobStore;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
-import sleeper.systemtest.drivers.ingest.SystemTestDataGenerationJobWriter;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -97,7 +97,7 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
     }
 
     ECSSystemTestTask createTask(SystemTestDataGenerationJob job) {
-        String jobObjectKey = new SystemTestDataGenerationJobWriter(systemTestProperties, s3Client)
+        String jobObjectKey = new SystemTestDataGenerationJobStore(systemTestProperties, s3Client)
                 .writeJobGetObjectKey(job);
         IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClient, hadoopConf, tempDir.toString());
         return new ECSSystemTestTask(systemTestProperties, s3Client, jobObjectKey, readJob -> {

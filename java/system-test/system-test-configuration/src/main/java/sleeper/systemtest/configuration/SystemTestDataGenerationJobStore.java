@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.configuration;
 
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
-import sleeper.systemtest.configuration.SystemTestPropertyValues;
-
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
-public class SystemTestDataGenerationJobWriter {
+public class SystemTestDataGenerationJobStore {
     private final SystemTestPropertyValues properties;
     private final S3Client s3Client;
     private final SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
 
-    public SystemTestDataGenerationJobWriter(SystemTestPropertyValues properties, S3Client s3Client) {
+    public SystemTestDataGenerationJobStore(SystemTestPropertyValues properties, S3Client s3Client) {
         this.properties = properties;
         this.s3Client = s3Client;
     }

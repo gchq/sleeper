@@ -35,6 +35,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobStore;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -65,7 +66,7 @@ public class RunWriteRandomDataTaskOnECS {
     private final InstanceProperties instanceProperties;
     private final SystemTestPropertyValues systemTestProperties;
     private final EcsClient ecsClient;
-    private final SystemTestDataGenerationJobWriter jobWriter;
+    private final SystemTestDataGenerationJobStore jobStore;
     private final String deployType;
     private final String configBucket;
     private final String loadConfigRoleArn;
@@ -74,7 +75,7 @@ public class RunWriteRandomDataTaskOnECS {
         this.instanceProperties = systemTestProperties;
         this.systemTestProperties = systemTestProperties.testPropertiesOnly();
         this.ecsClient = ecsClient;
-        this.jobWriter = new SystemTestDataGenerationJobWriter(this.systemTestProperties, s3Client);
+        this.jobStore = new SystemTestDataGenerationJobStore(this.systemTestProperties, s3Client);
         this.deployType = "combined";
         this.configBucket = systemTestProperties.get(CONFIG_BUCKET);
         this.loadConfigRoleArn = systemTestProperties.get(INGEST_BY_QUEUE_ROLE_ARN);
@@ -86,14 +87,14 @@ public class RunWriteRandomDataTaskOnECS {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
         this.ecsClient = ecsClient;
-        this.jobWriter = new SystemTestDataGenerationJobWriter(systemTestProperties, s3Client);
+        this.jobStore = new SystemTestDataGenerationJobStore(systemTestProperties, s3Client);
         this.deployType = "standalone";
         this.configBucket = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME);
         this.loadConfigRoleArn = null;
     }
 
     public List<RunTaskResponse> runTasks(int numberOfTasks, SystemTestDataGenerationJob jobSpec) {
-        String jobObjectKey = jobWriter.writeJobGetObjectKey(jobSpec);
+        String jobObjectKey = jobStore.writeJobGetObjectKey(jobSpec);
         List<String> args = new ArrayList<>(List.of(deployType, jobObjectKey, configBucket));
         if (loadConfigRoleArn != null) {
             args.add(loadConfigRoleArn);
