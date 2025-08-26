@@ -48,7 +48,6 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 
 public class ECSSystemTestTaskIT extends LocalStackTestBase {
 
@@ -65,7 +64,6 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
         instanceProperties.set(ENDPOINT_URL, localStackContainer.getEndpoint().toString());
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "ingest-direct");
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "ingest-by-queue");
-        systemTestProperties.set(SYSTEM_TEST_JOBS_QUEUE_URL, createSqsQueueGetUrl());
         systemTestProperties.set(SYSTEM_TEST_BUCKET_NAME, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
