@@ -74,6 +74,15 @@ public class SystemTestDataGenerationJob {
                 .toList();
     }
 
+    public static SystemTestDataGenerationJob getDefaultJob(
+            SystemTestProperties properties, TableProperties tableProperties) {
+        return builder()
+                .instanceProperties(properties)
+                .testProperties(properties.testPropertiesOnly())
+                .tableName(tableProperties.get(TABLE_NAME))
+                .build();
+    }
+
     public String getJobId() {
         return jobId;
     }

@@ -17,9 +17,8 @@
 package sleeper.systemtest.drivers.ingest;
 
 import software.amazon.awssdk.services.ecs.EcsClient;
-import software.amazon.awssdk.services.ecs.model.RunTaskResponse;
 import software.amazon.awssdk.services.ecs.model.Task;
-import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
@@ -29,7 +28,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.DataGenerationTasksDriver;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static sleeper.systemtest.drivers.ingest.WaitForGenerateData.ecsTaskStatusFormat;
 
@@ -37,30 +35,29 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
     private final DeployedSystemTestResources systemTest;
     private final SystemTestInstanceContext instance;
     private final EcsClient ecsClient;
-    private final SqsClient sqsClient;
+    private final S3Client s3Client;
 
     public AwsDataGenerationTasksDriver(
             DeployedSystemTestResources systemTest, SystemTestInstanceContext instance, SystemTestClients clients) {
         this.systemTest = systemTest;
         this.instance = instance;
         this.ecsClient = clients.getEcs();
-        this.sqsClient = clients.getSqs();
+        this.s3Client = clients.getS3();
     }
 
     @Override
     public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll) {
-        jobSender().sendJobsToQueue(jobs);
-
-        List<Task> tasks = startTasks(jobs.size());
+        List<Task> tasks = startTasks(jobs);
 
         waitForTasks(tasks, poll);
     }
 
-    private List<Task> startTasks(int numberOfTasks) {
-        List<RunTaskResponse> responses = taskStarter().runTasks(numberOfTasks);
-        return responses.stream()
+    private List<Task> startTasks(List<SystemTestDataGenerationJob> jobs) {
+        RunWriteRandomDataTaskOnECS taskStarter = taskStarter();
+        return jobs.stream()
+                .flatMap(job -> taskStarter.runTasks(job, 1).stream())
                 .flatMap(response -> response.tasks().stream())
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     private void waitForTasks(List<Task> tasks, PollWithRetries poll) {
@@ -73,11 +70,7 @@ public class AwsDataGenerationTasksDriver implements DataGenerationTasksDriver {
         }
     }
 
-    private SystemTestDataGenerationJobSender jobSender() {
-        return new SystemTestDataGenerationJobSender(systemTest.getProperties(), sqsClient);
-    }
-
     private RunWriteRandomDataTaskOnECS taskStarter() {
-        return new RunWriteRandomDataTaskOnECS(instance.getInstanceProperties(), systemTest.getProperties(), ecsClient);
+        return new RunWriteRandomDataTaskOnECS(instance.getInstanceProperties(), systemTest.getProperties(), ecsClient, s3Client);
     }
 }

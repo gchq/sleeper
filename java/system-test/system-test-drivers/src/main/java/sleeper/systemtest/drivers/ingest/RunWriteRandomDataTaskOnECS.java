@@ -65,30 +65,39 @@ public class RunWriteRandomDataTaskOnECS {
     private final InstanceProperties instanceProperties;
     private final SystemTestPropertyValues systemTestProperties;
     private final EcsClient ecsClient;
-    private final List<String> args;
+    private final SystemTestDataGenerationJobWriter jobWriter;
+    private final String deployType;
+    private final String configBucket;
+    private final String loadConfigRoleArn;
 
-    public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, EcsClient ecsClient) {
+    public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, EcsClient ecsClient, S3Client s3Client) {
         this.instanceProperties = systemTestProperties;
         this.systemTestProperties = systemTestProperties.testPropertiesOnly();
         this.ecsClient = ecsClient;
-        this.args = List.of(
-                "combined",
-                systemTestProperties.get(CONFIG_BUCKET),
-                systemTestProperties.get(INGEST_BY_QUEUE_ROLE_ARN));
+        this.jobWriter = new SystemTestDataGenerationJobWriter(this.systemTestProperties, s3Client);
+        this.deployType = "combined";
+        this.configBucket = systemTestProperties.get(CONFIG_BUCKET);
+        this.loadConfigRoleArn = systemTestProperties.get(INGEST_BY_QUEUE_ROLE_ARN);
     }
 
     public RunWriteRandomDataTaskOnECS(
             InstanceProperties instanceProperties, SystemTestStandaloneProperties systemTestProperties,
-            EcsClient ecsClient) {
+            EcsClient ecsClient, S3Client s3Client) {
         this.instanceProperties = instanceProperties;
         this.systemTestProperties = systemTestProperties;
         this.ecsClient = ecsClient;
-        this.args = List.of(
-                "standalone",
-                systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
+        this.jobWriter = new SystemTestDataGenerationJobWriter(systemTestProperties, s3Client);
+        this.deployType = "standalone";
+        this.configBucket = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME);
+        this.loadConfigRoleArn = null;
     }
 
-    public List<RunTaskResponse> runTasks(int numberOfTasks) {
+    public List<RunTaskResponse> runTasks(SystemTestDataGenerationJob jobSpec, int numberOfTasks) {
+        String jobObjectKey = jobWriter.writeJobGetObjectKey(jobSpec);
+        List<String> args = new ArrayList<>(List.of(deployType, jobObjectKey, configBucket));
+        if (loadConfigRoleArn != null) {
+            args.add(loadConfigRoleArn);
+        }
 
         ContainerOverride containerOverride = ContainerOverride.builder()
                 .name(SYSTEM_TEST_CONTAINER)
@@ -135,11 +144,9 @@ public class RunWriteRandomDataTaskOnECS {
                 EcsClient ecsClient = EcsClient.create()) {
             SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
             TableProperties tableProperties = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
-            SystemTestDataGenerationJobSender jobSender = new SystemTestDataGenerationJobSender(systemTestProperties.testPropertiesOnly(), sqsClient);
-            RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient);
-
-            jobSender.sendJobsToQueue(SystemTestDataGenerationJob.getDefaultJobs(systemTestProperties, tableProperties));
-            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.runTasks(systemTestProperties.getInt(NUMBER_OF_WRITERS));
+            RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient, s3Client);
+            SystemTestDataGenerationJob job = SystemTestDataGenerationJob.getDefaultJob(systemTestProperties, tableProperties);
+            List<RunTaskResponse> results = runWriteRandomDataTaskOnECS.runTasks(job, systemTestProperties.getInt(NUMBER_OF_WRITERS));
             if (args.length > 2) {
                 TasksJson.writeToFile(results, Paths.get(args[2]));
             }
