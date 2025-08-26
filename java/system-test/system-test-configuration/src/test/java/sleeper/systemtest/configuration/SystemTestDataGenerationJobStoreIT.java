@@ -48,21 +48,15 @@ public class SystemTestDataGenerationJobStoreIT extends LocalStackTestBase {
                 .build();
 
         // When
-        String objectKey = writer().writeJobGetObjectKey(job);
+        String objectKey = store().writeJobGetObjectKey(job);
 
         // Then
-        assertThat(getJobFromBucket(objectKey))
+        assertThat(store().readJob(objectKey))
                 .isEqualTo(job);
     }
 
-    private SystemTestDataGenerationJobStore writer() {
+    private SystemTestDataGenerationJobStore store() {
         return new SystemTestDataGenerationJobStore(testProperties, s3Client);
-    }
-
-    private SystemTestDataGenerationJob getJobFromBucket(String objectKey) {
-        SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
-        String json = getObjectAsString(testProperties.get(SYSTEM_TEST_BUCKET_NAME), objectKey);
-        return serDe.fromJson(json);
     }
 
 }

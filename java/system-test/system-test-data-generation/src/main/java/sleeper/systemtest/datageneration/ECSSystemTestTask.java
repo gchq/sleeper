@@ -17,10 +17,7 @@ package sleeper.systemtest.datageneration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
@@ -29,7 +26,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobStore;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -38,18 +35,15 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.function.Consumer;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
-
 public class ECSSystemTestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(ECSSystemTestTask.class);
-    private final SystemTestPropertyValues properties;
-    private final S3Client s3Client;
+
+    private final SystemTestDataGenerationJobStore jobStore;
     private final String jobObjectKey;
     private final Consumer<SystemTestDataGenerationJob> jobRunner;
 
     public ECSSystemTestTask(SystemTestPropertyValues properties, S3Client s3Client, String jobObjectKey, Consumer<SystemTestDataGenerationJob> jobRunner) {
-        this.properties = properties;
-        this.s3Client = s3Client;
+        this.jobStore = new SystemTestDataGenerationJobStore(properties, s3Client);
         this.jobObjectKey = jobObjectKey;
         this.jobRunner = jobRunner;
     }
@@ -79,11 +73,7 @@ public class ECSSystemTestTask {
     }
 
     public void run() {
-        ResponseBytes<GetObjectResponse> response = s3Client.getObjectAsBytes(GetObjectRequest.builder()
-                .bucket(properties.get(SYSTEM_TEST_BUCKET_NAME))
-                .key(jobObjectKey)
-                .build());
-        SystemTestDataGenerationJob job = new SystemTestDataGenerationJobSerDe().fromJson(response.asUtf8String());
+        SystemTestDataGenerationJob job = jobStore.readJob(jobObjectKey);
         LOGGER.info("Running job: {}", job);
         jobRunner.accept(job);
     }

@@ -15,8 +15,11 @@
  */
 package sleeper.systemtest.configuration;
 
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
@@ -41,6 +44,15 @@ public class SystemTestDataGenerationJobStore {
                         .build(),
                 RequestBody.fromString(json));
         return key;
+    }
+
+    public SystemTestDataGenerationJob readJob(String objectKey) {
+        ResponseBytes<GetObjectResponse> response = s3Client.getObjectAsBytes(
+                GetObjectRequest.builder()
+                        .bucket(properties.get(SYSTEM_TEST_BUCKET_NAME))
+                        .key(objectKey)
+                        .build());
+        return serDe.fromJson(response.asUtf8String());
     }
 
 }
