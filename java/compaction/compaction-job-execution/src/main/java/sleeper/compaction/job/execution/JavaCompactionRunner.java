@@ -48,8 +48,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
-
 /**
  * Executes a compaction job. Compacts N input files into a single output file.
  */
@@ -73,7 +71,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         // Create a reader for each file
         List<CloseableIterator<Row>> inputIterators = createInputIterators(compactionJob, region, schema);
 
-        CloseableIterator<Row> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators, tableProperties.get(FILTERS_CONFIG));
+        CloseableIterator<Row> mergingIterator = getMergingIterator(objectFactory, schema, compactionJob, inputIterators);
         // Merge these iterator into one sorted iterator
 
         // Create writer
@@ -139,16 +137,16 @@ public class JavaCompactionRunner implements CompactionRunner {
 
     public static CloseableIterator<Row> getMergingIterator(
             ObjectFactory objectFactory, Schema schema, CompactionJob compactionJob,
-            List<CloseableIterator<Row>> inputIterators, String filtersConfig) throws IteratorCreationException {
+            List<CloseableIterator<Row>> inputIterators) throws IteratorCreationException {
         CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
 
         // Apply an iterator if one is provided
-        if (null != compactionJob.getIteratorClassName() || null != filtersConfig) {
+        if (null != compactionJob.getIteratorClassName() || null != compactionJob.getFilterConfig()) {
             mergingIterator = new IteratorFactory(objectFactory)
                     .getIterator(IteratorConfig.builder()
                             .iteratorClassName(compactionJob.getIteratorClassName())
                             .iteratorConfigString(compactionJob.getIteratorConfig())
-                            .filters(filtersConfig)
+                            .filters(compactionJob.getFilterConfig())
                             .schema(schema)
                             .build())
                     .apply(mergingIterator);

@@ -67,7 +67,6 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class InMemoryCompaction {
@@ -218,7 +217,7 @@ public class InMemoryCompaction {
         Instant startTime = run.getStartTime();
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
-        RowsProcessed rowsProcessed = mergeInputFiles(job, partition, schema, tableProperties.get(FILTERS_CONFIG));
+        RowsProcessed rowsProcessed = mergeInputFiles(job, partition, schema);
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                 job.replaceFileReferencesRequestBuilder(rowsProcessed.getRowsWritten())
                         .taskId(run.getTaskId()).jobRunId(job.getId()).build()));
@@ -231,14 +230,14 @@ public class InMemoryCompaction {
         return partitionTree.getPartition(job.getPartitionId());
     }
 
-    private RowsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema, String filtersConfig) {
+    private RowsProcessed mergeInputFiles(CompactionJob job, Partition partition, Schema schema) {
         List<CloseableIterator<Row>> inputIterators = job.getInputFiles().stream()
                 .map(file -> new CountingIterator(file, partition.getRegion(), schema))
                 .collect(toUnmodifiableList());
         CloseableIterator<Row> mergingIterator;
         try {
             mergingIterator = JavaCompactionRunner.getMergingIterator(
-                    ObjectFactory.noUserJars(), schema, job, inputIterators, filtersConfig);
+                    ObjectFactory.noUserJars(), schema, job, inputIterators);
         } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         }
