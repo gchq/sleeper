@@ -24,6 +24,8 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
@@ -41,12 +43,15 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
+import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
 public class ECSSystemTestTaskIT extends LocalStackTestBase {
@@ -64,6 +69,7 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
         instanceProperties.set(ENDPOINT_URL, localStackContainer.getEndpoint().toString());
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "ingest-direct");
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "ingest-by-queue");
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
         systemTestProperties.set(SYSTEM_TEST_BUCKET_NAME, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
@@ -91,6 +97,34 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
         assertThat(sleeperClient.getStateStore(tableName).getFileReferences())
                 .extracting(FileReference::getNumberOfRows)
                 .containsExactly(12L, 12L);
+    }
+
+    @Test
+    void shouldReuseSameDataGenerationJob() {
+        // Given
+        SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
+                .tableName(tableName)
+                .numberOfIngests(1)
+                .rowsPerIngest(10)
+                .ingestMode(QUEUE)
+                .ingestQueue(STANDARD_INGEST)
+                .build();
+
+        // When
+        createTask(job).run();
+        createTask(job).run();
+
+        // Then
+        List<IngestJob> ingestJobs = receiveIngestJobs();
+        assertThat(ingestJobs).extracting(IngestJob::getId).hasSize(2).doesNotHaveDuplicates();
+        assertThat(ingestJobs).flatExtracting(IngestJob::getFiles).hasSize(2).doesNotHaveDuplicates();
+    }
+
+    List<IngestJob> receiveIngestJobs() {
+        IngestJobSerDe serDe = new IngestJobSerDe();
+        return receiveMessages(instanceProperties.get(INGEST_JOB_QUEUE_URL))
+                .map(serDe::fromJson)
+                .toList();
     }
 
     ECSSystemTestTask createTask(SystemTestDataGenerationJob job) {
