@@ -22,6 +22,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.util.UUID;
+
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
 public class SystemTestDataGenerationJobStore {
@@ -35,7 +37,7 @@ public class SystemTestDataGenerationJobStore {
     }
 
     public String writeJobGetObjectKey(SystemTestDataGenerationJob job) {
-        String key = "jobs/" + job.getJobId() + ".json";
+        String key = "jobs/" + UUID.randomUUID().toString() + ".json";
         String json = serDe.toJson(job);
         s3Client.putObject(
                 PutObjectRequest.builder()

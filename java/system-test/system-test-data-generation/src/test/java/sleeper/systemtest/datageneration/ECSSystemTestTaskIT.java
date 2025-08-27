@@ -78,7 +78,6 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
     void shouldIngestDirectly() throws Exception {
         // Given
         SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
-                .jobId("test-job")
                 .tableName(tableName)
                 .numberOfIngests(2)
                 .rowsPerIngest(12)
