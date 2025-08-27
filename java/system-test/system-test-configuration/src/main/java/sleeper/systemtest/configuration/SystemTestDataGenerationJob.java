@@ -19,12 +19,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestQueue;
 import sleeper.core.properties.table.TableProperties;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
@@ -33,7 +31,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_INGESTS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_ROWS_PER_INGEST;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 
 public class SystemTestDataGenerationJob {
 
@@ -63,15 +60,14 @@ public class SystemTestDataGenerationJob {
         return new Builder();
     }
 
-    public static List<SystemTestDataGenerationJob> getDefaultJobs(
+    public static SystemTestDataGenerationJob getDefaultJob(
             SystemTestProperties properties, TableProperties tableProperties) {
-        return IntStream.range(0, properties.getInt(NUMBER_OF_WRITERS))
-                .mapToObj(i -> builder()
-                        .instanceProperties(properties)
-                        .testProperties(properties.testPropertiesOnly())
-                        .tableName(tableProperties.get(TABLE_NAME))
-                        .build())
-                .toList();
+        return builder()
+                .jobId(tableProperties.get(TABLE_NAME))
+                .instanceProperties(properties)
+                .testProperties(properties.testPropertiesOnly())
+                .tableName(tableProperties.get(TABLE_NAME))
+                .build();
     }
 
     public String getJobId() {

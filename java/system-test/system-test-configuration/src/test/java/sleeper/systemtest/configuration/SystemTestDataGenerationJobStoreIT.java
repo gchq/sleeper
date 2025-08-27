@@ -13,35 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.ingest;
+package sleeper.systemtest.configuration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
-import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
-public class SystemTestDataGenerationJobSenderIT extends LocalStackTestBase {
+public class SystemTestDataGenerationJobStoreIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     SystemTestStandaloneProperties testProperties = new SystemTestStandaloneProperties();
 
     @BeforeEach
     void setUp() {
-        testProperties.set(SYSTEM_TEST_JOBS_QUEUE_URL, createSqsQueueGetUrl());
+        testProperties.set(SYSTEM_TEST_BUCKET_NAME, UUID.randomUUID().toString());
+        createBucket(testProperties.get(SYSTEM_TEST_BUCKET_NAME));
     }
 
     @Test
-    void shouldSendDataGenerationJob() {
+    void shouldWriteDataGenerationJob() {
         // Given
         SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
                 .instanceProperties(instanceProperties)
@@ -50,21 +48,15 @@ public class SystemTestDataGenerationJobSenderIT extends LocalStackTestBase {
                 .build();
 
         // When
-        sender().sendJobsToQueue(List.of(job));
+        String objectKey = store().writeJobGetObjectKey(job);
 
         // Then
-        assertThat(receiveJobs()).containsExactly(job);
+        assertThat(store().readJob(objectKey))
+                .isEqualTo(job);
     }
 
-    private SystemTestDataGenerationJobSender sender() {
-        return new SystemTestDataGenerationJobSender(testProperties, sqsClient);
-    }
-
-    private List<SystemTestDataGenerationJob> receiveJobs() {
-        SystemTestDataGenerationJobSerDe serDe = new SystemTestDataGenerationJobSerDe();
-        return receiveMessages(testProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
-                .map(serDe::fromJson)
-                .toList();
+    private SystemTestDataGenerationJobStore store() {
+        return new SystemTestDataGenerationJobStore(testProperties, s3Client);
     }
 
 }

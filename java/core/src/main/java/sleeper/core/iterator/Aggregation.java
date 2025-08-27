@@ -13,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.core.iterator;
 
-package sleeper.systemtest.dsl.sourcedata;
+import java.util.Objects;
 
-import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+/**
+ * Defines an aggregation operation with the column name to perform on it.
+ *
+ * @param column the column to aggregate
+ * @param op     the aggregation operator
+ */
+public record Aggregation(String column, AggregationOp op) {
 
-public interface DataGenerationTasksDriver {
-
-    void runDataGenerationJobs(int numberOfJobs, SystemTestDataGenerationJob jobSpec, PollWithRetries poll);
+    public Aggregation {
+        Objects.requireNonNull(column, "column");
+        Objects.requireNonNull(op, "aggregationOp");
+    }
 }
