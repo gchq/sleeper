@@ -243,6 +243,6 @@ async fn should_merge_empty_files() -> Result<(), Error> {
     // Then
     // assert_eq!(read_file_of_ints(&output, "key")?, Vec::<i32>::new());
     assert_eq!([result.rows_read, result.rows_written], [0, 0]);
-    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 4]);
+    assert_eq!(read_sketch_approx_row_count(&sketches).await?, 0);
     Ok(())
 }
