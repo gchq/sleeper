@@ -213,3 +213,36 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
     assert_eq!(read_sketch_min_max_ints(&sketches).await?, [11, 24]);
     Ok(())
 }
+
+#[test(tokio::test)]
+async fn should_merge_empty_files() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+    let output = file(&dir, "output.parquet");
+    let sketches = file(&dir, "output.sketches");
+    write_file_of_ints(&file_1, "key", vec![])?;
+    write_file_of_ints(&file_2, "key", vec![])?;
+
+    let input = CommonConfig {
+        input_files: Vec::from([file_1, file_2]),
+        input_files_sorted: true,
+        row_key_cols: row_key_cols(["key"]),
+        region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
+        output: OperationOutput::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
+        },
+        ..Default::default()
+    };
+
+    // When
+    let result = run_compaction(&input).await?;
+
+    // Then
+    // assert_eq!(read_file_of_ints(&output, "key")?, Vec::<i32>::new());
+    assert_eq!([result.rows_read, result.rows_written], [0, 0]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 4]);
+    Ok(())
+}
