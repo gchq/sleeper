@@ -65,14 +65,14 @@ public class RunDataProcessingTasks {
 
     private final InstanceProperties instanceProperties;
     private final TaskCounts taskCounts;
-    private final CompactionTaskHostScaler hostScaler;
+    private final TaskHostScaler hostScaler;
     private final TaskLauncher taskLauncher;
     private final String sqsJobQueueUrl;
 
     private RunDataProcessingTasks(
             InstanceProperties instanceProperties,
             TaskCounts taskCounts,
-            CompactionTaskHostScaler hostScaler,
+            TaskHostScaler hostScaler,
             TaskLauncher taskLauncher,
             boolean compactionTask) {
         this.instanceProperties = instanceProperties;
@@ -87,10 +87,15 @@ public class RunDataProcessingTasks {
         clusterName = getClusterName(instanceProperties, compactionTask);
         containerName = getContainerName(compactionTask);
         fargateDefinitionFamily = getFargateDefinitionFamily(instanceProperties, compactionTask);
-
+        TaskHostScaler hostScaler;
+        if (compactionTask) {
+            hostScaler = EC2Scaler.create(instanceProperties, asClient, ec2Client);
+        } else {
+            hostScaler = new BulkExportTaskHostScaler();
+        }
         return new RunDataProcessingTasks(instanceProperties,
-                () -> ECSTaskCount.getNumPendingAndRunningTasks(getClusterName(instanceProperties, compactionTask), ecsClient),
-                EC2Scaler.create(instanceProperties, asClient, ec2Client),
+                () -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient),
+                hostScaler,
                 (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort),
                 compactionTask);
     }
@@ -101,16 +106,10 @@ public class RunDataProcessingTasks {
 
     public static RunDataProcessingTasks createForCompactions(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
         return createRunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, true);
-
     }
 
     public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
         return createRunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, false);
-    }
-
-    public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
-        return new RunDataProcessingTasks(instanceProperties, taskCounts, hostScaler, taskLauncher, false);
-
     }
 
     public interface TaskCounts {
@@ -313,8 +312,12 @@ public class RunDataProcessingTasks {
                 AutoScalingClient asClient = AutoScalingClient.create();
                 Ec2Client ec2Client = Ec2Client.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            createRunDataProcessingTasks(instanceProperties, ecsClient, asClient, ec2Client, compactionTask)
-                    .runToMeetTargetTasks(numberOfTasks);
+
+            if (compactionTask) {
+                createForCompactions(instanceProperties, ecsClient, asClient, ec2Client).runToMeetTargetTasks(numberOfTasks);
+            } else {
+                createForBulkExport(instanceProperties, ecsClient, asClient, ec2Client).runToMeetTargetTasks(numberOfTasks);
+            }
         }
     }
 }
