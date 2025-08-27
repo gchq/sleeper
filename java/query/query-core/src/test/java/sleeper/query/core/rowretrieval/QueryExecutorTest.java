@@ -58,6 +58,7 @@ import java.util.stream.StreamSupport;
 import static java.util.Spliterator.IMMUTABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
@@ -209,8 +210,40 @@ public class QueryExecutorTest {
     }
 
     @Nested
-    @DisplayName("Apply iterators")
-    class ApplyIterators {
+    @DisplayName("Apply filter iterators")
+    class ApplyFilterIterators {
+
+        private final Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(schema);
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of("key", "A", "value", 2L)),
+                    new Row(Map.of("key", "B", "value", 9999999999999999L))));
+        }
+
+        @Test
+        void shouldApplyAgeOffIterator() throws Exception {
+            // Given
+            tableProperties.set(FILTERS_CONFIG, "ageOff(value,1000)");
+
+            // When
+            List<Row> rows = getRows(queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", "B", "value", 9999999999999999L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply aggregation iterators")
+    class ApplyAggregationIterators {
 
         private final Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))

@@ -50,6 +50,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
@@ -502,6 +503,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
             return schema(tableProperties.getSchema())
                     .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                     .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
+                    .filtersConfig(tableProperties.get(FILTERS_CONFIG))
                     .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
         }
 

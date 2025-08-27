@@ -82,7 +82,7 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
             String sleeperIteratorConfig,
             String sleeperFiltersConfig,
             CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
-        if (null != sleeperIteratorClassName) {
+        if (null != sleeperIteratorClassName || null != sleeperFiltersConfig) {
             return new IteratorFactory(objectFactory)
                     .getIterator(IteratorConfig.builder()
                             .iteratorClassName(sleeperIteratorClassName)

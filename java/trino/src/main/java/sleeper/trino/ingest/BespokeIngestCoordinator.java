@@ -47,6 +47,7 @@ public class BespokeIngestCoordinator {
             Configuration hadoopConfiguration,
             String sleeperIteratorClassName,
             String sleeperIteratorConfig,
+            String sleeperFiltersConfig,
             int ingestPartitionRefreshFrequencyInSeconds,
             S3AsyncClient s3AsyncClient,
             BufferAllocator arrowBufferAllocator) {
@@ -81,6 +82,7 @@ public class BespokeIngestCoordinator {
                 .schema(tableProperties.getSchema())
                 .iteratorClassName(sleeperIteratorClassName)
                 .iteratorConfig(sleeperIteratorConfig)
+                .filtersConfig(sleeperFiltersConfig)
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
                 .rowBatchFactory(rowBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory)

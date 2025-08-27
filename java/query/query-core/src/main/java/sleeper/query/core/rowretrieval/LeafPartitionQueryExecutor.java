@@ -82,7 +82,7 @@ public class LeafPartitionQueryExecutor {
 
         try {
             compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig, compactionFilters);
-            queryIterator = createIterator(tableSchema, objectFactory, leafPartitionQuery.getQueryTimeIteratorClassName(), leafPartitionQuery.getQueryTimeIteratorConfig(), compactionFilters);
+            queryIterator = createIterator(tableSchema, objectFactory, leafPartitionQuery.getQueryTimeIteratorClassName(), leafPartitionQuery.getQueryTimeIteratorConfig(), null);
         } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);
         }
@@ -139,15 +139,15 @@ public class LeafPartitionQueryExecutor {
             ObjectFactory objectFactory,
             String iteratorClassName,
             String iteratorConfig,
-            String filters) throws IteratorCreationException {
-        if (iteratorClassName == null) {
+            String filtersConfig) throws IteratorCreationException {
+        if (iteratorClassName == null && filtersConfig == null) {
             return null;
         } else {
             return new IteratorFactory(objectFactory)
                     .getIterator(IteratorConfig.builder()
                             .iteratorClassName(iteratorClassName)
                             .iteratorConfigString(iteratorConfig)
-                            .filters(filters)
+                            .filters(filtersConfig)
                             .schema(schema)
                             .build());
         }
