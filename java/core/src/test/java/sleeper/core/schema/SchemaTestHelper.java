@@ -47,4 +47,16 @@ public class SchemaTestHelper {
         return Schema.builder().rowKeyFields(new Field(key, type)).build();
     }
 
+    /**
+     * Creates a Schema with a two row key fields.
+     *
+     * @param  key1  the name of the first row key field
+     * @param  type1 the type of the first row key field
+     * @param  key2  the name of the second row key field
+     * @param  type2 the type of the second row key field
+     * @return       a {@link Schema} with two row key fields
+     */
+    public static Schema createSchemaWithMultipleKeys(String key1, PrimitiveType type1, String key2, PrimitiveType type2) {
+        return Schema.builder().rowKeyFields(new Field(key1, type1), new Field(key2, type2)).build();
+    }
 }
