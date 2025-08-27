@@ -21,7 +21,7 @@ use compaction_helpers::*;
 use sleeper_core::{
     CommonConfig, OperationOutput, SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, path::Path, sync::Arc};
 use tempfile::tempdir;
 use test_log::test;
 
@@ -241,7 +241,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
     let result = run_compaction(&input).await?;
 
     // Then
-    // assert_eq!(read_file_of_ints(&output, "key")?, Vec::<i32>::new());
+    assert_eq!(Path::new(output.as_str()).exists(), false);
     assert_eq!([result.rows_read, result.rows_written], [0, 0]);
     assert_eq!(read_sketch_approx_row_count(&sketches).await?, 0);
     Ok(())
