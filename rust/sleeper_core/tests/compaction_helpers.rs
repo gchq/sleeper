@@ -97,6 +97,11 @@ pub async fn read_sketch_min_max_ints(path: &Url) -> Result<[i32; 2], Error> {
     Ok(min_max_ints(&read_sketch_of_ints(path).await?))
 }
 
+#[allow(clippy::missing_errors_doc)]
+pub async fn read_sketch_approx_row_count(path: &Url) -> Result<u64, Error> {
+    Ok(read_sketch_of_ints(path).await?.get_n())
+}
+
 async fn read_sketch_of_ints(path: &Url) -> Result<DataSketchVariant, Error> {
     let mut sketches = deserialise_sketches(path, vec![DataType::Int32]).await?;
     sketches.pop().ok_or_eyre("Expected one sketch, found 0")
