@@ -74,11 +74,14 @@ public class AutoStopEcsClusterTasks {
                 .logGroup(providerLogGroup)
                 .build();
 
-        CustomResource.Builder.create(scope, id)
+        CustomResource customResource = CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::AutoStopEcsClusterTasks")
                 .properties(Map.of("cluster", clusterName))
                 .serviceToken(propertiesWriterProvider.getServiceToken())
                 .build();
+
+        customResource.getNode().addDependency(cluster);
+
     }
 
 }
