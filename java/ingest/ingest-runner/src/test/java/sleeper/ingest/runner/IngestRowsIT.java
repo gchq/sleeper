@@ -544,7 +544,7 @@ class IngestRowsIT extends IngestRowsTestBase {
     }
 
     @Test
-    void shouldApplyAggregationIterator() throws Exception {
+    void shouldApplyAdditionIterator() throws Exception {
         // Given
         setSchema(Schema.builder()
                 .rowKeyFields(new Field("key", new ByteArrayType()))
