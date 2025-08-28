@@ -21,7 +21,6 @@ import sleeper.core.properties.table.TableProperties;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -34,7 +33,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_ROWS
 
 public class SystemTestDataGenerationJob {
 
-    private final String jobId;
     private final String configBucket;
     private final String roleArnToLoadConfig;
     private final String tableName;
@@ -45,7 +43,6 @@ public class SystemTestDataGenerationJob {
     private final SystemTestRandomDataSettings randomDataSettings;
 
     private SystemTestDataGenerationJob(Builder builder) {
-        jobId = Optional.ofNullable(builder.jobId).orElseGet(() -> UUID.randomUUID().toString());
         configBucket = builder.configBucket;
         roleArnToLoadConfig = builder.roleArnToLoadConfig;
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
@@ -63,15 +60,10 @@ public class SystemTestDataGenerationJob {
     public static SystemTestDataGenerationJob getDefaultJob(
             SystemTestProperties properties, TableProperties tableProperties) {
         return builder()
-                .jobId(tableProperties.get(TABLE_NAME))
                 .instanceProperties(properties)
                 .testProperties(properties.testPropertiesOnly())
                 .tableName(tableProperties.get(TABLE_NAME))
                 .build();
-    }
-
-    public String getJobId() {
-        return jobId;
     }
 
     public String getConfigBucket() {
@@ -108,13 +100,13 @@ public class SystemTestDataGenerationJob {
 
     @Override
     public String toString() {
-        return "SystemTestClusterJob{jobId=" + jobId + ", configBucket=" + configBucket + ", roleArnToLoadConfig=" + roleArnToLoadConfig + ", tableName=" + tableName + ", ingestMode=" + ingestMode
+        return "SystemTestClusterJob{configBucket=" + configBucket + ", roleArnToLoadConfig=" + roleArnToLoadConfig + ", tableName=" + tableName + ", ingestMode=" + ingestMode
                 + ", ingestQueue=" + ingestQueue + ", numberOfIngests=" + numberOfIngests + ", rowsPerIngest=" + rowsPerIngest + ", randomDataSettings=" + randomDataSettings + "}";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, configBucket, roleArnToLoadConfig, tableName, ingestMode, ingestQueue, numberOfIngests, rowsPerIngest, randomDataSettings);
+        return Objects.hash(configBucket, roleArnToLoadConfig, tableName, ingestMode, ingestQueue, numberOfIngests, rowsPerIngest, randomDataSettings);
     }
 
     @Override
@@ -126,13 +118,12 @@ public class SystemTestDataGenerationJob {
             return false;
         }
         SystemTestDataGenerationJob other = (SystemTestDataGenerationJob) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(configBucket, other.configBucket) && Objects.equals(roleArnToLoadConfig, other.roleArnToLoadConfig)
+        return Objects.equals(configBucket, other.configBucket) && Objects.equals(roleArnToLoadConfig, other.roleArnToLoadConfig)
                 && Objects.equals(tableName, other.tableName) && ingestMode == other.ingestMode && ingestQueue == other.ingestQueue && numberOfIngests == other.numberOfIngests
                 && rowsPerIngest == other.rowsPerIngest && Objects.equals(randomDataSettings, other.randomDataSettings);
     }
 
     public static class Builder {
-        private String jobId;
         private String configBucket;
         private String roleArnToLoadConfig;
         private String tableName;
@@ -143,11 +134,6 @@ public class SystemTestDataGenerationJob {
         private SystemTestRandomDataSettings randomDataSettings;
 
         private Builder() {
-        }
-
-        public Builder jobId(String jobId) {
-            this.jobId = jobId;
-            return this;
         }
 
         public Builder configBucket(String configBucket) {

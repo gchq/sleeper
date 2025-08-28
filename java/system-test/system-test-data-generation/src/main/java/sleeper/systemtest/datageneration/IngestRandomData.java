@@ -32,6 +32,7 @@ import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static sleeper.systemtest.configuration.SystemTestIngestMode.BATCHER;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
@@ -73,9 +74,10 @@ public class IngestRandomData {
     public void run(SystemTestDataGenerationJob job) throws IOException {
         Ingester ingester = ingester(job);
         for (int i = 1; i <= job.getNumberOfIngests(); i++) {
-            LOGGER.info("Starting ingest {}", i);
-            ingester.ingest();
-            LOGGER.info("Completed ingest {}", i);
+            String runId = UUID.randomUUID().toString();
+            LOGGER.info("Starting ingest {}, ID {}", i, runId);
+            ingester.ingest(runId);
+            LOGGER.info("Completed ingest {}, ID {}", i, runId);
         }
         LOGGER.info("Finished");
     }
@@ -103,18 +105,18 @@ public class IngestRandomData {
     private Ingester ingester(SystemTestDataGenerationJob job) {
         SystemTestIngestMode ingestMode = job.getIngestMode();
         if (ingestMode == DIRECT) {
-            return () -> {
+            return runId -> {
                 try (InstanceIngestSession session = InstanceIngestSession.direct(stsClient, instanceProperties, job.getTableName(), localDir)) {
                     WriteRandomDataDirect.writeWithIngestFactory(job, session);
                 }
             };
         }
-        return () -> {
+        return runId -> {
             try (InstanceIngestSession session = InstanceIngestSession.byQueue(stsClient, instanceProperties, job.getTableName(), localDir)) {
-                String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, job);
+                String dir = WriteRandomDataFiles.writeToS3GetDirectory(systemTestProperties, session.tableProperties(), hadoopConf, job, runId);
 
                 if (ingestMode == QUEUE) {
-                    IngestRandomDataViaQueue.sendJob(job.getJobId(), dir, job, session);
+                    IngestRandomDataViaQueue.sendJob(runId, dir, job, session);
                 } else if (ingestMode == BATCHER) {
                     IngestRandomDataViaBatcher.sendRequest(dir, session);
                 } else if (ingestMode == GENERATE_ONLY) {
@@ -127,7 +129,7 @@ public class IngestRandomData {
     }
 
     interface Ingester {
-        void ingest() throws IOException;
+        void ingest(String runId) throws IOException;
     }
 
     private static class CommandLineFactory {
