@@ -16,7 +16,6 @@
 package sleeper.compaction.datafusion;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,13 +27,12 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -95,17 +93,22 @@ public class DataFusionCompactionRunnerIT {
         // Given
         Schema schema = createSchemaWithMultipleKeys("foo1", new StringType(), "bar1", new LongType());
         tableProperties.setSchema(schema);
-        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-        Row row1 = new Row(Map.of("foo1", "row-1", "bar1", 1_000_000L));
-        Row row2 = new Row(Map.of("foo1", "row-2", "bar1", 1_000_000L));
-        String file1 = writeFileForPartition("root", List.of(row1));
-        String file2 = writeFileForPartition("root", List.of(row2));
-        CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
-        Region region = new Region(List.of(new Range(new Field("foo1", new StringType()), "aaaa", null),
-                new Range(new Field("bar1", new LongType()), 500_000L, 999_999_999L)));
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "L", "R", 0, "h")
+                .splitToNewChildrenOnDimension("R", "RL", "RR", 1, 10L)
+                .buildTree();
+        update(stateStore).initialise(partitions);
+        Row rowExcludedByFirstKey = new Row(Map.of("foo1", "a-row", "bar1", 20L));
+        Row rowExcludedBySecondKey = new Row(Map.of("foo1", "some-row", "bar1", 5L));
+        Row row1 = new Row(Map.of("foo1", "row-1", "bar1", 11L));
+        Row row2 = new Row(Map.of("foo1", "row-2", "bar1", 12L));
+        String file1 = writeFileForPartition("RR", List.of(row1, rowExcludedByFirstKey));
+        String file2 = writeFileForPartition("RR", List.of(row2, rowExcludedBySecondKey));
+        CompactionJob job = createCompactionForPartition("test-job", "RR", List.of(file1, file2));
 
         // When
-        RowsProcessed summary = compactWithRegion(job, region);
+        RowsProcessed summary = compact(job);
 
         // Then
         assertThat(summary.getRowsRead()).isEqualTo(2);
@@ -365,11 +368,6 @@ public class DataFusionCompactionRunnerIT {
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
     }
 
-    private RowsProcessed compactWithRegion(CompactionJob job, Region region) throws Exception {
-        CompactionRunner runner = new DataFusionCompactionRunner(new Configuration());
-        return runner.compact(job, tableProperties, region);
-    }
-
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
@@ -402,11 +400,6 @@ public class DataFusionCompactionRunnerIT {
             }
         }
         return results;
-    }
-
-    private boolean dataFileExists(String filename) throws IOException {
-        return FileSystem.getLocal(new Configuration())
-                .exists(new org.apache.hadoop.fs.Path(filename));
     }
 
     private Sketches readSketches(Schema schema, String filename) throws IOException {
