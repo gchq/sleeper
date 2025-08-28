@@ -170,7 +170,7 @@ public class SystemTestInstance {
 
     private static DeployInstanceConfiguration createCompactionPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
-        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
@@ -185,7 +185,7 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
-        properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+        properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "ARM64");
         properties.set(COMPACTION_TASK_X86_CPU, "4096");
         properties.set(COMPACTION_TASK_X86_MEMORY, "8192");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
