@@ -85,16 +85,6 @@ public class CompactionRunnerTestBase {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    protected RowsProcessed compact(Schema schema, CompactionJob job) throws Exception {
-        return compact(job, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-    }
-
-    protected RowsProcessed compact(CompactionJob job, Configuration conf) throws Exception {
-        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), conf, createSketchesStore());
-        CompactionRunner runner = selector.createCompactor(job, tableProperties);
-        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
-    }
-
     protected void runTask(CompactionJob job) throws Exception {
         runTask(job, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
     }
