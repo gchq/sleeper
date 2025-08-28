@@ -241,7 +241,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
     let result = run_compaction(&input).await?;
 
     // Then
-    assert!(!Path::new(output.as_str()).exists());
+    assert!(!Path::new(output.as_str()).try_exists()?);
     assert_eq!([result.rows_read, result.rows_written], [0, 0]);
     assert_eq!(read_sketch_approx_row_count(&sketches).await?, 0);
     Ok(())
