@@ -67,8 +67,7 @@ public class CompactionTaskTestHelper {
         this.threadSleep = threadSleep;
     }
 
-    public static MessageReceiver receiveJobs(List<CompactionJob> jobs) {
-        LinkedList<CompactionJob> queue = new LinkedList<>(jobs);
+    public static MessageReceiver receiveJobsFromQueue(LinkedList<CompactionJob> queue) {
         return () -> {
             if (queue.isEmpty()) {
                 return Optional.empty();
@@ -79,10 +78,10 @@ public class CompactionTaskTestHelper {
     }
 
     public void runTask(CompactionRunner compactionRunner, List<CompactionJob> jobs) throws IOException {
-        runTask(receiveJobs(jobs), compactionRunner);
+        runTask(compactionRunner, receiveJobsFromQueue(new LinkedList<>(jobs)));
     }
 
-    public void runTask(MessageReceiver messageReceiver, CompactionRunner compactionRunner) throws IOException {
+    public void runTask(CompactionRunner compactionRunner, MessageReceiver messageReceiver) throws IOException {
         new CompactionTask(
                 instanceProperties, tablePropertiesProvider, PropertiesReloader.neverReload(),
                 stateStoreProvider, messageReceiver, stateStoreWaitForFiles(), jobCommitter(),
