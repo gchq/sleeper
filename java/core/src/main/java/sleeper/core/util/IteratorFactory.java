@@ -26,6 +26,7 @@ import sleeper.core.iterator.FilterAggregationConfig;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.model.DataEngine;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
@@ -54,12 +55,13 @@ public class IteratorFactory {
      * then an aggregation iterator is created and initialised.
      *
      * @param  iteratorConfig            config object holding iterator details
+     * @param  schema                    the Sleeper {@link Schema} of the {@link Row} objects
      * @return                           an initialised iterator
      * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
      *                                   found
      * @see                              ConfigStringAggregationFilteringIterator
      */
-    public SortedRowIterator getIterator(IteratorConfig iteratorConfig) throws IteratorCreationException {
+    public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
             if (iteratorConfig.getFilters() == null) {
                 ConfigStringIterator iterator;
@@ -72,13 +74,13 @@ public class IteratorFactory {
                     iterator = inner.getObject(className, ConfigStringIterator.class);
                 }
                 LOGGER.debug("Created iterator of class {}", className);
-                iterator.init(iteratorConfig.getIteratorConfigString(), iteratorConfig.getSchema());
+                iterator.init(iteratorConfig.getIteratorConfigString(), schema);
                 LOGGER.debug("Initialised iterator with config {}", iteratorConfig.getIteratorConfigString());
                 return iterator;
             } else {
                 AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-                iterator.setFilterAggregationConfig(getConfigFromProperties(iteratorConfig));
-                iterator.setSchema(iteratorConfig.getSchema());
+                iterator.setFilterAggregationConfig(getConfigFromProperties(iteratorConfig, schema));
+                iterator.setSchema(schema);
                 return iterator;
             }
         } catch (ObjectFactoryException exc) {
@@ -92,15 +94,16 @@ public class IteratorFactory {
      * Currently only uses filters from input but eventually will build aggregations from it too.
      *
      * @param  iteratorConfig config for an iterator that should have filters set in it
+     * @param  schema         the Sleeper {@link Schema} of the {@link Row} objects
      * @return                filter aggregation config to be used in an iterator
      */
-    private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig) {
+    private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig, Schema schema) {
         String[] filterParts = iteratorConfig.getFilters().split("\\(");
         if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
             String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
             Optional<String> filterColumn = Optional.of(filterInput[0]);
             long maxAge = Long.parseLong(filterInput[1]);
-            List<String> groupingColumns = new ArrayList<>(iteratorConfig.getSchema().getRowKeyFieldNames());
+            List<String> groupingColumns = new ArrayList<>(schema.getRowKeyFieldNames());
             groupingColumns.add(filterInput[0]);
             return new FilterAggregationConfig(groupingColumns, filterColumn, maxAge, List.of());
         } else {

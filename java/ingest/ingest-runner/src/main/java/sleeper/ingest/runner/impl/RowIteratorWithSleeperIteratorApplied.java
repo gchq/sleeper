@@ -18,6 +18,7 @@ package sleeper.ingest.runner.impl;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.row.Row;
+import sleeper.core.schema.Schema;
 import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
@@ -39,17 +40,20 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
      *
      * @param  objectFactory             the {@link ObjectFactory} to use to create the Sleeper iterator
      * @param  iteratorConfig            the {@link IteratorConfig} to use to create the Sleeper iterator
+     * @param  schema                    the Sleeper {@link Schema} of the {@link Row} objects
      * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Row} objects
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      */
     RowIteratorWithSleeperIteratorApplied(
             ObjectFactory objectFactory,
             IteratorConfig iteratorConfig,
+            Schema schema,
             CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
         this.inputIterator = requireNonNull(sourceIterator);
         this.outputIterator = applyIterator(
                 objectFactory,
                 iteratorConfig,
+                schema,
                 this.inputIterator);
     }
 
@@ -58,6 +62,7 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
      *
      * @param  objectFactory             the {@link ObjectFactory} to use to create the Sleeper iterator
      * @param  iteratorConfig            the {@link IteratorConfig} to use to create the Sleeper iterator
+     * @param  schema                    the Sleeper {@link Schema} of the {@link Row} objects
      * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Row} objects
      * @return                           the row iterator, with the Sleeper iterator applied
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
@@ -65,10 +70,11 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
     private static CloseableIterator<Row> applyIterator(
             ObjectFactory objectFactory,
             IteratorConfig iteratorConfig,
+            Schema schema,
             CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
         if (null != iteratorConfig.getIteratorClassName() || null != iteratorConfig.getFilters()) {
             return new IteratorFactory(objectFactory)
-                    .getIterator(iteratorConfig)
+                    .getIterator(iteratorConfig, schema)
                     .apply(sourceIterator);
         }
         return sourceIterator;

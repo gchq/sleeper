@@ -23,7 +23,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
@@ -61,7 +60,7 @@ public class IngestCoordinatorTestHelper {
                 .objectFactory(ObjectFactory.noUserJars())
                 .ingestPartitionRefreshFrequencyInSeconds(Integer.MAX_VALUE)
                 .stateStore(stateStore)
-                .iteratorConfig(IteratorConfig.builder().schema(schema).build())
+                .schema(schema)
                 .rowBatchFactory(rowBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory);
     }

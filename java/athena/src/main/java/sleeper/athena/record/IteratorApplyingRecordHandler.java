@@ -266,8 +266,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
                         .iteratorClassName(iteratorClass)
                         .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
                         .filters(tableProperties.get(FILTERS_CONFIG))
-                        .schema(schema)
-                        .build())
+                        .build(), schema)
                 .apply(mergingIterator);
     }
 }

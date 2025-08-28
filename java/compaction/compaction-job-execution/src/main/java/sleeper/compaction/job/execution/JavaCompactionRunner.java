@@ -147,8 +147,7 @@ public class JavaCompactionRunner implements CompactionRunner {
                             .iteratorClassName(compactionJob.getIteratorClassName())
                             .iteratorConfigString(compactionJob.getIteratorConfig())
                             .filters(compactionJob.getFilterConfig())
-                            .schema(schema)
-                            .build())
+                            .build(), schema)
                     .apply(mergingIterator);
         }
         return mergingIterator;

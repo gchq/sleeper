@@ -26,6 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
+import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -103,6 +104,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final ObjectFactory objectFactory;
     private final StateStore sleeperStateStore;
     private final AddFilesToStateStore addFilesToStateStore;
+    private final Schema schema;
     private final IteratorConfig iteratorConfig;
     private final int ingestPartitionRefreshFrequencyInSeconds;
     private final RowBatchFactory<INCOMINGDATATYPE> rowBatchFactory;
@@ -117,13 +119,16 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private boolean isClosed;
 
     private IngestCoordinator(Builder<INCOMINGDATATYPE> builder) {
+        LOGGER.info("Creating IngestCoordinator with schema of {}", builder.schema);
+
         // Supplied member variables
         this.objectFactory = requireNonNull(builder.objectFactory);
         this.sleeperStateStore = requireNonNull(builder.stateStore);
         this.addFilesToStateStore = requireNonNullElseGet(builder.addFilesToStateStore,
                 () -> AddFilesToStateStore.synchronousNoJob(sleeperStateStore));
-        this.iteratorConfig = requireNonNull(builder.iteratorConfig);
-        LOGGER.info("Creating IngestCoordinator with schema of {}", iteratorConfig.getSchema());
+        this.schema = requireNonNull(builder.schema);
+        this.iteratorConfig = builder.iteratorConfig;
+
         this.ingestPartitionRefreshFrequencyInSeconds = builder.ingestPartitionRefreshFrequencyInSeconds;
         this.rowBatchFactory = requireNonNull(builder.rowBatchFactory);
 
@@ -131,7 +136,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.ingestCoordinatorCreationTime = Instant.now();
         this.ingestFutures = new ArrayList<>();
         this.partitionFileWriterFactory = requireNonNull(builder.partitionFileWriterFactory);
-        this.ingesterIntoPartitions = new IngesterIntoPartitions(iteratorConfig.getSchema(),
+        this.ingesterIntoPartitions = new IngesterIntoPartitions(builder.schema,
                 partitionFileWriterFactory::createPartitionFileWriter, builder.ingestFileWritingStrategy);
         this.currentRowBatch = this.rowBatchFactory.createRowBatch();
         this.isClosed = false;
@@ -173,6 +178,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                     CloseableIterator<Row> rowIteratorWithSleeperIteratorApplied = new RowIteratorWithSleeperIteratorApplied(
                             objectFactory,
                             iteratorConfig,
+                            schema,
                             orderedRowIteratorFromBatch)) {
                 // Create a future which completes once the partitions are created, the rows ingested
                 // and the state store updated.
@@ -349,6 +355,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private ObjectFactory objectFactory;
         private StateStore stateStore;
         private AddFilesToStateStore addFilesToStateStore;
+        private Schema schema;
         private IteratorConfig iteratorConfig;
         private int ingestPartitionRefreshFrequencyInSeconds;
         private RowBatchFactory<T> rowBatchFactory;
@@ -388,6 +395,17 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
          */
         public Builder<T> addFilesToStateStore(AddFilesToStateStore addFilesToStateStore) {
             this.addFilesToStateStore = addFilesToStateStore;
+            return this;
+        }
+
+        /**
+         * The Sleeper table schema.
+         *
+         * @param  schema the schema
+         * @return        the builder for call chaining
+         */
+        public Builder<T> schema(Schema schema) {
+            this.schema = schema;
             return this;
         }
 
@@ -454,12 +472,12 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         }
 
         public Builder<T> tableProperties(TableProperties tableProperties) {
-            return iteratorConfig(IteratorConfig.builder()
-                    .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
-                    .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                    .filters(tableProperties.get(FILTERS_CONFIG))
-                    .schema(tableProperties.getSchema())
-                    .build())
+            return schema(tableProperties.getSchema())
+                    .iteratorConfig(IteratorConfig.builder()
+                            .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
+                            .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
+                            .filters(tableProperties.get(FILTERS_CONFIG))
+                            .build())
                     .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
         }
 

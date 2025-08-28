@@ -148,8 +148,7 @@ public class LeafPartitionQueryExecutor {
                             .iteratorClassName(iteratorClassName)
                             .iteratorConfigString(iteratorConfig)
                             .filters(filtersConfig)
-                            .schema(schema)
-                            .build());
+                            .build(), schema);
         }
     }
 }
