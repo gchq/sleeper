@@ -28,6 +28,7 @@ import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.schema.Schema;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -99,7 +100,9 @@ public class IteratorFactory {
             String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
             Optional<String> filterColumn = Optional.of(filterInput[0]);
             long maxAge = Long.parseLong(filterInput[1]);
-            return new FilterAggregationConfig(List.of("TODO in 5477"), filterColumn, maxAge, List.of());
+            List<String> groupingColumns = new ArrayList<>(iteratorConfig.getSchema().getRowKeyFieldNames());
+            groupingColumns.add(filterInput[0]);
+            return new FilterAggregationConfig(groupingColumns, filterColumn, maxAge, List.of());
         } else {
             throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
         }

@@ -122,6 +122,24 @@ public class IteratorFactoryTest {
     }
 
     @Test
+    public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws IteratorCreationException {
+        // Given
+        SortedRowIterator iterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("ageOff(value,1000)")
+                        .schema(Schema.builder()
+                                .rowKeyFields(new Field("key", new IntType()))
+                                .valueFields(new Field("value", new LongType()),
+                                        new Field("notRequiredField", new IntType()))s
+                                .build())
+                        .build());
+
+        // Then
+        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
+    }
+
+    @Test
     public void shouldThowExceptionWhenUnknownFilterApplied() throws IteratorCreationException {
         // Given
         IteratorConfig config = IteratorConfig.builder()
