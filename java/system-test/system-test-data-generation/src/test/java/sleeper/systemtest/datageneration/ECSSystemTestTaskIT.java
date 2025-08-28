@@ -24,31 +24,37 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
+import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
-import sleeper.systemtest.configuration.SystemTestDataGenerationJobSerDe;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJobStore;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
+import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
-public class SystemTestTaskIT extends LocalStackTestBase {
+public class ECSSystemTestTaskIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     SystemTestStandaloneProperties systemTestProperties = new SystemTestStandaloneProperties();
@@ -63,9 +69,11 @@ public class SystemTestTaskIT extends LocalStackTestBase {
         instanceProperties.set(ENDPOINT_URL, localStackContainer.getEndpoint().toString());
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "ingest-direct");
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "ingest-by-queue");
-        systemTestProperties.set(SYSTEM_TEST_JOBS_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, createSqsQueueGetUrl());
+        systemTestProperties.set(SYSTEM_TEST_BUCKET_NAME, UUID.randomUUID().toString());
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         createBucket(instanceProperties.get(DATA_BUCKET));
+        createBucket(systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         sleeperClient = createSleeperClient();
@@ -75,16 +83,15 @@ public class SystemTestTaskIT extends LocalStackTestBase {
     @Test
     void shouldIngestDirectly() throws Exception {
         // Given
-        sendJob(SystemTestDataGenerationJob.builder()
-                .jobId("test-job")
+        SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
                 .tableName(tableName)
                 .numberOfIngests(2)
                 .rowsPerIngest(12)
                 .ingestMode(DIRECT)
-                .build());
+                .build();
 
         // When
-        createTask().run();
+        createTask(job).run();
 
         // Then
         assertThat(sleeperClient.getStateStore(tableName).getFileReferences())
@@ -92,21 +99,45 @@ public class SystemTestTaskIT extends LocalStackTestBase {
                 .containsExactly(12L, 12L);
     }
 
-    ECSSystemTestTask createTask() {
+    @Test
+    void shouldReuseSameDataGenerationJob() {
+        // Given
+        SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
+                .tableName(tableName)
+                .numberOfIngests(1)
+                .rowsPerIngest(10)
+                .ingestMode(QUEUE)
+                .ingestQueue(STANDARD_INGEST)
+                .build();
+
+        // When
+        createTask(job).run();
+        createTask(job).run();
+
+        // Then
+        List<IngestJob> ingestJobs = receiveIngestJobs();
+        assertThat(ingestJobs).extracting(IngestJob::getId).hasSize(2).doesNotHaveDuplicates();
+        assertThat(ingestJobs).flatExtracting(IngestJob::getFiles).hasSize(2).doesNotHaveDuplicates();
+    }
+
+    List<IngestJob> receiveIngestJobs() {
+        IngestJobSerDe serDe = new IngestJobSerDe();
+        return receiveMessages(instanceProperties.get(INGEST_JOB_QUEUE_URL))
+                .map(serDe::fromJson)
+                .toList();
+    }
+
+    ECSSystemTestTask createTask(SystemTestDataGenerationJob job) {
+        String jobObjectKey = new SystemTestDataGenerationJobStore(systemTestProperties, s3Client)
+                .writeJobGetObjectKey(job);
         IngestRandomData ingestData = new IngestRandomData(instanceProperties, systemTestProperties, stsClient, hadoopConf, tempDir.toString());
-        return new ECSSystemTestTask(systemTestProperties, sqsClient, job -> {
+        return new ECSSystemTestTask(systemTestProperties, s3Client, jobObjectKey, readJob -> {
             try {
-                ingestData.run(job);
+                ingestData.run(readJob);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
-    }
-
-    void sendJob(SystemTestDataGenerationJob job) {
-        sqsClient.sendMessage(builder -> builder
-                .queueUrl(systemTestProperties.get(SYSTEM_TEST_JOBS_QUEUE_URL))
-                .messageBody(new SystemTestDataGenerationJobSerDe().toJson(job)));
     }
 
     SleeperClient createSleeperClient() {
