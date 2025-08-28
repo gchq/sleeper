@@ -22,10 +22,12 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.core.task.CompactionTaskTestHelper;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
@@ -33,6 +35,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
@@ -63,6 +68,7 @@ public class CompactionRunnerTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     protected StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+    protected CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
 
     @BeforeEach
     public void setUpBase() throws Exception {
@@ -85,6 +91,22 @@ public class CompactionRunnerTestBase {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), conf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
+    }
+
+    protected void runTask(CompactionJob job, Configuration hadoopConf) throws Exception {
+        DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
+        CompactionRunner runner = selector.createCompactor(job, tableProperties);
+        compactionTaskTestHelper().runTask(runner, List.of(job));
+    }
+
+    private CompactionTaskTestHelper compactionTaskTestHelper() {
+        return new CompactionTaskTestHelper(
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore), jobTracker);
+    }
+
+    protected RowsProcessed getRowsProcessed(CompactionJob job) {
+        return CompactionJobTrackerTestHelper.getRowsProcessed(jobTracker, job.getId());
     }
 
     protected SketchesStore createSketchesStore() {
