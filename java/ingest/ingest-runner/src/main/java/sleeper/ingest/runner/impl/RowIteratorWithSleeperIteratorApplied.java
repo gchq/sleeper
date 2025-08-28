@@ -72,7 +72,7 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
             IteratorConfig iteratorConfig,
             Schema schema,
             CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
-        if (null != iteratorConfig.getIteratorClassName() || null != iteratorConfig.getFilters()) {
+        if (iteratorConfig != null && (iteratorConfig.getIteratorClassName() != null || iteratorConfig.getFilters() != null)) {
             return new IteratorFactory(objectFactory)
                     .getIterator(iteratorConfig, schema)
                     .apply(sourceIterator);
