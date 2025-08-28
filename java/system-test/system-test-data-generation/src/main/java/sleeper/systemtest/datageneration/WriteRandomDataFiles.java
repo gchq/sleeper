@@ -41,9 +41,9 @@ public class WriteRandomDataFiles {
     }
 
     public static String writeToS3GetDirectory(
-            SystemTestPropertyValues systemTestProperties, TableProperties tableProperties, Configuration hadoopConf, SystemTestDataGenerationJob job) throws IOException {
+            SystemTestPropertyValues systemTestProperties, TableProperties tableProperties, Configuration hadoopConf, SystemTestDataGenerationJob job, String runId) throws IOException {
 
-        String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + job.getJobId();
+        String dir = systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME) + "/ingest/" + runId;
 
         writeToPath(dir, "s3a://", tableProperties,
                 WriteRandomData.createRowIterator(job, tableProperties),
