@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
@@ -79,10 +80,12 @@ public class BespokeIngestCoordinator {
         return IngestCoordinator.builder()
                 .objectFactory(objectFactory)
                 .stateStore(sleeperStateStore)
-                .schema(tableProperties.getSchema())
-                .iteratorClassName(sleeperIteratorClassName)
-                .iteratorConfig(sleeperIteratorConfig)
-                .filtersConfig(sleeperFiltersConfig)
+                .iteratorConfig(IteratorConfig.builder()
+                        .schema(tableProperties.getSchema())
+                        .iteratorClassName(sleeperIteratorClassName)
+                        .iteratorConfigString(sleeperIteratorConfig)
+                        .filters(sleeperFiltersConfig)
+                        .build())
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
                 .rowBatchFactory(rowBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory)
