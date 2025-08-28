@@ -36,7 +36,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
@@ -76,16 +75,14 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config, PollWithRetries poll) {
-        List<SystemTestDataGenerationJob> jobs = IntStream.range(0, numberOfJobs)
-                .mapToObj(i -> SystemTestDataGenerationJob.builder()
-                        .applyMutation(config)
-                        .configBucket(instance.getInstanceProperties().get(CONFIG_BUCKET))
-                        .roleArnToLoadConfig(instance.getInstanceProperties().get(INGEST_BY_QUEUE_ROLE_ARN))
-                        .tableName(instance.getTableName())
-                        .build())
-                .toList();
+        SystemTestDataGenerationJob jobSpec = SystemTestDataGenerationJob.builder()
+                .applyMutation(config)
+                .configBucket(instance.getInstanceProperties().get(CONFIG_BUCKET))
+                .roleArnToLoadConfig(instance.getInstanceProperties().get(INGEST_BY_QUEUE_ROLE_ARN))
+                .tableName(instance.getTableName())
+                .build();
 
-        driver.runDataGenerationJobs(jobs, poll);
+        driver.runDataGenerationJobs(numberOfJobs, jobSpec, poll);
         lastGeneratedFiles = sourceFiles.findGeneratedFiles();
         return this;
     }

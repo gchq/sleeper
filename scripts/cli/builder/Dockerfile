@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y \
     uuid-runtime \
     sudo \
     # Rust build time dependencies
-    build-essential libssl-dev \
+    build-essential pkg-config libssl-dev \
     # Clang installation dependencies
     lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
@@ -35,9 +35,6 @@ RUN apt-get update && apt-get install -y \
 # Install Clang 20
 RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20 \
     && rm -rf /var/lib/apt/lists/*
-
-ENV CC=clang-20
-ENV CXX=clang++-20
 
 # VS Code Java extension requires Java 21, so we install that but set the preferred version to match AWS EMR.
 RUN update-java-alternatives --set java-17-amazon-corretto
