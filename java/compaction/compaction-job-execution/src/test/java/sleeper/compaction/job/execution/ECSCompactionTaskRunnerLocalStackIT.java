@@ -116,6 +116,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
+import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
 public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
@@ -468,8 +469,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
                 waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
-                jobRunIdSupplier, timeSupplier, duration -> {
-                });
+                jobRunIdSupplier, timeSupplier, noWaits());
         return task;
     }
 
