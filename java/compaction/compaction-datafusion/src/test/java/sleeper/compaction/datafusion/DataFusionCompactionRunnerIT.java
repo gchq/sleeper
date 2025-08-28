@@ -257,7 +257,7 @@ public class DataFusionCompactionRunnerIT {
             // Then
             assertThat(summary.getRowsRead()).isZero();
             assertThat(summary.getRowsWritten()).isZero();
-            assertThat(dataFileExists(job.getOutputFile())).isFalse();
+            assertThat(readDataFile(schema, job.getOutputFile())).isEmpty();
         }
     }
 
@@ -361,12 +361,12 @@ public class DataFusionCompactionRunnerIT {
     }
 
     private RowsProcessed compact(CompactionJob job) throws Exception {
-        CompactionRunner runner = new DataFusionCompactionRunner();
+        CompactionRunner runner = new DataFusionCompactionRunner(new Configuration());
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
     }
 
     private RowsProcessed compactWithRegion(CompactionJob job, Region region) throws Exception {
-        CompactionRunner runner = new DataFusionCompactionRunner();
+        CompactionRunner runner = new DataFusionCompactionRunner(new Configuration());
         return runner.compact(job, tableProperties, region);
     }
 
