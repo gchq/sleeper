@@ -27,7 +27,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
@@ -93,12 +92,11 @@ public class DataFusionCompactionRunnerIT {
         // Given
         Schema schema = createSchemaWithMultipleKeys("foo1", new StringType(), "bar1", new LongType());
         tableProperties.setSchema(schema);
-        PartitionTree partitions = new PartitionsBuilder(schema)
+        update(stateStore).initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "L", "R", 0, "h")
                 .splitToNewChildrenOnDimension("R", "RL", "RR", 1, 10L)
-                .buildTree();
-        update(stateStore).initialise(partitions);
+                .buildTree());
         Row rowExcludedByFirstKey = new Row(Map.of("foo1", "a-row", "bar1", 20L));
         Row rowExcludedBySecondKey = new Row(Map.of("foo1", "some-row", "bar1", 5L));
         Row row1 = new Row(Map.of("foo1", "row-1", "bar1", 11L));
