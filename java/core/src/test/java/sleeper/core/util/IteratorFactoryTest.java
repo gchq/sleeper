@@ -131,10 +131,9 @@ public class IteratorFactoryTest {
                         .schema(Schema.builder()
                                 .rowKeyFields(new Field("key", new IntType()))
                                 .valueFields(new Field("value", new LongType()),
-                                        new Field("notRequiredField", new IntType()))s
+                                        new Field("notRequiredField", new IntType()))
                                 .build())
                         .build());
-
         // Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
     }
