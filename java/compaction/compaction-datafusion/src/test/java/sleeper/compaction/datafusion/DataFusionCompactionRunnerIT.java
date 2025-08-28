@@ -42,6 +42,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
@@ -123,7 +124,7 @@ public class DataFusionCompactionRunnerIT {
         assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
                 .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         assertThat(stateStore.getFileReferences())
-                .containsExactly(FileReferenceFactory.from(stateStore).partitionFile("RR", job.getOutputFile(), 2));
+                .containsExactly(outputFileReference(job, 2));
         assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
     }
 
@@ -268,7 +269,7 @@ public class DataFusionCompactionRunnerIT {
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(schema, List.of()));
             assertThat(stateStore.getFileReferences())
-                    .containsExactly(FileReferenceFactory.from(stateStore).partitionFile("root", job.getOutputFile(), 0));
+                    .containsExactly(outputFileReference(job, 0));
         }
     }
 
@@ -378,6 +379,10 @@ public class DataFusionCompactionRunnerIT {
 
     private CompactionJobFactory compactionFactory() {
         return new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    protected FileReference outputFileReference(CompactionJob job, long numberOfRows) {
+        return FileReferenceFactory.from(stateStore).partitionFile(job.getPartitionId(), job.getOutputFile(), numberOfRows);
     }
 
     private String buildPartitionFilePath(String partitionId, String filename) {
