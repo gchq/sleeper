@@ -49,10 +49,8 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
-import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
-import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -345,27 +343,16 @@ public class DataFusionCompactionRunnerIT {
     private void runTask(CompactionJob job) throws Exception {
         CompactionRunner runner = new DataFusionCompactionRunner(new Configuration());
         compactionTaskTestHelper().runTask(runner, List.of(job));
-        CompactionJobStatus status = jobTracker.getJob(job.getId()).orElseThrow();
-        status.getRunsLatestFirst();
-    }
-
-    private RowsProcessed getRowsProcessed(CompactionJob job) {
-        CompactionJobStatus status = jobTracker.getJob(job.getId()).orElseThrow();
-        List<CompactionJobRun> jobRuns = status.getRunsLatestFirst();
-        if (jobRuns.size() != 1) {
-            throw new IllegalStateException("Expected one job run, found: " + jobRuns);
-        }
-        CompactionJobRun jobRun = jobRuns.get(0);
-        if (jobRun.getStatusType() != CompactionJobStatusType.FINISHED) {
-            throw new IllegalStateException("Expected successful job run, found: " + jobRun);
-        }
-        return jobRun.getFinishedSummary().getRowsProcessed();
     }
 
     private CompactionTaskTestHelper compactionTaskTestHelper() {
         return new CompactionTaskTestHelper(
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore), jobTracker);
+    }
+
+    private RowsProcessed getRowsProcessed(CompactionJob job) {
+        return CompactionJobTrackerTestHelper.getRowsProcessed(jobTracker, job.getId());
     }
 
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {
