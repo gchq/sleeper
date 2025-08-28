@@ -139,7 +139,7 @@ public class IteratorFactoryTest {
     }
 
     @Test
-    public void shouldThowExceptionWhenUnknownFilterApplied() throws IteratorCreationException {
+    public void shouldThrowExceptionWhenUnknownFilterApplied() throws IteratorCreationException {
         // Given
         IteratorConfig config = IteratorConfig.builder()
                 .filters("someother(value,1000)")
@@ -158,7 +158,7 @@ public class IteratorFactoryTest {
     }
 
     @Test
-    public void shouldThowExceptionWhenCantPassFilterValue() throws IteratorCreationException {
+    public void shouldThrowExceptionWhenCantPassFilterValue() throws IteratorCreationException {
         // Given
         IteratorConfig config = IteratorConfig.builder()
                 .filters("ageoff(value,oops)")
