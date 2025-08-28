@@ -31,6 +31,7 @@ import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
@@ -77,6 +78,7 @@ public class CompactionRunnerTestBase {
         instanceProperties.set(DATA_BUCKET, dataFolderName);
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(DEFAULT_DATA_ENGINE, DataEngine.JAVA.toString());
+        stateStore.fixFileUpdateTime(null);
     }
 
     protected CompactionJobFactory compactionFactory() {
@@ -93,10 +95,18 @@ public class CompactionRunnerTestBase {
         return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
     }
 
+    protected void runTask(CompactionJob job) throws Exception {
+        runTask(job, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+    }
+
     protected void runTask(CompactionJob job, Configuration hadoopConf) throws Exception {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
         CompactionRunner runner = selector.createCompactor(job, tableProperties);
         compactionTaskTestHelper().runTask(runner, List.of(job));
+    }
+
+    protected FileReference outputFileReference(CompactionJob job, long numberOfRows) {
+        return FileReferenceFactory.from(stateStore).partitionFile(job.getPartitionId(), job.getOutputFile(), numberOfRows);
     }
 
     private CompactionTaskTestHelper compactionTaskTestHelper() {
