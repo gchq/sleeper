@@ -35,149 +35,153 @@ public class LambdaHandler {
     private static final List<LambdaHandler> ALL = new ArrayList<>();
     private static final Map<String, LambdaHandler> ATHENA_HANDLER_BY_CLASSNAME = new HashMap<>();
     public static final LambdaHandler ATHENA_SIMPLE_COMPOSITE = builder()
-            .jar(LambdaJar.ATHENA)
-            .handler("sleeper.athena.composite.SimpleCompositeHandler")
-            .optionalStack(OptionalStack.AthenaStack).add();
+        .jar(LambdaJar.ATHENA)
+        .handler("sleeper.athena.composite.SimpleCompositeHandler")
+        .optionalStack(OptionalStack.AthenaStack).add();
     public static final LambdaHandler ATHENA_ITERATORS_COMPOSITE = builder()
-            .jar(LambdaJar.ATHENA)
-            .handler("sleeper.athena.composite.IteratorApplyingCompositeHandler")
-            .optionalStack(OptionalStack.AthenaStack).add();
+        .jar(LambdaJar.ATHENA)
+        .handler("sleeper.athena.composite.IteratorApplyingCompositeHandler")
+        .optionalStack(OptionalStack.AthenaStack).add();
     public static final LambdaHandler BULK_IMPORT_STARTER = builder()
-            .jar(LambdaJar.BULK_IMPORT_STARTER)
-            .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-            .optionalStacks(OptionalStack.BULK_IMPORT_STACKS).add();
+        .jar(LambdaJar.BULK_IMPORT_STARTER)
+        .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
+        .optionalStacks(OptionalStack.BULK_IMPORT_STACKS).add();
     public static final LambdaHandler INGEST_TASK_CREATOR = builder()
-            .jar(LambdaJar.INGEST_TASK_CREATOR)
-            .handler("sleeper.ingest.taskrunner.RunIngestTasksLambda::eventHandler")
-            .optionalStack(OptionalStack.IngestStack).add();
+        .jar(LambdaJar.INGEST_TASK_CREATOR)
+        .handler("sleeper.ingest.taskrunner.RunIngestTasksLambda::eventHandler")
+        .optionalStack(OptionalStack.IngestStack).add();
     public static final LambdaHandler INGEST_BATCHER_SUBMITTER = builder()
-            .jar(LambdaJar.INGEST_BATCHER_SUBMITTER)
-            .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
-            .optionalStack(OptionalStack.IngestBatcherStack).add();
+        .jar(LambdaJar.INGEST_BATCHER_SUBMITTER)
+        .handler("sleeper.ingest.batcher.submitter.IngestBatcherSubmitterLambda::handleRequest")
+        .optionalStack(OptionalStack.IngestBatcherStack).add();
     public static final LambdaHandler INGEST_BATCHER_JOB_CREATOR = builder()
-            .jar(LambdaJar.INGEST_BATCHER_JOB_CREATOR)
-            .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
-            .optionalStack(OptionalStack.IngestBatcherStack).add();
+        .jar(LambdaJar.INGEST_BATCHER_JOB_CREATOR)
+        .handler("sleeper.ingest.batcher.job.creator.IngestBatcherJobCreatorLambda::eventHandler")
+        .optionalStack(OptionalStack.IngestBatcherStack).add();
     public static final LambdaHandler GARBAGE_COLLECTOR_TRIGGER = builder()
-            .jar(LambdaJar.GARBAGE_COLLECTOR)
-            .handler("sleeper.garbagecollector.GarbageCollectorTriggerLambda::handleRequest")
-            .optionalStack(OptionalStack.GarbageCollectorStack).add();
+        .jar(LambdaJar.GARBAGE_COLLECTOR)
+        .handler("sleeper.garbagecollector.GarbageCollectorTriggerLambda::handleRequest")
+        .optionalStack(OptionalStack.GarbageCollectorStack).add();
     public static final LambdaHandler GARBAGE_COLLECTOR = builder()
-            .jar(LambdaJar.GARBAGE_COLLECTOR)
-            .handler("sleeper.garbagecollector.GarbageCollectorLambda::handleRequest")
-            .optionalStack(OptionalStack.GarbageCollectorStack).add();
+        .jar(LambdaJar.GARBAGE_COLLECTOR)
+        .handler("sleeper.garbagecollector.GarbageCollectorLambda::handleRequest")
+        .optionalStack(OptionalStack.GarbageCollectorStack).add();
     public static final LambdaHandler COMPACTION_JOB_CREATOR_TRIGGER = builder()
-            .jar(LambdaJar.COMPACTION_JOB_CREATOR)
-            .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
-            .optionalStack(OptionalStack.CompactionStack).add();
+        .jar(LambdaJar.COMPACTION_JOB_CREATOR)
+        .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsTriggerLambda::handleRequest")
+        .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaHandler COMPACTION_JOB_CREATOR = builder()
-            .jar(LambdaJar.COMPACTION_JOB_CREATOR)
-            .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
-            .optionalStack(OptionalStack.CompactionStack).add();
+        .jar(LambdaJar.COMPACTION_JOB_CREATOR)
+        .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
+        .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaHandler COMPACTION_JOB_DISPATCHER = builder()
-            .jar(LambdaJar.COMPACTION_JOB_CREATOR)
-            .handler("sleeper.compaction.job.creation.lambda.CompactionJobDispatchLambda::handleRequest")
-            .optionalStack(OptionalStack.CompactionStack).add();
+        .jar(LambdaJar.COMPACTION_JOB_CREATOR)
+        .handler("sleeper.compaction.job.creation.lambda.CompactionJobDispatchLambda::handleRequest")
+        .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaHandler COMPACTION_TASK_CREATOR = builder()
-            .jar(LambdaJar.COMPACTION_TASK_CREATOR)
-            .handler("sleeper.compaction.task.creation.RunCompactionTasksLambda::eventHandler")
-            .optionalStack(OptionalStack.CompactionStack).add();
+        .jar(LambdaJar.COMPACTION_TASK_CREATOR)
+        .handler("sleeper.compaction.task.creation.RunCompactionTasksLambda::eventHandler")
+        .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaHandler COMPACTION_TASK_TERMINATOR = builder()
-            .jar(LambdaJar.COMPACTION_TASK_CREATOR)
-            .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
-            .optionalStack(OptionalStack.CompactionStack).add();
+        .jar(LambdaJar.COMPACTION_TASK_CREATOR)
+        .handler("sleeper.compaction.task.creation.SafeTerminationLambda::handleRequest")
+        .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaHandler FIND_PARTITIONS_TO_SPLIT_TRIGGER = builder()
-            .jar(LambdaJar.PARTITION_SPLITTER)
-            .handler("sleeper.splitter.lambda.FindPartitionsToSplitTriggerLambda::handleRequest")
-            .optionalStack(OptionalStack.PartitionSplittingStack).add();
+        .jar(LambdaJar.PARTITION_SPLITTER)
+        .handler("sleeper.splitter.lambda.FindPartitionsToSplitTriggerLambda::handleRequest")
+        .optionalStack(OptionalStack.PartitionSplittingStack).add();
     public static final LambdaHandler FIND_PARTITIONS_TO_SPLIT = builder()
-            .jar(LambdaJar.PARTITION_SPLITTER)
-            .handler("sleeper.splitter.lambda.FindPartitionsToSplitLambda::handleRequest")
-            .optionalStack(OptionalStack.PartitionSplittingStack).add();
+        .jar(LambdaJar.PARTITION_SPLITTER)
+        .handler("sleeper.splitter.lambda.FindPartitionsToSplitLambda::handleRequest")
+        .optionalStack(OptionalStack.PartitionSplittingStack).add();
     public static final LambdaHandler SPLIT_PARTITION = builder()
-            .jar(LambdaJar.PARTITION_SPLITTER)
-            .handler("sleeper.splitter.lambda.SplitPartitionLambda::handleRequest")
-            .optionalStack(OptionalStack.PartitionSplittingStack).add();
+        .jar(LambdaJar.PARTITION_SPLITTER)
+        .handler("sleeper.splitter.lambda.SplitPartitionLambda::handleRequest")
+        .optionalStack(OptionalStack.PartitionSplittingStack).add();
     public static final LambdaHandler KEEP_QUERY_WARM = builder()
-            .jar(LambdaJar.QUERY)
-            .handler("sleeper.query.lambda.WarmQueryExecutorLambda::handleRequest")
-            .optionalStack(OptionalStack.KeepLambdaWarmStack).add();
+        .jar(LambdaJar.QUERY)
+        .handler("sleeper.query.lambda.WarmQueryExecutorLambda::handleRequest")
+        .optionalStack(OptionalStack.KeepLambdaWarmStack).add();
     public static final LambdaHandler BULK_EXPORT_PLANNER = builder()
-            .jar(LambdaJar.BULK_EXPORT_PLANNER)
-            .handler("sleeper.bulkexport.planner.SqsBulkExportProcessorLambda::handleRequest")
-            .optionalStack(BulkExportStack).add();
+        .jar(LambdaJar.BULK_EXPORT_PLANNER)
+        .handler("sleeper.bulkexport.planner.SqsBulkExportProcessorLambda::handleRequest")
+        .optionalStack(BulkExportStack).add();
     public static final LambdaHandler BULK_EXPORT_TASK_CREATOR = builder()
-            .jar(LambdaJar.BULK_EXPORT_TASK_CREATOR)
-            .handler("sleeper.bulkexport.taskcreator.SqsTriggeredBulkExportTaskRunnerLambda::handleRequest")
-            .optionalStack(BulkExportStack).add();
+        .jar(LambdaJar.BULK_EXPORT_TASK_CREATOR)
+        .handler("sleeper.bulkexport.taskcreator.SqsTriggeredBulkExportTaskRunnerLambda::handleRequest")
+        .optionalStack(BulkExportStack).add();
     public static final LambdaHandler QUERY_EXECUTOR = builder()
-            .jar(LambdaJar.QUERY)
-            .handler("sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest")
-            .optionalStack(OptionalStack.QueryStack).add();
+        .jar(LambdaJar.QUERY)
+        .handler("sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest")
+        .optionalStack(OptionalStack.QueryStack).add();
     public static final LambdaHandler QUERY_LEAF_PARTITION = builder()
-            .jar(LambdaJar.QUERY)
-            .handler("sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest")
-            .optionalStack(OptionalStack.QueryStack).add();
+        .jar(LambdaJar.QUERY)
+        .handler("sleeper.query.lambda.SqsLeafPartitionQueryLambda::handleRequest")
+        .optionalStack(OptionalStack.QueryStack).add();
     public static final LambdaHandler WEB_SOCKET_QUERY = builder()
-            .jar(LambdaJar.QUERY)
-            .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
-            .optionalStack(OptionalStack.WebSocketQueryStack).add();
+        .jar(LambdaJar.QUERY)
+        .handler("sleeper.query.lambda.WebSocketQueryProcessorLambda::handleRequest")
+        .optionalStack(OptionalStack.WebSocketQueryStack).add();
     public static final LambdaHandler AUTO_DELETE_S3_OBJECTS = builder()
-            .jar(LambdaJar.CUSTOM_RESOURCES)
-            .handler("sleeper.cdk.custom.AutoDeleteS3ObjectsLambda::handleEvent")
-            .core().add();
+        .jar(LambdaJar.CUSTOM_RESOURCES)
+        .handler("sleeper.cdk.custom.AutoDeleteS3ObjectsLambda::handleEvent")
+        .core().add();
+    public static final LambdaHandler AUTO_STOP_ECS_CLUSTER_TASKS = builder()
+        .jar(LambdaJar.CUSTOM_RESOURCES)
+        .handler("sleeper.cdk.custom.AutoStopEcsClusterTasksLambda::handleEvent")
+        .core().add();
     public static final LambdaHandler PROPERTIES_WRITER = builder()
-            .jar(LambdaJar.CUSTOM_RESOURCES)
-            .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
-            .core().add();
+        .jar(LambdaJar.CUSTOM_RESOURCES)
+        .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
+        .core().add();
     public static final LambdaHandler VPC_CHECK = builder()
-            .jar(LambdaJar.CUSTOM_RESOURCES)
-            .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
-            .core().add();
+        .jar(LambdaJar.CUSTOM_RESOURCES)
+        .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
+        .core().add();
     public static final LambdaHandler METRICS_TRIGGER = builder()
-            .jar(LambdaJar.METRICS)
-            .handler("sleeper.metrics.TableMetricsTriggerLambda::handleRequest")
-            .optionalStack(OptionalStack.TableMetricsStack).add();
+        .jar(LambdaJar.METRICS)
+        .handler("sleeper.metrics.TableMetricsTriggerLambda::handleRequest")
+        .optionalStack(OptionalStack.TableMetricsStack).add();
     public static final LambdaHandler METRICS = builder()
-            .jar(LambdaJar.METRICS)
-            .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
-            .optionalStack(OptionalStack.TableMetricsStack).add();
+        .jar(LambdaJar.METRICS)
+        .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
+        .optionalStack(OptionalStack.TableMetricsStack).add();
     public static final LambdaHandler STATESTORE_COMMITTER = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.committer.StateStoreCommitterLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.committer.StateStoreCommitterLambda::handleRequest")
+        .core().add();
     public static final LambdaHandler COMPACTION_COMMIT_BATCHER = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.committer.CompactionCommitBatcherLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.committer.CompactionCommitBatcherLambda::handleRequest")
+        .core().add();
     public static final LambdaHandler SNAPSHOT_CREATION_TRIGGER = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotCreationTriggerLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotCreationTriggerLambda::handleRequest")
+        .core().add();
     public static final LambdaHandler SNAPSHOT_CREATION = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotCreationLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotCreationLambda::handleRequest")
+        .core().add();
     public static final LambdaHandler SNAPSHOT_DELETION_TRIGGER = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotDeletionTriggerLambda::handleRequest")
+        .core().add();
     public static final LambdaHandler SNAPSHOT_DELETION = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotDeletionLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.snapshot.TransactionLogSnapshotDeletionLambda::handleRequest")
+        .core().add();
     public static final LambdaHandler TRANSACTION_DELETION_TRIGGER = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.transaction.TransactionLogTransactionDeletionTriggerLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.transaction.TransactionLogTransactionDeletionTriggerLambda::handleRequest")
+        .core().add();
     public static final LambdaHandler TRANSACTION_DELETION = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
+        .core().add();
     public static final LambdaHandler TRANSACTION_FOLLOWER = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.transaction.TransactionLogFollowerLambda::handleRequest")
-            .core().add();
+        .jar(LambdaJar.STATESTORE)
+        .handler("sleeper.statestore.lambda.transaction.TransactionLogFollowerLambda::handleRequest")
+        .core().add();
 
     private final LambdaJar jar;
     private final String handler;
