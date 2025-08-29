@@ -46,6 +46,7 @@ public class CompactionJob {
     private final String iteratorClassName;
     private final String iteratorConfig;
     private final String filterConfig;
+    private final String aggregationConfig;
 
     private CompactionJob(Builder builder) {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
@@ -56,6 +57,7 @@ public class CompactionJob {
         iteratorClassName = builder.iteratorClassName;
         iteratorConfig = builder.iteratorConfig;
         filterConfig = builder.filterConfig;
+        aggregationConfig = builder.aggregationConfig;
         checkDuplicates(inputFiles);
     }
 
@@ -72,7 +74,8 @@ public class CompactionJob {
                 .partitionId(partitionId)
                 .iteratorClassName(iteratorClassName)
                 .iteratorConfig(iteratorConfig)
-                .filterConfig(filterConfig);
+                .filterConfig(filterConfig)
+                .aggregationConfig(aggregationConfig);
     }
 
     public CheckFileAssignmentsRequest createInputFileAssignmentsCheck() {
@@ -166,6 +169,10 @@ public class CompactionJob {
         return filterConfig;
     }
 
+    public String getAggregationConfig() {
+        return aggregationConfig;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -179,13 +186,14 @@ public class CompactionJob {
                 && Objects.equals(inputFiles, that.inputFiles) && Objects.equals(outputFile, that.outputFile)
                 && Objects.equals(partitionId, that.partitionId) && Objects.equals(iteratorClassName, that.iteratorClassName)
                 && Objects.equals(iteratorConfig, that.iteratorConfig)
-                && Objects.equals(filterConfig, that.filterConfig);
+                && Objects.equals(filterConfig, that.filterConfig)
+                && Objects.equals(aggregationConfig, that.aggregationConfig);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(tableId, jobId, inputFiles, outputFile, partitionId,
-                iteratorClassName, iteratorConfig, filterConfig);
+                iteratorClassName, iteratorConfig, filterConfig, aggregationConfig);
     }
 
     @Override
@@ -199,6 +207,7 @@ public class CompactionJob {
                 ", iteratorClassName='" + iteratorClassName + '\'' +
                 ", iteratorConfig='" + iteratorConfig + '\'' +
                 ", filterConfig='" + filterConfig + '\'' +
+                ", aggregationConfig='" + aggregationConfig + '\'' +
                 '}';
     }
 
@@ -211,6 +220,7 @@ public class CompactionJob {
         private String iteratorClassName;
         private String iteratorConfig;
         private String filterConfig;
+        private String aggregationConfig;
 
         private Builder() {
         }
@@ -252,6 +262,11 @@ public class CompactionJob {
 
         public Builder filterConfig(String filterConfig) {
             this.filterConfig = filterConfig;
+            return this;
+        }
+
+        public Builder aggregationConfig(String aggregationConfig) {
+            this.aggregationConfig = aggregationConfig;
             return this;
         }
 
