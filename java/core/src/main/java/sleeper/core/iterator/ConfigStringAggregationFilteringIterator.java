@@ -17,7 +17,6 @@ package sleeper.core.iterator;
 
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.util.IteratorConfig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -84,7 +83,7 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
     @Override
     public void init(String configString, Schema schema) {
         //FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());
-        FilterAggregationConfig iteratorConfig = this.getAggregationConfig(null);
+        FilterAggregationConfig iteratorConfig = this.getAggregationConfig(configString, schema);
         validate(iteratorConfig, schema);
         iterator.setFilterAggregationConfig(iteratorConfig);
         iterator.setSchema(schema);
@@ -218,13 +217,13 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
         }
     }
 
-    private FilterAggregationConfig getAggregationConfig(IteratorConfig iteratorConfig) {
+    private FilterAggregationConfig getAggregationConfig(String configString, Schema schema) {
         LinkedHashMap<String, Aggregation> aggregationMap = new LinkedHashMap<String, Aggregation>();
-        iteratorConfig.getSchema().getValueFieldNames().forEach(valueField -> {
+        schema.getValueFieldNames().forEach(valueField -> {
             aggregationMap.put(valueField, null);
         });
 
-        String[] aggregationSplits = iteratorConfig.getAggregationString().split("\\),");
+        String[] aggregationSplits = configString.split("\\),");
         Arrays.stream(aggregationSplits).forEach(presentAggregation -> {
             AggregationString aggObject = new AggregationString(presentAggregation
                     .replaceAll("\\)", "")
@@ -233,8 +232,8 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
             if (aggregationMap.containsKey(aggObject.getColumnName())) {
                 throw new IllegalStateException("Not allowed duplicate columns for aggregation, Column name: " + aggObject.getColumnName());
             }
-            if (iteratorConfig.getSchema().getRowKeyFieldNames().contains(aggObject.getColumnName()) ||
-                    iteratorConfig.getSchema().getSortKeyFieldNames().contains(aggObject.getColumnName())) {
+            if (schema.getRowKeyFieldNames().contains(aggObject.getColumnName()) ||
+                    schema.getSortKeyFieldNames().contains(aggObject.getColumnName())) {
                 throw new IllegalStateException("Column for aggregation now allowed to be a Row Key or Sort Key, Column name: " + aggObject.getColumnName());
             }
             Aggregation aggregationToAdd;
