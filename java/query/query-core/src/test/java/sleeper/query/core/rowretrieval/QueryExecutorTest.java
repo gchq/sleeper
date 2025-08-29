@@ -242,8 +242,8 @@ public class QueryExecutorTest {
     }
 
     @Nested
-    @DisplayName("Apply addition iterators")
-    class ApplyAdditionIterators {
+    @DisplayName("Apply iterators by class name")
+    class ApplyIteratorsByClassName {
 
         private final Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
