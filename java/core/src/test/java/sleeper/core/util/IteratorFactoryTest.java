@@ -16,8 +16,6 @@
 package sleeper.core.util;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
@@ -94,48 +92,24 @@ public class IteratorFactoryTest {
         assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
     }
 
-    @ParameterizedTest
-    @CsvSource({"ageoff", "AGEOFF", "ageOff"})
-    public void shouldApplyAgeOffFilterFromProperties(String filters) throws IteratorCreationException {
-        // Given
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
-        SortedRowIterator ageOffIterator = new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.builder()
-                        .filters(filters + "(value,1000)")
-                        .build(), schema);
-
-        List<Row> rows = List.of(
-                new Row(Map.of("key", "test", "value", 10L)),
-                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
-        CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
-
-        // When
-        List<Row> filtered = new ArrayList<>();
-        ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
-
-        // Then
-        assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
-    }
-
     @Test
-    public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws IteratorCreationException {
-        // Given
+    public void shouldUseFiltersDataOverClassNameWhenBothSet() throws IteratorCreationException {
+        //When
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new LongType()),
-                        new Field("notRequiredField", new IntType()))
+                        new Field("otherValue", new LongType()))
                 .build();
         SortedRowIterator iterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("ageOff(value,1000)")
+                        .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                        .iteratorConfigString(";ageoff=value,1000,")
+                        .filters("ageOff(otherValue,1000)")
                         .build(), schema);
-        // Then
-        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
+
+        //Then
+        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "otherValue");
     }
 
     @Test

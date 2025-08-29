@@ -141,13 +141,14 @@ public class JavaCompactionRunner implements CompactionRunner {
         CloseableIterator<Row> mergingIterator = new MergingIterator(schema, inputIterators);
 
         // Apply an iterator if one is provided
-        if (null != compactionJob.getIteratorClassName() || null != compactionJob.getFilterConfig()) {
+        IteratorConfig config = IteratorConfig.builder()
+                .iteratorClassName(compactionJob.getIteratorClassName())
+                .iteratorConfigString(compactionJob.getIteratorConfig())
+                .filters(compactionJob.getFilterConfig())
+                .build();
+        if (config.shouldIteratorBeApplied()) {
             mergingIterator = new IteratorFactory(objectFactory)
-                    .getIterator(IteratorConfig.builder()
-                            .iteratorClassName(compactionJob.getIteratorClassName())
-                            .iteratorConfigString(compactionJob.getIteratorConfig())
-                            .filters(compactionJob.getFilterConfig())
-                            .build(), schema)
+                    .getIterator(config, schema)
                     .apply(mergingIterator);
         }
         return mergingIterator;

@@ -356,7 +356,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private StateStore stateStore;
         private AddFilesToStateStore addFilesToStateStore;
         private Schema schema;
-        private IteratorConfig iteratorConfig;
+        private IteratorConfig iteratorConfig = IteratorConfig.builder().build();
         private int ingestPartitionRefreshFrequencyInSeconds;
         private RowBatchFactory<T> rowBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
