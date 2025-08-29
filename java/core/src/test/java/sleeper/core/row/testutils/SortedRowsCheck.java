@@ -65,11 +65,11 @@ public record SortedRowsCheck(long rowsRead, List<Row> outOfOrder) {
     /**
      * Creates the results of a check reporting that rows were sorted.
      *
-     * @param  count the number of row
-     * @return       the check result
+     * @param  rowsRead the number of rows that were read
+     * @return          the check result
      */
-    public static SortedRowsCheck sorted(long count) {
-        return new SortedRowsCheck(count, List.of());
+    public static SortedRowsCheck sorted(long rowsRead) {
+        return new SortedRowsCheck(rowsRead, List.of());
     }
 
     /**
