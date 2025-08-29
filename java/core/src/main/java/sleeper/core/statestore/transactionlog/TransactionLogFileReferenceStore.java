@@ -27,10 +27,9 @@ import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -42,7 +41,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogFileReferenceStore.class);
     private final TransactionLogHead<StateStoreFiles> head;
-    private Clock clock = Clock.systemUTC();
+    private Supplier<Instant> timeSupplier = Instant::now;
 
     TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> head) {
         this.head = head;
@@ -50,7 +49,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void fixFileUpdateTime(Instant time) {
-        clock = Clock.fixed(time, ZoneId.of("UTC"));
+        timeSupplier = () -> time;
     }
 
     @Override
@@ -86,7 +85,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void addFilesTransaction(AddTransactionRequest request) {
-        head.addTransaction(clock.instant(), request);
+        head.addTransaction(timeSupplier.get(), request);
     }
 
     void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
@@ -94,7 +93,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     void clearTransactionLog() {
-        head.clearTransactionLog(new ClearFilesTransaction(), clock.instant());
+        head.clearTransactionLog(new ClearFilesTransaction(), timeSupplier.get());
     }
 
     private StateStoreFiles files() throws StateStoreException {

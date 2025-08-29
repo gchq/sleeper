@@ -23,10 +23,9 @@ import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * A partition store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
@@ -34,7 +33,7 @@ import java.util.List;
 class TransactionLogPartitionStore implements PartitionStore {
 
     private final TransactionLogHead<StateStorePartitions> head;
-    private Clock clock = Clock.systemUTC();
+    private Supplier<Instant> timeSupplier = Instant::now;
 
     TransactionLogPartitionStore(TransactionLogHead<StateStorePartitions> head) {
         this.head = head;
@@ -58,7 +57,7 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void fixPartitionUpdateTime(Instant time) {
-        clock = Clock.fixed(time, ZoneId.of("UTC"));
+        timeSupplier = () -> time;
     }
 
     /**
@@ -72,7 +71,7 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void addPartitionsTransaction(AddTransactionRequest request) {
-        head.addTransaction(clock.instant(), request);
+        head.addTransaction(timeSupplier.get(), request);
     }
 
     void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
@@ -80,7 +79,7 @@ class TransactionLogPartitionStore implements PartitionStore {
     }
 
     void clearTransactionLog() {
-        head.clearTransactionLog(ClearPartitionsTransaction.create(), clock.instant());
+        head.clearTransactionLog(ClearPartitionsTransaction.create(), timeSupplier.get());
     }
 
     private StateStorePartitions partitions() throws StateStoreException {
