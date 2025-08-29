@@ -176,7 +176,7 @@
         <guice.version>7.0.0</guice.version>
         <jol.version>0.17</jol.version>
         <zookeeper.version>3.9.4</zookeeper.version>
-        <jackson.version>2.20.0</jackson.version>
+        <jackson.version>2.20</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
