@@ -21,12 +21,14 @@ import sleeper.core.schema.Schema;
 public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
+    private final String aggregationString;
     private final String filters;
     private final Schema schema;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
+        this.aggregationString = builder.aggregationString;
         this.filters = builder.filters;
         this.schema = builder.schema;
     }
@@ -41,6 +43,10 @@ public class IteratorConfig {
 
     public String getIteratorConfigString() {
         return iteratorConfigString;
+    }
+
+    public String getAggregationString() {
+        return aggregationString;
     }
 
     public String getFilters() {
@@ -58,6 +64,7 @@ public class IteratorConfig {
         private String iteratorClassName;
         private String iteratorConfigString;
         private String filters;
+        private String aggregationString;
         private Schema schema;
 
         private Builder() {
@@ -93,6 +100,17 @@ public class IteratorConfig {
          */
         public Builder filters(String filters) {
             this.filters = filters;
+            return this;
+        }
+
+        /**
+         * Sets the aggregation string.
+         *
+         * @param  aggregationString the config string to be used for the aggregation
+         * @return                   builder for method chaining
+         */
+        public Builder aggregationString(String aggregationString) {
+            this.aggregationString = aggregationString;
             return this;
         }
 

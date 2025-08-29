@@ -17,10 +17,12 @@ package sleeper.core.iterator;
 
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.IteratorConfig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -81,7 +83,8 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
 
     @Override
     public void init(String configString, Schema schema) {
-        FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());
+        //FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());
+        FilterAggregationConfig iteratorConfig = this.getAggregationConfig(null);
         validate(iteratorConfig, schema);
         iterator.setFilterAggregationConfig(iteratorConfig);
         iterator.setSchema(schema);
@@ -212,6 +215,76 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
             if (!duplicateAggregationCheck.contains(column)) {
                 throw new IllegalArgumentException("Column " + column + " doesn't have a aggregation operator specified");
             }
+        }
+    }
+
+    private FilterAggregationConfig getAggregationConfig(IteratorConfig iteratorConfig) {
+        LinkedHashMap<String, Aggregation> aggregationMap = new LinkedHashMap<String, Aggregation>();
+        iteratorConfig.getSchema().getValueFieldNames().forEach(valueField -> {
+            aggregationMap.put(valueField, null);
+        });
+
+        String[] aggregationSplits = iteratorConfig.getAggregationString().split("\\),");
+        Arrays.stream(aggregationSplits).forEach(presentAggregation -> {
+            AggregationString aggObject = new AggregationString(presentAggregation
+                    .replaceAll("\\)", "")
+                    .split("\\("));
+
+            if (aggregationMap.containsKey(aggObject.getColumnName())) {
+                throw new IllegalStateException("Not allowed duplicate columns for aggregation, Column name: " + aggObject.getColumnName());
+            }
+            if (iteratorConfig.getSchema().getRowKeyFieldNames().contains(aggObject.getColumnName()) ||
+                    iteratorConfig.getSchema().getSortKeyFieldNames().contains(aggObject.getColumnName())) {
+                throw new IllegalStateException("Column for aggregation now allowed to be a Row Key or Sort Key, Column name: " + aggObject.getColumnName());
+            }
+            Aggregation aggregationToAdd;
+            switch (aggObject.getOpName().toUpperCase()) {
+                case "SUM":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.SUM);
+                    break;
+                case "MIN":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MIN);
+                    break;
+                case "MAX":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MAX);
+                    break;
+                case "MAP_SUM":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.SUM);
+                    break;
+                case "MAP_MIN":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MIN);
+                    break;
+                case "MAP_MAX":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MAX);
+                    break;
+                default:
+                    throw new IllegalStateException("Invalid aggregation operation name: " + aggObject.getOpName());
+            }
+            aggregationMap.put(aggObject.getColumnName(), aggregationToAdd);
+        });
+
+        if (aggregationMap.values().contains(null)) {
+            final StringBuilder columnErr = new StringBuilder();
+            aggregationMap.keySet().forEach(key -> {
+                if (aggregationMap.get(key).equals(null)) {
+                    columnErr.append(key + ", ");
+                }
+            });
+            throw new IllegalStateException("Not all value columns aggregations set, missing columns: " + columnErr.toString());
+        }
+        return new FilterAggregationConfig(new ArrayList<String>(aggregationMap.keySet()), Optional.empty(),
+                0l, // TODO Check
+                new ArrayList<Aggregation>(aggregationMap.values()));
+    }
+
+    private record AggregationString(String[] aggParts) {
+
+        String getOpName() {
+            return aggParts[0];
+        }
+
+        String getColumnName() {
+            return aggParts[1];
         }
     }
 }

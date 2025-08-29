@@ -50,6 +50,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
 import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
@@ -107,6 +108,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
     private final String sleeperIteratorClassName;
     private final String sleeperIteratorConfig;
     private final String sleeperFiltersConfig;
+    private final String sleeperAggregationConfig;
     private final int ingestPartitionRefreshFrequencyInSeconds;
     private final RowBatchFactory<INCOMINGDATATYPE> rowBatchFactory;
     private final PartitionFileWriterFactory partitionFileWriterFactory;
@@ -131,6 +133,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.sleeperIteratorClassName = builder.iteratorClassName;
         this.sleeperIteratorConfig = builder.iteratorConfig;
         this.sleeperFiltersConfig = builder.filtersConfig;
+        this.sleeperAggregationConfig = builder.aggregationConfig;
         this.ingestPartitionRefreshFrequencyInSeconds = builder.ingestPartitionRefreshFrequencyInSeconds;
         this.rowBatchFactory = requireNonNull(builder.rowBatchFactory);
 
@@ -183,6 +186,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                             sleeperIteratorClassName,
                             sleeperIteratorConfig,
                             sleeperFiltersConfig,
+                            sleeperAggregationConfig,
                             orderedRowIteratorFromBatch)) {
                 // Create a future which completes once the partitions are created, the rows ingested
                 // and the state store updated.
@@ -363,6 +367,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         private String iteratorClassName;
         private String iteratorConfig;
         private String filtersConfig;
+        private String aggregationConfig;
         private int ingestPartitionRefreshFrequencyInSeconds;
         private RowBatchFactory<T> rowBatchFactory;
         private PartitionFileWriterFactory partitionFileWriterFactory;
@@ -449,6 +454,17 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         }
 
         /**
+         * The Sleeper aggregation configuration.
+         *
+         * @param  aggregationConfig the configuration
+         * @return                   the builder for call chaining
+         */
+        public Builder<T> aggregationConfig(String aggregationConfig) {
+            this.aggregationConfig = aggregationConfig;
+            return this;
+        }
+
+        /**
          * The number of seconds to wait before the current list of partitions is refreshed from the state store.
          *
          * @param  ingestPartitionRefreshFrequencyInSeconds the wait time
@@ -504,6 +520,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                     .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                     .iteratorConfig(tableProperties.get(ITERATOR_CONFIG))
                     .filtersConfig(tableProperties.get(FILTERS_CONFIG))
+                    .aggregationConfig(tableProperties.get(AGGREGATIONS))
                     .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
         }
 
