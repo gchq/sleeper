@@ -34,6 +34,7 @@ import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
@@ -60,7 +61,8 @@ public class CompactionVeryLargeST {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
-                DATA_ENGINE, DataEngine.DATAFUSION.toString()));
+                DATA_ENGINE, DataEngine.DATAFUSION.toString(),
+                COMPACTION_FILES_BATCH_SIZE, "40"));
         sleeper.systemTestCluster().runDataGenerationJobs(10,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(200_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)))
