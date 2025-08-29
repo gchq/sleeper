@@ -185,7 +185,7 @@ public class IngestStack extends NestedStack {
             CoreStacks coreStacks,
             Queue ingestJobQueue,
             LambdaCode lambdaCode) {
-        //RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -240,12 +240,10 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
-        //if (removalPolicy == RemovalPolicy.DESTROY) {
         AutoStopEcsClusterTasks.autoStopTasksOnEcsCluster(this, instanceProperties, lambdaCode,
                 cluster, clusterName,
                 coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
                 coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
-        //}
 
         return cluster;
     }
