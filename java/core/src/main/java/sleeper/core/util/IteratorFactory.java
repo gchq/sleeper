@@ -128,30 +128,8 @@ public class IteratorFactory {
                     .replaceAll("\\)", "")
                     .split("\\("));
 
-            Aggregation aggregationToAdd;
-            switch (aggObject.getOpName().toUpperCase()) {
-                case "SUM":
-                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.SUM);
-                    break;
-                case "MIN":
-                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MIN);
-                    break;
-                case "MAX":
-                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MAX);
-                    break;
-                case "MAP_SUM":
-                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.SUM);
-                    break;
-                case "MAP_MIN":
-                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MIN);
-                    break;
-                case "MAP_MAX":
-                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MAX);
-                    break;
-                default:
-                    throw new IllegalStateException("Invalid aggregation operation name: " + aggObject.getOpName());
-            }
-            aggregations.add(aggregationToAdd);
+            aggregations.add(new Aggregation(aggObject.getColumnName(),
+                    AggregationOp.valueOf(aggObject.getOpName().toUpperCase().replaceFirst("^MAP_", ""))));
         });
         return aggregations;
     }
