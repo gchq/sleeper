@@ -19,7 +19,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.iterator.Aggregation;
 import sleeper.core.iterator.AggregationFilteringIterator;
+import sleeper.core.iterator.AggregationOp;
 import sleeper.core.iterator.ConfigStringAggregationFilteringIterator;
 import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.FilterAggregationConfig;
@@ -30,6 +32,8 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -91,23 +95,124 @@ public class IteratorFactory {
     /**
      * Gets the filter aggregation config when set by table properties.
      * Currently just gets the filter ageoff(column,age).
-     * Currently only uses filters from input but eventually will build aggregations from it too.
+     *
      *
      * @param  iteratorConfig config for an iterator that should have filters set in it
      * @param  schema         the Sleeper {@link Schema} of the {@link Row} objects
      * @return                filter aggregation config to be used in an iterator
      */
     private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig, Schema schema) {
+        List<String> groupingColumns = new ArrayList<>(schema.getRowKeyFieldNames());
+        Optional<String> filterColumn = Optional.empty();
+        long maxAge = 0L;
+
         String[] filterParts = iteratorConfig.getFilters().split("\\(");
         if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
             String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
-            Optional<String> filterColumn = Optional.of(filterInput[0]);
-            long maxAge = Long.parseLong(filterInput[1]);
-            List<String> groupingColumns = new ArrayList<>(schema.getRowKeyFieldNames());
+            filterColumn = Optional.of(filterInput[0]);
+            maxAge = Long.parseLong(filterInput[1]);
             groupingColumns.add(filterInput[0]);
-            return new FilterAggregationConfig(groupingColumns, filterColumn, maxAge, List.of());
         } else {
             throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
+        }
+        List<Aggregation> aggregations = generateAggregationsFromProperty(iteratorConfig);
+        validateAggregations(aggregations, schema);
+        return new FilterAggregationConfig(groupingColumns, filterColumn, maxAge, aggregations);
+    }
+
+    private List<Aggregation> generateAggregationsFromProperty(IteratorConfig iteratorConfig) {
+        List<Aggregation> aggregations = new ArrayList<Aggregation>();
+        String[] aggregationSplits = iteratorConfig.getAggregationString().split("\\),");
+        Arrays.stream(aggregationSplits).forEach(presentAggregation -> {
+            AggregationString aggObject = new AggregationString(presentAggregation
+                    .replaceAll("\\)", "")
+                    .split("\\("));
+
+            Aggregation aggregationToAdd;
+            switch (aggObject.getOpName().toUpperCase()) {
+                case "SUM":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.SUM);
+                    break;
+                case "MIN":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MIN);
+                    break;
+                case "MAX":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MAX);
+                    break;
+                case "MAP_SUM":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.SUM);
+                    break;
+                case "MAP_MIN":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MIN);
+                    break;
+                case "MAP_MAX":
+                    aggregationToAdd = new Aggregation(aggObject.getColumnName(), AggregationOp.MAX);
+                    break;
+                default:
+                    throw new IllegalStateException("Invalid aggregation operation name: " + aggObject.getOpName());
+            }
+            aggregations.add(aggregationToAdd);
+        });
+        return aggregations;
+    }
+
+    private void validateAggregations(List<Aggregation> aggregations, Schema schema) {
+        validateNoRowKeySortKeyAggregations(aggregations, schema);
+        validateNoDuplicateAggregations(aggregations);
+        validateAllColumnsHaveAggregations(aggregations, schema);
+    }
+
+    private void validateNoRowKeySortKeyAggregations(List<Aggregation> aggregations, Schema schema) {
+        List<Aggregation> rowKeySortKeyViolations = aggregations.stream().filter(agg -> {
+            return schema.getRowKeyFieldNames().contains(agg.column()) ||
+                    schema.getSortKeyFieldNames().contains(agg.column());
+        }).toList();
+
+        if (!rowKeySortKeyViolations.isEmpty()) {
+            StringBuilder colNameStringBuilder = new StringBuilder();
+            rowKeySortKeyViolations.stream().forEach(aggegationViolation -> {
+                colNameStringBuilder.append(aggegationViolation.column() + ", ");
+            });
+            throw new IllegalStateException("Column for aggregation now allowed to be a Row Key or Sort Key. Column names: " + colNameStringBuilder.toString());
+        }
+    }
+
+    private void validateNoDuplicateAggregations(List<Aggregation> aggregations) {
+        HashMap<String, Boolean> aggMap = new HashMap<String, Boolean>();
+        aggregations.stream().forEach(aggregation -> {
+            if (!aggMap.putIfAbsent(aggregation.column(), Boolean.TRUE)) {
+                throw new IllegalStateException("Not allowed duplicate columns for aggregatiom. Column name: " + aggregation.column());
+            }
+        });
+    }
+
+    private void validateAllColumnsHaveAggregations(List<Aggregation> aggregations, Schema schema) {
+        List<String> aggregationColumns = new ArrayList<String>();
+        aggregations.stream().forEach(aggregation -> {
+            aggregationColumns.add(aggregation.column());
+        });
+
+        aggregationColumns.removeAll(schema.getValueFieldNames());
+        if (aggregationColumns.size() > 0) {
+            StringBuilder missingColumnStringBuilder = new StringBuilder();
+            aggregationColumns.forEach(col -> missingColumnStringBuilder.append(col + ", "));
+            throw new IllegalStateException("Not all value fields have aggregation declared. Missing columns: " + missingColumnStringBuilder.toString());
+        }
+    }
+
+    /**
+     * Record to provide parse object from the aggregation string for clarity.
+     *
+     * @param aggregationParts array contain sepeate parts of the aggregation.
+     */
+    private record AggregationString(String[] aggregationParts) {
+
+        String getOpName() {
+            return aggregationParts[0];
+        }
+
+        String getColumnName() {
+            return aggregationParts[1];
         }
     }
 
