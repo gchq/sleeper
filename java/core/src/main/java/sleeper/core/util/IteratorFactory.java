@@ -115,8 +115,12 @@ public class IteratorFactory {
         } else {
             throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
         }
-        List<Aggregation> aggregations = generateAggregationsFromProperty(iteratorConfig);
-        validateAggregations(aggregations, schema);
+        List<Aggregation> aggregations = List.of();
+        if (iteratorConfig.getAggregationString() != null
+                && !iteratorConfig.getAggregationString().equals("")) {
+            aggregations = generateAggregationsFromProperty(iteratorConfig);
+            validateAggregations(aggregations, schema);
+        }
         return new FilterAggregationConfig(groupingColumns, filterColumn, maxAge, aggregations);
     }
 
