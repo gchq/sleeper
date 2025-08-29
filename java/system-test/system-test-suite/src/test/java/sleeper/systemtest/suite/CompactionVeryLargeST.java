@@ -64,7 +64,9 @@ public class CompactionVeryLargeST {
         sleeper.systemTestCluster().runDataGenerationJobs(10,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(200_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)))
-                .waitForTotalFileReferences(10);
+                // 200 million rows don't fit in the local file system store of a data generation task,
+                // so we end up with 4 files from each task.
+                .waitForTotalFileReferences(40);
 
         // When
         sleeper.compaction().putTableOnlineUntilJobsAreCreated(1).waitForTasks(1)
