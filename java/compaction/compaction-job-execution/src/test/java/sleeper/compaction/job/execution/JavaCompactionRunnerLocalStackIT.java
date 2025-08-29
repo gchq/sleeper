@@ -59,7 +59,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
     private static DynamoDbClient dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
     private static S3Client s3Client = SleeperLocalStackClients.S3_CLIENT;
     private static S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    private static Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
+    private static Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
     private static S3TransferManager s3TransferManager = SleeperLocalStackClients.S3_TRANSFER_MANAGER;
 
     @BeforeEach
@@ -93,21 +93,20 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RowsProcessed summary = compact(compactionJob, configuration);
+        runTask(compactionJob, hadoopConf);
 
         // Then
         //  - Read output file and check that it contains the right results
         List<Row> expectedResults = CompactionRunnerTestData.combineSortedBySingleKey(data1, data2);
-        assertThat(summary.getRowsRead()).isEqualTo(expectedResults.size());
-        assertThat(summary.getRowsWritten()).isEqualTo(expectedResults.size());
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
         assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
                 .isEqualTo(SketchesDeciles.from(schema, expectedResults));
+        assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(expectedResults.size(), expectedResults.size()));
     }
 
     protected FileReference ingestRowsGetFile(List<Row> rows) throws Exception {
         return ingestRowsGetFile(rows, builder -> builder
-                .hadoopConfiguration(configuration)
+                .hadoopConfiguration(hadoopConf)
                 .s3AsyncClient(s3AsyncClient));
     }
 

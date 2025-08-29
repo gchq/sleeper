@@ -66,12 +66,11 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RowsProcessed summary = compact(schema, compactionJob);
+        runTask(compactionJob);
 
         // Then
         //  - Read output files and check that they contain the right results
-        assertThat(summary.getRowsRead()).isEqualTo(200L);
-        assertThat(summary.getRowsWritten()).isEqualTo(100L);
+        assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(200, 100));
         assertThat(CompactionRunnerTestData.readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
         assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))
                 .isEqualTo(SketchesDeciles.builder()
@@ -81,5 +80,6 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
                                 .rank(0.4, 80L).rank(0.5, 100L).rank(0.6, 120L)
                                 .rank(0.7, 140L).rank(0.8, 160L).rank(0.9, 180L))
                         .build());
+        assertThat(stateStore.getFileReferences()).containsExactly(outputFileReference(compactionJob, 100));
     }
 }
