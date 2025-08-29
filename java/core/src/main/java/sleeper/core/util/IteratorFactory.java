@@ -103,7 +103,7 @@ public class IteratorFactory {
      */
     private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig, Schema schema) {
         List<String> groupingColumns = new ArrayList<>(schema.getRowKeyFieldNames());
-        Optional<String> filterColumn = Optional.empty();
+        Optional<String> filterColumn = Optional.of("");
         long maxAge = 0L;
 
         String[] filterParts = iteratorConfig.getFilters().split("\\(");
@@ -133,7 +133,7 @@ public class IteratorFactory {
                     .split("\\("));
 
             aggregations.add(new Aggregation(aggObject.getColumnName(),
-                    AggregationOp.valueOf(aggObject.getOpName().toUpperCase().replaceFirst("^MAP_", ""))));
+                    AggregationOp.valueOf(aggObject.getOpName().toUpperCase(Locale.ENGLISH).replaceFirst("^MAP_", ""))));
         });
         return aggregations;
     }
