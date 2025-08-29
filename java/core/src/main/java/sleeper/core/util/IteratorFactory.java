@@ -103,13 +103,13 @@ public class IteratorFactory {
      */
     private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig, Schema schema) {
         List<String> groupingColumns = new ArrayList<>(schema.getRowKeyFieldNames());
-        Optional<String> filterColumn = Optional.of("");
         long maxAge = 0L;
+        String filterName = null;
 
         String[] filterParts = iteratorConfig.getFilters().split("\\(");
         if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
             String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
-            filterColumn = Optional.of(filterInput[0]);
+            filterName = filterInput[0];
             maxAge = Long.parseLong(filterInput[1]);
             groupingColumns.add(filterInput[0]);
         } else {
@@ -121,7 +121,11 @@ public class IteratorFactory {
             aggregations = generateAggregationsFromProperty(iteratorConfig);
             validateAggregations(aggregations, schema);
         }
-        return new FilterAggregationConfig(groupingColumns, filterColumn, maxAge, aggregations);
+
+        return new FilterAggregationConfig(groupingColumns,
+                filterName != null ? Optional.of(filterName) : Optional.empty(),
+                maxAge,
+                aggregations);
     }
 
     private List<Aggregation> generateAggregationsFromProperty(IteratorConfig iteratorConfig) {
