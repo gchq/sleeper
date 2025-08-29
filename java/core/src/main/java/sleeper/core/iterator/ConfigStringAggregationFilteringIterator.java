@@ -229,13 +229,6 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
                     .replaceAll("\\)", "")
                     .split("\\("));
 
-            if (aggregationMap.containsKey(aggObject.getColumnName())) {
-                throw new IllegalStateException("Not allowed duplicate columns for aggregation, Column name: " + aggObject.getColumnName());
-            }
-            if (schema.getRowKeyFieldNames().contains(aggObject.getColumnName()) ||
-                    schema.getSortKeyFieldNames().contains(aggObject.getColumnName())) {
-                throw new IllegalStateException("Column for aggregation now allowed to be a Row Key or Sort Key, Column name: " + aggObject.getColumnName());
-            }
             Aggregation aggregationToAdd;
             switch (aggObject.getOpName().toUpperCase()) {
                 case "SUM":
@@ -262,16 +255,11 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
             aggregationMap.put(aggObject.getColumnName(), aggregationToAdd);
         });
 
-        if (aggregationMap.values().contains(null)) {
-            final StringBuilder columnErr = new StringBuilder();
-            aggregationMap.keySet().forEach(key -> {
-                if (aggregationMap.get(key).equals(null)) {
-                    columnErr.append(key + ", ");
-                }
-            });
-            throw new IllegalStateException("Not all value columns aggregations set, missing columns: " + columnErr.toString());
-        }
-        return new FilterAggregationConfig(new ArrayList<String>(aggregationMap.keySet()), Optional.empty(),
+        ArrayList<String> groupings = new ArrayList<String>();
+        groupings.addAll(schema.getRowKeyFieldNames());
+        groupings.addAll(schema.getSortKeyFieldNames());
+
+        return new FilterAggregationConfig(groupings, Optional.empty(),
                 0l, // TODO Check
                 new ArrayList<Aggregation>(aggregationMap.values()));
     }

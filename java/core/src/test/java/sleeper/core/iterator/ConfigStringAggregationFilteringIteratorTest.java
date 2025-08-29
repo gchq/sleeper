@@ -71,7 +71,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .build();
 
         // When
-        iterator.init("timestamp;,min(value)", schema);
+        iterator.init("min(value)", schema);
 
         // Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "timestamp", "value");
@@ -90,7 +90,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         // Then
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> {
-                    iterator.init("key;,sum(value)", schema);
+                    iterator.init("sum(value)", schema);
                 })
                 .withMessage("Aggregation grouping column key is already a row key column or is duplicated");
     }
@@ -108,7 +108,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         // Then
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> {
-                    iterator.init("timestamp,timestamp;,sum(value)", schema);
+                    iterator.init("sum(value)", schema);
                 })
                 .withMessage("Aggregation grouping column timestamp is already a row key column or is duplicated");
     }
@@ -126,7 +126,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         // Then
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> {
-                    iterator.init("not_there;,sum(value)", schema);
+                    iterator.init("sum(value)", schema);
                 })
                 .withMessage("Aggregation grouping column not_there doesn't exist");
     }
@@ -144,7 +144,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         // Then
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> {
-                    iterator.init(";,sum(value),sum(key),sum(timestamp)", schema);
+                    iterator.init("sum(value),sum(key),sum(timestamp)", schema);
                 })
                 .withMessage("Row key/extra grouping column key cannot have an aggregation");
     }
@@ -162,7 +162,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         // Then
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> {
-                    iterator.init(";,sum(value),sum(not_there),sum(timestamp)", schema);
+                    iterator.init("sum(value),sum(not_there),sum(timestamp)", schema);
                 })
                 .withMessage("Aggregation column not_there doesn't exist");
     }
@@ -180,7 +180,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         // Then
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> {
-                    iterator.init(";,sum(value),sum(value),sum(timestamp)", schema);
+                    iterator.init("sum(value),sum(value),sum(timestamp)", schema);
                 })
                 .withMessage("Aggregation column value duplicated");
     }
@@ -198,7 +198,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         // Then
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> {
-                    iterator.init(";,sum(value)", schema);
+                    iterator.init("sum(value)", schema);
                 })
                 .withMessage("Column timestamp doesn't have a aggregation operator specified");
     }
@@ -376,7 +376,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .valueFields(new Field("value1", new StringType()), new Field("value2", new IntType()))
                 .build();
         ConfigStringAggregationFilteringIterator aggregationIterator = new ConfigStringAggregationFilteringIterator();
-        aggregationIterator.init("sort_key,sort_key2;,sum(value1),min(value2)", schema);
+        aggregationIterator.init("sum(value1),min(value2)", schema);
 
         try (CloseableIterator<Row> aggregator = aggregationIterator.apply(it)) {
             List<Row> list = new ArrayList<>();
