@@ -20,7 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Vpc;
@@ -63,7 +62,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
@@ -187,7 +185,7 @@ public class IngestStack extends NestedStack {
             CoreStacks coreStacks,
             Queue ingestJobQueue,
             LambdaCode lambdaCode) {
-        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+        //RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -242,12 +240,12 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
-        if (removalPolicy == RemovalPolicy.DESTROY) {
-            AutoStopEcsClusterTasks.autoStopTasksOnEcsCluster(this, instanceProperties, lambdaCode,
-                    cluster, clusterName,
-                    coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
-                    coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
-        }
+        //if (removalPolicy == RemovalPolicy.DESTROY) {
+        AutoStopEcsClusterTasks.autoStopTasksOnEcsCluster(this, instanceProperties, lambdaCode,
+                cluster, clusterName,
+                coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
+                coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
+        //}
 
         return cluster;
     }
