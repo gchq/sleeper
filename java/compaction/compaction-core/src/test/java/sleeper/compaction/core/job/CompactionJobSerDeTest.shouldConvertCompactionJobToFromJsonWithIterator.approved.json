@@ -8,5 +8,6 @@
   "outputFile": "outputfile",
   "partitionId": "test-partition",
   "iteratorClassName": "sleeper.core.iterator.AgeOffIterator",
-  "iteratorConfig": "key,600000"
+  "iteratorConfig": "key,600000",
+  "filterConfig": "ageOff(key,600000)"
 }
