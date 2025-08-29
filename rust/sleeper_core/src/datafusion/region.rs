@@ -15,10 +15,7 @@
 * limitations under the License.
 */
 use crate::{ColRange, PartitionBound};
-use datafusion::{
-    logical_expr::{col, lit},
-    prelude::Expr,
-};
+use datafusion::logical_expr::{Expr, col, lit};
 use log::error;
 use std::collections::HashMap;
 

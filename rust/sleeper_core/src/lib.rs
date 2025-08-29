@@ -27,13 +27,15 @@ use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail};
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
-use std::fmt::Formatter;
+use std::fmt::{Display, Formatter};
 use url::Url;
 
 mod datafusion;
 
+use crate::datafusion::LeafPartitionQuery;
+pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
-    SleeperPartitionRegion,
+    CompletionOptions, LeafPartitionQueryConfig, SleeperPartitionRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
 };
 
@@ -89,7 +91,7 @@ impl Default for SleeperParquetOptions {
 
 /// Common items necessary to perform any `DataFusion` related
 /// work for Sleeper.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct CommonConfig<'a> {
     /// Aws credentials configuration
     pub aws_config: Option<AwsConfig>,
@@ -104,50 +106,106 @@ pub struct CommonConfig<'a> {
     /// Ranges for each column to filter input files
     pub region: SleeperPartitionRegion<'a>,
     /// How output from operation should be returned
-    pub output: OperationOutput,
+    pub output: CompletionOptions,
     /// Iterator config. Filters, aggregators, etc.
     pub iterator_config: Option<String>,
 }
 
-impl CommonConfig<'_> {
-    /// Convert all Java "s3a" URLs in input and output to "s3."
-    pub fn sanitise_java_s3_urls(&mut self) {
-        self.input_files.iter_mut().for_each(|t| {
-            if t.scheme() == "s3a" {
-                let _ = t.set_scheme("s3");
-            }
-        });
-
-        if let OperationOutput::File {
-            output_file,
-            opts: _,
-        } = &mut self.output
-            && output_file.scheme() == "s3a"
-        {
-            let _ = output_file.set_scheme("s3");
+impl Default for CommonConfig<'_> {
+    fn default() -> Self {
+        Self {
+            aws_config: Option::default(),
+            input_files: Vec::default(),
+            input_files_sorted: true,
+            row_key_cols: Vec::default(),
+            sort_key_cols: Vec::default(),
+            region: SleeperPartitionRegion::default(),
+            output: CompletionOptions::default(),
+            iterator_config: Option::default(),
         }
     }
+}
 
-    /// Checks for simple configuration errors
+impl<'a> CommonConfig<'a> {
+    /// Creates a new configuration object.
     ///
     /// # Errors
-    /// It is an error for input paths to be empty or for a length
-    /// mismatch between row key columns length and number of ranges in
-    /// partition region.
-    pub fn validate(&self) -> Result<()> {
-        if self.input_files.is_empty() {
-            bail!("No input paths supplied");
+    /// The configuration must validate. Input files mustn't be empty
+    /// and the number of row key columns must match the number of region
+    /// dimensions.
+    #[allow(clippy::too_many_arguments)]
+    pub fn try_new(
+        aws_config: Option<AwsConfig>,
+        input_files: Vec<Url>,
+        input_files_sorted: bool,
+        row_key_cols: Vec<String>,
+        sort_key_cols: Vec<String>,
+        region: SleeperPartitionRegion<'a>,
+        output: CompletionOptions,
+        iterator_config: Option<String>,
+    ) -> Result<Self> {
+        validate(&input_files, &row_key_cols, &region)?;
+        // Convert Java s3a schema to s3
+        let (input_files, output) = normalise_s3a_urls(input_files, output);
+        Ok(Self {
+            aws_config,
+            input_files,
+            input_files_sorted,
+            row_key_cols,
+            sort_key_cols,
+            region,
+            output,
+            iterator_config,
+        })
+    }
+}
+
+/// Change all input and output URLS from s3a to s3 scheme.
+fn normalise_s3a_urls(
+    mut input_files: Vec<Url>,
+    mut output: CompletionOptions,
+) -> (Vec<Url>, CompletionOptions) {
+    for t in &mut input_files {
+        if t.scheme() == "s3a" {
+            let _ = t.set_scheme("s3");
         }
-        if self.row_key_cols.len() != self.region.len() {
-            bail!(
-                "Length mismatch between row keys {} and partition region bounds {}",
-                self.row_key_cols.len(),
-                self.region.len()
-            );
-        }
-        Ok(())
     }
 
+    if let CompletionOptions::File {
+        output_file,
+        opts: _,
+    } = &mut output
+        && output_file.scheme() == "s3a"
+    {
+        let _ = output_file.set_scheme("s3");
+    }
+    (input_files, output)
+}
+
+/// Performs validity checks on parameters.
+///
+/// # Errors
+/// There must be at least one input file.
+/// The length of `row_key_cols` must match the number of region dimensions.
+fn validate(
+    input_files: &[Url],
+    row_key_cols: &[String],
+    region: &SleeperPartitionRegion<'_>,
+) -> Result<()> {
+    if input_files.is_empty() {
+        bail!("No input paths supplied");
+    }
+    if row_key_cols.len() != region.len() {
+        bail!(
+            "Length mismatch between row keys {} and partition region bounds {}",
+            row_key_cols.len(),
+            region.len()
+        );
+    }
+    Ok(())
+}
+
+impl CommonConfig<'_> {
     /// Get iterator for row and sort key columns in order
     pub fn sorting_columns_iter(&self) -> impl Iterator<Item = &str> {
         self.row_key_cols
@@ -163,7 +221,7 @@ impl CommonConfig<'_> {
     }
 }
 
-impl std::fmt::Display for CommonConfig<'_> {
+impl Display for CommonConfig<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -172,28 +230,13 @@ impl std::fmt::Display for CommonConfig<'_> {
             self.region
         )?;
         match &self.output {
-            OperationOutput::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
-            OperationOutput::File {
+            CompletionOptions::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
+            CompletionOptions::File {
                 output_file,
                 opts: _,
             } => write!(f, "output file {output_file:?}"),
         }
     }
-}
-
-/// Defines how operation output should be given.
-#[derive(Debug, Default)]
-pub enum OperationOutput {
-    /// `DataFusion` results will be returned as a stream of Arrow [`RecordBatch`]es.
-    #[default]
-    ArrowRecordBatch,
-    /// `DataFusion` results will be written to a file with given Parquet options.
-    File {
-        /// Output file Url
-        output_file: Url,
-        /// Parquet output options
-        opts: SleeperParquetOptions,
-    },
 }
 
 #[derive(Debug)]
@@ -217,10 +260,7 @@ pub struct CompactionResult {
     pub rows_written: usize,
 }
 
-/// Merges the given Parquet files and reads the schema from the first.
-///
-/// This function reads the schema from the first file, then calls
-/// `merge_sorted_files_with_schema(...)`.
+/// Compacts the given Parquet files and reads the schema from the first.
 ///
 /// The `aws_creds` are optional if you are not attempting to read/write files from S3.
 ///
@@ -230,11 +270,11 @@ pub struct CompactionResult {
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_compaction, CommonConfig, PartitionBound, ColRange,
-/// # OperationOutput, SleeperParquetOptions};
+/// # CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion};
 /// let mut compaction_input = CommonConfig::default();
 /// compaction_input.input_files_sorted = true;
 /// compaction_input.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
-/// compaction_input.output = OperationOutput::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
+/// compaction_input.output = CompletionOptions::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
 /// compaction_input.row_key_cols = vec!["key".into()];
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -243,6 +283,7 @@ pub struct CompactionResult {
 ///     upper: PartitionBound::String("h"),
 ///     upper_inclusive: true,
 /// });
+/// compaction_input.region = SleeperPartitionRegion::new(region);
 ///
 /// # tokio_test::block_on(async {
 /// let result = run_compaction(&compaction_input).await;
@@ -253,10 +294,64 @@ pub struct CompactionResult {
 /// There must be at least one input file.
 ///
 pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResult> {
-    config.validate()?;
     let store_factory = create_object_store_factory(config.aws_config.as_ref()).await;
 
     crate::datafusion::compact(&store_factory, config)
+        .await
+        .map_err(Into::into)
+}
+
+/// Runs the given Sleeper leaf partition query on the given Parquet files and reads the schema from the first.
+///
+/// The `aws_creds` are optional if you are not attempting to read/write files from S3.
+///
+/// # Examples
+/// ```no_run
+/// # use url::Url;
+/// # use aws_types::region::Region;
+/// # use std::collections::HashMap;
+/// # use crate::sleeper_core::{run_query, CommonConfig, PartitionBound, ColRange,
+/// # CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion};
+/// # use sleeper_core::LeafPartitionQueryConfig;
+/// let mut common = CommonConfig::default();
+/// common.input_files_sorted = true;
+/// common.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
+/// common.output = CompletionOptions::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
+/// common.row_key_cols = vec!["key".into()];
+/// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
+/// region.insert("key".into(), ColRange {
+///     lower : PartitionBound::String("a"),
+///     lower_inclusive: true,
+///     upper: PartitionBound::String("h"),
+///     upper_inclusive: true,
+/// });
+/// common.region = SleeperPartitionRegion::new(region);
+///
+/// let mut leaf_config = LeafPartitionQueryConfig::default();
+/// leaf_config.common = common;
+/// let mut query_region : HashMap<String, ColRange<'_>> = HashMap::new();
+/// query_region.insert("key".into(), ColRange {
+///     lower : PartitionBound::String("a"),
+///     lower_inclusive: true,
+///     upper: PartitionBound::String("h"),
+///     upper_inclusive: true,
+/// });
+/// leaf_config.ranges = vec![SleeperPartitionRegion::new(query_region)];
+///
+/// # tokio_test::block_on(async {
+/// let result = run_query(&leaf_config).await;
+/// # })
+/// ```
+///
+/// # Errors
+/// There must be at least one input file.
+/// There must be at least one query region specified.
+///
+pub async fn run_query(config: &LeafPartitionQueryConfig<'_>) -> Result<CompletedOutput> {
+    let store_factory = create_object_store_factory(config.common.aws_config.as_ref()).await;
+
+    LeafPartitionQuery::new(config, &store_factory)
+        .run_query()
         .await
         .map_err(Into::into)
 }
