@@ -20,11 +20,13 @@ public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
     private final String filters;
+    private final String aggregationString;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
         this.filters = builder.filters;
+        this.aggregationString = builder.aggregationString;
     }
 
     public static Builder builder() {
@@ -43,6 +45,10 @@ public class IteratorConfig {
         return filters;
     }
 
+    public String getAggregationString() {
+        return aggregationString;
+    }
+
     /**
      * Checks if a iterator should be applied based on if a class name or filters have been set.
      *
@@ -59,6 +65,7 @@ public class IteratorConfig {
         private String iteratorClassName;
         private String iteratorConfigString;
         private String filters;
+        private String aggregationString;
 
         private Builder() {
         }
@@ -93,6 +100,17 @@ public class IteratorConfig {
          */
         public Builder filters(String filters) {
             this.filters = filters;
+            return this;
+        }
+
+        /**
+         * Sets the aggregation string.
+         *
+         * @param  aggregationString the aggregation string to be used for the iterator
+         * @return                   builder for method chaining
+         */
+        public Builder aggregationString(String aggregationString) {
+            this.aggregationString = aggregationString;
             return this;
         }
 

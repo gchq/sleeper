@@ -39,6 +39,7 @@ public class BespokeIngestCoordinator {
     private BespokeIngestCoordinator() {
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public static IngestCoordinator<Page> asyncFromPage(
             ObjectFactory objectFactory,
             StateStore sleeperStateStore,
@@ -49,6 +50,7 @@ public class BespokeIngestCoordinator {
             String sleeperIteratorClassName,
             String sleeperIteratorConfig,
             String sleeperFiltersConfig,
+            String sleeperAggregationString,
             int ingestPartitionRefreshFrequencyInSeconds,
             S3AsyncClient s3AsyncClient,
             BufferAllocator arrowBufferAllocator) {
@@ -85,6 +87,7 @@ public class BespokeIngestCoordinator {
                         .iteratorClassName(sleeperIteratorClassName)
                         .iteratorConfigString(sleeperIteratorConfig)
                         .filters(sleeperFiltersConfig)
+                        .aggregationString(sleeperAggregationString)
                         .build())
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
                 .rowBatchFactory(rowBatchFactory)

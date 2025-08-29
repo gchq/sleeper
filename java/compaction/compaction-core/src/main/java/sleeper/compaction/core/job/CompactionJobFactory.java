@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 import static java.util.stream.Collectors.toList;
+import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
 import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
@@ -37,6 +38,7 @@ public class CompactionJobFactory {
     private final String iteratorClassName;
     private final String iteratorConfig;
     private final String filterConfig;
+    private final String aggregationConfig;
     private final Supplier<String> jobIdSupplier;
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
@@ -49,6 +51,7 @@ public class CompactionJobFactory {
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         filterConfig = tableProperties.get(FILTERS_CONFIG);
+        aggregationConfig = tableProperties.get(AGGREGATIONS);
         this.jobIdSupplier = jobIdSupplier;
     }
 
@@ -86,6 +89,7 @@ public class CompactionJobFactory {
                 .iteratorClassName(iteratorClassName)
                 .iteratorConfig(iteratorConfig)
                 .filterConfig(filterConfig)
+                .aggregationConfig(aggregationConfig)
                 .build();
     }
 }

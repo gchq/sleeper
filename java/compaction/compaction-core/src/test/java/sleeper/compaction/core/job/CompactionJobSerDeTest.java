@@ -61,6 +61,7 @@ public class CompactionJobSerDeTest {
                 .iteratorClassName(AgeOffIterator.class.getName())
                 .iteratorConfig("key,600000")
                 .filterConfig("ageOff(key,600000)")
+                .aggregationConfig("sum(value1),min(value2)")
                 .build();
 
         // When
@@ -90,6 +91,7 @@ public class CompactionJobSerDeTest {
                 .iteratorClassName(AgeOffIterator.class.getName())
                 .iteratorConfig("key,600000")
                 .filterConfig("ageOff(key,600000)")
+                .aggregationConfig("max(value1),min(value2)")
                 .build();
 
         // When

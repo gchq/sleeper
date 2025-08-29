@@ -334,6 +334,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 null,
                 null,
                 null,
+                null,
                 INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS,
                 s3AsyncClient,
                 rootBufferAllocator);
