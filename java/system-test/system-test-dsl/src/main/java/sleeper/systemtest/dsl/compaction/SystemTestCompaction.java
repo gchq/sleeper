@@ -29,7 +29,6 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
-import sleeper.systemtest.dsl.util.WaitForFileReferences;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
 
@@ -178,7 +177,23 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction waitForTotalFileReferences(int expectedFileReferences, PollWithRetries poll) {
-        WaitForFileReferences.waitForTotalFileReferences(expectedFileReferences, instance.getStateStore(), poll);
+        try {
+            poll.pollUntil("file references are compacted", () -> {
+                List<FileReference> fileReferences = loadFileReferences();
+                LOGGER.info("Found {} file references, waiting for expected {}", fileReferences.size(), expectedFileReferences);
+                if (fileReferences.size() < expectedFileReferences) {
+                    throw new RuntimeException("Was waiting for " + expectedFileReferences + " file references, overshot and found " + fileReferences.size());
+                }
+                return fileReferences.size() == expectedFileReferences;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
         return this;
+    }
+
+    private List<FileReference> loadFileReferences() {
+        return instance.getStateStore().getFileReferences();
     }
 }

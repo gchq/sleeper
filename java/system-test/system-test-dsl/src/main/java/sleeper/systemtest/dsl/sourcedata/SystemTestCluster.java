@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -29,7 +30,6 @@ import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
-import sleeper.systemtest.dsl.util.WaitForFileReferences;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
 import java.time.Duration;
@@ -122,12 +122,28 @@ public class SystemTestCluster {
     }
 
     public void waitForTotalFileReferences(int expectedFileReferences) {
-        WaitForFileReferences.waitForTotalFileReferences(expectedFileReferences, instance.getStateStore(),
+        waitForTotalFileReferences(expectedFileReferences,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1)));
     }
 
     public void waitForTotalFileReferences(int expectedFileReferences, PollWithRetries poll) {
-        WaitForFileReferences.waitForTotalFileReferences(expectedFileReferences, instance.getStateStore(), poll);
+        try {
+            poll.pollUntil("file references are added", () -> {
+                List<FileReference> fileReferences = loadFileReferences();
+                LOGGER.info("Found {} file references, waiting for expected {}", fileReferences.size(), expectedFileReferences);
+                if (fileReferences.size() > expectedFileReferences) {
+                    throw new RuntimeException("Was waiting for " + expectedFileReferences + " file references, overshot and found " + fileReferences.size());
+                }
+                return fileReferences.size() == expectedFileReferences;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<FileReference> loadFileReferences() {
+        return instance.getStateStore().getFileReferences();
     }
 
     public List<String> findIngestJobIdsInSourceBucket() {
