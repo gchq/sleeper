@@ -62,13 +62,35 @@ public class Region {
     }
 
     /**
-     * Returns the ranges in this region. Note that these are returned in no
-     * particular order.
+     * Returns the ranges in this region unordered.
+     *
+     * <strong>Note: these ranges are returned in no
+     * particular order.</strong>
      *
      * @return a List of Ranges in no particular order.
+     * @see Region#getRangesOrdered(Schema)
      */
     public List<Range> getRanges() {
         return new ArrayList<>(rowKeyFieldNameToRange.values());
+    }
+
+    /**
+     * Returns the ranges in this region ordered according to the given schema.
+     *
+     * @param schema the schema that dictates returned order
+     * @return a List of Ranges in schema order.
+     */
+    public List<Range> getRangesOrdered(Schema schema) {
+        List<String> rowKeysOrdered = schema.getRowKeyFieldNames();
+        List<Range> ranges = new ArrayList<>(rowKeysOrdered.size());
+        for (String rowKey : rowKeysOrdered) {
+            Range range = getRange(rowKey);
+            if (range == null) {
+                throw new IllegalArgumentException("schema row key \"" + rowKey + "\" does not exist in this Region");
+            }
+            ranges.add(range);
+        }
+        return ranges;
     }
 
     /**
