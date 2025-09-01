@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
@@ -101,6 +102,16 @@ public class StateStoreUpdatesWrapper {
      */
     public void initialise(List<Partition> partitions) throws StateStoreException {
         new InitialisePartitionsTransaction(partitions).synchronousCommit(stateStore);
+    }
+
+    /**
+     * Initialises the store with the given partition tree.
+     *
+     * @param  partitions          the partition tree
+     * @throws StateStoreException if the update fails
+     */
+    public void initialise(PartitionTree partitions) throws StateStoreException {
+        initialise(partitions.getAllPartitions());
     }
 
     /**

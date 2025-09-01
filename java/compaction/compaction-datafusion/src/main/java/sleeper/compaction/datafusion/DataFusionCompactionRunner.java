@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.datafusion;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +29,7 @@ import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -34,6 +38,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.bridge.FFIBridge;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -55,6 +60,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
     private final DataFusionAwsConfig awsConfig;
+    private final Configuration hadoopConf;
 
     private static final DataFusionFunctions NATIVE_COMPACTION;
 
@@ -68,12 +74,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         }
     }
 
-    public DataFusionCompactionRunner() {
-        this(DataFusionAwsConfig.getDefault());
+    public DataFusionCompactionRunner(Configuration hadoopConf) {
+        this(DataFusionAwsConfig.getDefault(), hadoopConf);
     }
 
-    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig) {
+    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
         this.awsConfig = awsConfig;
+        this.hadoopConf = hadoopConf;
     }
 
     @Override
@@ -83,6 +90,14 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         DataFusionCompactionParams params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
+
+        if (result.getRowsWritten() < 1) {
+            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                    new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
+                // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
+                // See the test should_merge_empty_files in compaction_test.rs
+            }
+        }
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
@@ -202,7 +217,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                  rows read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    public static RowsProcessed invokeDataFusion(CompactionJob job,
+    private static RowsProcessed invokeDataFusion(CompactionJob job,
             DataFusionCompactionParams compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
