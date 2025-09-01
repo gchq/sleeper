@@ -98,4 +98,68 @@ public class AggregationFilteringIteratorTest {
         // Then
         assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
     }
+
+    @ParameterizedTest
+    @CsvSource({"sum", "Sum", "SUM"})
+    public void shouldApplySumAggregationFromProperties(String aggregator) throws IteratorCreationException {
+        SortedRowIterator sumAggregatorIterator = buildSingleValueAggregator(aggregator);
+        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                new Row(Map.of("key", "test", "value", 2214L)),
+                new Row(Map.of("key", "test", "value", 87L)),
+                new Row(Map.of("key", "test", "value", 7841L))).iterator());
+
+        // When
+        Row resultant = sumAggregatorIterator.apply(iterator).next();
+
+        // Then
+        assertThat(resultant).isEqualTo(new Row(Map.of("key", "test", "value", 10142L)));
+
+    }
+
+    @ParameterizedTest
+    @CsvSource({"min", "Min", "MIN"})
+    public void shouldApplyMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
+        SortedRowIterator minAggregatorIterator = buildSingleValueAggregator(aggregator);
+        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                new Row(Map.of("key", "test", "value", 619L)),
+                new Row(Map.of("key", "test", "value", 321L)),
+                new Row(Map.of("key", "test", "value", 97L))).iterator());
+
+        // When
+        Row resultant = minAggregatorIterator.apply(iterator).next();
+
+        // Then
+        assertThat(resultant).isEqualTo(new Row(Map.of("key", "test", "value", 97L)));
+
+    }
+
+    @ParameterizedTest
+    @CsvSource({"max", "Max", "MAX"})
+    public void shouldApplyMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
+        SortedRowIterator maxAggregatorIterator = buildSingleValueAggregator(aggregator);
+        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                new Row(Map.of("key", "test", "value", 458498L)),
+                new Row(Map.of("key", "test", "value", 87L)),
+                new Row(Map.of("key", "test", "value", 222474L))).iterator());
+
+        // When
+        Row resultant = maxAggregatorIterator.apply(iterator).next();
+
+        // Then
+        assertThat(resultant).isEqualTo(new Row(Map.of("key", "test", "value", 458498L)));
+
+    }
+
+    private SortedRowIterator buildSingleValueAggregator(String aggregator) throws IteratorCreationException {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+        return new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .aggregationString(aggregator + "(value)")
+                        .build(), schema);
+    }
 }
