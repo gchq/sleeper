@@ -67,7 +67,7 @@ public class IteratorFactory {
      */
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
-            if (iteratorConfig.getFilters() == null) {
+            if (iteratorConfig.getFilters() == null && iteratorConfig.getAggregationString() == null) {
                 ConfigStringIterator iterator;
                 String className = iteratorConfig.getIteratorClassName();
 
@@ -106,14 +106,16 @@ public class IteratorFactory {
         long maxAge = 0L;
         String filterName = null;
 
-        String[] filterParts = iteratorConfig.getFilters().split("\\(");
-        if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
-            String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
-            filterName = filterInput[0];
-            maxAge = Long.parseLong(filterInput[1]);
-            groupingColumns.add(filterInput[0]);
-        } else {
-            throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
+        if (iteratorConfig.getFilters() != null) {
+            String[] filterParts = iteratorConfig.getFilters().split("\\(");
+            if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
+                String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
+                filterName = filterInput[0];
+                maxAge = Long.parseLong(filterInput[1]);
+                groupingColumns.add(filterInput[0]);
+            } else {
+                throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
+            }
         }
         List<Aggregation> aggregations = List.of();
         if (iteratorConfig.getAggregationString() != null
@@ -166,7 +168,7 @@ public class IteratorFactory {
     private void validateNoDuplicateAggregations(List<Aggregation> aggregations) {
         HashMap<String, Boolean> aggMap = new HashMap<String, Boolean>();
         aggregations.stream().forEach(aggregation -> {
-            if (!aggMap.putIfAbsent(aggregation.column(), Boolean.TRUE)) {
+            if (aggMap.putIfAbsent(aggregation.column(), Boolean.TRUE) != null) {
                 throw new IllegalStateException("Not allowed duplicate columns for aggregatiom. Column name: " + aggregation.column());
             }
         });
