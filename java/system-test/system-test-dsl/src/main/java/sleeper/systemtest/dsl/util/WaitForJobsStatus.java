@@ -36,10 +36,8 @@ import sleeper.core.util.GsonConfig;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -68,18 +66,24 @@ public class WaitForJobsStatus {
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus forIngest(IngestJobTracker tracker, Collection<TableProperties> tables, Collection<String> jobIds, Instant now) {
-        Set<String> jobIdsSet = new HashSet<>(jobIds);
-        Stream<JobStatus<?>> statuses = streamIngestJobs(tracker, tables)
-                .filter(job -> jobIdsSet.contains(job.getJobId()));
-        return fromJobs(statuses, jobIds.size(), now);
+    public static WaitForJobsStatus fromJobs(
+            Stream<JobStatus<?>> jobs, int numJobs, Instant now) {
+        Builder builder = new Builder(now);
+        jobs.forEach(builder::addJob);
+        builder.reportRemainingHaveNoStatus(numJobs);
+        return builder.build();
     }
 
-    public static WaitForJobsStatus forCompaction(CompactionJobTracker tracker, Collection<TableProperties> tables, Collection<String> jobIds, Instant now) {
-        Set<String> jobIdsSet = new HashSet<>(jobIds);
-        Stream<JobStatus<?>> statuses = streamCompactionJobs(tracker, tables)
-                .filter(job -> jobIdsSet.contains(job.getJobId()));
-        return fromJobs(statuses, jobIds.size(), now);
+    public static Stream<JobStatus<?>> streamIngestJobs(IngestJobTracker tracker, Collection<TableProperties> tables) {
+        return tables.stream().flatMap(table -> tracker
+                .streamAllJobs(table.get(TABLE_ID))
+                .map(JobStatus::ingest));
+    }
+
+    public static Stream<JobStatus<?>> streamCompactionJobs(CompactionJobTracker tracker, Collection<TableProperties> tables) {
+        return tables.stream().flatMap(table -> tracker
+                .streamAllJobs(table.get(TABLE_ID))
+                .map(JobStatus::compaction));
     }
 
     public boolean areAllJobsFinished() {
@@ -90,14 +94,6 @@ public class WaitForJobsStatus {
         return GSON.toJson(this);
     }
 
-    private static WaitForJobsStatus fromJobs(
-            Stream<JobStatus<?>> jobs, int numJobs, Instant now) {
-        Builder builder = new Builder(now);
-        jobs.forEach(builder::addJob);
-        builder.reportRemainingHaveNoStatus(numJobs);
-        return builder.build();
-    }
-
     private static JsonSerializer<Instant> instantSerializer() {
         return (instant, type, context) -> new JsonPrimitive(instant.toString());
     }
@@ -106,32 +102,14 @@ public class WaitForJobsStatus {
         return (duration, type, context) -> new JsonPrimitive(duration.toString());
     }
 
-    private static Stream<JobStatus<?>> streamIngestJobs(IngestJobTracker tracker, Collection<TableProperties> tables) {
-        return tables.stream().flatMap(table -> streamIngestJobs(tracker, table));
-    }
-
-    private static Stream<JobStatus<?>> streamIngestJobs(IngestJobTracker tracker, TableProperties table) {
-        return tracker.streamAllJobs(table.get(TABLE_ID))
-                .map(JobStatus::ingest);
-    }
-
-    private static Stream<JobStatus<?>> streamCompactionJobs(CompactionJobTracker tracker, Collection<TableProperties> tables) {
-        return tables.stream().flatMap(table -> streamCompactionJobs(tracker, table));
-    }
-
-    private static Stream<JobStatus<?>> streamCompactionJobs(CompactionJobTracker tracker, TableProperties table) {
-        return tracker.streamAllJobs(table.get(TABLE_ID))
-                .map(JobStatus::compaction);
-    }
-
-    private static class JobStatus<T extends JobRunReport> {
+    public static class JobStatus<T extends JobRunReport> {
         private final String jobId;
         private final List<T> runsLatestFirst;
         private final String furthestStatusType;
         private final boolean finished;
         private final Predicate<T> isRunFinished;
 
-        JobStatus(String jobId, List<T> runsLatestFirst, String furthestStatusType, boolean finished, Predicate<T> isRunFinished) {
+        private JobStatus(String jobId, List<T> runsLatestFirst, String furthestStatusType, boolean finished, Predicate<T> isRunFinished) {
             this.jobId = jobId;
             this.runsLatestFirst = runsLatestFirst;
             this.furthestStatusType = furthestStatusType;
@@ -139,13 +117,13 @@ public class WaitForJobsStatus {
             this.isRunFinished = isRunFinished;
         }
 
-        static JobStatus<IngestJobRun> ingest(IngestJobStatus status) {
+        public static JobStatus<IngestJobRun> ingest(IngestJobStatus status) {
             IngestJobStatusType statusType = status.getFurthestRunStatusType();
             return new JobStatus<>(status.getJobId(), status.getRunsLatestFirst(), statusType.toString(), statusType == IngestJobStatusType.FINISHED,
                     run -> run.getStatusType() == IngestJobStatusType.FINISHED);
         }
 
-        static JobStatus<CompactionJobRun> compaction(CompactionJobStatus status) {
+        public static JobStatus<CompactionJobRun> compaction(CompactionJobStatus status) {
             CompactionJobStatusType statusType = status.getFurthestStatusType();
             return new JobStatus<>(status.getJobId(), status.getRunsLatestFirst(), statusType.toString(), statusType == CompactionJobStatusType.FINISHED,
                     run -> run.getStatusType() == CompactionJobStatusType.FINISHED);

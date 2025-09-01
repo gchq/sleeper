@@ -297,11 +297,13 @@ public class WaitForJobsStatusTest {
     }
 
     private WaitForJobsStatus compactionStatus(Collection<String> jobIds, Instant now) {
-        return WaitForJobsStatus.forCompaction(compactionTracker, List.of(tableProperties), jobIds, now);
+        return WaitForJobs.JobTracker.forCompaction(List.of(tableProperties), compactionTracker)
+                .getStatus(jobIds, now);
     }
 
     private WaitForJobsStatus ingestStatus(Collection<String> jobIds, Instant now) {
-        return WaitForJobsStatus.forIngest(ingestTracker, List.of(tableProperties), jobIds, now);
+        return WaitForJobs.JobTracker.forIngest(List.of(tableProperties), ingestTracker)
+                .getStatus(jobIds, now);
     }
 
     private CompactionJob compactionJob(String id, String... files) {

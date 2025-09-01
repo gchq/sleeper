@@ -27,12 +27,16 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.WaitForJobsStatus.JobStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class WaitForJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobs.class);
@@ -145,15 +149,26 @@ public class WaitForJobs {
     }
 
     @FunctionalInterface
-    private interface JobTracker {
-        WaitForJobsStatus getStatus(Collection<String> jobIds);
+    public interface JobTracker {
+        Stream<WaitForJobsStatus.JobStatus<?>> streamAllJobsInTest();
+
+        default WaitForJobsStatus getStatus(Collection<String> jobIds) {
+            return getStatus(jobIds, Instant.now());
+        }
+
+        default WaitForJobsStatus getStatus(Collection<String> jobIds, Instant now) {
+            Set<String> jobIdsSet = new HashSet<>(jobIds);
+            Stream<JobStatus<?>> statuses = streamAllJobsInTest()
+                    .filter(job -> jobIdsSet.contains(job.getJobId()));
+            return WaitForJobsStatus.fromJobs(statuses, jobIds.size(), now);
+        }
 
         static JobTracker forIngest(Collection<TableProperties> tables, IngestJobTracker tracker) {
-            return jobId -> WaitForJobsStatus.forIngest(tracker, tables, jobId, Instant.now());
+            return () -> WaitForJobsStatus.streamIngestJobs(tracker, tables);
         }
 
         static JobTracker forCompaction(Collection<TableProperties> tables, CompactionJobTracker tracker) {
-            return jobId -> WaitForJobsStatus.forCompaction(tracker, tables, jobId, Instant.now());
+            return () -> WaitForJobsStatus.streamCompactionJobs(tracker, tables);
         }
     }
 
