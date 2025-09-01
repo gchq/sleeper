@@ -111,10 +111,11 @@ public class AggregationFilteringIteratorTest {
                 new Row(Map.of("key", "test", "value", 7841L))).iterator());
 
         // When
-        Row resultant = sumAggregatorIterator.apply(iterator).next();
-
+        List<Row> resultList = new ArrayList<>();
+        sumAggregatorIterator.apply(iterator)
+                .forEachRemaining(resultList::add);
         // Then
-        assertThat(resultant).isEqualTo(new Row(Map.of("key", "test", "value", 10142L)));
+        assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 10142L))));
     }
 
     @ParameterizedTest
@@ -128,10 +129,12 @@ public class AggregationFilteringIteratorTest {
                 new Row(Map.of("key", "test", "value", 97L))).iterator());
 
         // When
-        Row resultant = minAggregatorIterator.apply(iterator).next();
+        List<Row> resultList = new ArrayList<>();
+        minAggregatorIterator.apply(iterator)
+                .forEachRemaining(resultList::add);
 
         // Then
-        assertThat(resultant).isEqualTo(new Row(Map.of("key", "test", "value", 97L)));
+        assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 97L))));
     }
 
     @ParameterizedTest
@@ -145,10 +148,48 @@ public class AggregationFilteringIteratorTest {
                 new Row(Map.of("key", "test", "value", 222474L))).iterator());
 
         // When
-        Row resultant = maxAggregatorIterator.apply(iterator).next();
+        List<Row> resultList = new ArrayList<>();
+        maxAggregatorIterator.apply(iterator)
+                .forEachRemaining(resultList::add);
 
         // Then
-        assertThat(resultant).isEqualTo(new Row(Map.of("key", "test", "value", 458498L)));
+        assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 458498L))));
+    }
+
+    @Test
+    void shouldApplyTwoAggregatorFromProperties() throws IteratorCreationException {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(List.of(
+                        new Field("key1", new StringType()),
+                        new Field("key2", new StringType())))
+                .valueFields(List.of(
+                        new Field("value1", new LongType()),
+                        new Field("value2", new LongType())))
+                .build();
+
+        SortedRowIterator doubleAggregatorIterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("")
+                        .aggregationString("SUM(value1),MAX(value2)")
+                        .build(), schema);
+
+        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                new Row(Map.of("key1", "test", "value1", 4217L,
+                        "key2", "test", "value2", 367L)),
+                new Row(Map.of("key1", "test", "value1", 214L,
+                        "key2", "test", "value2", 88818L)))
+                .iterator());
+        // When
+        List<Row> resultList = new ArrayList<>();
+        doubleAggregatorIterator.apply(iterator)
+                .forEachRemaining(resultList::add);
+
+        // Then
+        assertThat(resultList.get(0).toString()).isEqualTo(
+                new Row(Map.of("key1", "test", "value1", 4431,
+                        "key2", "test", "value2", 88818L)).toString());
     }
 
     private SortedRowIterator buildSingleValueAggregator(String aggregator) throws IteratorCreationException {
