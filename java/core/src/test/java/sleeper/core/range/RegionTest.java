@@ -32,7 +32,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
-
 public class RegionTest {
 
     private static Schema schemaWithSingleKeyOfType(PrimitiveType type) {
@@ -92,8 +91,8 @@ public class RegionTest {
 
         // Then
         assertThatIllegalArgumentException()
-            .isThrownBy(() -> region.getRangesOrdered(oneKeySchema))
-            .withMessage("schema row key \"key\" does not exist in this Region");
+                .isThrownBy(() -> region.getRangesOrdered(oneKeySchema))
+                .withMessage("schema row key \"key\" does not exist in this Region");
     }
 
     @Test
@@ -1497,6 +1496,4 @@ public class RegionTest {
         assertThat(doesRegion8OverlapRegion0).isTrue();
         assertThat(doesRegion9OverlapRegion0).isFalse();
     }
-
-
 }
