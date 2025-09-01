@@ -169,7 +169,7 @@ public class IteratorFactory {
         HashMap<String, Boolean> aggMap = new HashMap<String, Boolean>();
         aggregations.stream().forEach(aggregation -> {
             if (aggMap.putIfAbsent(aggregation.column(), Boolean.TRUE) != null) {
-                throw new IllegalStateException("Not allowed duplicate columns for aggregatiom. Column name: " + aggregation.column());
+                throw new IllegalStateException("Not allowed duplicate columns for aggregation. Column name: " + aggregation.column());
             }
         });
     }
@@ -180,10 +180,13 @@ public class IteratorFactory {
             aggregationColumns.add(aggregation.column());
         });
 
-        aggregationColumns.removeAll(schema.getValueFieldNames());
-        if (aggregationColumns.size() > 0) {
+        if (!aggregationColumns.containsAll(schema.getValueFieldNames())) {
             StringBuilder missingColumnStringBuilder = new StringBuilder();
-            aggregationColumns.forEach(col -> missingColumnStringBuilder.append(col + ", "));
+            schema.getValueFieldNames().forEach(col -> {
+                if (!aggregationColumns.contains(col)) {
+                    missingColumnStringBuilder.append(col + ", ");
+                }
+            });
             throw new IllegalStateException("Not all value fields have aggregation declared. Missing columns: " + missingColumnStringBuilder.toString());
         }
     }

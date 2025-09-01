@@ -192,6 +192,56 @@ public class AggregationFilteringIteratorTest {
                         "key2", "test", "value2", 88818L)).toString());
     }
 
+    @Test
+    void shouldThrowExceptionWithKeyFieldIncludeAsAggregators() throws IteratorCreationException {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("failKey", new StringType()))
+                .sortKeyFields(new Field("sortKey", new StringType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+        assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("")
+                        .aggregationString("MIN(failKey),MIN(sortKey),SUM(value)")
+                        .build(), schema))
+                .withMessage("Column for aggregation now allowed to be a Row Key or Sort Key. Column names: failKey, sortKey, ");
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDuplicateAggregators() {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("doubleValue", new LongType()), new Field("singleValue", new LongType()))
+                .build();
+
+        assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("")
+                        .aggregationString("MIN(doubleValue),SUM(doubleValue),SUM(singleValue)")
+                        .build(), schema))
+                .withMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNotAllValueFieldsIncludedAsAggregator() {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("existsValue", new LongType()), new Field("ignoredValue", new LongType()))
+                .build();
+
+        assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("")
+                        .aggregationString("MIN(existsValue)")
+                        .build(), schema))
+                .withMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue, ");
+
+    }
+
     private SortedRowIterator buildSingleValueAggregator(String aggregator) throws IteratorCreationException {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
