@@ -27,6 +27,7 @@ import io.trino.spi.type.Type;
 
 import sleeper.core.key.Key;
 import sleeper.core.range.Range;
+import sleeper.core.schema.Schema;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperPartitioningHandle;
 import sleeper.trino.handle.SleeperSplit;
@@ -92,7 +93,8 @@ public class SleeperNodePartitioningProvider implements ConnectorNodePartitionin
         SleeperPartitioningHandle sleeperPartitioningHandle = (SleeperPartitioningHandle) partitioningHandle;
         return connectorSplit -> {
             SleeperSplit sleeperSplit = (SleeperSplit) connectorSplit;
-            Key minKey = Key.create(sleeperSplit.getLeafPartitionQuery().getPartitionRegion().getRangesUnordered().stream().map(Range::getMin).collect(ImmutableList.toImmutableList()));
+            Schema schema = sleeperSplit.getSleeperSchema();
+            Key minKey = Key.create(sleeperSplit.getLeafPartitionQuery().getPartitionRegion().getRangesOrdered(schema).stream().map(Range::getMin).collect(ImmutableList.toImmutableList()));
             return sleeperPartitioningHandle.getPartitionNo(minKey);
         };
     }
