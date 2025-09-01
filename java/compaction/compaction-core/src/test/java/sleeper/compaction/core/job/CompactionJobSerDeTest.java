@@ -60,6 +60,7 @@ public class CompactionJobSerDeTest {
                 .partitionId("test-partition")
                 .iteratorClassName(AgeOffIterator.class.getName())
                 .iteratorConfig("key,600000")
+                .filterConfig("ageOff(key,600000)")
                 .build();
 
         // When
@@ -88,6 +89,7 @@ public class CompactionJobSerDeTest {
                 .partitionId("other-partition")
                 .iteratorClassName(AgeOffIterator.class.getName())
                 .iteratorConfig("key,600000")
+                .filterConfig("ageOff(key,600000)")
                 .build();
 
         // When
