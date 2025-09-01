@@ -32,13 +32,11 @@ import sleeper.core.util.StaticRateLimit;
 import sleeper.core.util.ThreadSleep;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class ShutdownSystemProcesses {
 
@@ -81,7 +79,7 @@ public class ShutdownSystemProcesses {
         stopTasks(ecs, instanceProperties, INGEST_CLUSTER);
         stopTasks(ecs, instanceProperties, COMPACTION_CLUSTER);
         stopTasks(ecs, instanceProperties, BULK_EXPORT_CLUSTER);
-        extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
+        //extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
     }
 
     private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
@@ -96,25 +94,25 @@ public class ShutdownSystemProcesses {
         if (!properties.isSet(property)) {
             return;
         }
-        stopTasks(ecs, properties.get(property));
+        //stopTasks(ecs, properties.get(property));
     }
 
-    private static void stopTasks(EcsClient ecs, String clusterName) {
-        LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
-        forEachTaskArn(ecs, clusterName, taskArn -> {
-            // Rate limit for ECS StopTask is 100 burst, 40 sustained:
-            // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
-            sleepForSustainedRatePerSecond(30);
-            ecs.stopTask(builder -> builder.cluster(clusterName).task(taskArn)
-                    .reason("Cleaning up before cdk destroy"));
-        });
-    }
+    //    private static void stopTasks(EcsClient ecs, String clusterName) {
+    //        LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
+    //        forEachTaskArn(ecs, clusterName, taskArn -> {
+    //            // Rate limit for ECS StopTask is 100 burst, 40 sustained:
+    //            // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
+    //            sleepForSustainedRatePerSecond(30);
+    //            ecs.stopTask(builder -> builder.cluster(clusterName).task(taskArn)
+    //                    .reason("Cleaning up before cdk destroy"));
+    //        });
+    //    }
 
-    private static void forEachTaskArn(EcsClient ecs, String clusterName, Consumer<String> consumer) {
-        ecs.listTasksPaginator(builder -> builder.cluster(clusterName))
-                .stream()
-                .peek(response -> LOGGER.info("Found {} tasks", response.taskArns().size()))
-                .flatMap(response -> response.taskArns().stream())
-                .forEach(consumer);
-    }
+    //    private static void forEachTaskArn(EcsClient ecs, String clusterName, Consumer<String> consumer) {
+    //        ecs.listTasksPaginator(builder -> builder.cluster(clusterName))
+    //                .stream()
+    //                .peek(response -> LOGGER.info("Found {} tasks", response.taskArns().size()))
+    //                .flatMap(response -> response.taskArns().stream())
+    //                .forEach(consumer);
+    //    }
 }

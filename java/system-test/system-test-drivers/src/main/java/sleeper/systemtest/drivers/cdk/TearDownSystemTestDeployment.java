@@ -21,7 +21,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.teardown.RemoveECRRepositories;
 import sleeper.clients.teardown.RemoveJarsBucket;
-import sleeper.clients.teardown.ShutdownSystemProcesses;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.WaitForStackToDelete;
 import sleeper.core.deploy.PopulateInstanceProperties;
@@ -31,7 +30,6 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
@@ -65,9 +63,9 @@ public class TearDownSystemTestDeployment {
         WaitForStackToDelete.from(clients.getCloudFormation(), properties.get(SYSTEM_TEST_ID)).pollUntilFinished();
     }
 
-    public void shutdownSystemProcesses() throws InterruptedException {
-        ShutdownSystemProcesses.stopTasks(clients.getEcs(), properties, SYSTEM_TEST_CLUSTER_NAME);
-    }
+    //    public void shutdownSystemProcesses() throws InterruptedException {
+    //        ShutdownSystemProcesses.stopTasks(clients.getEcs(), properties, SYSTEM_TEST_CLUSTER_NAME);
+    //    }
 
     public void cleanupAfterAllInstancesAndStackDeleted() throws InterruptedException, IOException {
         LOGGER.info("Removing the Jars bucket and docker containers");

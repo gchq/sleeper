@@ -70,7 +70,7 @@ public class TearDownMavenSystemTest {
             instance.waitForStackToDelete();
         }
         for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
-            deployment.shutdownSystemProcesses();
+            // deployment.shutdownSystemProcesses();
             deployment.deleteStack();
         }
         for (TearDownInstance instance : tearDownStandaloneInstances) {
