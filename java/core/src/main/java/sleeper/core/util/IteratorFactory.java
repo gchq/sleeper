@@ -106,7 +106,7 @@ public class IteratorFactory {
         long maxAge = 0L;
         String filterName = null;
 
-        if (iteratorConfig.getFilters() != null) {
+        if (iteratorConfig.getFilters() != null && !iteratorConfig.getFilters().equals("")) {
             String[] filterParts = iteratorConfig.getFilters().split("\\(");
             if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
                 String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
