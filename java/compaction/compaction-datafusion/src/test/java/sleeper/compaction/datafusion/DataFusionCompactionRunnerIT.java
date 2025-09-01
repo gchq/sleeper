@@ -16,7 +16,6 @@
 package sleeper.compaction.datafusion;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,11 +27,13 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.core.task.CompactionTaskTestHelper;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -41,10 +42,16 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -69,6 +76,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithMultipleKeys;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class DataFusionCompactionRunnerIT {
@@ -77,6 +85,7 @@ public class DataFusionCompactionRunnerIT {
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     private final SketchesStore sketchesStore = new LocalFileSystemSketchesStore();
+    private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     @TempDir
     public Path tempDir;
 
@@ -85,6 +94,38 @@ public class DataFusionCompactionRunnerIT {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, createTempDirectory(tempDir, null).toString());
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        stateStore.fixFileUpdateTime(null);
+    }
+
+    @Test
+    void shouldMergeFilesWithStringAndLongKey() throws Exception {
+        // Given
+        Schema schema = createSchemaWithMultipleKeys("foo1", new StringType(), "bar1", new LongType());
+        tableProperties.setSchema(schema);
+        update(stateStore).initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "L", "R", 0, "h")
+                .splitToNewChildrenOnDimension("R", "RL", "RR", 1, 10L)
+                .buildTree());
+        Row rowExcludedByFirstKey = new Row(Map.of("foo1", "a-row", "bar1", 20L));
+        Row rowExcludedBySecondKey = new Row(Map.of("foo1", "some-row", "bar1", 5L));
+        Row row1 = new Row(Map.of("foo1", "row-1", "bar1", 11L));
+        Row row2 = new Row(Map.of("foo1", "row-2", "bar1", 12L));
+        String file1 = writeFileForPartition("RR", List.of(row1, rowExcludedByFirstKey));
+        String file2 = writeFileForPartition("RR", List.of(row2, rowExcludedBySecondKey));
+        CompactionJob job = createCompactionForPartition("test-job", "RR", List.of(file1, file2));
+
+        // When
+        runTask(job);
+
+        // Then
+        assertThat(readDataFile(schema, job.getOutputFile()))
+                .containsExactly(row1, row2);
+        assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
+        assertThat(stateStore.getFileReferences())
+                .containsExactly(outputFileReference(job, 2));
+        assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
     }
 
     @Nested
@@ -103,11 +144,10 @@ public class DataFusionCompactionRunnerIT {
             String file2 = writeFileForPartition("root", List.of(row2));
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
             // When
-            RowsProcessed summary = compact(job);
+            runTask(job);
 
             // Then
-            assertThat(summary.getRowsRead()).isEqualTo(2);
-            assertThat(summary.getRowsWritten()).isEqualTo(2);
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -127,11 +167,10 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
-            RowsProcessed summary = compact(job);
+            runTask(job);
 
             // Then
-            assertThat(summary.getRowsRead()).isEqualTo(2);
-            assertThat(summary.getRowsWritten()).isEqualTo(2);
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -151,11 +190,10 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
-            RowsProcessed summary = compact(job);
+            runTask(job);
 
             // Then
-            assertThat(summary.getRowsRead()).isEqualTo(2);
-            assertThat(summary.getRowsWritten()).isEqualTo(2);
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -175,11 +213,10 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
-            RowsProcessed summary = compact(job);
+            runTask(job);
 
             // Then
-            assertThat(summary.getRowsRead()).isEqualTo(2);
-            assertThat(summary.getRowsWritten()).isEqualTo(2);
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row1, row2);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -203,13 +240,14 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(emptyFile, nonEmptyFile));
 
             // When
-            RowsProcessed summary = compact(job);
+            runTask(job);
 
             // Then
-            assertThat(summary.getRowsRead()).isEqualTo(1);
-            assertThat(summary.getRowsWritten()).isEqualTo(1);
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(1, 1));
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(row);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(row)));
         }
 
         @Test
@@ -223,37 +261,15 @@ public class DataFusionCompactionRunnerIT {
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
             // When
-            RowsProcessed summary = compact(job);
+            runTask(job);
 
             // Then
-            assertThat(summary.getRowsRead()).isZero();
-            assertThat(summary.getRowsWritten()).isZero();
-            assertThat(dataFileExists(job.getOutputFile())).isFalse();
-        }
-    }
-
-    @Nested
-    @DisplayName("Write sketches")
-    class WriteSketches {
-
-        @Test
-        void shouldWriteSketchWhenMergingFiles() throws Exception {
-            // Given
-            Schema schema = createSchemaWithKey("key", new StringType());
-            tableProperties.setSchema(schema);
-            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Row row1 = new Row(Map.of("key", "row-1"));
-            Row row2 = new Row(Map.of("key", "row-2"));
-            String file1 = writeFileForPartition("root", List.of(row1));
-            String file2 = writeFileForPartition("root", List.of(row2));
-            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
-
-            // When
-            compact(job);
-
-            // Then
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(0, 0));
+            assertThat(readDataFile(schema, job.getOutputFile())).isEmpty();
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
+                    .isEqualTo(SketchesDeciles.from(schema, List.of()));
+            assertThat(stateStore.getFileReferences())
+                    .containsExactly(outputFileReference(job, 0));
         }
     }
 
@@ -281,11 +297,10 @@ public class DataFusionCompactionRunnerIT {
             Row output1 = new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2", Map.of("map_key1", 4L, "map_key2", 7L)));
 
             // When
-            RowsProcessed summary = compact(job);
+            runTask(job);
 
             // Then
-            assertThat(summary.getRowsRead()).isEqualTo(2);
-            assertThat(summary.getRowsWritten()).isEqualTo(1);
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 1));
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(output1);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -315,11 +330,10 @@ public class DataFusionCompactionRunnerIT {
             Row output1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 4L));
 
             // When
-            RowsProcessed summary = compact(job);
+            runTask(job);
 
             // Then
-            assertThat(summary.getRowsRead()).isEqualTo(2);
-            assertThat(summary.getRowsWritten()).isEqualTo(1);
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 1));
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(output1);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
@@ -327,13 +341,19 @@ public class DataFusionCompactionRunnerIT {
         }
     }
 
-    private CompactionJobFactory compactionFactory() {
-        return new CompactionJobFactory(instanceProperties, tableProperties);
+    private void runTask(CompactionJob job) throws Exception {
+        CompactionRunner runner = new DataFusionCompactionRunner(new Configuration());
+        compactionTaskTestHelper().runTask(runner, List.of(job));
     }
 
-    private RowsProcessed compact(CompactionJob job) throws Exception {
-        CompactionRunner runner = new DataFusionCompactionRunner();
-        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
+    private CompactionTaskTestHelper compactionTaskTestHelper() {
+        return new CompactionTaskTestHelper(
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore), jobTracker);
+    }
+
+    private RowsProcessed getRowsProcessed(CompactionJob job) {
+        return CompactionJobTrackerTestHelper.getRowsProcessed(jobTracker, job.getId());
     }
 
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {
@@ -346,12 +366,23 @@ public class DataFusionCompactionRunnerIT {
                 sketches.update(row);
             }
         }
+        update(stateStore).addFile(FileReferenceFactory.from(stateStore).partitionFile(partitionId, dataFile, rows.size()));
         sketchesStore.saveFileSketches(dataFile, schema, sketches);
         return dataFile;
     }
 
     private CompactionJob createCompactionForPartition(String jobId, String partitionId, List<String> filenames) {
-        return compactionFactory().createCompactionJobWithFilenames(jobId, filenames, partitionId);
+        CompactionJob job = compactionFactory().createCompactionJobWithFilenames(jobId, filenames, partitionId);
+        update(stateStore).assignJobId(jobId, partitionId, filenames);
+        return job;
+    }
+
+    private CompactionJobFactory compactionFactory() {
+        return new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    protected FileReference outputFileReference(CompactionJob job, long numberOfRows) {
+        return FileReferenceFactory.from(stateStore).partitionFile(job.getPartitionId(), job.getOutputFile(), numberOfRows);
     }
 
     private String buildPartitionFilePath(String partitionId, String filename) {
@@ -368,11 +399,6 @@ public class DataFusionCompactionRunnerIT {
             }
         }
         return results;
-    }
-
-    private boolean dataFileExists(String filename) throws IOException {
-        return FileSystem.getLocal(new Configuration())
-                .exists(new org.apache.hadoop.fs.Path(filename));
     }
 
     private Sketches readSketches(Schema schema, String filename) throws IOException {

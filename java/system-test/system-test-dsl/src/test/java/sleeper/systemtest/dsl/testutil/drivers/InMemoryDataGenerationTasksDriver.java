@@ -50,12 +50,12 @@ public class InMemoryDataGenerationTasksDriver implements DataGenerationTasksDri
     }
 
     @Override
-    public void runDataGenerationJobs(List<SystemTestDataGenerationJob> jobs, PollWithRetries poll) {
-        for (SystemTestDataGenerationJob job : jobs) {
-            TableProperties tableProperties = instance.getTablePropertiesByDeployedName(job.getTableName()).orElseThrow();
-            for (int i = 0; i < job.getNumberOfIngests(); i++) {
+    public void runDataGenerationJobs(int numberOfJobs, SystemTestDataGenerationJob jobSpec, PollWithRetries poll) {
+        for (int i = 0; i < numberOfJobs; i++) {
+            TableProperties tableProperties = instance.getTablePropertiesByDeployedName(jobSpec.getTableName()).orElseThrow();
+            for (int j = 0; j < jobSpec.getNumberOfIngests(); j++) {
                 try (IngestCoordinator<Row> coordinator = ingest(tableProperties).createCoordinator()) {
-                    for (Row row : generateRows(job, tableProperties)) {
+                    for (Row row : generateRows(jobSpec, tableProperties)) {
                         coordinator.write(row);
                     }
                 } catch (IteratorCreationException e) {

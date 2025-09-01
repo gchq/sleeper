@@ -16,6 +16,9 @@
 package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +27,7 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFIFileResult;
@@ -32,6 +36,7 @@ import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -53,8 +58,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     /** Maximum number of rows in a Parquet row group. */
     private static final DataFusionCompactionFunctions NATIVE_COMPACTION;
-
     private final DataFusionAwsConfig awsConfig;
+    private final Configuration hadoopConf;
 
     static {
         // Obtain native library. This throws an exception if native library can't be
@@ -66,12 +71,13 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         }
     }
 
-    public DataFusionCompactionRunner() {
-        this(DataFusionAwsConfig.getDefault());
+    public DataFusionCompactionRunner(Configuration hadoopConf) {
+        this(DataFusionAwsConfig.getDefault(), hadoopConf);
     }
 
-    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig) {
+    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
         this.awsConfig = awsConfig;
+        this.hadoopConf = hadoopConf;
     }
 
     @Override
@@ -81,6 +87,14 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
+
+        if (result.getRowsWritten() < 1) {
+            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                    new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
+                // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
+                // See the test should_merge_empty_files in compaction_test.rs
+            }
+        }
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
@@ -125,10 +139,14 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Is there an aggregation/filtering iterator set?
         if (DataEngine.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName())) {
             params.iterator_config.set(job.getIteratorConfig());
+        } else {
+            params.iterator_config.set("");
         }
+
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, schema, region);
         params.setRegion(partitionRegion);
         params.validate();
+
         return params;
     }
 

@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.datafusion;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,16 +26,23 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.core.task.CompactionTaskTestHelper;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -67,6 +75,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     private final SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
+    private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     @TempDir
     public Path tempDir;
 
@@ -88,24 +97,29 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
 
         // When
-        RowsProcessed summary = compact(job);
+        runTask(job);
 
         // Then
-        assertThat(summary.getRowsRead()).isEqualTo(2);
-        assertThat(summary.getRowsWritten()).isEqualTo(2);
         assertThat(readDataFile(schema, job.getOutputFile()))
                 .containsExactly(row1, row2);
         assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
                 .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
+        assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
     }
 
-    protected CompactionJobFactory compactionFactory() {
-        return new CompactionJobFactory(instanceProperties, tableProperties);
+    private void runTask(CompactionJob job) throws Exception {
+        CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration());
+        compactionTaskTestHelper().runTask(runner, List.of(job));
     }
 
-    protected RowsProcessed compact(CompactionJob job) throws Exception {
-        CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig());
-        return runner.compact(job, tableProperties, stateStore.getPartition(job.getPartitionId()).getRegion());
+    private CompactionTaskTestHelper compactionTaskTestHelper() {
+        return new CompactionTaskTestHelper(
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore), jobTracker);
+    }
+
+    private RowsProcessed getRowsProcessed(CompactionJob job) {
+        return CompactionJobTrackerTestHelper.getRowsProcessed(jobTracker, job.getId());
     }
 
     private static DataFusionAwsConfig createAwsConfig() {
@@ -123,12 +137,19 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
                 sketches.update(row);
             }
         }
+        update(stateStore).addFile(FileReferenceFactory.from(stateStore).partitionFile(partitionId, dataFile, rows.size()));
         sketchesStore.saveFileSketches(dataFile, schema, sketches);
         return dataFile;
     }
 
     private CompactionJob createCompactionForPartition(String jobId, String partitionId, List<String> filenames) {
-        return compactionFactory().createCompactionJobWithFilenames(jobId, filenames, partitionId);
+        CompactionJob job = compactionFactory().createCompactionJobWithFilenames(jobId, filenames, partitionId);
+        update(stateStore).assignJobId(jobId, partitionId, filenames);
+        return job;
+    }
+
+    private CompactionJobFactory compactionFactory() {
+        return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
     private String buildPartitionFilePath(String partitionId, String filename) {

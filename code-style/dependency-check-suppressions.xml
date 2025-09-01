@@ -152,6 +152,15 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        This dependency is only used by WireMock, which is only used for tests.
+
+        file name: http2-common-11.0.25.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-common@.*$</packageUrl>
+        <vulnerabilityName>CVE-2025-5115</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         DOMPurify is only used by WireMock, which is only used for tests. We're not able to upgrade to a later version
         of WireMock that doesn't use this. Later versions of WireMock use Jetty 11 or 12, and the version of Hadoop
         we're using uses Jetty 9.

@@ -51,14 +51,6 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         CompactionRunner runner = createRunnerForEngine(engine);
-
-        // Has an experimental DataFusion only iterator been specified? If so, make sure
-        // we are using the DataFusion compactor
-        if (DataEngine.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName()) && !(runner instanceof DataFusionCompactionRunner)) {
-            throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
-                    + job.getId() + " table ID " + job.getTableId());
-        }
-
         LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
         return runner;
     }
@@ -66,7 +58,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private CompactionRunner createRunnerForEngine(DataEngine engine) {
         switch (engine) {
             case DATAFUSION:
-                return new DataFusionCompactionRunner();
+                return new DataFusionCompactionRunner(configuration);
             case JAVA:
             default:
                 return createJavaRunner();

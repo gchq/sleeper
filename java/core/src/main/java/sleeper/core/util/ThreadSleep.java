@@ -15,6 +15,8 @@
  */
 package sleeper.core.util;
 
+import java.time.Duration;
+
 /**
  * Waits for a number of milliseconds. Implemented by <code>Thread.sleep</code>.
  */
@@ -27,6 +29,16 @@ public interface ThreadSleep {
      * @throws InterruptedException if the thread is interrupted while waiting
      */
     void waitForMillis(long milliseconds) throws InterruptedException;
+
+    /**
+     * Wait for the specified period. If the thread is interrupted while waiting, wrap it as a RuntimeException and
+     * re-interrupt the thread.
+     *
+     * @param duration duration to wait for
+     */
+    default void waitForDurationWrappingInterrupt(Duration duration) {
+        waitForMillisWrappingInterrupt(duration.toMillis());
+    }
 
     /**
      * Wait for the specified period. If the thread is interrupted while waiting, wrap it as a RuntimeException and
