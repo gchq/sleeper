@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class WaitForJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobs.class);
@@ -112,7 +113,7 @@ public class WaitForJobs {
                     return false;
                 } else {
                     LOGGER.info("Found no running tasks while waiting for {} jobs, will wait for async commits", typeDescription);
-                    waitForJobsToCommit(jobIds, jobTracker, pollUntilJobsCommit);
+                    waitForJobsToCommit(() -> jobTracker.getStatus(jobIds), pollUntilJobsCommit);
                     return true;
                 }
             });
@@ -127,14 +128,13 @@ public class WaitForJobs {
         InstanceProperties properties = instance.getInstanceProperties();
         JobTracker jobTracker = getJobTracker.apply(properties);
         LOGGER.info("Waiting for {} jobs to commit: {}", typeDescription, jobIds.size());
-        waitForJobsToCommit(jobIds, jobTracker, pollUntilJobsCommit);
+        waitForJobsToCommit(() -> jobTracker.getStatus(jobIds), pollUntilJobsCommit);
     }
 
-    private void waitForJobsToCommit(
-            Collection<String> jobIds, JobTracker tracker, PollWithRetries pollUntilJobsCommit) {
+    private void waitForJobsToCommit(Supplier<WaitForJobsStatus> getStatus, PollWithRetries pollUntilJobsCommit) {
         try {
             pollUntilJobsCommit.pollUntil("jobs are committed", () -> {
-                WaitForJobsStatus status = tracker.getStatus(jobIds);
+                WaitForJobsStatus status = getStatus.get();
                 LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
                 return status.areAllJobsFinished();
             });
