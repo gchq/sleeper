@@ -226,7 +226,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     private static RowsProcessed invokeDataFusion(CompactionJob job,
-            DataFusionCompactionParams compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+            DataFusionCommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction
