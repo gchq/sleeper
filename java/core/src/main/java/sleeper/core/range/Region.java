@@ -68,7 +68,7 @@ public class Region {
      * particular order.</strong>
      *
      * @return a List of Ranges in no particular order.
-     * @see Region#getRangesOrdered(Schema)
+     * @see    Region#getRangesOrdered(Schema)
      */
     public List<Range> getRanges() {
         return new ArrayList<>(rowKeyFieldNameToRange.values());
@@ -77,8 +77,8 @@ public class Region {
     /**
      * Returns the ranges in this region ordered according to the given schema.
      *
-     * @param schema the schema that dictates returned order
-     * @return a List of Ranges in schema order.
+     * @param  schema the schema that dictates returned order
+     * @return        a List of Ranges in schema order.
      */
     public List<Range> getRangesOrdered(Schema schema) {
         List<String> rowKeysOrdered = schema.getRowKeyFieldNames();
