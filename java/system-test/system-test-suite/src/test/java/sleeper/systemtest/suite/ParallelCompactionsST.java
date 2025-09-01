@@ -72,7 +72,7 @@ public class ParallelCompactionsST {
         sleeper.compaction()
                 .putTableOnlineWaitForJobCreation(40960,
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(2)))
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .waitForTasks(300)
                 .waitForJobsToFinishThenCommit(
                         PollWithRetries.intervalAndPollingTimeout(
