@@ -29,6 +29,7 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
+import sleeper.systemtest.dsl.util.WaitForFileReferences;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
 
@@ -173,6 +174,11 @@ public class SystemTestCompaction {
                     batches.stream().map(CompactionJobDispatchRequest::getBatchKey).forEach(remainingBatchKeys::remove);
                     return remainingBatchKeys.isEmpty();
                 });
+        return this;
+    }
+
+    public SystemTestCompaction waitForTotalFileReferences(int expectedFileReferences, PollWithRetries poll) {
+        WaitForFileReferences.waitForTotalFileReferences(expectedFileReferences, instance.getStateStore(), poll);
         return this;
     }
 }
