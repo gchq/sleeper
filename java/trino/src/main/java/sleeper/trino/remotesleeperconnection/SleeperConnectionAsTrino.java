@@ -203,8 +203,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                         partition.getId(),
                         partition.getParentPartitionId(),
                         partition.getChildPartitionIds(),
-                        partition.getRegion().getRanges().stream().map(sleeper.core.range.Range::getMin).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
-                        partition.getRegion().getRanges().stream().map(sleeper.core.range.Range::getMax).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
+                        partition.getRegion().getRangesUnordered().stream().map(sleeper.core.range.Range::getMin).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
+                        partition.getRegion().getRangesUnordered().stream().map(sleeper.core.range.Range::getMax).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
                         partition.getDimension(),
                         partition.isLeafPartition()));
     }

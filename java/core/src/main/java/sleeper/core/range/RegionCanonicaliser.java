@@ -37,7 +37,7 @@ public class RegionCanonicaliser {
             return region;
         }
 
-        List<Range> ranges = region.getRanges();
+        List<Range> ranges = region.getRangesUnordered();
         List<Range> canonicalisedRanges = new ArrayList<>();
         for (Range range : ranges) {
             canonicalisedRanges.add(RangeCanonicaliser.canonicaliseRange(range));
@@ -53,7 +53,7 @@ public class RegionCanonicaliser {
      * @return        whether all ranges in the region are in canonical form
      */
     public static boolean isRegionInCanonicalForm(Region region) {
-        for (Range range : region.getRanges()) {
+        for (Range range : region.getRangesUnordered()) {
             if (!range.isInCanonicalForm()) {
                 return false;
             }

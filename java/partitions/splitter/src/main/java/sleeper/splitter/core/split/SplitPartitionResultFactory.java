@@ -66,7 +66,7 @@ public class SplitPartitionResultFactory {
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
 
         // New partitions
-        List<Range> leftChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
+        List<Range> leftChildRanges = removeRange(partition.getRegion().getRangesUnordered(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionLeftChild = rangeFactory.createRange(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
         leftChildRanges.add(rangeForSplitDimensionLeftChild);
         Region leftChildRegion = new Region(leftChildRanges);
@@ -79,7 +79,7 @@ public class SplitPartitionResultFactory {
                 .dimension(-1)
                 .build();
 
-        List<Range> rightChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
+        List<Range> rightChildRanges = removeRange(partition.getRegion().getRangesUnordered(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionRightChild = rangeFactory.createRange(fieldToSplitOn, splitPoint, partition.getRegion().getRange(fieldToSplitOn.getName()).getMax());
         rightChildRanges.add(rangeForSplitDimensionRightChild);
         Region rightChildRegion = new Region(rightChildRanges);

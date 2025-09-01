@@ -70,7 +70,7 @@ public class Region {
      * @return a List of Ranges in no particular order.
      * @see    Region#getRangesOrdered(Schema)
      */
-    public List<Range> getRanges() {
+    public List<Range> getRangesUnordered() {
         return new ArrayList<>(rowKeyFieldNameToRange.values());
     }
 

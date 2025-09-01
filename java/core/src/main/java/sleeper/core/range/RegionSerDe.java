@@ -133,7 +133,7 @@ public class RegionSerDe {
         @Override
         public JsonElement serialize(Region region, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
-            List<Range> ranges = region.getRanges();
+            List<Range> ranges = region.getRangesUnordered();
             for (Range range : ranges) {
                 json.add(range.getFieldName(), convertRangeToJsonObject(range));
             }

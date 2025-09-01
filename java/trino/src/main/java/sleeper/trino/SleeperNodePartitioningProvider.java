@@ -92,7 +92,7 @@ public class SleeperNodePartitioningProvider implements ConnectorNodePartitionin
         SleeperPartitioningHandle sleeperPartitioningHandle = (SleeperPartitioningHandle) partitioningHandle;
         return connectorSplit -> {
             SleeperSplit sleeperSplit = (SleeperSplit) connectorSplit;
-            Key minKey = Key.create(sleeperSplit.getLeafPartitionQuery().getPartitionRegion().getRanges().stream().map(Range::getMin).collect(ImmutableList.toImmutableList()));
+            Key minKey = Key.create(sleeperSplit.getLeafPartitionQuery().getPartitionRegion().getRangesUnordered().stream().map(Range::getMin).collect(ImmutableList.toImmutableList()));
             return sleeperPartitioningHandle.getPartitionNo(minKey);
         };
     }

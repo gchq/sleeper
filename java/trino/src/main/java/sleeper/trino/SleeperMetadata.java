@@ -216,10 +216,10 @@ public class SleeperMetadata implements ConnectorMetadata {
             List<ColumnHandle> keyColumnHandles = sleeperTableHandle.getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory.ROWKEY).stream()
                     .map(ColumnHandle.class::cast)
                     .collect(ImmutableList.toImmutableList());
-            // Generate as list of the lower-bounds of eadh partition and use these to create a SleeperPartitioningHandle object.
+            // Generate as list of the lower-bounds of each partition and use these to create a SleeperPartitioningHandle object.
             List<Key> partitionMinKeys = this.sleeperConnectionAsTrino.streamPartitions(sleeperTableHandle.getSchemaTableName())
                     .filter(Partition::isLeafPartition)
-                    .map(partition -> Key.create(partition.getRegion().getRanges().stream().map(Range::getMin).collect(ImmutableList.toImmutableList())))
+                    .map(partition -> Key.create(partition.getRegion().getRangesUnordered().stream().map(Range::getMin).collect(ImmutableList.toImmutableList())))
                     .collect(ImmutableList.toImmutableList());
             ConnectorTablePartitioning connectorTablePartitioning = new ConnectorTablePartitioning(
                     new SleeperPartitioningHandle(sleeperTableHandle, partitionMinKeys), keyColumnHandles);

@@ -80,7 +80,7 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
 
     @Override
     protected void writeExtraPartitionDataToBlock(Partition partition, Block block, int rowNum) {
-        List<Range> ranges = partition.getRegion().getRanges();
+        List<Range> ranges = partition.getRegion().getRangesUnordered();
         for (Range range : ranges) {
             block.setValue(MIN_ROW_KEY_PREFIX + "-" + range.getFieldName(), rowNum, range.getMin());
             block.setValue(MAX_ROW_KEY_PREFIX + "-" + range.getFieldName(), rowNum, range.getMax());
