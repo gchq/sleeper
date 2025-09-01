@@ -135,6 +135,13 @@ public class WaitForJobs {
         waitForJobsToCommit(() -> jobTracker.getStatus(jobIds), pollUntilJobsCommit);
     }
 
+    public void waitForAllJobsToCommit(PollWithRetries pollUntilJobsCommit) {
+        InstanceProperties properties = instance.getInstanceProperties();
+        JobTracker jobTracker = getJobTracker.apply(properties);
+        LOGGER.info("Waiting for all {} jobs to commit", typeDescription);
+        waitForJobsToCommit(() -> jobTracker.getAllJobsStatus(), pollUntilJobsCommit);
+    }
+
     private void waitForJobsToCommit(Supplier<WaitForJobsStatus> getStatus, PollWithRetries pollUntilJobsCommit) {
         try {
             pollUntilJobsCommit.pollUntil("jobs are committed", () -> {
@@ -151,6 +158,14 @@ public class WaitForJobs {
     @FunctionalInterface
     public interface JobTracker {
         Stream<WaitForJobsStatus.JobStatus<?>> streamAllJobsInTest();
+
+        default WaitForJobsStatus getAllJobsStatus() {
+            return getAllJobsStatus(Instant.now());
+        }
+
+        default WaitForJobsStatus getAllJobsStatus(Instant now) {
+            return WaitForJobsStatus.fromJobs(streamAllJobsInTest(), now);
+        }
 
         default WaitForJobsStatus getStatus(Collection<String> jobIds) {
             return getStatus(jobIds, Instant.now());

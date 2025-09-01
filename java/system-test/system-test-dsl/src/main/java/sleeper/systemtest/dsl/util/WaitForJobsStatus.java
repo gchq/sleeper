@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -71,6 +72,18 @@ public class WaitForJobsStatus {
         Builder builder = new Builder(now);
         jobs.forEach(builder::addJob);
         builder.reportRemainingHaveNoStatus(numJobs);
+        return builder.build();
+    }
+
+    public static WaitForJobsStatus fromJobs(
+            Stream<JobStatus<?>> jobs, Instant now) {
+        Builder builder = new Builder(now);
+        AtomicInteger numJobs = new AtomicInteger();
+        jobs.forEach(job -> {
+            numJobs.incrementAndGet();
+            builder.addJob(job);
+        });
+        builder.reportRemainingHaveNoStatus(numJobs.get());
         return builder.build();
     }
 
