@@ -380,13 +380,18 @@ pub fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use super::*;
     use url::Url;
 
     #[test]
     fn test_convert_s3a_scheme_in_input_files() {
         // Given
-        let input_files = vec![Url::parse("s3a://bucket/key1").unwrap(), Url::parse("s3a://bucket/key2").unwrap()];
+        let input_files = vec![
+            Url::parse("s3a://bucket/key1").unwrap(),
+            Url::parse("s3a://bucket/key2").unwrap(),
+        ];
         let output = CompletionOptions::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
             opts: SleeperParquetOptions::default(),
@@ -466,7 +471,10 @@ mod tests {
     #[test]
     fn test_normalise_s3a_urls_arrow_record_batch() {
         // Given
-        let input_files = vec![Url::parse("s3a://bucket/key1").unwrap(), Url::parse("s3a://bucket/key2").unwrap()];
+        let input_files = vec![
+            Url::parse("s3a://bucket/key1").unwrap(),
+            Url::parse("s3a://bucket/key2").unwrap(),
+        ];
         let output = CompletionOptions::ArrowRecordBatch;
 
         // When
@@ -478,8 +486,8 @@ mod tests {
         }
 
         match new_output {
-            CompletionOptions::ArrowRecordBatch => {},
-            _ => panic!("Output should be ArrowRecordBatch")
+            CompletionOptions::ArrowRecordBatch => {}
+            _ => panic!("Output should be ArrowRecordBatch"),
         }
     }
 
@@ -503,20 +511,28 @@ mod tests {
         // Given
         let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
         let row_key_cols = vec!["key1".to_string(), "key2".to_string()];
-        let mut region = SleeperPartitionRegion::default();
-        region.region.insert("col".to_string(), ColRange {
-            lower: PartitionBound::String("a"),
-            lower_inclusive: true,
-            upper: PartitionBound::String("z"),
-            upper_inclusive: true,
-        });
+        let region = SleeperPartitionRegion::new(HashMap::from([(
+            "col".to_string(),
+            ColRange {
+                lower: PartitionBound::String("a"),
+                lower_inclusive: true,
+                upper: PartitionBound::String("z"),
+                upper_inclusive: true,
+            },
+        )]));
 
         // When
         let result = validate(&input_files, &row_key_cols, &region);
 
         // Then
         assert!(result.is_err());
-        assert!(result.err().unwrap().to_string().contains("Length mismatch"));
+        assert!(
+            result
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("Length mismatch")
+        );
     }
 
     #[test]
@@ -524,13 +540,15 @@ mod tests {
         // Given
         let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
         let row_key_cols = vec!["key".to_string()];
-        let mut region = SleeperPartitionRegion::default();
-        region.region.insert("col".to_string(), ColRange {
-            lower: PartitionBound::String("a"),
-            lower_inclusive: true,
-            upper: PartitionBound::String("z"),
-            upper_inclusive: true,
-        });
+        let region = SleeperPartitionRegion::new(HashMap::from([(
+            "col".to_string(),
+            ColRange {
+                lower: PartitionBound::String("a"),
+                lower_inclusive: true,
+                upper: PartitionBound::String("z"),
+                upper_inclusive: true,
+            },
+        )]));
 
         // When
         let result = validate(&input_files, &row_key_cols, &region);

@@ -18,14 +18,20 @@ use arrow::{
     datatypes::{DataType, Field, Schema},
 };
 use color_eyre::eyre::{Error, OptionExt, eyre};
-use datafusion::parquet::{
-    arrow::{
-        ArrowWriter,
-        arrow_reader::{ArrowReaderMetadata, ArrowReaderOptions, ParquetRecordBatchReaderBuilder},
+use datafusion::{
+    execution::SendableRecordBatchStream,
+    parquet::{
+        arrow::{
+            ArrowWriter,
+            arrow_reader::{
+                ArrowReaderMetadata, ArrowReaderOptions, ParquetRecordBatchReaderBuilder,
+            },
+        },
+        basic::{Compression, ZstdLevel},
+        file::properties::WriterProperties,
     },
-    basic::{Compression, ZstdLevel},
-    file::properties::WriterProperties,
 };
+use futures::StreamExt;
 use sleeper_core::{ColRange, DataSketchVariant, PartitionBound, deserialise_sketches};
 use std::{collections::HashMap, fs::File, sync::Arc};
 use tempfile::TempDir;
@@ -84,7 +90,7 @@ pub fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error
     let file = File::open(path.path())?;
     let mut data: Vec<i32> = Vec::new();
     let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
-    check_non_null_field(field_name, &DataType::Int32, &metadata)?;
+    check_non_null_field(field_name, &DataType::Int32, metadata.schema().as_ref())?;
     for result in ParquetRecordBatchReaderBuilder::new_with_metadata(file, metadata).build()? {
         data.extend(get_int_array(field_name, &result?)?.values());
     }
@@ -124,10 +130,27 @@ pub fn read_file_of_int_fields<const N: usize>(
     let mut data: Vec<[i32; N]> = Vec::new();
     let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
     for field_name in field_names {
-        check_non_null_field(field_name, &DataType::Int32, &metadata)?;
+        check_non_null_field(field_name, &DataType::Int32, &metadata.schema())?;
     }
     for result in ParquetRecordBatchReaderBuilder::new_with_metadata(file, metadata).build()? {
         let batch = result?;
+        let arrays: Vec<&Int32Array> = get_int_arrays(&batch, field_names)?;
+        data.extend((0..batch.num_rows()).map(|row_number| read_row(row_number, &arrays)));
+    }
+    Ok(data)
+}
+
+#[allow(clippy::missing_errors_doc)]
+pub async fn read_batches_of_int_fields<const N: usize>(
+    mut stream: SendableRecordBatchStream,
+    field_names: [&str; N],
+) -> Result<Vec<[i32; N]>, Error> {
+    let schema = stream.schema();
+    for field_name in field_names {
+        check_non_null_field(field_name, &DataType::Int32, schema.as_ref())?;
+    }
+    let mut data: Vec<[i32; N]> = Vec::new();
+    while let Some(Ok(batch)) = stream.next().await {
         let arrays: Vec<&Int32Array> = get_int_arrays(&batch, field_names)?;
         data.extend((0..batch.num_rows()).map(|row_number| read_row(row_number, &arrays)));
     }
@@ -164,9 +187,9 @@ fn get_int_array<'b>(field_name: &str, batch: &'b RecordBatch) -> Result<&'b Int
 fn check_non_null_field(
     field_name: &str,
     field_type: &DataType,
-    metadata: &ArrowReaderMetadata,
+    schema: &Schema,
 ) -> Result<(), Error> {
-    let field = metadata.schema().field_with_name(field_name)?;
+    let field = schema.field_with_name(field_name)?;
     if field.data_type() != field_type {
         Err(eyre!(
             "Expected field {} to be of type {}, found {}",
@@ -202,4 +225,17 @@ pub fn int_range<'r>(min: i32, max: i32) -> ColRange<'r> {
         upper: PartitionBound::Int32(max),
         upper_inclusive: false,
     }
+}
+
+#[macro_export]
+macro_rules! assert_error {
+    ($err_expr: expr, $err_type: path, $err_contents: expr) => {
+        let result = if let Err($err_type(err)) = $err_expr {
+            assert_eq!(err, $err_contents);
+            true
+        } else {
+            false
+        };
+        assert!(result, "Expected different error type");
+    };
 }
