@@ -25,8 +25,6 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.deploy.PauseSystem;
 import sleeper.clients.util.EmrUtils;
-import sleeper.core.properties.SleeperProperties;
-import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.StaticRateLimit;
 import sleeper.core.util.ThreadSleep;
@@ -87,12 +85,12 @@ public class ShutdownSystemProcesses {
         new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
-    public static <T extends SleeperProperty> void stopTasks(EcsClient ecs, SleeperProperties<T> properties, T property) {
-        if (!properties.isSet(property)) {
-            return;
-        }
-        //stopTasks(ecs, properties.get(property));
-    }
+    // public static <T extends SleeperProperty> void stopTasks(EcsClient ecs, SleeperProperties<T> properties, T property) {
+    //     if (!properties.isSet(property)) {
+    //         return;
+    //     }
+    //     //stopTasks(ecs, properties.get(property));
+    // }
 
     //    private static void stopTasks(EcsClient ecs, String clusterName) {
     //        LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
