@@ -222,7 +222,7 @@ public class AggregationFilteringIteratorTest {
                         .filters("")
                         .aggregationString("MIN(failKey),MIN(sortKey),SUM(value)")
                         .build(), schema))
-                .withMessage("Column for aggregation now allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
+                .withMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
     }
 
     @Test

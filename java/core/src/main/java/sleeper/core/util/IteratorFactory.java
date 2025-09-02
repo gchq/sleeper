@@ -165,7 +165,7 @@ public class IteratorFactory {
             String outStr = rowKeySortKeyViolations.stream()
                     .map(Aggregation::column)
                     .collect(Collectors.joining(", "));
-            throw new IllegalStateException("Column for aggregation now allowed to be a Row Key or Sort Key. Column names: " + outStr);
+            throw new IllegalStateException("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: " + outStr);
         }
     }
 
