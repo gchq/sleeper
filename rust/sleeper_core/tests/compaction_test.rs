@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod compaction_helpers;
-
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
-use compaction_helpers::*;
+use test_util::*;
 use sleeper_core::{
     CommonConfig, CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
