@@ -77,13 +77,14 @@ public class LeafPartitionQueryExecutor {
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
         String compactionFilters = tableProperties.get(TableProperty.FILTERS_CONFIG);
+        String compactionAggregationString = tableProperties.get(TableProperty.AGGREGATIONS);
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
 
         try {
-            compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig, compactionFilters);
+            compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig, compactionFilters, compactionAggregationString);
             queryIterator = createIterator(tableSchema, objectFactory, leafPartitionQuery.getQueryTimeIteratorClassName(), leafPartitionQuery.getQueryTimeIteratorConfig(),
-                    leafPartitionQuery.getQueryTimeFilters());
+                    leafPartitionQuery.getQueryTimeFilters(), null);
         } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);
         }
@@ -140,7 +141,8 @@ public class LeafPartitionQueryExecutor {
             ObjectFactory objectFactory,
             String iteratorClassName,
             String iteratorConfig,
-            String filtersConfig) throws IteratorCreationException {
+            String filtersConfig,
+            String aggregationString) throws IteratorCreationException {
         if (iteratorClassName == null && filtersConfig == null) {
             return null;
         } else {
@@ -149,6 +151,7 @@ public class LeafPartitionQueryExecutor {
                             .iteratorClassName(iteratorClassName)
                             .iteratorConfigString(iteratorConfig)
                             .filters(filtersConfig)
+                            .aggregationString(aggregationString)
                             .build(), schema);
         }
     }
