@@ -377,3 +377,165 @@ pub fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
         .with_endpoint(&aws_config.endpoint)
         .with_allow_http(aws_config.allow_http)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use url::Url;
+
+    #[test]
+    fn test_convert_s3a_scheme_in_input_files() {
+        // Given
+        let input_files = vec![Url::parse("s3a://bucket/key1").unwrap(), Url::parse("s3a://bucket/key2").unwrap()];
+        let output = CompletionOptions::File {
+            output_file: Url::parse("https://example.com/output").unwrap(),
+            opts: SleeperParquetOptions::default(),
+        };
+
+        // When
+        let (new_files, new_output) = normalise_s3a_urls(input_files, output);
+
+        // Then
+        for url in new_files {
+            assert_eq!(url.scheme(), "s3");
+        }
+        if let CompletionOptions::File { output_file, .. } = new_output {
+            assert_eq!(output_file.scheme(), "https"); // unchanged
+        } else {
+            panic!("Output option changed unexpectedly")
+        }
+    }
+
+    #[test]
+    fn test_no_change_for_non_s3a_urls() {
+        // Given
+        let input_files = vec![Url::parse("https://example.com/key").unwrap()];
+        let output = CompletionOptions::File {
+            output_file: Url::parse("https://example.com/output").unwrap(),
+            opts: SleeperParquetOptions::default(),
+        };
+
+        // When
+        let (new_files, new_output) = normalise_s3a_urls(input_files, output);
+
+        // Then
+        assert_eq!(new_files[0].scheme(), "https");
+        if let CompletionOptions::File { output_file, .. } = new_output {
+            assert_eq!(output_file.scheme(), "https"); // unchanged
+        } else {
+            panic!("Output option changed unexpectedly")
+        }
+    }
+
+    #[test]
+    fn test_convert_output_scheme_when_s3a() {
+        // Given
+        let input_files = vec![Url::parse("https://example.com/key").unwrap()];
+        let output = CompletionOptions::File {
+            output_file: Url::parse("s3a://bucket/output").unwrap(),
+            opts: SleeperParquetOptions::default(),
+        };
+
+        // When
+        let (_, new_output) = normalise_s3a_urls(input_files, output);
+
+        // Then
+        if let CompletionOptions::File { output_file, .. } = new_output {
+            assert_eq!(output_file.scheme(), "s3");
+        } else {
+            panic!("Unexpected output option type")
+        }
+    }
+
+    #[test]
+    fn test_empty_input_files() {
+        // Given
+        let input_files: Vec<Url> = vec![];
+        let output = CompletionOptions::File {
+            output_file: Url::parse("https://example.com/output").unwrap(),
+            opts: SleeperParquetOptions::default(),
+        };
+
+        // When
+        let (new_files, _) = normalise_s3a_urls(input_files, output);
+
+        // Then
+        assert!(new_files.is_empty());
+    }
+
+    #[test]
+    fn test_normalise_s3a_urls_arrow_record_batch() {
+        // Given
+        let input_files = vec![Url::parse("s3a://bucket/key1").unwrap(), Url::parse("s3a://bucket/key2").unwrap()];
+        let output = CompletionOptions::ArrowRecordBatch;
+
+        // When
+        let (new_files, new_output) = normalise_s3a_urls(input_files.clone(), output);
+
+        // Then
+        for url in new_files {
+            assert_eq!(url.scheme(), "s3");
+        }
+
+        match new_output {
+            CompletionOptions::ArrowRecordBatch => {},
+            _ => panic!("Output should be ArrowRecordBatch")
+        }
+    }
+
+    #[test]
+    fn test_validate_no_input_files() {
+        // Given
+        let input_files: Vec<Url> = vec![];
+        let row_key_cols = vec!["key".to_string()];
+        let region = SleeperPartitionRegion::default();
+
+        // When
+        let result = validate(&input_files, &row_key_cols, &region);
+
+        // Then
+        assert!(result.is_err());
+        assert_eq!(result.err().unwrap().to_string(), "No input paths supplied");
+    }
+
+    #[test]
+    fn test_validate_row_key_mismatch() {
+        // Given
+        let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
+        let row_key_cols = vec!["key1".to_string(), "key2".to_string()];
+        let mut region = SleeperPartitionRegion::default();
+        region.region.insert("col".to_string(), ColRange {
+            lower: PartitionBound::String("a"),
+            lower_inclusive: true,
+            upper: PartitionBound::String("z"),
+            upper_inclusive: true,
+        });
+
+        // When
+        let result = validate(&input_files, &row_key_cols, &region);
+
+        // Then
+        assert!(result.is_err());
+        assert!(result.err().unwrap().to_string().contains("Length mismatch"));
+    }
+
+    #[test]
+    fn test_validate_success() {
+        // Given
+        let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
+        let row_key_cols = vec!["key".to_string()];
+        let mut region = SleeperPartitionRegion::default();
+        region.region.insert("col".to_string(), ColRange {
+            lower: PartitionBound::String("a"),
+            lower_inclusive: true,
+            upper: PartitionBound::String("z"),
+            upper_inclusive: true,
+        });
+
+        // When
+        let result = validate(&input_files, &row_key_cols, &region);
+
+        // Then
+        assert!(result.is_ok());
+    }
+}
