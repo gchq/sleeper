@@ -487,7 +487,7 @@ mod tests {
 
         match new_output {
             CompletionOptions::ArrowRecordBatch => {}
-            _ => panic!("Output should be ArrowRecordBatch"),
+            CompletionOptions::File { .. } => panic!("Output should be ArrowRecordBatch"),
         }
     }
 

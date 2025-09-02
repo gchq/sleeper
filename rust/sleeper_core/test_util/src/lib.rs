@@ -130,7 +130,7 @@ pub fn read_file_of_int_fields<const N: usize>(
     let mut data: Vec<[i32; N]> = Vec::new();
     let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
     for field_name in field_names {
-        check_non_null_field(field_name, &DataType::Int32, &metadata.schema())?;
+        check_non_null_field(field_name, &DataType::Int32, metadata.schema())?;
     }
     for result in ParquetRecordBatchReaderBuilder::new_with_metadata(file, metadata).build()? {
         let batch = result?;
