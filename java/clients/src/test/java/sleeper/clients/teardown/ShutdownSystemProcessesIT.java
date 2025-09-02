@@ -37,7 +37,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
-import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcsClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.anyRequestedForCloudWatchEvents;
@@ -86,7 +85,7 @@ class ShutdownSystemProcessesIT {
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClient(runtimeInfo),
+        shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo),
                 wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo), StaticRateLimit.none(), noWaits());
     }
 
@@ -153,59 +152,6 @@ class ShutdownSystemProcessesIT {
             verify(1, disableRuleRequestedFor("test-table-metrics-rule"));
         }
     }
-
-    // @Nested
-    // @DisplayName("Terminate running ECS tasks")
-    // class TerminateECSTasks {
-
-    //     @BeforeEach
-    //     void setup() {
-    //         properties.set(INGEST_CLUSTER, "test-ingest-cluster");
-    //         stubFor(listActiveEmrClustersRequest()
-    //                 .willReturn(aResponseWithNoClusters()));
-    //         stubFor(listActiveEmrApplicationsRequest()
-    //                 .willReturn(aResponseWithNoApplications()));
-    //     }
-
-    //     @Test
-    //     void shouldLookForECSTasksWhenClustersSet() throws Exception {
-    //         // Given
-    //         properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
-    //         List<String> extraECSClusters = List.of("test-system-test-cluster");
-
-    //         stubFor(post("/")
-    //                 .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-    //                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
-
-    //         // When
-    //         shutdownWithExtraEcsClusters(extraECSClusters);
-
-    //         // Then
-    //         verify(3, anyRequestedForEcs());
-    //         verify(1, listTasksRequestedFor("test-ingest-cluster"));
-    //         verify(1, listTasksRequestedFor("test-compaction-cluster"));
-    //         verify(1, listTasksRequestedFor("test-system-test-cluster"));
-    //     }
-
-    //     @Test
-    //     void shouldStopECSTaskWhenOneIsFound() throws Exception {
-    //         // Given
-    //         stubFor(post("/")
-    //                 .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-    //                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
-    //         stubFor(post("/")
-    //                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
-    //                 .willReturn(aResponse().withStatus(200)));
-
-    //         // When
-    //         shutdown();
-
-    //         // Then
-    //         verify(2, anyRequestedForEcs());
-    //         verify(1, listTasksRequestedFor("test-ingest-cluster"));
-    //         verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
-    //     }
-    // }
 
     @Nested
     @DisplayName("Terminate running EMR clusters")
