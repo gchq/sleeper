@@ -4264,6 +4264,7 @@ dependencies = [
  "rust_sketch",
  "tempfile",
  "test-log",
+ "test_util",
  "tokio",
  "tokio-test",
  "url",
@@ -4454,6 +4455,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "test_util"
+version = "0.33.0-SNAPSHOT"
+dependencies = [
+ "arrow",
+ "color-eyre",
+ "datafusion",
+ "sleeper_core",
+ "tempfile",
+ "url",
 ]
 
 [[package]]
