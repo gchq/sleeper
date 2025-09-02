@@ -169,7 +169,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty AGGREGATIONS = Index.propertyBuilder("sleeper.table.aggregations")
             .description("Property to configure aggregation of columns from the table. Format accepted: " +
-                    "op(column),op(column)") //TODO Further expand
+                    "op(column),op(column)")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .defaultValue("")
             .build();
