@@ -138,8 +138,12 @@ public class IteratorFactory {
                     .replaceAll("\\)", "")
                     .split("\\("));
 
-            aggregations.add(new Aggregation(aggObject.getColumnName(),
-                    AggregationOp.valueOf(aggObject.getOpName().toUpperCase(Locale.ENGLISH).replaceFirst("^MAP_", ""))));
+            try {
+                aggregations.add(new Aggregation(aggObject.getColumnName(),
+                        AggregationOp.valueOf(aggObject.getOpName().toUpperCase(Locale.ENGLISH).replaceFirst("^MAP_", ""))));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException("Unable to parse operand. Operand: " + aggObject.getOpName());
+            }
         });
         return aggregations;
     }

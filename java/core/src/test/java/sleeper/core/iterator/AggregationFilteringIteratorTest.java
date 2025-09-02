@@ -101,7 +101,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"sum", "Sum", "SUM"})
+    @CsvSource({"sum", "Sum", "SUM", "map_sum", "Map_Sum", "MAP_SUM"})
     public void shouldApplySumAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
         SortedRowIterator sumAggregatorIterator = buildSingleValueAggregator(aggregator);
@@ -119,7 +119,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"min", "Min", "MIN"})
+    @CsvSource({"min", "Min", "MIN", "map_min", "Map_Min", "MAP_MIN"})
     public void shouldApplyMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
         SortedRowIterator minAggregatorIterator = buildSingleValueAggregator(aggregator);
@@ -138,7 +138,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"max", "Max", "MAX"})
+    @CsvSource({"max", "Max", "MAX", "map_max", "Map_Max", "MAP_MAX"})
     public void shouldApplyMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
         SortedRowIterator maxAggregatorIterator = buildSingleValueAggregator(aggregator);
@@ -190,6 +190,22 @@ public class AggregationFilteringIteratorTest {
         assertThat(resultList.get(0).toString()).isEqualTo(
                 new Row(Map.of("key1", "test", "value1", 4431,
                         "key2", "test", "value2", 88818L)).toString());
+    }
+
+    @Test
+    void shouldThrowExceptionForInvalidOperandDeclared() throws IteratorCreationException {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+        assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("")
+                        .aggregationString("bop(VALUE)")
+                        .build(), schema))
+                .withMessage("Unable to parse operand. Operand: bop");
     }
 
     @Test
