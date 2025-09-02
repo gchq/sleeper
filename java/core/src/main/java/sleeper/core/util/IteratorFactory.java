@@ -68,7 +68,7 @@ public class IteratorFactory {
      */
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
-            if (iteratorConfig.getFilters() == null) {
+            if (iteratorConfig.getFilters() == null && (iteratorConfig.getAggregationString() == null || iteratorConfig.getAggregationString().equals(""))) {
                 ConfigStringIterator iterator;
                 String className = iteratorConfig.getIteratorClassName();
 
