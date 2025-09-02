@@ -230,7 +230,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
-        output: OperationOutput::File {
+        output: CompletionOptions::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
         },
