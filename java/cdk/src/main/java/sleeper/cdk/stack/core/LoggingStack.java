@@ -90,6 +90,8 @@ public class LoggingStack extends NestedStack {
         BULK_IMPORT_EKS_STATE_MACHINE("EksBulkImportStateMachine", "/aws/vendedlogs/states/"),
         BULK_IMPORT_AUTODELETE("bulk-import-autodelete"),
         BULK_IMPORT_AUTODELETE_PROVIDER("bulk-import-autodelete-provider"),
+        ECS_CLUSTER_TASKS_AUTOSTOP("ecs-cluster-tasks-autostop"),
+        ECS_CLUSTER_TASKS_AUTOSTOP_PROVIDER("ecs-cluster-tasks-autostop-provider"),
         INGEST_TASKS("IngestTasks"),
         INGEST_TASKS_AUTOSTOP("ingest-tasks-autostop"),
         INGEST_TASKS_AUTOSTOP_PROVIDER("ingest-tasks-autostop-provider"),

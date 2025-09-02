@@ -43,6 +43,7 @@ import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack;
@@ -102,6 +103,7 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
+    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -287,6 +289,11 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     coreStacks,
                     errorMetrics);
+            autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(this,
+                    "AutoStopEcsClusterTasks",
+                    instanceProperties, jars,
+                    ingestStack,
+                    loggingStack);
         }
 
         // Aggregate ingest stacks

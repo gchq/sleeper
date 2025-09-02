@@ -49,7 +49,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.util.AutoStopEcsClusterTasks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
@@ -240,10 +239,10 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
-        AutoStopEcsClusterTasks.autoStopTasksOnEcsCluster(this, instanceProperties, lambdaCode,
-                cluster, clusterName,
-                coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
-                coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
+        // AutoStopEcsClusterTasks.autoStopTasksOnEcsCluster(this, instanceProperties, lambdaCode,
+        //         cluster, clusterName,
+        //         coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
+        //         coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
 
         return cluster;
     }
