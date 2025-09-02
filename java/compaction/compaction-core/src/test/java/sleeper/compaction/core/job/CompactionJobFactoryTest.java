@@ -63,6 +63,7 @@ public class CompactionJobFactoryTest {
                 .partitionId("root")
                 .outputFile("file://test-data-bucket/test-table-id/data/partition_root/job1.parquet")
                 .tableId("test-table-id")
+                .aggregationConfig("")
                 .build());
     }
 }
