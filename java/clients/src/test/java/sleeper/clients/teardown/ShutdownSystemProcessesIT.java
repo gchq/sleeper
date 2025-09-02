@@ -154,57 +154,57 @@ class ShutdownSystemProcessesIT {
         }
     }
 
-    //@Nested
-    //@DisplayName("Terminate running ECS tasks")
-    //class TerminateECSTasks {
+    // @Nested
+    // @DisplayName("Terminate running ECS tasks")
+    // class TerminateECSTasks {
 
-    //    @BeforeEach
-    //    void setup() {
-    //        properties.set(INGEST_CLUSTER, "test-ingest-cluster");
-    //        stubFor(listActiveEmrClustersRequest()
-    //                .willReturn(aResponseWithNoClusters()));
-    //        stubFor(listActiveEmrApplicationsRequest()
-    //                .willReturn(aResponseWithNoApplications()));
-    //    }
+    //     @BeforeEach
+    //     void setup() {
+    //         properties.set(INGEST_CLUSTER, "test-ingest-cluster");
+    //         stubFor(listActiveEmrClustersRequest()
+    //                 .willReturn(aResponseWithNoClusters()));
+    //         stubFor(listActiveEmrApplicationsRequest()
+    //                 .willReturn(aResponseWithNoApplications()));
+    //     }
 
-    //    @Test
-    //    void shouldLookForECSTasksWhenClustersSet() throws Exception {
-    //        // Given
-    //        properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
-    //        List<String> extraECSClusters = List.of("test-system-test-cluster");
+    //     @Test
+    //     void shouldLookForECSTasksWhenClustersSet() throws Exception {
+    //         // Given
+    //         properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
+    //         List<String> extraECSClusters = List.of("test-system-test-cluster");
 
-    //            stubFor(post("/")
-    //                    .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-    //                   .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
+    //         stubFor(post("/")
+    //                 .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
+    //                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
 
-    // When
-    //           shutdownWithExtraEcsClusters(extraECSClusters);
+    //         // When
+    //         shutdownWithExtraEcsClusters(extraECSClusters);
 
-    // Then
-    //           verify(3, anyRequestedForEcs());
-    //           verify(1, listTasksRequestedFor("test-ingest-cluster"));
-    //           verify(1, listTasksRequestedFor("test-compaction-cluster"));
-    //           verify(1, listTasksRequestedFor("test-system-test-cluster"));
-    //       }
+    //         // Then
+    //         verify(3, anyRequestedForEcs());
+    //         verify(1, listTasksRequestedFor("test-ingest-cluster"));
+    //         verify(1, listTasksRequestedFor("test-compaction-cluster"));
+    //         verify(1, listTasksRequestedFor("test-system-test-cluster"));
+    //     }
 
-    //@Test
-    //void shouldStopECSTaskWhenOneIsFound() throws Exception {
-    //    // Given
-    //    stubFor(post("/")
-    //            .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-    //            .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
-    //    stubFor(post("/")
-    //            .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
-    //            .willReturn(aResponse().withStatus(200)));
-    //
-    //            // When
-    //            shutdown();
-    //
-    //           // Then
-    //            verify(2, anyRequestedForEcs());
-    //           verify(1, listTasksRequestedFor("test-ingest-cluster"));
-    //           verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
-    //       }
+    //     @Test
+    //     void shouldStopECSTaskWhenOneIsFound() throws Exception {
+    //         // Given
+    //         stubFor(post("/")
+    //                 .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
+    //                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
+    //         stubFor(post("/")
+    //                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
+    //                 .willReturn(aResponse().withStatus(200)));
+
+    //         // When
+    //         shutdown();
+
+    //         // Then
+    //         verify(2, anyRequestedForEcs());
+    //         verify(1, listTasksRequestedFor("test-ingest-cluster"));
+    //         verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
+    //     }
     // }
 
     @Nested

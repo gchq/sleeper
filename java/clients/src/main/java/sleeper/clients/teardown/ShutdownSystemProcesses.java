@@ -33,9 +33,6 @@ import sleeper.core.util.ThreadSleep;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class ShutdownSystemProcesses {
@@ -70,17 +67,17 @@ public class ShutdownSystemProcesses {
         LOGGER.info("Shutting down system processes for instance {}", instanceProperties.get(ID));
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
-        stopECSTasks(instanceProperties, extraECSClusters);
+        //stopECSTasks(instanceProperties, extraECSClusters);
         stopEMRClusters(instanceProperties);
         stopEMRServerlessApplication(instanceProperties);
     }
 
-    private void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
-        stopTasks(ecs, instanceProperties, INGEST_CLUSTER);
-        stopTasks(ecs, instanceProperties, COMPACTION_CLUSTER);
-        stopTasks(ecs, instanceProperties, BULK_EXPORT_CLUSTER);
-        //extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
-    }
+    //private void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
+    // stopTasks(ecs, instanceProperties, INGEST_CLUSTER);
+    // stopTasks(ecs, instanceProperties, COMPACTION_CLUSTER);
+    // stopTasks(ecs, instanceProperties, BULK_EXPORT_CLUSTER);
+    //extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
+    //}
 
     private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
         new TerminateEMRClusters(emrClient, properties.get(ID), listActiveClustersLimit, threadSleep).run();
