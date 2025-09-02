@@ -63,10 +63,6 @@ public class TearDownSystemTestDeployment {
         WaitForStackToDelete.from(clients.getCloudFormation(), properties.get(SYSTEM_TEST_ID)).pollUntilFinished();
     }
 
-    //    public void shutdownSystemProcesses() throws InterruptedException {
-    //        ShutdownSystemProcesses.stopTasks(clients.getEcs(), properties, SYSTEM_TEST_CLUSTER_NAME);
-    //    }
-
     public void cleanupAfterAllInstancesAndStackDeleted() throws InterruptedException, IOException {
         LOGGER.info("Removing the Jars bucket and docker containers");
         RemoveJarsBucket.remove(clients.getS3(), properties.get(SYSTEM_TEST_JARS_BUCKET));
