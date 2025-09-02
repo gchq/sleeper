@@ -85,6 +85,10 @@ public class LeafPartitionQuery {
         return processingConfig.getQueryTimeFilters();
     }
 
+    public String getQueryTimeAggregations() {
+        return processingConfig.getQueryTimeAggregations();
+    }
+
     public List<String> getRequestedValueFields() {
         return processingConfig.getRequestedValueFields();
     }

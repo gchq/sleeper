@@ -33,6 +33,7 @@ public class QueryProcessingConfig {
     private final String queryTimeIteratorClassName;
     private final String queryTimeIteratorConfig;
     private final String queryTimeFilters;
+    private final String queryTimeAggregations;
     private final Map<String, String> resultsPublisherConfig;
     private final List<Map<String, String>> statusReportDestinations;
     private final List<String> requestedValueFields;
@@ -41,6 +42,7 @@ public class QueryProcessingConfig {
         queryTimeIteratorClassName = builder.queryTimeIteratorClassName;
         queryTimeIteratorConfig = builder.queryTimeIteratorConfig;
         queryTimeFilters = builder.queryTimeFilters;
+        queryTimeAggregations = builder.queryTimeAggregations;
         resultsPublisherConfig = Objects.requireNonNull(builder.resultsPublisherConfig, "resultsPublisherConfig must not be null");
         statusReportDestinations = Objects.requireNonNull(builder.statusReportDestinations, "statusReportDestinations must not be null");
         requestedValueFields = builder.requestedValueFields;
@@ -70,6 +72,10 @@ public class QueryProcessingConfig {
 
     public String getQueryTimeFilters() {
         return queryTimeFilters;
+    }
+
+    public String getQueryTimeAggregations() {
+        return queryTimeAggregations;
     }
 
     public Map<String, String> getResultsPublisherConfig() {
@@ -173,6 +179,7 @@ public class QueryProcessingConfig {
         private String queryTimeIteratorClassName;
         private String queryTimeIteratorConfig;
         private String queryTimeFilters;
+        private String queryTimeAggregations;
         private Map<String, String> resultsPublisherConfig = Map.of();
         private List<Map<String, String>> statusReportDestinations = List.of();
         private List<String> requestedValueFields;
@@ -199,6 +206,17 @@ public class QueryProcessingConfig {
          */
         public Builder queryTimeIteratorConfig(String queryTimeIteratorConfig) {
             this.queryTimeIteratorConfig = queryTimeIteratorConfig;
+            return this;
+        }
+
+        /**
+         * Provides the query time aggregations.
+         *
+         * @param  queryTimeAggregations the iterator aggregations
+         * @return                       the builder
+         */
+        public Builder queryTimeAggregations(String queryTimeAggregations) {
+            this.queryTimeAggregations = queryTimeAggregations;
             return this;
         }
 
