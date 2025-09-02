@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * A factory class for Sleeper iterators.
@@ -161,11 +162,10 @@ public class IteratorFactory {
         }).toList();
 
         if (!rowKeySortKeyViolations.isEmpty()) {
-            StringBuilder colNameStringBuilder = new StringBuilder();
-            rowKeySortKeyViolations.stream().forEach(aggegationViolation -> {
-                colNameStringBuilder.append(aggegationViolation.column() + ", ");
-            });
-            throw new IllegalStateException("Column for aggregation now allowed to be a Row Key or Sort Key. Column names: " + colNameStringBuilder.toString());
+            String outStr = rowKeySortKeyViolations.stream()
+                    .map(Aggregation::column)
+                    .collect(Collectors.joining(", "));
+            throw new IllegalStateException("Column for aggregation now allowed to be a Row Key or Sort Key. Column names: " + outStr);
         }
     }
 
