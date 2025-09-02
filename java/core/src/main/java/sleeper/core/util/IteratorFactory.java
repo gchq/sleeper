@@ -152,7 +152,7 @@ public class IteratorFactory {
     private void validateAggregations(List<Aggregation> aggregations, Schema schema) {
         validateNoRowKeySortKeyAggregations(aggregations, schema);
         validateNoDuplicateAggregations(aggregations);
-        validateAllValueColumnsHaveAggregations(aggregations, schema);
+        validateAllColumnsHaveAggregations(aggregations, schema);
     }
 
     private void validateNoRowKeySortKeyAggregations(List<Aggregation> aggregations, Schema schema) {
@@ -178,7 +178,7 @@ public class IteratorFactory {
         });
     }
 
-    private void validateAllValueColumnsHaveAggregations(List<Aggregation> aggregations, Schema schema) {
+    private void validateAllColumnsHaveAggregations(List<Aggregation> aggregations, Schema schema) {
         List<String> aggregationColumns = new ArrayList<String>();
         aggregations.stream().forEach(aggregation -> {
             aggregationColumns.add(aggregation.column());

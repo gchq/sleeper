@@ -24,6 +24,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
@@ -101,7 +102,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"sum", "Sum", "SUM", "map_sum", "Map_Sum", "MAP_SUM"})
+    @CsvSource({"sum", "Sum", "SUM"})
     public void shouldApplySumAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
         SortedRowIterator sumAggregatorIterator = buildSingleValueAggregator(aggregator);
@@ -119,7 +120,42 @@ public class AggregationFilteringIteratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"min", "Min", "MIN", "map_min", "Map_Min", "MAP_MIN"})
+    @CsvSource({"map_sum", "Map_Sum", "MAP_SUM"})
+    void shouldApplyMapSumAggregationFromProperties(String aggregator) throws IteratorCreationException {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .sortKeyFields(new Field("sort", new StringType()))
+                .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
+                .build();
+
+        SortedRowIterator sumAggregatorIterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("")
+                        .aggregationString("sum(value)," + aggregator + "(map_value2)")
+                        .build(), schema);
+
+        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
+                        Map.of("map_key1", 1L, "map_key2", 3L))),
+                new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
+                        Map.of("map_key1", 3L, "map_key2", 4L))))
+                .iterator());
+
+        // When
+        List<Row> resultList = new ArrayList<>();
+        sumAggregatorIterator.apply(iterator)
+                .forEachRemaining(resultList::add);
+
+        assertThat(resultList).containsExactly(
+                new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
+                        Map.of("map_key1", 4L, "map_key2", 7L))));
+
+    }
+
+    @ParameterizedTest
+    @CsvSource({"min", "Min", "MIN"})
     public void shouldApplyMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
         SortedRowIterator minAggregatorIterator = buildSingleValueAggregator(aggregator);
@@ -135,6 +171,40 @@ public class AggregationFilteringIteratorTest {
 
         // Then
         assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 97L))));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"map_min", "Map_Min", "MAP_MIN"})
+    void shouldApplyMapMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .sortKeyFields(new Field("sort", new StringType()))
+                .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
+                .build();
+
+        SortedRowIterator sumAggregatorIterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("")
+                        .aggregationString("sum(value)," + aggregator + "(map_value2)")
+                        .build(), schema);
+
+        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
+                        Map.of("map_key1", 17L, "map_key2", 112L))),
+                new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
+                        Map.of("map_key1", 9L, "map_key2", 2489L))))
+                .iterator());
+
+        // When
+        List<Row> resultList = new ArrayList<>();
+        sumAggregatorIterator.apply(iterator)
+                .forEachRemaining(resultList::add);
+
+        assertThat(resultList).containsExactly(
+                new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
+                        Map.of("map_key1", 9L, "map_key2", 112L))));
     }
 
     @ParameterizedTest
@@ -154,6 +224,40 @@ public class AggregationFilteringIteratorTest {
 
         // Then
         assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 458498L))));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"map_max", "Map_Max", "MAP_MAX"})
+    void shouldApplyMapMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .sortKeyFields(new Field("sort", new StringType()))
+                .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
+                .build();
+
+        SortedRowIterator sumAggregatorIterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .filters("")
+                        .aggregationString("sum(value)," + aggregator + "(map_value2)")
+                        .build(), schema);
+
+        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
+                        Map.of("map_key1", 666L, "map_key2", 11L))),
+                new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
+                        Map.of("map_key1", 245L, "map_key2", 2L))))
+                .iterator());
+
+        // When
+        List<Row> resultList = new ArrayList<>();
+        sumAggregatorIterator.apply(iterator)
+                .forEachRemaining(resultList::add);
+
+        assertThat(resultList).containsExactly(
+                new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
+                        Map.of("map_key1", 666L, "map_key2", 11L))));
     }
 
     @Test
