@@ -162,10 +162,10 @@ public class IteratorFactory {
         }).toList();
 
         if (!rowKeySortKeyViolations.isEmpty()) {
-            String outStr = rowKeySortKeyViolations.stream()
+            String errStr = rowKeySortKeyViolations.stream()
                     .map(Aggregation::column)
                     .collect(Collectors.joining(", "));
-            throw new IllegalStateException("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: " + outStr);
+            throw new IllegalStateException("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: " + errStr);
         }
     }
 
@@ -185,13 +185,10 @@ public class IteratorFactory {
         });
 
         if (!aggregationColumns.containsAll(schema.getValueFieldNames())) {
-            StringBuilder missingColumnStringBuilder = new StringBuilder();
-            schema.getValueFieldNames().forEach(col -> {
-                if (!aggregationColumns.contains(col)) {
-                    missingColumnStringBuilder.append(col + ", ");
-                }
-            });
-            throw new IllegalStateException("Not all value fields have aggregation declared. Missing columns: " + missingColumnStringBuilder.toString());
+            String errStr = schema.getValueFieldNames().stream()
+                    .filter(presCol -> !aggregationColumns.contains(presCol))
+                    .collect(Collectors.joining(", "));
+            throw new IllegalStateException("Not all value fields have aggregation declared. Missing columns: " + errStr);
         }
     }
 

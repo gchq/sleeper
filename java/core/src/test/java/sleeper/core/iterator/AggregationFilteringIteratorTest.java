@@ -229,14 +229,14 @@ public class AggregationFilteringIteratorTest {
     void shouldThrowExceptionWhenDuplicateAggregators() {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("doubleValue", new LongType()), new Field("singleValue", new LongType()))
+                .valueFields(new Field("doubleValue", new LongType()))
                 .build();
 
         assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
                         .filters("")
-                        .aggregationString("MIN(doubleValue),SUM(doubleValue),SUM(singleValue)")
+                        .aggregationString("MIN(doubleValue),SUM(doubleValue)")
                         .build(), schema))
                 .withMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
     }
@@ -254,7 +254,7 @@ public class AggregationFilteringIteratorTest {
                         .filters("")
                         .aggregationString("MIN(existsValue)")
                         .build(), schema))
-                .withMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue, ");
+                .withMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
 
     }
 
