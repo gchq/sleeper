@@ -57,7 +57,7 @@ public class CompactionVeryLargeST {
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
+    void shouldRunVeryLargeCompaction(SleeperSystemTest sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
