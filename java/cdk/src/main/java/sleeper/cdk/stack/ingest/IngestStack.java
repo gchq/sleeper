@@ -47,6 +47,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -100,6 +101,7 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             Topic topic,
             CoreStacks coreStacks,
+            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -118,7 +120,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode, autoStopEcsClusterTasksStack);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
@@ -183,7 +185,8 @@ public class IngestStack extends NestedStack {
             IBucket jarsBucket,
             CoreStacks coreStacks,
             Queue ingestJobQueue,
-            LambdaCode lambdaCode) {
+            LambdaCode lambdaCode,
+            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -239,10 +242,8 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
-        // AutoStopEcsClusterTasks.autoStopTasksOnEcsCluster(this, instanceProperties, lambdaCode,
-        //         cluster, clusterName,
-        //         coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
-        //         coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
+        autoStopEcsClusterTasksStack.grantAccessToCustomResource(this, instanceProperties,
+                cluster, clusterName);
 
         return cluster;
     }

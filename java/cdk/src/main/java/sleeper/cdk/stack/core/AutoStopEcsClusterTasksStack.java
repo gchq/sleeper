@@ -20,6 +20,7 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
+import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -43,9 +44,15 @@ import java.util.Objects;
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AutoStopEcsClusterTasksStack extends NestedStack {
 
+    private IFunction lambda;
+    private Provider propertiesWriterProvider;
+    private String id;
+
     public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            NestedStack clusterStack, LoggingStack logging) {
+            LoggingStack logging) {
         super(scope, id);
+
+        this.id = id;
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -54,7 +61,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");
 
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, "AutoStopEcsClusterTasksLambda", builder -> builder
+        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, "AutoStopEcsClusterTasksLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
@@ -72,20 +79,25 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         role.addToPrincipalPolicy(policyStatement);
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
-        Provider propertiesWriterProvider = Provider.Builder.create(scope, id + "Provider")
+        propertiesWriterProvider = Provider.Builder.create(scope, id + "Provider")
                 .onEventHandler(lambda)
                 .logGroup(logging.getLogGroup(LogGroupRef.ECS_CLUSTER_TASKS_AUTOSTOP_PROVIDER))
                 .build();
 
+        Utils.addStackTagIfSet(this, instanceProperties);
+
+    }
+
+    public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
+            ICluster cluster, String clusterName) {
+
         CustomResource customResource = CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::AutoStopEcsClusterTasks")
-                .properties(Map.of("cluster", clusterStack.getNode().getId()))
+                .properties(Map.of("cluster", clusterName))
                 .serviceToken(propertiesWriterProvider.getServiceToken())
                 .build();
 
-        customResource.getNode().addDependency(clusterStack);
-
-        Utils.addStackTagIfSet(this, instanceProperties);
+        customResource.getNode().addDependency(cluster);
 
     }
 
