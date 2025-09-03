@@ -45,6 +45,7 @@ regex = { workspace = true }
 rust_sketch = { path = "../rust_sketch" }
 tokio = { workspace = true, features = ["full"] }
 url = { workspace = true }
+tracing-subscriber = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
