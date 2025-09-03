@@ -15,13 +15,13 @@
  */
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
-use test_util::*;
 use sleeper_core::{
     CommonConfig, CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tempfile::tempdir;
 use test_log::test;
+use test_util::*;
 
 #[test(tokio::test)]
 async fn should_merge_two_files() -> Result<(), Error> {
