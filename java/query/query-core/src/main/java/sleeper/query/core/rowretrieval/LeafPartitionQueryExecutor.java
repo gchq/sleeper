@@ -143,8 +143,7 @@ public class LeafPartitionQueryExecutor {
             String iteratorConfig,
             String filtersConfig,
             String aggregationString) throws IteratorCreationException {
-        if (iteratorClassName == null && filtersConfig == null &&
-                (aggregationString == null || aggregationString.equals(""))) {
+        if (iteratorClassName == null && filtersConfig == null && aggregationString == null) {
             return null;
         } else {
             return new IteratorFactory(objectFactory)
