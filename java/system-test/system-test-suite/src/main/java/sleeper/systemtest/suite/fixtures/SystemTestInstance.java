@@ -233,7 +233,9 @@ public class SystemTestInstance {
 
     private static DeployInstanceConfiguration createCompactionInParallelConfiguration() {
         InstanceProperties properties = createInstanceProperties();
-        properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
+        properties.setEnumList(OPTIONAL_STACKS,
+                // Enable GC to reduce the number of files needing deletion during teardown
+                List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "300");
         setSystemTestTags(properties, "compactionInParallel", "Sleeper Maven system test compaction in parallel");
         return createInstanceConfiguration(properties);
