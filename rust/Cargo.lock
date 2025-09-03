@@ -154,7 +154,6 @@ dependencies = [
  "predicates",
  "sleeper_core",
  "tokio",
- "tracing-subscriber",
  "url",
 ]
 
@@ -3329,7 +3328,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-test",
- "tracing-subscriber",
  "url",
 ]
 
@@ -4212,7 +4210,6 @@ dependencies = [
  "test_util",
  "tokio",
  "tokio-test",
- "tracing-subscriber",
  "url",
 ]
 
@@ -4228,7 +4225,6 @@ dependencies = [
  "log",
  "sleeper_core",
  "tokio",
- "tracing-subscriber",
  "url",
 ]
 
@@ -4775,7 +4771,6 @@ dependencies = [
  "once_cell",
  "regex-automata",
  "sharded-slab",
- "smallvec",
  "thread_local",
  "tracing",
  "tracing-core",

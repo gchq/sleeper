@@ -33,7 +33,6 @@ aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] 
 aws-types = { workspace = true }
 bytes = { workspace = true }
 chrono = { workspace = true }
-tracing-subscriber = { workspace = true }
 color-eyre = { workspace = true }
 cxx = { workspace = true }
 datafusion = { workspace = true }
