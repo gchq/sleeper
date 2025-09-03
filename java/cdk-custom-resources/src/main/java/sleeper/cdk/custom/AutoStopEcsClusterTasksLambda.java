@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 import sleeper.core.util.ThreadSleep;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
@@ -62,24 +63,31 @@ public class AutoStopEcsClusterTasksLambda {
             case "Update":
                 break;
             case "Delete":
-                stopTasks(clusterName);
+                stopTasks(ecsClient, clusterName, maxResults, sleep);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
         }
     }
 
-    private void stopTasks(String clusterName) {
-        ecsClient.listTasksPaginator(builder -> builder.cluster(clusterName).maxResults(maxResults))
-                .taskArns()
-                .stream()
-                .forEach(
-                        task -> {
-                            LOGGER.info("Stopping task {} in cluster {} ", task, clusterName);
-                            // Rate limit for ECS StopTask is 100 burst, 40 sustained:
-                            // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
-                            sleepForSustainedRatePerSecond(30, sleep);
-                            ecsClient.stopTask(builder -> builder.cluster(clusterName).task(task));
-                        });
+    private static void stopTasks(EcsClient ecs, String clusterName, int maxResults, ThreadSleep sleep) {
+        LOGGER.info("Stopping tasks for ECS cluster {}", clusterName);
+        forEachTaskArn(ecs, clusterName, maxResults, taskArn -> {
+            // Rate limit for ECS StopTask is 100 burst, 40 sustained:
+            // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
+            sleepForSustainedRatePerSecond(30, sleep);
+            ecs.stopTask(builder -> builder.cluster(clusterName).task(taskArn)
+                    .reason("Cleaning up before cdk destroy"));
+            LOGGER.info("Stopped task {} in ECS cluster {}", taskArn, clusterName);
+        });
     }
+
+    private static void forEachTaskArn(EcsClient ecs, String clusterName, int maxResults, Consumer<String> consumer) {
+        ecs.listTasksPaginator(builder -> builder.cluster(clusterName).maxResults(maxResults))
+                .stream()
+                .peek(response -> LOGGER.info("Found {} tasks", response.taskArns().size()))
+                .flatMap(response -> response.taskArns().stream())
+                .forEach(consumer);
+    }
+
 }

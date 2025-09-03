@@ -20,7 +20,9 @@
       "outputFile": "outputfile2",
       "partitionId": "other-partition",
       "iteratorClassName": "sleeper.core.iterator.AgeOffIterator",
-      "iteratorConfig": "key,600000"
+      "iteratorConfig": "key,600000",
+      "filterConfig": "ageOff(key,600000)",
+      "aggregationConfig": "max(value1),min(value2)"
     }
   ]
 }

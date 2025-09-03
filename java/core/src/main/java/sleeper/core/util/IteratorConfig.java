@@ -15,18 +15,18 @@
  */
 package sleeper.core.util;
 
-import sleeper.core.schema.Schema;
-
 /** Config class for getting iterator's from the iterator factory. */
 public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
-    private final Schema schema;
+    private final String filters;
+    private final String aggregationString;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
-        this.schema = builder.schema;
+        this.filters = builder.filters;
+        this.aggregationString = builder.aggregationString;
     }
 
     public static Builder builder() {
@@ -41,8 +41,21 @@ public class IteratorConfig {
         return iteratorConfigString;
     }
 
-    public Schema getSchema() {
-        return schema;
+    public String getFilters() {
+        return filters;
+    }
+
+    public String getAggregationString() {
+        return aggregationString;
+    }
+
+    /**
+     * Checks if a iterator should be applied based on if a class name or filters have been set.
+     *
+     * @return true if the iterator should be applied, otherwise false
+     */
+    public boolean shouldIteratorBeApplied() {
+        return iteratorClassName != null || filters != null;
     }
 
     /**
@@ -51,7 +64,8 @@ public class IteratorConfig {
     public static final class Builder {
         private String iteratorClassName;
         private String iteratorConfigString;
-        private Schema schema;
+        private String filters;
+        private String aggregationString;
 
         private Builder() {
         }
@@ -79,13 +93,24 @@ public class IteratorConfig {
         }
 
         /**
-         * Sets the schema for the iterator to use.
+         * Sets the filters string.
          *
-         * @param  schema the schema for the iterator to use
-         * @return        builder for method chaining
+         * @param  filters the filters string to be used for the iterator
+         * @return         builder for method chaining
          */
-        public Builder schema(Schema schema) {
-            this.schema = schema;
+        public Builder filters(String filters) {
+            this.filters = filters;
+            return this;
+        }
+
+        /**
+         * Sets the aggregation string.
+         *
+         * @param  aggregationString the aggregation string to be used for the iterator
+         * @return                   builder for method chaining
+         */
+        public Builder aggregationString(String aggregationString) {
+            this.aggregationString = aggregationString;
             return this;
         }
 

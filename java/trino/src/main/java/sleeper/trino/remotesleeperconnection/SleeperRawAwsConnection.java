@@ -333,6 +333,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties),
                 null,
                 null,
+                null,
+                null,
                 INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS,
                 s3AsyncClient,
                 rootBufferAllocator);
