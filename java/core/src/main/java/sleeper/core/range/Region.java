@@ -19,6 +19,7 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,7 @@ import java.util.Objects;
 public class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
 
-    public Region(List<Range> ranges) {
+    public Region(Collection<Range> ranges) {
         rowKeyFieldNameToRange = new HashMap<>();
         for (Range range : ranges) {
             if (rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
@@ -70,8 +71,8 @@ public class Region {
      * @return a List of Ranges in no particular order.
      * @see    Region#getRangesOrdered(Schema)
      */
-    public List<Range> getRangesUnordered() {
-        return new ArrayList<>(rowKeyFieldNameToRange.values());
+    public Collection<Range> getRangesUnordered() {
+        return rowKeyFieldNameToRange.values();
     }
 
     /**

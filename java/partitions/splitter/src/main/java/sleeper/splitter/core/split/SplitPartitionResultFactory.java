@@ -27,6 +27,7 @@ import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -66,7 +67,7 @@ public class SplitPartitionResultFactory {
         LOGGER.info("Splitting partition {} on split point {} in dimension {}", partition.getId(), splitPoint, dimension);
 
         // New partitions
-        List<Range> leftChildRanges = removeRange(partition.getRegion().getRangesUnordered(), fieldToSplitOn.getName());
+        Collection<Range> leftChildRanges = removeRange(partition.getRegion().getRangesUnordered(), fieldToSplitOn.getName());
         Range rangeForSplitDimensionLeftChild = rangeFactory.createRange(fieldToSplitOn, partition.getRegion().getRange(fieldToSplitOn.getName()).getMin(), splitPoint);
         leftChildRanges.add(rangeForSplitDimensionLeftChild);
         Region leftChildRegion = new Region(leftChildRanges);
@@ -101,7 +102,7 @@ public class SplitPartitionResultFactory {
         return new SplitPartitionResult(partition, leftChild, rightChild);
     }
 
-    private List<Range> removeRange(List<Range> inputRanges, String rangeToRemove) {
+    private List<Range> removeRange(Collection<Range> inputRanges, String rangeToRemove) {
         return inputRanges.stream()
                 .filter(r -> !r.getFieldName().equals(rangeToRemove))
                 .collect(Collectors.toList());

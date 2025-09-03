@@ -16,6 +16,7 @@
 package sleeper.core.range;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,7 +38,7 @@ public class RegionCanonicaliser {
             return region;
         }
 
-        List<Range> ranges = region.getRangesUnordered();
+        Collection<Range> ranges = region.getRangesUnordered();
         List<Range> canonicalisedRanges = new ArrayList<>();
         for (Range range : ranges) {
             canonicalisedRanges.add(RangeCanonicaliser.canonicaliseRange(range));

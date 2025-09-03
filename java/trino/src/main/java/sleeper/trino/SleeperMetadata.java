@@ -218,9 +218,9 @@ public class SleeperMetadata implements ConnectorMetadata {
                     .map(ColumnHandle.class::cast)
                     .collect(ImmutableList.toImmutableList());
 
-            Schema tableSchema = this.sleeperConnectionAsTrino.getSchema(sleeperTableHandle.getSchemaTableName());
+            Schema tableSchema = sleeperConnectionAsTrino.getSchema(sleeperTableHandle.getSchemaTableName());
             // Generate as list of the lower-bounds of each partition and use these to create a SleeperPartitioningHandle object.
-            List<Key> partitionMinKeys = this.sleeperConnectionAsTrino.streamPartitions(sleeperTableHandle.getSchemaTableName())
+            List<Key> partitionMinKeys = sleeperConnectionAsTrino.streamPartitions(sleeperTableHandle.getSchemaTableName())
                     .filter(Partition::isLeafPartition)
                     .map(partition -> Key.create(partition.getRegion().getRangesOrdered(tableSchema).stream().map(Range::getMin).collect(ImmutableList.toImmutableList())))
                     .collect(ImmutableList.toImmutableList());

@@ -192,10 +192,10 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
      */
     public Stream<List<Object>> streamPartitionStatusRows(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
-        List<Partition> allPartitions = this.sleeperRawAwsConnection.getSleeperTablePartitionStructure(
+        List<Partition> allPartitions = sleeperRawAwsConnection.getSleeperTablePartitionStructure(
                 schemaTableName.getTableName(),
                 Instant.now()).getAllPartitions();
-        Schema schema = this.sleeperRawAwsConnection.getSleeperSchema(schemaTableName.getTableName());
+        Schema schema = sleeperRawAwsConnection.getSleeperSchema(schemaTableName.getTableName());
         // Some of the partition methods can return null and so an ImmutableList cannot be used here
         return allPartitions.stream()
                 .map(partition -> Arrays.asList(

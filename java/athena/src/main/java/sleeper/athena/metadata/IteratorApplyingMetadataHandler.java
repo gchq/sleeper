@@ -38,6 +38,7 @@ import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.PrimitiveType;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -80,7 +81,7 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
 
     @Override
     protected void writeExtraPartitionDataToBlock(Partition partition, Block block, int rowNum) {
-        List<Range> ranges = partition.getRegion().getRangesUnordered();
+        Collection<Range> ranges = partition.getRegion().getRangesUnordered();
         for (Range range : ranges) {
             block.setValue(MIN_ROW_KEY_PREFIX + "-" + range.getFieldName(), rowNum, range.getMin());
             block.setValue(MAX_ROW_KEY_PREFIX + "-" + range.getFieldName(), rowNum, range.getMax());
