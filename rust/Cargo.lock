@@ -1335,9 +1335,9 @@ dependencies = [
 
 [[package]]
 name = "cxx"
-version = "1.0.174"
+version = "1.0.170"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5ba77f286ce5c44c7ba02de894b057bc0a605a210e3d81fa83b92d94586c0e1"
+checksum = "77377ef8d2a668ad5ad5c58a1d0b172836495dffd3b10e0488a41c9b288b3a0e"
 dependencies = [
  "cc",
  "cxxbridge-cmd",
@@ -1364,9 +1364,9 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-cmd"
-version = "1.0.174"
+version = "1.0.170"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19ade5eb6d6e6ef9c5631eff7e4f74e0e7109140e775f124d76904c0e5e6a202"
+checksum = "dea3ad43f199bbb9df0547f5db39896604b9554784d963d73a8c7f83fc6fecb1"
 dependencies = [
  "clap",
  "codespan-reporting",
@@ -1378,15 +1378,15 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-flags"
-version = "1.0.174"
+version = "1.0.170"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99f99fe2f3f76a2ba40c5431f854efe3725c19a89f4d59966bca3ec561be940e"
+checksum = "e213bf54b95ba7bceebbbdaf923dfe32fdbd630c685fedf5c47132da64df6aa1"
 
 [[package]]
 name = "cxxbridge-macro"
-version = "1.0.174"
+version = "1.0.170"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b6e5fa0545804d2d8d398a1e995203a1f2403a9f0651d50546462e61a28340e"
+checksum = "9caa03943851c364d0ff229bd11ba07f3144673cca9feb52b9ca09817c8a239e"
 dependencies = [
  "indexmap",
  "proc-macro2",
@@ -2985,9 +2985,9 @@ dependencies = [
 
 [[package]]
 name = "link-cplusplus"
-version = "1.0.11"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c349c75e1ab4a03bd6b33fe6cbd3c479c5dd443e44ad732664d72cb0e755475"
+checksum = "4a6f6da007f968f9def0d65a05b187e2960183de70c160204ecfccf0ee330212"
 dependencies = [
  "cc",
 ]
@@ -4795,7 +4795,7 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.3.20"
+version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8189decb5ac0fa7bc8b96b7cb9b2701d60d48805aca84a238004d665fcc4008"
 dependencies = [
