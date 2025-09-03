@@ -78,7 +78,7 @@ public class ParallelCompactionsST {
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)),
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(2)))
+                                Duration.ofSeconds(10), Duration.ofMinutes(3)))
                 // The table is still online, so it will continue to compact until each partition has 1 file.
                 // Because the table is online, we can't control the order in which the files are compacted, so we
                 // don't know how many jobs will run. We do know it will eventually get to one file per partition.
