@@ -295,6 +295,7 @@ public class SleeperCdkApp extends Stack {
                     ingestStack,
                     loggingStack);
         }
+        System.out.println(autoStopEcsClusterTasksStack.getStackId());
 
         // Aggregate ingest stacks
         ingestStacks = new IngestStacks(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack, emrServerlessBulkImportStack);
