@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
-import sleeper.core.properties.SleeperProperties;
-import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
@@ -111,8 +109,7 @@ public final class DeployedSleeperInstance {
             LOGGER.info("Redeploy required as version number does not match");
         }
 
-        if (isRedeployDueToPropertyChange(UserDefinedInstanceProperty.getAll(),
-                configuration.getInstanceProperties(), instanceProperties)) {
+        if (isRedeployDueToPropertyChange(configuration.getInstanceProperties(), instanceProperties)) {
             redeployNeeded = true;
         }
 
@@ -123,21 +120,25 @@ public final class DeployedSleeperInstance {
         return redeployNeeded;
     }
 
-    private static <P extends SleeperProperty, T extends SleeperProperties<P>> boolean isRedeployDueToPropertyChange(
-            List<? extends P> userDefinedProperties, T deployProperties, T foundProperties) {
+    public static boolean isRedeployDueToPropertyChange(InstanceProperties deployProperties, InstanceProperties foundProperties) {
         boolean redeployNeeded = false;
-        for (P property : userDefinedProperties) {
+        for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.getAll()) {
             if (!property.isEditable() || !property.isRunCdkDeployWhenChanged()) {
                 // Non-CDK properties get reset before every test in SleeperInstanceContext.resetProperties
                 continue;
             }
-            if (!deployProperties.isSet(property) || property == TAGS) {
+            if (property == TAGS) {
+                // Tags are an unordered map, so we can't compare values in the same way as other properties
                 continue;
             }
             String deployValue = deployProperties.get(property);
             String foundValue = foundProperties.get(property);
-            if (!foundProperties.isSet(property) || !Objects.equals(deployValue, foundValue)) {
-                foundProperties.set(property, deployValue);
+            if (!Objects.equals(deployValue, foundValue)) {
+                if (deployProperties.isSet(property)) {
+                    foundProperties.set(property, deployValue);
+                } else {
+                    foundProperties.unset(property);
+                }
                 LOGGER.info("Redeploy required as property changed: {}", property);
                 LOGGER.info("Required value: {}", deployValue);
                 LOGGER.info("Found value: {}", foundValue);
