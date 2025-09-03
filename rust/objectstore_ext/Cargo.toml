@@ -30,6 +30,7 @@ aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] 
 async-trait = { workspace = true }
 bytes = { workspace = true }
 chrono = { workspace = true }
+tracing-subscriber = { workspace = true }
 color-eyre = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
@@ -37,7 +38,6 @@ num-format = { workspace = true }
 object_store = { workspace = true, features = [ "aws" ] }
 thiserror = { workspace = true }
 url = { workspace = true }
-tracing-subscriber = { workspace = true }
 
 [dev-dependencies]
 object_store = { workspace = true, features = ["integration"] }
