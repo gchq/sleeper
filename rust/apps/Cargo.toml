@@ -29,6 +29,7 @@ publish = { workspace = true }
 arrow = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
+tracing-subscriber = { workspace = true }
 color-eyre = { workspace = true }
 sleeper_core = { path = "../sleeper_core" }
 env_logger = { workspace = true }

@@ -33,6 +33,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 aws-types = { workspace = true }
 chrono = { workspace = true }
+tracing-subscriber = { workspace = true }
 color-eyre = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
