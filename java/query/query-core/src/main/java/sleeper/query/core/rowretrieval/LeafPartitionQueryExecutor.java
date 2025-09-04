@@ -150,10 +150,9 @@ public class LeafPartitionQueryExecutor {
             ObjectFactory objectFactory,
             IteratorConfig iteratorConfig) throws IteratorCreationException {
         if (iteratorConfig.shouldIteratorBeApplied()) {
-            return null;
-        } else {
             return new IteratorFactory(objectFactory)
                     .getIterator(iteratorConfig, schema);
         }
+        return null;
     }
 }
