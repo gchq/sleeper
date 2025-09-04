@@ -113,6 +113,47 @@ public class IteratorFactoryTest {
     }
 
     @Test
+    public void shouldUseAggregationsDataOverClassNameWhenBothSet() throws IteratorCreationException {
+        //When
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()),
+                        new Field("otherValue", new LongType()))
+                .build();
+        SortedRowIterator iterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                        .iteratorConfigString(";ageoff=value,1000,")
+                        .aggregationString("sum(value),sum(otherValue)")
+                        .build(), schema);
+
+        //Then
+        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value", "otherValue");
+    }
+
+    @Test
+    public void shouldUseClassNameWhenNeitherFiltersOrAggregationsSet() throws IteratorCreationException {
+        //When
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()),
+                        new Field("otherValue", new LongType()))
+                .build();
+        SortedRowIterator iterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                        .iteratorConfigString(";ageoff=value,1000,")
+                        .filters(null)
+                        .aggregationString(null)
+                        .build(), schema);
+
+        //Then
+        assertThat(iterator.getRequiredValueFields()).containsExactly("key");
+    }
+
+    @Test
     public void shouldThrowExceptionWhenUnknownFilterApplied() throws IteratorCreationException {
         // Given
         Schema schema = Schema.builder()
