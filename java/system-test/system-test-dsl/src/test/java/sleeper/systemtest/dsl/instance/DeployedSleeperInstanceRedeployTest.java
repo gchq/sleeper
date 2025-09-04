@@ -118,7 +118,9 @@ public class DeployedSleeperInstanceRedeployTest {
     }
 
     private InstanceProperties fakeDeploy() {
+        // Replicate system test behaviour
         InstanceProperties properties = buildDeployConfig().getInstanceProperties();
+        // Replicate behaviour in DeployNewInstance
         return PopulateInstanceProperties.builder()
                 .accountSupplier(() -> "test-account")
                 .regionIdSupplier(() -> "test-region")
