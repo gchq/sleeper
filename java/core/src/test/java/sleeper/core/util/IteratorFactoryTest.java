@@ -104,7 +104,7 @@ public class IteratorFactoryTest {
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
                         .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
-                        .iteratorConfigString(";ageoff=value,1000,")
+                        .iteratorConfigString("someFakeConfig") //Would throw illegal argument exception if used
                         .filters("ageOff(otherValue,1000)")
                         .build(), schema);
 
@@ -124,7 +124,7 @@ public class IteratorFactoryTest {
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
                         .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
-                        .iteratorConfigString(";ageoff=value,1000,")
+                        .iteratorConfigString("someFakeConfig") //Would throw illegal argument exception if used
                         .aggregationString("sum(value),sum(otherValue)")
                         .build(), schema);
 
@@ -144,13 +144,13 @@ public class IteratorFactoryTest {
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
                         .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
-                        .iteratorConfigString(";ageoff=value,1000,")
+                        .iteratorConfigString("value;ageOff=value,1000")
                         .filters(null)
                         .aggregationString(null)
                         .build(), schema);
 
         //Then
-        assertThat(iterator.getRequiredValueFields()).containsExactly("key");
+        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
     }
 
     @Test
