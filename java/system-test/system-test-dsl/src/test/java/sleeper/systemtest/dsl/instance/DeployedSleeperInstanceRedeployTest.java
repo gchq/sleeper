@@ -117,6 +117,7 @@ public class DeployedSleeperInstanceRedeployTest {
     }
 
     private InstanceProperties fakeDeploy() {
+        InstanceProperties properties = buildDeployConfig().getInstanceProperties();
         return PopulateInstanceProperties.builder()
                 .accountSupplier(() -> "test-account")
                 .regionIdSupplier(() -> "test-region")
@@ -124,7 +125,7 @@ public class DeployedSleeperInstanceRedeployTest {
                 .vpcId("test-vpc")
                 .subnetIds("test-subnet")
                 .build()
-                .populate(buildDeployConfig().getInstanceProperties());
+                .populate(properties);
     }
 
     private DeployInstanceConfiguration buildDeployConfig() {
