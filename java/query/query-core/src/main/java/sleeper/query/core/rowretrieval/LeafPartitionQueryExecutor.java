@@ -82,9 +82,18 @@ public class LeafPartitionQueryExecutor {
         SortedRowIterator queryIterator;
 
         try {
-            compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig, compactionFilters, compactionAggregationString);
-            queryIterator = createIterator(tableSchema, objectFactory, leafPartitionQuery.getQueryTimeIteratorClassName(), leafPartitionQuery.getQueryTimeIteratorConfig(),
-                    leafPartitionQuery.getQueryTimeFilters(), leafPartitionQuery.getQueryTimeAggregations());
+            compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
+                    .iteratorClassName(compactionIteratorClassName)
+                    .iteratorConfigString(compactionIteratorConfig)
+                    .filters(compactionFilters)
+                    .aggregationString(compactionAggregationString)
+                    .build());
+            queryIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
+                    .iteratorClassName(leafPartitionQuery.getQueryTimeIteratorClassName())
+                    .iteratorConfigString(leafPartitionQuery.getQueryTimeIteratorConfig())
+                    .filters(leafPartitionQuery.getQueryTimeFilters())
+                    .aggregationString(leafPartitionQuery.getQueryTimeAggregations())
+                    .build());
         } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);
         }
@@ -139,20 +148,12 @@ public class LeafPartitionQueryExecutor {
     private SortedRowIterator createIterator(
             Schema schema,
             ObjectFactory objectFactory,
-            String iteratorClassName,
-            String iteratorConfig,
-            String filtersConfig,
-            String aggregationString) throws IteratorCreationException {
-        if (iteratorClassName == null && filtersConfig == null && aggregationString == null) {
+            IteratorConfig iteratorConfig) throws IteratorCreationException {
+        if (iteratorConfig.shouldIteratorBeApplied()) {
             return null;
         } else {
             return new IteratorFactory(objectFactory)
-                    .getIterator(IteratorConfig.builder()
-                            .iteratorClassName(iteratorClassName)
-                            .iteratorConfigString(iteratorConfig)
-                            .filters(filtersConfig)
-                            .aggregationString(aggregationString)
-                            .build(), schema);
+                    .getIterator(iteratorConfig, schema);
         }
     }
 }
