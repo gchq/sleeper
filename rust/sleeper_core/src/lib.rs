@@ -320,13 +320,9 @@ pub struct CompactionResult {
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
-/// # use crate::sleeper_core::{run_compaction, CommonConfig, PartitionBound, ColRange,
-/// # CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion};
-/// let mut compaction_input = CommonConfig::default();
-/// compaction_input.input_files_sorted = true;
-/// compaction_input.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
-/// compaction_input.output = CompletionOptions::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
-/// compaction_input.row_key_cols = vec!["key".into()];
+/// # use crate::sleeper_core::{run_compaction, CommonConfig, CommonConfigBuilder, PartitionBound, ColRange,
+/// # OutputType, SleeperParquetOptions, SleeperPartitionRegion};
+/// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
 ///     lower : PartitionBound::String("a"),
@@ -334,11 +330,18 @@ pub struct CompactionResult {
 ///     upper: PartitionBound::String("h"),
 ///     upper_inclusive: true,
 /// });
-/// compaction_input.region = SleeperPartitionRegion::new(region);
-///
+/// let mut compaction_input = CommonConfigBuilder::new()
+///     .input_files_sorted(true)
+///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
+///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
+///     .row_key_cols(vec!["key".into()])
+///     .region(SleeperPartitionRegion::new(region))
+///     .build()?;
 /// # tokio_test::block_on(async {
 /// let result = run_compaction(&compaction_input).await;
-/// # })
+/// # });
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// # Errors
@@ -361,14 +364,10 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
-/// # use crate::sleeper_core::{run_query, CommonConfig, PartitionBound, ColRange,
-/// # CompletionOptions, SleeperParquetOptions, SleeperPartitionRegion};
+/// # use crate::sleeper_core::{run_query, CommonConfigBuilder, PartitionBound, ColRange,
+/// # OutputType, SleeperParquetOptions, SleeperPartitionRegion};
 /// # use sleeper_core::LeafPartitionQueryConfig;
-/// let mut common = CommonConfig::default();
-/// common.input_files_sorted = true;
-/// common.input_files = vec![Url::parse("file:///path/to/file1.parquet").unwrap()];
-/// common.output = CompletionOptions::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() };
-/// common.row_key_cols = vec!["key".into()];
+/// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
 ///     lower : PartitionBound::String("a"),
@@ -376,8 +375,13 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 ///     upper: PartitionBound::String("h"),
 ///     upper_inclusive: true,
 /// });
-/// common.region = SleeperPartitionRegion::new(region);
-///
+/// let mut common = CommonConfigBuilder::new()
+///     .input_files_sorted(true)
+///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
+///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
+///     .row_key_cols(vec!["key".into()])
+///     .region(SleeperPartitionRegion::new(region))
+///     .build()?;
 /// let mut leaf_config = LeafPartitionQueryConfig::default();
 /// leaf_config.common = common;
 /// let mut query_region : HashMap<String, ColRange<'_>> = HashMap::new();
@@ -391,7 +395,9 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 ///
 /// # tokio_test::block_on(async {
 /// let result = run_query(&leaf_config).await;
-/// # })
+/// # });
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// # Errors
@@ -548,9 +554,13 @@ mod tests {
         let input_files: Vec<Url> = vec![];
         let row_key_cols = vec!["key".to_string()];
         let region = SleeperPartitionRegion::default();
+        let builder = CommonConfigBuilder::new()
+            .input_files(input_files)
+            .row_key_cols(row_key_cols)
+            .region(region);
 
         // When
-        let result = validate(&input_files, &row_key_cols, &region);
+        let result = builder.validate();
 
         // Then
         assert!(result.is_err());
@@ -573,7 +583,13 @@ mod tests {
         )]));
 
         // When
-        let result = validate(&input_files, &row_key_cols, &region);
+        let builder = CommonConfigBuilder::new()
+            .input_files(input_files)
+            .row_key_cols(row_key_cols)
+            .region(region);
+
+        // When
+        let result = builder.validate();
 
         // Then
         assert!(result.is_err());
@@ -601,8 +617,13 @@ mod tests {
             },
         )]));
 
+        let builder = CommonConfigBuilder::new()
+            .input_files(input_files)
+            .row_key_cols(row_key_cols)
+            .region(region);
+
         // When
-        let result = validate(&input_files, &row_key_cols, &region);
+        let result = builder.validate();
 
         // Then
         assert!(result.is_ok());

@@ -16,8 +16,8 @@
 
 use color_eyre::eyre::{Error, bail};
 use sleeper_core::{
-    CommonConfig, CompletedOutput, LeafPartitionQueryConfig, OutputType, SleeperParquetOptions,
-    SleeperPartitionRegion, run_query,
+    CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,
+    SleeperParquetOptions, SleeperPartitionRegion, run_query,
 };
 use tempfile::tempdir;
 use test_util::*;
