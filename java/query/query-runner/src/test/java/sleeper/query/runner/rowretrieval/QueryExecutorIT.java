@@ -16,8 +16,12 @@
 package sleeper.query.runner.rowretrieval;
 
 import com.google.common.collect.Lists;
+import org.apache.hadoop.conf.Configuration;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
@@ -37,8 +41,13 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.example.iterator.SecurityFilteringIterator;
+import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
@@ -46,14 +55,22 @@ import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
@@ -61,7 +78,22 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class QueryExecutorIT extends QueryExecutorITBase {
+public class QueryExecutorIT {
+    private static ExecutorService executorService;
+
+    @TempDir
+    public Path folder;
+
+    @BeforeAll
+    public static void initExecutorService() {
+        executorService = Executors.newFixedThreadPool(10);
+    }
+
+    @AfterAll
+    public static void shutdownExecutorService() {
+        executorService.shutdown();
+    }
+
     @Test
     public void shouldReturnNothingWhenThereAreNoFiles() throws Exception {
         // Given
@@ -1263,5 +1295,61 @@ public class QueryExecutorIT extends QueryExecutorITBase {
         row.put("value1", value1);
         row.put("value2", value2);
         return row;
+    }
+
+    private StateStore initialiseStateStore(TableProperties tableProperties, List<Partition> partitions) {
+        return InMemoryTransactionLogStateStore.createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
+    }
+
+    private QueryExecutor queryExecutor(TableProperties tableProperties, StateStore stateStore) {
+        return new QueryExecutor(ObjectFactory.noUserJars(),
+                tableProperties, stateStore,
+                new QueryEngineSelector(executorService, new Configuration()).getRowRetriever(tableProperties));
+    }
+
+    private Query queryWithRegion(Region region) {
+        return Query.builder()
+                .tableName("myTable")
+                .queryId("id")
+                .regions(List.of(region))
+                .build();
+    }
+
+    private Schema getLongKeySchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
+    }
+
+    private void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
+            TableProperties tableProperties, Iterator<Row> rowIterator) throws IOException, IteratorCreationException {
+        tableProperties.set(COMPRESSION_CODEC, "snappy");
+        IngestFactory factory = IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(createTempDirectory(folder, null).toString())
+                .instanceProperties(instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .hadoopConfiguration(new Configuration())
+                .build();
+        factory.ingestFromRowIterator(tableProperties, rowIterator);
+    }
+
+    private List<Row> getRows() {
+        List<Row> rows = new ArrayList<>();
+        Row row = new Row();
+        row.put("key", 1L);
+        row.put("value1", 10L);
+        row.put("value2", 100L);
+        rows.add(row);
+        return rows;
+    }
+
+    private InstanceProperties createInstanceProperties() throws IOException {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
+        return instanceProperties;
     }
 }

@@ -31,6 +31,7 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
@@ -58,6 +59,7 @@ import java.util.stream.StreamSupport;
 import static java.util.Spliterator.IMMUTABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
 import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
@@ -228,7 +230,7 @@ public class QueryExecutorTest {
         }
 
         @Test
-        void shouldApplyAgeOffIterator() throws Exception {
+        void shouldApplyAgeOffIteratorFromTableProperty() throws Exception {
             // Given
             tableProperties.set(FILTERS_CONFIG, "ageOff(value,1000)");
 
@@ -238,6 +240,70 @@ public class QueryExecutorTest {
             // Then
             assertThat(rows).containsExactly(
                     new Row(Map.of("key", "B", "value", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldApplyAgeOffIteratorFromQueryProperty() throws Exception {
+            // Given
+            Query query = queryAllRowsBuilder()
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .queryTimeFilters("ageOff(value,1000)").build())
+                    .build();
+
+            // When
+            List<Row> rows = getRows(query);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", "B", "value", 9999999999999999L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply aggregation iterators")
+    class ApplyAggregationIterators {
+
+        private final Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(schema);
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of("key", "A", "value", 2)),
+                    new Row(Map.of("key", "A", "value", 4))));
+        }
+
+        @Test
+        void shouldApplyAggregationFromTableProperty() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATIONS, "sum(value)");
+
+            // When
+            List<Row> rows = getRows(queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", "A", "value", 6)));
+        }
+
+        @Test
+        void shouldApplyAggregationFromQueryProperty() throws Exception {
+            // Given
+            Query query = queryAllRowsBuilder()
+                    .processingConfig(QueryProcessingConfig.builder()
+                            .queryTimeAggregations("sum(value)").build())
+                    .build();
+
+            // When
+            List<Row> rows = getRows(query);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", "A", "value", 6)));
         }
     }
 
