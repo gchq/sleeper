@@ -133,7 +133,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of
         the build module. -->
         <logback.version>1.5.18</logback.version>
-        <aws-java-sdk-v2.version>2.32.31</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.33.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -170,7 +170,7 @@
         <httpclient5.version>5.5</httpclient5.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>3.30.5</jline.version>
-        <jetbrains-annotations.version>26.0.2</jetbrains-annotations.version>
+        <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
         <paranamer.version>2.8.3</paranamer.version>
         <zstd-jni.version>1.5.7-4</zstd-jni.version>
         <airlift.units.version>1.10</airlift.units.version>
@@ -191,7 +191,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.8-jre</guava.version>
         <google.errorprone.version>2.41.0</google.errorprone.version>
-        <cdk.version>2.213.0</cdk.version>
+        <cdk.version>2.214.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <jsii.version>1.113.0</jsii.version>
@@ -199,7 +199,7 @@
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <aspectj.version>1.9.24</aspectj.version>
-        <pty4j.version>0.13.10-1</pty4j.version>
+        <pty4j.version>0.13.11</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.81</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>
@@ -241,7 +241,7 @@
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.3</xmlunit.version>
         <jsonunit.version>4.1.1</jsonunit.version>
-        <checkstyle.version>11.0.0</checkstyle.version>
+        <checkstyle.version>11.0.1</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
         <sleeper.system.test.subnet.ids />

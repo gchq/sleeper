@@ -150,7 +150,8 @@ pub async fn read_batches_of_int_fields<const N: usize>(
         check_non_null_field(field_name, &DataType::Int32, schema.as_ref())?;
     }
     let mut data: Vec<[i32; N]> = Vec::new();
-    while let Some(Ok(batch)) = stream.next().await {
+    while let Some(batch) = stream.next().await {
+        let batch = batch?;
         let arrays: Vec<&Int32Array> = get_int_arrays(&batch, field_names)?;
         data.extend((0..batch.num_rows()).map(|row_number| read_row(row_number, &arrays)));
     }
@@ -225,17 +226,4 @@ pub fn int_range<'r>(min: i32, max: i32) -> ColRange<'r> {
         upper: PartitionBound::Int32(max),
         upper_inclusive: false,
     }
-}
-
-#[macro_export]
-macro_rules! assert_error {
-    ($err_expr: expr, $err_type: path, $err_contents: expr) => {
-        let result = if let Err($err_type(err)) = $err_expr {
-            assert_eq!(err, $err_contents);
-            true
-        } else {
-            false
-        };
-        assert!(result, "Expected different error type");
-    };
 }

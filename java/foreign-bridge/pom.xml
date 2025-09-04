@@ -50,6 +50,8 @@
             <artifactId>spotbugs-annotations</artifactId>
             <version>${spotbugs.version}</version>
         </dependency>
+        <!-- Test dependencies -->
+
     </dependencies>
     <build>
         <plugins>
