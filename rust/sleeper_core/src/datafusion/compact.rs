@@ -18,7 +18,7 @@
 use crate::{
     CommonConfig, CompactionResult,
     datafusion::{
-        CompletionOptions, SleeperOperations,
+        OutputType, SleeperOperations,
         metrics::RowCounts,
         output::{CompletedOutput, Completer},
         sketch::{Sketcher, output_sketch},
@@ -47,7 +47,7 @@ pub async fn compact(
     info!("DataFusion compaction: {ops}");
 
     // Retrieve Parquet output options
-    let CompletionOptions::File {
+    let OutputType::File {
         output_file,
         opts: _,
     } = &config.output

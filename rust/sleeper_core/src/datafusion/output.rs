@@ -38,7 +38,7 @@ use url::Url;
 
 /// Defines how operation output should be given.
 #[derive(Debug, Default)]
-pub enum CompletionOptions {
+pub enum OutputType {
     /// `DataFusion` results will be returned as a stream of Arrow [`RecordBatch`]es.
     #[default]
     ArrowRecordBatch,
@@ -51,7 +51,7 @@ pub enum CompletionOptions {
     },
 }
 
-impl CompletionOptions {
+impl OutputType {
     /// Create a [`Completer`] for this type of output.
     #[must_use]
     pub fn finisher<'a>(&self, ops: &'a SleeperOperations<'a>) -> Box<dyn Completer + 'a> {
@@ -126,14 +126,14 @@ impl<'a> FileOutputCompleter<'a> {
 impl Completer for FileOutputCompleter<'_> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         match &self.ops.config.output {
-            CompletionOptions::File {
+            OutputType::File {
                 output_file: _,
                 opts: parquet_options,
             } => {
                 let configurer = ParquetWriterConfigurer { parquet_options };
                 self.ops.plan_with_parquet_output(frame, &configurer)
             }
-            CompletionOptions::ArrowRecordBatch => {
+            OutputType::ArrowRecordBatch => {
                 plan_err!("Can't use FileOutputCompleter with CompletionOptions::ArrowRecordBatch")
             }
         }
@@ -166,13 +166,13 @@ impl<'a> ArrowOutputCompleter<'a> {
 impl Completer for ArrowOutputCompleter<'_> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         match &self.ops.config.output {
-            CompletionOptions::File {
+            OutputType::File {
                 output_file: _,
                 opts: _,
             } => {
                 plan_err!("Can't use ArrowOutputCompleter with CompletionOptions::File")
             }
-            CompletionOptions::ArrowRecordBatch => Ok(frame),
+            OutputType::ArrowRecordBatch => Ok(frame),
         }
     }
 
