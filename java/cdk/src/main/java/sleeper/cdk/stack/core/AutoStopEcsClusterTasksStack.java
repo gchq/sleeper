@@ -45,7 +45,7 @@ import java.util.Objects;
 public class AutoStopEcsClusterTasksStack extends NestedStack {
 
     private IFunction lambda;
-    private Provider propertiesWriterProvider;
+    private Provider provider;
     private String id;
 
     public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
@@ -79,7 +79,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         role.addToPrincipalPolicy(policyStatement);
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
-        propertiesWriterProvider = Provider.Builder.create(scope, id + "Provider")
+        provider = Provider.Builder.create(this, id + "Provider")
                 .onEventHandler(lambda)
                 .logGroup(logging.getLogGroup(LogGroupRef.ECS_CLUSTER_TASKS_AUTOSTOP_PROVIDER))
                 .build();
@@ -94,7 +94,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         CustomResource customResource = CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::AutoStopEcsClusterTasks")
                 .properties(Map.of("cluster", clusterName))
-                .serviceToken(propertiesWriterProvider.getServiceToken())
+                .serviceToken(provider.getServiceToken())
                 .build();
 
         customResource.getNode().addDependency(cluster);

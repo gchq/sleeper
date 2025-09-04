@@ -93,8 +93,6 @@ public class LoggingStack extends NestedStack {
         ECS_CLUSTER_TASKS_AUTOSTOP("ecs-cluster-tasks-autostop"),
         ECS_CLUSTER_TASKS_AUTOSTOP_PROVIDER("ecs-cluster-tasks-autostop-provider"),
         INGEST_TASKS("IngestTasks"),
-        INGEST_TASKS_AUTOSTOP("ingest-tasks-autostop"),
-        INGEST_TASKS_AUTOSTOP_PROVIDER("ingest-tasks-autostop-provider"),
         INGEST_CREATE_TASKS("ingest-create-tasks"),
         INGEST_BATCHER_SUBMIT_FILES("ingest-batcher-submit-files"),
         INGEST_BATCHER_CREATE_JOBS("ingest-batcher-create-jobs"),
