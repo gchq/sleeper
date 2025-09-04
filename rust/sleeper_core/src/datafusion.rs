@@ -59,7 +59,7 @@ mod util;
 pub use compact::compact;
 pub use config::ParquetWriterConfigurer;
 pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};
-pub use output::CompletionOptions;
+pub use output::OutputType;
 pub use region::SleeperPartitionRegion;
 
 /// Drives common operations in processing of `DataFusion` for Sleeper.
@@ -94,7 +94,7 @@ impl<'a> SleeperOperations<'a> {
         // together in wrong order.
         cfg.options_mut().optimizer.repartition_aggregations = false;
         // Set upload size if outputting to a file
-        if let CompletionOptions::File {
+        if let OutputType::File {
             output_file: _,
             opts: parquet_options,
         } = &self.config.output
@@ -124,8 +124,8 @@ impl<'a> SleeperOperations<'a> {
             store_factory,
             &self.config.input_files,
             match &self.config.output {
-                CompletionOptions::ArrowRecordBatch => None,
-                CompletionOptions::File {
+                OutputType::ArrowRecordBatch => None,
+                OutputType::File {
                     output_file,
                     opts: _,
                 } => Some(output_file),
@@ -274,7 +274,7 @@ impl<'a> SleeperOperations<'a> {
         frame: DataFrame,
         configurer: &ParquetWriterConfigurer<'_>,
     ) -> Result<DataFrame, DataFusionError> {
-        let CompletionOptions::File {
+        let OutputType::File {
             output_file,
             opts: _,
         } = &self.config.output

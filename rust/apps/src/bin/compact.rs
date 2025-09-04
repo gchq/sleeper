@@ -21,7 +21,7 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
-    ColRange, CommonConfig, CompletionOptions, PartitionBound, SleeperParquetOptions,
+    ColRange, CommonConfigBuilder, OutputType, PartitionBound, SleeperParquetOptions,
     SleeperPartitionRegion, run_compaction,
 };
 use std::{collections::HashMap, io::Write};
@@ -140,19 +140,19 @@ async fn main() -> color_eyre::Result<()> {
         dict_enc_values: true,
     };
 
-    let details = CommonConfig::try_new(
-        None,
-        input_urls,
-        true,
-        args.row_keys,
-        args.sort_keys,
-        SleeperPartitionRegion::new(map),
-        CompletionOptions::File {
+    let details = CommonConfigBuilder::new()
+        .aws_config(None)
+        .input_files(input_urls)
+        .input_files_sorted(true)
+        .row_key_cols(args.row_keys)
+        .sort_key_cols(args.sort_keys)
+        .region(SleeperPartitionRegion::new(map))
+        .output(OutputType::File {
             output_file,
             opts: parquet_options,
-        },
-        args.iterator_config,
-    )?;
+        })
+        .iterator_config(args.iterator_config)
+        .build()?;
 
     let result = run_compaction(&details).await?;
     info!(
