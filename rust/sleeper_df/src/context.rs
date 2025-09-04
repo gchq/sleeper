@@ -137,7 +137,7 @@ pub unsafe extern "C" fn destroy_context(ctx: *mut FFIContext) {
 
 #[cfg(test)]
 mod tests {
-    use crate::context::{create_context, destroy_context};
+    use crate::context::create_context;
 
     #[test]
     pub fn should_return_non_null() {
