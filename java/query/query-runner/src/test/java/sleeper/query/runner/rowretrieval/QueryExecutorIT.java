@@ -1201,11 +1201,59 @@ public class QueryExecutorIT {
         }
     }
 
+    private StateStore initialiseStateStore(TableProperties tableProperties, List<Partition> partitions) {
+        return InMemoryTransactionLogStateStore.createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
+    }
+
+    private QueryExecutor queryExecutor(TableProperties tableProperties, StateStore stateStore) {
+        return new QueryExecutor(ObjectFactory.noUserJars(),
+                tableProperties, stateStore,
+                new QueryEngineSelector(executorService, new Configuration()).getRowRetriever(tableProperties));
+    }
+
+    private Query queryWithRegion(Region region) {
+        return Query.builder()
+                .tableName("myTable")
+                .queryId("id")
+                .regions(List.of(region))
+                .build();
+    }
+
+    private Schema getLongKeySchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
+    }
+
     protected Schema getSecurityLabelSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(new Field("value", new LongType()), new Field("securityLabel", new StringType()))
                 .build();
+    }
+
+    private void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
+            TableProperties tableProperties, Iterator<Row> rowIterator) throws IOException, IteratorCreationException {
+        tableProperties.set(COMPRESSION_CODEC, "snappy");
+        IngestFactory factory = IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(createTempDirectory(folder, null).toString())
+                .instanceProperties(instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .hadoopConfiguration(new Configuration())
+                .build();
+        factory.ingestFromRowIterator(tableProperties, rowIterator);
+    }
+
+    private List<Row> getRows() {
+        List<Row> rows = new ArrayList<>();
+        Row row = new Row();
+        row.put("key", 1L);
+        row.put("value1", 10L);
+        row.put("value2", 100L);
+        rows.add(row);
+        return rows;
     }
 
     protected List<Row> getMultipleIdenticalRows() {
@@ -1295,54 +1343,6 @@ public class QueryExecutorIT {
         row.put("value1", value1);
         row.put("value2", value2);
         return row;
-    }
-
-    private StateStore initialiseStateStore(TableProperties tableProperties, List<Partition> partitions) {
-        return InMemoryTransactionLogStateStore.createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
-    }
-
-    private QueryExecutor queryExecutor(TableProperties tableProperties, StateStore stateStore) {
-        return new QueryExecutor(ObjectFactory.noUserJars(),
-                tableProperties, stateStore,
-                new QueryEngineSelector(executorService, new Configuration()).getRowRetriever(tableProperties));
-    }
-
-    private Query queryWithRegion(Region region) {
-        return Query.builder()
-                .tableName("myTable")
-                .queryId("id")
-                .regions(List.of(region))
-                .build();
-    }
-
-    private Schema getLongKeySchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build();
-    }
-
-    private void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
-            TableProperties tableProperties, Iterator<Row> rowIterator) throws IOException, IteratorCreationException {
-        tableProperties.set(COMPRESSION_CODEC, "snappy");
-        IngestFactory factory = IngestFactory.builder()
-                .objectFactory(ObjectFactory.noUserJars())
-                .localDir(createTempDirectory(folder, null).toString())
-                .instanceProperties(instanceProperties)
-                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
-                .hadoopConfiguration(new Configuration())
-                .build();
-        factory.ingestFromRowIterator(tableProperties, rowIterator);
-    }
-
-    private List<Row> getRows() {
-        List<Row> rows = new ArrayList<>();
-        Row row = new Row();
-        row.put("key", 1L);
-        row.put("value1", 10L);
-        row.put("value2", 100L);
-        rows.add(row);
-        return rows;
     }
 
     private InstanceProperties createInstanceProperties() throws IOException {
