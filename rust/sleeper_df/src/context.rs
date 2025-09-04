@@ -128,6 +128,22 @@ pub unsafe extern "C" fn destroy_context(ctx: *mut FFIContext) {
         // safely de-allocates it
         let _ = unsafe { Box::from_raw(ctx_ref) };
     } else {
-        panic!("Null pointer passed to destroy_context!");
+        // Can't panic! in an extern "C" function. Stack unwinding is not supported
+        // and is undefined behaviour across FFI boundary.
+        eprintln!("Null pointer passed to destroy_context!");
+        std::process::abort();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::context::{create_context, destroy_context};
+
+    #[test]
+    pub fn should_return_non_null() {
+        // Given
+        let ptr = create_context();
+
+        assert!(!ptr.is_null());
     }
 }
