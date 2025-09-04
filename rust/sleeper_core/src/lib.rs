@@ -33,7 +33,6 @@ use url::Url;
 
 mod datafusion;
 
-use crate::datafusion::LeafPartitionQuery;
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
     LeafPartitionQueryConfig, OutputType, SleeperPartitionRegion,

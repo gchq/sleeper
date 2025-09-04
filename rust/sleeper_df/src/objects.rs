@@ -20,8 +20,8 @@ use crate::unpack::{
 };
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
-    ColRange, CommonConfig, CompletionOptions, LeafPartitionQueryConfig, SleeperParquetOptions,
-    SleeperPartitionRegion,
+    ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
+    SleeperParquetOptions, SleeperPartitionRegion,
 };
 use std::{
     borrow::Borrow,
@@ -227,27 +227,31 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
             dict_enc_values: params.dict_enc_values,
         };
 
-        Self::try_new(
-            unpack_aws_config(params)?,
-            unpack_string_array(params.input_files, params.input_files_len)?
-                .into_iter()
-                .map(Url::parse)
-                .collect::<Result<Vec<_>, _>>()?,
-            params.input_files_sorted,
-            row_key_cols,
-            unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
-                .into_iter()
-                .map(String::from)
-                .collect(),
-            region,
-            CompletionOptions::File {
+        CommonConfigBuilder::new()
+            .aws_config(unpack_aws_config(params)?)
+            .input_files(
+                unpack_string_array(params.input_files, params.input_files_len)?
+                    .into_iter()
+                    .map(Url::parse)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )
+            .input_files_sorted(true)
+            .row_key_cols(row_key_cols)
+            .sort_key_cols(
+                unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
+                    .into_iter()
+                    .map(String::from)
+                    .collect(),
+            )
+            .region(region)
+            .output(OutputType::File {
                 output_file: unsafe { CStr::from_ptr(params.output_file) }
                     .to_str()
                     .map(Url::parse)??,
                 opts,
-            },
-            iterator_config,
-        )
+            })
+            .iterator_config(iterator_config)
+            .build()
     }
 }
 
