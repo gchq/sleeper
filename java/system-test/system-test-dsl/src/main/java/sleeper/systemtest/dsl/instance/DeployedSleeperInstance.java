@@ -121,7 +121,7 @@ public final class DeployedSleeperInstance {
         return redeployNeeded;
     }
 
-    public static boolean isRedeployDueToPropertyChange(DeployInstanceConfiguration deployConfig, InstanceProperties foundProperties) {
+    public static boolean isRedeployDueToPropertyChange(DeployInstanceConfiguration deployConfig, InstanceProperties existingProperties) {
         InstanceProperties deployProperties = deployConfig.getInstanceProperties();
         boolean redeployNeeded = false;
         for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.getAll()) {
@@ -135,12 +135,12 @@ public final class DeployedSleeperInstance {
                 continue;
             }
             String deployValue = deployProperties.get(property);
-            String foundValue = foundProperties.get(property);
+            String foundValue = existingProperties.get(property);
             if (!Objects.equals(deployValue, foundValue)) {
                 if (deployProperties.isSet(property)) {
-                    foundProperties.set(property, deployValue);
+                    existingProperties.set(property, deployValue);
                 } else {
-                    foundProperties.unset(property);
+                    existingProperties.unset(property);
                 }
                 LOGGER.info("Redeploy required as property changed: {}", property);
                 LOGGER.info("Required value: {}", deployValue);
