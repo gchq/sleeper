@@ -32,14 +32,13 @@ async fn should_return_subset_results_with_query_subset_of_partition() -> Result
     write_file_of_ints(&file_1, "key", vec![1, 3])?;
     write_file_of_ints(&file_2, "key", vec![2, 4])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1, file_2]),
-        input_files_sorted: true,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
-        output: OutputType::ArrowRecordBatch,
-        ..Default::default()
-    };
+    let input = CommonConfigBuilder::new()
+        .input_files(Vec::from([file_1, file_2]))
+        .input_files_sorted(true)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range("key", 0, 5)))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
@@ -74,14 +73,13 @@ async fn should_return_subset_results_with_query_subset_of_partition_unsorted_in
     write_file_of_ints(&file_1, "key", vec![7, 3, 5, 1])?;
     write_file_of_ints(&file_2, "key", vec![8, 6, 2, 4])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1, file_2]),
-        input_files_sorted: false,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 1, 7)),
-        output: OutputType::ArrowRecordBatch,
-        ..Default::default()
-    };
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(false)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range("key", 1, 7)))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
@@ -116,14 +114,13 @@ async fn should_return_subset_results_with_overlapping_query_and_partition_range
     write_file_of_ints(&file_1, "key", vec![1, 3, 5, 7, 9])?;
     write_file_of_ints(&file_2, "key", vec![2, 4, 6, 8, 10])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1, file_2]),
-        input_files_sorted: true,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 0, 6)),
-        output: OutputType::ArrowRecordBatch,
-        ..Default::default()
-    };
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range("key", 0, 6)))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
@@ -158,14 +155,13 @@ async fn should_return_zero_results_with_non_overlapping_query_and_partition_ran
     write_file_of_ints(&file_1, "key", vec![1, 3, 5, 7, 9])?;
     write_file_of_ints(&file_2, "key", vec![2, 4, 6, 8, 10])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1, file_2]),
-        input_files_sorted: true,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 0, 3)),
-        output: OutputType::ArrowRecordBatch,
-        ..Default::default()
-    };
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range("key", 0, 3)))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
@@ -199,14 +195,15 @@ async fn should_return_results_from_two_overlapping_query_ranges() -> Result<(),
     write_file_of_ints(&file_1, "key", vec![1, 3, 5, 7, 9])?;
     write_file_of_ints(&file_2, "key", vec![2, 4, 6, 8, 10])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1, file_2]),
-        input_files_sorted: true,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", -10, 11)),
-        output: OutputType::ArrowRecordBatch,
-        ..Default::default()
-    };
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range(
+            "key", -10, 11,
+        )))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
@@ -243,14 +240,15 @@ async fn should_return_results_from_two_non_overlapping_query_ranges() -> Result
     write_file_of_ints(&file_1, "key", vec![1, 3, 5, 7, 9])?;
     write_file_of_ints(&file_2, "key", vec![2, 4, 6, 8, 10])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1, file_2]),
-        input_files_sorted: true,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", -10, 11)),
-        output: OutputType::ArrowRecordBatch,
-        ..Default::default()
-    };
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range(
+            "key", -10, 11,
+        )))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
@@ -287,14 +285,13 @@ async fn should_error_with_no_query_ranges() -> Result<(), Error> {
     write_file_of_ints(&file_1, "key", vec![1, 3, 5, 7, 9])?;
     write_file_of_ints(&file_2, "key", vec![2, 4, 6, 8, 10])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1, file_2]),
-        input_files_sorted: true,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 0, 3)),
-        output: OutputType::ArrowRecordBatch,
-        ..Default::default()
-    };
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range("key", 0, 3)))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
@@ -323,14 +320,13 @@ async fn should_error_when_arrow_output_with_sketches() -> Result<(), Error> {
 
     write_file_of_ints(&file_1, "key", vec![1])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1]),
-        input_files_sorted: true,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 0, 3)),
-        output: OutputType::ArrowRecordBatch,
-        ..Default::default()
-    };
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1])
+        .input_files_sorted(true)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range("key", 0, 3)))
+        .output(OutputType::ArrowRecordBatch)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
@@ -363,17 +359,16 @@ async fn should_return_results_as_file_with_sketch() -> Result<(), Error> {
     write_file_of_ints(&file_1, "key", vec![1, 3, 5, 7, 9])?;
     write_file_of_ints(&file_2, "key", vec![2, 4, 6, 8, 10])?;
 
-    let input = CommonConfig {
-        input_files: Vec::from([file_1, file_2]),
-        input_files_sorted: true,
-        row_key_cols: row_key_cols(["key"]),
-        region: SleeperPartitionRegion::new(single_int_range("key", 0, 6)),
-        output: OutputType::File {
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(row_key_cols(["key"]))
+        .region(SleeperPartitionRegion::new(single_int_range("key", 0, 6)))
+        .output(OutputType::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
-        },
-        ..Default::default()
-    };
+        })
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common: input,
