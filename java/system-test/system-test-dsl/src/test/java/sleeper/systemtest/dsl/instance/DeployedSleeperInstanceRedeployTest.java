@@ -44,6 +44,7 @@ public class DeployedSleeperInstanceRedeployTest {
     @BeforeEach
     void setUp() {
         systemTestProperties.set(SYSTEM_TEST_BUCKET_NAME, "system-test-bucket");
+        // Note this step is delayed until here so that the system test bucket is applied as an ingest source
         existing = fakeDeploy();
     }
 
