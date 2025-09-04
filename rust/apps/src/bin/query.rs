@@ -21,7 +21,7 @@ use color_eyre::eyre::bail;
 use futures::StreamExt;
 use human_panic::setup_panic;
 use sleeper_core::{
-    ColRange, CommonConfig, CompletedOutput, CompletionOptions, LeafPartitionQueryConfig,
+    ColRange, CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,
     PartitionBound, SleeperPartitionRegion, run_query,
 };
 use std::{collections::HashMap, io::Write};
@@ -149,16 +149,16 @@ async fn main() -> color_eyre::Result<()> {
         );
     }
 
-    let common = CommonConfig::try_new(
-        None,
-        input_urls,
-        true,
-        args.row_keys,
-        args.sort_keys,
-        SleeperPartitionRegion::new(map),
-        CompletionOptions::ArrowRecordBatch,
-        args.iterator_config,
-    )?;
+    let common = CommonConfigBuilder::new()
+        .aws_config(None)
+        .input_files(input_urls)
+        .input_files_sorted(true)
+        .row_key_cols(args.row_keys)
+        .sort_key_cols(args.sort_keys)
+        .region(SleeperPartitionRegion::new(map))
+        .output(OutputType::ArrowRecordBatch)
+        .iterator_config(args.iterator_config)
+        .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common,

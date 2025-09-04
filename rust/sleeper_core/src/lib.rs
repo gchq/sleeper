@@ -35,7 +35,7 @@ mod datafusion;
 use crate::datafusion::LeafPartitionQuery;
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
-    CompletionOptions, LeafPartitionQueryConfig, SleeperPartitionRegion,
+    LeafPartitionQueryConfig, OutputType, SleeperPartitionRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
 };
 
@@ -94,21 +94,21 @@ impl Default for SleeperParquetOptions {
 #[derive(Debug)]
 pub struct CommonConfig<'a> {
     /// Aws credentials configuration
-    pub aws_config: Option<AwsConfig>,
+    aws_config: Option<AwsConfig>,
     /// Input file URLs
-    pub input_files: Vec<Url>,
+    input_files: Vec<Url>,
     /// Are input files individually sorted?
-    pub input_files_sorted: bool,
+    input_files_sorted: bool,
     /// Names of row-key columns
-    pub row_key_cols: Vec<String>,
+    row_key_cols: Vec<String>,
     /// Names of sort-key columns
-    pub sort_key_cols: Vec<String>,
+    sort_key_cols: Vec<String>,
     /// Ranges for each column to filter input files
-    pub region: SleeperPartitionRegion<'a>,
+    region: SleeperPartitionRegion<'a>,
     /// How output from operation should be returned
-    pub output: CompletionOptions,
+    output: OutputType,
     /// Iterator config. Filters, aggregators, etc.
-    pub iterator_config: Option<String>,
+    iterator_config: Option<String>,
 }
 
 impl Default for CommonConfig<'_> {
@@ -120,58 +120,21 @@ impl Default for CommonConfig<'_> {
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
             region: SleeperPartitionRegion::default(),
-            output: CompletionOptions::default(),
+            output: OutputType::default(),
             iterator_config: Option::default(),
         }
     }
 }
 
-impl<'a> CommonConfig<'a> {
-    /// Creates a new configuration object.
-    ///
-    /// # Errors
-    /// The configuration must validate. Input files mustn't be empty
-    /// and the number of row key columns must match the number of region
-    /// dimensions.
-    #[allow(clippy::too_many_arguments)]
-    pub fn try_new(
-        aws_config: Option<AwsConfig>,
-        input_files: Vec<Url>,
-        input_files_sorted: bool,
-        row_key_cols: Vec<String>,
-        sort_key_cols: Vec<String>,
-        region: SleeperPartitionRegion<'a>,
-        output: CompletionOptions,
-        iterator_config: Option<String>,
-    ) -> Result<Self> {
-        validate(&input_files, &row_key_cols, &region)?;
-        // Convert Java s3a schema to s3
-        let (input_files, output) = normalise_s3a_urls(input_files, output);
-        Ok(Self {
-            aws_config,
-            input_files,
-            input_files_sorted,
-            row_key_cols,
-            sort_key_cols,
-            region,
-            output,
-            iterator_config,
-        })
-    }
-}
-
 /// Change all input and output URLS from s3a to s3 scheme.
-fn normalise_s3a_urls(
-    mut input_files: Vec<Url>,
-    mut output: CompletionOptions,
-) -> (Vec<Url>, CompletionOptions) {
+fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec<Url>, OutputType) {
     for t in &mut input_files {
         if t.scheme() == "s3a" {
             let _ = t.set_scheme("s3");
         }
     }
 
-    if let CompletionOptions::File {
+    if let OutputType::File {
         output_file,
         opts: _,
     } = &mut output
@@ -180,29 +143,6 @@ fn normalise_s3a_urls(
         let _ = output_file.set_scheme("s3");
     }
     (input_files, output)
-}
-
-/// Performs validity checks on parameters.
-///
-/// # Errors
-/// There must be at least one input file.
-/// The length of `row_key_cols` must match the number of region dimensions.
-fn validate(
-    input_files: &[Url],
-    row_key_cols: &[String],
-    region: &SleeperPartitionRegion<'_>,
-) -> Result<()> {
-    if input_files.is_empty() {
-        bail!("No input paths supplied");
-    }
-    if row_key_cols.len() != region.len() {
-        bail!(
-            "Length mismatch between row keys {} and partition region bounds {}",
-            row_key_cols.len(),
-            region.len()
-        );
-    }
-    Ok(())
 }
 
 impl CommonConfig<'_> {
@@ -230,12 +170,123 @@ impl Display for CommonConfig<'_> {
             self.region
         )?;
         match &self.output {
-            CompletionOptions::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
-            CompletionOptions::File {
+            OutputType::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
+            OutputType::File {
                 output_file,
                 opts: _,
             } => write!(f, "output file {output_file:?}"),
         }
+    }
+}
+
+/// Builder for `CommonConfig`.
+#[derive(Default)]
+pub struct CommonConfigBuilder<'a> {
+    aws_config: Option<AwsConfig>,
+    input_files: Vec<Url>,
+    input_files_sorted: bool,
+    row_key_cols: Vec<String>,
+    sort_key_cols: Vec<String>,
+    region: SleeperPartitionRegion<'a>,
+    output: OutputType,
+    iterator_config: Option<String>,
+}
+
+impl<'a> CommonConfigBuilder<'a> {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[must_use]
+    pub fn aws_config(mut self, aws_config: Option<AwsConfig>) -> Self {
+        self.aws_config = aws_config;
+        self
+    }
+
+    #[must_use]
+    pub fn input_files(mut self, input_files: Vec<Url>) -> Self {
+        self.input_files = input_files;
+        self
+    }
+
+    #[must_use]
+    pub fn input_files_sorted(mut self, input_files_sorted: bool) -> Self {
+        self.input_files_sorted = input_files_sorted;
+        self
+    }
+
+    #[must_use]
+    pub fn row_key_cols(mut self, row_key_cols: Vec<String>) -> Self {
+        self.row_key_cols = row_key_cols;
+        self
+    }
+
+    #[must_use]
+    pub fn sort_key_cols(mut self, sort_key_cols: Vec<String>) -> Self {
+        self.sort_key_cols = sort_key_cols;
+        self
+    }
+
+    #[must_use]
+    pub fn region(mut self, region: SleeperPartitionRegion<'a>) -> Self {
+        self.region = region;
+        self
+    }
+
+    #[must_use]
+    pub fn output(mut self, output: OutputType) -> Self {
+        self.output = output;
+        self
+    }
+
+    #[must_use]
+    pub fn iterator_config(mut self, iterator_config: Option<String>) -> Self {
+        self.iterator_config = iterator_config;
+        self
+    }
+
+    /// Build the `CommonConfig`, consuming the builder and validating required fields.
+    ///
+    /// # Errors
+    /// The configuration must validate. Input files mustn't be empty
+    /// and the number of row key columns must match the number of region
+    /// dimensions.
+    pub fn build(self) -> Result<CommonConfig<'a>> {
+        self.validate()?;
+
+        // s3a normalization
+        let (input_files, output) = normalise_s3a_urls(self.input_files, self.output);
+
+        Ok(CommonConfig {
+            aws_config: self.aws_config,
+            input_files,
+            input_files_sorted: self.input_files_sorted,
+            row_key_cols: self.row_key_cols,
+            sort_key_cols: self.sort_key_cols,
+            region: self.region,
+            output,
+            iterator_config: self.iterator_config,
+        })
+    }
+
+    /// Performs validity checks on parameters.
+    ///
+    /// # Errors
+    /// There must be at least one input file.
+    /// The length of `row_key_cols` must match the number of region dimensions.
+    fn validate(&self) -> Result<()> {
+        if self.input_files.is_empty() {
+            bail!("No input paths supplied");
+        }
+        if self.row_key_cols.len() != self.region.len() {
+            bail!(
+                "Length mismatch between row keys {} and partition region bounds {}",
+                self.row_key_cols.len(),
+                self.region.len()
+            );
+        }
+        Ok(())
     }
 }
 
@@ -392,7 +443,7 @@ mod tests {
             Url::parse("s3a://bucket/key1").unwrap(),
             Url::parse("s3a://bucket/key2").unwrap(),
         ];
-        let output = CompletionOptions::File {
+        let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
             opts: SleeperParquetOptions::default(),
         };
@@ -404,7 +455,7 @@ mod tests {
         for url in new_files {
             assert_eq!(url.scheme(), "s3");
         }
-        if let CompletionOptions::File { output_file, .. } = new_output {
+        if let OutputType::File { output_file, .. } = new_output {
             assert_eq!(output_file.scheme(), "https"); // unchanged
         } else {
             panic!("Output option changed unexpectedly")
@@ -415,7 +466,7 @@ mod tests {
     fn test_no_change_for_non_s3a_urls() {
         // Given
         let input_files = vec![Url::parse("https://example.com/key").unwrap()];
-        let output = CompletionOptions::File {
+        let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
             opts: SleeperParquetOptions::default(),
         };
@@ -425,7 +476,7 @@ mod tests {
 
         // Then
         assert_eq!(new_files[0].scheme(), "https");
-        if let CompletionOptions::File { output_file, .. } = new_output {
+        if let OutputType::File { output_file, .. } = new_output {
             assert_eq!(output_file.scheme(), "https"); // unchanged
         } else {
             panic!("Output option changed unexpectedly")
@@ -436,7 +487,7 @@ mod tests {
     fn test_convert_output_scheme_when_s3a() {
         // Given
         let input_files = vec![Url::parse("https://example.com/key").unwrap()];
-        let output = CompletionOptions::File {
+        let output = OutputType::File {
             output_file: Url::parse("s3a://bucket/output").unwrap(),
             opts: SleeperParquetOptions::default(),
         };
@@ -445,7 +496,7 @@ mod tests {
         let (_, new_output) = normalise_s3a_urls(input_files, output);
 
         // Then
-        if let CompletionOptions::File { output_file, .. } = new_output {
+        if let OutputType::File { output_file, .. } = new_output {
             assert_eq!(output_file.scheme(), "s3");
         } else {
             panic!("Unexpected output option type")
@@ -456,7 +507,7 @@ mod tests {
     fn test_empty_input_files() {
         // Given
         let input_files: Vec<Url> = vec![];
-        let output = CompletionOptions::File {
+        let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
             opts: SleeperParquetOptions::default(),
         };
@@ -475,7 +526,7 @@ mod tests {
             Url::parse("s3a://bucket/key1").unwrap(),
             Url::parse("s3a://bucket/key2").unwrap(),
         ];
-        let output = CompletionOptions::ArrowRecordBatch;
+        let output = OutputType::ArrowRecordBatch;
 
         // When
         let (new_files, new_output) = normalise_s3a_urls(input_files.clone(), output);
@@ -486,8 +537,8 @@ mod tests {
         }
 
         match new_output {
-            CompletionOptions::ArrowRecordBatch => {}
-            CompletionOptions::File { .. } => panic!("Output should be ArrowRecordBatch"),
+            OutputType::ArrowRecordBatch => {}
+            OutputType::File { .. } => panic!("Output should be ArrowRecordBatch"),
         }
     }
 

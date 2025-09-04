@@ -16,8 +16,8 @@
 
 use color_eyre::eyre::{Error, bail};
 use sleeper_core::{
-    CommonConfig, CompletedOutput, CompletionOptions, LeafPartitionQueryConfig,
-    SleeperParquetOptions, SleeperPartitionRegion, run_query,
+    CommonConfig, CompletedOutput, LeafPartitionQueryConfig, OutputType, SleeperParquetOptions,
+    SleeperPartitionRegion, run_query,
 };
 use tempfile::tempdir;
 use test_util::*;
@@ -37,7 +37,7 @@ async fn should_return_subset_results_with_query_subset_of_partition() -> Result
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 5)),
-        output: CompletionOptions::ArrowRecordBatch,
+        output: OutputType::ArrowRecordBatch,
         ..Default::default()
     };
 
@@ -79,7 +79,7 @@ async fn should_return_subset_results_with_query_subset_of_partition_unsorted_in
         input_files_sorted: false,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 1, 7)),
-        output: CompletionOptions::ArrowRecordBatch,
+        output: OutputType::ArrowRecordBatch,
         ..Default::default()
     };
 
@@ -121,7 +121,7 @@ async fn should_return_subset_results_with_overlapping_query_and_partition_range
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 6)),
-        output: CompletionOptions::ArrowRecordBatch,
+        output: OutputType::ArrowRecordBatch,
         ..Default::default()
     };
 
@@ -163,7 +163,7 @@ async fn should_return_zero_results_with_non_overlapping_query_and_partition_ran
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 3)),
-        output: CompletionOptions::ArrowRecordBatch,
+        output: OutputType::ArrowRecordBatch,
         ..Default::default()
     };
 
@@ -204,7 +204,7 @@ async fn should_return_results_from_two_overlapping_query_ranges() -> Result<(),
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", -10, 11)),
-        output: CompletionOptions::ArrowRecordBatch,
+        output: OutputType::ArrowRecordBatch,
         ..Default::default()
     };
 
@@ -248,7 +248,7 @@ async fn should_return_results_from_two_non_overlapping_query_ranges() -> Result
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", -10, 11)),
-        output: CompletionOptions::ArrowRecordBatch,
+        output: OutputType::ArrowRecordBatch,
         ..Default::default()
     };
 
@@ -292,7 +292,7 @@ async fn should_error_with_no_query_ranges() -> Result<(), Error> {
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 3)),
-        output: CompletionOptions::ArrowRecordBatch,
+        output: OutputType::ArrowRecordBatch,
         ..Default::default()
     };
 
@@ -328,7 +328,7 @@ async fn should_error_when_arrow_output_with_sketches() -> Result<(), Error> {
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 3)),
-        output: CompletionOptions::ArrowRecordBatch,
+        output: OutputType::ArrowRecordBatch,
         ..Default::default()
     };
 
@@ -368,7 +368,7 @@ async fn should_return_results_as_file_with_sketch() -> Result<(), Error> {
         input_files_sorted: true,
         row_key_cols: row_key_cols(["key"]),
         region: SleeperPartitionRegion::new(single_int_range("key", 0, 6)),
-        output: CompletionOptions::File {
+        output: OutputType::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
         },
