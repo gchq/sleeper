@@ -15,15 +15,10 @@
  */
 package sleeper.cdk.stack.core;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
-import software.amazon.awscdk.services.ecs.ICluster;
-import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -37,19 +32,17 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-public class AutoStopEcsClusterTasksStack extends NestedStack {
+public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     private IFunction lambda;
     private Provider provider;
     private String id;
 
-    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
             ILogGroup logGroup, ILogGroup providerLogGroup) {
+
         super(scope, id);
 
         this.id = id;
@@ -59,46 +52,33 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");
+                Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
 
-        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, "AutoStopEcsClusterTasksLambda", builder -> builder
+        lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
-                .description("Lambda for auto-stopping ECS tasks")
+                .description("Lambda for auto-deleting S3 objects")
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
 
-        // Grant this function permission to list tasks and stop tasks
-        PolicyStatement policyStatement = PolicyStatement.Builder
-                .create()
-                .resources(List.of("*"))
-                .actions(List.of("ecs:ListTasks", "ecs:StopTask", "iam:PassRole"))
-                .build();
-        IRole role = Objects.requireNonNull(lambda.getRole());
-        role.addToPrincipalPolicy(policyStatement);
-        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
-
-        provider = Provider.Builder.create(this, id + "Provider")
+        provider = Provider.Builder.create(scope, id + "Provider")
                 .onEventHandler(lambda)
                 .logGroup(providerLogGroup)
                 .build();
-
-        Utils.addStackTagIfSet(this, instanceProperties);
-
     }
 
     public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
-            ICluster cluster, String clusterName) {
+            IBucket bucket, String bucketName) {
 
-        CustomResource customResource = CustomResource.Builder.create(scope, id)
-                .resourceType("Custom::AutoStopEcsClusterTasks")
-                .properties(Map.of("cluster", clusterName))
+        bucket.grantRead(lambda);
+        bucket.grantDelete(lambda);
+
+        CustomResource.Builder.create(scope, id)
+                .resourceType("Custom::AutoDeleteS3Objects")
+                .properties(Map.of("bucket", bucketName))
                 .serviceToken(provider.getServiceToken())
                 .build();
-
-        customResource.getNode().addDependency(cluster);
-
     }
 
 }

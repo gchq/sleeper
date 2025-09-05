@@ -43,10 +43,12 @@ import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
@@ -104,6 +106,7 @@ public class SleeperCdkApp extends Stack {
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
     private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
+    private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -165,7 +168,11 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Athena analytics
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+                    this, "AutoDeleteS3Objects", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE_PROVIDER));
+            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks, autoDeleteS3ObjectsStack);
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
@@ -284,7 +291,9 @@ public class SleeperCdkApp extends Stack {
         // Stack for ingest jobs
         if (optionalStacks.contains(OptionalStack.IngestStack)) {
             autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
-                    this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
+                    this, "AutoStopEcsClusterTask", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
+                    loggingStack.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
