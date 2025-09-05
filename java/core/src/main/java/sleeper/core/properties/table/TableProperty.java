@@ -172,7 +172,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Property to configure aggregation of columns from the table. Format accepted: " +
                     "op(column),op(column)")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .defaultValue("")
             .build();
     TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
             .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
