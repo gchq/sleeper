@@ -176,7 +176,12 @@ public class SleeperCdkApp extends Stack {
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, jars);
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+                    this, "AutoDeleteS3Objects", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE_PROVIDER));
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks,
+                    autoDeleteS3ObjectsStack, jars);
         }
         if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
