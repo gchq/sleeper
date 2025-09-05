@@ -27,8 +27,10 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 public class RegionTest {
 
@@ -40,6 +42,57 @@ public class RegionTest {
         return Schema.builder().rowKeyFields(
                 new Field("key1", type1),
                 new Field("key2", type2)).build();
+    }
+
+    @Test
+    public void getRangesOrderedShouldReturnCorrectOrder() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("first", new IntType()),
+                new Field("second", new IntType()),
+                new Field("third", new IntType())).build();
+        Schema reverseSchema = Schema.builder().rowKeyFields(
+                new Field("third", new IntType()),
+                new Field("second", new IntType()),
+                new Field("first", new IntType())).build();
+        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
+        Range range1 = rangeFactory.createRange("first", 1, true, 2, true);
+        Range range2 = rangeFactory.createRange("second", 1, true, 2, true);
+        Range range3 = rangeFactory.createRange("third", 1, true, 2, true);
+
+        Region inSchemaOrder = new Region(List.of(range1, range2, range3));
+        Region notSchemaOrder = new Region(List.of(range1, range3, range2));
+        List<Range> expectedOrder = List.of(range1, range2, range3);
+        List<Range> expectedReverseOrder = List.of(range3, range2, range1);
+
+        // When
+        List<Range> ranges1 = inSchemaOrder.getRangesOrdered(schema);
+        List<Range> ranges2 = notSchemaOrder.getRangesOrdered(schema);
+        List<Range> ranges3 = inSchemaOrder.getRangesOrdered(reverseSchema);
+        List<Range> ranges4 = notSchemaOrder.getRangesOrdered(reverseSchema);
+
+        // Then
+        assertThat(ranges1).containsExactlyElementsOf(expectedOrder);
+        assertThat(ranges2).containsExactlyElementsOf(expectedOrder);
+        assertThat(ranges3).containsExactlyElementsOf(expectedReverseOrder);
+        assertThat(ranges4).containsExactlyElementsOf(expectedReverseOrder);
+    }
+
+    @Test
+    public void getRangesOrderedShouldThrowException() {
+        // Given
+        Schema twoKeySchema = schemaWithTwoKeysOfTypes(new IntType(), new IntType());
+        Schema oneKeySchema = schemaWithSingleKeyOfType(new IntType());
+
+        Range.RangeFactory rangeFactory = new Range.RangeFactory(twoKeySchema);
+        Range range1 = rangeFactory.createRange("key1", 1, true, 2, true);
+        Range range2 = rangeFactory.createRange("key2", 1, true, 2, true);
+        Region region = new Region(List.of(range1, range2));
+
+        // Then
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> region.getRangesOrdered(oneKeySchema))
+                .withMessage("schema row key \"key\" does not exist in this Region");
     }
 
     @Test

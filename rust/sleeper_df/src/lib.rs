@@ -19,8 +19,8 @@ use color_eyre::eyre::{bail, eyre};
 use libc::{EFAULT, EINVAL, EIO, size_t};
 use log::{LevelFilter, error, warn};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperParquetOptions,
-    SleeperPartitionRegion, run_compaction,
+    AwsConfig, ColRange, CommonConfig, CommonConfigBuilder, OutputType, PartitionBound,
+    SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
 };
 use std::{
     borrow::Borrow,
@@ -153,27 +153,31 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CommonConfig<'a> {
             dict_enc_values: params.dict_enc_values,
         };
 
-        Ok(Self {
-            aws_config: unpack_aws_config(params)?,
-            input_files: unpack_string_array(params.input_files, params.input_files_len)?
-                .into_iter()
-                .map(Url::parse)
-                .collect::<Result<Vec<_>, _>>()?,
-            input_files_sorted: true,
-            row_key_cols,
-            sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
-                .into_iter()
-                .map(String::from)
-                .collect(),
-            region,
-            output: OperationOutput::File {
+        CommonConfigBuilder::new()
+            .aws_config(unpack_aws_config(params)?)
+            .input_files(
+                unpack_string_array(params.input_files, params.input_files_len)?
+                    .into_iter()
+                    .map(Url::parse)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )
+            .input_files_sorted(true)
+            .row_key_cols(row_key_cols)
+            .sort_key_cols(
+                unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
+                    .into_iter()
+                    .map(String::from)
+                    .collect(),
+            )
+            .region(region)
+            .output(OutputType::File {
                 output_file: unsafe { CStr::from_ptr(params.output_file) }
                     .to_str()
                     .map(Url::parse)??,
                 opts,
-            },
-            iterator_config,
-        })
+            })
+            .iterator_config(iterator_config)
+            .build()
     }
 }
 
@@ -317,7 +321,7 @@ pub extern "C" fn merge_sorted_files(
         }
     };
 
-    let mut details = match TryInto::<CommonConfig>::try_into(params) {
+    let details = match TryInto::<CommonConfig>::try_into(params) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {e}");
@@ -326,7 +330,6 @@ pub extern "C" fn merge_sorted_files(
     };
 
     // Run compaction
-    details.sanitise_java_s3_urls();
     let result = rt.block_on(run_compaction(&details));
     match result {
         Ok(res) => {

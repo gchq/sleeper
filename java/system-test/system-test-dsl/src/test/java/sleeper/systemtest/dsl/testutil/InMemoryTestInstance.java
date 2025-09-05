@@ -21,6 +21,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
+import java.util.function.Supplier;
+
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -52,8 +54,18 @@ public class InMemoryTestInstance {
     });
 
     private static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
+        return usingSystemTestDefaultsWithProperties(identifier,
+                () -> createDslInstanceProperties());
+    }
+
+    public static SystemTestInstanceConfiguration usingSystemTestDefaultsWithProperties(InstanceProperties instanceProperties) {
+        return usingSystemTestDefaultsWithProperties("test",
+                () -> InstanceProperties.copyOf(instanceProperties));
+    }
+
+    private static SystemTestInstanceConfiguration usingSystemTestDefaultsWithProperties(String identifier, Supplier<InstanceProperties> createInstanceProperties) {
         return usingSystemTestDefaults(identifier, () -> {
-            InstanceProperties instanceProperties = createDslInstanceProperties();
+            InstanceProperties instanceProperties = createInstanceProperties.get();
             return DeployInstanceConfiguration.builder()
                     .instanceProperties(instanceProperties)
                     .tableProperties(createDslTableProperties(instanceProperties))
@@ -61,7 +73,7 @@ public class InMemoryTestInstance {
         });
     }
 
-    private static InstanceProperties createDslInstanceProperties() {
+    public static InstanceProperties createDslInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         instanceProperties.set(FILE_SYSTEM, "file://");

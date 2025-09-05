@@ -106,9 +106,7 @@ public class WaitForJobsStatusTest {
         compactionTracker.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
         compactionTracker.jobCommitted(finishedJob.committedEventBuilder(Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").jobRunId("finished-run-2").build());
         // When
-        WaitForJobsStatus status = compactionStatus(
-                List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
-                Instant.parse("2023-09-18T14:50:01Z"));
+        WaitForJobsStatus status = allCompactionsStatus(Instant.parse("2023-09-18T14:50:01Z"));
 
         // Then
         assertThat(status).hasToString("{\n" +
@@ -297,11 +295,18 @@ public class WaitForJobsStatusTest {
     }
 
     private WaitForJobsStatus compactionStatus(Collection<String> jobIds, Instant now) {
-        return WaitForJobsStatus.forCompaction(compactionTracker, List.of(tableProperties), jobIds, now);
+        return WaitForJobs.JobTracker.forCompaction(List.of(tableProperties), compactionTracker)
+                .getStatus(jobIds, now);
+    }
+
+    private WaitForJobsStatus allCompactionsStatus(Instant now) {
+        return WaitForJobs.JobTracker.forCompaction(List.of(tableProperties), compactionTracker)
+                .getAllJobsStatus(now);
     }
 
     private WaitForJobsStatus ingestStatus(Collection<String> jobIds, Instant now) {
-        return WaitForJobsStatus.forIngest(ingestTracker, List.of(tableProperties), jobIds, now);
+        return WaitForJobs.JobTracker.forIngest(List.of(tableProperties), ingestTracker)
+                .getStatus(jobIds, now);
     }
 
     private CompactionJob compactionJob(String id, String... files) {

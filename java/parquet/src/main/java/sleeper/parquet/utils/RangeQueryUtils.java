@@ -86,7 +86,7 @@ public class RangeQueryUtils {
 
     private static FilterPredicate getFilterPredicateNoCanonicalise(Region region) {
         FilterPredicate fieldsFilter = null;
-        for (Range range : region.getRanges()) {
+        for (Range range : region.getRangesUnordered()) {
             FilterPredicate predicateForThisDimension = getFilterPredicate(range);
             if (null == fieldsFilter) {
                 fieldsFilter = predicateForThisDimension;

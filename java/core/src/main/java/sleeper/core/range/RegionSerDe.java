@@ -38,6 +38,7 @@ import sleeper.core.schema.type.Type;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,7 +134,7 @@ public class RegionSerDe {
         @Override
         public JsonElement serialize(Region region, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
-            List<Range> ranges = region.getRanges();
+            Collection<Range> ranges = region.getRangesUnordered();
             for (Range range : ranges) {
                 json.add(range.getFieldName(), convertRangeToJsonObject(range));
             }
