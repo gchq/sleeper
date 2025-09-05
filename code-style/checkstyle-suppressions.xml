@@ -13,80 +13,79 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<!DOCTYPE suppressions PUBLIC "-//Puppy Crawl//DTD Suppressions 1.1//EN" "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+<!DOCTYPE suppressions PUBLIC "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+        "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 
 <suppressions>
-    <suppress files="[\\/]src[\\/]test[\\/].*" id="finalParameters" />
-    <suppress files="[\\/]src[\\/]test[\\/].*" id="localFinalVariableName" />
-    <suppress files="[\\/]src[\\/]test[\\/].*" id="localVariableName" />
-    <suppress files="[\\/]src[\\/]test[\\/].*" id="equalsHashCode" />
-    <suppress files="[\\/]src[\\/]test[\\/].*" id="fileLength" />
-    <suppress files="[\\/]src[\\/]test[\\/].*" id="missingSwitchDefault" />
-    <suppress files="[\\/]src[\\/]test[\\/].*" id="methodLengthMax" />
-    <suppress files="[\\/]src[\\/]test[\\/].*" id="parameterNumber" />
-    <suppress files="[\\/]src[\\/]test[\\/].*TestBase.java$" id="missingJavadocMethod" />
-    <suppress files="[\\/]src[\\/]test[\\/].*Test.java$" id="missingJavadocMethod" />
-    <suppress files="[\\/]src[\\/]test[\\/].*IT.java$" id="missingJavadocMethod" />
-    <suppress files="[\\/]src[\\/]test[\\/].*TestBase.java$" id="missingJavadocType" />
-    <suppress files="[\\/]src[\\/]test[\\/].*Test.java$" id="missingJavadocType" />
-    <suppress files="[\\/]src[\\/]test[\\/].*IT.java$" id="missingJavadocType" />
-    <suppress files=".*Application.java" id="hideUtilityClassConstructor" />
-    <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]bulkimport[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]bulkimport[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]cdk[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]cdk[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]environment[\\/]cdk[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]environment[\\/]cdk[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]systemtest[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]systemtest[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]parquet[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]parquet[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]common[\\/]job[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]common[\\/]job[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]common[\\/]task[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]common[\\/]task[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]core[\\/]rowbatch[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]core[\\/]rowbatch[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]tools[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]tools[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]compaction[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]compaction[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]compaction[\\/]tracker[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]compaction[\\/]tracker[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]splitter[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]splitter[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]garbagecollector[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]garbagecollector[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]batcher[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]batcher[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]runner[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]runner[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]taskrunner[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]taskrunner[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]tracker[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]tracker[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]trackerv2[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]ingest[\\/]trackerv2[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]query[\\/]runner[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]query[\\/]runner[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]query[\\/]lambda[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]query[\\/]lambda[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]trino[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]trino[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]metrics[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]metrics[\\/].*" id="missingJavadocType" />
-    <suppress files="[\\/]sleeper[\\/]build[\\/].*" id="missingJavadocMethod" />
-    <suppress files="[\\/]sleeper[\\/]build[\\/].*" id="missingJavadocType" />
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="finalParameters"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="localFinalVariableName"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="localVariableName"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="equalsHashCode"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="fileLength"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="missingSwitchDefault"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="methodLengthMax"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*" id="parameterNumber"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*TestBase.java$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*Test.java$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*IT.java$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*TestBase.java$" id="missingJavadocType"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*Test.java$" id="missingJavadocType"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*IT.java$" id="missingJavadocType"/>
+    <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
+    <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]bulkimport[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]bulkimport[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]cdk[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]cdk[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]environment[\\/]cdk[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]environment[\\/]cdk[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]systemtest[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]systemtest[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]parquet[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]parquet[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]sketches[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]invoke[\\/]tables[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]job[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]job[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]task[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]common[\\/]task[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]tools[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]tools[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]compaction[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]compaction[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]compaction[\\/]tracker[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]compaction[\\/]tracker[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]splitter[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]splitter[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]garbagecollector[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]garbagecollector[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]batcher[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]batcher[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]runner[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]runner[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]taskrunner[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]taskrunner[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]tracker[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]tracker[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]trackerv2[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]ingest[\\/]trackerv2[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]query[\\/]runner[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]query[\\/]runner[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]query[\\/]lambda[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]query[\\/]lambda[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]trino[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]trino[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]metrics[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]metrics[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]build[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]build[\\/].*" id="missingJavadocType"/>
 </suppressions>
