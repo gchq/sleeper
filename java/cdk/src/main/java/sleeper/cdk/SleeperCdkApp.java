@@ -43,9 +43,12 @@ import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
@@ -102,6 +105,8 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
+    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
+    private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -163,11 +168,20 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Athena analytics
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+                    this, "AutoDeleteS3Objects", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE_PROVIDER));
+            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks, autoDeleteS3ObjectsStack);
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, jars);
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+                    this, "AutoDeleteS3Objects", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE_PROVIDER));
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks,
+                    autoDeleteS3ObjectsStack, jars);
         }
         if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
@@ -222,11 +236,16 @@ public class SleeperCdkApp extends Stack {
 
         // Stack to run bulk export jobs
         if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+                    this, "AutoDeleteS3Objects", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE_PROVIDER));
             new BulkExportStack(this,
                     "BulkExport",
                     instanceProperties,
                     jars,
-                    coreStacks);
+                    coreStacks,
+                    autoDeleteS3ObjectsStack);
         }
 
         // Stack to garbage collect old files
@@ -261,6 +280,10 @@ public class SleeperCdkApp extends Stack {
         QueryStack queryStack = null;
         // Stack to execute queries
         if (OptionalStack.QUERY_STACKS.stream().anyMatch(optionalStacks::contains)) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+                    this, "AutoDeleteS3Objects", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE_PROVIDER));
             queryQueueStack = new QueryQueueStack(this, "QueryQueue",
                     instanceProperties,
                     topicStack.getTopic(), coreStacks,
@@ -270,6 +293,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks, queryQueueStack,
+                    autoDeleteS3ObjectsStack,
                     errorMetrics);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
@@ -281,11 +305,16 @@ public class SleeperCdkApp extends Stack {
         }
         // Stack for ingest jobs
         if (optionalStacks.contains(OptionalStack.IngestStack)) {
+            autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
+                    this, "AutoStopEcsClusterTask", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
+                    loggingStack.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
+                    autoStopEcsClusterTasksStack,
                     errorMetrics);
         }
 

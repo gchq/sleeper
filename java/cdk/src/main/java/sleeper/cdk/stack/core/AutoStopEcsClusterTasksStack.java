@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.util;
+package sleeper.cdk.stack.core;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
+import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.IRole;
@@ -25,9 +26,13 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
@@ -37,21 +42,26 @@ import java.util.Map;
 import java.util.Objects;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-public class AutoStopEcsClusterTasks {
+public class AutoStopEcsClusterTasksStack extends NestedStack {
 
-    private AutoStopEcsClusterTasks() {
-    }
+    private IFunction lambda;
+    private Provider provider;
+    private String id;
 
-    public static void autoStopTasksOnEcsCluster(
-            Construct scope, InstanceProperties instanceProperties, LambdaCode lambdaCode,
-            ICluster cluster, String clusterName,
-            ILogGroup logGroup,
-            ILogGroup providerLogGroup) {
+    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
+            ILogGroup logGroup, ILogGroup providerLogGroup) {
+        super(scope, id);
 
-        String id = cluster.getNode().getId() + "-AutoStop";
-        String functionName = clusterName + "-autostop";
+        this.id = id;
 
-        IFunction lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, id + "Lambda", builder -> builder
+        // Jars bucket
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");
+
+        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, "AutoStopEcsClusterTasksLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
@@ -69,15 +79,22 @@ public class AutoStopEcsClusterTasks {
         role.addToPrincipalPolicy(policyStatement);
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
-        Provider propertiesWriterProvider = Provider.Builder.create(scope, id + "Provider")
+        provider = Provider.Builder.create(this, id + "Provider")
                 .onEventHandler(lambda)
                 .logGroup(providerLogGroup)
                 .build();
 
+        Utils.addStackTagIfSet(this, instanceProperties);
+
+    }
+
+    public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
+            ICluster cluster, String clusterName) {
+
         CustomResource customResource = CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::AutoStopEcsClusterTasks")
                 .properties(Map.of("cluster", clusterName))
-                .serviceToken(propertiesWriterProvider.getServiceToken())
+                .serviceToken(provider.getServiceToken())
                 .build();
 
         customResource.getNode().addDependency(cluster);
