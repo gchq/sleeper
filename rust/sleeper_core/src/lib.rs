@@ -20,6 +20,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::datafusion::LeafPartitionQuery;
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
 use aws_config::Region;
@@ -32,11 +33,11 @@ use url::Url;
 
 mod datafusion;
 
-use crate::datafusion::LeafPartitionQuery;
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
     LeafPartitionQueryConfig, OutputType, SleeperPartitionRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
+    stream_to_ffi_arrow_stream,
 };
 
 /// Type safe variant for Sleeper partition boundary
