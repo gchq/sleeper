@@ -21,15 +21,15 @@ use datafusion::{
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     },
     config::ExecutionOptions,
+    dataframe::DataFrame,
     error::DataFusionError,
-    execution::SessionStateBuilder,
+    execution::{SessionStateBuilder, context::SessionContext},
     physical_expr::LexOrdering,
     physical_plan::{
         ExecutionPlan, accept,
         coalesce_partitions::CoalescePartitionsExec,
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
-    prelude::{DataFrame, SessionContext},
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};

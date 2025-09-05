@@ -16,19 +16,19 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, CompactionResult, OperationOutput,
+    CommonConfig, CompactionResult,
     datafusion::{
-        ParquetWriterConfigurer, SleeperOperations,
+        OutputType, SleeperOperations,
         metrics::RowCounts,
+        output::{CompletedOutput, Completer},
         sketch::{Sketcher, output_sketch},
-        util::{collect_stats, explain_plan},
+        util::explain_plan,
     },
 };
 use datafusion::{
-    common::plan_err,
-    error::DataFusionError,
-    physical_plan::{collect, displayable},
-    prelude::{DataFrame, SessionConfig, SessionContext},
+    common::plan_err, dataframe::DataFrame, error::DataFusionError,
+    execution::config::SessionConfig, execution::context::SessionContext,
+    physical_plan::displayable,
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -47,57 +47,56 @@ pub async fn compact(
     info!("DataFusion compaction: {ops}");
 
     // Retrieve Parquet output options
-    let OperationOutput::File {
+    let OutputType::File {
         output_file,
-        opts: parquet_options,
+        opts: _,
     } = &config.output
     else {
         return plan_err!("Sleeper compactions must output to a file");
     };
 
-    // Create Parquet configuration object based on requested output
-    let configurer = ParquetWriterConfigurer { parquet_options };
-
     // Make compaction DataFrame
-    let (sketcher, frame) = build_compaction_dataframe(&ops, &configurer, store_factory).await?;
+    let completer = config.output.finisher(&ops);
+    let (sketcher, frame) =
+        build_compaction_dataframe(&ops, completer.as_ref(), store_factory).await?;
 
     // Explain logical plan
     explain_plan(&frame).await?;
 
     // Run plan
-    let stats = execute_compaction_plan(&ops, frame).await?;
+    let stats = execute_compaction_plan(&ops, completer.as_ref(), frame).await?;
 
     // Write the frame out and collect stats
     output_sketch(store_factory, output_file, sketcher.sketch()).await?;
 
+    // Dump input file metrics to logging console
     stats.log_metrics();
     Ok(CompactionResult::from(&stats))
 }
 
-/// Creates the dataframe for a compaction.
+/// Creates the [`DataFrame`] for a compaction.
 ///
-/// This applies necessary filtering, sorting and sketch creation
+/// This applies necessary loading, filtering, sorting, aggregation and sketch creation
 /// steps to the plan.
 ///
 /// # Errors
 /// Each step of compaction may produce an error. Any are reported back to the caller.
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
-    configurer: &'a ParquetWriterConfigurer<'a>,
+    completer: &(dyn Completer + 'a),
     store_factory: &ObjectStoreFactory,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
     let sf = ops
         .apply_config(SessionConfig::new(), store_factory)
         .await?;
-    let sf = configurer.apply_parquet_config(sf);
-    let ctx = ops.apply_to_context(SessionContext::new_with_config(sf), store_factory)?;
+    let ctx = ops.configure_context(SessionContext::new_with_config(sf), store_factory)?;
     let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
     frame = ops.apply_user_filters(frame)?;
     frame = ops.apply_general_sort(frame)?;
     frame = ops.apply_aggregations(frame)?;
     let sketcher = ops.create_sketcher(frame.schema());
     frame = sketcher.apply_sketch(frame)?;
-    frame = ops.plan_with_parquet_output(frame, configurer)?;
+    frame = completer.complete_frame(frame)?;
     Ok((sketcher, frame))
 }
 
@@ -107,8 +106,9 @@ async fn build_compaction_dataframe<'a>(
 ///
 /// # Errors
 /// Any error that occurs during execution will be returned.
-async fn execute_compaction_plan(
+async fn execute_compaction_plan<'a>(
     ops: &SleeperOperations<'_>,
+    completer: &(dyn Completer + 'a),
     frame: DataFrame,
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
@@ -117,7 +117,10 @@ async fn execute_compaction_plan(
         "Physical plan\n{}",
         displayable(&*physical_plan).indent(true)
     );
-    collect(physical_plan.clone(), task_ctx).await?;
-    let stats = collect_stats(&ops.config.input_files, &physical_plan)?;
-    Ok(stats)
+    match completer.execute_frame(physical_plan, task_ctx).await? {
+        CompletedOutput::File(stats) => Ok(stats),
+        CompletedOutput::ArrowRecordBatch(_) => {
+            panic!("FileOutputCompleter did not return a CompletedOutput::File")
+        }
+    }
 }
