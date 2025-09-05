@@ -231,11 +231,16 @@ public class SleeperCdkApp extends Stack {
 
         // Stack to run bulk export jobs
         if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+                    this, "AutoDeleteS3Objects", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE_PROVIDER));
             new BulkExportStack(this,
                     "BulkExport",
                     instanceProperties,
                     jars,
-                    coreStacks);
+                    coreStacks,
+                    autoDeleteS3ObjectsStack);
         }
 
         // Stack to garbage collect old files
