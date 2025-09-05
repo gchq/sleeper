@@ -18,7 +18,7 @@
 use crate::{
     CommonConfig, SleeperPartitionRegion,
     datafusion::{
-        CompletionOptions, SleeperOperations,
+        OutputType, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
         util::explain_plan,
@@ -126,13 +126,13 @@ impl<'a> LeafPartitionQuery<'a> {
             && self.config.write_quantile_sketch
         {
             match &self.config.common.output {
-                CompletionOptions::File {
+                OutputType::File {
                     output_file,
                     opts: _,
                 } => {
                     output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
                 }
-                CompletionOptions::ArrowRecordBatch => {
+                OutputType::ArrowRecordBatch => {
                     return plan_err!(
                         "Quantile sketch output cannot be enabled if file output not selected"
                     );
@@ -154,7 +154,7 @@ impl<'a> LeafPartitionQuery<'a> {
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
         if self.config.write_quantile_sketch {
             match self.config.common.output {
-                CompletionOptions::File {
+                OutputType::File {
                     output_file: _,
                     opts: _,
                 } => {
@@ -162,7 +162,7 @@ impl<'a> LeafPartitionQuery<'a> {
                     let frame = sketcher.apply_sketch(frame)?;
                     Ok((Some(sketcher), frame))
                 }
-                CompletionOptions::ArrowRecordBatch => plan_err!(
+                OutputType::ArrowRecordBatch => plan_err!(
                     "Quantile sketch output cannot be enabled if file output not selected"
                 ),
             }

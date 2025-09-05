@@ -133,7 +133,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of
         the build module. -->
         <logback.version>1.5.18</logback.version>
-        <aws-java-sdk-v2.version>2.33.1</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.33.2</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -152,7 +152,7 @@
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
         <aws-crt.version>0.38.11</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
-        <aws-lambda-java-core.version>1.3.0</aws-lambda-java-core.version>
+        <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>2.3.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <commons-codec.version>1.19.0</commons-codec.version>
@@ -212,7 +212,7 @@
         <jakarta.ws.build.version>2.1.6</jakarta.ws.build.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible
         versions -->
-        <netty.version>4.2.4.Final</netty.version>
+        <netty.version>4.2.5.Final</netty.version>
         <!-- netty-tcnative is a fork of Tomcat Native, and is only used by spark-sql -->
         <netty-tcnative.version>2.0.73.Final</netty-tcnative.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use
