@@ -196,16 +196,16 @@ pub fn unalias(qualified_name: &str, original_schema: &SchemaRef) -> String {
     // Need keys in reverse length order
     col_names.sort_by_key(|s| Reverse(s.len()));
     // Find first that matches
-    col_names
+    (*col_names
         .iter()
         .find(|&&s| qualified_name.ends_with(s))
-        .expect("Can't find unaliased column name")
-        .to_string()
+        .expect("Can't find unaliased column name"))
+    .to_string()
 }
 
 /// Unalias column names that were changed due to a [`ProjectionExec`].
 ///
-/// The Java Arrow FFI library can't handle view types, so we tell DataFusion to expand view types
+/// The Java Arrow FFI library can't handle view types, so we tell `DataFusion` to expand view types
 /// in queries. However, the projection in the plan renames columns when we do this. This function
 /// transforms a physical plan to remove that aliasing.
 pub fn unalias_view_projection_columns(
