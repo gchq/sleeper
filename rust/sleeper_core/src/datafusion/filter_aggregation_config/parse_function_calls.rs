@@ -13,21 +13,22 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use color_eyre::eyre::{Result, eyre};
+use color_eyre::eyre::{Result, ensure, eyre};
 
 pub struct FunctionReader<'h> {
     haystack: &'h str,
     pos: usize,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct FunctionCall {
     pub name: String,
     parameters: Vec<FunctionParameter>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum FunctionParameter {
-    String(String),
+    Word(String),
     Number(i64),
 }
 
@@ -37,13 +38,35 @@ impl<'h> FunctionReader<'h> {
     }
 
     pub fn read_function_call(&mut self) -> Result<FunctionCall> {
+        let name = self
+            .read_word()
+            .ok_or_else(|| eyre!("expected function name at position {}", self.pos))?;
+        ensure!(
+            self.read_expected_char('('),
+            "expected open paren at position {}",
+            self.pos
+        );
+        let word = self
+            .read_word()
+            .ok_or_else(|| eyre!("expected word at position {}", self.pos))?;
+        ensure!(
+            self.read_expected_char(','),
+            "expected comma at position {}",
+            self.pos
+        );
+        let number = self
+            .read_number()?
+            .ok_or_else(|| eyre!("expected number at position {}", self.pos))?;
+        ensure!(
+            self.read_expected_char(')'),
+            "expected close paren at position {}",
+            self.pos
+        );
         return Ok(FunctionCall {
-            name: self
-                .read_word()
-                .ok_or_else(|| eyre!("expected function name"))?,
+            name,
             parameters: vec![
-                FunctionParameter::String("value".to_string()),
-                FunctionParameter::Number(1234),
+                FunctionParameter::Word(word),
+                FunctionParameter::Number(number),
             ],
         });
     }
@@ -64,6 +87,34 @@ impl<'h> FunctionReader<'h> {
         }
     }
 
+    fn read_number(&mut self) -> Result<Option<i64>> {
+        self.ignore_whitespace();
+        let mut result = String::new();
+        while let Some(c) = self.read_char()
+            && c.is_numeric()
+        {
+            result.push(c);
+            self.pos += 1;
+        }
+        if result.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(result.parse::<i64>()?))
+        }
+    }
+
+    fn read_expected_char(&mut self, expected: char) -> bool {
+        self.ignore_whitespace();
+        if let Some(c) = self.read_char()
+            && c == expected
+        {
+            self.pos += 1;
+            true
+        } else {
+            false
+        }
+    }
+
     fn ignore_whitespace(&mut self) {
         while let Some(c) = self.read_char()
             && c.is_whitespace()
@@ -78,9 +129,9 @@ impl<'h> FunctionReader<'h> {
 }
 
 impl FunctionCall {
-    pub fn string_param(&self, index: usize) -> Result<&String> {
+    pub fn word_param(&self, index: usize) -> Result<&String> {
         let param = self.param(index)?;
-        if let FunctionParameter::String(value) = param {
+        if let FunctionParameter::Word(value) = param {
             Ok(value)
         } else {
             Err(eyre!(
@@ -110,7 +161,8 @@ impl FunctionCall {
 #[cfg(test)]
 mod tests {
 
-    use super::FunctionReader;
+    use super::{FunctionCall, FunctionParameter, FunctionReader};
+    use color_eyre::eyre::Result;
     use test_log::test;
 
     // Tests:
@@ -131,5 +183,20 @@ mod tests {
     fn should_find_no_word_is_present() {
         let mut reader = FunctionReader::new("@/ #!");
         assert_eq!(reader.read_word(), None)
+    }
+
+    #[test]
+    fn should_read_function_call() -> Result<()> {
+        let mut reader = FunctionReader::new("fn(a, 123)");
+        Ok(assert_eq!(
+            reader.read_function_call()?,
+            FunctionCall {
+                name: "fn".to_string(),
+                parameters: vec![
+                    FunctionParameter::Word("a".to_string()),
+                    FunctionParameter::Number(123)
+                ]
+            }
+        ))
     }
 }

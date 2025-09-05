@@ -91,7 +91,7 @@ impl Filter {
             call.name
         );
         Ok(Filter::Ageoff {
-            column: call.string_param(0)?.clone(),
+            column: call.word_param(0)?.clone(),
             max_age: call.number_param(1)?,
         })
     }
