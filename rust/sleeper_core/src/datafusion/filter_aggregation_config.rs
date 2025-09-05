@@ -17,6 +17,7 @@ use aggregator_udfs::{
     map_aggregate::{MapAggregator, MapAggregatorOp},
     nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
 };
+use color_eyre::eyre::{self, ensure};
 use datafusion::{
     common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
     dataframe::DataFrame,
@@ -24,8 +25,14 @@ use datafusion::{
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
 };
 use filter_udfs::ageoff::AgeOff;
+use log::info;
 use regex::Regex;
 use std::sync::Arc;
+
+use crate::datafusion::filter_aggregation_config::parse_function_calls::{
+    FunctionCall, FunctionReader,
+};
+mod parse_function_calls;
 
 pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 
@@ -56,7 +63,7 @@ impl FilterAggregationConfig {
 }
 
 /// Supported filters
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Filter {
     /// Skip any row where timestamp in named column is older than `max_age` milliseconds.
     Ageoff { column: String, max_age: i64 },
@@ -71,6 +78,23 @@ impl Filter {
                 Ok(ScalarUDF::from(AgeOff::try_from(*max_age)?).call(vec![col(column)]))
             }
         }
+    }
+
+    pub fn parse(config_string: &str) -> eyre::Result<Vec<Self>> {
+        let call = FunctionReader::new(config_string).read_function_call()?;
+        Ok(vec![Self::from(call)?])
+    }
+
+    fn from(call: FunctionCall) -> eyre::Result<Filter> {
+        ensure!(
+            call.name.eq_ignore_ascii_case("ageOff"),
+            "unexpected filter function name: {}",
+            call.name
+        );
+        Ok(Filter::Ageoff {
+            column: call.string_param(0)?.clone(),
+            max_age: call.number_param(1)?,
+        })
     }
 }
 
@@ -246,22 +270,30 @@ pub fn validate_aggregations(
 
 #[cfg(test)]
 mod tests {
+    use super::Filter;
+    use color_eyre::eyre::Result;
+    use test_log::test;
+
     // Tests:
     // - Parse age off filter
     // - Parse empty string
     // - Parse two filters
     // - Case insensitivity
     // - Unrecognised filter name
+    // - No filter name
     // - Unrecognised field name
     // - Too few arguments
     // - Too many arguments
     // - Filter threshold has wrong type
 
     #[test]
-    fn should_parse_age_off_filter() {
-        // Given
-        let config_str = "ageOff(value,1234)";
-
-        // When
+    fn should_parse_age_off_filter() -> Result<()> {
+        Ok(assert_eq!(
+            Filter::parse("ageOff(value,1234)")?,
+            vec![Filter::Ageoff {
+                column: "value".to_string(),
+                max_age: 1234
+            }]
+        ))
     }
 }
