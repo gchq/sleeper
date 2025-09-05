@@ -86,7 +86,7 @@ impl<'a> SleeperOperations<'a> {
         mut cfg: SessionConfig,
         store_factory: &ObjectStoreFactory,
     ) -> Result<SessionConfig, DataFusionError> {
-        if matches!(self.config.output, CompletionOptions::ArrowRecordBatch) {
+        if matches!(self.config.output, OutputType::ArrowRecordBatch) {
             // Java's Arrow FFI layer can't handle view types, so expand them at output
             cfg.options_mut().optimizer.expand_views_at_output = true;
         }
@@ -342,7 +342,7 @@ impl<'a> SleeperOperations<'a> {
         ordering: &LexOrdering,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
         Ok(
-            if matches!(self.config.output, CompletionOptions::ArrowRecordBatch) {
+            if matches!(self.config.output, OutputType::ArrowRecordBatch) {
                 // Remove aliased column names to make things look correct for Java
                 let physical_plan = unalias_view_projection_columns(physical_plan)?;
                 // This may have been done in parallel, which will break sort order, so add a SortPreservingMergeExec stage

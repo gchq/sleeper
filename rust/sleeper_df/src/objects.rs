@@ -18,8 +18,8 @@ use crate::unpack::{unpack_string_array, unpack_typed_array, unpack_variant_arra
 use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, LeafPartitionQueryConfig, OutputType, SleeperParquetOptions,
-    SleeperPartitionRegion,
+    AwsConfig, ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
+    SleeperParquetOptions, SleeperPartitionRegion,
 };
 use std::{
     borrow::Borrow,
@@ -282,14 +282,14 @@ impl FFICommonConfig {
                 dict_enc_sort_keys: self.dict_enc_sort_keys,
                 dict_enc_values: self.dict_enc_values,
             };
-            CompletionOptions::File {
+            OutputType::File {
                 output_file: unsafe { CStr::from_ptr(self.output_file) }
                     .to_str()
                     .map(Url::parse)??,
                 opts,
             }
         } else {
-            CompletionOptions::ArrowRecordBatch
+            OutputType::ArrowRecordBatch
         };
 
         let aws_config = if self.override_aws_config {
@@ -304,7 +304,7 @@ impl FFICommonConfig {
         CommonConfigBuilder::new()
             .aws_config(aws_config)
             .input_files(
-                unpack_string_array(params.input_files, params.input_files_len)?
+                unpack_string_array(self.input_files, self.input_files_len)?
                     .into_iter()
                     .map(Url::parse)
                     .collect::<Result<Vec<_>, _>>()?,
@@ -312,13 +312,13 @@ impl FFICommonConfig {
             .input_files_sorted(self.input_files_sorted)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
-                unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
+                unpack_string_array(self.sort_key_cols, self.sort_key_cols_len)?
                     .into_iter()
                     .map(String::from)
                     .collect(),
             )
             .region(region)
-            .output(ouput)
+            .output(output)
             .iterator_config(iterator_config)
             .build()
     }
