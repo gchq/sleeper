@@ -19,11 +19,13 @@ package sleeper.systemtest.dsl.instance;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.Set;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 
 public class SystemTestInstanceConfiguration {
     private final String shortName;
@@ -58,11 +60,11 @@ public class SystemTestInstanceConfiguration {
     }
 
     public DeployInstanceConfiguration buildDeployConfig(
-            SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
+            SystemTestParameters parameters, SystemTestStandaloneProperties systemTestProperties) {
         DeployInstanceConfiguration configuration = buildDeployConfig(parameters);
         InstanceProperties properties = configuration.getInstanceProperties();
         if (shouldUseSystemTestIngestSourceBucket()) {
-            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+            properties.set(INGEST_SOURCE_BUCKET, systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
         }
         return configuration;
     }
