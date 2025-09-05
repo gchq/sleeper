@@ -187,7 +187,7 @@ public class SystemTestCompaction {
                 List<FileReference> fileReferences = loadFileReferences();
                 LOGGER.info("Found {} file references, waiting for expected {}", fileReferences.size(), expectedFileReferences);
                 if (fileReferences.size() < expectedFileReferences) {
-                    throw new RuntimeException("Was waiting for " + expectedFileReferences + " file references, overshot and found " + fileReferences.size());
+                    throw new RuntimeException("Was waiting for " + expectedFileReferences + " file references, undershot and found " + fileReferences.size());
                 }
                 return fileReferences.size() == expectedFileReferences;
             });
