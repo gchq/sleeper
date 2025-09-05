@@ -20,6 +20,7 @@ import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class Region {
      * @see    Region#getRangesOrdered(Schema)
      */
     public Collection<Range> getRangesUnordered() {
-        return rowKeyFieldNameToRange.values();
+        return Collections.unmodifiableCollection(rowKeyFieldNameToRange.values());
     }
 
     /**
