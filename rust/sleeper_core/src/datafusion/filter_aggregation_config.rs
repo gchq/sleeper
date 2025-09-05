@@ -243,3 +243,25 @@ pub fn validate_aggregations(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    // Tests:
+    // - Parse age off filter
+    // - Parse empty string
+    // - Parse two filters
+    // - Case insensitivity
+    // - Unrecognised filter name
+    // - Unrecognised field name
+    // - Too few arguments
+    // - Too many arguments
+    // - Filter threshold has wrong type
+
+    #[test]
+    fn should_parse_age_off_filter() {
+        // Given
+        let config_str = "ageOff(value,1234)";
+
+        // When
+    }
+}
