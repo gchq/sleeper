@@ -104,12 +104,53 @@ public class IteratorFactoryTest {
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
                         .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
-                        .iteratorConfigString(";ageoff=value,1000,")
+                        .iteratorConfigString("someFakeConfig") //Would throw illegal argument exception if used
                         .filters("ageOff(otherValue,1000)")
                         .build(), schema);
 
         //Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "otherValue");
+    }
+
+    @Test
+    public void shouldUseAggregationsDataOverClassNameWhenBothSet() throws IteratorCreationException {
+        //When
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()),
+                        new Field("otherValue", new LongType()))
+                .build();
+        SortedRowIterator iterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                        .iteratorConfigString("someFakeConfig") //Would throw illegal argument exception if used
+                        .aggregationString("sum(value),sum(otherValue)")
+                        .build(), schema);
+
+        //Then
+        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value", "otherValue");
+    }
+
+    @Test
+    public void shouldUseClassNameWhenNeitherFiltersOrAggregationsSet() throws IteratorCreationException {
+        //When
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()),
+                        new Field("otherValue", new LongType()))
+                .build();
+        SortedRowIterator iterator = new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
+                .getIterator(IteratorConfig.builder()
+                        .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                        .iteratorConfigString("value;ageOff=value,1000")
+                        .filters(null)
+                        .aggregationString(null)
+                        .build(), schema);
+
+        //Then
+        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
     }
 
     @Test

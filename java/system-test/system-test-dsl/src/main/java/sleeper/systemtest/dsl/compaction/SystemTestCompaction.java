@@ -143,6 +143,11 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction waitForAllJobsToCommit(PollWithRetries poll) {
+        waitForJobs.waitForAllJobsToCommit(poll);
+        return this;
+    }
+
     public FoundCompactionJobs drainJobsQueueForWholeInstance(int expectedJobs) {
         return FoundCompactionJobs.from(sourceFiles, baseDriver.drainJobsQueueForWholeInstance(expectedJobs));
     }
@@ -174,5 +179,26 @@ public class SystemTestCompaction {
                     return remainingBatchKeys.isEmpty();
                 });
         return this;
+    }
+
+    public SystemTestCompaction waitForTotalFileReferences(int expectedFileReferences, PollWithRetries poll) {
+        try {
+            poll.pollUntil("file references are compacted", () -> {
+                List<FileReference> fileReferences = loadFileReferences();
+                LOGGER.info("Found {} file references, waiting for expected {}", fileReferences.size(), expectedFileReferences);
+                if (fileReferences.size() < expectedFileReferences) {
+                    throw new RuntimeException("Was waiting for " + expectedFileReferences + " file references, undershot and found " + fileReferences.size());
+                }
+                return fileReferences.size() == expectedFileReferences;
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+        return this;
+    }
+
+    private List<FileReference> loadFileReferences() {
+        return instance.getStateStore().getFileReferences();
     }
 }

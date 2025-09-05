@@ -20,7 +20,7 @@ use std::process::Command; // Run programs
 
 #[test]
 fn invalid_region_maxs() -> Result<()> {
-    let mut cmd = Command::cargo_bin("main")?;
+    let mut cmd = Command::cargo_bin("compact")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
@@ -43,7 +43,7 @@ fn invalid_region_maxs() -> Result<()> {
 
 #[test]
 fn invalid_region_mins() -> Result<()> {
-    let mut cmd = Command::cargo_bin("main")?;
+    let mut cmd = Command::cargo_bin("compact")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",

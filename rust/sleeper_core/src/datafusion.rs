@@ -18,9 +18,10 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, OperationOutput,
+    CommonConfig,
     datafusion::{
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
+        output::Completer,
         sketch::Sketcher,
         util::{
             calculate_upload_size, check_for_sort_exec, register_store,
@@ -32,13 +33,13 @@ use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
 use datafusion::{
     common::{DFSchema, plan_err},
+    dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{LogicalPlanBuilder, SortExpr},
+    logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
-    prelude::*,
 };
 use log::{info, warn};
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -47,7 +48,9 @@ use std::{collections::HashMap, sync::Arc};
 mod compact;
 mod config;
 mod filter_aggregation_config;
+mod leaf_partition_query;
 mod metrics;
+pub mod output;
 mod region;
 pub mod sketch;
 mod sketch_udf;
@@ -55,6 +58,8 @@ mod util;
 
 pub use compact::compact;
 pub use config::ParquetWriterConfigurer;
+pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};
+pub use output::OutputType;
 pub use region::SleeperPartitionRegion;
 
 /// Drives common operations in processing of `DataFusion` for Sleeper.
@@ -70,9 +75,7 @@ impl<'a> SleeperOperations<'a> {
         Self { config }
     }
 
-    /// Create the `DataFusion` session configuration for a given session.
-    ///
-    /// This sets as many parameters as possible from the given input data.
+    /// Sets as many parameters as possible from the given input data.
     ///
     pub async fn apply_config(
         &self,
@@ -91,22 +94,26 @@ impl<'a> SleeperOperations<'a> {
         // together in wrong order.
         cfg.options_mut().optimizer.repartition_aggregations = false;
         // Set upload size if outputting to a file
-        if let OperationOutput::File {
+        if let OutputType::File {
             output_file: _,
-            opts: _,
-        } = self.config.output
+            opts: parquet_options,
+        } = &self.config.output
         {
             let total_input_size = retrieve_input_size(&self.config.input_files, store_factory)
                 .await
                 .inspect_err(|e| warn!("Error getting total input data size {e}"))?;
             cfg.options_mut().execution.objectstore_writer_buffer_size =
                 calculate_upload_size(total_input_size)?;
+
+            // Create Parquet configuration object based on requested output
+            let configurer = ParquetWriterConfigurer { parquet_options };
+            cfg = configurer.apply_parquet_config(cfg);
         }
         Ok(cfg)
     }
 
     // Configure a [`SessionContext`].
-    pub fn apply_to_context(
+    pub fn configure_context(
         &self,
         mut ctx: SessionContext,
         store_factory: &ObjectStoreFactory,
@@ -117,8 +124,8 @@ impl<'a> SleeperOperations<'a> {
             store_factory,
             &self.config.input_files,
             match &self.config.output {
-                OperationOutput::ArrowRecordBatch => None,
-                OperationOutput::File {
+                OutputType::ArrowRecordBatch => None,
+                OutputType::File {
                     output_file,
                     opts: _,
                 } => Some(output_file),
@@ -155,7 +162,7 @@ impl<'a> SleeperOperations<'a> {
             .await?;
         // Do we have partition bounds?
         Ok(
-            if let Some(expr) = Into::<Option<Expr>>::into(&self.config.region) {
+            if let Some(expr) = Option::<Expr>::from(&self.config.region) {
                 frame.filter(expr)?
             } else {
                 frame
@@ -267,7 +274,7 @@ impl<'a> SleeperOperations<'a> {
         frame: DataFrame,
         configurer: &ParquetWriterConfigurer<'_>,
     ) -> Result<DataFrame, DataFusionError> {
-        let OperationOutput::File {
+        let OutputType::File {
             output_file,
             opts: _,
         } = &self.config.output
@@ -338,6 +345,12 @@ impl<'a> SleeperOperations<'a> {
                 })
                 .collect::<Result<Vec<_>, DataFusionError>>()?,
         ))
+    }
+
+    /// Create appropriate output completer.
+    #[must_use]
+    pub fn create_output_completer(&self) -> Box<dyn Completer + '_> {
+        self.config.output.finisher(self)
     }
 }
 
