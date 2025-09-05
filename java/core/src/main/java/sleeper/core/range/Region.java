@@ -19,6 +19,8 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,7 @@ import java.util.Objects;
 public class Region {
     private final Map<String, Range> rowKeyFieldNameToRange;
 
-    public Region(List<Range> ranges) {
+    public Region(Collection<Range> ranges) {
         rowKeyFieldNameToRange = new HashMap<>();
         for (Range range : ranges) {
             if (rowKeyFieldNameToRange.containsKey(range.getFieldName())) {
@@ -62,13 +64,35 @@ public class Region {
     }
 
     /**
-     * Returns the ranges in this region. Note that these are returned in no
-     * particular order.
+     * Returns the ranges in this region unordered.
+     *
+     * <strong>Note: these ranges are returned in no
+     * particular order.</strong>
      *
      * @return a List of Ranges in no particular order.
+     * @see    Region#getRangesOrdered(Schema)
      */
-    public List<Range> getRanges() {
-        return new ArrayList<>(rowKeyFieldNameToRange.values());
+    public Collection<Range> getRangesUnordered() {
+        return Collections.unmodifiableCollection(rowKeyFieldNameToRange.values());
+    }
+
+    /**
+     * Returns the ranges in this region ordered according to the given schema.
+     *
+     * @param  schema the schema that dictates returned order
+     * @return        a List of Ranges in schema order.
+     */
+    public List<Range> getRangesOrdered(Schema schema) {
+        List<String> rowKeysOrdered = schema.getRowKeyFieldNames();
+        List<Range> ranges = new ArrayList<>(rowKeysOrdered.size());
+        for (String rowKey : rowKeysOrdered) {
+            Range range = getRange(rowKey);
+            if (range == null) {
+                throw new IllegalArgumentException("schema row key \"" + rowKey + "\" does not exist in this Region");
+            }
+            ranges.add(range);
+        }
+        return ranges;
     }
 
     /**

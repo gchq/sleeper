@@ -160,9 +160,9 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } else {
             params.iterator_config.set("");
         }
-        List<String> rowKeysOrdered = schema.getRowKeyFieldNames();
-        List<Range> orderedRanges = rowKeysOrdered.stream().map(rowKeyName -> region.getRange(rowKeyName)).toList();
+
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
+        List<Range> orderedRanges = region.getRangesOrdered(schema);
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
