@@ -55,7 +55,7 @@ public class IteratorConfig {
      * @return true if the iterator should be applied, otherwise false
      */
     public boolean shouldIteratorBeApplied() {
-        return iteratorClassName != null || filters != null;
+        return iteratorClassName != null || filters != null || aggregationString != null;
     }
 
     /**
