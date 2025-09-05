@@ -121,7 +121,7 @@ public class IteratorFactory {
             }
         }
         List<Aggregation> aggregations = List.of();
-        if (iteratorConfig.getAggregationString() != null) {
+        if (iteratorConfig.getAggregationString() != null && !iteratorConfig.getAggregationString().equals("")) {
             aggregations = generateAggregationsFromProperty(iteratorConfig);
             validateAggregations(aggregations, schema);
         }
