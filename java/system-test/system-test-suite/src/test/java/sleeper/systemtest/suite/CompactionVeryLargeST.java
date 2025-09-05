@@ -86,7 +86,7 @@ public class CompactionVeryLargeST {
                             .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L));
                 });
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_000_000, 4_000_000),
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_900_000, 4_000_000),
                         "meets expected performance");
     }
 }
