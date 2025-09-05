@@ -79,7 +79,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorIT {
-    protected static ExecutorService executorService;
+    private static ExecutorService executorService;
 
     @TempDir
     public Path folder;
@@ -1219,7 +1219,7 @@ public class QueryExecutorIT {
                 .build();
     }
 
-    protected Schema getLongKeySchema() {
+    private Schema getLongKeySchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
@@ -1233,7 +1233,7 @@ public class QueryExecutorIT {
                 .build();
     }
 
-    protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
+    private void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
             TableProperties tableProperties, Iterator<Row> rowIterator) throws IOException, IteratorCreationException {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestFactory.builder()
@@ -1246,7 +1246,7 @@ public class QueryExecutorIT {
         factory.ingestFromRowIterator(tableProperties, rowIterator);
     }
 
-    protected List<Row> getRows() {
+    private List<Row> getRows() {
         List<Row> rows = new ArrayList<>();
         Row row = new Row();
         row.put("key", 1L);

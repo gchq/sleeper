@@ -1,0 +1,100 @@
+Row group 0
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0001                                  row-0100                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                         4                   144                     0                   800
+
+Row group 1
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0101                                  row-0200                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                       148                   144                     0                   800
+
+Row group 2
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0201                                  row-0300                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                       292                   144                     0                   800
+
+Row group 3
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0301                                  row-0400                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                       436                   144                     0                   800
+
+Row group 4
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0401                                  row-0500                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                       580                   144                     0                   800
+
+Row group 5
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0501                                  row-0600                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                       724                   144                     0                   800
+
+Row group 6
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0601                                  row-0700                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                       868                   144                     0                   800
+
+Row group 7
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0701                                  row-0800                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                      1012                   144                     0                   800
+
+Row group 8
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0801                                  row-0900                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                      1156                   144                     0                   800
+
+Row group 9
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0901                                  row-1000                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                      1300                   145                     0                   800
+
