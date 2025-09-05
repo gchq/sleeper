@@ -36,9 +36,9 @@ pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 #[derive(Debug, Default)]
 pub struct FilterAggregationConfig {
     /// Single filtering option
-    pub filter: Option<Filter>,
+    filter: Option<Filter>,
     /// Aggregation columns. These must not include any row key columns or columns mentioned in `agg_cols`.
-    pub aggregation: Option<Vec<Aggregate>>,
+    aggregation: Option<Vec<Aggregate>>,
 }
 
 impl FilterAggregationConfig {
