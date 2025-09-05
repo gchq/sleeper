@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 [package]
-name = "objectstore_ext"
-description = "ObjectStore extensions and wrappers for Sleeper."
+name = "test_util"
+description = "Test utilities for integration tests."
 keywords = ["sleeper"]
 categories = ["science"]
 version = { workspace = true }
@@ -22,26 +22,13 @@ repository = { workspace = true }
 license = { workspace = true }
 authors = { workspace = true }
 rust-version = { workspace = true }
-publish = { workspace = true }
+publish = false
 
 [dependencies]
-aws-config = { workspace = true }
-aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
-async-trait = { workspace = true }
-bytes = { workspace = true }
-chrono = { workspace = true }
-color-eyre = { workspace = true }
+arrow = { workspace = true }
 futures = { workspace = true }
-log = { workspace = true }
-num-format = { workspace = true }
-object_store = { workspace = true, features = [ "aws" ] }
-thiserror = { workspace = true }
+color-eyre = { workspace = true }
+datafusion = { workspace = true }
 url = { workspace = true }
-
-[dev-dependencies]
-object_store = { workspace = true, features = ["integration"] }
 tempfile = { workspace = true }
-test-log = { workspace = true }
-testing_logger = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
-tokio-test = { workspace = true }
+sleeper_core = { path = "../" }
