@@ -103,7 +103,9 @@ public class IteratorFactory {
      * @return                filter aggregation config to be used in an iterator
      */
     private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig, Schema schema) {
-        List<String> groupingColumns = new ArrayList<>(schema.getRowKeyFieldNames());
+        List<String> groupingColumns = new ArrayList<>();
+        groupingColumns.addAll(schema.getRowKeyFieldNames());
+        groupingColumns.addAll(schema.getSortKeyFieldNames());
         long maxAge = 0L;
         String filterName = null;
 
@@ -119,7 +121,7 @@ public class IteratorFactory {
             }
         }
         List<Aggregation> aggregations = List.of();
-        if (iteratorConfig.getAggregationString() != null) {
+        if (iteratorConfig.getAggregationString() != null && !iteratorConfig.getAggregationString().equals("")) {
             aggregations = generateAggregationsFromProperty(iteratorConfig);
             validateAggregations(aggregations, schema);
         }

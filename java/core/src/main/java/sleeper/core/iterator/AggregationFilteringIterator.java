@@ -49,6 +49,15 @@ public class AggregationFilteringIterator implements SortedRowIterator {
         this.config = config;
     }
 
+    /**
+     * Returns filter config.
+     *
+     * @return present set config
+     */
+    public FilterAggregationConfig getFilterAggregationConfig() {
+        return this.config;
+    }
+
     public void setSchema(Schema schema) {
         this.schema = schema;
     }
