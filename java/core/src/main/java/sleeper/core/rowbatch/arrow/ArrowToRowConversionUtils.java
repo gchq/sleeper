@@ -78,7 +78,7 @@ public class ArrowToRowConversionUtils {
             } else {
                 // Convert any text elements into strings
                 return ((List<?>) value).stream()
-                        .map(v -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0), value))
+                        .map(v -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0), v))
                         .collect(Collectors.toList());
             }
         } else if (fieldVector.getMinorType() == Types.MinorType.MAP) {
