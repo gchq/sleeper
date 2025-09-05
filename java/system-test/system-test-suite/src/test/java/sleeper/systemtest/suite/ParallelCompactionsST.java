@@ -72,17 +72,26 @@ public class ParallelCompactionsST {
         sleeper.compaction()
                 .putTableOnlineWaitForJobCreation(40960,
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(2)))
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .waitForTasks(300)
                 .waitForJobsToFinishThenCommit(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)),
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(2)));
+                                Duration.ofSeconds(10), Duration.ofMinutes(2)))
+                // The table is still online, so it will continue to compact until each partition has 1 file.
+                // Because the table is online, we can't control the order in which the files are compacted, so we
+                // don't know how many jobs will run. We do know it will eventually get to one file per partition.
+                .waitForTotalFileReferences(8192,
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                .waitForAllJobsToCommit(
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(4)));
 
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())
-                .hasSize(40960)
+                .hasSize(8192)
                 .satisfies(files -> assertThat(files.stream().mapToLong(FileReference::getNumberOfRows).sum())
                         .isEqualTo(10_000_000))
                 .allMatch(file -> file.onlyContainsDataForThisPartition() && !file.isCountApproximate(),
@@ -94,12 +103,12 @@ public class ParallelCompactionsST {
                         .isBetween(800L, 1600L));
         // And all jobs have finished and only ran once
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(statistics -> statistics.isAllFinishedOneRunEach(40960),
+                .matches(statistics -> statistics.isAllFinishedOneRunEachWithMinimum(40960),
                         "all jobs finished and ran once");
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
                         .describedAs("ran the expected distribution of jobs")
-                        .isBetween(0, 100));
+                        .isBetween(0, 400));
     }
 
 }

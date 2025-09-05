@@ -371,7 +371,6 @@ public class AggregationFilteringIteratorTest {
         return new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
                         .aggregationString(aggregator + "(value)")
                         .build(), schema);
     }

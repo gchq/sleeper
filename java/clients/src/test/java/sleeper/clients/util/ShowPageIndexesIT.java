@@ -16,9 +16,10 @@
 
 package sleeper.clients.util;
 
-import com.google.common.io.CharStreams;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,15 +39,12 @@ import sleeper.core.schema.type.StringType;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.function.BiConsumer;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 
 public class ShowPageIndexesIT {
@@ -72,8 +70,8 @@ public class ShowPageIndexesIT {
                 (i, row) -> row.put("test-key", String.format("row-%03d", i)));
 
         // When/Then
-        assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/oneRowKeyField.txt"));
+        Approvals.verify(runShowPageIndexes(file),
+                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-oneRowKeyField"));
     }
 
     @ParameterizedTest
@@ -93,8 +91,8 @@ public class ShowPageIndexesIT {
         });
 
         // When/Then
-        assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/multipleRowKeyFields.txt"));
+        Approvals.verify(runShowPageIndexes(file),
+                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-multipleRowKeyFields"));
     }
 
     @ParameterizedTest
@@ -115,8 +113,8 @@ public class ShowPageIndexesIT {
         });
 
         // When/Then
-        assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/rowKeySortKeyAndValueFields.txt"));
+        Approvals.verify(runShowPageIndexes(file),
+                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-rowKeySortKeyAndValueFields"));
     }
 
     @ParameterizedTest
@@ -133,8 +131,8 @@ public class ShowPageIndexesIT {
                 (i, row) -> row.put("test-key", String.format("row-%04d", i)));
 
         // When/Then
-        assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/multiplePages.txt"));
+        Approvals.verify(runShowPageIndexes(file),
+                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-multiplePages"));
     }
 
     @ParameterizedTest
@@ -151,8 +149,8 @@ public class ShowPageIndexesIT {
                 (i, row) -> row.put("test-key", String.format("row-%04d", i)));
 
         // When/Then
-        assertThat(runShowPageIndexes(file))
-                .isEqualTo(example("util/showPageIndexes/" + parquetVersion + "/multipleRowGroups.txt"));
+        Approvals.verify(runShowPageIndexes(file),
+                new Options().forFile().withBaseName("ShowPageIndexes-" + parquetVersion + "-multipleRowGroups"));
     }
 
     private static void writeRows(Path file, TableProperties tableProperties,
@@ -178,12 +176,6 @@ public class ShowPageIndexesIT {
 
     private static ParquetWriter<Row> createRowWriter(Path file, TableProperties tableProperties) throws IOException {
         return ParquetRowWriterFactory.createParquetRowWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
-    }
-
-    private static String example(String path) throws IOException {
-        try (Reader reader = new InputStreamReader(ShowPageIndexesIT.class.getClassLoader().getResourceAsStream(path))) {
-            return CharStreams.toString(reader);
-        }
     }
 
     private String runShowPageIndexes(Path file) throws Exception {
