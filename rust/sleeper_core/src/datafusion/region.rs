@@ -128,7 +128,7 @@ fn bound_to_lit_expr(bound: &PartitionBound) -> Expr {
         PartitionBound::ByteArray(val) => lit(val.to_owned()),
         PartitionBound::Unbounded => {
             error!("Can't create filter expression for unbounded partition range!");
-            panic!("Can't create filter expression for unbounded partition range!");
+            std::process::abort();
         }
     }
 }

@@ -16,6 +16,7 @@
  */
 #[cfg(doc)]
 use crate::native_query_stream;
+use log::error;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -131,7 +132,7 @@ pub unsafe extern "C" fn destroy_context(ctx: *mut FFIContext) {
     } else {
         // Can't panic! in an extern "C" function. Stack unwinding is not supported
         // and is undefined behaviour across FFI boundary.
-        eprintln!("Null pointer passed to destroy_context!");
+        error!("Null pointer passed to destroy_context!");
         std::process::abort();
     }
 }

@@ -205,7 +205,8 @@ pub extern "C" fn native_query_stream(
     match result {
         Ok(res) => {
             let CompletedOutput::ArrowRecordBatch(batch_stream) = res else {
-                panic!("Expected CompletedOutput::ArrowRecordBatch results from query");
+                error!("Expected CompletedOutput::ArrowRecordBatch results from query");
+                return -1;
             };
             // Convert the DataFusion stream of data to an FFI compatible Arrow stream
             let ffi_arrow_stream =
@@ -299,7 +300,8 @@ pub extern "C" fn native_query_file(
     match result {
         Ok(res) => {
             let CompletedOutput::File(row_counts) = res else {
-                panic!("Expected CompletedOutput::File results from query");
+                error!("Expected CompletedOutput::File results from query");
+                return -1;
             };
             if let Some(data) = unsafe { output_data.as_mut() } {
                 data.rows_read = row_counts.rows_read;
