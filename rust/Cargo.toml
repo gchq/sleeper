@@ -35,7 +35,6 @@ bytes = { version = "1.10.1" }                      # Byte buffer for S3 uploadi
 cargo_metadata = { version = "0.22.0" }             # Access cargo metadata programmtically
 chrono = { version = "0.4.41" }                     # Log helper
 clap = { version = "4.5.47" }                       # Cmd line args processing
-tracing-subscriber = { version = "0.3.20" }
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
 cxx = { version = "1.0.175" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.175" }
