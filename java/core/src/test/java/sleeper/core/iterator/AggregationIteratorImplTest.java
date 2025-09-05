@@ -18,14 +18,6 @@ package sleeper.core.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
-import sleeper.core.util.IteratorConfig;
-import sleeper.core.util.IteratorFactory;
-import sleeper.core.util.ObjectFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -34,43 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static sleeper.core.iterator.AggregatorIteratorImpl.aggregateOnTo;
 
-public class AggregationIteratorImplTest {
-
-    private static FilterAggregationConfig createConfig() throws IteratorCreationException {
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
-                .sortKeyFields(new Field("sort_key", new StringType()), new Field("sort_key2", new StringType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
-
-        return ((AggregationFilteringIterator) new IteratorFactory(
-                new ObjectFactory(AggregationIteratorImplTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("")
-                        .build(), schema))
-                .getFilterAggregationConfig();
-    }
-
-    private static FilterAggregationConfig createConfigWithAggregations() throws IteratorCreationException {
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
-                .sortKeyFields(new Field("sort_key", new StringType()), new Field("sort_key2", new StringType()))
-                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build();
-
-        return ((AggregationFilteringIterator) new IteratorFactory(
-                new ObjectFactory(AggregationIteratorImplTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("sum(value1),min(value2)")
-                        .build(), schema))
-                .getFilterAggregationConfig();
-    }
+public class AggregationIteratorImplTest extends AggregationFilteringIteratorTestBase {
 
     @Test
     public void shouldThrowOnNullIterator() {
-        assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(createConfig(), null));
+        assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(createIterator(null, null, null).getFilterAggregationConfig(), null));
     }
 
     @Test
@@ -90,7 +50,7 @@ public class AggregationIteratorImplTest {
         Row expected = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testtestaaaaa", "value2", 78));
         // When
-        aggregateOnTo(r1, r2, createConfigWithAggregations());
+        aggregateOnTo(r1, r2, createIteratorWithAggregations().getFilterAggregationConfig());
 
         // Then
         assertThat(r1).isEqualTo(expected);
@@ -106,7 +66,7 @@ public class AggregationIteratorImplTest {
 
         Row expected = new Row(r1);
         // When
-        aggregateOnTo(r1, r2, createConfig());
+        aggregateOnTo(r1, r2, createIterator(null, "", "").getFilterAggregationConfig());
 
         // Then
         assertThat(r1).isEqualTo(expected);
@@ -120,7 +80,7 @@ public class AggregationIteratorImplTest {
                 "sort_key2", 5, "value1", "test", "value2", 78));
         Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testaaaaa", "value2", 7800));
-        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createConfig(),
+        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createIterator(null, "", "").getFilterAggregationConfig(),
                 new WrappedIterator<Row>(List.<Row>of().iterator()));
 
         // When
@@ -139,7 +99,7 @@ public class AggregationIteratorImplTest {
         // Make sort_key2 different
         Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 6, "value1", "testaaaaa", "value2", 7800));
-        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createConfig(),
+        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createIterator(null, "", "").getFilterAggregationConfig(),
                 new WrappedIterator<Row>(List.<Row>of().iterator()));
 
         // When
