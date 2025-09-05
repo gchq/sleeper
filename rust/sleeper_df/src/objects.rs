@@ -19,7 +19,7 @@ use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
     AwsConfig, ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
-    SleeperParquetOptions, SleeperPartitionRegion,
+    SleeperParquetOptions, SleeperRegion,
 };
 use std::{
     borrow::Borrow,
@@ -92,7 +92,7 @@ impl<'a> FFISleeperRegion {
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
         schema_types: &[FFIRowKeySchemaType],
-    ) -> Result<SleeperPartitionRegion<'a>, color_eyre::Report> {
+    ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
         if region.mins_len != region.maxs_len
             || region.mins_len != region.mins_inclusive_len
             || region.mins_len != region.maxs_inclusive_len
@@ -120,7 +120,7 @@ impl<'a> FFISleeperRegion {
                 },
             );
         }
-        Ok(SleeperPartitionRegion::new(map))
+        Ok(SleeperRegion::new(map))
     }
 }
 

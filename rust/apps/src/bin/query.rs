@@ -22,7 +22,7 @@ use futures::StreamExt;
 use human_panic::setup_panic;
 use sleeper_core::{
     ColRange, CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,
-    PartitionBound, SleeperPartitionRegion, run_query,
+    PartitionBound, SleeperRegion, run_query,
 };
 use std::{collections::HashMap, io::Write};
 use url::Url;
@@ -155,14 +155,14 @@ async fn main() -> color_eyre::Result<()> {
         .input_files_sorted(true)
         .row_key_cols(args.row_keys)
         .sort_key_cols(args.sort_keys)
-        .region(SleeperPartitionRegion::new(map))
+        .region(SleeperRegion::new(map))
         .output(OutputType::ArrowRecordBatch)
         .iterator_config(args.iterator_config)
         .build()?;
 
     let query_config = LeafPartitionQueryConfig {
         common,
-        ranges: vec![SleeperPartitionRegion::new(query_map)],
+        ranges: vec![SleeperRegion::new(query_map)],
         requested_value_fields: None,
         explain_plans: true,
         write_quantile_sketch: false,

@@ -35,7 +35,7 @@ mod datafusion;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
-    LeafPartitionQueryConfig, OutputType, SleeperPartitionRegion,
+    LeafPartitionQueryConfig, OutputType, SleeperRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
     stream_to_ffi_arrow_stream,
 };
@@ -105,7 +105,7 @@ pub struct CommonConfig<'a> {
     /// Names of sort-key columns
     sort_key_cols: Vec<String>,
     /// Ranges for each column to filter input files
-    region: SleeperPartitionRegion<'a>,
+    region: SleeperRegion<'a>,
     /// How output from operation should be returned
     output: OutputType,
     /// Iterator config. Filters, aggregators, etc.
@@ -120,7 +120,7 @@ impl Default for CommonConfig<'_> {
             input_files_sorted: true,
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
-            region: SleeperPartitionRegion::default(),
+            region: SleeperRegion::default(),
             output: OutputType::default(),
             iterator_config: Option::default(),
         }
@@ -188,7 +188,7 @@ pub struct CommonConfigBuilder<'a> {
     input_files_sorted: bool,
     row_key_cols: Vec<String>,
     sort_key_cols: Vec<String>,
-    region: SleeperPartitionRegion<'a>,
+    region: SleeperRegion<'a>,
     output: OutputType,
     iterator_config: Option<String>,
 }
@@ -230,7 +230,7 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 
     #[must_use]
-    pub fn region(mut self, region: SleeperPartitionRegion<'a>) -> Self {
+    pub fn region(mut self, region: SleeperRegion<'a>) -> Self {
         self.region = region;
         self
     }
@@ -541,7 +541,7 @@ mod tests {
         // Given
         let input_files: Vec<Url> = vec![];
         let row_key_cols = vec!["key".to_string()];
-        let region = SleeperPartitionRegion::default();
+        let region = SleeperRegion::default();
         let builder = CommonConfigBuilder::new()
             .input_files(input_files)
             .row_key_cols(row_key_cols)
@@ -560,7 +560,7 @@ mod tests {
         // Given
         let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
         let row_key_cols = vec!["key1".to_string(), "key2".to_string()];
-        let region = SleeperPartitionRegion::new(HashMap::from([(
+        let region = SleeperRegion::new(HashMap::from([(
             "col".to_string(),
             ColRange {
                 lower: PartitionBound::String("a"),
@@ -595,7 +595,7 @@ mod tests {
         // Given
         let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
         let row_key_cols = vec!["key".to_string()];
-        let region = SleeperPartitionRegion::new(HashMap::from([(
+        let region = SleeperRegion::new(HashMap::from([(
             "col".to_string(),
             ColRange {
                 lower: PartitionBound::String("a"),

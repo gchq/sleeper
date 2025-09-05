@@ -16,7 +16,7 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, SleeperPartitionRegion,
+    CommonConfig, SleeperRegion,
     datafusion::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
@@ -46,7 +46,7 @@ pub struct LeafPartitionQueryConfig<'a> {
     /// Basic information
     pub common: CommonConfig<'a>,
     /// Query ranges
-    pub ranges: Vec<SleeperPartitionRegion<'a>>,
+    pub ranges: Vec<SleeperRegion<'a>>,
     /// Requested value columns for Sleeper query
     pub requested_value_fields: Option<Vec<String>>,
     /// Should logical/physical plan explanation be logged?
