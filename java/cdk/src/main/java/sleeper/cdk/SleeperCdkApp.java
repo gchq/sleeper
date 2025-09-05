@@ -280,6 +280,10 @@ public class SleeperCdkApp extends Stack {
         QueryStack queryStack = null;
         // Stack to execute queries
         if (OptionalStack.QUERY_STACKS.stream().anyMatch(optionalStacks::contains)) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+                    this, "AutoDeleteS3Objects", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE_PROVIDER));
             queryQueueStack = new QueryQueueStack(this, "QueryQueue",
                     instanceProperties,
                     topicStack.getTopic(), coreStacks,
@@ -289,6 +293,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks, queryQueueStack,
+                    autoDeleteS3ObjectsStack,
                     errorMetrics);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
