@@ -34,8 +34,9 @@ import sleeper.foreign.datafusion.FFICommonConfig;
 public class FFILeafPartitionQueryConfig extends Struct {
     /** Basic configuration for query. */
     public final Struct.StructRef<FFICommonConfig> common = new StructRef<>(FFICommonConfig.class);
+    /** Length of query region array. */
     public final Struct.size_t query_region_len = new Struct.size_t();
-    /** The list of query regions. */
+    /** The array of query regions. */
     public final Struct.StructRef<FFISleeperRegion> query_regions = new StructRef<>(FFISleeperRegion.class);
     /** Specifies if there are any requested value fields. */
     public final Struct.Boolean requested_value_fields_set = new Struct.Boolean();

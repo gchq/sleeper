@@ -39,7 +39,7 @@
             <artifactId>apigatewaymanagementapi</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
-            <dependency>
+        <dependency>
             <groupId>sleeper</groupId>
             <artifactId>query-datafusion</artifactId>
             <version>${project.parent.version}</version>
