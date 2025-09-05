@@ -23,7 +23,7 @@ pub struct FunctionReader<'h> {
 #[derive(Debug, PartialEq, Eq)]
 pub struct FunctionCall {
     pub name: String,
-    parameters: Vec<FunctionParameter>,
+    pub parameters: Vec<FunctionParameter>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -165,6 +165,12 @@ mod tests {
     use color_eyre::eyre::Result;
     use test_log::test;
 
+    macro_rules! assert_error {
+        ($err_expr: expr, $err_contents: expr) => {
+            assert_eq!($err_expr.err().map(|e| e.to_string()), Some($err_contents))
+        };
+    }
+
     // Tests:
     // - One function with no parameters
     // - One function with two parameters
@@ -173,21 +179,8 @@ mod tests {
     // - Explore invalid possibilities
 
     #[test]
-    fn should_read_words_separated_by_whitespace() {
-        let mut reader = FunctionReader::new("hey there");
-        assert_eq!(reader.read_word(), Some("hey".to_string()));
-        assert_eq!(reader.read_word(), Some("there".to_string()))
-    }
-
-    #[test]
-    fn should_find_no_word_is_present() {
-        let mut reader = FunctionReader::new("@/ #!");
-        assert_eq!(reader.read_word(), None)
-    }
-
-    #[test]
     fn should_read_function_call() -> Result<()> {
-        let mut reader = FunctionReader::new("fn(a, 123)");
+        let mut reader = FunctionReader::new("fn(a,123)");
         Ok(assert_eq!(
             reader.read_function_call()?,
             FunctionCall {
@@ -198,5 +191,29 @@ mod tests {
                 ]
             }
         ))
+    }
+
+    #[test]
+    fn should_read_function_call_with_whitespace() -> Result<()> {
+        let mut reader = FunctionReader::new(" fn ( a , 123 ) ");
+        Ok(assert_eq!(
+            reader.read_function_call()?,
+            FunctionCall {
+                name: "fn".to_string(),
+                parameters: vec![
+                    FunctionParameter::Word("a".to_string()),
+                    FunctionParameter::Number(123)
+                ]
+            }
+        ))
+    }
+
+    #[test]
+    fn should_find_no_function_call() {
+        let mut reader = FunctionReader::new("@/ #!");
+        assert_error!(
+            reader.read_function_call(),
+            "expected function name at position 0".to_string()
+        )
     }
 }
