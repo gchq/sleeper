@@ -77,8 +77,8 @@ public class FFISleeperRegion extends Struct {
     public void populateRegion(Schema schema, Region region) {
         Objects.requireNonNull(schema, "schema");
         Objects.requireNonNull(region, "region");
-        List<java.lang.String> rowKeysOrdered = schema.getRowKeyFieldNames();
-        List<Range> orderedRanges = rowKeysOrdered.stream().map(rowKeyName -> region.getRange(rowKeyName)).toList();
+
+        List<Range> orderedRanges = region.getRangesOrdered(schema);
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
