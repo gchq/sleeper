@@ -36,7 +36,7 @@ impl<'h> FunctionReader<'h> {
         FunctionReader { haystack, pos: 0 }
     }
 
-    pub fn read_function_call(&self) -> Result<FunctionCall> {
+    pub fn read_function_call(&mut self) -> Result<FunctionCall> {
         return Ok(FunctionCall {
             name: self.read_word()?,
             parameters: vec![
@@ -46,8 +46,28 @@ impl<'h> FunctionReader<'h> {
         });
     }
 
-    fn read_word(&self) -> Result<String> {
-        Ok("ageOff".to_string())
+    fn read_word(&mut self) -> Result<String> {
+        self.ignore_whitespace();
+        let mut result = String::new();
+        while let Some(c) = self.read_char()
+            && c.is_alphanumeric()
+        {
+            result.push(c);
+            self.pos += 1;
+        }
+        Ok(result)
+    }
+
+    fn ignore_whitespace(&mut self) {
+        while let Some(c) = self.read_char()
+            && c.is_whitespace()
+        {
+            self.pos += 1;
+        }
+    }
+
+    fn read_char(&mut self) -> Option<char> {
+        self.haystack.chars().nth(self.pos)
     }
 }
 
@@ -96,7 +116,20 @@ mod tests {
 
     #[test]
     fn should_read_word() -> Result<()> {
-        let reader = FunctionReader::new("word");
+        let mut reader = FunctionReader::new("ageOff");
         Ok(assert_eq!(reader.read_word()?, "ageOff"))
+    }
+
+    #[test]
+    fn should_read_first_word() -> Result<()> {
+        let mut reader = FunctionReader::new("hey there");
+        Ok(assert_eq!(reader.read_word()?, "hey"))
+    }
+
+    #[test]
+    fn should_read_words_separated_by_whitespace() -> Result<()> {
+        let mut reader = FunctionReader::new("hey there");
+        assert_eq!(reader.read_word()?, "hey");
+        Ok(assert_eq!(reader.read_word()?, "there"))
     }
 }
