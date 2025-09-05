@@ -63,6 +63,9 @@ public class ArrowToRowConversionUtils {
      * @return             plain Java value
      */
     public static Object convertValueFromArrow(FieldVector fieldVector, Object value) {
+        if (value == null) {
+            return null;
+        }
         if (value instanceof Text) {
             // The Parquet writer does not handle Text fields and so convert to a String
             return value.toString();

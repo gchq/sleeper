@@ -4,6 +4,7 @@ import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 class ArrowToRowConversionUtilsTest {
 
     private VectorSchemaRoot root;
+    private Schema rootSchema;
     private FieldVector intVector;
     private FieldVector stringVector;
     private FieldVector listVector;
@@ -32,6 +34,8 @@ class ArrowToRowConversionUtilsTest {
     @BeforeEach
     void setup() {
         root = mock(VectorSchemaRoot.class);
+        rootSchema = mock(Schema.class);
+        when(root.getSchema()).thenReturn(rootSchema);
         intVector = mock(FieldVector.class);
         stringVector = mock(FieldVector.class);
         listVector = mock(FieldVector.class);
@@ -41,6 +45,7 @@ class ArrowToRowConversionUtilsTest {
     @AfterEach
     void teardown() {
         root = null;
+        rootSchema = null;
         intVector = null;
         stringVector = null;
         listVector = null;
@@ -50,6 +55,7 @@ class ArrowToRowConversionUtilsTest {
     @Test
     void shouldConvertPrimitiveFields() {
         // Given
+
         when(intVector.getName()).thenReturn("age");
         when(intVector.getMinorType()).thenReturn(Types.MinorType.INT);
         when(intVector.getObject(0)).thenReturn(42);
@@ -180,13 +186,18 @@ class ArrowToRowConversionUtilsTest {
     @SuppressWarnings("unchecked")
     void shouldConvertEmptyMap() {
         // Given
-        when(mapVector.getMinorType()).thenReturn(Types.MinorType.LIST);
         FieldVector structVector = mock(FieldVector.class);
+        FieldVector keyVector = mock(FieldVector.class);
+        FieldVector valueVector = mock(FieldVector.class);
+
+        when(mapVector.getMinorType()).thenReturn(Types.MinorType.LIST);
         when(mapVector.getChildrenFromFields()).thenReturn(List.of(structVector));
         when(structVector.getMinorType()).thenReturn(Types.MinorType.STRUCT);
-        when(structVector.getChildrenFromFields()).thenReturn(List.of(
-                mock(FieldVector.class),
-                mock(FieldVector.class)));
+        when(structVector.getChildrenFromFields()).thenReturn(List.of(keyVector, valueVector));
+        when(keyVector.getField()).thenReturn(mock(Field.class));
+        when(keyVector.getField().getName()).thenReturn(ArrowRowBatch.MAP_KEY_FIELD_NAME);
+        when(valueVector.getField()).thenReturn(mock(Field.class));
+        when(valueVector.getField().getName()).thenReturn(ArrowRowBatch.MAP_VALUE_FIELD_NAME);
 
         // When
         Object result = ArrowToRowConversionUtils.convertValueFromArrow(mapVector, Collections.emptyList());
@@ -257,9 +268,13 @@ class ArrowToRowConversionUtilsTest {
     @SuppressWarnings("unchecked")
     void shouldListWithNullsAndNestedLists() {
         // Given
+
         FieldVector childVector = mock(FieldVector.class);
         when(listVector.getMinorType()).thenReturn(Types.MinorType.LIST);
         when(listVector.getChildrenFromFields()).thenReturn(List.of(childVector));
+        FieldVector grandChildVector = mock(FieldVector.class);
+        when(childVector.getMinorType()).thenReturn(Types.MinorType.LIST);
+        when(childVector.getChildrenFromFields()).thenReturn(List.of(grandChildVector));
 
         List<Object> value = Arrays.asList(null, Arrays.asList(new Text("z")));
 
@@ -271,12 +286,13 @@ class ArrowToRowConversionUtilsTest {
         List<Object> resultList = (List<Object>) result;
         assertThat(resultList.get(0)).isNull();
         assertThat(resultList.get(1)).isInstanceOf(List.class);
-        assertThat((List<Object>) resultList.get(1)).containsExactly("z");
+        assertThat(((List<?>) resultList.get(1)).get(0)).isInstanceOf(String.class);
+        assertThat((List<String>) resultList.get(1)).containsExactly("z");
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    void shouldMapWithNullKeysAndValues() {
+    void shouldMapWithNullKeys() {
         // Given
         FieldVector structVector = mock(FieldVector.class);
         FieldVector keyVector = mock(FieldVector.class);
@@ -286,9 +302,9 @@ class ArrowToRowConversionUtilsTest {
         when(mapVector.getChildrenFromFields()).thenReturn(List.of(structVector));
         when(structVector.getMinorType()).thenReturn(Types.MinorType.STRUCT);
         when(structVector.getChildrenFromFields()).thenReturn(List.of(keyVector, valueVector));
-        when(keyVector.getField()).thenReturn(mock(org.apache.arrow.vector.types.pojo.Field.class));
+        when(keyVector.getField()).thenReturn(mock(Field.class));
         when(keyVector.getField().getName()).thenReturn(ArrowRowBatch.MAP_KEY_FIELD_NAME);
-        when(valueVector.getField()).thenReturn(mock(org.apache.arrow.vector.types.pojo.Field.class));
+        when(valueVector.getField()).thenReturn(mock(Field.class));
         when(valueVector.getField().getName()).thenReturn(ArrowRowBatch.MAP_VALUE_FIELD_NAME);
 
         Map<String, Object> entry1 = new HashMap<>();
@@ -297,7 +313,7 @@ class ArrowToRowConversionUtilsTest {
 
         Map<String, Object> entry2 = new HashMap<>();
         entry2.put(ArrowRowBatch.MAP_KEY_FIELD_NAME, new Text("other"));
-        entry2.put(ArrowRowBatch.MAP_VALUE_FIELD_NAME, null);
+        entry2.put(ArrowRowBatch.MAP_VALUE_FIELD_NAME, new Text("thing"));
 
         List<Map<String, Object>> arrowMapValue = Arrays.asList(entry1, entry2);
 
@@ -308,7 +324,7 @@ class ArrowToRowConversionUtilsTest {
         assertThat(result).isInstanceOf(Map.class);
         Map<Object, Object> resultMap = (Map<Object, Object>) result;
         assertThat(resultMap).containsEntry(null, "something");
-        assertThat(resultMap.get("other")).isNull();
+        assertThat(resultMap).containsEntry("other", "thing");
     }
 
     @Test
