@@ -25,7 +25,6 @@ use datafusion::{
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
 };
 use filter_udfs::ageoff::AgeOff;
-use log::info;
 use regex::Regex;
 use std::sync::Arc;
 

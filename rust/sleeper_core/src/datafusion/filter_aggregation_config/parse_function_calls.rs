@@ -38,7 +38,9 @@ impl<'h> FunctionReader<'h> {
 
     pub fn read_function_call(&mut self) -> Result<FunctionCall> {
         return Ok(FunctionCall {
-            name: self.read_word()?,
+            name: self
+                .read_word()
+                .ok_or_else(|| eyre!("expected function name"))?,
             parameters: vec![
                 FunctionParameter::String("value".to_string()),
                 FunctionParameter::Number(1234),
@@ -46,7 +48,7 @@ impl<'h> FunctionReader<'h> {
         });
     }
 
-    fn read_word(&mut self) -> Result<String> {
+    fn read_word(&mut self) -> Option<String> {
         self.ignore_whitespace();
         let mut result = String::new();
         while let Some(c) = self.read_char()
@@ -55,7 +57,11 @@ impl<'h> FunctionReader<'h> {
             result.push(c);
             self.pos += 1;
         }
-        Ok(result)
+        if result.is_empty() {
+            None
+        } else {
+            Some(result)
+        }
     }
 
     fn ignore_whitespace(&mut self) {
@@ -103,8 +109,8 @@ impl FunctionCall {
 
 #[cfg(test)]
 mod tests {
+
     use super::FunctionReader;
-    use color_eyre::eyre::Result;
     use test_log::test;
 
     // Tests:
@@ -115,21 +121,15 @@ mod tests {
     // - Explore invalid possibilities
 
     #[test]
-    fn should_read_word() -> Result<()> {
-        let mut reader = FunctionReader::new("ageOff");
-        Ok(assert_eq!(reader.read_word()?, "ageOff"))
+    fn should_read_words_separated_by_whitespace() {
+        let mut reader = FunctionReader::new("hey there");
+        assert_eq!(reader.read_word(), Some("hey".to_string()));
+        assert_eq!(reader.read_word(), Some("there".to_string()))
     }
 
     #[test]
-    fn should_read_first_word() -> Result<()> {
-        let mut reader = FunctionReader::new("hey there");
-        Ok(assert_eq!(reader.read_word()?, "hey"))
-    }
-
-    #[test]
-    fn should_read_words_separated_by_whitespace() -> Result<()> {
-        let mut reader = FunctionReader::new("hey there");
-        assert_eq!(reader.read_word()?, "hey");
-        Ok(assert_eq!(reader.read_word()?, "there"))
+    fn should_find_no_word_is_present() {
+        let mut reader = FunctionReader::new("@/ #!");
+        assert_eq!(reader.read_word(), None)
     }
 }
