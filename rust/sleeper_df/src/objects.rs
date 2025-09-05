@@ -14,34 +14,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::unpack::{
-    unpack_aws_config, unpack_string_array, unpack_typed_array, unpack_typed_ref_array,
-    unpack_variant_array,
-};
+use crate::unpack::{unpack_string_array, unpack_typed_array, unpack_variant_array};
+use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
-    ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
-    SleeperParquetOptions, SleeperPartitionRegion,
+    AwsConfig, ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
+    SleeperParquetOptions, SleeperRegion,
 };
 use std::{
     borrow::Borrow,
     collections::HashMap,
     ffi::{CStr, c_char, c_void},
+    slice,
 };
 use url::Url;
 
-/// Contains all output data from a compaction operation.
+/// Contains all output data from a file output operation.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIFileResult.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
-pub struct FFICompactionResult {
-    /// The total number of rows read by a compaction.
+pub struct FFIFileResult {
+    /// The total number of rows read by a query/compaction.
     pub rows_read: usize,
-    /// The total number of rows written by a compaction.
+    /// The total number of rows written by a query/compaction.
     pub rows_written: usize,
 }
 
 /// Represents a Sleeper region in a C ABI struct.
 ///
 /// Java arrays are transferred with a length. They should all be the same length in this struct.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFISleeperRegion.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
@@ -85,7 +92,7 @@ impl<'a> FFISleeperRegion {
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
         schema_types: &[FFIRowKeySchemaType],
-    ) -> Result<SleeperPartitionRegion<'a>, color_eyre::Report> {
+    ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
         if region.mins_len != region.maxs_len
             || region.mins_len != region.mins_inclusive_len
             || region.mins_len != region.maxs_inclusive_len
@@ -113,22 +120,65 @@ impl<'a> FFISleeperRegion {
                 },
             );
         }
-        Ok(SleeperPartitionRegion::new(map))
+        Ok(SleeperRegion::new(map))
+    }
+}
+
+/// Contains the FFI compatible configuration data for AWS.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIAwsConfig.java.
+/// The order and types of the fields must match exactly.
+#[repr(C)]
+pub struct FFIAwsConfig {
+    pub region: *const c_char,
+    pub endpoint: *const c_char,
+    pub access_key: *const c_char,
+    pub secret_key: *const c_char,
+    pub allow_http: bool,
+}
+
+impl TryFrom<&FFIAwsConfig> for AwsConfig {
+    type Error = color_eyre::Report;
+
+    fn try_from(value: &FFIAwsConfig) -> Result<Self, Self::Error> {
+        if value.region.is_null() {
+            bail!("FFIAwsConfig region pointer is NULL");
+        }
+        if value.endpoint.is_null() {
+            bail!("FFIAwsConfig endpoint pointer is NULL");
+        }
+        if value.access_key.is_null() {
+            bail!("FFIAwsConfig access_key pointer is NULL");
+        }
+        if value.secret_key.is_null() {
+            bail!("FFIAwsConfig secret_key pointer is NULL");
+        }
+        Ok(AwsConfig {
+            region: unsafe { CStr::from_ptr(value.region) }.to_str()?.to_owned(),
+            endpoint: unsafe { CStr::from_ptr(value.endpoint) }
+                .to_str()?
+                .to_owned(),
+            access_key: unsafe { CStr::from_ptr(value.access_key) }
+                .to_str()?
+                .to_owned(),
+            secret_key: unsafe { CStr::from_ptr(value.secret_key) }
+                .to_str()?
+                .to_owned(),
+            allow_http: value.allow_http,
+        })
     }
 }
 
 /// Contains all the common input data for setting up a Sleeper `DataFusion` operation.
 ///
-/// See `java/compaction/compaction-datafusion/src/main/java/sleeper/compaction/datafusion/DataFusionFunctions.java`
-/// for details. Field ordering and types MUST match between the two definitions!
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/datafusion/FFICommonConfig.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
     pub override_aws_config: bool,
-    pub aws_region: *const c_char,
-    pub aws_endpoint: *const c_char,
-    pub aws_access_key: *const c_char,
-    pub aws_secret_key: *const c_char,
-    pub aws_allow_http: bool,
+    pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
     pub input_files: *const *const c_char,
     pub input_files_sorted: bool,
@@ -173,89 +223,112 @@ impl FFICommonConfig {
                 .collect::<Vec<_>>(),
         )
     }
-}
 
-impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
-    type Error = color_eyre::Report;
-
-    fn try_from(params: &'a FFICommonConfig) -> Result<CommonConfig<'a>, Self::Error> {
-        if params.iterator_config.is_null() {
+    /// Convert to a Rust native struct.
+    ///
+    /// All pointers must be valid. Pointers are NULL checked, but we can't vouch for validity.
+    ///
+    /// # Errors
+    /// Errors if: any pointer is NULL, any array lengths invalid, region invalid, etc.
+    pub fn to_common_config<'a>(
+        &self,
+        file_output_enabled: bool,
+    ) -> Result<CommonConfig<'a>, color_eyre::Report> {
+        if self.iterator_config.is_null() {
             bail!("FFICommonConfig iterator_config is NULL");
         }
-        if params.output_file.is_null() {
-            bail!("FFICommonConfig output_file is NULL");
+        if file_output_enabled && self.output_file.is_null() {
+            bail!("FFICommonConfig output_file is NULL, file output selected");
         }
-        if params.compression.is_null() {
+        if self.compression.is_null() {
             bail!("FFICommonConfig compression is NULL");
         }
-        if params.writer_version.is_null() {
+        if self.writer_version.is_null() {
             bail!("FFICommonConfig writer_version is NULL");
         }
-        if params.region.is_null() {
+        if self.region.is_null() {
             bail!("FFICommonConfig region is NULL");
         }
         // We do this separately since we need the values for computing the region
-        let row_key_cols = params.row_key_cols()?;
+        let row_key_cols = self.row_key_cols()?;
         // Contains numeric types to indicate schema types
-        let schema_types = params.schema_types()?;
+        let schema_types = self.schema_types()?;
 
-        let ffi_region = unsafe { params.region.as_ref() }.unwrap();
+        let ffi_region = unsafe { self.region.as_ref() }.unwrap();
         let region = FFISleeperRegion::to_sleeper_region(ffi_region, &row_key_cols, &schema_types)?;
 
         // Extract iterator config
         let iterator_config = Some(
-            unsafe { CStr::from_ptr(params.iterator_config) }
+            unsafe { CStr::from_ptr(self.iterator_config) }
                 .to_str()?
                 .to_owned(),
         )
         // Set option to None if config is empty
         .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
 
-        let opts = SleeperParquetOptions {
-            max_row_group_size: params.max_row_group_size,
-            max_page_size: params.max_page_size,
-            compression: unsafe { CStr::from_ptr(params.compression) }
-                .to_str()?
-                .to_owned(),
-            writer_version: unsafe { CStr::from_ptr(params.writer_version) }
-                .to_str()?
-                .to_owned(),
-            column_truncate_length: params.column_truncate_length,
-            stats_truncate_length: params.stats_truncate_length,
-            dict_enc_row_keys: params.dict_enc_row_keys,
-            dict_enc_sort_keys: params.dict_enc_sort_keys,
-            dict_enc_values: params.dict_enc_values,
+        let output = if file_output_enabled {
+            let opts = SleeperParquetOptions {
+                max_row_group_size: self.max_row_group_size,
+                max_page_size: self.max_page_size,
+                compression: unsafe { CStr::from_ptr(self.compression) }
+                    .to_str()?
+                    .to_owned(),
+                writer_version: unsafe { CStr::from_ptr(self.writer_version) }
+                    .to_str()?
+                    .to_owned(),
+                column_truncate_length: self.column_truncate_length,
+                stats_truncate_length: self.stats_truncate_length,
+                dict_enc_row_keys: self.dict_enc_row_keys,
+                dict_enc_sort_keys: self.dict_enc_sort_keys,
+                dict_enc_values: self.dict_enc_values,
+            };
+            OutputType::File {
+                output_file: unsafe { CStr::from_ptr(self.output_file) }
+                    .to_str()
+                    .map(Url::parse)??,
+                opts,
+            }
+        } else {
+            OutputType::ArrowRecordBatch
+        };
+
+        let aws_config = if self.override_aws_config {
+            let Some(ffi_aws) = (unsafe { self.aws_config.as_ref() }) else {
+                bail!("override_aws_config is true, but aws_config pointer is NULL");
+            };
+            AwsConfig::try_from(ffi_aws).ok()
+        } else {
+            None
         };
 
         CommonConfigBuilder::new()
-            .aws_config(unpack_aws_config(params)?)
+            .aws_config(aws_config)
             .input_files(
-                unpack_string_array(params.input_files, params.input_files_len)?
+                unpack_string_array(self.input_files, self.input_files_len)?
                     .into_iter()
                     .map(Url::parse)
                     .collect::<Result<Vec<_>, _>>()?,
             )
-            .input_files_sorted(true)
+            .input_files_sorted(self.input_files_sorted)
             .row_key_cols(row_key_cols)
             .sort_key_cols(
-                unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
+                unpack_string_array(self.sort_key_cols, self.sort_key_cols_len)?
                     .into_iter()
                     .map(String::from)
                     .collect(),
             )
             .region(region)
-            .output(OutputType::File {
-                output_file: unsafe { CStr::from_ptr(params.output_file) }
-                    .to_str()
-                    .map(Url::parse)??,
-                opts,
-            })
+            .output(output)
             .iterator_config(iterator_config)
             .build()
     }
 }
 
 /// Contains all information needed for a Sleeper leaf partition query from a foreign function.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/query/query-datafusion/src/main/java/sleeper/query/datafusion/FFILeafPartitionQueryConfig.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFILeafPartitionQueryConfig {
     /// Common configuration
@@ -263,39 +336,96 @@ pub struct FFILeafPartitionQueryConfig {
     /// Length of query region array
     pub query_regions_len: usize,
     /// Pointers to query regions,
-    pub query_regions: *const *const FFISleeperRegion,
+    pub query_regions: *const FFISleeperRegion,
+    /// Are there any requested value fields? This is different to there being zero.
+    pub requested_value_fields_set: bool,
+    /// Length of requested value columns
+    pub requested_value_fields_len: usize,
+    /// Requested value columns.
+    pub requested_value_fields: *const *const c_char,
     /// Should quantile data sketches be written out?
     pub write_quantile_sketch: bool,
-    /// Should logical and physical query plans be written to log?
+    /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,
 }
 
-impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'a> {
-    type Error = color_eyre::Report;
-
-    fn try_from(config: &'a FFILeafPartitionQueryConfig) -> Result<Self, Self::Error> {
-        let Some(ffi_common) = (unsafe { config.common.as_ref() }) else {
+impl FFILeafPartitionQueryConfig {
+    /// Convert to a Rust native struct.
+    ///
+    /// All pointers must be valid. Pointers are NULL checked, but we can't vouch for validity.
+    ///
+    /// # Errors
+    /// Errors if: any pointer is NULL, any array lengths invalid, region invalid, etc.
+    pub fn to_leaf_config<'a>(
+        &self,
+        file_output_enabled: bool,
+    ) -> Result<LeafPartitionQueryConfig<'a>, color_eyre::Report> {
+        let Some(ffi_common) = (unsafe { self.common.as_ref() }) else {
             bail!("FFILeafPartitionQueryConfig common is NULL");
         };
-        let common = CommonConfig::try_from(ffi_common)?;
+        let common = ffi_common.to_common_config(file_output_enabled)?;
         let row_key_cols = ffi_common.row_key_cols()?;
         let schema_types = ffi_common.schema_types()?;
 
-        let ranges = unpack_typed_ref_array(config.query_regions, config.query_regions_len)?
+        let Some(_) = (unsafe { self.query_regions.as_ref() }) else {
+            bail!("FFILeafPartitionQueryConfig query_regions is NULL");
+        };
+
+        let ranges = unsafe { slice::from_raw_parts(self.query_regions, self.query_regions_len) }
             .iter()
             .map(|ffi_reg| {
-                let Some(ffi_reg) = (unsafe { ffi_reg.as_ref() }) else {
-                    bail!("NULL pointer found in query ranges")
-                };
                 FFISleeperRegion::to_sleeper_region(ffi_reg, &row_key_cols, &schema_types)
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Self {
+        let requested_value_columns = if self.requested_value_fields_set {
+            Some(
+                unpack_string_array(self.requested_value_fields, self.requested_value_fields_len)?
+                    .into_iter()
+                    .map(String::from)
+                    .collect(),
+            )
+        } else {
+            None
+        };
+
+        Ok(LeafPartitionQueryConfig {
             common,
             ranges,
-            explain_plans: config.explain_plans,
-            write_quantile_sketch: config.write_quantile_sketch,
+            requested_value_fields: requested_value_columns,
+            explain_plans: self.explain_plans,
+            write_quantile_sketch: self.write_quantile_sketch,
         })
+    }
+}
+
+/// This is a simple struct that contains a single pointer to the [`FFI_ArrowArrayStream`].
+///
+/// The consumer should create one of these objects and then pass it to
+/// a query function which will populate the pointer.
+///
+/// As the contents of this struct are read and written by external code,
+/// we need it to be FFI compatible, so we apply the `#[repr(C)]` attribute
+/// to ensure Rust uses C compatible ordering, alignment and padding.
+///
+/// # Safety
+/// The Rust side of this function, should NOT read incoming value of
+/// [`arrow_array_stream`](FFIQueryResults::arrow_array_stream) as it is undefined.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/query/query-datafusion/src/main/java/sleeper/query/datafusion/FFIQueryResults.java.
+/// The order and types of the fields must match exactly.
+#[repr(C)]
+#[derive(Debug)]
+pub struct FFIQueryResults {
+    /// Pointer to an Arrow array stream for use by consumer.
+    pub arrow_array_stream: *const FFI_ArrowArrayStream,
+}
+
+impl Default for FFIQueryResults {
+    fn default() -> Self {
+        Self {
+            arrow_array_stream: std::ptr::null(),
+        }
     }
 }

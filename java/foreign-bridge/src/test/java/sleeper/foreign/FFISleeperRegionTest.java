@@ -29,12 +29,12 @@ public class FFISleeperRegionTest {
         FFISleeperRegion region = new FFISleeperRegion(runtime);
         Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
         Integer[] maxBounds = new Integer[]{1, 2, 3, 4};
-        region.region_mins.populate(minBounds, false);
-        region.region_maxs.populate(maxBounds, false);
+        region.mins.populate(minBounds, false);
+        region.maxs.populate(maxBounds, false);
         Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false, false};
         Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
-        region.region_mins_inclusive.populate(minbBoolBounds, false);
-        region.region_maxs_inclusive.populate(maxBoolBounds, false);
+        region.mins_inclusive.populate(minbBoolBounds, false);
+        region.maxs_inclusive.populate(maxBoolBounds, false);
 
         // Then
         assertThatIllegalStateException()
@@ -49,12 +49,12 @@ public class FFISleeperRegionTest {
         FFISleeperRegion region = new FFISleeperRegion(runtime);
         Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
         Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
-        region.region_mins.populate(minBounds, false);
-        region.region_maxs.populate(maxBounds, false);
+        region.mins.populate(minBounds, false);
+        region.maxs.populate(maxBounds, false);
         Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false};
         Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
-        region.region_mins_inclusive.populate(minbBoolBounds, false);
-        region.region_maxs_inclusive.populate(maxBoolBounds, false);
+        region.mins_inclusive.populate(minbBoolBounds, false);
+        region.maxs_inclusive.populate(maxBoolBounds, false);
 
         // Then
         assertThatIllegalStateException()
@@ -69,12 +69,12 @@ public class FFISleeperRegionTest {
         FFISleeperRegion region = new FFISleeperRegion(runtime);
         Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
         Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
-        region.region_mins.populate(minBounds, false);
-        region.region_maxs.populate(maxBounds, false);
+        region.mins.populate(minBounds, false);
+        region.maxs.populate(maxBounds, false);
         Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false, false};
         Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false};
-        region.region_mins_inclusive.populate(minbBoolBounds, false);
-        region.region_maxs_inclusive.populate(maxBoolBounds, false);
+        region.mins_inclusive.populate(minbBoolBounds, false);
+        region.maxs_inclusive.populate(maxBoolBounds, false);
 
         // Then
         assertThatIllegalStateException()
@@ -89,12 +89,12 @@ public class FFISleeperRegionTest {
         FFISleeperRegion region = new FFISleeperRegion(runtime);
         Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
         Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
-        region.region_mins.populate(minBounds, false);
-        region.region_maxs.populate(maxBounds, false);
+        region.mins.populate(minBounds, false);
+        region.maxs.populate(maxBounds, false);
         Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false, false};
         Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
-        region.region_mins_inclusive.populate(minbBoolBounds, false);
-        region.region_maxs_inclusive.populate(maxBoolBounds, false);
+        region.mins_inclusive.populate(minbBoolBounds, false);
+        region.maxs_inclusive.populate(maxBoolBounds, false);
 
         // Then
         region.validate();

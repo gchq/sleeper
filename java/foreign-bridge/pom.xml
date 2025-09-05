@@ -27,6 +27,12 @@
     <artifactId>foreign-bridge</artifactId>
 
     <dependencies>
+        <!-- Sleeper dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Native code loading and linking -->
         <dependency>
             <groupId>com.github.jnr</groupId>

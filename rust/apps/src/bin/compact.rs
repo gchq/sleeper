@@ -22,7 +22,7 @@ use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
     ColRange, CommonConfigBuilder, OutputType, PartitionBound, SleeperParquetOptions,
-    SleeperPartitionRegion, run_compaction,
+    SleeperRegion, run_compaction,
 };
 use std::{collections::HashMap, io::Write};
 use url::Url;
@@ -146,7 +146,7 @@ async fn main() -> color_eyre::Result<()> {
         .input_files_sorted(true)
         .row_key_cols(args.row_keys)
         .sort_key_cols(args.sort_keys)
-        .region(SleeperPartitionRegion::new(map))
+        .region(SleeperRegion::new(map))
         .output(OutputType::File {
             output_file,
             opts: parquet_options,

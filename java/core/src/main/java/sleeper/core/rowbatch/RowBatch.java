@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.rowbatch;
+package sleeper.core.rowbatch;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.row.Row;

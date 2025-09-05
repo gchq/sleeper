@@ -366,7 +366,8 @@ public interface TableDefaultProperty {
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DATA_ENGINE = Index.propertyBuilder("sleeper.default.table.data.engine")
             .description("Select which data engine to use for the table. DataFusion support is experimental. " +
-                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
+                    "Even with DataFusion enabled, DataFusion will only be used in queries if environment variable " +
+                    "DF_QUERY is non null. Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
             .defaultValue(DataEngine.JAVA.toString())
             .validationPredicate(DataEngine::isValid)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
