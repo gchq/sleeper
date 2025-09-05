@@ -25,7 +25,7 @@ public class SleeperConfig {
     private String configBucket = "";
     private int maxSplitBatchSize = 1024;
     private boolean enableTrinoPartitioning = true;
-    private long maxArrowRootAllocatorBytes = 1024 * 1024 * 1024L;
+    private long maxArrowRootAllocatorBytes = 2 * 1024 * 1024 * 1024L;
     private long maxBytesToWriteLocallyPerWriter = 2 * 1024 * 1024 * 1024L;
     private String localWorkingDirectory = "/tmp";
 

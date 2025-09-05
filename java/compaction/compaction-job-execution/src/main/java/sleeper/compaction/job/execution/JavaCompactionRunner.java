@@ -130,7 +130,7 @@ public class JavaCompactionRunner implements CompactionRunner {
             inputIterators.add(rowIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
             LOGGER.debug("Compaction job {}: File is being filtered on ranges {}", compactionJob.getId(),
-                    region.getRanges());
+                    region.getRangesUnordered());
         }
         return inputIterators;
     }

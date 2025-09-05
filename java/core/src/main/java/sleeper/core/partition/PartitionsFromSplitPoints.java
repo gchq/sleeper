@@ -112,7 +112,7 @@ public class PartitionsFromSplitPoints {
                 Partition.Builder rightPartition = partitionsInLayer.get(i + 1);
 
                 List<Range> ranges = new ArrayList<>();
-                for (Range range : leftPartition.getRegion().getRanges()) {
+                for (Range range : leftPartition.getRegion().getRangesUnordered()) {
                     if (!range.getFieldName().equals(rowKeyFields.get(0).getName())) {
                         ranges.add(range); // TODO Check that left and right have the same ranges in the dimensions other than 0
                     }

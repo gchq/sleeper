@@ -50,6 +50,7 @@ import io.trino.spi.statistics.ComputedStatistics;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
+import sleeper.core.schema.Schema;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperInsertTableHandle;
 import sleeper.trino.handle.SleeperPartitioningHandle;
@@ -216,10 +217,12 @@ public class SleeperMetadata implements ConnectorMetadata {
             List<ColumnHandle> keyColumnHandles = sleeperTableHandle.getColumnHandlesInCategoryInOrder(SleeperColumnHandle.SleeperColumnCategory.ROWKEY).stream()
                     .map(ColumnHandle.class::cast)
                     .collect(ImmutableList.toImmutableList());
-            // Generate as list of the lower-bounds of eadh partition and use these to create a SleeperPartitioningHandle object.
-            List<Key> partitionMinKeys = this.sleeperConnectionAsTrino.streamPartitions(sleeperTableHandle.getSchemaTableName())
+
+            Schema tableSchema = sleeperConnectionAsTrino.getSchema(sleeperTableHandle.getSchemaTableName());
+            // Generate as list of the lower-bounds of each partition and use these to create a SleeperPartitioningHandle object.
+            List<Key> partitionMinKeys = sleeperConnectionAsTrino.streamPartitions(sleeperTableHandle.getSchemaTableName())
                     .filter(Partition::isLeafPartition)
-                    .map(partition -> Key.create(partition.getRegion().getRanges().stream().map(Range::getMin).collect(ImmutableList.toImmutableList())))
+                    .map(partition -> Key.create(partition.getRegion().getRangesOrdered(tableSchema).stream().map(Range::getMin).collect(ImmutableList.toImmutableList())))
                     .collect(ImmutableList.toImmutableList());
             ConnectorTablePartitioning connectorTablePartitioning = new ConnectorTablePartitioning(
                     new SleeperPartitioningHandle(sleeperTableHandle, partitionMinKeys), keyColumnHandles);
