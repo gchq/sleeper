@@ -1,0 +1,28 @@
+Row group 0
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-0001                                  row-0100                                                <none>                <none>
+page-1                         0  row-0101                                  row-0200                                                <none>                <none>
+page-2                         0  row-0201                                  row-0300                                                <none>                <none>
+page-3                         0  row-0301                                  row-0400                                                <none>                <none>
+page-4                         0  row-0401                                  row-0500                                                <none>                <none>
+page-5                         0  row-0501                                  row-0600                                                <none>                <none>
+page-6                         0  row-0601                                  row-0700                                                <none>                <none>
+page-7                         0  row-0701                                  row-0800                                                <none>                <none>
+page-8                         0  row-0801                                  row-0900                                                <none>                <none>
+page-9                         0  row-0901                                  row-1000                                                <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                         4                   146                     0                   800
+page-1                       150                   145                   100                   800
+page-2                       295                   146                   200                   800
+page-3                       441                   146                   300                   800
+page-4                       587                   146                   400                   800
+page-5                       733                   146                   500                   800
+page-6                       879                   146                   600                   800
+page-7                      1025                   146                   700                   800
+page-8                      1171                   144                   800                   800
+page-9                      1315                   158                   900                   800
+
