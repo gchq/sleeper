@@ -37,7 +37,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
  * Autoscaler to scale EC2 instances for the desired number of compaction tasks. This makes decisions on how many
  * instances to start and stop based on the amount of work there is to do.
  */
-public class CompactionTaskHostScaler {
+public class CompactionTaskHostScaler implements TaskHostScaler {
 
     private final InstanceProperties instanceProperties;
     private final CheckAutoScalingGroup asgQuery;
@@ -63,6 +63,7 @@ public class CompactionTaskHostScaler {
      *
      * @param numberOfTasks total number of tasks to provide capacity for
      */
+    @Override
     public void scaleTo(int numberOfTasks) {
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         // Only need scaler for EC2
