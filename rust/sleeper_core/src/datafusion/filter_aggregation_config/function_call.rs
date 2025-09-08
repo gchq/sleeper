@@ -99,34 +99,35 @@ mod tests {
         let call = call("fn", vec![word("abc"), number(123)]);
         call.expect_args(&["param1", "param2"])?;
         assert_eq!(call.word_param(0, "param1")?, "abc");
-        Ok(assert_eq!(call.number_param(1, "param2")?, 123))
+        assert_eq!(call.number_param(1, "param2")?, 123);
+        Ok(())
     }
 
     #[test]
-    fn should_fail_expected_number_of_parameters() -> Result<()> {
+    fn should_fail_expected_number_of_parameters() {
         let call = call("fn", vec![word("abc"), number(123)]);
-        Ok(assert_error!(
+        assert_error!(
             call.expect_args(&["param1", "param2", "param3"]),
             "fn expects 3 arguments (param1, param2, param3), found 2"
-        ))
+        );
     }
 
     #[test]
-    fn should_fail_reading_word_wrong_type() -> Result<()> {
+    fn should_fail_reading_word_wrong_type() {
         let call = call("fn", vec![word("abc"), number(123)]);
-        Ok(assert_error!(
+        assert_error!(
             call.word_param(1, "param2"),
             "wrong type for fn parameter 1 (param2), expected word, found Number(123)"
-        ))
+        );
     }
 
     #[test]
-    fn should_fail_reading_number_wrong_type() -> Result<()> {
+    fn should_fail_reading_number_wrong_type() {
         let call = call("fn", vec![word("abc"), number(123)]);
-        Ok(assert_error!(
+        assert_error!(
             call.number_param(0, "param1"),
             "wrong type for fn parameter 0 (param1), expected number, found Word(\"abc\")"
-        ))
+        );
     }
 
     fn call(name: &str, parameters: Vec<FunctionParameter>) -> FunctionCall {

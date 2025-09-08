@@ -81,31 +81,35 @@ mod tests {
 
     #[test]
     fn should_parse_age_off_filter() -> Result<()> {
-        Ok(assert_eq!(
+        assert_eq!(
             Filter::parse_config("ageOff(value,1234)")?,
             vec![age_off("value", 1234)]
-        ))
+        );
+        Ok(())
     }
 
     #[test]
     fn should_parse_two_filters() -> Result<()> {
-        Ok(assert_eq!(
+        assert_eq!(
             Filter::parse_config("ageOff(value,123), ageOff(other, 456)")?,
             vec![age_off("value", 123), age_off("other", 456)]
-        ))
+        );
+        Ok(())
     }
 
     #[test]
     fn should_parse_no_filters() -> Result<()> {
-        Ok(assert_eq!(Filter::parse_config("")?, vec![]))
+        assert_eq!(Filter::parse_config("")?, vec![]);
+        Ok(())
     }
 
     #[test]
     fn should_ignore_case() -> Result<()> {
-        Ok(assert_eq!(
+        assert_eq!(
             Filter::parse_config("AGEOFF(a, 1), ageoff(b, 2)")?,
             vec![age_off("a", 1), age_off("b", 2)]
-        ))
+        );
+        Ok(())
     }
 
     #[test]
@@ -113,7 +117,7 @@ mod tests {
         assert_error!(
             Filter::parse_config("go(abc, 123)"),
             "unrecognised filter function name \"go\""
-        )
+        );
     }
 
     #[test]
@@ -121,7 +125,7 @@ mod tests {
         assert_error!(
             Filter::parse_config("(abc, 123)"),
             "expected function name at position 0"
-        )
+        );
     }
 
     #[test]
@@ -129,7 +133,7 @@ mod tests {
         assert_error!(
             Filter::parse_config("ageOff(abc)"),
             "ageOff expects 2 arguments (column, max age), found 1"
-        )
+        );
     }
 
     #[test]
@@ -137,7 +141,7 @@ mod tests {
         assert_error!(
             Filter::parse_config("ageOff(abc, 123, 456)"),
             "ageOff expects 2 arguments (column, max age), found 3"
-        )
+        );
     }
 
     #[test]
@@ -145,7 +149,7 @@ mod tests {
         assert_error!(
             Filter::parse_config("ageOff(123, 456)"),
             "wrong type for ageOff parameter 0 (column), expected word, found Number(123)"
-        )
+        );
     }
 
     fn age_off(column: &str, max_age: i64) -> Filter {

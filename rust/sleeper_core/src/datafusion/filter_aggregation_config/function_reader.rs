@@ -181,10 +181,11 @@ mod tests {
     #[test]
     fn should_read_function_call() -> Result<()> {
         let mut reader = FunctionReader::new("answer(42)");
-        Ok(assert_eq!(
+        assert_eq!(
             expect_function_call(&mut reader)?,
             call("answer", vec![number(42)])
-        ))
+        );
+        Ok(())
     }
 
     #[test]
@@ -194,37 +195,38 @@ mod tests {
             expect_function_call(&mut reader)?,
             call("answer", vec![number(42)])
         );
-        Ok(assert_eq!(
+        assert_eq!(
             expect_function_call(&mut reader)?,
             call("question", vec![word("earth")])
-        ))
+        );
+        Ok(())
     }
 
     #[test]
     fn should_read_function_call_with_two_parameters() -> Result<()> {
         let mut reader = FunctionReader::new("fn(a,123)");
-        Ok(assert_eq!(
+        assert_eq!(
             expect_function_call(&mut reader)?,
             call("fn", vec![word("a"), number(123)])
-        ))
+        );
+        Ok(())
     }
 
     #[test]
     fn should_read_function_call_with_no_parameters() -> Result<()> {
         let mut reader = FunctionReader::new("go()");
-        Ok(assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("go", vec![])
-        ))
+        assert_eq!(expect_function_call(&mut reader)?, call("go", vec![]));
+        Ok(())
     }
 
     #[test]
     fn should_read_function_call_with_whitespace() -> Result<()> {
         let mut reader = FunctionReader::new(" fn ( a , 123 ) ");
-        Ok(assert_eq!(
+        assert_eq!(
             expect_function_call(&mut reader)?,
             call("fn", vec![word("a"), number(123)])
-        ))
+        );
+        Ok(())
     }
 
     #[test]
@@ -233,37 +235,41 @@ mod tests {
         assert_error!(
             reader.read_function_call(),
             "expected function name at position 0"
-        )
+        );
     }
 
     #[test]
     fn should_find_no_function_call() -> Result<()> {
         let mut reader = FunctionReader::new("");
-        Ok(assert_eq!(reader.read_function_call()?, None))
+        assert_eq!(reader.read_function_call()?, None);
+        Ok(())
     }
 
     #[test]
     fn should_find_no_more_function_calls_after_first() -> Result<()> {
         let mut reader = FunctionReader::new("fn()");
         assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
-        Ok(assert_eq!(reader.read_function_call()?, None))
+        assert_eq!(reader.read_function_call()?, None);
+        Ok(())
     }
 
     #[test]
     fn should_find_no_more_function_calls_after_first_with_trailing_whitespace() -> Result<()> {
         let mut reader = FunctionReader::new("fn() ");
         assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
-        Ok(assert_eq!(reader.read_function_call()?, None))
+        assert_eq!(reader.read_function_call()?, None);
+        Ok(())
     }
 
     #[test]
     fn should_find_no_more_function_calls_after_first_with_trailing_comma() -> Result<()> {
         let mut reader = FunctionReader::new("fn(),");
         assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
-        Ok(assert_error!(
+        assert_error!(
             reader.read_function_call(),
             "expected function call at position 5"
-        ))
+        );
+        Ok(())
     }
 
     #[test]
@@ -272,7 +278,7 @@ mod tests {
         assert_error!(
             reader.read_function_call(),
             "expected comma or close parenthesis at position 5"
-        )
+        );
     }
 
     #[test]
@@ -282,10 +288,8 @@ mod tests {
             expect_function_call(&mut reader)?,
             call("fn", vec![number(1)])
         );
-        Ok(assert_error!(
-            reader.read_function_call(),
-            "expected comma at position 6"
-        ))
+        assert_error!(reader.read_function_call(), "expected comma at position 6");
+        Ok(())
     }
 
     #[test]
@@ -294,7 +298,7 @@ mod tests {
         assert_error!(
             reader.read_function_call(),
             "expected close parenthesis at position 7"
-        )
+        );
     }
 
     #[test]
@@ -303,7 +307,7 @@ mod tests {
         assert_error!(
             reader.read_function_call(),
             "expected open parenthesis at position 2"
-        )
+        );
     }
 
     #[test]
@@ -312,7 +316,7 @@ mod tests {
         assert_error!(
             reader.read_function_call(),
             "expected parameter or close parenthesis at position 3"
-        )
+        );
     }
 
     fn expect_function_call(reader: &mut FunctionReader) -> Result<FunctionCall> {
