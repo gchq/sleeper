@@ -41,36 +41,41 @@ impl<'h> FunctionReader<'h> {
         let name = self
             .read_word()
             .ok_or_else(|| eyre!("expected function name at position {}", self.pos))?;
+        let parameters = self.read_parameters()?;
+        return Ok(FunctionCall { name, parameters });
+    }
+
+    fn read_parameters(&mut self) -> Result<Vec<FunctionParameter>> {
         ensure!(
             self.read_expected_char('('),
             "expected open parenthesis at position {}",
             self.pos
         );
-        let parameters = self.read_parameters()?;
-        ensure!(
-            self.read_expected_char(')'),
-            "expected comma or close parenthesis at position {}",
-            self.pos
-        );
-        return Ok(FunctionCall { name, parameters });
-    }
-
-    fn read_parameters(&mut self) -> Result<Vec<FunctionParameter>> {
         let mut parameters = vec![];
-        let mut first = true;
-        while self.is_next_parameter(first)? {
+        loop {
             if let Some(param) = self.read_parameter() {
-                parameters.push(param)
+                parameters.push(param);
+                if self.is_next_parameter()? {
+                    continue;
+                } else {
+                    ensure!(
+                        self.read_expected_char(')'),
+                        "expected comma or close parenthesis at position {}",
+                        self.pos
+                    );
+                }
+            } else {
+                ensure!(
+                    self.read_expected_char(')'),
+                    "expected parameter or close parenthesis at position {}",
+                    self.pos
+                );
             }
-            first = false;
+            return Ok(parameters);
         }
-        Ok(parameters)
     }
 
-    fn is_next_parameter(&mut self, first: bool) -> Result<bool> {
-        if first {
-            return Ok(true);
-        }
+    fn is_next_parameter(&mut self) -> Result<bool> {
         self.ignore_whitespace();
         if let Some(c) = self.read_char() {
             if c == ',' {
@@ -269,6 +274,15 @@ mod tests {
         assert_error!(
             reader.read_function_call(),
             "expected open parenthesis at position 2".to_string()
+        )
+    }
+
+    #[test]
+    fn should_find_quoted_parameter() {
+        let mut reader = FunctionReader::new("fn(\"abc\")");
+        assert_error!(
+            reader.read_function_call(),
+            "expected parameter or close parenthesis at position 3".to_string()
         )
     }
 }
