@@ -207,13 +207,6 @@ mod tests {
         };
     }
 
-    // Tests:
-    // - One function with no parameters
-    // - One function with two parameters
-    // - Two functions
-    // - No functions
-    // - Explore invalid possibilities
-
     #[test]
     fn should_read_function_call() -> Result<()> {
         let mut reader = FunctionReader::new("answer(42)");
