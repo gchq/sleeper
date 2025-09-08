@@ -206,10 +206,21 @@ mod tests {
         let mut reader = FunctionReader::new("answer(42)");
         Ok(assert_eq!(
             expect_function_call(&mut reader)?,
-            FunctionCall {
-                name: "answer".to_string(),
-                parameters: vec![FunctionParameter::Number(42)]
-            }
+            call("answer", vec![number(42)])
+        ))
+    }
+
+    #[test]
+    fn should_read_two_function_calls() -> Result<()> {
+        let mut reader = FunctionReader::new("answer(42), question(earth)");
+        assert_eq!(
+            expect_function_call(&mut reader)?,
+            call("answer", vec![number(42)])
+        );
+        reader.read_expected_char(',');
+        Ok(assert_eq!(
+            expect_function_call(&mut reader)?,
+            call("question", vec![word("earth")])
         ))
     }
 
@@ -218,13 +229,7 @@ mod tests {
         let mut reader = FunctionReader::new("fn(a,123)");
         Ok(assert_eq!(
             expect_function_call(&mut reader)?,
-            FunctionCall {
-                name: "fn".to_string(),
-                parameters: vec![
-                    FunctionParameter::Word("a".to_string()),
-                    FunctionParameter::Number(123)
-                ]
-            }
+            call("fn", vec![word("a"), number(123)])
         ))
     }
 
@@ -233,10 +238,7 @@ mod tests {
         let mut reader = FunctionReader::new("go()");
         Ok(assert_eq!(
             expect_function_call(&mut reader)?,
-            FunctionCall {
-                name: "go".to_string(),
-                parameters: vec![]
-            }
+            call("go", vec![])
         ))
     }
 
@@ -245,13 +247,7 @@ mod tests {
         let mut reader = FunctionReader::new(" fn ( a , 123 ) ");
         Ok(assert_eq!(
             expect_function_call(&mut reader)?,
-            FunctionCall {
-                name: "fn".to_string(),
-                parameters: vec![
-                    FunctionParameter::Word("a".to_string()),
-                    FunctionParameter::Number(123)
-                ]
-            }
+            call("fn", vec![word("a"), number(123)])
         ))
     }
 
@@ -310,5 +306,19 @@ mod tests {
         reader
             .read_function_call()?
             .ok_or_else(|| eyre!("found no function call"))
+    }
+
+    fn call(name: &str, parameters: Vec<FunctionParameter>) -> FunctionCall {
+        let name = name.to_string();
+        FunctionCall { name, parameters }
+    }
+
+    fn word(value: &str) -> FunctionParameter {
+        let value = value.to_string();
+        FunctionParameter::Word(value)
+    }
+
+    fn number(value: i64) -> FunctionParameter {
+        FunctionParameter::Number(value)
     }
 }
