@@ -43,7 +43,7 @@ impl<'h> FunctionReader<'h> {
             .ok_or_else(|| eyre!("expected function name at position {}", self.pos))?;
         ensure!(
             self.read_expected_char('('),
-            "expected open paren at position {}",
+            "expected open parenthesis at position {}",
             self.pos
         );
         let parameters = self.read_parameters()?;
@@ -260,6 +260,15 @@ mod tests {
         assert_error!(
             reader.read_function_call(),
             "expected close parenthesis at position 7".to_string()
+        )
+    }
+
+    #[test]
+    fn should_find_no_open_paren() {
+        let mut reader = FunctionReader::new("fn");
+        assert_error!(
+            reader.read_function_call(),
+            "expected open parenthesis at position 2".to_string()
         )
     }
 }
