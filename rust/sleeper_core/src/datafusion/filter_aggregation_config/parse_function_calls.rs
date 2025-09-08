@@ -49,7 +49,7 @@ impl<'h> FunctionReader<'h> {
         let parameters = self.read_parameters()?;
         ensure!(
             self.read_expected_char(')'),
-            "expected comma or close paren at position {}",
+            "expected comma or close parenthesis at position {}",
             self.pos
         );
         return Ok(FunctionCall { name, parameters });
@@ -80,7 +80,7 @@ impl<'h> FunctionReader<'h> {
                 Ok(false)
             }
         } else {
-            Err(eyre!("unexpected end of string at position {}", self.pos))
+            Err(eyre!("expected close parenthesis at position {}", self.pos))
         }
     }
 
@@ -250,7 +250,16 @@ mod tests {
         let mut reader = FunctionReader::new("fn(a b)");
         assert_error!(
             reader.read_function_call(),
-            "expected comma or close paren at position 5".to_string()
+            "expected comma or close parenthesis at position 5".to_string()
+        )
+    }
+
+    #[test]
+    fn should_find_no_close_paren() {
+        let mut reader = FunctionReader::new("fn(a, b");
+        assert_error!(
+            reader.read_function_call(),
+            "expected close parenthesis at position 7".to_string()
         )
     }
 }
