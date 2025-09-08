@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use color_eyre::eyre::{Result, ensure, eyre};
+use color_eyre::eyre::{Error, Result, ensure, eyre};
 
 pub struct FunctionReader<'h> {
     haystack: &'h str,
@@ -171,26 +171,47 @@ impl<'h> FunctionReader<'h> {
 }
 
 impl FunctionCall {
-    pub fn word_param(&self, index: usize) -> Result<&String> {
+    pub fn expect_args(&self, param_names: Vec<&str>) -> Result<()> {
+        ensure!(
+            self.parameters.len() == param_names.len(),
+            "{} expects {} arguments ({}), found {}",
+            self.name,
+            param_names.len(),
+            param_names.join(", "),
+            self.parameters.len()
+        );
+        Ok(())
+    }
+
+    pub fn word_param(&self, index: usize, param_name: &str) -> Result<&str> {
         let param = self.param(index)?;
         if let FunctionParameter::Word(value) = param {
             Ok(value)
         } else {
-            Err(eyre!(
-                "expected string at parameter {index}, found {param:?}"
-            ))
+            Err(self.type_error(index, param_name, param, "word"))
         }
     }
 
-    pub fn number_param(&self, index: usize) -> Result<i64> {
+    pub fn number_param(&self, index: usize, param_name: &str) -> Result<i64> {
         let param = self.param(index)?;
         if let FunctionParameter::Number(value) = param {
             Ok(*value)
         } else {
-            Err(eyre!(
-                "expected number at parameter {index}, found {param:?}"
-            ))
+            Err(self.type_error(index, param_name, param, "number"))
         }
+    }
+
+    fn type_error(
+        &self,
+        index: usize,
+        param_name: &str,
+        param: &FunctionParameter,
+        expected_type: &str,
+    ) -> Error {
+        eyre!(
+            "wrong type for {} parameter {index} ({param_name}), expected {expected_type}, found {param:?}",
+            self.name
+        )
     }
 
     fn param(&self, index: usize) -> Result<&FunctionParameter> {
@@ -351,6 +372,45 @@ mod tests {
             reader.read_function_call(),
             "expected parameter or close parenthesis at position 3"
         )
+    }
+
+    #[test]
+    fn should_read_parameters() -> Result<()> {
+        let call = parse_function_call("fn(abc, 123)")?;
+        call.expect_args(vec!["param1", "param2"])?;
+        assert_eq!(call.word_param(0, "param1")?, "abc");
+        Ok(assert_eq!(call.number_param(1, "param2")?, 123))
+    }
+
+    #[test]
+    fn should_fail_expected_number_of_parameters() -> Result<()> {
+        let call = parse_function_call("fn(abc, 123)")?;
+        Ok(assert_error!(
+            call.expect_args(vec!["param1", "param2", "param3"]),
+            "fn expects 3 arguments (param1, param2, param3), found 2"
+        ))
+    }
+
+    #[test]
+    fn should_fail_reading_word_wrong_type() -> Result<()> {
+        let call = parse_function_call("fn(abc, 123)")?;
+        Ok(assert_error!(
+            call.word_param(1, "param2"),
+            "wrong type for fn parameter 1 (param2), expected word, found Number(123)"
+        ))
+    }
+
+    #[test]
+    fn should_fail_reading_number_wrong_type() -> Result<()> {
+        let call = parse_function_call("fn(abc, 123)")?;
+        Ok(assert_error!(
+            call.number_param(0, "param1"),
+            "wrong type for fn parameter 0 (param1), expected number, found Word(\"abc\")"
+        ))
+    }
+
+    fn parse_function_call(string: &str) -> Result<FunctionCall> {
+        expect_function_call(&mut FunctionReader::new(string))
     }
 
     fn expect_function_call(reader: &mut FunctionReader) -> Result<FunctionCall> {

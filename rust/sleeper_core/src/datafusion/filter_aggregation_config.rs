@@ -94,14 +94,10 @@ impl Filter {
             "unrecognised filter function name \"{}\"",
             call.name
         );
-        ensure!(
-            call.parameters.len() == 2,
-            "ageOff expects 2 arguments (column, max age), found {}",
-            call.parameters.len()
-        );
+        call.expect_args(vec!["column", "max age"])?;
         Ok(Filter::Ageoff {
-            column: call.word_param(0)?.clone(),
-            max_age: call.number_param(1)?,
+            column: call.word_param(0, "column")?.to_string(),
+            max_age: call.number_param(1, "max age")?,
         })
     }
 }
@@ -293,7 +289,6 @@ mod tests {
 
     // Tests:
     // - Unrecognised field name
-    // - Filter threshold has wrong type
 
     #[test]
     fn should_parse_age_off_filter() -> Result<()> {
@@ -353,6 +348,14 @@ mod tests {
         assert_error!(
             Filter::parse("ageOff(abc, 123, 456)"),
             "ageOff expects 2 arguments (column, max age), found 3"
+        )
+    }
+
+    #[test]
+    fn should_fail_with_field_name_wrong_type() {
+        assert_error!(
+            Filter::parse("ageOff(123, 456)"),
+            "wrong type for ageOff parameter 0 (column), expected word, found Number(123)"
         )
     }
 
