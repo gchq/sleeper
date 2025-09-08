@@ -73,7 +73,7 @@ impl<'h> FunctionReader<'h> {
             if self.read_expected_char(')') {
                 return Ok(parameters);
             }
-            if let Some(param) = self.read_parameter()? {
+            if let Some(param) = self.read_parameter() {
                 parameters.push(param);
                 if self.is_next_parameter()? {
                     continue;
@@ -107,11 +107,11 @@ impl<'h> FunctionReader<'h> {
         }
     }
 
-    fn read_parameter(&mut self) -> Result<Option<FunctionParameter>> {
-        Ok(self.read_word().map(|word| match word.parse::<i64>() {
+    fn read_parameter(&mut self) -> Option<FunctionParameter> {
+        self.read_word().map(|word| match word.parse::<i64>() {
             Ok(number) => FunctionParameter::Number(number),
             Err(_) => FunctionParameter::Word(word),
-        }))
+        })
     }
 
     fn read_word(&mut self) -> Option<String> {
