@@ -59,24 +59,15 @@ import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCUR
  */
 public class RunDataProcessingTasks {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunDataProcessingTasks.class);
-    private static String clusterName;
-    private static String fargateDefinitionFamily;
-    private static String containerName;
-    private static TaskHostScaler hostScaler;
-    private static String sqsJobQueueUrl;
-    private static LaunchType launchType;
-
+    private final TaskHostScaler hostScaler;
+    private final String sqsJobQueueUrl;
     private final TaskCounts taskCounts;
     private final TaskLauncher taskLauncher;
     private final int maximumRunningTasks;
 
     private RunDataProcessingTasks(Builder builder) {
-        clusterName = builder.clusterName;
-        fargateDefinitionFamily = builder.fargateDefinitionFamily;
-        containerName = builder.containerName;
-        hostScaler = builder.hostScaler;
-        sqsJobQueueUrl = builder.sqsJobQueueUrl;
-        launchType = builder.launchType;
+        this.hostScaler = builder.hostScaler;
+        this.sqsJobQueueUrl = builder.sqsJobQueueUrl;
         this.taskCounts = builder.taskCounts;
         this.taskLauncher = builder.taskLauncher;
         this.maximumRunningTasks = builder.maximumRunningTasks;
@@ -109,16 +100,16 @@ public class RunDataProcessingTasks {
     }
 
     public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+        String clusterName = instanceProperties.get(BULK_EXPORT_CLUSTER);
         return builder()
                 .hostScaler(new BulkExportTaskHostScaler())
                 .sqsJobQueueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
-                .clusterName(instanceProperties.get(BULK_EXPORT_CLUSTER))
-                .containerName(BULK_EXPORT_CONTAINER_NAME)
-                .fargateDefinitionFamily(instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY))
-                .taskCounts(() -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient))
-                .taskLauncher((numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort))
+                .taskCounts(() -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient))
+                .taskLauncher((numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, BULK_EXPORT_CONTAINER_NAME,
+                        clusterName, LaunchType.FARGATE,
+                        instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY),
+                        numberOfTasks, checkAbort))
                 .maximumRunningTasks(instanceProperties.getInt(MAXIMUM_CONCURRENT_BULK_EXPORT_TASKS))
-                .launchType(LaunchType.FARGATE)
                 .build();
     }
 
@@ -127,24 +118,23 @@ public class RunDataProcessingTasks {
                 .hostScaler(compactionHostScaler)
                 .taskCounts(taskCounts)
                 .taskLauncher(taskLauncher)
-                .launchType(instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, LaunchType.class))
                 .build();
     }
 
     public static RunDataProcessingTasks createForCompactions(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+        String clusterName = instanceProperties.get(COMPACTION_CLUSTER);
         return setupForCompactions(instanceProperties)
                 .hostScaler(EC2Scaler.create(instanceProperties, asClient, ec2Client))
-                .taskCounts(() -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient))
-                .taskLauncher((numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort))
+                .taskCounts(() -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient))
+                .taskLauncher((numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, COMPACTION_CONTAINER_NAME, clusterName,
+                        instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, LaunchType.class),
+                        instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY), numberOfTasks, checkAbort))
                 .build();
     }
 
     private static Builder setupForCompactions(InstanceProperties instanceProperties) {
         return builder()
                 .sqsJobQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .clusterName(instanceProperties.get(COMPACTION_CLUSTER))
-                .containerName(COMPACTION_CONTAINER_NAME)
-                .fargateDefinitionFamily(instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY))
                 .maximumRunningTasks(instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS));
     }
 
@@ -220,17 +210,21 @@ public class RunDataProcessingTasks {
     /**
      * Attempts to launch some tasks on ECS.
      *
-     * @param ecsClient             Amazon ECS client
-     * @param instanceProperties    Properties for instance
-     * @param numberOfTasksToCreate number of tasks to create
-     * @param checkAbort            a condition under which launching will be aborted
+     * @param ecsClient               the Amazon ECS client
+     * @param instanceProperties      the properties for instance
+     * @param containerName           the name of the container
+     * @param clusterName             the name for the cluster
+     * @param launchType              the launch type either FARGATE or EC2
+     * @param fargateDefinitionFamily the fargate definition family
+     * @param numberOfTasksToCreate   the number of tasks to create
+     * @param checkAbort              a condition under which launching will be aborted
      */
     private static void launchTasks(
-            EcsClient ecsClient, InstanceProperties instanceProperties,
-            int numberOfTasksToCreate, BooleanSupplier checkAbort) {
+            EcsClient ecsClient, InstanceProperties instanceProperties, String containerName, String clusterName,
+            LaunchType launchType, String fargateDefinitionFamily, int numberOfTasksToCreate, BooleanSupplier checkAbort) {
         RunECSTasks.runTasks(builder -> builder
                 .ecsClient(ecsClient)
-                .runTaskRequest(createRunTaskRequest(instanceProperties))
+                .runTaskRequest(createRunTaskRequest(instanceProperties, containerName, clusterName, launchType, fargateDefinitionFamily))
                 .numberOfTasksToCreate(numberOfTasksToCreate)
                 .checkAbort(checkAbort));
     }
@@ -239,13 +233,18 @@ public class RunDataProcessingTasks {
      * Creates a new task request that can be passed to ECS.
      *
      * @param  instanceProperties       the instance properties
+     * @param  containerName            the name of the container
+     * @param  clusterName              the name for the cluster
+     * @param  launchType               the launch type either FARGATE or EC2
+     * @param  fargateDefinitionFamily  the fargate definition family
      * @return                          the request for ECS
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
-    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
+    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties, String containerName, String clusterName,
+            LaunchType launchType, String fargateDefinitionFamily) {
 
         // Choose either compaction or export
-        TaskOverride override = createOverride(instanceProperties);
+        TaskOverride override = createOverride(instanceProperties, containerName);
         RunTaskRequest.Builder runTaskRequest = RunTaskRequest.builder()
                 .cluster(clusterName)
                 .overrides(override)
@@ -259,7 +258,7 @@ public class RunDataProcessingTasks {
                     .platformVersion(fargateVersion)
                     .networkConfiguration(networkConfiguration)
                     .taskDefinition(fargateDefinitionFamily);
-        } else if (launchType == LaunchType.EC2) {
+        } else if (launchType == LaunchType.EC2) { //Only used by compactions
             runTaskRequest
                     .launchType(LaunchType.EC2)
                     .taskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY));
@@ -273,9 +272,10 @@ public class RunDataProcessingTasks {
      * Create the container definition overrides for the task launch.
      *
      * @param  instanceProperties the instance properties
+     * @param  containerName      the name of the container
      * @return                    the container definition overrides
      */
-    private static TaskOverride createOverride(InstanceProperties instanceProperties) {
+    private static TaskOverride createOverride(InstanceProperties instanceProperties, String containerName) {
         ContainerOverride containerOverride = ContainerOverride.builder()
                 .name(containerName)
                 .command(List.of(instanceProperties.get(CONFIG_BUCKET)))
@@ -302,33 +302,14 @@ public class RunDataProcessingTasks {
     }
 
     public static class Builder {
-        private String clusterName;
-        private String fargateDefinitionFamily;
-        private String containerName;
         private TaskHostScaler hostScaler;
         private String sqsJobQueueUrl;
         private TaskCounts taskCounts;
         private TaskLauncher taskLauncher;
         private int maximumRunningTasks;
-        private LaunchType launchType;
 
         private Builder() {
 
-        }
-
-        public Builder clusterName(String clusterName) {
-            this.clusterName = clusterName;
-            return this;
-        }
-
-        public Builder fargateDefinitionFamily(String fargateDefinitionFamily) {
-            this.fargateDefinitionFamily = fargateDefinitionFamily;
-            return this;
-        }
-
-        public Builder containerName(String containerName) {
-            this.containerName = containerName;
-            return this;
         }
 
         public Builder hostScaler(TaskHostScaler hostScaler) {
@@ -353,11 +334,6 @@ public class RunDataProcessingTasks {
 
         public Builder maximumRunningTasks(int maximumRunningTasks) {
             this.maximumRunningTasks = maximumRunningTasks;
-            return this;
-        }
-
-        public Builder launchType(LaunchType launchType) {
-            this.launchType = launchType;
             return this;
         }
 
