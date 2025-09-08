@@ -79,16 +79,16 @@ impl Filter {
         }
     }
 
-    pub fn parse(config_string: &str) -> eyre::Result<Vec<Self>> {
+    pub fn parse_config(config_string: &str) -> eyre::Result<Vec<Self>> {
         let mut reader = FunctionReader::new(config_string);
         let mut filters = vec![];
         while let Some(call) = reader.read_function_call()? {
-            filters.push(Self::from(call)?);
+            filters.push(Self::from_function_call(call)?);
         }
         Ok(filters)
     }
 
-    fn from(call: FunctionCall) -> eyre::Result<Filter> {
+    fn from_function_call(call: FunctionCall) -> eyre::Result<Filter> {
         ensure!(
             call.name.eq_ignore_ascii_case("ageOff"),
             "unrecognised filter function name \"{}\"",
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn should_parse_age_off_filter() -> Result<()> {
         Ok(assert_eq!(
-            Filter::parse("ageOff(value,1234)")?,
+            Filter::parse_config("ageOff(value,1234)")?,
             vec![age_off("value", 1234)]
         ))
     }
@@ -298,20 +298,20 @@ mod tests {
     #[test]
     fn should_parse_two_filters() -> Result<()> {
         Ok(assert_eq!(
-            Filter::parse("ageOff(value,123), ageOff(other, 456)")?,
+            Filter::parse_config("ageOff(value,123), ageOff(other, 456)")?,
             vec![age_off("value", 123), age_off("other", 456)]
         ))
     }
 
     #[test]
     fn should_parse_no_filters() -> Result<()> {
-        Ok(assert_eq!(Filter::parse("")?, vec![]))
+        Ok(assert_eq!(Filter::parse_config("")?, vec![]))
     }
 
     #[test]
     fn should_ignore_case() -> Result<()> {
         Ok(assert_eq!(
-            Filter::parse("AGEOFF(a, 1), ageoff(b, 2)")?,
+            Filter::parse_config("AGEOFF(a, 1), ageoff(b, 2)")?,
             vec![age_off("a", 1), age_off("b", 2)]
         ))
     }
@@ -319,7 +319,7 @@ mod tests {
     #[test]
     fn should_fail_with_unrecognised_filter_name() {
         assert_error!(
-            Filter::parse("go(abc, 123)"),
+            Filter::parse_config("go(abc, 123)"),
             "unrecognised filter function name \"go\""
         )
     }
@@ -327,7 +327,7 @@ mod tests {
     #[test]
     fn should_fail_with_no_filter_name() {
         assert_error!(
-            Filter::parse("(abc, 123)"),
+            Filter::parse_config("(abc, 123)"),
             "expected function name at position 0"
         )
     }
@@ -335,7 +335,7 @@ mod tests {
     #[test]
     fn should_fail_with_too_few_arguments() {
         assert_error!(
-            Filter::parse("ageOff(abc)"),
+            Filter::parse_config("ageOff(abc)"),
             "ageOff expects 2 arguments (column, max age), found 1"
         )
     }
@@ -343,7 +343,7 @@ mod tests {
     #[test]
     fn should_fail_with_too_many_arguments() {
         assert_error!(
-            Filter::parse("ageOff(abc, 123, 456)"),
+            Filter::parse_config("ageOff(abc, 123, 456)"),
             "ageOff expects 2 arguments (column, max age), found 3"
         )
     }
@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn should_fail_with_field_name_wrong_type() {
         assert_error!(
-            Filter::parse("ageOff(123, 456)"),
+            Filter::parse_config("ageOff(123, 456)"),
             "wrong type for ageOff parameter 0 (column), expected word, found Number(123)"
         )
     }
