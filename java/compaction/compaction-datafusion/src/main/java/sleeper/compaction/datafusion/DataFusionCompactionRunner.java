@@ -34,7 +34,7 @@ import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
-import sleeper.foreign.datafusion.DataFusionAwsConfig;
+import sleeper.foreign.datafusion.FFIAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
@@ -57,8 +57,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
     /** Maximum number of rows in a Parquet row group. */
-    private static final DataFusionCompactionFunctions NATIVE_COMPACTION;
-    private final DataFusionAwsConfig awsConfig;
+    public static final DataFusionCompactionFunctions NATIVE_COMPACTION;
+    private final FFIAwsConfig awsConfig;
     private final Configuration hadoopConf;
 
     static {
@@ -72,10 +72,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     public DataFusionCompactionRunner(Configuration hadoopConf) {
-        this(DataFusionAwsConfig.getDefault(), hadoopConf);
+        this(FFIAwsConfig.getDefault(jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION)), hadoopConf);
     }
 
-    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
+    public DataFusionCompactionRunner(FFIAwsConfig awsConfig, Configuration hadoopConf) {
         this.awsConfig = awsConfig;
         this.hadoopConf = hadoopConf;
     }
@@ -117,7 +117,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
-            Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
+            Region region, FFIAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
         FFICommonConfig params = new FFICommonConfig(runtime, Optional.ofNullable(awsConfig));
         params.input_files.populate(job.getInputFiles().toArray(String[]::new), false);

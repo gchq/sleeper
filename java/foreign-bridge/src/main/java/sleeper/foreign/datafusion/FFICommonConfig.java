@@ -23,7 +23,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.foreign.FFIAwsConfig;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIArray;
 
@@ -84,7 +83,7 @@ public class FFICommonConfig extends Struct {
         this(runtime, Optional.empty());
     }
 
-    public FFICommonConfig(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> awsConfig) {
+    public FFICommonConfig(jnr.ffi.Runtime runtime, Optional<FFIAwsConfig> awsConfig) {
         super(runtime);
         this.setAWSCredentials(runtime, awsConfig);
         setDefaults();
@@ -115,16 +114,10 @@ public class FFICommonConfig extends Struct {
      * @param runtime the JNR runtime
      * @param config  the optional AWS credentials
      */
-    public void setAWSCredentials(jnr.ffi.Runtime runtime, Optional<DataFusionAwsConfig> config) {
+    public void setAWSCredentials(jnr.ffi.Runtime runtime, Optional<FFIAwsConfig> config) {
         config.ifPresentOrElse(awsConfig -> {
             this.override_aws_config.set(true);
-            FFIAwsConfig ffiAwsConfig = new FFIAwsConfig(runtime);
-            ffiAwsConfig.region.set(awsConfig.getRegion());
-            ffiAwsConfig.endpoint.set(awsConfig.getEndpoint());
-            ffiAwsConfig.allow_http.set(awsConfig.isAllowHttp());
-            ffiAwsConfig.access_key.set(awsConfig.getAccessKey());
-            ffiAwsConfig.secret_key.set(awsConfig.getSecretKey());
-            this.aws_config.set(ffiAwsConfig);
+            this.aws_config.set(awsConfig);
         }, () -> {
             this.override_aws_config.set(false);
         });

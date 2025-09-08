@@ -44,7 +44,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
-import sleeper.foreign.datafusion.DataFusionAwsConfig;
+import sleeper.foreign.datafusion.FFIAwsConfig;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.row.ParquetReaderIterator;
@@ -122,9 +122,10 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
         return CompactionJobTrackerTestHelper.getRowsProcessed(jobTracker, job.getId());
     }
 
-    private static DataFusionAwsConfig createAwsConfig() {
+    private static FFIAwsConfig createAwsConfig() {
         LocalStackContainer container = SleeperLocalStackContainer.INSTANCE;
-        return DataFusionAwsConfig.overrideEndpoint(container.getEndpoint().toString());
+        return FFIAwsConfig.overrideEndpoint(jnr.ffi.Runtime.getRuntime(DataFusionCompactionRunner.NATIVE_COMPACTION),
+                container.getEndpoint().toString());
     }
 
     private String writeFileForPartition(String partitionId, List<Row> rows) throws Exception {
