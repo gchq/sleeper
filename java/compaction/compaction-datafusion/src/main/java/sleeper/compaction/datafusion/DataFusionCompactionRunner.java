@@ -57,7 +57,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
     /** Maximum number of rows in a Parquet row group. */
-    public static final DataFusionCompactionFunctions NATIVE_COMPACTION;
+    private static final DataFusionCompactionFunctions NATIVE_COMPACTION;
     private final FFIAwsConfig awsConfig;
     private final Configuration hadoopConf;
 
@@ -69,6 +69,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } catch (IOException e) {
             throw new ExceptionInInitializerError(e);
         }
+    }
+
+    static jnr.ffi.Runtime getNativeRuntime() {
+        return jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
     }
 
     public DataFusionCompactionRunner(Configuration hadoopConf) {
@@ -124,6 +128,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
         params.output_file.set(job.getOutputFile());
+        params.write_sketch_file.set(true);
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);
         params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
         params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(String[]::new), false);

@@ -41,6 +41,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
         .region(SleeperRegion::new(single_int_range("key", 0, 5)))
         .output(OutputType::File {
             output_file: output.clone(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         })
         .build()?;
@@ -73,6 +74,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
         .region(SleeperRegion::new(single_int_range("key", 0, 5)))
         .output(OutputType::File {
             output_file: output.clone(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         })
         .build()?;
@@ -105,6 +107,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
         .region(SleeperRegion::new(single_int_range("key", 2, 4)))
         .output(OutputType::File {
             output_file: output.clone(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         })
         .build()?;
@@ -146,6 +149,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
         ])))
         .output(OutputType::File {
             output_file: output.clone(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         })
         .build()?;
@@ -190,6 +194,7 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
         )])))
         .output(OutputType::File {
             output_file: output.clone(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         })
         .build()?;
@@ -228,6 +233,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
         )])))
         .output(OutputType::File {
             output_file: output.clone(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         })
         .build()?;

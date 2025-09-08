@@ -50,6 +50,8 @@ public class FFICommonConfig extends Struct {
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
     /** Output file name. */
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
+    /** Specifies if sketch output is enabled. Can only be used with file output. */
+    public final Struct.Boolean write_sketch_file = new Struct.Boolean();
     /** Names of Sleeper row key columns from schema. */
     public final FFIArray<java.lang.String> row_key_cols = new FFIArray<>(this);
     /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte array. */

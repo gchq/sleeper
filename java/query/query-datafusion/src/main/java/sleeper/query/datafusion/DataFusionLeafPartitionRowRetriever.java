@@ -30,7 +30,7 @@ import sleeper.core.schema.Schema;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
-import sleeper.foreign.datafusion.DataFusionAwsConfig;
+import sleeper.foreign.datafusion.FFIAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
@@ -49,7 +49,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
     protected static final DataFusionQueryFunctions NATIVE_QUERY;
 
-    protected final DataFusionAwsConfig awsConfig;
+    protected final FFIAwsConfig awsConfig;
     protected final BufferAllocator allocator;
     protected final FFIContext context;
 
@@ -136,7 +136,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * @param  runtime        FFI runtime
      * @return                object to pass to FFI layer
      */
-    private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
+    private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema, FFIAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         FFICommonConfig common = new FFICommonConfig(runtime, Optional.ofNullable(awsConfig));
         common.input_files.populate(query.getFiles().toArray(String[]::new), false);
         // Files are always sorted for queries
@@ -150,6 +150,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         }
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, dataReadSchema, query.getPartitionRegion());
         common.setRegion(partitionRegion);
+        common.write_sketch_file.set(false);
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
@@ -163,7 +164,6 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFISleeperRegion[] ffiRegions = query.getRegions().stream().map(region -> new FFISleeperRegion(runtime, dataReadSchema, region)).toArray(FFISleeperRegion[]::new);
         queryConfig.setQueryRegions(ffiRegions);
-        queryConfig.write_quantile_sketch.set(false);
         queryConfig.explain_plans.set(true);
 
         queryConfig.validate();
@@ -193,7 +193,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      */
     public static class Builder {
         /** AWS configuration used by the retriever. */
-        private DataFusionAwsConfig awsConfig = DataFusionAwsConfig.getDefault();
+        private FFIAwsConfig awsConfig = FFIAwsConfig.getDefault(jnr.ffi.Runtime.getRuntime(NATIVE_QUERY));
 
         /**
          * Buffer allocator for managing Arrow memory.
@@ -208,7 +208,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
          * @param  awsConfig the {@link DataFusionAwsConfig} to use
          * @return           this {@code Builder} instance for method chaining
          */
-        public Builder awsConfig(DataFusionAwsConfig awsConfig) {
+        public Builder awsConfig(FFIAwsConfig awsConfig) {
             this.awsConfig = awsConfig;
             return this;
         }

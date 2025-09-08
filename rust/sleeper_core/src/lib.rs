@@ -137,6 +137,7 @@ fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec
 
     if let OutputType::File {
         output_file,
+        write_sketch_file: _,
         opts: _,
     } = &mut output
         && output_file.scheme() == "s3a"
@@ -174,8 +175,12 @@ impl Display for CommonConfig<'_> {
             OutputType::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
             OutputType::File {
                 output_file,
+                write_sketch_file,
                 opts: _,
-            } => write!(f, "output file {output_file:?}"),
+            } => write!(
+                f,
+                "output file {output_file:?} write sketch file {write_sketch_file}"
+            ),
         }
     }
 }
@@ -322,7 +327,9 @@ pub struct AwsConfig {
 /// let mut compaction_input = CommonConfigBuilder::new()
 ///     .input_files_sorted(true)
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
-///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
+///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(),
+///         write_sketch_file: true,
+///         opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
@@ -366,7 +373,9 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// let mut common = CommonConfigBuilder::new()
 ///     .input_files_sorted(true)
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
-///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
+///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(),
+///         write_sketch_file: true,
+///         opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
@@ -439,6 +448,7 @@ mod tests {
         ];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -462,6 +472,7 @@ mod tests {
         let input_files = vec![Url::parse("https://example.com/key").unwrap()];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -483,6 +494,7 @@ mod tests {
         let input_files = vec![Url::parse("https://example.com/key").unwrap()];
         let output = OutputType::File {
             output_file: Url::parse("s3a://bucket/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -503,6 +515,7 @@ mod tests {
         let input_files: Vec<Url> = vec![];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 

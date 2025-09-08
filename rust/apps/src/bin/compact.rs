@@ -149,6 +149,7 @@ async fn main() -> color_eyre::Result<()> {
         .region(SleeperRegion::new(map))
         .output(OutputType::File {
             output_file,
+            write_sketch_file: true,
             opts: parquet_options,
         })
         .iterator_config(args.iterator_config)

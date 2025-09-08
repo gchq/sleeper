@@ -183,6 +183,7 @@ pub struct FFICommonConfig {
     pub input_files: *const *const c_char,
     pub input_files_sorted: bool,
     pub output_file: *const c_char,
+    pub write_sketch_file: bool,
     pub row_key_cols_len: usize,
     pub row_key_cols: *const *const c_char,
     pub row_key_schema_len: usize,
@@ -286,6 +287,7 @@ impl FFICommonConfig {
                 output_file: unsafe { CStr::from_ptr(self.output_file) }
                     .to_str()
                     .map(Url::parse)??,
+                write_sketch_file: self.write_sketch_file,
                 opts,
             }
         } else {
@@ -343,8 +345,6 @@ pub struct FFILeafPartitionQueryConfig {
     pub requested_value_fields_len: usize,
     /// Requested value columns.
     pub requested_value_fields: *const *const c_char,
-    /// Should quantile data sketches be written out?
-    pub write_quantile_sketch: bool,
     /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,
 }
@@ -394,7 +394,6 @@ impl FFILeafPartitionQueryConfig {
             ranges,
             requested_value_fields: requested_value_columns,
             explain_plans: self.explain_plans,
-            write_quantile_sketch: self.write_quantile_sketch,
         })
     }
 }

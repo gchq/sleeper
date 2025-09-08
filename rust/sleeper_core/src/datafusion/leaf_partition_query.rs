@@ -51,16 +51,14 @@ pub struct LeafPartitionQueryConfig<'a> {
     pub requested_value_fields: Option<Vec<String>>,
     /// Should logical/physical plan explanation be logged?
     pub explain_plans: bool,
-    /// Should quantile sketches be written to a file?
-    pub write_quantile_sketch: bool,
 }
 
 impl Display for LeafPartitionQueryConfig<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Query config: {}, ranges: {:?} write quantile sketches: {}",
-            self.common, self.ranges, self.write_quantile_sketch
+            "Query config: {}, ranges: {:?}",
+            self.common, self.ranges
         )
     }
 }
@@ -123,21 +121,14 @@ impl<'a> LeafPartitionQuery<'a> {
 
         // Do we have some sketch output to write?
         if let Some(sketch_func) = sketcher
-            && self.config.write_quantile_sketch
+            && let OutputType::File {
+                output_file,
+                write_sketch_file,
+                opts: _,
+            } = &self.config.common.output
+            && *write_sketch_file
         {
-            match &self.config.common.output {
-                OutputType::File {
-                    output_file,
-                    opts: _,
-                } => {
-                    output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
-                }
-                OutputType::ArrowRecordBatch => {
-                    return plan_err!(
-                        "Quantile sketch output cannot be enabled if file output not selected"
-                    );
-                }
-            }
+            output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
         }
 
         Ok(result)
@@ -152,22 +143,22 @@ impl<'a> LeafPartitionQuery<'a> {
         ops: &'a SleeperOperations<'a>,
         frame: DataFrame,
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
-        if self.config.write_quantile_sketch {
-            match self.config.common.output {
-                OutputType::File {
-                    output_file: _,
-                    opts: _,
-                } => {
-                    let sketcher = ops.create_sketcher(frame.schema());
-                    let frame = sketcher.apply_sketch(frame)?;
-                    Ok((Some(sketcher), frame))
-                }
-                OutputType::ArrowRecordBatch => plan_err!(
-                    "Quantile sketch output cannot be enabled if file output not selected"
-                ),
+        match self.config.common.output {
+            OutputType::File {
+                output_file: _,
+                write_sketch_file: true,
+                opts: _,
+            } => {
+                let sketcher = ops.create_sketcher(frame.schema());
+                let frame = sketcher.apply_sketch(frame)?;
+                Ok((Some(sketcher), frame))
             }
-        } else {
-            Ok((None, frame))
+            OutputType::File {
+                output_file: _,
+                write_sketch_file: _,
+                opts: _,
+            }
+            | OutputType::ArrowRecordBatch => Ok((None, frame)),
         }
     }
 

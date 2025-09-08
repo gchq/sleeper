@@ -104,6 +104,7 @@ impl<'a> SleeperOperations<'a> {
         // Set upload size if outputting to a file
         if let OutputType::File {
             output_file: _,
+            write_sketch_file: _,
             opts: parquet_options,
         } = &self.config.output
         {
@@ -135,6 +136,7 @@ impl<'a> SleeperOperations<'a> {
                 OutputType::ArrowRecordBatch => None,
                 OutputType::File {
                     output_file,
+                    write_sketch_file: _,
                     opts: _,
                 } => Some(output_file),
             },
@@ -284,6 +286,7 @@ impl<'a> SleeperOperations<'a> {
     ) -> Result<DataFrame, DataFusionError> {
         let OutputType::File {
             output_file,
+            write_sketch_file: _,
             opts: _,
         } = &self.config.output
         else {

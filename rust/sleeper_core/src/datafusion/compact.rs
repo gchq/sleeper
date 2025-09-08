@@ -61,6 +61,7 @@ pub async fn compact(
     // Retrieve Parquet output options
     let OutputType::File {
         output_file,
+        write_sketch_file: _,
         opts: _,
     } = &config.output
     else {

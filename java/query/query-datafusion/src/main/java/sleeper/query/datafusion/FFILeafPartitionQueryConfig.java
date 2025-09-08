@@ -42,8 +42,6 @@ public class FFILeafPartitionQueryConfig extends Struct {
     public final Struct.Boolean requested_value_fields_set = new Struct.Boolean();
     /** Requested value columns. */
     public final FFIArray<java.lang.String> requested_value_fields = new FFIArray<>(this);
-    /** Specifies quantile sketches be written out to a file. */
-    public final Struct.Boolean write_quantile_sketch = new Struct.Boolean();
     /** Specifies if logical and physical DataFusion query plans should be written to a log output. */
     public final Struct.Boolean explain_plans = new Struct.Boolean();
 
