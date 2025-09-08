@@ -91,7 +91,7 @@ impl Filter {
     fn from(call: FunctionCall) -> eyre::Result<Filter> {
         ensure!(
             call.name.eq_ignore_ascii_case("ageOff"),
-            "unexpected filter function name: {}",
+            "unrecognised filter function name: {}",
             call.name
         );
         Ok(Filter::Ageoff {
@@ -277,13 +277,16 @@ mod tests {
     use color_eyre::eyre::Result;
     use test_log::test;
 
+    macro_rules! assert_error {
+        ($err_expr: expr, $err_contents: expr) => {
+            assert_eq!(
+                $err_expr.err().map(|e| e.to_string()),
+                Some($err_contents.to_string())
+            )
+        };
+    }
+
     // Tests:
-    // - Parse age off filter
-    // - Parse empty string
-    // - Parse two filters
-    // - Case insensitivity
-    // - Unrecognised filter name
-    // - No filter name
     // - Unrecognised field name
     // - Too few arguments
     // - Too many arguments
@@ -293,15 +296,49 @@ mod tests {
     fn should_parse_age_off_filter() -> Result<()> {
         Ok(assert_eq!(
             Filter::parse("ageOff(value,1234)")?,
-            vec![Filter::Ageoff {
-                column: "value".to_string(),
-                max_age: 1234
-            }]
+            vec![age_off("value", 1234)]
+        ))
+    }
+
+    #[test]
+    fn should_parse_two_filters() -> Result<()> {
+        Ok(assert_eq!(
+            Filter::parse("ageOff(value,123), ageOff(other, 456)")?,
+            vec![age_off("value", 123), age_off("other", 456)]
         ))
     }
 
     #[test]
     fn should_parse_no_filters() -> Result<()> {
         Ok(assert_eq!(Filter::parse("")?, vec![]))
+    }
+
+    #[test]
+    fn should_ignore_case() -> Result<()> {
+        Ok(assert_eq!(
+            Filter::parse("AGEOFF(a, 1), ageoff(b, 2)")?,
+            vec![age_off("a", 1), age_off("b", 2)]
+        ))
+    }
+
+    #[test]
+    fn should_fail_with_unrecognised_filter_name() {
+        assert_error!(
+            Filter::parse("go(abc, 123)"),
+            "unrecognised filter function name: go"
+        )
+    }
+
+    #[test]
+    fn should_fail_with_no_filter_name() {
+        assert_error!(
+            Filter::parse("(abc, 123)"),
+            "expected function name at position 0"
+        )
+    }
+
+    fn age_off(column: &str, max_age: i64) -> Filter {
+        let column = column.to_string();
+        Filter::Ageoff { column, max_age }
     }
 }

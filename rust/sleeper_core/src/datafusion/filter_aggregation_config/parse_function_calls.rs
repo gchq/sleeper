@@ -209,7 +209,10 @@ mod tests {
 
     macro_rules! assert_error {
         ($err_expr: expr, $err_contents: expr) => {
-            assert_eq!($err_expr.err().map(|e| e.to_string()), Some($err_contents))
+            assert_eq!(
+                $err_expr.err().map(|e| e.to_string()),
+                Some($err_contents.to_string())
+            )
         };
     }
 
@@ -267,7 +270,7 @@ mod tests {
         let mut reader = FunctionReader::new("@/ #!");
         assert_error!(
             reader.read_function_call(),
-            "expected function name at position 0".to_string()
+            "expected function name at position 0"
         )
     }
 
@@ -297,7 +300,7 @@ mod tests {
         assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
         Ok(assert_error!(
             reader.read_function_call(),
-            "expected function call at position 5".to_string()
+            "expected function call at position 5"
         ))
     }
 
@@ -306,7 +309,7 @@ mod tests {
         let mut reader = FunctionReader::new("fn(a b)");
         assert_error!(
             reader.read_function_call(),
-            "expected comma or close parenthesis at position 5".to_string()
+            "expected comma or close parenthesis at position 5"
         )
     }
 
@@ -319,7 +322,7 @@ mod tests {
         );
         Ok(assert_error!(
             reader.read_function_call(),
-            "expected comma at position 6".to_string()
+            "expected comma at position 6"
         ))
     }
 
@@ -328,7 +331,7 @@ mod tests {
         let mut reader = FunctionReader::new("fn(a, b");
         assert_error!(
             reader.read_function_call(),
-            "expected close parenthesis at position 7".to_string()
+            "expected close parenthesis at position 7"
         )
     }
 
@@ -337,7 +340,7 @@ mod tests {
         let mut reader = FunctionReader::new("fn");
         assert_error!(
             reader.read_function_call(),
-            "expected open parenthesis at position 2".to_string()
+            "expected open parenthesis at position 2"
         )
     }
 
@@ -346,7 +349,7 @@ mod tests {
         let mut reader = FunctionReader::new("fn(\"abc\")");
         assert_error!(
             reader.read_function_call(),
-            "expected parameter or close parenthesis at position 3".to_string()
+            "expected parameter or close parenthesis at position 3"
         )
     }
 
