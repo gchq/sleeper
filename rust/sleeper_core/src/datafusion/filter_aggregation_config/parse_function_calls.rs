@@ -46,29 +46,49 @@ impl<'h> FunctionReader<'h> {
             "expected open paren at position {}",
             self.pos
         );
-        let word = self
-            .read_word()
-            .ok_or_else(|| eyre!("expected word at position {}", self.pos))?;
-        ensure!(
-            self.read_expected_char(','),
-            "expected comma at position {}",
-            self.pos
-        );
-        let number = self
-            .read_number()?
-            .ok_or_else(|| eyre!("expected number at position {}", self.pos))?;
+        let parameters = self.read_parameters()?;
         ensure!(
             self.read_expected_char(')'),
-            "expected close paren at position {}",
+            "expected comma or close paren at position {}",
             self.pos
         );
-        return Ok(FunctionCall {
-            name,
-            parameters: vec![
-                FunctionParameter::Word(word),
-                FunctionParameter::Number(number),
-            ],
-        });
+        return Ok(FunctionCall { name, parameters });
+    }
+
+    fn read_parameters(&mut self) -> Result<Vec<FunctionParameter>> {
+        let mut parameters = vec![];
+        let mut first = true;
+        while self.is_next_parameter(first)? {
+            if let Some(param) = self.read_parameter() {
+                parameters.push(param)
+            }
+            first = false;
+        }
+        Ok(parameters)
+    }
+
+    fn is_next_parameter(&mut self, first: bool) -> Result<bool> {
+        if first {
+            return Ok(true);
+        }
+        self.ignore_whitespace();
+        if let Some(c) = self.read_char() {
+            if c == ',' {
+                self.pos += 1;
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        } else {
+            Err(eyre!("unexpected end of string at position {}", self.pos))
+        }
+    }
+
+    fn read_parameter(&mut self) -> Option<FunctionParameter> {
+        self.read_word().map(|word| match word.parse::<i64>() {
+            Ok(number) => FunctionParameter::Number(number),
+            Err(_) => FunctionParameter::Word(word),
+        })
     }
 
     fn read_word(&mut self) -> Option<String> {
@@ -84,22 +104,6 @@ impl<'h> FunctionReader<'h> {
             None
         } else {
             Some(result)
-        }
-    }
-
-    fn read_number(&mut self) -> Result<Option<i64>> {
-        self.ignore_whitespace();
-        let mut result = String::new();
-        while let Some(c) = self.read_char()
-            && c.is_numeric()
-        {
-            result.push(c);
-            self.pos += 1;
-        }
-        if result.is_empty() {
-            Ok(None)
-        } else {
-            Ok(Some(result.parse::<i64>()?))
         }
     }
 
@@ -180,6 +184,18 @@ mod tests {
 
     #[test]
     fn should_read_function_call() -> Result<()> {
+        let mut reader = FunctionReader::new("answer(42)");
+        Ok(assert_eq!(
+            reader.read_function_call()?,
+            FunctionCall {
+                name: "answer".to_string(),
+                parameters: vec![FunctionParameter::Number(42)]
+            }
+        ))
+    }
+
+    #[test]
+    fn should_read_function_call_with_two_parameters() -> Result<()> {
         let mut reader = FunctionReader::new("fn(a,123)");
         Ok(assert_eq!(
             reader.read_function_call()?,
@@ -189,6 +205,18 @@ mod tests {
                     FunctionParameter::Word("a".to_string()),
                     FunctionParameter::Number(123)
                 ]
+            }
+        ))
+    }
+
+    #[test]
+    fn should_read_function_call_with_no_parameters() -> Result<()> {
+        let mut reader = FunctionReader::new("go()");
+        Ok(assert_eq!(
+            reader.read_function_call()?,
+            FunctionCall {
+                name: "go".to_string(),
+                parameters: vec![]
             }
         ))
     }
@@ -214,6 +242,15 @@ mod tests {
         assert_error!(
             reader.read_function_call(),
             "expected function name at position 0".to_string()
+        )
+    }
+
+    #[test]
+    fn should_find_no_comma_between_parameters() {
+        let mut reader = FunctionReader::new("fn(a b)");
+        assert_error!(
+            reader.read_function_call(),
+            "expected comma or close paren at position 5".to_string()
         )
     }
 }
