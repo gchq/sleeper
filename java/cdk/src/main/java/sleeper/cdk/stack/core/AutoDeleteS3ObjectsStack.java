@@ -20,7 +20,6 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -40,8 +39,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     private Provider provider;
     private String id;
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            ILogGroup logGroup, ILogGroup providerLogGroup) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
 
         super(scope, id);
 
@@ -54,18 +52,10 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
 
-        lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
-                .functionName(functionName)
-                .memorySize(2048)
-                .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
-                .description("Lambda for auto-deleting S3 objects")
-                .logGroup(logGroup)
-                .timeout(Duration.minutes(10)));
+        lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder.functionName(functionName).memorySize(2048)
+                .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties)).description("Lambda for auto-deleting S3 objects").timeout(Duration.minutes(10)));
 
-        provider = Provider.Builder.create(scope, id + "Provider")
-                .onEventHandler(lambda)
-                .logGroup(providerLogGroup)
-                .build();
+        provider = Provider.Builder.create(scope, id + "Provider").onEventHandler(lambda).build();
     }
 
     public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
