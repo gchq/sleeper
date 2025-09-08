@@ -287,9 +287,6 @@ mod tests {
         };
     }
 
-    // Tests:
-    // - Unrecognised field name
-
     #[test]
     fn should_parse_age_off_filter() -> Result<()> {
         Ok(assert_eq!(
