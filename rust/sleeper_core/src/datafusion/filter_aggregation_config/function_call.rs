@@ -28,7 +28,7 @@ pub enum FunctionParameter {
 }
 
 impl FunctionCall {
-    pub fn expect_args(&self, param_names: Vec<&str>) -> Result<()> {
+    pub fn expect_args(&self, param_names: &[&str]) -> Result<()> {
         ensure!(
             self.parameters.len() == param_names.len(),
             "{} expects {} arguments ({}), found {}",
@@ -97,7 +97,7 @@ mod tests {
     #[test]
     fn should_read_parameters() -> Result<()> {
         let call = call("fn", vec![word("abc"), number(123)]);
-        call.expect_args(vec!["param1", "param2"])?;
+        call.expect_args(&["param1", "param2"])?;
         assert_eq!(call.word_param(0, "param1")?, "abc");
         Ok(assert_eq!(call.number_param(1, "param2")?, 123))
     }
@@ -106,7 +106,7 @@ mod tests {
     fn should_fail_expected_number_of_parameters() -> Result<()> {
         let call = call("fn", vec![word("abc"), number(123)]);
         Ok(assert_error!(
-            call.expect_args(vec!["param1", "param2", "param3"]),
+            call.expect_args(&["param1", "param2", "param3"]),
             "fn expects 3 arguments (param1, param2, param3), found 2"
         ))
     }
