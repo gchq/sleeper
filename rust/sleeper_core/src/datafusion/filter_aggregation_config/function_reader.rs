@@ -43,9 +43,8 @@ impl<'h> FunctionReader<'h> {
                     self.pos
                 );
                 return Ok(None);
-            } else {
-                ensure!(found_comma, "expected comma at position {}", self.pos);
             }
+            ensure!(found_comma, "expected comma at position {}", self.pos);
         }
         match self.read_word() {
             Some(name) => {
@@ -78,13 +77,12 @@ impl<'h> FunctionReader<'h> {
                 parameters.push(param);
                 if self.is_next_parameter()? {
                     continue;
-                } else {
-                    ensure!(
-                        self.read_expected_char(')'),
-                        "expected comma or close parenthesis at position {}",
-                        self.pos
-                    );
                 }
+                ensure!(
+                    self.read_expected_char(')'),
+                    "expected comma or close parenthesis at position {}",
+                    self.pos
+                );
             } else {
                 return Err(eyre!(
                     "expected parameter or close parenthesis at position {}",

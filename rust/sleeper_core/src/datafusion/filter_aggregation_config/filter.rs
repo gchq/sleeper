@@ -45,12 +45,12 @@ impl Filter {
         let mut reader = FunctionReader::new(config_string);
         let mut filters = vec![];
         while let Some(call) = reader.read_function_call()? {
-            filters.push(Self::from_function_call(call)?);
+            filters.push(Self::from_function_call(&call)?);
         }
         Ok(filters)
     }
 
-    fn from_function_call(call: FunctionCall) -> eyre::Result<Filter> {
+    fn from_function_call(call: &FunctionCall) -> eyre::Result<Filter> {
         ensure!(
             call.name.eq_ignore_ascii_case("ageOff"),
             "unrecognised filter function name \"{}\"",
