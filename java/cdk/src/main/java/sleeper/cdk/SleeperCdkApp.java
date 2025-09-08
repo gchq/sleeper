@@ -139,7 +139,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
+        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
                 this, "AutoDeleteS3Objects", instanceProperties, jars);
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3ObjectsStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(

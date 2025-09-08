@@ -24,7 +24,6 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
@@ -40,9 +39,7 @@ public class SystemTestStandaloneApp extends Stack {
             App app, String id, StackProps props, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(app, id, props);
 
-        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", properties.toInstancePropertiesForCdkUtils(), jars);
-
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars, autoDeleteS3ObjectsStack);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars);
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
             new SystemTestClusterStack(this, "SystemTestCluster", properties, bucketStack);
         }
