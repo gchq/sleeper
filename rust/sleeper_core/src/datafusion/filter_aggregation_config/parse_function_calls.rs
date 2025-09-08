@@ -18,6 +18,7 @@ use color_eyre::eyre::{Result, ensure, eyre};
 pub struct FunctionReader<'h> {
     haystack: &'h str,
     pos: usize,
+    first_function: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -34,15 +35,27 @@ pub enum FunctionParameter {
 
 impl<'h> FunctionReader<'h> {
     pub fn new(haystack: &'h str) -> Self {
-        FunctionReader { haystack, pos: 0 }
+        FunctionReader {
+            haystack,
+            pos: 0,
+            first_function: true,
+        }
     }
 
     pub fn read_function_call(&mut self) -> Result<Option<FunctionCall>> {
+        if !self.first_function {
+            ensure!(
+                self.read_expected_char(','),
+                "expected comma at position {}",
+                self.pos
+            );
+        }
         match self.read_word() {
-            Some(name) => Ok(Some(FunctionCall {
-                name,
-                parameters: self.read_parameters()?,
-            })),
+            Some(name) => {
+                let parameters = self.read_parameters()?;
+                self.first_function = false;
+                Ok(Some(FunctionCall { name, parameters }))
+            }
             None => {
                 if self.at_end() {
                     Ok(None)
@@ -217,7 +230,6 @@ mod tests {
             expect_function_call(&mut reader)?,
             call("answer", vec![number(42)])
         );
-        reader.read_expected_char(',');
         Ok(assert_eq!(
             expect_function_call(&mut reader)?,
             call("question", vec![word("earth")])
@@ -273,6 +285,19 @@ mod tests {
             reader.read_function_call(),
             "expected comma or close parenthesis at position 5".to_string()
         )
+    }
+
+    #[test]
+    fn should_find_no_comma_between_functions() -> Result<()> {
+        let mut reader = FunctionReader::new("fn(1) other(2)");
+        assert_eq!(
+            expect_function_call(&mut reader)?,
+            call("fn", vec![number(1)])
+        );
+        Ok(assert_error!(
+            reader.read_function_call(),
+            "expected comma at position 6".to_string()
+        ))
     }
 
     #[test]
