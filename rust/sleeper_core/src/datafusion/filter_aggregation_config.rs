@@ -91,8 +91,13 @@ impl Filter {
     fn from(call: FunctionCall) -> eyre::Result<Filter> {
         ensure!(
             call.name.eq_ignore_ascii_case("ageOff"),
-            "unrecognised filter function name: {}",
+            "unrecognised filter function name \"{}\"",
             call.name
+        );
+        ensure!(
+            call.parameters.len() == 2,
+            "ageOff expects 2 arguments (column, max age), found {}",
+            call.parameters.len()
         );
         Ok(Filter::Ageoff {
             column: call.word_param(0)?.clone(),
@@ -288,8 +293,6 @@ mod tests {
 
     // Tests:
     // - Unrecognised field name
-    // - Too few arguments
-    // - Too many arguments
     // - Filter threshold has wrong type
 
     #[test]
@@ -325,7 +328,7 @@ mod tests {
     fn should_fail_with_unrecognised_filter_name() {
         assert_error!(
             Filter::parse("go(abc, 123)"),
-            "unrecognised filter function name: go"
+            "unrecognised filter function name \"go\""
         )
     }
 
@@ -334,6 +337,22 @@ mod tests {
         assert_error!(
             Filter::parse("(abc, 123)"),
             "expected function name at position 0"
+        )
+    }
+
+    #[test]
+    fn should_fail_with_too_few_arguments() {
+        assert_error!(
+            Filter::parse("ageOff(abc)"),
+            "ageOff expects 2 arguments (column, max age), found 1"
+        )
+    }
+
+    #[test]
+    fn should_fail_with_too_many_arguments() {
+        assert_error!(
+            Filter::parse("ageOff(abc, 123, 456)"),
+            "ageOff expects 2 arguments (column, max age), found 3"
         )
     }
 
