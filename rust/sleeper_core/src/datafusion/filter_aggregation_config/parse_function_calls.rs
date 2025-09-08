@@ -37,12 +37,20 @@ impl<'h> FunctionReader<'h> {
         FunctionReader { haystack, pos: 0 }
     }
 
-    pub fn read_function_call(&mut self) -> Result<FunctionCall> {
-        let name = self
-            .read_word()
-            .ok_or_else(|| eyre!("expected function name at position {}", self.pos))?;
-        let parameters = self.read_parameters()?;
-        return Ok(FunctionCall { name, parameters });
+    pub fn read_function_call(&mut self) -> Result<Option<FunctionCall>> {
+        match self.read_word() {
+            Some(name) => Ok(Some(FunctionCall {
+                name,
+                parameters: self.read_parameters()?,
+            })),
+            None => {
+                if self.at_end() {
+                    Ok(None)
+                } else {
+                    Err(eyre!("expected function name at position {}", self.pos))
+                }
+            }
+        }
     }
 
     fn read_parameters(&mut self) -> Result<Vec<FunctionParameter>> {
@@ -53,7 +61,10 @@ impl<'h> FunctionReader<'h> {
         );
         let mut parameters = vec![];
         loop {
-            if let Some(param) = self.read_parameter() {
+            if self.read_expected_char(')') {
+                return Ok(parameters);
+            }
+            if let Some(param) = self.read_parameter()? {
                 parameters.push(param);
                 if self.is_next_parameter()? {
                     continue;
@@ -65,11 +76,10 @@ impl<'h> FunctionReader<'h> {
                     );
                 }
             } else {
-                ensure!(
-                    self.read_expected_char(')'),
+                return Err(eyre!(
                     "expected parameter or close parenthesis at position {}",
                     self.pos
-                );
+                ));
             }
             return Ok(parameters);
         }
@@ -89,11 +99,11 @@ impl<'h> FunctionReader<'h> {
         }
     }
 
-    fn read_parameter(&mut self) -> Option<FunctionParameter> {
-        self.read_word().map(|word| match word.parse::<i64>() {
+    fn read_parameter(&mut self) -> Result<Option<FunctionParameter>> {
+        Ok(self.read_word().map(|word| match word.parse::<i64>() {
             Ok(number) => FunctionParameter::Number(number),
             Err(_) => FunctionParameter::Word(word),
-        })
+        }))
     }
 
     fn read_word(&mut self) -> Option<String> {
@@ -135,6 +145,10 @@ impl<'h> FunctionReader<'h> {
     fn read_char(&mut self) -> Option<char> {
         self.haystack.chars().nth(self.pos)
     }
+
+    fn at_end(&self) -> bool {
+        self.haystack.len() == self.pos
+    }
 }
 
 impl FunctionCall {
@@ -171,7 +185,7 @@ impl FunctionCall {
 mod tests {
 
     use super::{FunctionCall, FunctionParameter, FunctionReader};
-    use color_eyre::eyre::Result;
+    use color_eyre::eyre::{Result, eyre};
     use test_log::test;
 
     macro_rules! assert_error {
@@ -191,7 +205,7 @@ mod tests {
     fn should_read_function_call() -> Result<()> {
         let mut reader = FunctionReader::new("answer(42)");
         Ok(assert_eq!(
-            reader.read_function_call()?,
+            expect_function_call(&mut reader)?,
             FunctionCall {
                 name: "answer".to_string(),
                 parameters: vec![FunctionParameter::Number(42)]
@@ -203,7 +217,7 @@ mod tests {
     fn should_read_function_call_with_two_parameters() -> Result<()> {
         let mut reader = FunctionReader::new("fn(a,123)");
         Ok(assert_eq!(
-            reader.read_function_call()?,
+            expect_function_call(&mut reader)?,
             FunctionCall {
                 name: "fn".to_string(),
                 parameters: vec![
@@ -218,7 +232,7 @@ mod tests {
     fn should_read_function_call_with_no_parameters() -> Result<()> {
         let mut reader = FunctionReader::new("go()");
         Ok(assert_eq!(
-            reader.read_function_call()?,
+            expect_function_call(&mut reader)?,
             FunctionCall {
                 name: "go".to_string(),
                 parameters: vec![]
@@ -230,7 +244,7 @@ mod tests {
     fn should_read_function_call_with_whitespace() -> Result<()> {
         let mut reader = FunctionReader::new(" fn ( a , 123 ) ");
         Ok(assert_eq!(
-            reader.read_function_call()?,
+            expect_function_call(&mut reader)?,
             FunctionCall {
                 name: "fn".to_string(),
                 parameters: vec![
@@ -242,12 +256,18 @@ mod tests {
     }
 
     #[test]
-    fn should_find_no_function_call() {
+    fn should_find_bad_characters_at_function_name() {
         let mut reader = FunctionReader::new("@/ #!");
         assert_error!(
             reader.read_function_call(),
             "expected function name at position 0".to_string()
         )
+    }
+
+    #[test]
+    fn should_find_no_function_call() -> Result<()> {
+        let mut reader = FunctionReader::new("");
+        Ok(assert_eq!(reader.read_function_call()?, None))
     }
 
     #[test]
@@ -284,5 +304,11 @@ mod tests {
             reader.read_function_call(),
             "expected parameter or close parenthesis at position 3".to_string()
         )
+    }
+
+    fn expect_function_call(reader: &mut FunctionReader) -> Result<FunctionCall> {
+        reader
+            .read_function_call()?
+            .ok_or_else(|| eyre!("found no function call"))
     }
 }

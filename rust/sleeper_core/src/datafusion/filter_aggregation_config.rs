@@ -81,7 +81,7 @@ impl Filter {
 
     pub fn parse(config_string: &str) -> eyre::Result<Vec<Self>> {
         let call = FunctionReader::new(config_string).read_function_call()?;
-        Ok(vec![Self::from(call)?])
+        Ok(vec![Self::from(call.expect("expected function call"))?])
     }
 
     fn from(call: FunctionCall) -> eyre::Result<Filter> {
