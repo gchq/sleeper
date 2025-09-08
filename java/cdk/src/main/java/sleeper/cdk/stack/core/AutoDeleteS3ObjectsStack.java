@@ -36,25 +36,27 @@ import java.util.Map;
 
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
-    private IFunction lambda;
-    private Provider provider;
+    private LambdaCode lambdaCode;
+    private String functionName;
     private String id;
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            ILogGroup logGroup, ILogGroup providerLogGroup) {
-
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
         super(scope, id);
 
         this.id = id;
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        lambdaCode = jars.lambdaCode(jarsBucket);
 
-        String functionName = String.join("-", "sleeper",
+        functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
+    }
 
-        lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
+    public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
+            IBucket bucket, String bucketName, ILogGroup logGroup, ILogGroup providerLogGroup) {
+
+        IFunction lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
@@ -62,14 +64,10 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
 
-        provider = Provider.Builder.create(scope, id + "Provider")
+        Provider provider = Provider.Builder.create(scope, id + "Provider")
                 .onEventHandler(lambda)
                 .logGroup(providerLogGroup)
                 .build();
-    }
-
-    public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
-            IBucket bucket, String bucketName) {
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
