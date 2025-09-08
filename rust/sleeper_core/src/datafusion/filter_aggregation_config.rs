@@ -80,8 +80,12 @@ impl Filter {
     }
 
     pub fn parse(config_string: &str) -> eyre::Result<Vec<Self>> {
-        let call = FunctionReader::new(config_string).read_function_call()?;
-        Ok(vec![Self::from(call.expect("expected function call"))?])
+        let mut reader = FunctionReader::new(config_string);
+        let mut filters = vec![];
+        while let Some(call) = reader.read_function_call()? {
+            filters.push(Self::from(call)?);
+        }
+        Ok(filters)
     }
 
     fn from(call: FunctionCall) -> eyre::Result<Filter> {
@@ -294,5 +298,10 @@ mod tests {
                 max_age: 1234
             }]
         ))
+    }
+
+    #[test]
+    fn should_parse_no_filters() -> Result<()> {
+        Ok(assert_eq!(Filter::parse("")?, vec![]))
     }
 }

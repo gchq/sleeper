@@ -44,11 +44,17 @@ impl<'h> FunctionReader<'h> {
 
     pub fn read_function_call(&mut self) -> Result<Option<FunctionCall>> {
         if !self.first_function {
-            ensure!(
-                self.read_expected_char(','),
-                "expected comma at position {}",
-                self.pos
-            );
+            let found_comma = self.read_expected_char(',');
+            if self.at_end() {
+                ensure!(
+                    !found_comma,
+                    "expected function call at position {}",
+                    self.pos
+                );
+                return Ok(None);
+            } else {
+                ensure!(found_comma, "expected comma at position {}", self.pos);
+            }
         }
         match self.read_word() {
             Some(name) => {
@@ -269,6 +275,30 @@ mod tests {
     fn should_find_no_function_call() -> Result<()> {
         let mut reader = FunctionReader::new("");
         Ok(assert_eq!(reader.read_function_call()?, None))
+    }
+
+    #[test]
+    fn should_find_no_more_function_calls_after_first() -> Result<()> {
+        let mut reader = FunctionReader::new("fn()");
+        assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
+        Ok(assert_eq!(reader.read_function_call()?, None))
+    }
+
+    #[test]
+    fn should_find_no_more_function_calls_after_first_with_trailing_whitespace() -> Result<()> {
+        let mut reader = FunctionReader::new("fn() ");
+        assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
+        Ok(assert_eq!(reader.read_function_call()?, None))
+    }
+
+    #[test]
+    fn should_find_no_more_function_calls_after_first_with_trailing_comma() -> Result<()> {
+        let mut reader = FunctionReader::new("fn(),");
+        assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
+        Ok(assert_error!(
+            reader.read_function_call(),
+            "expected function call at position 5".to_string()
+        ))
     }
 
     #[test]
