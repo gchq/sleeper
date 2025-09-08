@@ -13,24 +13,15 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use color_eyre::eyre::{Error, Result, ensure, eyre};
+use crate::datafusion::filter_aggregation_config::function_call::{
+    FunctionCall, FunctionParameter,
+};
+use color_eyre::eyre::{Result, ensure, eyre};
 
 pub struct FunctionReader<'h> {
     haystack: &'h str,
     pos: usize,
     first_function: bool,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct FunctionCall {
-    pub name: String,
-    pub parameters: Vec<FunctionParameter>,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum FunctionParameter {
-    Word(String),
-    Number(i64),
 }
 
 impl<'h> FunctionReader<'h> {
@@ -170,61 +161,13 @@ impl<'h> FunctionReader<'h> {
     }
 }
 
-impl FunctionCall {
-    pub fn expect_args(&self, param_names: Vec<&str>) -> Result<()> {
-        ensure!(
-            self.parameters.len() == param_names.len(),
-            "{} expects {} arguments ({}), found {}",
-            self.name,
-            param_names.len(),
-            param_names.join(", "),
-            self.parameters.len()
-        );
-        Ok(())
-    }
-
-    pub fn word_param(&self, index: usize, param_name: &str) -> Result<&str> {
-        let param = self.param(index)?;
-        if let FunctionParameter::Word(value) = param {
-            Ok(value)
-        } else {
-            Err(self.type_error(index, param_name, param, "word"))
-        }
-    }
-
-    pub fn number_param(&self, index: usize, param_name: &str) -> Result<i64> {
-        let param = self.param(index)?;
-        if let FunctionParameter::Number(value) = param {
-            Ok(*value)
-        } else {
-            Err(self.type_error(index, param_name, param, "number"))
-        }
-    }
-
-    fn type_error(
-        &self,
-        index: usize,
-        param_name: &str,
-        param: &FunctionParameter,
-        expected_type: &str,
-    ) -> Error {
-        eyre!(
-            "wrong type for {} parameter {index} ({param_name}), expected {expected_type}, found {param:?}",
-            self.name
-        )
-    }
-
-    fn param(&self, index: usize) -> Result<&FunctionParameter> {
-        self.parameters
-            .get(index)
-            .ok_or_else(|| eyre!("parameter not found at index {index}"))
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
-    use super::{FunctionCall, FunctionParameter, FunctionReader};
+    use super::FunctionReader;
+    use crate::datafusion::filter_aggregation_config::function_call::{
+        FunctionCall, FunctionParameter,
+    };
     use color_eyre::eyre::{Result, eyre};
     use test_log::test;
 
@@ -372,45 +315,6 @@ mod tests {
             reader.read_function_call(),
             "expected parameter or close parenthesis at position 3"
         )
-    }
-
-    #[test]
-    fn should_read_parameters() -> Result<()> {
-        let call = parse_function_call("fn(abc, 123)")?;
-        call.expect_args(vec!["param1", "param2"])?;
-        assert_eq!(call.word_param(0, "param1")?, "abc");
-        Ok(assert_eq!(call.number_param(1, "param2")?, 123))
-    }
-
-    #[test]
-    fn should_fail_expected_number_of_parameters() -> Result<()> {
-        let call = parse_function_call("fn(abc, 123)")?;
-        Ok(assert_error!(
-            call.expect_args(vec!["param1", "param2", "param3"]),
-            "fn expects 3 arguments (param1, param2, param3), found 2"
-        ))
-    }
-
-    #[test]
-    fn should_fail_reading_word_wrong_type() -> Result<()> {
-        let call = parse_function_call("fn(abc, 123)")?;
-        Ok(assert_error!(
-            call.word_param(1, "param2"),
-            "wrong type for fn parameter 1 (param2), expected word, found Number(123)"
-        ))
-    }
-
-    #[test]
-    fn should_fail_reading_number_wrong_type() -> Result<()> {
-        let call = parse_function_call("fn(abc, 123)")?;
-        Ok(assert_error!(
-            call.number_param(0, "param1"),
-            "wrong type for fn parameter 0 (param1), expected number, found Word(\"abc\")"
-        ))
-    }
-
-    fn parse_function_call(string: &str) -> Result<FunctionCall> {
-        expect_function_call(&mut FunctionReader::new(string))
     }
 
     fn expect_function_call(reader: &mut FunctionReader) -> Result<FunctionCall> {

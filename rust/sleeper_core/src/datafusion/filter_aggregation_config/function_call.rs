@@ -1,0 +1,145 @@
+/*
+* Copyright 2022-2025 Crown Copyright
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+use color_eyre::eyre::{Error, Result, ensure, eyre};
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct FunctionCall {
+    pub name: String,
+    pub parameters: Vec<FunctionParameter>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum FunctionParameter {
+    Word(String),
+    Number(i64),
+}
+
+impl FunctionCall {
+    pub fn expect_args(&self, param_names: Vec<&str>) -> Result<()> {
+        ensure!(
+            self.parameters.len() == param_names.len(),
+            "{} expects {} arguments ({}), found {}",
+            self.name,
+            param_names.len(),
+            param_names.join(", "),
+            self.parameters.len()
+        );
+        Ok(())
+    }
+
+    pub fn word_param(&self, index: usize, param_name: &str) -> Result<&str> {
+        let param = self.param(index)?;
+        if let FunctionParameter::Word(value) = param {
+            Ok(value)
+        } else {
+            Err(self.type_error(index, param_name, param, "word"))
+        }
+    }
+
+    pub fn number_param(&self, index: usize, param_name: &str) -> Result<i64> {
+        let param = self.param(index)?;
+        if let FunctionParameter::Number(value) = param {
+            Ok(*value)
+        } else {
+            Err(self.type_error(index, param_name, param, "number"))
+        }
+    }
+
+    fn type_error(
+        &self,
+        index: usize,
+        param_name: &str,
+        param: &FunctionParameter,
+        expected_type: &str,
+    ) -> Error {
+        eyre!(
+            "wrong type for {} parameter {index} ({param_name}), expected {expected_type}, found {param:?}",
+            self.name
+        )
+    }
+
+    fn param(&self, index: usize) -> Result<&FunctionParameter> {
+        self.parameters
+            .get(index)
+            .ok_or_else(|| eyre!("parameter not found at index {index}"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::{FunctionCall, FunctionParameter};
+    use color_eyre::eyre::Result;
+    use test_log::test;
+
+    macro_rules! assert_error {
+        ($err_expr: expr, $err_contents: expr) => {
+            assert_eq!(
+                $err_expr.err().map(|e| e.to_string()),
+                Some($err_contents.to_string())
+            )
+        };
+    }
+
+    #[test]
+    fn should_read_parameters() -> Result<()> {
+        let call = call("fn", vec![word("abc"), number(123)]);
+        call.expect_args(vec!["param1", "param2"])?;
+        assert_eq!(call.word_param(0, "param1")?, "abc");
+        Ok(assert_eq!(call.number_param(1, "param2")?, 123))
+    }
+
+    #[test]
+    fn should_fail_expected_number_of_parameters() -> Result<()> {
+        let call = call("fn", vec![word("abc"), number(123)]);
+        Ok(assert_error!(
+            call.expect_args(vec!["param1", "param2", "param3"]),
+            "fn expects 3 arguments (param1, param2, param3), found 2"
+        ))
+    }
+
+    #[test]
+    fn should_fail_reading_word_wrong_type() -> Result<()> {
+        let call = call("fn", vec![word("abc"), number(123)]);
+        Ok(assert_error!(
+            call.word_param(1, "param2"),
+            "wrong type for fn parameter 1 (param2), expected word, found Number(123)"
+        ))
+    }
+
+    #[test]
+    fn should_fail_reading_number_wrong_type() -> Result<()> {
+        let call = call("fn", vec![word("abc"), number(123)]);
+        Ok(assert_error!(
+            call.number_param(0, "param1"),
+            "wrong type for fn parameter 0 (param1), expected number, found Word(\"abc\")"
+        ))
+    }
+
+    fn call(name: &str, parameters: Vec<FunctionParameter>) -> FunctionCall {
+        let name = name.to_string();
+        FunctionCall { name, parameters }
+    }
+
+    fn word(value: &str) -> FunctionParameter {
+        let value = value.to_string();
+        FunctionParameter::Word(value)
+    }
+
+    fn number(value: i64) -> FunctionParameter {
+        FunctionParameter::Number(value)
+    }
+}

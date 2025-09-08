@@ -28,7 +28,9 @@ use filter_udfs::ageoff::AgeOff;
 use regex::Regex;
 use std::sync::Arc;
 
-use crate::datafusion::filter_aggregation_config::function_reader::{FunctionCall, FunctionReader};
+use crate::datafusion::filter_aggregation_config::function_call::FunctionCall;
+use crate::datafusion::filter_aggregation_config::function_reader::FunctionReader;
+mod function_call;
 mod function_reader;
 
 pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
