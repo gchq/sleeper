@@ -1,3 +1,5 @@
+use std::str::{CharIndices, Chars};
+
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -20,14 +22,20 @@ use color_eyre::eyre::{Result, ensure, eyre};
 
 pub struct FunctionReader<'h> {
     haystack: &'h str,
+    chars: CharIndices<'h>,
+    current: Option<(usize, char)>,
     pos: usize,
     first_function: bool,
 }
 
 impl<'h> FunctionReader<'h> {
     pub fn new(haystack: &'h str) -> Self {
+        let mut chars = haystack.char_indices();
+        let current = chars.next();
         FunctionReader {
             haystack,
+            chars,
+            current,
             pos: 0,
             first_function: true,
         }
@@ -95,9 +103,9 @@ impl<'h> FunctionReader<'h> {
 
     fn is_next_parameter(&mut self) -> Result<bool> {
         self.ignore_whitespace();
-        if let Some(c) = self.read_char() {
+        if let Some(c) = self.current_char() {
             if c == ',' {
-                self.pos += 1;
+                self.advance();
                 Ok(true)
             } else {
                 Ok(false)
@@ -116,25 +124,29 @@ impl<'h> FunctionReader<'h> {
 
     fn read_word(&mut self) -> Option<&'h str> {
         self.ignore_whitespace();
-        let start_pos = self.pos;
-        while let Some(c) = self.read_char()
+        let start_index = self.current_index()?;
+        while let Some(c) = self.current_char()
             && (c.is_alphanumeric() || c == '_' || c == '-')
         {
-            self.pos += 1;
+            self.advance();
         }
-        if start_pos == self.pos {
-            None
+        if let Some(end_index) = self.current_index() {
+            if start_index == end_index {
+                None
+            } else {
+                Some(&self.haystack[start_index..end_index])
+            }
         } else {
-            Some(&self.haystack[start_pos..self.pos])
+            Some(&self.haystack[start_index..])
         }
     }
 
     fn read_expected_char(&mut self, expected: char) -> bool {
         self.ignore_whitespace();
-        if let Some(c) = self.read_char()
+        if let Some(c) = self.current_char()
             && c == expected
         {
-            self.pos += 1;
+            self.advance();
             true
         } else {
             false
@@ -142,15 +154,24 @@ impl<'h> FunctionReader<'h> {
     }
 
     fn ignore_whitespace(&mut self) {
-        while let Some(c) = self.read_char()
+        while let Some(c) = self.current_char()
             && c.is_whitespace()
         {
-            self.pos += 1;
+            self.advance();
         }
     }
 
-    fn read_char(&mut self) -> Option<char> {
-        self.haystack.chars().nth(self.pos)
+    fn current_index(&mut self) -> Option<usize> {
+        self.current.map(|c| c.0)
+    }
+
+    fn current_char(&mut self) -> Option<char> {
+        self.current.map(|c| c.1)
+    }
+
+    fn advance(&mut self) {
+        self.current = self.chars.next();
+        self.pos += 1;
     }
 
     fn at_end(&self) -> bool {
@@ -280,6 +301,16 @@ mod tests {
         assert_eq!(
             expect_function_call(&mut reader)?,
             call("some-fn", vec![word("a-field")])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_read_function_call_with_japanese_characters() -> Result<()> {
+        let mut reader = FunctionReader::new("存在する(ひほわれよう)");
+        assert_eq!(
+            expect_function_call(&mut reader)?,
+            call("存在する", vec![word("ひほわれよう")])
         );
         Ok(())
     }
