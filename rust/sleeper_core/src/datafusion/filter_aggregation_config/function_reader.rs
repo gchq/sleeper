@@ -21,21 +21,21 @@ use std::str::CharIndices;
 
 pub struct FunctionReader<'h> {
     haystack: &'h str,
-    chars: CharIndices<'h>,
+    iterator: CharIndices<'h>,
     current: Option<(usize, char)>,
-    pos: usize,
+    characters_read: usize,
     first_function: bool,
 }
 
 impl<'h> FunctionReader<'h> {
     pub fn new(haystack: &'h str) -> Self {
-        let mut chars = haystack.char_indices();
-        let current = chars.next();
+        let mut iterator = haystack.char_indices();
+        let current = iterator.next();
         FunctionReader {
             haystack,
-            chars,
+            iterator,
             current,
-            pos: 0,
+            characters_read: 0,
             first_function: true,
         }
     }
@@ -47,11 +47,15 @@ impl<'h> FunctionReader<'h> {
                 ensure!(
                     !found_comma,
                     "expected function call at position {}",
-                    self.pos
+                    self.characters_read
                 );
                 return Ok(None);
             }
-            ensure!(found_comma, "expected comma at position {}", self.pos);
+            ensure!(
+                found_comma,
+                "expected comma at position {}",
+                self.characters_read
+            );
         }
         match self.read_word() {
             Some(name) => {
@@ -63,7 +67,10 @@ impl<'h> FunctionReader<'h> {
                 if self.at_end() {
                     Ok(None)
                 } else {
-                    Err(eyre!("expected function name at position {}", self.pos))
+                    Err(eyre!(
+                        "expected function name at position {}",
+                        self.characters_read
+                    ))
                 }
             }
         }
@@ -73,7 +80,7 @@ impl<'h> FunctionReader<'h> {
         ensure!(
             self.read_expected_char('('),
             "expected open parenthesis at position {}",
-            self.pos
+            self.characters_read
         );
         let mut parameters = vec![];
         loop {
@@ -88,12 +95,12 @@ impl<'h> FunctionReader<'h> {
                 ensure!(
                     self.read_expected_char(')'),
                     "expected comma or close parenthesis at position {}",
-                    self.pos
+                    self.characters_read
                 );
             } else {
                 return Err(eyre!(
                     "expected parameter or close parenthesis at position {}",
-                    self.pos
+                    self.characters_read
                 ));
             }
             return Ok(parameters);
@@ -110,7 +117,10 @@ impl<'h> FunctionReader<'h> {
                 Ok(false)
             }
         } else {
-            Err(eyre!("expected close parenthesis at position {}", self.pos))
+            Err(eyre!(
+                "expected close parenthesis at position {}",
+                self.characters_read
+            ))
         }
     }
 
@@ -169,8 +179,8 @@ impl<'h> FunctionReader<'h> {
     }
 
     fn advance(&mut self) {
-        self.current = self.chars.next();
-        self.pos += 1;
+        self.current = self.iterator.next();
+        self.characters_read += 1;
     }
 
     fn at_end(&self) -> bool {
