@@ -61,7 +61,7 @@ public class CompactionVeryLargeST {
     // We want to know compactions can deal with a very large amount of data.
     // This test is based on our expectations for how much data will be compacted at once.
     // The most data that can be compacted at once is the contents of a whole partition.
-    // At time of writing, a partition will be split if it contains 1 billion rows.
+    // At time of writing, by default a partition will be split if it contains 1 billion rows.
     // With some allowance for the fact that partition splitting takes time, we test with 2 billion rows.
     void shouldRunVeryLargeCompaction(SleeperSystemTest sleeper) {
         // Given
