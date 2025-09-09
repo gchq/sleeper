@@ -43,19 +43,17 @@ impl<'h> FunctionCall<'h> {
 
     pub fn word_param(&self, index: usize, param_name: &str) -> Result<&str> {
         let param = self.param(index)?;
-        if let FunctionParameter::Word(value) = param {
-            Ok(value)
-        } else {
-            Err(self.type_error(index, param_name, param, "word"))
+        match param {
+            FunctionParameter::Word(value) => Ok(value),
+            _ => Err(self.type_error(index, param_name, param, "word")),
         }
     }
 
     pub fn number_param(&self, index: usize, param_name: &str) -> Result<i64> {
         let param = self.param(index)?;
-        if let FunctionParameter::Number(value) = param {
-            Ok(*value)
-        } else {
-            Err(self.type_error(index, param_name, param, "number"))
+        match param {
+            FunctionParameter::Number(value) => Ok(*value),
+            _ => Err(self.type_error(index, param_name, param, "word")),
         }
     }
 
