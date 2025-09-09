@@ -238,6 +238,33 @@ mod tests {
     }
 
     #[test]
+    fn should_find_bad_characters_at_field_name() {
+        let mut reader = FunctionReader::new("fn(@/ #!)");
+        assert_error!(
+            reader.read_function_call(),
+            "expected parameter or close parenthesis at position 3"
+        );
+    }
+
+    #[test]
+    fn should_find_bad_character_in_function_name() {
+        let mut reader = FunctionReader::new("fn@1()");
+        assert_error!(
+            reader.read_function_call(),
+            "expected open parenthesis at position 2"
+        );
+    }
+
+    #[test]
+    fn should_find_bad_character_in_field_name() {
+        let mut reader = FunctionReader::new("fn(field@0)");
+        assert_error!(
+            reader.read_function_call(),
+            "expected comma or close parenthesis at position 8"
+        );
+    }
+
+    #[test]
     fn should_read_function_call_with_underscore() -> Result<()> {
         let mut reader = FunctionReader::new("some_fn(a_field)");
         assert_eq!(
