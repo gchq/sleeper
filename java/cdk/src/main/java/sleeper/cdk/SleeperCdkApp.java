@@ -174,10 +174,15 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Athena analytics
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "Athena - AutoDelete", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE), loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE_PROVIDER));
             new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks, autoDeleteS3ObjectsStack);
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "BulkImportBucket - AutoDelete", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE_PROVIDER));
             bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks,
                     autoDeleteS3ObjectsStack, jars);
         }
@@ -234,6 +239,9 @@ public class SleeperCdkApp extends Stack {
 
         // Stack to run bulk export jobs
         if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "BulkExport - AutoDelete", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE_PROVIDER));
             new BulkExportStack(this,
                     "BulkExport",
                     instanceProperties,
@@ -274,6 +282,9 @@ public class SleeperCdkApp extends Stack {
         QueryStack queryStack = null;
         // Stack to execute queries
         if (OptionalStack.QUERY_STACKS.stream().anyMatch(optionalStacks::contains)) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "Query - AutoDelete", instanceProperties, jars,
+                    loggingStack.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE_PROVIDER));
             queryQueueStack = new QueryQueueStack(this, "QueryQueue",
                     instanceProperties,
                     topicStack.getTopic(), coreStacks,

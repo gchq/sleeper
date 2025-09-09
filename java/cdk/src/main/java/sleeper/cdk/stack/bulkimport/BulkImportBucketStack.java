@@ -26,7 +26,6 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.CoreStacks;
-import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -49,9 +48,7 @@ public class BulkImportBucketStack extends NestedStack {
                 .build();
         importBucket.grantWrite(coreStacks.getIngestByQueuePolicyForGrants());
         instanceProperties.set(BULK_IMPORT_BUCKET, importBucket.getBucketName());
-        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, importBucket, bucketName,
-                coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE),
-                coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE_PROVIDER));
+        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, importBucket, bucketName);
     }
 
     public IBucket getImportBucket() {
