@@ -63,7 +63,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                         new Field("notRequiredField", new IntType()))
                 .build();
 
-        SortedRowIterator iterator = createAggregationFilteringIterator(schema, "ageOff(value,1000)", null);
+        SortedRowIterator iterator = createAggregationFilteringIteratorWithSchema(schema, "ageOff(value,1000)", null);
 
         // Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
@@ -73,12 +73,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     @CsvSource({"ageoff", "AGEOFF", "ageOff"})
     public void shouldApplyAgeOffFilterFromProperties(String filters) throws IteratorCreationException {
         // Given
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
-
-        SortedRowIterator ageOffIterator = createAggregationFilteringIterator(schema, filters + "(value,1000)", null);
+        SortedRowIterator ageOffIterator = createAggregationFilteringIterator(filters + "(value,1000)", null);
 
         List<Row> rows = List.of(
                 new Row(Map.of("key", "test", "value", 10L)),
@@ -231,7 +226,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                         new Field("value2", new LongType())))
                 .build();
 
-        SortedRowIterator doubleAggregatorIterator = createAggregationFilteringIterator(schema, null, "SUM(value1),MAX(value2)");
+        SortedRowIterator doubleAggregatorIterator = createAggregationFilteringIteratorWithSchema(schema, null, "SUM(value1),MAX(value2)");
 
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
                 new Row(Map.of("key1", "test", "value1", 4217L,
@@ -252,12 +247,8 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
 
     @Test
     void shouldThrowExceptionForInvalidOperandDeclared() throws IteratorCreationException {
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
 
-        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "bop(VALUE)"))
+        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(null, "bop(VALUE)"))
                 .withMessage("Unable to parse operand. Operand: bop");
     }
 
@@ -269,7 +260,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
-        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(failKey),MIN(sortKey),SUM(value)"))
+        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIteratorWithSchema(schema, null, "MIN(failKey),MIN(sortKey),SUM(value)"))
                 .withMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
     }
 
@@ -280,7 +271,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                 .valueFields(new Field("doubleValue", new LongType()))
                 .build();
 
-        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(doubleValue),SUM(doubleValue)"))
+        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIteratorWithSchema(schema, null, "MIN(doubleValue),SUM(doubleValue)"))
                 .withMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
     }
 
@@ -291,18 +282,13 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                 .valueFields(new Field("existsValue", new LongType()), new Field("ignoredValue", new LongType()))
                 .build();
 
-        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(existsValue)"))
+        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIteratorWithSchema(schema, null, "MIN(existsValue)"))
                 .withMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
 
     }
 
     private SortedRowIterator buildSingleValueAggregator(String aggregator) throws IteratorCreationException {
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
-
-        return createAggregationFilteringIterator(schema, null, aggregator + "(value)");
+        return createAggregationFilteringIterator(null, aggregator + "(value)");
     }
 
     private SortedRowIterator buildMapAggregator(String aggregator) throws IteratorCreationException {
@@ -313,6 +299,6 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                 .build();
 
         String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
-        return createAggregationFilteringIterator(schema, null, parsedAggregatorString);
+        return createAggregationFilteringIteratorWithSchema(schema, null, parsedAggregatorString);
     }
 }

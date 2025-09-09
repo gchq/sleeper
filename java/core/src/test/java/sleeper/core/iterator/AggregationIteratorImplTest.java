@@ -35,7 +35,7 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
 
     @Test
     public void shouldThrowOnNullIterator() {
-        assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(createAggregationFilteringIterator(null, null, null).getFilterAggregationConfig(), null));
+        assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(createAggregationFilteringIterator(null, null).getFilterAggregationConfig(), null));
     }
 
     @Test
@@ -55,7 +55,7 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
         Row expected = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testtestaaaaa", "value2", 78));
         // When
-        aggregateOnTo(r1, r2, createAggregationFilteringIterator(null, null, "sum(value1),min(value2)").getFilterAggregationConfig());
+        aggregateOnTo(r1, r2, createAggregationFilteringIterator(null, "sum(value1),min(value2)").getFilterAggregationConfig());
 
         // Then
         assertThat(r1).isEqualTo(expected);
@@ -71,7 +71,7 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
 
         Row expected = new Row(r1);
         // When
-        aggregateOnTo(r1, r2, createAggregationFilteringIterator(null, "", "").getFilterAggregationConfig());
+        aggregateOnTo(r1, r2, createAggregationFilteringIterator("", "").getFilterAggregationConfig());
 
         // Then
         assertThat(r1).isEqualTo(expected);
@@ -85,7 +85,7 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
                 "sort_key2", 5, "value1", "test", "value2", 78));
         Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testaaaaa", "value2", 7800));
-        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createAggregationFilteringIterator(null, "", "").getFilterAggregationConfig(),
+        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createAggregationFilteringIterator("", "").getFilterAggregationConfig(),
                 new WrappedIterator<Row>(List.<Row>of().iterator()));
 
         // When
@@ -110,7 +110,7 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
         Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 6, "value1", "testaaaaa", "value2", 7800));
 
-        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createAggregationFilteringIterator(schema, "", "").getFilterAggregationConfig(),
+        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createAggregationFilteringIteratorWithSchema(schema, "", "").getFilterAggregationConfig(),
                 new WrappedIterator<Row>(List.<Row>of().iterator()));
 
         // When

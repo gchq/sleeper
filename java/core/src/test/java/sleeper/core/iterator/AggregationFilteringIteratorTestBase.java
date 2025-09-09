@@ -15,28 +15,41 @@
  */
 package sleeper.core.iterator;
 
+import org.junit.jupiter.api.BeforeEach;
+
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
-
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 /**
  * Test base class for the generator methods around aggregation filters.
  */
 public abstract class AggregationFilteringIteratorTestBase {
+    private static Schema schema;
 
-    protected static AggregationFilteringIterator createAggregationFilteringIterator(Schema schema, String filters, String aggregationString) throws IteratorCreationException {
-        if (schema == null) {
-            schema = createSchemaWithKey("key1", new IntType());
-        }
+    @BeforeEach
+    void setUp() {
+        schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+    }
+
+    protected static AggregationFilteringIterator createAggregationFilteringIterator(String filters, String aggregationString) throws IteratorCreationException {
+        return createAggregationFilteringIteratorWithSchema(schema, filters, aggregationString);
+    }
+
+    protected static AggregationFilteringIterator createAggregationFilteringIteratorWithSchema(Schema schemaIn, String filters, String aggregationString) throws IteratorCreationException {
         return (AggregationFilteringIterator) new IteratorFactory(
                 new ObjectFactory(AggregationFilteringIteratorTestBase.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
                         .filters(filters)
                         .aggregationString(aggregationString)
-                        .build(), schema);
+                        .build(), schemaIn);
     }
 }
