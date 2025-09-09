@@ -52,6 +52,7 @@ impl Aggregate {
         // Rename column to original name
         .alias(&self.column))
     }
+
     pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
         let mut reader = FunctionReader::new(config_string);
         let mut aggregations = vec![];
@@ -83,7 +84,7 @@ impl AggOp {
         Self::parse(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
     }
 
-    pub fn parse(value: &str) -> Result<Self> {
+    fn parse(value: &str) -> Result<Self> {
         match value.to_lowercase().as_str() {
             "sum" => Ok(Self::Sum),
             "min" => Ok(Self::Min),
