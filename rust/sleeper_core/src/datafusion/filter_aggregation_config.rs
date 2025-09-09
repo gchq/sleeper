@@ -21,9 +21,11 @@ use aggregator_udfs::{
 use datafusion::{
     common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
     dataframe::DataFrame,
+    error::Result as DataFusionResult,
     error::{DataFusionError, Result},
-    logical_expr::{AggregateUDF, Expr, ExprSchemable, col},
+    logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
 };
+use filter_udfs::ageoff::AgeOff;
 use regex::Regex;
 use std::sync::Arc;
 mod filter;
@@ -55,6 +57,18 @@ impl FilterAggregationConfig {
     #[must_use]
     pub fn aggregation(&self) -> Option<&Vec<Aggregate>> {
         self.aggregation.as_ref()
+    }
+}
+
+impl Filter {
+    /// Creates a filtering expression for this filter instance. The returned
+    /// expression can be passed to [`DataFrame::filter`].
+    pub fn create_filter_expr(&self) -> DataFusionResult<Expr> {
+        match self {
+            Self::Ageoff { column, max_age } => {
+                Ok(ScalarUDF::from(AgeOff::try_from(*max_age)?).call(vec![col(column)]))
+            }
+        }
     }
 }
 

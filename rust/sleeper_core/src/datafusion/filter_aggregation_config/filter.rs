@@ -18,11 +18,6 @@ use crate::datafusion::filter_aggregation_config::{
     function_call::FunctionCall, function_reader::FunctionReader,
 };
 use color_eyre::eyre::{Report, Result, ensure};
-use datafusion::{
-    error::Result as DataFusionResult,
-    logical_expr::{Expr, ScalarUDF, col},
-};
-use filter_udfs::ageoff::AgeOff;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Filter {
@@ -31,16 +26,6 @@ pub enum Filter {
 }
 
 impl Filter {
-    /// Creates a filtering expression for this filter instance. The returned
-    /// expression can be passed to [`DataFrame::filter`].
-    pub fn create_filter_expr(&self) -> DataFusionResult<Expr> {
-        match self {
-            Self::Ageoff { column, max_age } => {
-                Ok(ScalarUDF::from(AgeOff::try_from(*max_age)?).call(vec![col(column)]))
-            }
-        }
-    }
-
     pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
         let mut reader = FunctionReader::new(config_string);
         let mut filters = vec![];
