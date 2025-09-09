@@ -53,7 +53,7 @@ impl<'h> FunctionCall<'h> {
         let param = self.param(index)?;
         match param {
             FunctionParameter::Number(value) => Ok(*value),
-            _ => Err(self.type_error(index, param_name, param, "word")),
+            _ => Err(self.type_error(index, param_name, param, "number")),
         }
     }
 
