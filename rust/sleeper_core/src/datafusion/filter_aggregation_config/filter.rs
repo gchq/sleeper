@@ -14,15 +14,15 @@
 * limitations under the License.
 */
 
+use crate::datafusion::filter_aggregation_config::{
+    function_call::FunctionCall, function_reader::FunctionReader,
+};
 use color_eyre::eyre::{Result, ensure};
 use datafusion::{
     error::Result as DataFusionResult,
     logical_expr::{Expr, ScalarUDF, col},
 };
 use filter_udfs::ageoff::AgeOff;
-
-use crate::datafusion::filter_aggregation_config::function_call::FunctionCall;
-use crate::datafusion::filter_aggregation_config::function_reader::FunctionReader;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Filter {
