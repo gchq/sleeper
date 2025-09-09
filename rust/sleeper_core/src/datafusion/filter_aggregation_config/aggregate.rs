@@ -25,8 +25,12 @@ use datafusion::{
 };
 use std::sync::Arc;
 
+use crate::datafusion::filter_aggregation_config::{
+    function_call::FunctionCall, function_reader::FunctionReader,
+};
+
 /// Aggregation support. Consists of a column name and operation.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Aggregate {
     pub column: String,
     pub operation: AggOp,
@@ -48,10 +52,25 @@ impl Aggregate {
         // Rename column to original name
         .alias(&self.column))
     }
+    pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
+        let mut reader = FunctionReader::new(config_string);
+        let mut aggregations = vec![];
+        while let Some(call) = reader.read_function_call()? {
+            aggregations.push(Self::from_function_call(&call)?);
+        }
+        Ok(aggregations)
+    }
+
+    fn from_function_call(call: &FunctionCall) -> Result<Self> {
+        call.expect_args(&["column"])?;
+        let column = call.word_param(0, "column")?.to_string();
+        let operation: AggOp = AggOp::parse(call.name)?;
+        Ok(Aggregate { column, operation })
+    }
 }
 
 /// Supported aggregating operations.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum AggOp {
     Sum,
     Min,
@@ -73,6 +92,101 @@ impl AggOp {
             "map_min" => Ok(Self::MapAggregate(MapAggregatorOp::Min)),
             "map_max" => Ok(Self::MapAggregate(MapAggregatorOp::Max)),
             _ => Err(eyre!("Aggregation operator {value} not recognised")),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{AggOp, Aggregate};
+    use aggregator_udfs::map_aggregate::MapAggregatorOp;
+    use color_eyre::eyre::Result;
+    use test_log::test;
+
+    #[test]
+    fn should_parse_sum() -> Result<()> {
+        assert_eq!(Aggregate::parse_config("sum(count)")?, vec![sum("count")]);
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_min() -> Result<()> {
+        assert_eq!(Aggregate::parse_config("min(count)")?, vec![min("count")]);
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_max() -> Result<()> {
+        assert_eq!(Aggregate::parse_config("max(count)")?, vec![max("count")]);
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_map_sum() -> Result<()> {
+        assert_eq!(
+            Aggregate::parse_config("map_sum(some_map)")?,
+            vec![map_sum("some_map")]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_map_min() -> Result<()> {
+        assert_eq!(
+            Aggregate::parse_config("map_min(some_map)")?,
+            vec![map_min("some_map")]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_map_max() -> Result<()> {
+        assert_eq!(
+            Aggregate::parse_config("map_max(some_map)")?,
+            vec![map_max("some_map")]
+        );
+        Ok(())
+    }
+
+    fn sum(column: &str) -> Aggregate {
+        Aggregate {
+            column: column.to_string(),
+            operation: AggOp::Sum,
+        }
+    }
+
+    fn min(column: &str) -> Aggregate {
+        Aggregate {
+            column: column.to_string(),
+            operation: AggOp::Min,
+        }
+    }
+
+    fn max(column: &str) -> Aggregate {
+        Aggregate {
+            column: column.to_string(),
+            operation: AggOp::Max,
+        }
+    }
+
+    fn map_sum(column: &str) -> Aggregate {
+        Aggregate {
+            column: column.to_string(),
+            operation: AggOp::MapAggregate(MapAggregatorOp::Sum),
+        }
+    }
+
+    fn map_min(column: &str) -> Aggregate {
+        Aggregate {
+            column: column.to_string(),
+            operation: AggOp::MapAggregate(MapAggregatorOp::Min),
+        }
+    }
+
+    fn map_max(column: &str) -> Aggregate {
+        Aggregate {
+            column: column.to_string(),
+            operation: AggOp::MapAggregate(MapAggregatorOp::Max),
         }
     }
 }
