@@ -59,7 +59,7 @@ impl TryFrom<&FunctionCall<'_>> for Filter {
             "unrecognised filter function name \"{}\"",
             call.name
         );
-        call.expect_args(&["column", "max age"])?;
+        call.expect_num_parameters(&["column", "max age"])?;
         Ok(Filter::Ageoff {
             column: call.word_param(0, "column")?.to_string(),
             max_age: call.number_param(1, "max age")?,
