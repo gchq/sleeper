@@ -50,7 +50,7 @@ impl Filter {
         Ok(filters)
     }
 
-    fn from_function_call(call: &FunctionCall) -> Result<Filter> {
+    fn from_function_call(call: &FunctionCall) -> Result<Self> {
         ensure!(
             call.name.eq_ignore_ascii_case("ageOff"),
             "unrecognised filter function name \"{}\"",
