@@ -174,7 +174,7 @@ impl<'h> FunctionReader<'h> {
     }
 
     fn at_end(&self) -> bool {
-        self.haystack.len() == self.pos
+        self.current.is_none()
     }
 }
 
