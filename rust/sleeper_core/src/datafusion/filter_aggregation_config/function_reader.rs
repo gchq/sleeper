@@ -188,6 +188,18 @@ impl<'h> FunctionReader<'h> {
     }
 }
 
+impl<'h> Iterator for FunctionReader<'h> {
+    type Item = Result<FunctionCall<'h>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.read_function_call() {
+            Err(failure) => Some(Err(failure)),
+            Ok(Some(call)) => Some(Ok(call)),
+            Ok(None) => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 

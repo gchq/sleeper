@@ -27,12 +27,12 @@ pub enum Filter {
 
 impl Filter {
     pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
-        let mut reader = FunctionReader::new(config_string);
-        let mut filters = vec![];
-        while let Some(call) = reader.read_function_call()? {
-            filters.push(Filter::try_from(&call)?);
-        }
-        Ok(filters)
+        FunctionReader::new(config_string)
+            .map(|result| match result {
+                Ok(call) => Self::try_from(&call),
+                Err(e) => Err(e),
+            })
+            .collect()
     }
 }
 
