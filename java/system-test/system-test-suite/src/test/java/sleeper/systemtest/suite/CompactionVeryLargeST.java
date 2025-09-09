@@ -57,7 +57,7 @@ public class CompactionVeryLargeST {
     }
 
     @Test
-    // This test takes about 2 hours to run.
+    // This test takes about 2 hours to run, or an hour and a half if the Sleeper instance is already deployed.
     // We want to know compactions can deal with a very large amount of data.
     // This test is based on our expectations for how much data will be compacted at once.
     // The most data that can be compacted at once is the contents of a whole partition.
