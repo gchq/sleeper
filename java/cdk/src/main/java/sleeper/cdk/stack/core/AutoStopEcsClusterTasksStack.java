@@ -52,7 +52,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
             ILogGroup logGroup, ILogGroup providerLogGroup) {
         super(scope, id);
 
-        this.id = id;
+        this.id = id + "AutoStop";
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
