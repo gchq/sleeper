@@ -17,7 +17,7 @@
 use crate::datafusion::filter_aggregation_config::{
     function_call::FunctionCall, function_reader::FunctionReader,
 };
-use color_eyre::eyre::{Result, ensure};
+use color_eyre::eyre::{Report, Result, ensure};
 use datafusion::{
     error::Result as DataFusionResult,
     logical_expr::{Expr, ScalarUDF, col},
@@ -45,12 +45,15 @@ impl Filter {
         let mut reader = FunctionReader::new(config_string);
         let mut filters = vec![];
         while let Some(call) = reader.read_function_call()? {
-            filters.push(Self::from_function_call(&call)?);
+            filters.push(Filter::try_from(&call)?);
         }
         Ok(filters)
     }
+}
 
-    fn from_function_call(call: &FunctionCall) -> Result<Self> {
+impl<'h> TryFrom<&FunctionCall<'h>> for Filter {
+    type Error = Report;
+    fn try_from(call: &FunctionCall) -> Result<Self> {
         ensure!(
             call.name.eq_ignore_ascii_case("ageOff"),
             "unrecognised filter function name \"{}\"",
