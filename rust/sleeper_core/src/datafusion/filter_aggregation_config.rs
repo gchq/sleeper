@@ -19,7 +19,7 @@ use datafusion::{
 };
 use regex::Regex;
 
-use crate::datafusion::filter_aggregation_config::aggregate::Aggregate;
+use crate::datafusion::filter_aggregation_config::aggregate::{AggOp, Aggregate};
 use crate::datafusion::filter_aggregation_config::filter::Filter;
 mod aggregate;
 mod filter;
@@ -91,7 +91,7 @@ impl TryFrom<&str> for FilterAggregationConfig {
             if let Some(captures) = matcher.captures(agg) {
                 aggregation.push(Aggregate {
                     column: captures[2].to_owned(),
-                    operation: captures[1].try_into()?,
+                    operation: AggOp::parse_for_datafusion(&captures[1])?,
                 });
             }
         }

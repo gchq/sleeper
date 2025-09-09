@@ -58,9 +58,8 @@ pub enum AggOp {
     MapAggregate(MapAggregatorOp),
 }
 
-impl TryFrom<&str> for AggOp {
-    type Error = DataFusionError;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+impl AggOp {
+    pub fn parse_for_datafusion(value: &str) -> Result<Self, DataFusionError> {
         match value.to_lowercase().as_str() {
             "sum" => Ok(Self::Sum),
             "min" => Ok(Self::Min),
@@ -68,7 +67,7 @@ impl TryFrom<&str> for AggOp {
             "map_sum" => Ok(Self::MapAggregate(MapAggregatorOp::Sum)),
             "map_min" => Ok(Self::MapAggregate(MapAggregatorOp::Min)),
             "map_max" => Ok(Self::MapAggregate(MapAggregatorOp::Max)),
-            _ => Err(Self::Error::NotImplemented(format!(
+            _ => Err(DataFusionError::NotImplemented(format!(
                 "Aggregation operator {value} not recognised"
             ))),
         }
