@@ -51,7 +51,7 @@ impl Filter {
     }
 }
 
-impl<'h> TryFrom<&FunctionCall<'h>> for Filter {
+impl TryFrom<&FunctionCall<'_>> for Filter {
     type Error = Report;
     fn try_from(call: &FunctionCall) -> Result<Self> {
         ensure!(
