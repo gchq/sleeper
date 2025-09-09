@@ -117,7 +117,7 @@ public class IteratorFactory {
                 maxAge = Long.parseLong(filterInput[1]);
                 groupingColumns.add(filterInput[0]);
             } else {
-                throw new IllegalStateException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
+                throw new IllegalArgumentException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
             }
         }
         List<Aggregation> aggregations = List.of();
@@ -144,7 +144,7 @@ public class IteratorFactory {
                 aggregations.add(new Aggregation(aggObject.getColumnName(),
                         AggregationOp.valueOf(aggObject.getOpName().toUpperCase(Locale.ENGLISH).replaceFirst("^MAP_", ""))));
             } catch (IllegalArgumentException e) {
-                throw new IllegalStateException("Unable to parse operand. Operand: " + aggObject.getOpName());
+                throw new IllegalArgumentException("Unable to parse operand. Operand: " + aggObject.getOpName());
             }
         });
         return aggregations;
@@ -166,7 +166,7 @@ public class IteratorFactory {
             String errStr = rowKeySortKeyViolations.stream()
                     .map(Aggregation::column)
                     .collect(Collectors.joining(", "));
-            throw new IllegalStateException("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: " + errStr);
+            throw new IllegalArgumentException("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: " + errStr);
         }
     }
 
@@ -174,7 +174,7 @@ public class IteratorFactory {
         HashMap<String, Boolean> aggMap = new HashMap<String, Boolean>();
         aggregations.stream().forEach(aggregation -> {
             if (aggMap.putIfAbsent(aggregation.column(), Boolean.TRUE) != null) {
-                throw new IllegalStateException("Not allowed duplicate columns for aggregation. Column name: " + aggregation.column());
+                throw new IllegalArgumentException("Not allowed duplicate columns for aggregation. Column name: " + aggregation.column());
             }
         });
     }
@@ -189,7 +189,7 @@ public class IteratorFactory {
             String errStr = schema.getValueFieldNames().stream()
                     .filter(presCol -> !aggregationColumns.contains(presCol))
                     .collect(Collectors.joining(", "));
-            throw new IllegalStateException("Not all value fields have aggregation declared. Missing columns: " + errStr);
+            throw new IllegalArgumentException("Not all value fields have aggregation declared. Missing columns: " + errStr);
         }
     }
 

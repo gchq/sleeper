@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 public class AggregationFilteringIteratorTest extends AggregationFilteringIteratorTestBase {
@@ -256,7 +257,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
-        assertThatIllegalStateException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "bop(VALUE)"))
+        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "bop(VALUE)"))
                 .withMessage("Unable to parse operand. Operand: bop");
     }
 
@@ -268,7 +269,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
-        assertThatIllegalStateException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(failKey),MIN(sortKey),SUM(value)"))
+        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(failKey),MIN(sortKey),SUM(value)"))
                 .withMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
     }
 
@@ -279,7 +280,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                 .valueFields(new Field("doubleValue", new LongType()))
                 .build();
 
-        assertThatIllegalStateException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(doubleValue),SUM(doubleValue)"))
+        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(doubleValue),SUM(doubleValue)"))
                 .withMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
     }
 
@@ -290,7 +291,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
                 .valueFields(new Field("existsValue", new LongType()), new Field("ignoredValue", new LongType()))
                 .build();
 
-        assertThatIllegalStateException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(existsValue)"))
+        assertThatIllegalArgumentException().isThrownBy(() -> createAggregationFilteringIterator(schema, null, "MIN(existsValue)"))
                 .withMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
 
     }
