@@ -1,5 +1,3 @@
-use std::str::{CharIndices, Chars};
-
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -19,6 +17,7 @@ use crate::datafusion::filter_aggregation_config::function_call::{
     FunctionCall, FunctionParameter,
 };
 use color_eyre::eyre::{Result, ensure, eyre};
+use std::str::CharIndices;
 
 pub struct FunctionReader<'h> {
     haystack: &'h str,
