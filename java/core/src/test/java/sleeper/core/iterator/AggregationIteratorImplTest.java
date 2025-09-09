@@ -47,6 +47,11 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
     @Test
     public void shouldAggregate() throws IteratorCreationException {
         // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key1", new StringType()))
+                .valueFields(new Field("value1", new LongType()))
+                .build();
+
         Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
         Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
@@ -55,7 +60,7 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
         Row expected = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testtestaaaaa", "value2", 78));
         // When
-        aggregateOnTo(r1, r2, createAggregationFilteringIterator(null, "sum(value1),min(value2)").getFilterAggregationConfig());
+        aggregateOnTo(r1, r2, createAggregationFilteringIteratorWithSchema(schema, null, "sum(value1),min(value2)").getFilterAggregationConfig());
 
         // Then
         assertThat(r1).isEqualTo(expected);
