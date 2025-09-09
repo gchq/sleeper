@@ -36,25 +36,22 @@ import java.util.Map;
 
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
-    private LambdaCode lambdaCode;
-    private String functionName;
+    private IFunction lambda;
     private String id;
+    private Provider provider;
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
+            ILogGroup logGroup, ILogGroup providerLogGroup) {
         super(scope, id);
 
         this.id = id;
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        lambdaCode = jars.lambdaCode(jarsBucket);
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        functionName = String.join("-", "sleeper",
+        String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
-    }
-
-    public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
-            IBucket bucket, String bucketName, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         IFunction lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
                 .functionName(functionName)
@@ -64,10 +61,15 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
 
-        Provider provider = Provider.Builder.create(scope, id + "Provider")
+        provider = Provider.Builder.create(scope, id + "Provider")
                 .onEventHandler(lambda)
                 .logGroup(providerLogGroup)
                 .build();
+
+    }
+
+    public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
+            IBucket bucket, String bucketName) {
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);

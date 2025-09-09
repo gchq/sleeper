@@ -25,7 +25,6 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -55,9 +54,7 @@ public class ConfigBucketStack extends NestedStack {
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, configBucket, bucketName,
-                loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE),
-                loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE_PROVIDER));
+        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, configBucket, bucketName);
 
         configBucket.grantRead(policiesStack.getDirectIngestPolicyForGrants());
         configBucket.grantRead(policiesStack.getIngestByQueuePolicyForGrants());

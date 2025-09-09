@@ -139,8 +139,9 @@ public class SleeperCdkApp extends Stack {
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(
-                this, "AutoDeleteS3Objects", instanceProperties, jars);
+        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "TableData - AutoDelete", instanceProperties, jars,
+                loggingStack.getLogGroup(LogGroupRef.TABLE_DATA_AUTODELETE),
+                loggingStack.getLogGroup(LogGroupRef.TABLE_DATA_AUTODELETE_PROVIDER));
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3ObjectsStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
@@ -149,6 +150,9 @@ public class SleeperCdkApp extends Stack {
                 this, "IngestTracker", instanceProperties, policiesStack);
         CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
                 this, "CompactionTracker", instanceProperties, policiesStack);
+        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "Configuration - AutoDelete", instanceProperties, jars,
+                loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE),
+                loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE_PROVIDER));
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3ObjectsStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
