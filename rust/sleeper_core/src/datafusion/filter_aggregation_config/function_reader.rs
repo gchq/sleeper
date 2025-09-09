@@ -207,7 +207,7 @@ mod tests {
     use crate::datafusion::filter_aggregation_config::function_call::{
         FunctionCall, FunctionParameter,
     };
-    use color_eyre::eyre::{Result, eyre};
+    use color_eyre::eyre::Result;
     use test_log::test;
 
     macro_rules! assert_error {
@@ -221,206 +221,164 @@ mod tests {
 
     #[test]
     fn should_read_function_call() -> Result<()> {
-        let mut reader = FunctionReader::new("answer(42)");
         assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("answer", vec![number(42)])
+            read_function_calls("answer(42)")?,
+            vec![call("answer", vec![number(42)])]
         );
         Ok(())
     }
 
     #[test]
     fn should_read_two_function_calls() -> Result<()> {
-        let mut reader = FunctionReader::new("answer(42), question(earth)");
         assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("answer", vec![number(42)])
-        );
-        assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("question", vec![word("earth")])
+            read_function_calls("answer(42), question(earth)")?,
+            vec![
+                call("answer", vec![number(42)]),
+                call("question", vec![word("earth")])
+            ]
         );
         Ok(())
     }
 
     #[test]
     fn should_read_function_call_with_two_parameters() -> Result<()> {
-        let mut reader = FunctionReader::new("fn(a,123)");
         assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("fn", vec![word("a"), number(123)])
+            read_function_calls("fn(a,123)")?,
+            vec![call("fn", vec![word("a"), number(123)])]
         );
         Ok(())
     }
 
     #[test]
     fn should_read_function_call_with_no_parameters() -> Result<()> {
-        let mut reader = FunctionReader::new("go()");
-        assert_eq!(expect_function_call(&mut reader)?, call("go", vec![]));
+        assert_eq!(read_function_calls("go()")?, vec![call("go", vec![])]);
         Ok(())
     }
 
     #[test]
     fn should_read_function_call_with_whitespace() -> Result<()> {
-        let mut reader = FunctionReader::new(" fn ( a , 123 ) ");
         assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("fn", vec![word("a"), number(123)])
+            read_function_calls(" fn ( a , 123 ) ")?,
+            vec![call("fn", vec![word("a"), number(123)])]
         );
         Ok(())
     }
 
     #[test]
     fn should_find_bad_characters_at_function_name() {
-        let mut reader = FunctionReader::new("@/ #!");
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("@/ #!"),
             "expected function name at position 0"
         );
     }
 
     #[test]
     fn should_find_bad_characters_at_field_name() {
-        let mut reader = FunctionReader::new("fn(@/ #!)");
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("fn(@/ #!)"),
             "expected parameter or close parenthesis at position 3"
         );
     }
 
     #[test]
     fn should_find_bad_character_in_function_name() {
-        let mut reader = FunctionReader::new("fn@1()");
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("fn@1()"),
             "expected open parenthesis at position 2"
         );
     }
 
     #[test]
     fn should_find_bad_character_in_field_name() {
-        let mut reader = FunctionReader::new("fn(field@0)");
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("fn(field@0)"),
             "expected comma or close parenthesis at position 8"
         );
     }
 
     #[test]
     fn should_read_function_call_with_underscore() -> Result<()> {
-        let mut reader = FunctionReader::new("some_fn(a_field)");
         assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("some_fn", vec![word("a_field")])
+            read_function_calls("some_fn(a_field)")?,
+            vec![call("some_fn", vec![word("a_field")])]
         );
         Ok(())
     }
 
     #[test]
     fn should_read_function_call_with_hyphen() -> Result<()> {
-        let mut reader = FunctionReader::new("some-fn(a-field)");
         assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("some-fn", vec![word("a-field")])
+            read_function_calls("some-fn(a-field)")?,
+            vec![call("some-fn", vec![word("a-field")])]
         );
         Ok(())
     }
 
     #[test]
     fn should_read_function_call_with_unicode_characters_spanning_multiple_bytes() -> Result<()> {
-        let mut reader = FunctionReader::new("存在する(ひほわれよう)");
         assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("存在する", vec![word("ひほわれよう")])
+            read_function_calls("存在する(ひほわれよう)")?,
+            vec![call("存在する", vec![word("ひほわれよう")])]
         );
         Ok(())
     }
 
     #[test]
     fn should_find_no_function_call() -> Result<()> {
-        let mut reader = FunctionReader::new("");
-        assert_eq!(reader.read_function_call()?, None);
+        assert_eq!(read_function_calls("")?, vec![]);
         Ok(())
     }
 
     #[test]
-    fn should_find_no_more_function_calls_after_first() -> Result<()> {
-        let mut reader = FunctionReader::new("fn()");
-        assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
-        assert_eq!(reader.read_function_call()?, None);
-        Ok(())
-    }
-
-    #[test]
-    fn should_find_no_more_function_calls_after_first_with_trailing_whitespace() -> Result<()> {
-        let mut reader = FunctionReader::new("fn() ");
-        assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
-        assert_eq!(reader.read_function_call()?, None);
-        Ok(())
-    }
-
-    #[test]
-    fn should_find_no_more_function_calls_after_first_with_trailing_comma() -> Result<()> {
-        let mut reader = FunctionReader::new("fn(),");
-        assert_eq!(expect_function_call(&mut reader)?, call("fn", vec![]));
+    fn should_find_trailing_comma() {
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("fn(),"),
             "expected function call at position 5"
-        );
-        Ok(())
+        )
     }
 
     #[test]
     fn should_find_no_comma_between_parameters() {
-        let mut reader = FunctionReader::new("fn(a b)");
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("fn(a b)"),
             "expected comma or close parenthesis at position 5"
         );
     }
 
     #[test]
-    fn should_find_no_comma_between_functions() -> Result<()> {
-        let mut reader = FunctionReader::new("fn(1) other(2)");
-        assert_eq!(
-            expect_function_call(&mut reader)?,
-            call("fn", vec![number(1)])
+    fn should_find_no_comma_between_functions() {
+        assert_error!(
+            read_function_calls("fn(1) other(2)"),
+            "expected comma at position 6"
         );
-        assert_error!(reader.read_function_call(), "expected comma at position 6");
-        Ok(())
     }
 
     #[test]
     fn should_find_no_close_paren() {
-        let mut reader = FunctionReader::new("fn(a, b");
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("fn(a, b"),
             "expected close parenthesis at position 7"
         );
     }
 
     #[test]
     fn should_find_no_open_paren() {
-        let mut reader = FunctionReader::new("fn");
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("fn"),
             "expected open parenthesis at position 2"
         );
     }
 
     #[test]
     fn should_find_quoted_parameter() {
-        let mut reader = FunctionReader::new("fn(\"abc\")");
         assert_error!(
-            reader.read_function_call(),
+            read_function_calls("fn(\"abc\")"),
             "expected parameter or close parenthesis at position 3"
         );
     }
 
-    fn expect_function_call<'h>(reader: &mut FunctionReader<'h>) -> Result<FunctionCall<'h>> {
-        reader
-            .read_function_call()?
-            .ok_or_else(|| eyre!("found no function call"))
+    fn read_function_calls(haystack: &'static str) -> Result<Vec<FunctionCall<'static>>> {
+        FunctionReader::new(haystack).collect()
     }
 
     fn call<'h>(name: &'static str, parameters: Vec<FunctionParameter<'h>>) -> FunctionCall<'h> {
