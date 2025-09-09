@@ -17,9 +17,10 @@ use aggregator_udfs::{
     map_aggregate::{MapAggregator, MapAggregatorOp},
     nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
 };
+use color_eyre::eyre::{Result, eyre};
 use datafusion::{
     dataframe::DataFrame,
-    error::{DataFusionError, Result},
+    error::{DataFusionError, Result as DataFusionResult},
     logical_expr::{AggregateUDF, Expr, ExprSchemable, col},
 };
 use std::sync::Arc;
@@ -33,7 +34,7 @@ pub struct Aggregate {
 
 impl Aggregate {
     // Create a DataFusion logical expression to represent this aggregation operation.
-    pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
+    pub fn to_expr(&self, frame: &DataFrame) -> DataFusionResult<Expr> {
         Ok(match &self.operation {
             AggOp::Sum => non_null_sum(col(&self.column)),
             AggOp::Min => non_null_min(col(&self.column)),
@@ -59,7 +60,11 @@ pub enum AggOp {
 }
 
 impl AggOp {
-    pub fn parse_for_datafusion(value: &str) -> Result<Self, DataFusionError> {
+    pub fn parse_for_datafusion(value: &str) -> DataFusionResult<Self, DataFusionError> {
+        Self::parse(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
+    }
+
+    pub fn parse(value: &str) -> Result<Self> {
         match value.to_lowercase().as_str() {
             "sum" => Ok(Self::Sum),
             "min" => Ok(Self::Min),
@@ -67,9 +72,7 @@ impl AggOp {
             "map_sum" => Ok(Self::MapAggregate(MapAggregatorOp::Sum)),
             "map_min" => Ok(Self::MapAggregate(MapAggregatorOp::Min)),
             "map_max" => Ok(Self::MapAggregate(MapAggregatorOp::Max)),
-            _ => Err(DataFusionError::NotImplemented(format!(
-                "Aggregation operator {value} not recognised"
-            ))),
+            _ => Err(eyre!("Aggregation operator {value} not recognised")),
         }
     }
 }
