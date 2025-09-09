@@ -16,18 +16,18 @@
 use color_eyre::eyre::{Error, Result, ensure, eyre};
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct FunctionCall {
-    pub name: String,
-    pub parameters: Vec<FunctionParameter>,
+pub struct FunctionCall<'h> {
+    pub name: &'h str,
+    pub parameters: Vec<FunctionParameter<'h>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum FunctionParameter {
-    Word(String),
+pub enum FunctionParameter<'h> {
+    Word(&'h str),
     Number(i64),
 }
 
-impl FunctionCall {
+impl<'h> FunctionCall<'h> {
     pub fn expect_args(&self, param_names: &[&str]) -> Result<()> {
         ensure!(
             self.parameters.len() == param_names.len(),
@@ -71,7 +71,7 @@ impl FunctionCall {
         )
     }
 
-    fn param(&self, index: usize) -> Result<&FunctionParameter> {
+    fn param(&'_ self, index: usize) -> Result<&FunctionParameter<'h>> {
         self.parameters
             .get(index)
             .ok_or_else(|| eyre!("parameter not found at index {index}"))
@@ -130,17 +130,15 @@ mod tests {
         );
     }
 
-    fn call(name: &str, parameters: Vec<FunctionParameter>) -> FunctionCall {
-        let name = name.to_string();
+    fn call<'h>(name: &'static str, parameters: Vec<FunctionParameter<'h>>) -> FunctionCall<'h> {
         FunctionCall { name, parameters }
     }
 
-    fn word(value: &str) -> FunctionParameter {
-        let value = value.to_string();
+    fn word(value: &'static str) -> FunctionParameter<'static> {
         FunctionParameter::Word(value)
     }
 
-    fn number(value: i64) -> FunctionParameter {
+    fn number(value: i64) -> FunctionParameter<'static> {
         FunctionParameter::Number(value)
     }
 }

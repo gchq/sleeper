@@ -33,7 +33,7 @@ impl<'h> FunctionReader<'h> {
         }
     }
 
-    pub fn read_function_call(&mut self) -> Result<Option<FunctionCall>> {
+    pub fn read_function_call(&mut self) -> Result<Option<FunctionCall<'h>>> {
         if !self.first_function {
             let found_comma = self.read_expected_char(',');
             if self.at_end() {
@@ -62,7 +62,7 @@ impl<'h> FunctionReader<'h> {
         }
     }
 
-    fn read_parameters(&mut self) -> Result<Vec<FunctionParameter>> {
+    fn read_parameters(&mut self) -> Result<Vec<FunctionParameter<'h>>> {
         ensure!(
             self.read_expected_char('('),
             "expected open parenthesis at position {}",
@@ -107,26 +107,25 @@ impl<'h> FunctionReader<'h> {
         }
     }
 
-    fn read_parameter(&mut self) -> Option<FunctionParameter> {
+    fn read_parameter(&mut self) -> Option<FunctionParameter<'h>> {
         self.read_word().map(|word| match word.parse::<i64>() {
             Ok(number) => FunctionParameter::Number(number),
             Err(_) => FunctionParameter::Word(word),
         })
     }
 
-    fn read_word(&mut self) -> Option<String> {
+    fn read_word(&mut self) -> Option<&'h str> {
         self.ignore_whitespace();
-        let mut result = String::new();
+        let start_pos = self.pos;
         while let Some(c) = self.read_char()
             && c.is_alphanumeric()
         {
-            result.push(c);
             self.pos += 1;
         }
-        if result.is_empty() {
+        if start_pos == self.pos {
             None
         } else {
-            Some(result)
+            Some(&self.haystack[start_pos..self.pos])
         }
     }
 
@@ -319,23 +318,21 @@ mod tests {
         );
     }
 
-    fn expect_function_call(reader: &mut FunctionReader) -> Result<FunctionCall> {
+    fn expect_function_call<'h>(reader: &mut FunctionReader<'h>) -> Result<FunctionCall<'h>> {
         reader
             .read_function_call()?
             .ok_or_else(|| eyre!("found no function call"))
     }
 
-    fn call(name: &str, parameters: Vec<FunctionParameter>) -> FunctionCall {
-        let name = name.to_string();
+    fn call<'h>(name: &'static str, parameters: Vec<FunctionParameter<'h>>) -> FunctionCall<'h> {
         FunctionCall { name, parameters }
     }
 
-    fn word(value: &str) -> FunctionParameter {
-        let value = value.to_string();
+    fn word(value: &'static str) -> FunctionParameter<'static> {
         FunctionParameter::Word(value)
     }
 
-    fn number(value: i64) -> FunctionParameter {
+    fn number(value: i64) -> FunctionParameter<'static> {
         FunctionParameter::Number(value)
     }
 }
