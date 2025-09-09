@@ -13,20 +13,15 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use aggregator_udfs::{
-    map_aggregate::{MapAggregator, MapAggregatorOp},
-    nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
-};
 use datafusion::{
     common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
-    dataframe::DataFrame,
     error::{DataFusionError, Result},
-    logical_expr::{AggregateUDF, Expr, ExprSchemable, col},
 };
 use regex::Regex;
-use std::sync::Arc;
 
+use crate::datafusion::filter_aggregation_config::aggregate::Aggregate;
 use crate::datafusion::filter_aggregation_config::filter::Filter;
+mod aggregate;
 mod filter;
 mod function_call;
 mod function_reader;
@@ -56,54 +51,6 @@ impl FilterAggregationConfig {
     #[must_use]
     pub fn aggregation(&self) -> Option<&Vec<Aggregate>> {
         self.aggregation.as_ref()
-    }
-}
-
-/// Aggregation support. Consists of a column name and operation.
-#[derive(Debug)]
-pub struct Aggregate(String, AggOp);
-
-impl Aggregate {
-    // Create a DataFusion logical expression to represent this aggregation operation.
-    pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
-        Ok(match &self.1 {
-            AggOp::Sum => non_null_sum(col(&self.0)),
-            AggOp::Min => non_null_min(col(&self.0)),
-            AggOp::Max => non_null_max(col(&self.0)),
-            AggOp::MapAggregate(op) => {
-                let col_dt = col(&self.0).get_type(frame.schema())?;
-                let map_sum = Arc::new(MapAggregator::try_new(&col_dt, op.clone())?);
-                AggregateUDF::new_from_impl(NonNullable::new(map_sum)).call(vec![col(&self.0)])
-            }
-        }
-        // Rename column to original name
-        .alias(&self.0))
-    }
-}
-
-/// Supported aggregating operations.
-#[derive(Debug)]
-pub enum AggOp {
-    Sum,
-    Min,
-    Max,
-    MapAggregate(MapAggregatorOp),
-}
-
-impl TryFrom<&str> for AggOp {
-    type Error = DataFusionError;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value.to_lowercase().as_str() {
-            "sum" => Ok(Self::Sum),
-            "min" => Ok(Self::Min),
-            "max" => Ok(Self::Max),
-            "map_sum" => Ok(Self::MapAggregate(MapAggregatorOp::Sum)),
-            "map_min" => Ok(Self::MapAggregate(MapAggregatorOp::Min)),
-            "map_max" => Ok(Self::MapAggregate(MapAggregatorOp::Max)),
-            _ => Err(Self::Error::NotImplemented(format!(
-                "Aggregation operator {value} not recognised"
-            ))),
-        }
     }
 }
 
@@ -142,7 +89,10 @@ impl TryFrom<&str> for FilterAggregationConfig {
             Regex::new(AGGREGATE_REGEX).map_err(|e| DataFusionError::External(Box::new(e)))?;
         for agg in iter {
             if let Some(captures) = matcher.captures(agg) {
-                aggregation.push(Aggregate(captures[2].to_owned(), captures[1].try_into()?));
+                aggregation.push(Aggregate {
+                    column: captures[2].to_owned(),
+                    operation: captures[1].try_into()?,
+                });
             }
         }
         let aggregation = if aggregation.is_empty() {
@@ -200,7 +150,7 @@ pub fn validate_aggregations(
         // Columns with aggregators
         let agg_cols = agg_conf
             .iter()
-            .map(|agg| agg.0.as_str())
+            .map(|agg| agg.column.as_str())
             .collect::<Vec<_>>();
         // Check for duplications in aggregation columns and row key aggregations
         let mut col_checks: HashSet<&str> = HashSet::new();
