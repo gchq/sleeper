@@ -306,7 +306,7 @@ mod tests {
     }
 
     #[test]
-    fn should_read_function_call_with_japanese_characters() -> Result<()> {
+    fn should_read_function_call_with_unicode_characters_spanning_multiple_bytes() -> Result<()> {
         let mut reader = FunctionReader::new("存在する(ひほわれよう)");
         assert_eq!(
             expect_function_call(&mut reader)?,
