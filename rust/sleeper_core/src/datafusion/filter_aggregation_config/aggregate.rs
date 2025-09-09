@@ -91,7 +91,7 @@ impl AggOp {
             "map_sum" => Ok(Self::MapAggregate(MapAggregatorOp::Sum)),
             "map_min" => Ok(Self::MapAggregate(MapAggregatorOp::Min)),
             "map_max" => Ok(Self::MapAggregate(MapAggregatorOp::Max)),
-            _ => Err(eyre!("Aggregation operator {value} not recognised")),
+            _ => Err(eyre!("unrecognised aggregation function name \"{value}\"")),
         }
     }
 }
@@ -102,6 +102,15 @@ mod tests {
     use aggregator_udfs::map_aggregate::MapAggregatorOp;
     use color_eyre::eyre::Result;
     use test_log::test;
+
+    macro_rules! assert_error {
+        ($err_expr: expr, $err_contents: expr) => {
+            assert_eq!(
+                $err_expr.err().map(|e| e.to_string()),
+                Some($err_contents.to_string())
+            )
+        };
+    }
 
     #[test]
     fn should_parse_sum() -> Result<()> {
@@ -146,6 +155,61 @@ mod tests {
             vec![map_max("some_map")]
         );
         Ok(())
+    }
+
+    #[test]
+    fn should_parse_no_aggregation() -> Result<()> {
+        assert_eq!(Aggregate::parse_config("")?, vec![]);
+        Ok(())
+    }
+
+    #[test]
+    fn should_parse_two_aggregations() -> Result<()> {
+        assert_eq!(
+            Aggregate::parse_config("sum(a), sum(b)")?,
+            vec![sum("a"), sum("b")]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_ignore_case() -> Result<()> {
+        assert_eq!(
+            Aggregate::parse_config("SUM(a), MiN(b), Max(c), Map_Sum(d), MAP_MIN(e), MAP_max(f)")?,
+            vec![
+                sum("a"),
+                min("b"),
+                max("c"),
+                map_sum("d"),
+                map_min("e"),
+                map_max("f")
+            ]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_fail_with_unrecognised_aggregation_name() {
+        assert_error!(
+            Aggregate::parse_config("combine(a)"),
+            "unrecognised aggregation function name \"combine\""
+        );
+    }
+
+    #[test]
+    fn should_fail_with_too_many_arguments() {
+        assert_error!(
+            Aggregate::parse_config("sum(abc, 123)"),
+            "sum expects 1 argument (column), found 2"
+        );
+    }
+
+    #[test]
+    fn should_fail_with_field_name_wrong_type() {
+        assert_error!(
+            Aggregate::parse_config("sum(123)"),
+            "wrong type for sum parameter 0 (column), expected word, found Number(123)"
+        );
     }
 
     fn sum(column: &str) -> Aggregate {
