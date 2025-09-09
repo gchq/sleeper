@@ -43,7 +43,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
         super(scope, id);
 
-        this.id = id + "-AutoDelete";
+        this.id = id;
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
