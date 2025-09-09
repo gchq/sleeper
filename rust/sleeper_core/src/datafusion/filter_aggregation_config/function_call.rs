@@ -31,9 +31,10 @@ impl<'h> FunctionCall<'h> {
     pub fn expect_args(&self, param_names: &[&str]) -> Result<()> {
         ensure!(
             self.parameters.len() == param_names.len(),
-            "{} expects {} arguments ({}), found {}",
+            "{} expects {} argument{} ({}), found {}",
             self.name,
             param_names.len(),
+            if param_names.len() == 1 { "" } else { "s" },
             param_names.join(", "),
             self.parameters.len()
         );
@@ -109,6 +110,15 @@ mod tests {
         assert_error!(
             call.expect_args(&["param1", "param2", "param3"]),
             "fn expects 3 arguments (param1, param2, param3), found 2"
+        );
+    }
+
+    #[test]
+    fn should_fail_expected_one_parameter() {
+        let call = call("fn", vec![word("abc"), number(123)]);
+        assert_error!(
+            call.expect_args(&["param"]),
+            "fn expects 1 argument (param), found 2"
         );
     }
 
