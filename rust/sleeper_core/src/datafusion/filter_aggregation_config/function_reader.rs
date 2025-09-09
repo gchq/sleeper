@@ -118,7 +118,7 @@ impl<'h> FunctionReader<'h> {
         self.ignore_whitespace();
         let start_pos = self.pos;
         while let Some(c) = self.read_char()
-            && c.is_alphanumeric()
+            && (c.is_alphanumeric() || c == '_' || c == '-')
         {
             self.pos += 1;
         }
@@ -235,6 +235,26 @@ mod tests {
             reader.read_function_call(),
             "expected function name at position 0"
         );
+    }
+
+    #[test]
+    fn should_read_function_call_with_underscore() -> Result<()> {
+        let mut reader = FunctionReader::new("some_fn(a_field)");
+        assert_eq!(
+            expect_function_call(&mut reader)?,
+            call("some_fn", vec![word("a_field")])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_read_function_call_with_hyphen() -> Result<()> {
+        let mut reader = FunctionReader::new("some-fn(a-field)");
+        assert_eq!(
+            expect_function_call(&mut reader)?,
+            call("some-fn", vec![word("a-field")])
+        );
+        Ok(())
     }
 
     #[test]
