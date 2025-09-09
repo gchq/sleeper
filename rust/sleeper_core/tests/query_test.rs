@@ -373,7 +373,7 @@ async fn should_return_results_as_file_without_sketch() -> Result<(), Error> {
         .region(SleeperRegion::new(single_int_range("key", 0, 6)))
         .output(OutputType::File {
             output_file: output.clone(),
-            write_sketch_file: true,
+            write_sketch_file: false,
             opts: SleeperParquetOptions::default(),
         })
         .build()?;
