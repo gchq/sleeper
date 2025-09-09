@@ -40,6 +40,10 @@ use url::Url;
 
 use crate::datafusion::metrics::RowCounts;
 
+/// Maximum number of file upload parts to generate. Implementation will
+/// try to match this, but may not get there exactly.
+pub const MAX_PART_COUNT: u64 = 5000;
+
 /// Write explanation of logical query plan to log output.
 ///
 /// # Errors
@@ -66,7 +70,7 @@ pub async fn explain_plan(frame: &DataFrame) -> Result<(), DataFusionError> {
 pub fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionError> {
     let upload_size = std::cmp::max(
         ExecutionOptions::default().objectstore_writer_buffer_size,
-        usize::try_from(total_input_size / 5000)
+        usize::try_from(total_input_size / MAX_PART_COUNT)
             .map_err(|e| DataFusionError::External(Box::new(e)))?,
     );
     info!(
@@ -97,9 +101,6 @@ pub fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusi
 
 /// Takes the urls in `input_paths` list and `output_path`
 /// and registers the appropriate [`object_store::ObjectStore`] for it.
-///
-/// `DataFusion` doesn't seem to like loading a single file set from different object stores
-/// so we only register the first one.
 ///
 /// # Errors
 /// If we can't create an [`object_store::ObjectStore`] for a known URL then this will fail.
@@ -155,6 +156,8 @@ pub async fn retrieve_input_size(
 /// streams. This forgets the ordering of chunks of data, leading to them be re-merged out of order,
 /// thus breaking the overall order.
 ///
+/// After the first [`CoalescePartitionsExec`] has been found, this function will not recurse further down the tree.
+///
 /// For example, if we had chunks `[A-F], [G-H], [I-M], ...` they might be parallelised into 2 streams for some
 /// other unrelated plan stage. Afterwards, they might be re-merged to `[A-F], [I-M], [G-H], ...` due to
 /// the coalescing stage not knowing the correct order. By using a secong sort preserving merge instead, we
@@ -194,6 +197,7 @@ pub fn unalias(qualified_name: &str, original_schema: &SchemaRef) -> String {
         .map(|f| f.name())
         .collect::<Vec<_>>();
     // Need keys in reverse length order
+    // This ensures we find the longest matching suffix.
     col_names.sort_by_key(|s| Reverse(s.len()));
     // Find first that matches
     (*col_names
@@ -204,6 +208,8 @@ pub fn unalias(qualified_name: &str, original_schema: &SchemaRef) -> String {
 }
 
 /// Unalias column names that were changed due to a [`ProjectionExec`].
+///
+/// Recursion stops after the first [`ProjectionExec`] has been found.
 ///
 /// The Java Arrow FFI library can't handle view types, so we tell `DataFusion` to expand view types
 /// in queries. However, the projection in the plan renames columns when we do this. This function
@@ -252,4 +258,79 @@ pub fn collect_stats(
     let mut stats = RowCounts::new(input_paths);
     accept(physical_plan.as_ref(), &mut stats)?;
     Ok(stats)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::datafusion::util::unalias;
+    use arrow::datatypes::{DataType, Field, Schema};
+    use std::sync::Arc;
+
+    #[test]
+    fn should_unalias_exact_match() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("col1", DataType::Int32, false),
+            Field::new("col2", DataType::Utf8, false),
+        ]));
+
+        let qualified_name = "col1";
+
+        // When
+        let result = unalias(qualified_name, &schema);
+
+        // Then
+        assert_eq!(result, "col1");
+    }
+
+    #[test]
+    fn should_unalias_suffix_match() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("field", DataType::Int32, false),
+            Field::new("data", DataType::Utf8, false),
+        ]));
+
+        let qualified_name = "prefix_field";
+
+        // When
+        let result = unalias(qualified_name, &schema);
+
+        // Then
+        assert_eq!(result, "field");
+    }
+
+    #[test]
+    fn should_unalias_multiple_suffix_candidates() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("id", DataType::Int64, false),
+            Field::new("user_id", DataType::Int64, false),
+        ]));
+
+        // "prefix_user_id" ends with "user_id" and "id", it should pick "user_id" because of longer length
+        let qualified_name = "prefix_user_id";
+
+        // When
+        let result = unalias(qualified_name, &schema);
+
+        // Then
+        assert_eq!(result, "user_id");
+    }
+
+    #[test]
+    #[should_panic(expected = "Can't find unaliased column name")]
+    fn should_panic_when_no_match() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Utf8, false),
+        ]));
+
+        let qualified_name = "unknown";
+
+        // When
+        // Then should panic
+        let _ = unalias(qualified_name, &schema);
+    }
 }
