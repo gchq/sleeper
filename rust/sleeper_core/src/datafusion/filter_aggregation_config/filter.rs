@@ -27,7 +27,7 @@ pub enum Filter {
 
 impl Filter {
     pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
-        FunctionReader::new(config_string)
+        FunctionReader::from(config_string)
             .map(|result| match result {
                 Ok(call) => Self::try_from(&call),
                 Err(e) => Err(eyre!(e)),

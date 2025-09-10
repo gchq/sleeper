@@ -52,6 +52,20 @@ pub enum ExpectedNext {
     CloseParenthesis,
 }
 
+impl<'h> From<&'h str> for FunctionReader<'h> {
+    fn from(haystack: &'h str) -> Self {
+        let mut iterator = haystack.char_indices();
+        let current = iterator.next();
+        FunctionReader {
+            haystack,
+            iterator,
+            current,
+            characters_read: 0,
+            first_function: true,
+        }
+    }
+}
+
 impl<'h> Iterator for FunctionReader<'h> {
     type Item = Result<FunctionCall<'h>, FunctionReaderError>;
 
@@ -65,18 +79,6 @@ impl<'h> Iterator for FunctionReader<'h> {
 }
 
 impl<'h> FunctionReader<'h> {
-    pub fn new(haystack: &'h str) -> Self {
-        let mut iterator = haystack.char_indices();
-        let current = iterator.next();
-        FunctionReader {
-            haystack,
-            iterator,
-            current,
-            characters_read: 0,
-            first_function: true,
-        }
-    }
-
     fn read_function_call(&mut self) -> Result<Option<FunctionCall<'h>>, FunctionReaderError> {
         if !self.first_function {
             let found_comma = self.read_expected_char(',');
@@ -402,7 +404,7 @@ mod tests {
     }
 
     fn read_function_calls(config_string: &'static str) -> EyreResult<Vec<FunctionCall<'static>>> {
-        FunctionReader::new(config_string)
+        FunctionReader::from(config_string)
             .map(|result| match result {
                 Ok(call) => Ok(call),
                 Err(e) => Err(eyre!(e)),
