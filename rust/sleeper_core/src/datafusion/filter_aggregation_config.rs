@@ -89,12 +89,6 @@ impl Aggregate {
     }
 }
 
-impl AggOp {
-    fn parse_for_datafusion(value: &str) -> Result<AggOp> {
-        Self::try_from(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
-    }
-}
-
 impl MapAggregateOp {
     fn to_udf_op(&self) -> MapAggregatorOp {
         match self {
@@ -142,7 +136,8 @@ impl TryFrom<&str> for FilterAggregationConfig {
             if let Some(captures) = matcher.captures(agg) {
                 aggregation.push(Aggregate {
                     column: captures[2].to_owned(),
-                    operation: AggOp::parse_for_datafusion(&captures[1])?,
+                    operation: AggOp::try_from(&captures[1])
+                        .map_err(|e| DataFusionError::Configuration(e.to_string()))?,
                 });
             }
         }
