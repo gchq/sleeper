@@ -136,7 +136,7 @@ mod tests {
     fn should_fail_with_field_name_wrong_type() {
         assert_error!(
             Filter::parse_config("ageOff(123, 456)"),
-            "wrong type for ageOff parameter 0 (column), expected word, found Number(123)"
+            "wrong type for ageOff parameter 0 (column), expected word, found \"123\""
         );
     }
 

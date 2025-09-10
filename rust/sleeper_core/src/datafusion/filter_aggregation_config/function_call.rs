@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -13,7 +15,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use color_eyre::eyre::{Error, Result, ensure, eyre};
+use color_eyre::eyre::{Error, Result, eyre};
+use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FunctionCall<'h> {
@@ -27,18 +30,45 @@ pub enum FunctionParameter<'h> {
     Number(i64),
 }
 
+#[derive(Error, Debug)]
+pub enum FunctionCallError {
+    #[error(
+        "{function_name} expects {} argument{} ({}), found {actual_num_parameters}",
+        expected_parameters.len(), if expected_parameters.len() == 1 { ""} else {"s"}, expected_parameters.join(", ")
+    )]
+    WrongNumberOfParameters {
+        function_name: String,
+        expected_parameters: &'static [&'static str],
+        actual_num_parameters: usize,
+    },
+    #[error(
+        "wrong type for {function_name} parameter {index} ({parameter_name}), expected {expected_type}, found \"{actual_value}\""
+    )]
+    WrongParameterType {
+        function_name: String,
+        index: usize,
+        parameter_name: String,
+        expected_type: String,
+        actual_value: String,
+    },
+    #[error("parameter not found at index {index}")]
+    ParameterNotFound { index: usize },
+}
+
 impl<'h> FunctionCall<'h> {
-    pub fn expect_num_parameters(&self, param_names: &[&str]) -> Result<()> {
-        ensure!(
-            self.parameters.len() == param_names.len(),
-            "{} expects {} argument{} ({}), found {}",
-            self.name,
-            param_names.len(),
-            if param_names.len() == 1 { "" } else { "s" },
-            param_names.join(", "),
-            self.parameters.len()
-        );
-        Ok(())
+    pub fn expect_num_parameters(
+        &self,
+        expected_parameters: &'static [&'static str],
+    ) -> Result<()> {
+        if self.parameters.len() == expected_parameters.len() {
+            Ok(())
+        } else {
+            Err(eyre!(FunctionCallError::WrongNumberOfParameters {
+                function_name: self.name.to_string(),
+                expected_parameters,
+                actual_num_parameters: self.parameters.len()
+            }))
+        }
     }
 
     pub fn word_param(&self, index: usize, param_name: &str) -> Result<&str> {
@@ -60,20 +90,36 @@ impl<'h> FunctionCall<'h> {
     fn type_error(
         &self,
         index: usize,
-        param_name: &str,
+        parameter_name: &str,
         param: &FunctionParameter,
         expected_type: &str,
     ) -> Error {
-        eyre!(
-            "wrong type for {} parameter {index} ({param_name}), expected {expected_type}, found {param:?}",
-            self.name
-        )
+        let function_name = self.name.to_string();
+        let parameter_name = parameter_name.to_string();
+        let expected_type = expected_type.to_string();
+        let actual_value = param.to_string();
+        eyre!(FunctionCallError::WrongParameterType {
+            function_name,
+            index,
+            parameter_name,
+            expected_type,
+            actual_value,
+        })
     }
 
     fn param(&'_ self, index: usize) -> Result<&FunctionParameter<'h>> {
         self.parameters
             .get(index)
-            .ok_or_else(|| eyre!("parameter not found at index {index}"))
+            .ok_or_else(|| eyre!(FunctionCallError::ParameterNotFound { index }))
+    }
+}
+
+impl Display for FunctionParameter<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FunctionParameter::Word(word) => write!(f, "{word}"),
+            FunctionParameter::Number(number) => write!(f, "{number}"),
+        }
     }
 }
 
@@ -125,7 +171,7 @@ mod tests {
         let call = call("fn", vec![word("abc"), number(123)]);
         assert_error!(
             call.word_param(1, "param2"),
-            "wrong type for fn parameter 1 (param2), expected word, found Number(123)"
+            "wrong type for fn parameter 1 (param2), expected word, found \"123\""
         );
     }
 
@@ -134,7 +180,7 @@ mod tests {
         let call = call("fn", vec![word("abc"), number(123)]);
         assert_error!(
             call.number_param(0, "param1"),
-            "wrong type for fn parameter 0 (param1), expected number, found Word(\"abc\")"
+            "wrong type for fn parameter 0 (param1), expected number, found \"abc\""
         );
     }
 
