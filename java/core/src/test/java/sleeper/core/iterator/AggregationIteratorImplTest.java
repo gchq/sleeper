@@ -101,12 +101,12 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
                 "sort_key2", 5, "value1", "test", "value2", 78));
         Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testaaaaa", "value2", 7800));
-        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createAggregationFilteringIterator("", "").getFilterAggregationConfig(),
-                new WrappedIterator<Row>(List.<Row>of().iterator()));
 
         // When
-        boolean equal = iteratorImpl.rowsEqual(r1, r2);
-        iteratorImpl.close();
+        boolean equal = AggregatorIteratorImpl.rowsEqual(r1, r2, new FilterAggregationConfig(List.of("TestColumn"),
+                Optional.empty(),
+                0L,
+                List.of()));
 
         // Then
         assertThat(equal).isTrue();
@@ -126,12 +126,12 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
         Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 6, "value1", "testaaaaa", "value2", 7800));
 
-        AggregatorIteratorImpl iteratorImpl = new AggregatorIteratorImpl(createAggregationFilteringIteratorWithSchema(schema, "", "").getFilterAggregationConfig(),
-                new WrappedIterator<Row>(List.<Row>of().iterator()));
-
         // When
-        boolean equal = iteratorImpl.rowsEqual(r1, r2);
-        iteratorImpl.close();
+        boolean equal = AggregatorIteratorImpl.rowsEqual(r1, r2,
+                new FilterAggregationConfig(List.of("key1", "key2", "sort_key", "sort_key2"),
+                        Optional.empty(),
+                        0L,
+                        List.of()));
 
         // Then
         assertThat(equal).isFalse();

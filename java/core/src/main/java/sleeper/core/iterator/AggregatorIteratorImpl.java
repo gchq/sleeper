@@ -75,7 +75,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
         // Now aggregate more rows on to this one until we find an unequal one or run out of data
         while (startOfNextAggregationGroup == null && input.hasNext()) {
             Row next = input.next();
-            if (rowsEqual(aggregated, next)) {
+            if (rowsEqual(aggregated, next, config)) {
                 aggregateOnTo(aggregated, next, config);
             } else {
                 startOfNextAggregationGroup = next;
@@ -103,11 +103,12 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
     /**
      * Determines if two rows are equal.
      *
-     * @param  lhs a row
-     * @param  rhs another row
-     * @return     true if they are considered equal
+     * @param  lhs    a row
+     * @param  rhs    another row
+     * @param  config the grouping configuration
+     * @return        true if they are considered equal
      */
-    public boolean rowsEqual(Row lhs, Row rhs) {
+    public static boolean rowsEqual(Row lhs, Row rhs, FilterAggregationConfig config) {
         List<Object> keys1 = new ArrayList<>();
         List<Object> keys2 = new ArrayList<>();
         for (String key : config.groupingColumns()) {
@@ -115,6 +116,5 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
             keys2.add(rhs.get(key));
         }
         return Key.create(keys1).equals(Key.create(keys2));
-
     }
 }
