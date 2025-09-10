@@ -15,7 +15,7 @@ use std::fmt::Display;
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use color_eyre::eyre::{Error, Result, eyre};
+use color_eyre::eyre::{Result, eyre};
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -75,7 +75,9 @@ impl<'h> FunctionCall<'h> {
         let param = self.param(index)?;
         match param {
             FunctionParameter::Word(value) => Ok(value),
-            FunctionParameter::Number(_) => Err(self.type_error(index, param_name, param, "word")),
+            FunctionParameter::Number(_) => {
+                Err(eyre!(self.type_error(index, param_name, param, "word")))
+            }
         }
     }
 
@@ -83,7 +85,9 @@ impl<'h> FunctionCall<'h> {
         let param = self.param(index)?;
         match param {
             FunctionParameter::Number(value) => Ok(*value),
-            FunctionParameter::Word(_) => Err(self.type_error(index, param_name, param, "number")),
+            FunctionParameter::Word(_) => {
+                Err(eyre!(self.type_error(index, param_name, param, "number")))
+            }
         }
     }
 
@@ -93,18 +97,14 @@ impl<'h> FunctionCall<'h> {
         parameter_name: &str,
         param: &FunctionParameter,
         expected_type: &str,
-    ) -> Error {
-        let function_name = self.name.to_string();
-        let parameter_name = parameter_name.to_string();
-        let expected_type = expected_type.to_string();
-        let actual_value = param.to_string();
-        eyre!(FunctionCallError::WrongParameterType {
-            function_name,
+    ) -> FunctionCallError {
+        FunctionCallError::WrongParameterType {
+            function_name: self.name.to_string(),
             index,
-            parameter_name,
-            expected_type,
-            actual_value,
-        })
+            parameter_name: parameter_name.to_string(),
+            expected_type: expected_type.to_string(),
+            actual_value: param.to_string(),
+        }
     }
 
     fn param(&'_ self, index: usize) -> Result<&FunctionParameter<'h>> {
