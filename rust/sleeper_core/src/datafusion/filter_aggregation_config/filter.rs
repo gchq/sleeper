@@ -15,9 +15,10 @@
 */
 
 use crate::datafusion::filter_aggregation_config::{
-    function_call::FunctionCall, function_reader::FunctionReader,
+    function_call::{FunctionCall, FunctionCallError},
+    function_reader::{FunctionReader, FunctionReaderError},
 };
-use color_eyre::eyre::{Report, Result, ensure, eyre};
+use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Filter {
@@ -25,31 +26,47 @@ pub enum Filter {
     Ageoff { column: String, max_age: i64 },
 }
 
+#[derive(Error, Debug)]
+pub enum FilterConfigError {
+    #[error("{error}")]
+    CouldNotReadConfig { error: FunctionReaderError },
+    #[error("{error}")]
+    InvalidFunctionCall { error: FunctionCallError },
+    #[error("unrecognised filter function name \"{name}\"")]
+    UnrecognisedFilterFunction { name: String },
+}
+
 impl Filter {
-    pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
+    pub fn parse_config(config_string: &str) -> Result<Vec<Self>, FilterConfigError> {
         FunctionReader::from(config_string)
             .map(|result| match result {
                 Ok(call) => Self::try_from(&call),
-                Err(e) => Err(eyre!(e)),
+                Err(error) => Err(FilterConfigError::CouldNotReadConfig { error }),
             })
             .collect()
     }
 }
 
 impl TryFrom<&FunctionCall<'_>> for Filter {
-    type Error = Report;
-    fn try_from(call: &FunctionCall) -> Result<Self> {
-        ensure!(
-            call.name.eq_ignore_ascii_case("ageOff"),
-            "unrecognised filter function name \"{}\"",
-            call.name
-        );
-        call.expect_num_parameters(&["column", "max age"])?;
-        Ok(Filter::Ageoff {
-            column: call.word_param(0, "column")?.to_string(),
-            max_age: call.number_param(1, "max age")?,
-        })
+    type Error = FilterConfigError;
+    fn try_from(call: &FunctionCall) -> Result<Self, FilterConfigError> {
+        if call.name.eq_ignore_ascii_case("ageOff") {
+            age_off(call)
+        } else {
+            return Err(FilterConfigError::UnrecognisedFilterFunction {
+                name: call.name.to_string(),
+            });
+        }
+        .map_err(|error| FilterConfigError::InvalidFunctionCall { error })
     }
+}
+
+fn age_off(call: &FunctionCall) -> Result<Filter, FunctionCallError> {
+    call.expect_num_parameters(&["column", "max age"])?;
+    Ok(Filter::Ageoff {
+        column: call.word_param(0, "column")?.to_string(),
+        max_age: call.number_param(1, "max age")?,
+    })
 }
 
 #[cfg(test)]
