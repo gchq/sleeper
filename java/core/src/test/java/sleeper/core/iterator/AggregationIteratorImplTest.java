@@ -26,6 +26,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
@@ -35,7 +36,9 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
 
     @Test
     public void shouldThrowOnNullIterator() {
-        assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(createAggregationFilteringIterator(null, null).getFilterAggregationConfig(), null));
+        assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(
+                new FilterAggregationConfig(List.of("TestColumn"), Optional.empty(), 0L, List.of()),
+                null));
     }
 
     @Test

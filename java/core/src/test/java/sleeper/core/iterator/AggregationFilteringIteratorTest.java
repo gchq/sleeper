@@ -22,7 +22,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
@@ -57,13 +56,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     @Test
     public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws IteratorCreationException {
         // Given
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType()),
-                        new Field("notRequiredField", new IntType()))
-                .build();
-
-        SortedRowIterator iterator = createAggregationFilteringIteratorWithSchema(schema, "ageOff(value,1000)", null);
+        SortedRowIterator iterator = buildFilterOnlyIterator("ageOff(value,1000)");
 
         // Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
@@ -73,7 +66,7 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     @CsvSource({"ageoff", "AGEOFF", "ageOff"})
     public void shouldApplyAgeOffFilterFromProperties(String filters) throws IteratorCreationException {
         // Given
-        SortedRowIterator ageOffIterator = createAggregationFilteringIterator(filters + "(value,1000)", null);
+        SortedRowIterator ageOffIterator = buildFilterOnlyIterator(filters + "(value,1000)");
 
         List<Row> rows = List.of(
                 new Row(Map.of("key", "test", "value", 10L)),
@@ -92,7 +85,8 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     @CsvSource({"sum", "Sum", "SUM"})
     public void shouldApplySumAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
-        SortedRowIterator sumAggregatorIterator = buildSingleValueAggregator(aggregator);
+        String parsedAggregatorString = aggregator + "(value)";
+        SortedRowIterator sumAggregatorIterator = buildAggregatorOnlyIteratorSingleValue(parsedAggregatorString);
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
                 new Row(Map.of("key", "test", "value", 2214L)),
                 new Row(Map.of("key", "test", "value", 87L)),
@@ -110,7 +104,9 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     @CsvSource({"map_sum", "Map_Sum", "MAP_SUM"})
     void shouldApplyMapSumAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
-        SortedRowIterator sumAggregatorIterator = buildMapAggregator(aggregator);
+
+        String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
+        SortedRowIterator sumAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
 
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
                 new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
@@ -134,7 +130,8 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     @CsvSource({"min", "Min", "MIN"})
     public void shouldApplyMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
-        SortedRowIterator minAggregatorIterator = buildSingleValueAggregator(aggregator);
+        String parsedAggregatorString = aggregator + "(value)";
+        SortedRowIterator minAggregatorIterator = buildAggregatorOnlyIteratorSingleValue(parsedAggregatorString);
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
                 new Row(Map.of("key", "test", "value", 619L)),
                 new Row(Map.of("key", "test", "value", 321L)),
@@ -153,7 +150,8 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     @CsvSource({"map_min", "Map_Min", "MAP_MIN"})
     void shouldApplyMapMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
-        SortedRowIterator minAggregatorIterator = buildMapAggregator(aggregator);
+        String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
+        SortedRowIterator minAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
 
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
                 new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
@@ -173,10 +171,11 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     }
 
     @ParameterizedTest
-    @CsvSource({"max", "Max", "MAX", "map_max", "Map_Max", "MAP_MAX"})
+    @CsvSource({"max", "Max", "MAX"})
     public void shouldApplyMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
-        SortedRowIterator maxAggregatorIterator = buildSingleValueAggregator(aggregator);
+        String parsedAggregatorString = aggregator + "(value)";
+        SortedRowIterator maxAggregatorIterator = buildAggregatorOnlyIteratorSingleValue(parsedAggregatorString);
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
                 new Row(Map.of("key", "test", "value", 458498L)),
                 new Row(Map.of("key", "test", "value", 87L)),
@@ -195,7 +194,8 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
     @CsvSource({"map_max", "Map_Max", "MAP_MAX"})
     void shouldApplyMapMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
         // Given
-        SortedRowIterator maxAggregatorIterator = buildMapAggregator(aggregator);
+        String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
+        SortedRowIterator maxAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
 
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
                 new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
@@ -287,18 +287,21 @@ public class AggregationFilteringIteratorTest extends AggregationFilteringIterat
 
     }
 
-    private SortedRowIterator buildSingleValueAggregator(String aggregator) throws IteratorCreationException {
-        return createAggregationFilteringIterator(null, aggregator + "(value)");
+    private SortedRowIterator buildFilterOnlyIterator(String filters) throws IteratorCreationException {
+        return createAggregationFilteringIterator(filters, null);
     }
 
-    private SortedRowIterator buildMapAggregator(String aggregator) throws IteratorCreationException {
+    private SortedRowIterator buildAggregatorOnlyIteratorSingleValue(String aggregator) throws IteratorCreationException {
+        return createAggregationFilteringIterator(null, aggregator);
+    }
+
+    private SortedRowIterator buildAggregatorOnlyIteratorForMap(String aggregator) throws IteratorCreationException {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .sortKeyFields(new Field("sort", new StringType()))
                 .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
                 .build();
 
-        String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
-        return createAggregationFilteringIteratorWithSchema(schema, null, parsedAggregatorString);
+        return createAggregationFilteringIteratorWithSchema(schema, null, aggregator);
     }
 }
