@@ -24,7 +24,6 @@ use aggregator_udfs::{
 use datafusion::{
     common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
     dataframe::DataFrame,
-    error::Result as DataFusionResult,
     error::{DataFusionError, Result},
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
 };
@@ -63,7 +62,7 @@ impl FilterAggregationConfig {
 impl Filter {
     /// Creates a filtering expression for this filter instance. The returned
     /// expression can be passed to [`DataFrame::filter`].
-    pub fn create_filter_expr(&self) -> DataFusionResult<Expr> {
+    pub fn create_filter_expr(&self) -> Result<Expr> {
         match self {
             Self::Ageoff { column, max_age } => {
                 Ok(ScalarUDF::from(AgeOff::try_from(*max_age)?).call(vec![col(column)]))
@@ -74,7 +73,7 @@ impl Filter {
 
 impl Aggregate {
     // Create a DataFusion logical expression to represent this aggregation operation.
-    pub fn to_expr(&self, frame: &DataFrame) -> DataFusionResult<Expr> {
+    pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
         Ok(match &self.operation {
             AggOp::Sum => non_null_sum(col(&self.column)),
             AggOp::Min => non_null_min(col(&self.column)),
@@ -91,7 +90,7 @@ impl Aggregate {
 }
 
 impl AggOp {
-    fn parse_for_datafusion(value: &str) -> DataFusionResult<Self, DataFusionError> {
+    fn parse_for_datafusion(value: &str) -> Result<AggOp> {
         Self::try_from(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
     }
 }
