@@ -22,6 +22,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.CloseableIterator;
@@ -31,6 +33,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -65,6 +68,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,6 +83,11 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorIT {
+
+    static Stream<String> queryEngineChoices() {
+        return Stream.of("JAVA", "DATAFUSION");
+    }
+
     private static ExecutorService executorService;
 
     @TempDir
@@ -94,13 +103,15 @@ public class QueryExecutorIT {
         executorService.shutdown();
     }
 
-    @Test
-    public void shouldReturnNothingWhenThereAreNoFiles() throws Exception {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnNothingWhenThereAreNoFiles(String queryEngine) throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
@@ -131,13 +142,15 @@ public class QueryExecutorIT {
         assertThat(leafPartitionQueries).isEmpty();
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartition() throws Exception {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartition(String queryEngine) throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
@@ -201,13 +214,15 @@ public class QueryExecutorIT {
                         .build());
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenMultipleIdenticalRowsInOneFileInOnePartition() throws Exception {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWhenMultipleIdenticalRowsInOneFileInOnePartition(String queryEngine) throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRows().iterator());
@@ -263,13 +278,15 @@ public class QueryExecutorIT {
                         .build());
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenIdenticalRowsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWhenIdenticalRowsInMultipleFilesInOnePartition(String queryEngine) throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
@@ -327,13 +344,15 @@ public class QueryExecutorIT {
                         .build());
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInOnePartition(String queryEngine) throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
@@ -453,13 +472,15 @@ public class QueryExecutorIT {
                         .build());
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitions() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitions(String queryEngine) throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
