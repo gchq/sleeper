@@ -73,14 +73,7 @@ public class RunDataProcessingTasks {
         this.maximumRunningTasks = builder.maximumRunningTasks;
     }
 
-    public static void main(String[] args) {
-        if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <number-of-tasks> <is-compaction-task>");
-            return;
-        }
-        String instanceId = args[0];
-        int numberOfTasks = Integer.parseInt(args[1]);
-        boolean compactionTask = Boolean.parseBoolean(args[2]);
+    public static void run(String instanceId, int numberOfTasks, boolean compactionTask) {
         try (S3Client s3Client = S3Client.create();
                 EcsClient ecsClient = EcsClient.create();
                 AutoScalingClient asClient = AutoScalingClient.create();
@@ -90,7 +83,7 @@ public class RunDataProcessingTasks {
             if (compactionTask) {
                 createForCompactions(instanceProperties, ecsClient, asClient, ec2Client).runToMeetTargetTasks(numberOfTasks);
             } else {
-                createForBulkExport(instanceProperties, ecsClient, asClient, ec2Client).runToMeetTargetTasks(numberOfTasks);
+                createForBulkExport(instanceProperties, ecsClient).runToMeetTargetTasks(numberOfTasks);
             }
         }
     }
@@ -99,7 +92,7 @@ public class RunDataProcessingTasks {
         return new Builder();
     }
 
-    public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
+    public static RunDataProcessingTasks createForBulkExport(InstanceProperties instanceProperties, EcsClient ecsClient) {
         String clusterName = instanceProperties.get(BULK_EXPORT_CLUSTER);
         return builder()
                 .hostScaler(new BulkExportTaskHostScaler())
@@ -113,17 +106,9 @@ public class RunDataProcessingTasks {
                 .build();
     }
 
-    public static RunDataProcessingTasks createForCompactions(InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler compactionHostScaler, TaskLauncher taskLauncher) {
-        return setupForCompactions(instanceProperties)
-                .hostScaler(compactionHostScaler)
-                .taskCounts(taskCounts)
-                .taskLauncher(taskLauncher)
-                .build();
-    }
-
     public static RunDataProcessingTasks createForCompactions(InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
         String clusterName = instanceProperties.get(COMPACTION_CLUSTER);
-        return setupForCompactions(instanceProperties)
+        return builderForCompactions(instanceProperties)
                 .hostScaler(EC2Scaler.create(instanceProperties, asClient, ec2Client))
                 .taskCounts(() -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient))
                 .taskLauncher((numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, COMPACTION_CONTAINER_NAME, clusterName,
@@ -132,7 +117,7 @@ public class RunDataProcessingTasks {
                 .build();
     }
 
-    private static Builder setupForCompactions(InstanceProperties instanceProperties) {
+    public static Builder builderForCompactions(InstanceProperties instanceProperties) {
         return builder()
                 .sqsJobQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .maximumRunningTasks(instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS));

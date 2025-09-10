@@ -416,7 +416,11 @@ public class RunDataProcessingTasksTest {
     }
 
     private RunDataProcessingTasks taskRunner(TaskCounts taskCounts) {
-        return RunDataProcessingTasks.createForCompactions(instanceProperties, taskCounts, hostScaler(), taskLauncher());
+        return RunDataProcessingTasks.builderForCompactions(instanceProperties)
+                .hostScaler(hostScaler())
+                .taskCounts(taskCounts)
+                .taskLauncher(taskLauncher())
+                .build();
     }
 
     private CompactionTaskHostScaler hostScaler() {
