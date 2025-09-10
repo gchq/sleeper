@@ -30,7 +30,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
-import static sleeper.core.iterator.AggregatorIteratorImpl.aggregateOnTo;
 
 public class AggregationIteratorImplTest extends AggregationFilteringIteratorTestBase {
 
@@ -62,8 +61,13 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
 
         Row expected = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "testtestaaaaa", "value2", 78));
+
         // When
-        aggregateOnTo(r1, r2, createAggregationFilteringIteratorWithSchema(schema, null, "sum(value1),min(value2)").getFilterAggregationConfig());
+        AggregatorIteratorImpl.aggregateOnTo(r1, r2, new FilterAggregationConfig(List.of("TestColumn"),
+                Optional.empty(),
+                0L,
+                List.of(new Aggregation("value1", AggregationOp.SUM),
+                        new Aggregation("value2", AggregationOp.MIN))));
 
         // Then
         assertThat(r1).isEqualTo(expected);
@@ -78,8 +82,12 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
                 "sort_key2", 5, "value1", "testaaaaa", "value2", 7800));
 
         Row expected = new Row(r1);
+
         // When
-        aggregateOnTo(r1, r2, createAggregationFilteringIterator("", "").getFilterAggregationConfig());
+        AggregatorIteratorImpl.aggregateOnTo(r1, r2, new FilterAggregationConfig(List.of("TestColumn"),
+                Optional.empty(),
+                0L,
+                List.of()));
 
         // Then
         assertThat(r1).isEqualTo(expected);
