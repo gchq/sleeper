@@ -16,7 +16,6 @@
 use crate::datafusion::filter_aggregation_config::function_call::{
     FunctionCall, FunctionParameter,
 };
-use color_eyre::eyre::Result as EyreResult;
 use std::str::CharIndices;
 use thiserror::Error;
 
@@ -66,11 +65,7 @@ impl<'h> FunctionReader<'h> {
         }
     }
 
-    pub fn read_function_call(&mut self) -> EyreResult<Option<FunctionCall<'h>>> {
-        Ok(self.read_function_call_new()?)
-    }
-
-    fn read_function_call_new(&mut self) -> Result<Option<FunctionCall<'h>>, FunctionReaderError> {
+    fn read_function_call(&mut self) -> Result<Option<FunctionCall<'h>>, FunctionReaderError> {
         if !self.first_function {
             let found_comma = self.read_expected_char(',');
             if self.at_end() {
@@ -217,7 +212,7 @@ impl<'h> FunctionReader<'h> {
 }
 
 impl<'h> Iterator for FunctionReader<'h> {
-    type Item = EyreResult<FunctionCall<'h>>;
+    type Item = Result<FunctionCall<'h>, FunctionReaderError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.read_function_call() {
@@ -235,7 +230,7 @@ mod tests {
     use crate::datafusion::filter_aggregation_config::function_call::{
         FunctionCall, FunctionParameter,
     };
-    use color_eyre::eyre::Result;
+    use color_eyre::eyre::{Result as EyreResult, eyre};
     use test_log::test;
 
     macro_rules! assert_error {
@@ -248,7 +243,7 @@ mod tests {
     }
 
     #[test]
-    fn should_read_function_call() -> Result<()> {
+    fn should_read_function_call() -> EyreResult<()> {
         assert_eq!(
             read_function_calls("answer(42)")?,
             vec![call("answer", vec![number(42)])]
@@ -257,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn should_read_two_function_calls() -> Result<()> {
+    fn should_read_two_function_calls() -> EyreResult<()> {
         assert_eq!(
             read_function_calls("answer(42), question(earth)")?,
             vec![
@@ -269,7 +264,7 @@ mod tests {
     }
 
     #[test]
-    fn should_read_function_call_with_two_parameters() -> Result<()> {
+    fn should_read_function_call_with_two_parameters() -> EyreResult<()> {
         assert_eq!(
             read_function_calls("fn(a,123)")?,
             vec![call("fn", vec![word("a"), number(123)])]
@@ -278,13 +273,13 @@ mod tests {
     }
 
     #[test]
-    fn should_read_function_call_with_no_parameters() -> Result<()> {
+    fn should_read_function_call_with_no_parameters() -> EyreResult<()> {
         assert_eq!(read_function_calls("go()")?, vec![call("go", vec![])]);
         Ok(())
     }
 
     #[test]
-    fn should_read_function_call_with_whitespace() -> Result<()> {
+    fn should_read_function_call_with_whitespace() -> EyreResult<()> {
         assert_eq!(
             read_function_calls(" fn ( a , 123 ) ")?,
             vec![call("fn", vec![word("a"), number(123)])]
@@ -325,7 +320,7 @@ mod tests {
     }
 
     #[test]
-    fn should_read_function_call_with_underscore() -> Result<()> {
+    fn should_read_function_call_with_underscore() -> EyreResult<()> {
         assert_eq!(
             read_function_calls("some_fn(a_field)")?,
             vec![call("some_fn", vec![word("a_field")])]
@@ -334,7 +329,7 @@ mod tests {
     }
 
     #[test]
-    fn should_read_function_call_with_hyphen() -> Result<()> {
+    fn should_read_function_call_with_hyphen() -> EyreResult<()> {
         assert_eq!(
             read_function_calls("some-fn(a-field)")?,
             vec![call("some-fn", vec![word("a-field")])]
@@ -343,7 +338,8 @@ mod tests {
     }
 
     #[test]
-    fn should_read_function_call_with_unicode_characters_spanning_multiple_bytes() -> Result<()> {
+    fn should_read_function_call_with_unicode_characters_spanning_multiple_bytes() -> EyreResult<()>
+    {
         assert_eq!(
             read_function_calls("存在する(ひほわれよう)")?,
             vec![call("存在する", vec![word("ひほわれよう")])]
@@ -352,7 +348,7 @@ mod tests {
     }
 
     #[test]
-    fn should_find_no_function_call() -> Result<()> {
+    fn should_find_no_function_call() -> EyreResult<()> {
         assert_eq!(read_function_calls("")?, vec![]);
         Ok(())
     }
@@ -405,8 +401,13 @@ mod tests {
         );
     }
 
-    fn read_function_calls(haystack: &'static str) -> Result<Vec<FunctionCall<'static>>> {
-        FunctionReader::new(haystack).collect()
+    fn read_function_calls(config_string: &'static str) -> EyreResult<Vec<FunctionCall<'static>>> {
+        FunctionReader::new(config_string)
+            .map(|result| match result {
+                Ok(call) => Ok(call),
+                Err(e) => Err(eyre!(e)),
+            })
+            .collect()
     }
 
     fn call<'h>(name: &'static str, parameters: Vec<FunctionParameter<'h>>) -> FunctionCall<'h> {

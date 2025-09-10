@@ -17,7 +17,7 @@
 use crate::datafusion::filter_aggregation_config::{
     function_call::FunctionCall, function_reader::FunctionReader,
 };
-use color_eyre::eyre::{Report, Result, ensure};
+use color_eyre::eyre::{Report, Result, ensure, eyre};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Filter {
@@ -30,7 +30,7 @@ impl Filter {
         FunctionReader::new(config_string)
             .map(|result| match result {
                 Ok(call) => Self::try_from(&call),
-                Err(e) => Err(e),
+                Err(e) => Err(eyre!(e)),
             })
             .collect()
     }
