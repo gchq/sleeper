@@ -169,9 +169,9 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Athena analytics
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
-            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "Athena - AutoDelete", instanceProperties, jars,
-                    loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE), loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE_PROVIDER));
-            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks, autoDeleteS3ObjectsStack);
+            // autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "Athena - AutoDelete", instanceProperties, jars,
+            //         loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE), loggingStack.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE_PROVIDER));
+            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
