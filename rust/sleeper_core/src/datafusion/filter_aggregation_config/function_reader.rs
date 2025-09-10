@@ -52,6 +52,18 @@ pub enum ExpectedNext {
     CloseParenthesis,
 }
 
+impl<'h> Iterator for FunctionReader<'h> {
+    type Item = Result<FunctionCall<'h>, FunctionReaderError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.read_function_call() {
+            Err(failure) => Some(Err(failure)),
+            Ok(Some(call)) => Some(Ok(call)),
+            Ok(None) => None,
+        }
+    }
+}
+
 impl<'h> FunctionReader<'h> {
     pub fn new(haystack: &'h str) -> Self {
         let mut iterator = haystack.char_indices();
@@ -207,18 +219,6 @@ impl<'h> FunctionReader<'h> {
         FunctionReaderError {
             position: self.characters_read,
             expected_next,
-        }
-    }
-}
-
-impl<'h> Iterator for FunctionReader<'h> {
-    type Item = Result<FunctionCall<'h>, FunctionReaderError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.read_function_call() {
-            Err(failure) => Some(Err(failure)),
-            Ok(Some(call)) => Some(Ok(call)),
-            Ok(None) => None,
         }
     }
 }
