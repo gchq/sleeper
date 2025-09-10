@@ -231,17 +231,9 @@ mod tests {
         function_reader::FunctionReaderError,
     };
     use super::FunctionReader;
+    use crate::assert_error;
     use color_eyre::eyre::Result as EyreResult;
     use test_log::test;
-
-    macro_rules! assert_error {
-        ($err_expr: expr, $err_contents: expr) => {
-            assert_eq!(
-                $err_expr.err().map(|e| e.to_string()),
-                Some($err_contents.to_string())
-            )
-        };
-    }
 
     #[test]
     fn should_read_function_call() -> EyreResult<()> {

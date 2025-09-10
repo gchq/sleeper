@@ -72,17 +72,9 @@ fn age_off(call: &FunctionCall) -> Result<Filter, FunctionCallError> {
 #[cfg(test)]
 mod tests {
     use super::Filter;
+    use crate::assert_error;
     use color_eyre::eyre::Result;
     use test_log::test;
-
-    macro_rules! assert_error {
-        ($err_expr: expr, $err_contents: expr) => {
-            assert_eq!(
-                $err_expr.err().map(|e| e.to_string()),
-                Some($err_contents.to_string())
-            )
-        };
-    }
 
     #[test]
     fn should_parse_age_off_filter() -> Result<()> {

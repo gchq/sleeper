@@ -33,6 +33,8 @@ use url::Url;
 
 mod datafusion;
 mod filter_aggregation_config;
+#[cfg(test)]
+mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
