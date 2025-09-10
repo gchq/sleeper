@@ -15,7 +15,6 @@ use std::fmt::Display;
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use color_eyre::eyre::{Result as EyreResult, eyre};
 use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -71,23 +70,19 @@ impl<'h> FunctionCall<'h> {
         }
     }
 
-    pub fn word_param(&self, index: usize, param_name: &str) -> EyreResult<&str> {
+    pub fn word_param(&self, index: usize, param_name: &str) -> Result<&str, FunctionCallError> {
         let param = self.param(index)?;
         match param {
             FunctionParameter::Word(value) => Ok(value),
-            FunctionParameter::Number(_) => {
-                Err(eyre!(self.type_error(index, param_name, param, "word")))
-            }
+            FunctionParameter::Number(_) => Err(self.type_error(index, param_name, param, "word")),
         }
     }
 
-    pub fn number_param(&self, index: usize, param_name: &str) -> EyreResult<i64> {
+    pub fn number_param(&self, index: usize, param_name: &str) -> Result<i64, FunctionCallError> {
         let param = self.param(index)?;
         match param {
             FunctionParameter::Number(value) => Ok(*value),
-            FunctionParameter::Word(_) => {
-                Err(eyre!(self.type_error(index, param_name, param, "number")))
-            }
+            FunctionParameter::Word(_) => Err(self.type_error(index, param_name, param, "number")),
         }
     }
 
@@ -107,10 +102,10 @@ impl<'h> FunctionCall<'h> {
         }
     }
 
-    fn param(&'_ self, index: usize) -> EyreResult<&FunctionParameter<'h>> {
+    fn param(&'_ self, index: usize) -> Result<&FunctionParameter<'h>, FunctionCallError> {
         self.parameters
             .get(index)
-            .ok_or_else(|| eyre!(FunctionCallError::ParameterNotFound { index }))
+            .ok_or_else(|| FunctionCallError::ParameterNotFound { index })
     }
 }
 
