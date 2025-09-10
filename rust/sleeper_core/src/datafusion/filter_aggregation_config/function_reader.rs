@@ -16,8 +16,9 @@
 use crate::datafusion::filter_aggregation_config::function_call::{
     FunctionCall, FunctionParameter,
 };
-use color_eyre::eyre::{Result, ensure, eyre};
+use color_eyre::eyre::{Result as EyreResult, eyre};
 use std::str::CharIndices;
+use thiserror::Error;
 
 pub struct FunctionReader<'h> {
     haystack: &'h str,
@@ -25,6 +26,31 @@ pub struct FunctionReader<'h> {
     current: Option<(usize, char)>,
     characters_read: usize,
     first_function: bool,
+}
+
+#[derive(Error, Debug)]
+#[error("{problem} at position {position}")]
+pub struct FunctionReaderError {
+    position: usize,
+    problem: FunctionReaderProblem,
+}
+
+#[derive(Error, Debug, Clone, Copy)]
+pub enum FunctionReaderProblem {
+    #[error("expected function call")]
+    ExpectedFunctionCall,
+    #[error("expected comma")]
+    ExpectedComma,
+    #[error("expected function name")]
+    ExpectedFunctionName,
+    #[error("expected open parenthesis")]
+    ExpectedOpenParenthesis,
+    #[error("expected comma or close parenthesis")]
+    ExpectedCommaOrCloseParenthesis,
+    #[error("expected parameter or close parenthesis")]
+    ExpectedParameterOrCloseParenthesis,
+    #[error("expected close parenthesis")]
+    ExpectedCloseParenthesis,
 }
 
 impl<'h> FunctionReader<'h> {
@@ -40,22 +66,20 @@ impl<'h> FunctionReader<'h> {
         }
     }
 
-    pub fn read_function_call(&mut self) -> Result<Option<FunctionCall<'h>>> {
+    pub fn read_function_call(&mut self) -> EyreResult<Option<FunctionCall<'h>>> {
         if !self.first_function {
             let found_comma = self.read_expected_char(',');
             if self.at_end() {
-                ensure!(
-                    !found_comma,
-                    "expected function call at position {}",
-                    self.characters_read
-                );
+                if found_comma {
+                    return Err(eyre!(
+                        self.error(FunctionReaderProblem::ExpectedFunctionCall)
+                    ));
+                }
                 return Ok(None);
             }
-            ensure!(
-                found_comma,
-                "expected comma at position {}",
-                self.characters_read
-            );
+            if !found_comma {
+                return Err(eyre!(self.error(FunctionReaderProblem::ExpectedComma)));
+            }
         }
         match self.read_word() {
             Some(name) => {
@@ -68,20 +92,15 @@ impl<'h> FunctionReader<'h> {
                     Ok(None)
                 } else {
                     Err(eyre!(
-                        "expected function name at position {}",
-                        self.characters_read
+                        self.error(FunctionReaderProblem::ExpectedFunctionName)
                     ))
                 }
             }
         }
     }
 
-    fn read_parameters(&mut self) -> Result<Vec<FunctionParameter<'h>>> {
-        ensure!(
-            self.read_expected_char('('),
-            "expected open parenthesis at position {}",
-            self.characters_read
-        );
+    fn read_parameters(&mut self) -> EyreResult<Vec<FunctionParameter<'h>>> {
+        self.try_read_expected_char('(', FunctionReaderProblem::ExpectedOpenParenthesis)?;
         let mut parameters = vec![];
         loop {
             if self.read_expected_char(')') {
@@ -92,22 +111,20 @@ impl<'h> FunctionReader<'h> {
                 if self.is_next_parameter()? {
                     continue;
                 }
-                ensure!(
-                    self.read_expected_char(')'),
-                    "expected comma or close parenthesis at position {}",
-                    self.characters_read
-                );
+                self.try_read_expected_char(
+                    ')',
+                    FunctionReaderProblem::ExpectedCommaOrCloseParenthesis,
+                )?;
             } else {
                 return Err(eyre!(
-                    "expected parameter or close parenthesis at position {}",
-                    self.characters_read
+                    self.error(FunctionReaderProblem::ExpectedParameterOrCloseParenthesis)
                 ));
             }
             return Ok(parameters);
         }
     }
 
-    fn is_next_parameter(&mut self) -> Result<bool> {
+    fn is_next_parameter(&mut self) -> Result<bool, FunctionReaderError> {
         self.ignore_whitespace();
         if let Some(c) = self.current_char() {
             if c == ',' {
@@ -117,10 +134,7 @@ impl<'h> FunctionReader<'h> {
                 Ok(false)
             }
         } else {
-            Err(eyre!(
-                "expected close parenthesis at position {}",
-                self.characters_read
-            ))
+            Err(self.error(FunctionReaderProblem::ExpectedCloseParenthesis))
         }
     }
 
@@ -147,6 +161,18 @@ impl<'h> FunctionReader<'h> {
             }
         } else {
             Some(&self.haystack[start_index..])
+        }
+    }
+
+    fn try_read_expected_char(
+        &mut self,
+        expected: char,
+        problem: FunctionReaderProblem,
+    ) -> Result<(), FunctionReaderError> {
+        if self.read_expected_char(expected) {
+            Ok(())
+        } else {
+            Err(self.error(problem))
         }
     }
 
@@ -186,10 +212,17 @@ impl<'h> FunctionReader<'h> {
     fn at_end(&self) -> bool {
         self.current.is_none()
     }
+
+    fn error(&self, problem: FunctionReaderProblem) -> FunctionReaderError {
+        FunctionReaderError {
+            position: self.characters_read,
+            problem,
+        }
+    }
 }
 
 impl<'h> Iterator for FunctionReader<'h> {
-    type Item = Result<FunctionCall<'h>>;
+    type Item = EyreResult<FunctionCall<'h>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.read_function_call() {
