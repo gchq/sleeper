@@ -38,10 +38,9 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     private final IFunction lambda;
     private final String id;
-    private final Provider provider;
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            ILogGroup logGroup, ILogGroup providerLogGroup) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
+
         super(scope, id);
 
         this.id = id;
@@ -58,18 +57,18 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
-                .logGroup(logGroup)
+                //                .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
-
-        provider = Provider.Builder.create(scope, id + "Provider")
-                .onEventHandler(lambda)
-                .logGroup(providerLogGroup)
-                .build();
 
     }
 
     public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
-            IBucket bucket, String bucketName) {
+            IBucket bucket, String bucketName, ILogGroup logGroup, ILogGroup providerLogGroup) {
+
+        Provider provider = Provider.Builder.create(scope, id + "Provider")
+                .onEventHandler(lambda)
+                .logGroup(providerLogGroup)
+                .build();
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);

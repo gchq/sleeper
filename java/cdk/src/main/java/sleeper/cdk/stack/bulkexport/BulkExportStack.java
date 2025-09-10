@@ -36,7 +36,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -74,8 +73,8 @@ public class BulkExportStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            CoreStacks coreStacks,
-            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
+            CoreStacks coreStacks) {
+        //            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -132,7 +131,7 @@ public class BulkExportStack extends NestedStack {
                 .build();
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
 
-        IBucket exportResultsBucket = setupExportBucket(instanceProperties, coreStacks, lambdaCode, autoDeleteS3ObjectsStack);
+        IBucket exportResultsBucket = setupExportBucket(instanceProperties, coreStacks, lambdaCode);
         new BulkExportTaskResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ,
                 exportResultsBucket);
     }
@@ -171,14 +170,13 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create the export results bucket.
      *
-     * @param  instanceProperties       the instance properties
-     * @param  coreStacks               the core stacks
-     * @param  lambdaCode               the lambda code
-     * @param  autoDeleteS3ObjectsStack the delete s3 objects stack
-     * @return                          the export results bucket
+     * @param  instanceProperties the instance properties
+     * @param  coreStacks         the core stacks
+     * @param  lambdaCode         the lambda code
+     * @return                    the export results bucket
      */
     private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks,
-            LambdaCode lambdaCode, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
+            LambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-export-results");
@@ -195,9 +193,11 @@ public class BulkExportStack extends NestedStack {
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET, exportBucket.getBucketName());
 
-        if (removalPolicy == RemovalPolicy.DESTROY) {
-            autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, exportBucket, bucketName);
-        }
+        // if (removalPolicy == RemovalPolicy.DESTROY) {
+        //     autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, exportBucket, bucketName,
+        //             coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE),
+        //             coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE_PROVIDER));
+        // }
 
         return exportBucket;
     }

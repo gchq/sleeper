@@ -49,7 +49,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -93,7 +92,7 @@ public class QueryStack extends NestedStack {
             Topic topic,
             CoreStacks coreStacks,
             QueryQueueStack queryQueueStack,
-            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
+            //            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
 
@@ -121,8 +120,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
         queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
-        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, lambdaCode, jarsBucket, queryTrackingTable, errorMetrics,
-                autoDeleteS3ObjectsStack);
+        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, lambdaCode, jarsBucket, queryTrackingTable, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -167,11 +165,10 @@ public class QueryStack extends NestedStack {
 
     private IFunction setupLeafPartitionQueryQueueAndLambda(
             CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic,
-            LambdaCode lambdaCode, IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics,
-            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
+            LambdaCode lambdaCode, IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
         Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
-        IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode, autoDeleteS3ObjectsStack);
+        IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
         IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.QUERY_LEAF_PARTITION, "QueryLeafPartitionExecutorLambda", builder -> builder
@@ -307,8 +304,7 @@ public class QueryStack extends NestedStack {
         return resultsQueue;
     }
 
-    private IBucket setupResultsBucket(InstanceProperties instanceProperties, CoreStacks coreStacks, LambdaCode lambdaCode,
-            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
+    private IBucket setupResultsBucket(InstanceProperties instanceProperties, CoreStacks coreStacks, LambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-results");
@@ -324,9 +320,11 @@ public class QueryStack extends NestedStack {
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
 
-        if (removalPolicy == RemovalPolicy.DESTROY) {
-            autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, resultsBucket, bucketName);
-        }
+        // if (removalPolicy == RemovalPolicy.DESTROY) {
+        //     autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, resultsBucket, bucketName,
+        //             coreStacks.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE),
+        //             coreStacks.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE_PROVIDER));
+        // }
 
         return resultsBucket;
     }
