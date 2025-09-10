@@ -14,11 +14,11 @@
 * limitations under the License.
 */
 use crate::filter_aggregation_config::{
-    aggregate::{AggOp, Aggregate},
+    aggregate::{AggOp, Aggregate, MapAggregateOp},
     filter::Filter,
 };
 use aggregator_udfs::{
-    map_aggregate::MapAggregator,
+    map_aggregate::{MapAggregator, MapAggregatorOp},
     nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
 };
 use datafusion::{
@@ -81,7 +81,7 @@ impl Aggregate {
             AggOp::Max => non_null_max(col(&self.column)),
             AggOp::MapAggregate(op) => {
                 let col_dt = col(&self.column).get_type(frame.schema())?;
-                let map_sum = Arc::new(MapAggregator::try_new(&col_dt, op.clone())?);
+                let map_sum = Arc::new(MapAggregator::try_new(&col_dt, op.to_udf_op())?);
                 AggregateUDF::new_from_impl(NonNullable::new(map_sum)).call(vec![col(&self.column)])
             }
         }
@@ -93,6 +93,16 @@ impl Aggregate {
 impl AggOp {
     fn parse_for_datafusion(value: &str) -> DataFusionResult<Self, DataFusionError> {
         Self::parse(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
+    }
+}
+
+impl MapAggregateOp {
+    fn to_udf_op(&self) -> MapAggregatorOp {
+        match self {
+            MapAggregateOp::Sum => MapAggregatorOp::Sum,
+            MapAggregateOp::Min => MapAggregatorOp::Min,
+            MapAggregateOp::Max => MapAggregatorOp::Max,
+        }
     }
 }
 

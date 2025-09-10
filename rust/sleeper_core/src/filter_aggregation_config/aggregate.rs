@@ -13,7 +13,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use aggregator_udfs::map_aggregate::MapAggregatorOp;
 use color_eyre::eyre::{Result, eyre};
 
 use super::{function_call::FunctionCall, function_reader::FunctionReader};
@@ -49,7 +48,16 @@ pub enum AggOp {
     Sum,
     Min,
     Max,
-    MapAggregate(MapAggregatorOp),
+    MapAggregate(MapAggregateOp),
+}
+
+/// The aggregation operation to peform inside of each map. The values
+/// of identical keys will be aggregated according to the specified operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MapAggregateOp {
+    Sum,
+    Min,
+    Max,
 }
 
 impl AggOp {
@@ -58,9 +66,9 @@ impl AggOp {
             "sum" => Ok(Self::Sum),
             "min" => Ok(Self::Min),
             "max" => Ok(Self::Max),
-            "map_sum" => Ok(Self::MapAggregate(MapAggregatorOp::Sum)),
-            "map_min" => Ok(Self::MapAggregate(MapAggregatorOp::Min)),
-            "map_max" => Ok(Self::MapAggregate(MapAggregatorOp::Max)),
+            "map_sum" => Ok(Self::MapAggregate(MapAggregateOp::Sum)),
+            "map_min" => Ok(Self::MapAggregate(MapAggregateOp::Min)),
+            "map_max" => Ok(Self::MapAggregate(MapAggregateOp::Max)),
             _ => Err(eyre!("unrecognised aggregation function name \"{value}\"")),
         }
     }
@@ -68,9 +76,8 @@ impl AggOp {
 
 #[cfg(test)]
 mod tests {
-    use super::{AggOp, Aggregate};
+    use super::{AggOp, Aggregate, MapAggregateOp};
     use crate::assert_error;
-    use aggregator_udfs::map_aggregate::MapAggregatorOp;
     use color_eyre::eyre::Result;
     use test_log::test;
 
@@ -198,21 +205,21 @@ mod tests {
     fn map_sum(column: &str) -> Aggregate {
         Aggregate {
             column: column.to_string(),
-            operation: AggOp::MapAggregate(MapAggregatorOp::Sum),
+            operation: AggOp::MapAggregate(MapAggregateOp::Sum),
         }
     }
 
     fn map_min(column: &str) -> Aggregate {
         Aggregate {
             column: column.to_string(),
-            operation: AggOp::MapAggregate(MapAggregatorOp::Min),
+            operation: AggOp::MapAggregate(MapAggregateOp::Min),
         }
     }
 
     fn map_max(column: &str) -> Aggregate {
         Aggregate {
             column: column.to_string(),
-            operation: AggOp::MapAggregate(MapAggregatorOp::Max),
+            operation: AggOp::MapAggregate(MapAggregateOp::Max),
         }
     }
 }
