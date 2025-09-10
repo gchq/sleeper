@@ -77,7 +77,7 @@ impl<'h> Iterator for FunctionReader<'h> {
 }
 
 impl<'h> FunctionReader<'h> {
-    pub fn read_function_call(&mut self) -> Result<Option<FunctionCall<'h>>, FunctionReaderError> {
+    fn read_function_call(&mut self) -> Result<Option<FunctionCall<'h>>, FunctionReaderError> {
         if !self.first_function {
             let found_comma = self.read_expected_char(',');
             if self.at_end() {
