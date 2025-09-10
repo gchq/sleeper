@@ -262,8 +262,24 @@ pub fn collect_stats(
 
 #[cfg(test)]
 mod tests {
-    use crate::datafusion::util::unalias;
-    use arrow::datatypes::{DataType, Field, Schema};
+    use crate::datafusion::util::{
+        remove_coalesce_physical_stage, unalias, unalias_view_projection_columns,
+    };
+    use arrow::{
+        array::RecordBatch,
+        compute::SortOptions,
+        datatypes::{DataType, Field, Schema},
+    };
+    use datafusion::physical_plan::PhysicalExpr;
+    use datafusion::{
+        catalog::memory::MemorySourceConfig,
+        common::tree_node::TreeNode,
+        physical_expr::{LexOrdering, PhysicalSortExpr, expressions::Column},
+        physical_plan::{
+            coalesce_partitions::CoalescePartitionsExec, displayable, projection::ProjectionExec,
+            sorts::sort_preserving_merge::SortPreservingMergeExec,
+        },
+    };
     use std::sync::Arc;
 
     #[test]
@@ -332,5 +348,222 @@ mod tests {
         // When
         // Then should panic
         let _ = unalias(qualified_name, &schema);
+    }
+
+    fn build_ordering(schema: Arc<Schema>) -> LexOrdering {
+        vec![PhysicalSortExpr {
+            expr: Arc::new(Column::new(schema.field(0).name(), 0)),
+            options: SortOptions::default(),
+        }]
+        .into()
+    }
+
+    fn build_coalesce_exec_with_memory(schema: Arc<Schema>) -> Arc<CoalescePartitionsExec> {
+        let input_batch = RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        Arc::new(CoalescePartitionsExec::new(memory_exec))
+    }
+
+    #[test]
+    fn should_replace_top_most_coalesce_with_sort_preserving_merge() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let coalesce = build_coalesce_exec_with_memory(schema.clone());
+        let ordering = build_ordering(schema);
+
+        // When
+        let result = remove_coalesce_physical_stage(&ordering, coalesce.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        let contains_sort_preserving_merge = new_plan
+            .exists(|node| {
+                Ok(node
+                    .as_any()
+                    .downcast_ref::<SortPreservingMergeExec>()
+                    .is_some())
+            })
+            .unwrap();
+        assert!(
+            contains_sort_preserving_merge,
+            "Should contain SortPreservingMergeExec"
+        );
+    }
+
+    #[test]
+    fn should_return_same_plan_if_no_coalesce_found() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        let ordering = build_ordering(schema);
+
+        // When
+        let result = remove_coalesce_physical_stage(&ordering, memory_exec.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        let original_display = displayable(memory_exec.as_ref()).one_line();
+        let new_display = displayable(new_plan.as_ref()).one_line();
+        assert_eq!(format!("{}", original_display), format!("{}", new_display));
+    }
+
+    #[test]
+    fn should_stop_replacement_after_first_coalesce() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        let coalesce_inner = Arc::new(CoalescePartitionsExec::new(memory_exec));
+        let coalesce_outer = Arc::new(CoalescePartitionsExec::new(coalesce_inner));
+        let ordering = build_ordering(schema);
+
+        // When
+        let result = remove_coalesce_physical_stage(&ordering, coalesce_outer.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        let contains_coalesce_inner = new_plan
+            .exists(|node| {
+                Ok(node
+                    .as_any()
+                    .downcast_ref::<CoalescePartitionsExec>()
+                    .is_some())
+            })
+            .unwrap();
+        assert!(contains_coalesce_inner, "Inner coalesce should remain");
+
+        let root_is_coalesce = new_plan
+            .as_any()
+            .downcast_ref::<CoalescePartitionsExec>()
+            .is_some();
+        assert!(!root_is_coalesce, "Outer root should not be coalesce");
+    }
+
+    #[test]
+    fn should_unalias_projection_columns_correctly() {
+        // Given
+        let schema_before_proj = Arc::new(Schema::new(vec![Field::new(
+            "original_col",
+            DataType::Int32,
+            false,
+        )]));
+
+        let input_batch = RecordBatch::new_empty(schema_before_proj.clone());
+        let input_exec = MemorySourceConfig::try_new_exec(
+            &[vec![input_batch]],
+            schema_before_proj.clone(),
+            None,
+        )
+        .unwrap();
+
+        // Projection with an alias in the column name
+        let phys_exprs = vec![(
+            Arc::new(Column::new("original_col", 0)) as Arc<dyn PhysicalExpr>,
+            "alias_original_col".to_string(),
+        )];
+
+        // Now create a physical plan which includes the projection
+        let physical_plan =
+            Arc::new(ProjectionExec::try_new(phys_exprs.clone(), input_exec).unwrap());
+
+        // When
+        let result = unalias_view_projection_columns(physical_plan.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        // The new projection should have unaliased column names matching original schema
+        if let Some(p) = new_plan.as_any().downcast_ref::<ProjectionExec>() {
+            let exprs = p.expr();
+            // Alias should be removed to original_col
+            assert_eq!(exprs[0].1, "original_col");
+        } else {
+            panic!("Resulting plan node is not a ProjectionExec");
+        }
+    }
+
+    #[test]
+    fn should_return_same_plan_if_no_projection_exec_found() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+
+        // When
+        let result = unalias_view_projection_columns(memory_exec.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        // Should be the same plan
+        let orig_display = displayable(memory_exec.as_ref()).one_line();
+        let new_display = displayable(new_plan.as_ref()).one_line();
+        assert_eq!(format!("{}", orig_display), format!("{}", new_display));
+    }
+
+    #[test]
+    fn should_stop_after_first_projection_exec() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        // Inner projection
+        let phys_exprs_inner = vec![(
+            Arc::new(Column::new("a", 0)) as Arc<dyn PhysicalExpr>,
+            "alias_a".to_string(),
+        )];
+        let inner_projection = ProjectionExec::try_new(phys_exprs_inner, memory_exec).unwrap();
+        // Outer projection
+        let phys_exprs_outer = vec![(
+            Arc::new(Column::new("alias_a", 0)) as Arc<dyn PhysicalExpr>,
+            "alias_alias_a".to_string(),
+        )];
+        let outer_projection =
+            ProjectionExec::try_new(phys_exprs_outer, Arc::new(inner_projection)).unwrap();
+
+        let physical_plan = Arc::new(outer_projection);
+
+        // When
+        let result = unalias_view_projection_columns(physical_plan.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        // The top projection should be unaliased but inner remains aliased
+        if let Some(top_proj) = new_plan.as_any().downcast_ref::<ProjectionExec>() {
+            let exprs = top_proj.expr();
+            assert_eq!(exprs[0].1, "alias_a");
+            // The input to this projection should still be inner_projection
+            if let Some(inner_proj) = top_proj.input().as_any().downcast_ref::<ProjectionExec>() {
+                // Inner projection remains unchanged
+                let exprs = inner_proj.expr();
+                assert_eq!(exprs[0].1, "alias_a");
+            } else {
+                panic!("Inner projection should remain unchanged");
+            }
+        } else {
+            panic!("Resulting plan node is not a ProjectionExec");
+        }
     }
 }
