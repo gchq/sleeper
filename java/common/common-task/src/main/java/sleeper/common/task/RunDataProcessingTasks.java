@@ -31,6 +31,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.CompactionECSLaunchType;
 
 import java.util.List;
 import java.util.Objects;
@@ -98,7 +99,7 @@ public class RunDataProcessingTasks {
                 .hostScaler(new BulkExportTaskHostScaler())
                 .sqsJobQueueUrl(instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL))
                 .taskCounts(() -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient))
-                .taskLauncher((numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, BULK_EXPORT_CONTAINER_NAME,
+                .taskLauncher((numberOfTasks, checkAbort) -> launchTasksForBulkExport(ecsClient, instanceProperties, BULK_EXPORT_CONTAINER_NAME,
                         clusterName, LaunchType.FARGATE,
                         instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY),
                         numberOfTasks, checkAbort))
@@ -111,8 +112,8 @@ public class RunDataProcessingTasks {
         return builderForCompactions(instanceProperties)
                 .hostScaler(EC2Scaler.create(instanceProperties, asClient, ec2Client))
                 .taskCounts(() -> ECSTaskCount.getNumPendingAndRunningTasks(clusterName, ecsClient))
-                .taskLauncher((numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, COMPACTION_CONTAINER_NAME, clusterName,
-                        instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, LaunchType.class),
+                .taskLauncher((numberOfTasks, checkAbort) -> launchTasksForCompaction(ecsClient, instanceProperties, COMPACTION_CONTAINER_NAME, clusterName,
+                        instanceProperties.getEnumValue(COMPACTION_ECS_LAUNCHTYPE, CompactionECSLaunchType.class),
                         instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY), numberOfTasks, checkAbort))
                 .build();
     }
@@ -204,18 +205,51 @@ public class RunDataProcessingTasks {
      * @param numberOfTasksToCreate   the number of tasks to create
      * @param checkAbort              a condition under which launching will be aborted
      */
-    private static void launchTasks(
+    private static void launchTasksForCompaction(
             EcsClient ecsClient, InstanceProperties instanceProperties, String containerName, String clusterName,
-            LaunchType launchType, String fargateDefinitionFamily, int numberOfTasksToCreate, BooleanSupplier checkAbort) {
-        RunECSTasks.runTasks(builder -> builder
-                .ecsClient(ecsClient)
-                .runTaskRequest(createRunTaskRequest(instanceProperties, containerName, clusterName, launchType, fargateDefinitionFamily))
-                .numberOfTasksToCreate(numberOfTasksToCreate)
-                .checkAbort(checkAbort));
+            CompactionECSLaunchType launchType, String fargateDefinitionFamily, int numberOfTasksToCreate, BooleanSupplier checkAbort) {
+        builderForRunECSTasks(ecsClient, numberOfTasksToCreate, checkAbort)
+                .runTaskRequest(createCompactionTaskRequest(instanceProperties, containerName, clusterName, launchType, fargateDefinitionFamily))
+                .build().runTasks();
     }
 
     /**
-     * Creates a new task request that can be passed to ECS.
+     * Attempts to launch some tasks on ECS.
+     *
+     * @param ecsClient               the Amazon ECS client
+     * @param instanceProperties      the properties for instance
+     * @param containerName           the name of the container
+     * @param clusterName             the name for the cluster
+     * @param launchType              the launch type either FARGATE or EC2
+     * @param fargateDefinitionFamily the fargate definition family
+     * @param numberOfTasksToCreate   the number of tasks to create
+     * @param checkAbort              a condition under which launching will be aborted
+     */
+    private static void launchTasksForBulkExport(
+            EcsClient ecsClient, InstanceProperties instanceProperties, String containerName, String clusterName,
+            LaunchType launchType, String fargateDefinitionFamily, int numberOfTasksToCreate, BooleanSupplier checkAbort) {
+        builderForRunECSTasks(ecsClient, numberOfTasksToCreate, checkAbort)
+                .runTaskRequest(createBulkExportTaskRequest(instanceProperties, containerName, clusterName, fargateDefinitionFamily))
+                .build().runTasks();
+    }
+
+    /**
+     * Sets up the shared values in the run ECS tasks builder.
+     *
+     * @param  ecsClient             the Amazon ECS client
+     * @param  numberOfTasksToCreate the number of tasks to create
+     * @param  checkAbort            a condition under which launching will be aborted
+     * @return                       the builder to have it's run task request added
+     */
+    private static RunECSTasks.Builder builderForRunECSTasks(EcsClient ecsClient, int numberOfTasksToCreate, BooleanSupplier checkAbort) {
+        return RunECSTasks.builder()
+                .ecsClient(ecsClient)
+                .numberOfTasksToCreate(numberOfTasksToCreate)
+                .checkAbort(checkAbort);
+    }
+
+    /**
+     * Creates a new compaction task request that can be passed to ECS.
      *
      * @param  instanceProperties       the instance properties
      * @param  containerName            the name of the container
@@ -225,32 +259,73 @@ public class RunDataProcessingTasks {
      * @return                          the request for ECS
      * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
      */
-    private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties, String containerName, String clusterName,
-            LaunchType launchType, String fargateDefinitionFamily) {
+    private static RunTaskRequest createCompactionTaskRequest(InstanceProperties instanceProperties, String containerName, String clusterName,
+            CompactionECSLaunchType launchType, String fargateDefinitionFamily) {
 
-        // Choose either compaction or export
-        TaskOverride override = createOverride(instanceProperties, containerName);
-        RunTaskRequest.Builder runTaskRequest = RunTaskRequest.builder()
-                .cluster(clusterName)
-                .overrides(override)
-                .propagateTags(PropagateTags.TASK_DEFINITION);
+        RunTaskRequest runTaskRequest;
 
-        if (launchType == LaunchType.FARGATE) {
-            String fargateVersion = Objects.requireNonNull(instanceProperties.get(FARGATE_VERSION), "fargateVersion cannot be null");
-            NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
-            runTaskRequest
-                    .launchType(LaunchType.FARGATE)
-                    .platformVersion(fargateVersion)
-                    .networkConfiguration(networkConfiguration)
-                    .taskDefinition(fargateDefinitionFamily);
-        } else if (launchType == LaunchType.EC2) { //Only used by compactions
-            runTaskRequest
+        if (launchType == CompactionECSLaunchType.FARGATE) {
+            runTaskRequest = buildFargateRequest(instanceProperties, containerName, clusterName, fargateDefinitionFamily);
+        } else if (launchType == CompactionECSLaunchType.EC2) {
+            runTaskRequest = builderForRunTaskRequest(instanceProperties, containerName, clusterName)
                     .launchType(LaunchType.EC2)
-                    .taskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY));
+                    .taskDefinition(instanceProperties.get(COMPACTION_TASK_EC2_DEFINITION_FAMILY))
+                    .build();
         } else {
             throw new IllegalArgumentException("Unrecognised ECS launch type: " + launchType);
         }
-        return runTaskRequest.build();
+
+        return runTaskRequest;
+    }
+
+    /**
+     * Creates a new build export task request that can be passed to ECS.
+     *
+     * @param  instanceProperties       the instance properties
+     * @param  containerName            the name of the container
+     * @param  clusterName              the name for the cluster
+     * @param  fargateDefinitionFamily  the fargate definition family
+     * @return                          the request for ECS
+     * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
+     */
+    private static RunTaskRequest createBulkExportTaskRequest(InstanceProperties instanceProperties, String containerName, String clusterName,
+            String fargateDefinitionFamily) {
+        return buildFargateRequest(instanceProperties, containerName, clusterName, fargateDefinitionFamily);
+    }
+
+    /**
+     * Builds a run task request for a fargate launch type.
+     *
+     * @param  instanceProperties       the instance properties
+     * @param  containerName            the name of the container
+     * @param  clusterName              the name for the cluster
+     * @param  fargateDefinitionFamily  the fargate definition family
+     * @return                          the request for ECS
+     * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
+     */
+    private static RunTaskRequest buildFargateRequest(InstanceProperties instanceProperties, String containerName, String clusterName, String fargateDefinitionFamily) {
+        return builderForRunTaskRequest(instanceProperties, containerName, clusterName)
+                .launchType(LaunchType.FARGATE)
+                .platformVersion(Objects.requireNonNull(instanceProperties.get(FARGATE_VERSION), "fargateVersion cannot be null"))
+                .networkConfiguration(networkConfig(instanceProperties))
+                .taskDefinition(fargateDefinitionFamily)
+                .build();
+    }
+
+    /**
+     * Sets up the shared values in the run task request builder.
+     *
+     * @param  instanceProperties       the instance properties
+     * @param  containerName            the name of the container
+     * @param  clusterName              the name for the cluster
+     * @return                          the request for ECS
+     * @throws IllegalArgumentException if <code>launchType</code> is FARGATE and version is null
+     */
+    private static RunTaskRequest.Builder builderForRunTaskRequest(InstanceProperties instanceProperties, String containerName, String clusterName) {
+        return RunTaskRequest.builder()
+                .cluster(clusterName)
+                .overrides(createOverride(instanceProperties, containerName))
+                .propagateTags(PropagateTags.TASK_DEFINITION);
     }
 
     /**
