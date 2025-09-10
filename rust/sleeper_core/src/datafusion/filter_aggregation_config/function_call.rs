@@ -50,12 +50,14 @@ pub enum FunctionCallError {
         expected_type: String,
         actual_value: String,
     },
-    #[error("parameter not found at index {index}")]
-    ParameterNotFound { index: usize },
+    #[error(
+        "{function_name} parameter not found at index {index}, the number of parameters was not validated correctly"
+    )]
+    ParameterNotFound { function_name: String, index: usize },
 }
 
 impl<'h> FunctionCall<'h> {
-    pub fn expect_num_parameters(
+    pub fn validate_num_parameters(
         &self,
         expected_parameters: &'static [&'static str],
     ) -> Result<(), FunctionCallError> {
@@ -105,7 +107,10 @@ impl<'h> FunctionCall<'h> {
     fn param(&'_ self, index: usize) -> Result<&FunctionParameter<'h>, FunctionCallError> {
         self.parameters
             .get(index)
-            .ok_or(FunctionCallError::ParameterNotFound { index })
+            .ok_or(FunctionCallError::ParameterNotFound {
+                function_name: self.name.to_string(),
+                index,
+            })
     }
 }
 
@@ -137,7 +142,7 @@ mod tests {
     #[test]
     fn should_read_parameters() -> Result<()> {
         let call = call("fn", vec![word("abc"), number(123)]);
-        call.expect_num_parameters(&["param1", "param2"])?;
+        call.validate_num_parameters(&["param1", "param2"])?;
         assert_eq!(call.word_param(0, "param1")?, "abc");
         assert_eq!(call.number_param(1, "param2")?, 123);
         Ok(())
@@ -147,7 +152,7 @@ mod tests {
     fn should_fail_expected_number_of_parameters() {
         let call = call("fn", vec![word("abc"), number(123)]);
         assert_error!(
-            call.expect_num_parameters(&["param1", "param2", "param3"]),
+            call.validate_num_parameters(&["param1", "param2", "param3"]),
             "fn expects 3 arguments (param1, param2, param3), found 2"
         );
     }
@@ -156,7 +161,7 @@ mod tests {
     fn should_fail_expected_one_parameter() {
         let call = call("fn", vec![word("abc"), number(123)]);
         assert_error!(
-            call.expect_num_parameters(&["param"]),
+            call.validate_num_parameters(&["param"]),
             "fn expects 1 argument (param), found 2"
         );
     }
