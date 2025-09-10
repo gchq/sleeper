@@ -69,18 +69,10 @@ impl AggOp {
 #[cfg(test)]
 mod tests {
     use super::{AggOp, Aggregate};
+    use crate::assert_error;
     use aggregator_udfs::map_aggregate::MapAggregatorOp;
     use color_eyre::eyre::Result;
     use test_log::test;
-
-    macro_rules! assert_error {
-        ($err_expr: expr, $err_contents: expr) => {
-            assert_eq!(
-                $err_expr.err().map(|e| e.to_string()),
-                Some($err_contents.to_string())
-            )
-        };
-    }
 
     #[test]
     fn should_parse_sum() -> Result<()> {
@@ -178,7 +170,7 @@ mod tests {
     fn should_fail_with_field_name_wrong_type() {
         assert_error!(
             Aggregate::parse_config("sum(123)"),
-            "wrong type for sum parameter 0 (column), expected word, found Number(123)"
+            "wrong type for sum parameter 0 (column), expected word, found \"123\""
         );
     }
 
