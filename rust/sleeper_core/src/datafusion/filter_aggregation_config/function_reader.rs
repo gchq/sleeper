@@ -229,10 +229,11 @@ impl<'h> FunctionReader<'h> {
 mod tests {
 
     use super::FunctionReader;
-    use crate::datafusion::filter_aggregation_config::function_call::{
-        FunctionCall, FunctionParameter,
+    use crate::datafusion::filter_aggregation_config::{
+        function_call::{FunctionCall, FunctionParameter},
+        function_reader::FunctionReaderError,
     };
-    use color_eyre::eyre::{Result as EyreResult, eyre};
+    use color_eyre::eyre::Result as EyreResult;
     use test_log::test;
 
     macro_rules! assert_error {
@@ -403,13 +404,10 @@ mod tests {
         );
     }
 
-    fn read_function_calls(config_string: &'static str) -> EyreResult<Vec<FunctionCall<'static>>> {
-        FunctionReader::from(config_string)
-            .map(|result| match result {
-                Ok(call) => Ok(call),
-                Err(e) => Err(eyre!(e)),
-            })
-            .collect()
+    fn read_function_calls(
+        config_string: &'static str,
+    ) -> Result<Vec<FunctionCall<'static>>, FunctionReaderError> {
+        FunctionReader::from(config_string).collect()
     }
 
     fn call<'h>(name: &'static str, parameters: Vec<FunctionParameter<'h>>) -> FunctionCall<'h> {
