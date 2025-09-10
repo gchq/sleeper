@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::filter_aggregation_config::filter::Filter;
+use crate::filter_aggregation_config::filter::Filter;
 use aggregator_udfs::{
     map_aggregate::{MapAggregator, MapAggregatorOp},
     nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
@@ -28,9 +28,6 @@ use datafusion::{
 use filter_udfs::ageoff::AgeOff;
 use regex::Regex;
 use std::sync::Arc;
-mod filter;
-mod function_call;
-mod function_reader;
 
 pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 

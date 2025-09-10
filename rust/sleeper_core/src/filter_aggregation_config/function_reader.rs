@@ -13,9 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::filter_aggregation_config::function_call::{
-    FunctionCall, FunctionParameter,
-};
+use super::function_call::{FunctionCall, FunctionParameter};
 use std::str::CharIndices;
 use thiserror::Error;
 
@@ -228,11 +226,11 @@ impl<'h> FunctionReader<'h> {
 #[cfg(test)]
 mod tests {
 
-    use super::FunctionReader;
-    use crate::datafusion::filter_aggregation_config::{
+    use super::super::{
         function_call::{FunctionCall, FunctionParameter},
         function_reader::FunctionReaderError,
     };
+    use super::FunctionReader;
     use color_eyre::eyre::Result as EyreResult;
     use test_log::test;
 

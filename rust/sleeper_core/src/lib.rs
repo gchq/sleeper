@@ -32,6 +32,7 @@ use std::fmt::{Display, Formatter};
 use url::Url;
 
 mod datafusion;
+mod filter_aggregation_config;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{

@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-use crate::datafusion::filter_aggregation_config::{
+use super::{
     function_call::{FunctionCall, FunctionCallError},
     function_reader::{FunctionReader, FunctionReaderError},
 };
