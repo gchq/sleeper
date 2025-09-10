@@ -105,7 +105,7 @@ impl<'h> FunctionCall<'h> {
     fn param(&'_ self, index: usize) -> Result<&FunctionParameter<'h>, FunctionCallError> {
         self.parameters
             .get(index)
-            .ok_or_else(|| FunctionCallError::ParameterNotFound { index })
+            .ok_or(FunctionCallError::ParameterNotFound { index })
     }
 }
 
