@@ -44,9 +44,9 @@ import java.util.Objects;
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AutoStopEcsClusterTasksStack extends NestedStack {
 
-    private IFunction lambda;
-    private Provider provider;
-    private String id;
+    private final IFunction lambda;
+    private final Provider provider;
+    private final String id;
 
     public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
             ILogGroup logGroup, ILogGroup providerLogGroup) {
