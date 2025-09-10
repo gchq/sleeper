@@ -208,10 +208,10 @@ impl<'h> FunctionReader<'h> {
         self.current.is_none()
     }
 
-    fn error(&self, problem: ExpectedNext) -> FunctionReaderError {
+    fn error(&self, expected_next: ExpectedNext) -> FunctionReaderError {
         FunctionReaderError {
             position: self.characters_read,
-            expected_next: problem,
+            expected_next,
         }
     }
 }
