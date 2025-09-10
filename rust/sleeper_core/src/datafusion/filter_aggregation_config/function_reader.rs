@@ -334,7 +334,7 @@ mod tests {
         assert_error!(
             read_function_calls("fn(),"),
             "expected function call at position 5"
-        )
+        );
     }
 
     #[test]
