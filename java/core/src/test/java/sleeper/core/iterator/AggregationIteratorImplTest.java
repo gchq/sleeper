@@ -18,11 +18,6 @@ package sleeper.core.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 
 import java.util.List;
 import java.util.Map;
@@ -49,11 +44,6 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
     @Test
     public void shouldAggregate() throws IteratorCreationException {
         // Given
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key1", new StringType()))
-                .valueFields(new Field("value1", new LongType()))
-                .build();
-
         Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
         Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
@@ -63,7 +53,7 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
                 "sort_key2", 5, "value1", "testtestaaaaa", "value2", 78));
 
         // When
-        AggregatorIteratorImpl.aggregateOnTo(r1, r2, new FilterAggregationConfig(List.of("TestColumn"),
+        AggregatorIteratorImpl.aggregateOnTo(r1, r2, new FilterAggregationConfig(List.of("key1", "value1"),
                 Optional.empty(),
                 0L,
                 List.of(new Aggregation("value1", AggregationOp.SUM),
@@ -115,11 +105,6 @@ public class AggregationIteratorImplTest extends AggregationFilteringIteratorTes
     @Test
     public void shouldBeNonEqualRows() throws Exception {
         // Given
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
-                .sortKeyFields(new Field("sort_key", new StringType()), new Field("sort_key2", new StringType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
         Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
                 "sort_key2", 5, "value1", "test", "value2", 78));
         // Make sort_key2 different
