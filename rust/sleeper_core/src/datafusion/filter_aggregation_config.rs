@@ -92,7 +92,7 @@ impl Aggregate {
 
 impl AggOp {
     fn parse_for_datafusion(value: &str) -> DataFusionResult<Self, DataFusionError> {
-        Self::parse(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
+        Self::try_from(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
     }
 }
 

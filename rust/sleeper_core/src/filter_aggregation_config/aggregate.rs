@@ -13,9 +13,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use color_eyre::eyre::{Result, eyre};
-
-use super::{function_call::FunctionCall, function_reader::FunctionReader};
+use super::{
+    function_call::{FunctionCall, FunctionCallError},
+    function_reader::{FunctionReader, FunctionReaderError},
+};
+use thiserror::Error;
 
 /// Aggregation support. Consists of a column name and operation.
 #[derive(Debug, PartialEq, Eq)]
@@ -24,22 +26,45 @@ pub struct Aggregate {
     pub operation: AggOp,
 }
 
+#[derive(Error, Debug)]
+pub enum AggregateConfigError {
+    #[error("{error}")]
+    CouldNotReadConfig { error: FunctionReaderError },
+    #[error("{error}")]
+    InvalidFunctionCall { error: FunctionCallError },
+    #[error("unrecognised aggregation function name \"{name}\"")]
+    UnrecognisedAggregationFunction { name: String },
+}
+
 impl Aggregate {
-    pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
+    pub fn parse_config(config_string: &str) -> Result<Vec<Self>, AggregateConfigError> {
         let mut reader = FunctionReader::from(config_string);
         let mut aggregations = vec![];
-        while let Some(call) = reader.read_function_call()? {
-            aggregations.push(Self::from_function_call(&call)?);
+        while let Some(call) = reader
+            .read_function_call()
+            .map_err(|error| AggregateConfigError::CouldNotReadConfig { error })?
+        {
+            aggregations.push(Self::try_from(&call)?);
         }
         Ok(aggregations)
     }
+}
 
-    fn from_function_call(call: &FunctionCall) -> Result<Self> {
-        call.validate_num_parameters(&["column"])?;
-        let column = call.word_param(0, "column")?.to_string();
-        let operation: AggOp = AggOp::parse(call.name)?;
-        Ok(Aggregate { column, operation })
+impl TryFrom<&FunctionCall<'_>> for Aggregate {
+    type Error = AggregateConfigError;
+
+    fn try_from(call: &FunctionCall<'_>) -> Result<Self, Self::Error> {
+        Ok(Aggregate {
+            column: column(call)
+                .map_err(|error| AggregateConfigError::InvalidFunctionCall { error })?,
+            operation: AggOp::try_from(call.name)?,
+        })
     }
+}
+
+fn column(call: &FunctionCall) -> Result<String, FunctionCallError> {
+    call.validate_num_parameters(&["column"])?;
+    Ok(call.word_param(0, "column")?.to_string())
 }
 
 /// Supported aggregating operations.
@@ -60,16 +85,20 @@ pub enum MapAggregateOp {
     Max,
 }
 
-impl AggOp {
-    pub fn parse(value: &str) -> Result<Self> {
-        match value.to_lowercase().as_str() {
+impl TryFrom<&str> for AggOp {
+    type Error = AggregateConfigError;
+
+    fn try_from(name: &str) -> Result<Self, Self::Error> {
+        match name.to_lowercase().as_str() {
             "sum" => Ok(Self::Sum),
             "min" => Ok(Self::Min),
             "max" => Ok(Self::Max),
             "map_sum" => Ok(Self::MapAggregate(MapAggregateOp::Sum)),
             "map_min" => Ok(Self::MapAggregate(MapAggregateOp::Min)),
             "map_max" => Ok(Self::MapAggregate(MapAggregateOp::Max)),
-            _ => Err(eyre!("unrecognised aggregation function name \"{value}\"")),
+            _ => Err(AggregateConfigError::UnrecognisedAggregationFunction {
+                name: name.to_string(),
+            }),
         }
     }
 }
