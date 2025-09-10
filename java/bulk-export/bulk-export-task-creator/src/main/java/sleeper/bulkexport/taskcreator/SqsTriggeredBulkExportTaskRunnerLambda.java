@@ -19,8 +19,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
-import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -48,8 +46,6 @@ public class SqsTriggeredBulkExportTaskRunnerLambda {
         SqsClient sqsClient = SqsClient.create();
         S3Client s3Client = S3Client.create();
         EcsClient ecsClient = EcsClient.create();
-        AutoScalingClient asClient = AutoScalingClient.create();
-        Ec2Client ec2Client = Ec2Client.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
         this.runTasks = RunDataProcessingTasks.createForBulkExport(instanceProperties, ecsClient);
