@@ -14,15 +14,11 @@
 * limitations under the License.
 */
 
-use color_eyre::eyre::{Result, ensure};
-use datafusion::{
-    error::Result as DataFusionResult,
-    logical_expr::{Expr, ScalarUDF, col},
+use super::{
+    function_call::{FunctionCall, FunctionCallError},
+    function_reader::{FunctionReader, FunctionReaderError},
 };
-use filter_udfs::ageoff::AgeOff;
-
-use crate::datafusion::filter_aggregation_config::function_call::FunctionCall;
-use crate::datafusion::filter_aggregation_config::function_reader::FunctionReader;
+use thiserror::Error;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Filter {
@@ -30,54 +26,55 @@ pub enum Filter {
     Ageoff { column: String, max_age: i64 },
 }
 
+#[derive(Error, Debug)]
+pub enum FilterConfigError {
+    #[error("{error}")]
+    CouldNotReadConfig { error: FunctionReaderError },
+    #[error("{error}")]
+    InvalidFunctionCall { error: FunctionCallError },
+    #[error("unrecognised filter function name \"{name}\"")]
+    UnrecognisedFilterFunction { name: String },
+}
+
 impl Filter {
-    /// Creates a filtering expression for this filter instance. The returned
-    /// expression can be passed to [`DataFrame::filter`].
-    pub fn create_filter_expr(&self) -> DataFusionResult<Expr> {
-        match self {
-            Self::Ageoff { column, max_age } => {
-                Ok(ScalarUDF::from(AgeOff::try_from(*max_age)?).call(vec![col(column)]))
-            }
-        }
+    pub fn parse_config(config_string: &str) -> Result<Vec<Self>, FilterConfigError> {
+        FunctionReader::from(config_string)
+            .map(|result| match result {
+                Ok(call) => Self::try_from(&call),
+                Err(error) => Err(FilterConfigError::CouldNotReadConfig { error }),
+            })
+            .collect()
     }
+}
 
-    pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
-        let mut reader = FunctionReader::new(config_string);
-        let mut filters = vec![];
-        while let Some(call) = reader.read_function_call()? {
-            filters.push(Self::from_function_call(&call)?);
+impl TryFrom<&FunctionCall<'_>> for Filter {
+    type Error = FilterConfigError;
+    fn try_from(call: &FunctionCall) -> Result<Self, FilterConfigError> {
+        if call.name.eq_ignore_ascii_case("ageOff") {
+            age_off(call)
+        } else {
+            return Err(FilterConfigError::UnrecognisedFilterFunction {
+                name: call.name.to_string(),
+            });
         }
-        Ok(filters)
+        .map_err(|error| FilterConfigError::InvalidFunctionCall { error })
     }
+}
 
-    fn from_function_call(call: &FunctionCall) -> Result<Self> {
-        ensure!(
-            call.name.eq_ignore_ascii_case("ageOff"),
-            "unrecognised filter function name \"{}\"",
-            call.name
-        );
-        call.expect_args(&["column", "max age"])?;
-        Ok(Filter::Ageoff {
-            column: call.word_param(0, "column")?.to_string(),
-            max_age: call.number_param(1, "max age")?,
-        })
-    }
+fn age_off(call: &FunctionCall) -> Result<Filter, FunctionCallError> {
+    call.validate_num_parameters(&["column", "max age"])?;
+    Ok(Filter::Ageoff {
+        column: call.word_param(0, "column")?.to_string(),
+        max_age: call.number_param(1, "max age")?,
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::Filter;
+    use crate::assert_error;
     use color_eyre::eyre::Result;
     use test_log::test;
-
-    macro_rules! assert_error {
-        ($err_expr: expr, $err_contents: expr) => {
-            assert_eq!(
-                $err_expr.err().map(|e| e.to_string()),
-                Some($err_contents.to_string())
-            )
-        };
-    }
 
     #[test]
     fn should_parse_age_off_filter() -> Result<()> {
@@ -148,7 +145,7 @@ mod tests {
     fn should_fail_with_field_name_wrong_type() {
         assert_error!(
             Filter::parse_config("ageOff(123, 456)"),
-            "wrong type for ageOff parameter 0 (column), expected word, found Number(123)"
+            "wrong type for ageOff parameter 0 (column), expected word, found \"123\""
         );
     }
 

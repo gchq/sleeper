@@ -13,18 +13,24 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use crate::filter_aggregation_config::{
+    aggregate::{AggOp, Aggregate},
+    filter::Filter,
+};
+use aggregator_udfs::{
+    map_aggregate::MapAggregator,
+    nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
+};
 use datafusion::{
     common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
+    dataframe::DataFrame,
+    error::Result as DataFusionResult,
     error::{DataFusionError, Result},
+    logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
 };
+use filter_udfs::ageoff::AgeOff;
 use regex::Regex;
-
-use crate::datafusion::filter_aggregation_config::aggregate::{AggOp, Aggregate};
-use crate::datafusion::filter_aggregation_config::filter::Filter;
-mod aggregate;
-mod filter;
-mod function_call;
-mod function_reader;
+use std::sync::Arc;
 
 pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 
@@ -51,6 +57,42 @@ impl FilterAggregationConfig {
     #[must_use]
     pub fn aggregation(&self) -> Option<&Vec<Aggregate>> {
         self.aggregation.as_ref()
+    }
+}
+
+impl Filter {
+    /// Creates a filtering expression for this filter instance. The returned
+    /// expression can be passed to [`DataFrame::filter`].
+    pub fn create_filter_expr(&self) -> DataFusionResult<Expr> {
+        match self {
+            Self::Ageoff { column, max_age } => {
+                Ok(ScalarUDF::from(AgeOff::try_from(*max_age)?).call(vec![col(column)]))
+            }
+        }
+    }
+}
+
+impl Aggregate {
+    // Create a DataFusion logical expression to represent this aggregation operation.
+    pub fn to_expr(&self, frame: &DataFrame) -> DataFusionResult<Expr> {
+        Ok(match &self.operation {
+            AggOp::Sum => non_null_sum(col(&self.column)),
+            AggOp::Min => non_null_min(col(&self.column)),
+            AggOp::Max => non_null_max(col(&self.column)),
+            AggOp::MapAggregate(op) => {
+                let col_dt = col(&self.column).get_type(frame.schema())?;
+                let map_sum = Arc::new(MapAggregator::try_new(&col_dt, op.clone())?);
+                AggregateUDF::new_from_impl(NonNullable::new(map_sum)).call(vec![col(&self.column)])
+            }
+        }
+        // Rename column to original name
+        .alias(&self.column))
+    }
+}
+
+impl AggOp {
+    fn parse_for_datafusion(value: &str) -> DataFusionResult<Self, DataFusionError> {
+        Self::parse(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
     }
 }
 

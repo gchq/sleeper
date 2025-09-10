@@ -13,21 +13,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use aggregator_udfs::{
-    map_aggregate::{MapAggregator, MapAggregatorOp},
-    nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
-};
+use aggregator_udfs::map_aggregate::MapAggregatorOp;
 use color_eyre::eyre::{Result, eyre};
-use datafusion::{
-    dataframe::DataFrame,
-    error::{DataFusionError, Result as DataFusionResult},
-    logical_expr::{AggregateUDF, Expr, ExprSchemable, col},
-};
-use std::sync::Arc;
 
-use crate::datafusion::filter_aggregation_config::{
-    function_call::FunctionCall, function_reader::FunctionReader,
-};
+use super::{function_call::FunctionCall, function_reader::FunctionReader};
 
 /// Aggregation support. Consists of a column name and operation.
 #[derive(Debug, PartialEq, Eq)]
@@ -37,24 +26,8 @@ pub struct Aggregate {
 }
 
 impl Aggregate {
-    // Create a DataFusion logical expression to represent this aggregation operation.
-    pub fn to_expr(&self, frame: &DataFrame) -> DataFusionResult<Expr> {
-        Ok(match &self.operation {
-            AggOp::Sum => non_null_sum(col(&self.column)),
-            AggOp::Min => non_null_min(col(&self.column)),
-            AggOp::Max => non_null_max(col(&self.column)),
-            AggOp::MapAggregate(op) => {
-                let col_dt = col(&self.column).get_type(frame.schema())?;
-                let map_sum = Arc::new(MapAggregator::try_new(&col_dt, op.clone())?);
-                AggregateUDF::new_from_impl(NonNullable::new(map_sum)).call(vec![col(&self.column)])
-            }
-        }
-        // Rename column to original name
-        .alias(&self.column))
-    }
-
     pub fn parse_config(config_string: &str) -> Result<Vec<Self>> {
-        let mut reader = FunctionReader::new(config_string);
+        let mut reader = FunctionReader::from(config_string);
         let mut aggregations = vec![];
         while let Some(call) = reader.read_function_call()? {
             aggregations.push(Self::from_function_call(&call)?);
@@ -63,7 +36,7 @@ impl Aggregate {
     }
 
     fn from_function_call(call: &FunctionCall) -> Result<Self> {
-        call.expect_args(&["column"])?;
+        call.validate_num_parameters(&["column"])?;
         let column = call.word_param(0, "column")?.to_string();
         let operation: AggOp = AggOp::parse(call.name)?;
         Ok(Aggregate { column, operation })
@@ -80,11 +53,7 @@ pub enum AggOp {
 }
 
 impl AggOp {
-    pub fn parse_for_datafusion(value: &str) -> DataFusionResult<Self, DataFusionError> {
-        Self::parse(value).map_err(|e| DataFusionError::Configuration(e.to_string()))
-    }
-
-    fn parse(value: &str) -> Result<Self> {
+    pub fn parse(value: &str) -> Result<Self> {
         match value.to_lowercase().as_str() {
             "sum" => Ok(Self::Sum),
             "min" => Ok(Self::Min),
