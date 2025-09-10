@@ -38,15 +38,12 @@ pub enum AggregateConfigError {
 
 impl Aggregate {
     pub fn parse_config(config_string: &str) -> Result<Vec<Self>, AggregateConfigError> {
-        let mut reader = FunctionReader::from(config_string);
-        let mut aggregations = vec![];
-        while let Some(call) = reader
-            .read_function_call()
-            .map_err(|error| AggregateConfigError::CouldNotReadConfig { error })?
-        {
-            aggregations.push(Self::try_from(&call)?);
-        }
-        Ok(aggregations)
+        FunctionReader::from(config_string)
+            .map(|result| match result {
+                Ok(call) => Self::try_from(&call),
+                Err(error) => Err(AggregateConfigError::CouldNotReadConfig { error }),
+            })
+            .collect()
     }
 }
 
