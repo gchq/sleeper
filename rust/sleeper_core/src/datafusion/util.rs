@@ -350,7 +350,7 @@ mod tests {
         let _ = unalias(qualified_name, &schema);
     }
 
-    fn build_ordering(schema: Arc<Schema>) -> LexOrdering {
+    fn build_ordering(schema: &Arc<Schema>) -> LexOrdering {
         vec![PhysicalSortExpr {
             expr: Arc::new(Column::new(schema.field(0).name(), 0)),
             options: SortOptions::default(),
@@ -358,7 +358,7 @@ mod tests {
         .into()
     }
 
-    fn build_coalesce_exec_with_memory(schema: Arc<Schema>) -> Arc<CoalescePartitionsExec> {
+    fn build_coalesce_exec_with_memory(schema: &Arc<Schema>) -> Arc<CoalescePartitionsExec> {
         let input_batch = RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
@@ -369,8 +369,8 @@ mod tests {
     fn should_replace_top_most_coalesce_with_sort_preserving_merge() {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
-        let coalesce = build_coalesce_exec_with_memory(schema.clone());
-        let ordering = build_ordering(schema);
+        let coalesce = build_coalesce_exec_with_memory(&schema);
+        let ordering = build_ordering(&schema);
 
         // When
         let result = remove_coalesce_physical_stage(&ordering, coalesce.clone());
@@ -401,7 +401,7 @@ mod tests {
         let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
-        let ordering = build_ordering(schema);
+        let ordering = build_ordering(&schema);
 
         // When
         let result = remove_coalesce_physical_stage(&ordering, memory_exec.clone());
@@ -413,7 +413,7 @@ mod tests {
 
         let original_display = displayable(memory_exec.as_ref()).one_line();
         let new_display = displayable(new_plan.as_ref()).one_line();
-        assert_eq!(format!("{}", original_display), format!("{}", new_display));
+        assert_eq!(format!("{original_display}"), format!("{new_display}"));
     }
 
     #[test]
@@ -425,7 +425,7 @@ mod tests {
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         let coalesce_inner = Arc::new(CoalescePartitionsExec::new(memory_exec));
         let coalesce_outer = Arc::new(CoalescePartitionsExec::new(coalesce_inner));
-        let ordering = build_ordering(schema);
+        let ordering = build_ordering(&schema);
 
         // When
         let result = remove_coalesce_physical_stage(&ordering, coalesce_outer.clone());
@@ -516,7 +516,7 @@ mod tests {
         // Should be the same plan
         let orig_display = displayable(memory_exec.as_ref()).one_line();
         let new_display = displayable(new_plan.as_ref()).one_line();
-        assert_eq!(format!("{}", orig_display), format!("{}", new_display));
+        assert_eq!(format!("{orig_display}"), format!("{new_display}"));
     }
 
     #[test]
