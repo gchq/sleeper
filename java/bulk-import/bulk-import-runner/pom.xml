@@ -214,9 +214,10 @@
                         <relocation>
                             <pattern>org.apache.parquet</pattern>
                             <shadedPattern>sleeper.shaded.apache.parquet</shadedPattern>
-                            <excludes>
-                                <exclude>shaded.parquet.*</exclude>
-                            </excludes>
+                        </relocation>
+                        <relocation>
+                            <pattern>shaded.parquet</pattern>
+                            <shadedPattern>sleeper.shaded.parquet.shaded</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
