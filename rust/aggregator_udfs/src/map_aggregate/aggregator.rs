@@ -33,7 +33,7 @@
  * limitations under the License.
  */
 use crate::map_aggregate::{
-    MapAggregatorOp,
+    UdfMapAggregatorOp,
     accumulator::{
         byte_accumulator::ByteMapAccumulator, prim_accumulator::PrimMapAccumulator,
         string_accumulator::StringMapAccumulator,
@@ -96,7 +96,7 @@ pub struct MapAggregator {
     /// Defines what column types this function can work on
     signature: Signature,
     /// What sort of aggregation operation to perform
-    op: MapAggregatorOp,
+    op: UdfMapAggregatorOp,
 }
 
 impl MapAggregator {
@@ -104,7 +104,7 @@ impl MapAggregator {
     ///
     /// # Errors
     /// If the given column is not a map column.
-    pub fn try_new(column_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
+    pub fn try_new(column_type: &DataType, op: UdfMapAggregatorOp) -> Result<Self> {
         if matches!(column_type, DataType::Map(_, _)) {
             Ok(Self {
                 signature: Signature::exact(vec![column_type.clone()], Volatility::Immutable),
@@ -297,7 +297,7 @@ mod tests {
 
     use crate::{assert_error, map_aggregate::aggregator::map_test_common::make_map_datatype};
 
-    use super::{MapAggregator, MapAggregatorOp, PrimBuilderType, validate_map_struct_type};
+    use super::{MapAggregator, PrimBuilderType, UdfMapAggregatorOp, validate_map_struct_type};
 
     fn append<T>(mut builder: T, v: <T::ArrowType as ArrowPrimitiveType>::Native)
     where
@@ -419,7 +419,7 @@ mod tests {
     #[test]
     fn aggregator_op_sum_correct() {
         // Given
-        let op = MapAggregatorOp::Sum;
+        let op = UdfMapAggregatorOp::Sum;
 
         // When
         let result = op.op(5, 6);
@@ -431,7 +431,7 @@ mod tests {
     #[test]
     fn aggregator_op_max_correct() {
         // Given
-        let op = MapAggregatorOp::Max;
+        let op = UdfMapAggregatorOp::Max;
 
         // When
         let result = op.op(5, 6);
@@ -443,7 +443,7 @@ mod tests {
     #[test]
     fn aggregator_op_min_correct() {
         // Given
-        let op = MapAggregatorOp::Min;
+        let op = UdfMapAggregatorOp::Min;
 
         // When
         let result = op.op(5, 6);
@@ -455,7 +455,7 @@ mod tests {
     #[test]
     fn map_aggregator_new_type_check() {
         // Given
-        let map = MapAggregator::try_new(&DataType::Boolean, MapAggregatorOp::Sum);
+        let map = MapAggregator::try_new(&DataType::Boolean, UdfMapAggregatorOp::Sum);
 
         // Then
         assert_error!(
@@ -486,7 +486,7 @@ mod tests {
     fn should_be_nullable() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
 
         // Then
         assert!(agg.is_nullable());
@@ -497,7 +497,7 @@ mod tests {
     fn should_support_group_accumulator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
 
         // Then
         assert!(agg.groups_accumulator_supported(make_accumulator_args(
@@ -512,7 +512,7 @@ mod tests {
     fn should_error_on_multiple_arg_types() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
 
         // When
         let result = agg.return_type(&[DataType::Int64, DataType::Int64]);
@@ -531,7 +531,7 @@ mod tests {
     fn should_get_prim_accumulator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         let _acc = agg.accumulator(make_accumulator_args(
             &Schema::empty(),
             LexOrdering::empty(),
@@ -544,7 +544,7 @@ mod tests {
     fn should_error_on_accumulator_binary_value_type_prim_key() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::LargeBinary);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         let acc = agg.accumulator(make_accumulator_args(
             &Schema::empty(),
             LexOrdering::empty(),
@@ -564,7 +564,7 @@ mod tests {
     fn should_error_on_accumulator_binary_value_type_string_key() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::LargeBinary);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         let acc = agg.accumulator(make_accumulator_args(
             &Schema::empty(),
             LexOrdering::empty(),
@@ -584,7 +584,7 @@ mod tests {
     fn should_error_on_accumulator_binary_value_type_binary_key() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::LargeBinary);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         let acc = agg.accumulator(make_accumulator_args(
             &Schema::empty(),
             LexOrdering::empty(),
@@ -605,7 +605,7 @@ mod tests {
     fn should_make_primitive_key_accumlator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
         let mut acc = agg.accumulator(make_accumulator_args(
             &Schema::empty(),
@@ -639,7 +639,7 @@ mod tests {
     fn should_make_string_key_accumlator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
         let mut acc = agg.accumulator(make_accumulator_args(
             &Schema::empty(),
@@ -673,7 +673,7 @@ mod tests {
     fn should_make_binary_key_accumlator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
         let mut acc = agg.accumulator(make_accumulator_args(
             &Schema::empty(),
@@ -707,7 +707,7 @@ mod tests {
     fn should_get_prim_group_accumulator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         let _acc = agg.create_groups_accumulator(make_accumulator_args(
             &Schema::empty(),
             LexOrdering::empty(),
@@ -721,7 +721,7 @@ mod tests {
     {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::LargeBinary);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         let acc = agg.create_groups_accumulator(make_accumulator_args(
             &Schema::empty(),
             LexOrdering::empty(),
@@ -743,7 +743,7 @@ mod tests {
     -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::LargeBinary);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         let acc = agg.create_groups_accumulator(make_accumulator_args(
             &Schema::empty(),
             LexOrdering::empty(),
@@ -765,7 +765,7 @@ mod tests {
     -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::LargeBinary);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         let acc = agg.create_groups_accumulator(make_accumulator_args(
             &Schema::empty(),
             LexOrdering::empty(),
@@ -786,7 +786,7 @@ mod tests {
     fn should_make_primitive_key_group_accumlator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
         let mut acc = agg.create_groups_accumulator(make_accumulator_args(
             &Schema::empty(),
@@ -820,7 +820,7 @@ mod tests {
     fn should_make_string_key_group_accumlator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
         let mut acc = agg.create_groups_accumulator(make_accumulator_args(
             &Schema::empty(),
@@ -854,7 +854,7 @@ mod tests {
     fn should_make_binary_key_group_accumlator() -> Result<(), DataFusionError> {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::Int64);
-        let agg = MapAggregator::try_new(&map_type, MapAggregatorOp::Sum)?;
+        let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
         let mut acc = agg.create_groups_accumulator(make_accumulator_args(
             &Schema::empty(),

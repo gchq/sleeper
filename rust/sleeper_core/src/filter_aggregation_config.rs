@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 
+pub mod aggregate;
 pub mod filter;
 mod function_call;
 mod function_reader;
