@@ -19,7 +19,6 @@ package sleeper.systemtest.cdk;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Tags;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -28,6 +27,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -41,7 +41,6 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 
 public class SystemTestBucketStack extends NestedStack {
 
@@ -50,7 +49,8 @@ public class SystemTestBucketStack extends NestedStack {
     public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(scope, id);
         String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
-        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(scope, id + "-AutoDelete", properties.toInstancePropertiesForCdkUtils(), jars);
+        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(scope, id, properties.toInstancePropertiesForCdkUtils(),
+                getLoggingStack(this, properties.toInstancePropertiesForCdkUtils()), jars);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars, autoDeleteS3ObjectsStack);
         Tags.of(this).add("DeploymentStack", id);
@@ -62,7 +62,7 @@ public class SystemTestBucketStack extends NestedStack {
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));
-        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(scope, id + "-AutoDelete", properties, jars);
+        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(scope, id, properties, getLoggingStack(this, properties), jars);
         bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars, autoDeleteS3ObjectsStack);
         Utils.addStackTagIfSet(this, properties);
     }
@@ -77,19 +77,17 @@ public class SystemTestBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, bucket, bucketName,
-                LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
-                        .logGroupName(bucketName + "-autodelete")
-                        .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
-                        .build(),
-                LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
-                        .logGroupName(bucketName + "-autodelete-provider")
-                        .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
-                        .build());
+        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, bucket, bucketName);
+
         return bucket;
     }
 
     public IBucket getBucket() {
         return bucket;
     }
+
+    private LoggingStack getLoggingStack(Construct scope, InstanceProperties properties) {
+        return new LoggingStack(scope, "Logging", properties);
+    }
+
 }

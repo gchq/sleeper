@@ -20,13 +20,13 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -38,8 +38,9 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     private final IFunction lambda;
     private final String id;
+    private final Provider provider;
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, LoggingStack loggingStack, BuiltJars jars) {
 
         super(scope, id);
 
@@ -57,18 +58,18 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
-                //                .logGroup(logGroup)
+                .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS))
                 .timeout(Duration.minutes(10)));
+
+        provider = Provider.Builder.create(scope, id + "Provider")
+                .onEventHandler(lambda)
+                .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER))
+                .build();
 
     }
 
     public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
-            IBucket bucket, String bucketName, ILogGroup logGroup, ILogGroup providerLogGroup) {
-
-        Provider provider = Provider.Builder.create(scope, id + "Provider")
-                .onEventHandler(lambda)
-                .logGroup(providerLogGroup)
-                .build();
+            IBucket bucket, String bucketName) {
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);

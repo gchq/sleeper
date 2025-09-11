@@ -35,6 +35,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -58,7 +59,7 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 public class AthenaStack extends NestedStack {
 
     public AthenaStack(
-            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -77,8 +78,7 @@ public class AthenaStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        // autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, spillBucket, bucketName,
-        //                     coreStacks.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE), coreStacks.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE_PROVIDER));
+        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, spillBucket, bucketName);
 
         IKey spillMasterKey = createSpillMasterKey(this, instanceProperties);
         List<Policy> connectorPolicies = createConnectorPolicies(this, instanceProperties);

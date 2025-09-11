@@ -40,7 +40,7 @@ public class ConfigBucketStack extends NestedStack {
 
     public ConfigBucketStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, BuiltJars jars) {
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack, BuiltJars jars) {
         super(scope, id);
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "config");
@@ -54,9 +54,7 @@ public class ConfigBucketStack extends NestedStack {
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        // autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, configBucket, bucketName,
-        //         loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE),
-        //         loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE_PROVIDER));
+        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, configBucket, bucketName);
 
         configBucket.grantRead(policiesStack.getDirectIngestPolicyForGrants());
         configBucket.grantRead(policiesStack.getIngestByQueuePolicyForGrants());
