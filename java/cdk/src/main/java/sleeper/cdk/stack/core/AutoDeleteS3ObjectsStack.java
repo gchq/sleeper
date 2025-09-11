@@ -37,14 +37,11 @@ import java.util.Map;
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     private final IFunction lambda;
-    private final String id;
     private final Provider provider;
 
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, LoggingStack loggingStack, BuiltJars jars) {
 
         super(scope, id);
-
-        this.id = id;
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -74,7 +71,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
-        CustomResource.Builder.create(scope, id)
+        CustomResource.Builder.create(scope, scope.getNode().getId())
                 .resourceType("Custom::AutoDeleteS3Objects")
                 .properties(Map.of("bucket", bucketName))
                 .serviceToken(provider.getServiceToken())
