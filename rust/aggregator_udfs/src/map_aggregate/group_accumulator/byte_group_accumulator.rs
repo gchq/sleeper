@@ -670,7 +670,8 @@ mod tests {
     fn update_batch_should_fail_on_zero_or_multi_column() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
 
         // When
         let result = acc.update_batch(&[], &[1], None, 1);
@@ -701,7 +702,8 @@ mod tests {
     fn update_batch_should_not_update_zero_maps() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -719,7 +721,8 @@ mod tests {
     fn update_batch_should_not_update_single_empty_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -739,7 +742,8 @@ mod tests {
     fn update_batch_should_update_single_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([(s!["3"], 0)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
@@ -765,7 +769,8 @@ mod tests {
     fn update_batch_should_update_two_single_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
@@ -797,7 +802,8 @@ mod tests {
     fn update_batch_should_update_multiple_maps() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([
             (s!["3"], 0),
@@ -846,7 +852,8 @@ mod tests {
     fn update_batch_should_update_multiple_maps_multiple_groups() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_cache = HashMap::<Arc<Vec<u8>>, usize>::from([
             (s!["3"], 0),
@@ -912,7 +919,8 @@ mod tests {
     fn evaluate_should_produce_results_single_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["1"], 9), (s!["2"], 7)]);
 
@@ -952,7 +960,8 @@ mod tests {
     fn evaluate_should_produce_results_multiple_groups() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Binary, DataType::Int64);
-        let mut acc = ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc =
+            ByteGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_first_group =
             HashMap::from([(s!["3"], 10), (s!["1"], 10), (s!["2"], 7), (s!["4"], 11)]);

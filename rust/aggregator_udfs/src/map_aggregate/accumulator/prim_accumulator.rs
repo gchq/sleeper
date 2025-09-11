@@ -210,7 +210,11 @@ mod tests {
         let expected = map.clone();
 
         // When
-        update_primitive_map::<Int64Builder, Int64Builder>(None, &mut map, &UdfMapAggregatorOp::Sum);
+        update_primitive_map::<Int64Builder, Int64Builder>(
+            None,
+            &mut map,
+            &UdfMapAggregatorOp::Sum,
+        );
 
         // Then - expect no changes
         assert_eq!(map, expected);
@@ -470,8 +474,10 @@ mod tests {
     fn update_batch_should_fail_on_zero_or_multi_column() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-        let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc = PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            UdfMapAggregatorOp::Sum,
+        )?;
 
         // When
         let result = acc.update_batch(&[]);
@@ -502,8 +508,10 @@ mod tests {
     fn update_batch_should_not_update_zero_maps() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-        let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc = PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            UdfMapAggregatorOp::Sum,
+        )?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -520,8 +528,10 @@ mod tests {
     fn update_batch_should_not_update_single_empty_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-        let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc = PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            UdfMapAggregatorOp::Sum,
+        )?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -539,8 +549,10 @@ mod tests {
     fn update_batch_should_update_single_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-        let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc = PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            UdfMapAggregatorOp::Sum,
+        )?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10)]);
 
@@ -561,8 +573,10 @@ mod tests {
     fn update_batch_should_update_two_single_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-        let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc = PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            UdfMapAggregatorOp::Sum,
+        )?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10), (2, 5)]);
 
@@ -587,8 +601,10 @@ mod tests {
     fn update_batch_should_update_multiple_maps() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-        let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc = PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            UdfMapAggregatorOp::Sum,
+        )?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10), (1, 13), (2, 7), (4, 10)]);
 
@@ -623,8 +639,10 @@ mod tests {
     fn evaluate_should_produce_results() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
-        let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
+        let mut acc = PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(
+            &mt,
+            UdfMapAggregatorOp::Sum,
+        )?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10), (1, 9), (2, 7)]);
 
