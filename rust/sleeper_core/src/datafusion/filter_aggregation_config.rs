@@ -18,7 +18,7 @@ use crate::filter_aggregation_config::{
     filter::Filter,
 };
 use aggregator_udfs::{
-    map_aggregate::{MapAggregator, MapAggregatorOp},
+    map_aggregate::{MapAggregator, UdfMapAggregatorOp},
     nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
 };
 use datafusion::{
@@ -90,11 +90,11 @@ impl Aggregate {
 }
 
 impl MapAggregateOp {
-    fn to_udf_op(&self) -> MapAggregatorOp {
+    fn to_udf_op(&self) -> UdfMapAggregatorOp {
         match self {
-            MapAggregateOp::Sum => MapAggregatorOp::Sum,
-            MapAggregateOp::Min => MapAggregatorOp::Min,
-            MapAggregateOp::Max => MapAggregatorOp::Max,
+            MapAggregateOp::Sum => UdfMapAggregatorOp::Sum,
+            MapAggregateOp::Min => UdfMapAggregatorOp::Min,
+            MapAggregateOp::Max => UdfMapAggregatorOp::Max,
         }
     }
 }

@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::map_aggregate::{MapAggregatorOp, aggregator::PrimBuilderType};
+use crate::map_aggregate::{UdfMapAggregatorOp, aggregator::PrimBuilderType};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, MapBuilder, MapFieldNames,
@@ -42,7 +42,7 @@ fn update_string_map<VBuilder>(
         String,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
-    op: &MapAggregatorOp,
+    op: &UdfMapAggregatorOp,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
@@ -74,7 +74,7 @@ where
     inner_field_type: DataType,
     values:
         HashMap<String, <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native>,
-    op: MapAggregatorOp,
+    op: UdfMapAggregatorOp,
 }
 
 impl<VBuilder> StringMapAccumulator<VBuilder>
@@ -89,7 +89,7 @@ where
     /// # Errors
     /// If the incorrect type of data type is provided. Must me a map type with an
     /// inner Struct type.
-    pub fn try_new(map_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: UdfMapAggregatorOp) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -181,7 +181,7 @@ mod tests {
     use crate::{
         assert_error,
         map_aggregate::{
-            MapAggregatorOp,
+            UdfMapAggregatorOp,
             accumulator::string_accumulator::{StringMapAccumulator, update_string_map},
             aggregator::map_test_common::make_map_datatype,
         },
@@ -214,7 +214,7 @@ mod tests {
         let expected = map.clone();
 
         // When
-        update_string_map::<Int64Builder>(None, &mut map, &MapAggregatorOp::Sum);
+        update_string_map::<Int64Builder>(None, &mut map, &UdfMapAggregatorOp::Sum);
 
         // Then - expect no changes
         assert_eq!(map, expected);
@@ -243,7 +243,7 @@ mod tests {
         update_string_map::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then - expect no changes
@@ -285,7 +285,7 @@ mod tests {
         update_string_map::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -329,7 +329,7 @@ mod tests {
         update_string_map::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -378,7 +378,7 @@ mod tests {
         update_string_map::<Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
     }
 
@@ -388,7 +388,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
 
         // When
-        let acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert!(acc.is_ok());
@@ -398,7 +398,7 @@ mod tests {
     fn try_new_should_error_on_non_map_type() {
         // Given
         let mt = DataType::Int16;
-        let acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert_error!(
@@ -413,7 +413,7 @@ mod tests {
         // Given
         let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
         let acc: Result<_, DataFusionError> =
-            StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+            StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert_error!(
@@ -431,7 +431,7 @@ mod tests {
         let acc = StringMapAccumulator::<Int64Builder> {
             inner_field_type: DataType::Int16,
             values: HashMap::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // Then - should panic
@@ -447,7 +447,7 @@ mod tests {
                 Field::new("value1_name", DataType::Int64, false),
             ])),
             values: HashMap::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // When
@@ -469,7 +469,7 @@ mod tests {
                 Field::new("value1_name", DataType::UInt16, false),
             ])),
             values: HashMap::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // When
@@ -484,7 +484,7 @@ mod tests {
     fn update_batch_should_fail_on_zero_or_multi_column() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
 
         // When
         let result = acc.update_batch(&[]);
@@ -515,7 +515,7 @@ mod tests {
     fn update_batch_should_not_update_zero_maps() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -532,7 +532,7 @@ mod tests {
     fn update_batch_should_not_update_single_empty_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -550,7 +550,7 @@ mod tests {
     fn update_batch_should_update_single_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10)]);
 
@@ -571,7 +571,7 @@ mod tests {
     fn update_batch_should_update_two_single_map() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["2"], 5)]);
 
@@ -596,7 +596,7 @@ mod tests {
     fn update_batch_should_update_multiple_maps() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["1"], 13), (s!["2"], 7), (s!["4"], 10)]);
 
@@ -631,7 +631,7 @@ mod tests {
     fn evaluate_should_produce_results() -> Result<(), DataFusionError> {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
-        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+        let mut acc = StringMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["1"], 9), (s!["2"], 7)]);
 

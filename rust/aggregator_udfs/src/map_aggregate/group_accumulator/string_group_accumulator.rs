@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::map_aggregate::{MapAggregatorOp, aggregator::PrimBuilderType, state::MapNullState};
+use crate::map_aggregate::{UdfMapAggregatorOp, aggregator::PrimBuilderType, state::MapNullState};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BooleanArray, MapBuilder,
@@ -62,7 +62,7 @@ where
         >,
     >,
     nulls: MapNullState,
-    op: MapAggregatorOp,
+    op: UdfMapAggregatorOp,
 }
 
 impl<VBuilder> StringGroupMapAccumulator<VBuilder>
@@ -77,7 +77,7 @@ where
     // # Errors
     // If the incorrect type of data type is provided. Must me a map type with an
     // inner Struct type.
-    pub fn try_new(map_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: UdfMapAggregatorOp) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -140,7 +140,7 @@ fn update_string_map_group<VBuilder>(
     >,
     key_cache: &mut HashMap<Arc<String>, usize>,
     keys: &mut Vec<Arc<String>>,
-    op: &MapAggregatorOp,
+    op: &UdfMapAggregatorOp,
 ) where
     VBuilder: ArrayBuilder + PrimBuilderType,
     <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native: NumAssign + Ord,
@@ -293,7 +293,7 @@ mod tests {
     use crate::{
         assert_error,
         map_aggregate::{
-            MapAggregatorOp,
+            UdfMapAggregatorOp,
             aggregator::map_test_common::make_map_datatype,
             group_accumulator::string_group_accumulator::{
                 StringGroupMapAccumulator, update_string_map_group,
@@ -329,7 +329,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
 
         // When
-        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert!(acc.is_ok());
@@ -339,7 +339,7 @@ mod tests {
     fn try_new_should_error_on_non_map_type() {
         // Given
         let mt = DataType::Int16;
-        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert_error!(
@@ -353,7 +353,7 @@ mod tests {
     fn try_new_should_error_on_wrong_inner_type() {
         // Given
         let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
-        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+        let acc = StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert_error!(
@@ -374,7 +374,7 @@ mod tests {
             keys: Vec::with_capacity(200),
             nulls: MapNullState::new(),
             key_cache: HashMap::with_capacity(200),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // Then - should panic
@@ -393,7 +393,7 @@ mod tests {
             keys: Vec::with_capacity(200),
             nulls: MapNullState::new(),
             key_cache: HashMap::with_capacity(200),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // When
@@ -418,7 +418,7 @@ mod tests {
             keys: Vec::with_capacity(200),
             nulls: MapNullState::new(),
             key_cache: HashMap::with_capacity(200),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // When
@@ -451,7 +451,7 @@ mod tests {
             &mut map,
             &mut key_cache,
             &mut klist,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then - expect no changes
@@ -493,7 +493,7 @@ mod tests {
             &mut map,
             &mut key_cache,
             &mut klist,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then - expect no changes
@@ -548,7 +548,7 @@ mod tests {
             &mut map,
             &mut key_cache,
             &mut klist,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -607,7 +607,7 @@ mod tests {
             &mut map,
             &mut key_cache,
             &mut klist,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -662,7 +662,7 @@ mod tests {
             &mut map,
             &mut key_cache,
             &mut klist,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
     }
 
@@ -671,7 +671,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
 
         // When
         let result = acc.update_batch(&[], &[1], None, 1);
@@ -703,7 +703,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -722,7 +722,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -743,7 +743,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_cache = HashMap::<Arc<String>, usize>::from([(s!["3"], 0)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
@@ -770,7 +770,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_cache = HashMap::<Arc<String>, usize>::from([(s!["3"], 0), (s!["2"], 1)]);
         let mut expected_group_map = HashMap::<usize, i64, BuildNoHashHasher<usize>>::default();
@@ -803,7 +803,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_cache = HashMap::<Arc<String>, usize>::from([
             (s!["3"], 0),
@@ -853,7 +853,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_cache = HashMap::<Arc<String>, usize>::from([
             (s!["3"], 0),
@@ -920,7 +920,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(s!["3"], 10), (s!["1"], 9), (s!["2"], 7)]);
 
@@ -961,7 +961,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Utf8, DataType::Int64);
         let mut acc =
-            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            StringGroupMapAccumulator::<Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected_first_group =
             HashMap::from([(s!["3"], 10), (s!["1"], 10), (s!["2"], 7), (s!["4"], 11)]);

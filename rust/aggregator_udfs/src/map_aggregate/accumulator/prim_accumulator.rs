@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::map_aggregate::{MapAggregatorOp, aggregator::PrimBuilderType};
+use crate::map_aggregate::{UdfMapAggregatorOp, aggregator::PrimBuilderType};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, MapBuilder, MapFieldNames, StructArray,
@@ -41,7 +41,7 @@ fn update_primitive_map<KBuilder, VBuilder>(
         <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
-    op: &MapAggregatorOp,
+    op: &UdfMapAggregatorOp,
 ) where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
@@ -80,7 +80,7 @@ where
         <<KBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
         <<VBuilder as PrimBuilderType>::ArrowType as ArrowPrimitiveType>::Native,
     >,
-    op: MapAggregatorOp,
+    op: UdfMapAggregatorOp,
 }
 
 impl<KBuilder, VBuilder> PrimMapAccumulator<KBuilder, VBuilder>
@@ -96,7 +96,7 @@ where
     /// # Errors
     /// If the incorrect type of data type is provided. Must me a map type with an
     /// inner Struct type.
-    pub fn try_new(map_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: UdfMapAggregatorOp) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -190,7 +190,7 @@ mod tests {
     use super::{PrimMapAccumulator, update_primitive_map};
     use crate::{
         assert_error,
-        map_aggregate::{MapAggregatorOp, aggregator::map_test_common::make_map_datatype},
+        map_aggregate::{UdfMapAggregatorOp, aggregator::map_test_common::make_map_datatype},
     };
     use arrow::{
         array::{AsArray, Int64Array, Int64Builder, StructBuilder, UInt16Builder},
@@ -210,7 +210,7 @@ mod tests {
         let expected = map.clone();
 
         // When
-        update_primitive_map::<Int64Builder, Int64Builder>(None, &mut map, &MapAggregatorOp::Sum);
+        update_primitive_map::<Int64Builder, Int64Builder>(None, &mut map, &UdfMapAggregatorOp::Sum);
 
         // Then - expect no changes
         assert_eq!(map, expected);
@@ -236,7 +236,7 @@ mod tests {
         update_primitive_map::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then - expect no changes
@@ -275,7 +275,7 @@ mod tests {
         update_primitive_map::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -316,7 +316,7 @@ mod tests {
         update_primitive_map::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -362,7 +362,7 @@ mod tests {
         update_primitive_map::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
     }
 
@@ -373,7 +373,7 @@ mod tests {
 
         // When
         let acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert!(acc.is_ok());
@@ -384,7 +384,7 @@ mod tests {
         // Given
         let mt = DataType::Int16;
         let acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert_error!(
@@ -399,7 +399,7 @@ mod tests {
         // Given
         let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
         let acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum);
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum);
 
         // Then
         assert_error!(
@@ -417,7 +417,7 @@ mod tests {
         let acc = PrimMapAccumulator::<Int64Builder, Int64Builder> {
             inner_field_type: DataType::Int16,
             values: HashMap::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // Then - should panic
@@ -433,7 +433,7 @@ mod tests {
                 Field::new("value1_name", DataType::Int64, false),
             ])),
             values: HashMap::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // When
@@ -455,7 +455,7 @@ mod tests {
                 Field::new("value1_name", DataType::UInt16, false),
             ])),
             values: HashMap::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // When
@@ -471,7 +471,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
 
         // When
         let result = acc.update_batch(&[]);
@@ -503,7 +503,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -521,7 +521,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
 
         // When
@@ -540,7 +540,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10)]);
 
@@ -562,7 +562,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10), (2, 5)]);
 
@@ -588,7 +588,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10), (1, 13), (2, 7), (4, 10)]);
 
@@ -624,7 +624,7 @@ mod tests {
         // Given
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc =
-            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, MapAggregatorOp::Sum)?;
+            PrimMapAccumulator::<Int64Builder, Int64Builder>::try_new(&mt, UdfMapAggregatorOp::Sum)?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10), (1, 9), (2, 7)]);
 
