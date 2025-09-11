@@ -4203,6 +4203,7 @@ dependencies = [
  "tempfile",
  "test-log",
  "test_util",
+ "thiserror",
  "tokio",
  "tokio-test",
  "url",
