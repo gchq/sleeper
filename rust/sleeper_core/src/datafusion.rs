@@ -28,6 +28,7 @@ use crate::{
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
+    filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
@@ -203,6 +204,10 @@ impl<'a> SleeperOperations<'a> {
     /// An error will result if the frame cannot be filtered according to the given
     /// expression.
     fn apply_user_filters(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        let mut out_frame = frame;
+        for filter in self.config.filters.iter() {
+            out_frame = out_frame.filter(filter.create_filter_expr()?)?;
+        }
         Ok(
             if let Some(filter) = self
                 .parse_iterator_config()?
@@ -210,9 +215,9 @@ impl<'a> SleeperOperations<'a> {
                 .and_then(FilterAggregationConfig::filter)
             {
                 info!("Applying Sleeper filters: {filter:?}");
-                frame.filter(filter.create_filter_expr()?)?
+                out_frame.filter(filter.create_filter_expr()?)?
             } else {
-                frame
+                out_frame
             },
         )
     }
@@ -235,29 +240,38 @@ impl<'a> SleeperOperations<'a> {
     /// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified,
     /// then an error will result.
     fn apply_aggregations(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        let out_frame = self.apply_aggregation(&self.config.aggregates, frame)?;
         Ok(
-            if let Some(aggregations) = self
+            if let Some(aggregates) = self
                 .parse_iterator_config()?
                 .as_ref()
                 .and_then(FilterAggregationConfig::aggregation)
             {
-                info!("Applying Sleeper aggregations: {aggregations:?}");
-                // Grab row and sort key columns
-                let group_by_cols = self.config.sorting_columns();
-
-                // Check aggregations meet validity checks
-                validate_aggregations(&group_by_cols, frame.schema(), aggregations)?;
-                let aggregations_to_apply = aggregations
-                    .iter()
-                    .map(|agg| agg.to_expr(&frame))
-                    .collect::<Result<Vec<_>, _>>()?;
-                frame.aggregate(
-                    group_by_cols.iter().map(|e| col(*e)).collect(),
-                    aggregations_to_apply,
-                )?
+                self.apply_aggregation(aggregates, out_frame)?
             } else {
-                frame
+                out_frame
             },
+        )
+    }
+
+    fn apply_aggregation(
+        &self,
+        aggregates: &[Aggregate],
+        frame: DataFrame,
+    ) -> Result<DataFrame, DataFusionError> {
+        if aggregates.is_empty() {
+            return Ok(frame);
+        }
+        info!("Applying Sleeper aggregation: {aggregates:?}");
+        let group_by_cols = self.config.sorting_columns();
+        validate_aggregations(&group_by_cols, frame.schema(), aggregates)?;
+        let aggregation_expressions = aggregates
+            .iter()
+            .map(|agg| agg.to_expr(&frame))
+            .collect::<Result<Vec<_>, _>>()?;
+        frame.aggregate(
+            group_by_cols.iter().map(|e| col(*e)).collect(),
+            aggregation_expressions,
         )
     }
 
