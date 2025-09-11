@@ -579,8 +579,9 @@ public class QueryExecutorIT {
                                 .build());
     }
 
-    @Test
-    public void shouldReturnCorrectDataWithMultidimRowKey() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWithMultidimRowKey(String queryEngine) throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
@@ -590,6 +591,7 @@ public class QueryExecutorIT {
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
@@ -705,8 +707,10 @@ public class QueryExecutorIT {
                                 .build());
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws QueryException, IOException, IteratorCreationException, ObjectFactoryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey(
+            String queryEngine) throws QueryException, IOException, IteratorCreationException, ObjectFactoryException {
         // Given
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
@@ -716,6 +720,7 @@ public class QueryExecutorIT {
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         //  Partitions:
         //  - Root partition covers the whole space
         //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
@@ -1005,8 +1010,9 @@ public class QueryExecutorIT {
                                 .build());
     }
 
-    @Test
-    public void shouldReturnDataCorrectlySorted() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnDataCorrectlySorted(String queryEngine) throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder()
@@ -1016,6 +1022,7 @@ public class QueryExecutorIT {
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
@@ -1060,8 +1067,10 @@ public class QueryExecutorIT {
         }
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied(
+            String queryEngine) throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Field field = new Field("id", new StringType());
         Schema schema = Schema.builder()
@@ -1072,6 +1081,7 @@ public class QueryExecutorIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         List<Row> rows = getRowsForAgeOffIteratorTest();
         ingestData(instanceProperties, stateStore, tableProperties, rows.iterator());
