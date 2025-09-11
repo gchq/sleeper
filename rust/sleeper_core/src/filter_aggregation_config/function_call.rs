@@ -56,7 +56,7 @@ pub enum FunctionCallError {
     ParameterNotFound { function_name: String, index: usize },
 }
 
-fn add_s_if_plural<T>(slice: &'static [T]) -> &'static str {
+fn add_s_if_plural<T>(slice: &[T]) -> &'static str {
     if slice.len() == 1 { "" } else { "s" }
 }
 
