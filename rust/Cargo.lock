@@ -1335,9 +1335,9 @@ dependencies = [
 
 [[package]]
 name = "cxx-build"
-version = "1.0.181"
+version = "1.0.183"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e48d81746fe56e136ecca3ebb309b43949d737a4c34473d299a0d1fd20bdfc16"
+checksum = "bfb81a0b7d006a8761dd14f39470c532fede5df0976a296d20b06eff36690772"
 dependencies = [
  "cc",
  "codespan-reporting",
