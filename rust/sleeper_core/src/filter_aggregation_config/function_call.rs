@@ -33,7 +33,7 @@ pub enum FunctionParameter<'h> {
 pub enum FunctionCallError {
     #[error(
         "{function_name} expects {} argument{} ({}), found {actual_num_parameters}",
-        expected_parameters.len(), if expected_parameters.len() == 1 { ""} else {"s"}, expected_parameters.join(", ")
+        expected_parameters.len(), add_s_if_plural(expected_parameters), expected_parameters.join(", ")
     )]
     WrongNumberOfParameters {
         function_name: String,
@@ -54,6 +54,10 @@ pub enum FunctionCallError {
         "{function_name} parameter not found at index {index}, the number of parameters was not validated correctly"
     )]
     ParameterNotFound { function_name: String, index: usize },
+}
+
+fn add_s_if_plural<T>(slice: &'static [T]) -> &'static str {
+    if slice.len() == 1 { "" } else { "s" }
 }
 
 impl<'h> FunctionCall<'h> {
