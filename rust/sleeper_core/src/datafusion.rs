@@ -205,7 +205,7 @@ impl<'a> SleeperOperations<'a> {
     /// expression.
     fn apply_user_filters(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         let mut out_frame = frame;
-        for filter in self.config.filters.iter() {
+        for filter in &self.config.filters {
             out_frame = out_frame.filter(filter.create_filter_expr()?)?;
         }
         Ok(

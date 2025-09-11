@@ -62,6 +62,10 @@ impl FilterAggregationConfig {
 impl Filter {
     /// Creates a filtering expression for this filter instance. The returned
     /// expression can be passed to [`DataFrame::filter`].
+    /// # Errors
+    /// If any of:
+    ///  * the `max_age` of an age off filter is not representable as a timestamp
+    ///  * the local system time is before the UNIX epoch
     pub fn create_filter_expr(&self) -> Result<Expr> {
         match self {
             Self::Ageoff { column, max_age } => {
@@ -72,7 +76,9 @@ impl Filter {
 }
 
 impl Aggregate {
-    // Create a DataFusion logical expression to represent this aggregation operation.
+    /// Creates a `DataFusion` logical expression to represent this aggregation operation.
+    /// # Errors
+    /// If the type of the column could not be computed, or a map aggregation is set for a non-map column.
     pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
         Ok(match &self.operation {
             AggOp::Sum => non_null_sum(col(&self.column)),

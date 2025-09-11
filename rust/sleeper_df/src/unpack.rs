@@ -64,7 +64,7 @@ pub fn unpack_str<'a>(pointer: *const c_char) -> Result<&'a str> {
 }
 
 pub fn unpack_string(pointer: *const c_char) -> Result<String> {
-    unpack_str(pointer).map(|s| s.to_owned())
+    unpack_str(pointer).map(ToOwned::to_owned)
 }
 
 pub fn unpack_string_opt(pointer: *const c_char) -> Result<Option<String>> {
