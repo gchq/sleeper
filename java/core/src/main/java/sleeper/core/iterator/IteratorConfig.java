@@ -15,7 +15,7 @@
  */
 package sleeper.core.iterator;
 
-/** Config class for getting iterator's from the iterator factory. */
+/** Configuration for operations to be applied to processed rows with iterators. */
 public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
