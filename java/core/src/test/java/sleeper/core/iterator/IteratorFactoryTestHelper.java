@@ -23,6 +23,9 @@ import sleeper.core.util.ObjectFactory;
  */
 public class IteratorFactoryTestHelper {
 
+    private IteratorFactoryTestHelper() {
+    }
+
     /**
      * Creates the default iterator for a Sleeper table, which is applied during compaction.
      *

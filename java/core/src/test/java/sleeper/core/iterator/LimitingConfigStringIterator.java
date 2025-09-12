@@ -22,6 +22,9 @@ import sleeper.core.schema.Schema;
 
 import java.util.List;
 
+/**
+ * An example iterator that limits the number of rows read.
+ */
 public class LimitingConfigStringIterator implements ConfigStringIterator {
 
     private int limit;
