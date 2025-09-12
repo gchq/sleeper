@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 public class AggregationFilteringIteratorTest {
-    private static Schema defaultSchema;
+    private Schema defaultSchema;
 
     @BeforeEach
     void setUp() {
