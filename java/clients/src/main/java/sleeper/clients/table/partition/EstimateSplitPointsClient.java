@@ -17,9 +17,9 @@ package sleeper.clients.table.partition;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.LimitingIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.ConcatenatingIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;

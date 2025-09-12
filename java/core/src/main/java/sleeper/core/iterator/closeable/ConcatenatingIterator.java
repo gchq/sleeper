@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
+package sleeper.core.iterator.closeable;
 
-import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 
 import java.io.IOException;
