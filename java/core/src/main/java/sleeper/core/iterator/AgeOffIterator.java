@@ -16,6 +16,7 @@
 package sleeper.core.iterator;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.FilteringIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
