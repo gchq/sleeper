@@ -107,7 +107,6 @@ public class IteratorFactoryTest {
         assertThat(output).containsExactly(
                 new Row(Map.of("key", 2, "value", 9999999999999997L)),
                 new Row(Map.of("key", 3, "value", 9999999999999998L)));
-
     }
 
     @Test
