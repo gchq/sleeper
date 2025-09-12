@@ -45,11 +45,8 @@ public class AggregationFilteringIterator implements SortedRowIterator {
     /** Table schema being filtered. */
     private Schema schema;
 
-    public void setFilterAggregationConfig(FilterAggregationConfig config) {
+    public AggregationFilteringIterator(FilterAggregationConfig config, Schema schema) {
         this.config = config;
-    }
-
-    public void setSchema(Schema schema) {
         this.schema = schema;
     }
 
@@ -88,11 +85,13 @@ public class AggregationFilteringIterator implements SortedRowIterator {
      * @return        the source iterator or a new filtering iterator
      */
     private CloseableIterator<Row> maybeCreateFilter(CloseableIterator<Row> source) {
-        return config.ageOffColumn().map(filter_col -> {
+        if (config.ageOffColumn().size() > 0) {
             AgeOffIterator ageoff = new AgeOffIterator();
             // Age off iterator operates in milliseconds
-            ageoff.init(String.format("%s,%d", filter_col, config.maxAge()), schema);
+            ageoff.init(String.format("%s,%d", config.ageOffColumn().get(0), config.maxAge()), schema);
             return ageoff.apply(source);
-        }).orElse(source);
+        } else {
+            return source;
+        }
     }
 }

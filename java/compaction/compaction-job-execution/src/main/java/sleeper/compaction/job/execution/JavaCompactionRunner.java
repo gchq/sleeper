@@ -144,8 +144,9 @@ public class JavaCompactionRunner implements CompactionRunner {
         IteratorConfig config = IteratorConfig.builder()
                 .iteratorClassName(compactionJob.getIteratorClassName())
                 .iteratorConfigString(compactionJob.getIteratorConfig())
-                .filters(compactionJob.getFilterConfig())
-                .aggregationString(compactionJob.getAggregationConfig())
+                .filterAggregationConfig(compactionJob.getFilterConfig(),
+                        compactionJob.getAggregationConfig(),
+                        schema)
                 .build();
         if (config.shouldIteratorBeApplied()) {
             mergingIterator = new IteratorFactory(objectFactory)

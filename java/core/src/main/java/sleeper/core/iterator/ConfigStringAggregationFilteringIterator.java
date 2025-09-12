@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,7 +66,7 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
     /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
     public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
 
-    private final AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+    private AggregationFilteringIterator iterator;
 
     @Override
     public List<String> getRequiredValueFields() {
@@ -83,8 +82,7 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
     public void init(String configString, Schema schema) {
         FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());
         validate(iteratorConfig, schema);
-        iterator.setFilterAggregationConfig(iteratorConfig);
-        iterator.setSchema(schema);
+        iterator = new AggregationFilteringIterator(iteratorConfig, schema);
     }
 
     /**
@@ -123,11 +121,11 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
         // Following list needs to be mutable, hence Collectors.toList()
         List<String> filterAggs = Arrays.stream(configParts[1].split(",")).map(String::strip).collect(Collectors.toList());
         // We only support age-off filtering
-        Optional<String> filter = Optional.empty();
+        List<String> filter = new ArrayList<String>();
         long maxAge = 0;
         if (filterAggs.size() > 0) {
             if (filterAggs.get(0).startsWith("ageoff=")) {
-                filter = Optional.of(filterAggs.get(0).split("=", 2)[1].replace("'", ""));
+                filter.add(filterAggs.get(0).split("=", 2)[1].replace("'", ""));
                 maxAge = Long.parseLong(filterAggs.get(1).replace("'", ""));
                 // Remove these first two processed elements of filter_aggs list
                 // This is a really hacky implementation

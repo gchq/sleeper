@@ -37,13 +37,14 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class AggregationFilteringIteratorTest {
     @Test
     public void shouldThrowOnUninitialisedApply() {
         assertThatIllegalStateException().isThrownBy(() -> {
             // Given
-            AggregationFilteringIterator afi = new AggregationFilteringIterator();
+            AggregationFilteringIterator afi = new AggregationFilteringIterator(null, createSchemaWithKey("key1"));
             afi.apply(null);
         }).withMessage("AggregatingIterator has not been initialised, call init()");
     }
@@ -52,7 +53,7 @@ public class AggregationFilteringIteratorTest {
     public void shouldThrowOnUninitialisedGetRequiredValues() {
         assertThatIllegalStateException().isThrownBy(() -> {
             // Given
-            AggregationFilteringIterator afi = new AggregationFilteringIterator();
+            AggregationFilteringIterator afi = new AggregationFilteringIterator(null, createSchemaWithKey("key1"));
             afi.getRequiredValueFields();
         }).withMessage("AggregatingIterator has not been initialised, call init()");
     }
@@ -68,7 +69,7 @@ public class AggregationFilteringIteratorTest {
         SortedRowIterator iterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("ageOff(value,1000)")
+                        .filterAggregationConfig("ageOff(value,1000)", null, schema)
                         .build(), schema);
         // Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
@@ -85,7 +86,7 @@ public class AggregationFilteringIteratorTest {
         SortedRowIterator ageOffIterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters(filters + "(value,1000)")
+                        .filterAggregationConfig(filters + "(value,1000)", null, schema)
                         .build(), schema);
 
         List<Row> rows = List.of(
@@ -132,8 +133,7 @@ public class AggregationFilteringIteratorTest {
         SortedRowIterator sumAggregatorIterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("sum(value)," + aggregator + "(map_value2)")
+                        .filterAggregationConfig(null, "sum(value)," + aggregator + "(map_value2)", schema)
                         .build(), schema);
 
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
@@ -186,8 +186,7 @@ public class AggregationFilteringIteratorTest {
         SortedRowIterator sumAggregatorIterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("sum(value)," + aggregator + "(map_value2)")
+                        .filterAggregationConfig(null, "sum(value)," + aggregator + "(map_value2)", schema)
                         .build(), schema);
 
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
@@ -239,8 +238,7 @@ public class AggregationFilteringIteratorTest {
         SortedRowIterator sumAggregatorIterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("sum(value)," + aggregator + "(map_value2)")
+                        .filterAggregationConfig(null, "sum(value)," + aggregator + "(map_value2)", schema)
                         .build(), schema);
 
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
@@ -275,8 +273,7 @@ public class AggregationFilteringIteratorTest {
         SortedRowIterator doubleAggregatorIterator = new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("SUM(value1),MAX(value2)")
+                        .filterAggregationConfig(null, "SUM(value1),MAX(value2)", schema)
                         .build(), schema);
 
         CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
@@ -306,8 +303,7 @@ public class AggregationFilteringIteratorTest {
         assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("bop(VALUE)")
+                        .filterAggregationConfig(null, "bop(VALUE)", schema)
                         .build(), schema))
                 .withMessage("Unable to parse operand. Operand: bop");
     }
@@ -323,8 +319,7 @@ public class AggregationFilteringIteratorTest {
         assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("MIN(failKey),MIN(sortKey),SUM(value)")
+                        .filterAggregationConfig(null, "MIN(failKey),MIN(sortKey),SUM(value)", schema)
                         .build(), schema))
                 .withMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
     }
@@ -339,8 +334,7 @@ public class AggregationFilteringIteratorTest {
         assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("MIN(doubleValue),SUM(doubleValue)")
+                        .filterAggregationConfig(null, "MIN(doubleValue),SUM(doubleValue)", schema)
                         .build(), schema))
                 .withMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
     }
@@ -355,8 +349,7 @@ public class AggregationFilteringIteratorTest {
         assertThatIllegalStateException().isThrownBy(() -> new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters("")
-                        .aggregationString("MIN(existsValue)")
+                        .filterAggregationConfig(null, "MIN(existsValue)", schema)
                         .build(), schema))
                 .withMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
 
@@ -371,7 +364,7 @@ public class AggregationFilteringIteratorTest {
         return new IteratorFactory(
                 new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .aggregationString(aggregator + "(value)")
+                        .filterAggregationConfig(null, aggregator + "(value)", schema)
                         .build(), schema);
     }
 }

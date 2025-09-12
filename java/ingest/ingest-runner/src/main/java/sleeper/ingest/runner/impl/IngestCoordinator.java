@@ -477,8 +477,9 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
                     .iteratorConfig(IteratorConfig.builder()
                             .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                             .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                            .filters(tableProperties.get(FILTERS_CONFIG))
-                            .aggregationString(tableProperties.get(AGGREGATIONS))
+                            .filterAggregationConfig(tableProperties.get(FILTERS_CONFIG),
+                                    tableProperties.get(AGGREGATIONS),
+                                    schema)
                             .build())
                     .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
         }

@@ -17,18 +17,17 @@ package sleeper.core.iterator;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Defines the filtering and aggregation configuration for this iterator.
  *
  * @param  groupingColumns           the columns that the aggregation will "group by"
- * @param  ageOffColumn              the optional column to have an age-off filter applied
+ * @param  ageOffColumn              the list of columns to have an age-off filter applied
  * @param  maxAge                    the maximum age in seconds for rows if an age off filter is to be applied
  * @param  aggregations              the list of aggregations to apply
  * @throws IllegalArgumentExpception if {@code groupingColumns} is empty
  */
-public record FilterAggregationConfig(List<String> groupingColumns, Optional<String> ageOffColumn, long maxAge, List<Aggregation> aggregations) {
+public record FilterAggregationConfig(List<String> groupingColumns, List<String> ageOffColumn, long maxAge, List<Aggregation> aggregations) {
 
     public FilterAggregationConfig {
         Objects.requireNonNull(groupingColumns, "groupingColumns");
@@ -37,5 +36,9 @@ public record FilterAggregationConfig(List<String> groupingColumns, Optional<Str
         }
         Objects.requireNonNull(ageOffColumn, "ageOffColumn");
         Objects.requireNonNull(aggregations, "aggregations");
+    }
+
+    public Boolean isConfigSet() {
+        return aggregations().size() > 0 || ageOffColumn.size() > 0;
     }
 }

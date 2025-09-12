@@ -21,7 +21,6 @@ import sleeper.core.row.Row;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
@@ -30,13 +29,13 @@ import static sleeper.core.iterator.AggregatorIteratorImpl.aggregateOnTo;
 public class AggregationIteratorImplTest {
 
     private static FilterAggregationConfig createConfig() {
-        return new FilterAggregationConfig(List.of("key1", "key2", "sort_key", "sort_key2"), Optional.empty(),
+        return new FilterAggregationConfig(List.of("key1", "key2", "sort_key", "sort_key2"), List.of(),
                 0,
                 List.of());
     }
 
     private static FilterAggregationConfig createConfigWithAggregations() {
-        return new FilterAggregationConfig(List.of("key1", "key2", "sort_key", "sort_key2"), Optional.empty(),
+        return new FilterAggregationConfig(List.of("key1", "key2", "sort_key", "sort_key2"), List.of(),
                 0,
                 List.of(new Aggregation("value1", AggregationOp.SUM),
                         new Aggregation("value2", AggregationOp.MIN)));
