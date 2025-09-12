@@ -55,7 +55,7 @@ public class TableDataStack extends NestedStack {
                 .build();
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, this.getStackId(), instanceProperties, dataBucket, bucketName);
+            autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, id, instanceProperties, dataBucket, bucketName);
         }
 
         instanceProperties.set(DATA_BUCKET, dataBucket.getBucketName());

@@ -133,7 +133,7 @@ public class BulkExportStack extends NestedStack {
                 .build();
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
 
-        IBucket exportResultsBucket = setupExportBucket(instanceProperties, coreStacks, autoDeleteS3ObjectsStack, lambdaCode);
+        IBucket exportResultsBucket = setupExportBucket(id, instanceProperties, coreStacks, autoDeleteS3ObjectsStack, lambdaCode);
         new BulkExportTaskResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ,
                 exportResultsBucket);
     }
@@ -172,13 +172,14 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create the export results bucket.
      *
+     * @param  id                       the stack id
      * @param  instanceProperties       the instance properties
      * @param  coreStacks               the core stacks
      * @param  autoDeleteS3ObjectsStack the s3 object auto delete stack
      * @param  lambdaCode               the lambda code
      * @return                          the export results bucket
      */
-    private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
+    private IBucket setupExportBucket(String id, InstanceProperties instanceProperties, CoreStacks coreStacks, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
             LambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         String bucketName = String.join("-", "sleeper",
@@ -197,7 +198,7 @@ public class BulkExportStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET, exportBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, this.getStackId(), instanceProperties, exportBucket, bucketName);
+            autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, id, instanceProperties, exportBucket, bucketName);
         }
 
         return exportBucket;
