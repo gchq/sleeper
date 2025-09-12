@@ -15,6 +15,8 @@
  */
 package sleeper.core.iterator;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
+
 import java.util.Iterator;
 
 /**

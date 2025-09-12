@@ -20,6 +20,7 @@ import com.google.common.collect.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 
 import java.io.IOException;

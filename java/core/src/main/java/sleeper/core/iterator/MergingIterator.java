@@ -18,6 +18,7 @@ package sleeper.core.iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;

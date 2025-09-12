@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;

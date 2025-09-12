@@ -18,10 +18,10 @@ package sleeper.core.util;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.AgeOffIterator;
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.iterator.WrappedIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;

@@ -15,9 +15,9 @@
  */
 package sleeper.example.iterator;
 
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.FilteringIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 

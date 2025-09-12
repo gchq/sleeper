@@ -15,6 +15,7 @@
  */
 package sleeper.core.iterator;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.key.Key;
 import sleeper.core.row.Row;
 

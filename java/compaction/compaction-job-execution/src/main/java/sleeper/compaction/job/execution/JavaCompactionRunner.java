@@ -26,9 +26,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.MergingIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
