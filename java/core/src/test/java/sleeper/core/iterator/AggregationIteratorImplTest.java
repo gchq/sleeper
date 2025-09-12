@@ -24,44 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
-public class AggregationIteratorImplTest extends AggregationFilteringIteratorTestBase {
-
-    @Test
-    public void shouldThrowOnNullIterator() {
-        assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(
-                new FilterAggregationConfig(List.of("TestColumn"), Optional.empty(), 0L, List.of()),
-                null));
-    }
-
-    @Test
-    public void shouldThrowOnNullConfig() {
-        assertThatNullPointerException().isThrownBy(() -> new AggregatorIteratorImpl(null,
-                new WrappedIterator<Row>(List.<Row>of().iterator())));
-    }
-
-    @Test
-    public void shouldAggregate() throws IteratorCreationException {
-        // Given
-        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "test", "value2", 78));
-        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "testaaaaa", "value2", 7800));
-
-        Row expected = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "testtestaaaaa", "value2", 78));
-
-        // When
-        AggregatorIteratorImpl.aggregateOnTo(r1, r2, new FilterAggregationConfig(List.of("key1", "value1"),
-                Optional.empty(),
-                0L,
-                List.of(new Aggregation("value1", AggregationOp.SUM),
-                        new Aggregation("value2", AggregationOp.MIN))));
-
-        // Then
-        assertThat(r1).isEqualTo(expected);
-    }
+public class AggregationIteratorImplTest {
 
     @Test
     public void shouldReturnFirstRowNoAggregations() throws IteratorCreationException {

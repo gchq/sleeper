@@ -46,7 +46,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
      * @param input  the source iterator
      * @param config the configuration
      */
-    public AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<Row> input) {
+    AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<Row> input) {
         this.config = Objects.requireNonNull(config, "config");
         this.input = Objects.requireNonNull(input, "input");
     }
