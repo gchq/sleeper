@@ -25,7 +25,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.util.ObjectFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -162,8 +161,6 @@ public class IteratorFactoryTest {
     }
 
     private SortedRowIterator createIterator() throws Exception {
-        return new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.from(tableProperties), tableProperties.getSchema());
+        return IteratorFactoryTestHelper.createIterator(tableProperties);
     }
 }
