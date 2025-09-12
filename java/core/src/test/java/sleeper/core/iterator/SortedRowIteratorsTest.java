@@ -17,18 +17,16 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.iterator.closeable.FilteringIterator;
-import sleeper.core.iterator.closeable.LimitingIterator;
 import sleeper.core.row.Row;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.iterator.SortedRowIteratorTestHelper.apply;
+import static sleeper.core.iterator.SortedRowIteratorTestHelper.filterOnValueField;
+import static sleeper.core.iterator.SortedRowIteratorTestHelper.limitRows;
+import static sleeper.core.iterator.SortedRowIteratorTestHelper.withRequiredValueFields;
 
 public class SortedRowIteratorsTest {
 
@@ -74,36 +72,5 @@ public class SortedRowIteratorsTest {
         // When / Then
         assertThat(iterators.getRequiredValueFields())
                 .containsExactly("something", "value", "other", "thing", "else");
-    }
-
-    protected static SortedRowIterator filterOnValueField(String field, Object value) {
-        return withRequiredValueFields(List.of(field),
-                input -> new FilteringIterator<>(input, row -> Objects.equals(value, row.get(field))));
-    }
-
-    protected static SortedRowIterator limitRows(int limit) {
-        return withNoRequiredValueFields(input -> new LimitingIterator<>(limit, input));
-    }
-
-    protected static SortedRowIterator withRequiredValueFields(List<String> requiredValueFields) {
-        return withRequiredValueFields(requiredValueFields, input -> input);
-    }
-
-    protected static SortedRowIterator withNoRequiredValueFields(Function<CloseableIterator<Row>, CloseableIterator<Row>> apply) {
-        return withRequiredValueFields(List.of(), apply);
-    }
-
-    private static SortedRowIterator withRequiredValueFields(List<String> requiredValueFields, Function<CloseableIterator<Row>, CloseableIterator<Row>> apply) {
-        return new SortedRowIterator() {
-            @Override
-            public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
-                return apply.apply(input);
-            }
-
-            @Override
-            public List<String> getRequiredValueFields() {
-                return requiredValueFields;
-            }
-        };
     }
 }
