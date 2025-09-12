@@ -322,7 +322,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, id, instanceProperties, resultsBucket, bucketName);
+            autoDeleteS3ObjectsStack.grantAccessToCustomResource(id, instanceProperties, resultsBucket, bucketName);
         }
 
         return resultsBucket;

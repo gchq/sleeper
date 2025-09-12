@@ -198,7 +198,7 @@ public class BulkExportStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET, exportBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, id, instanceProperties, exportBucket, bucketName);
+            autoDeleteS3ObjectsStack.grantAccessToCustomResource(id, instanceProperties, exportBucket, bucketName);
         }
 
         return exportBucket;

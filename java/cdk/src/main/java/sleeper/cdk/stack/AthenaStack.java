@@ -78,7 +78,7 @@ public class AthenaStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, id, instanceProperties, spillBucket, bucketName);
+        autoDeleteS3ObjectsStack.grantAccessToCustomResource(id, instanceProperties, spillBucket, bucketName);
 
         IKey spillMasterKey = createSpillMasterKey(this, instanceProperties);
         List<Policy> connectorPolicies = createConnectorPolicies(this, instanceProperties);

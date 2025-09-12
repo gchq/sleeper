@@ -50,7 +50,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
 
-        lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
+        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
@@ -58,20 +58,20 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS))
                 .timeout(Duration.minutes(10)));
 
-        provider = Provider.Builder.create(scope, id + "Provider")
+        provider = Provider.Builder.create(this, id + "Provider")
                 .onEventHandler(lambda)
                 .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER))
                 .build();
 
     }
 
-    public void grantAccessToCustomResource(Construct scope, String id, InstanceProperties instanceProperties,
+    public void grantAccessToCustomResource(String id, InstanceProperties instanceProperties,
             IBucket bucket, String bucketName) {
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
-        CustomResource.Builder.create(scope, id + "-AutoDelete")
+        CustomResource.Builder.create(this, id + "-AutoDelete")
                 .resourceType("Custom::AutoDeleteS3Objects")
                 .properties(Map.of("bucket", bucketName))
                 .serviceToken(provider.getServiceToken())
