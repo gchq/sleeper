@@ -53,7 +53,7 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
     private static final String SOURCE_CODE = "" +
             "import sleeper.core.row.Row;\n" +
             "import sleeper.core.schema.Schema;\n" +
-            "import sleeper.core.iterator.CloseableIterator;\n" +
+            "import sleeper.core.iterator.closeable.CloseableIterator;\n" +
             "import sleeper.core.iterator.ConfigStringIterator;\n" +
             "import java.util.List;\n" +
             "\n" +
