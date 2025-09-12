@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.iterator;
 
 /** Config class for getting iterator's from the iterator factory. */
 public class IteratorConfig {

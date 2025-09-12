@@ -28,9 +28,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.util.IteratorConfig;
-import sleeper.core.util.IteratorFactory;
-import sleeper.core.util.IteratorFactoryTest;
 import sleeper.core.util.ObjectFactory;
 
 import java.util.ArrayList;

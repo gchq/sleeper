@@ -15,12 +15,12 @@
  */
 package sleeper.ingest.runner.impl;
 
+import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.IteratorFactory;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.util.IteratorConfig;
-import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 
 import java.io.IOException;

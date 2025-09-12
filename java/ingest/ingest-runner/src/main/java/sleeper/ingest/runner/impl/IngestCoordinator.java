@@ -18,6 +18,7 @@ package sleeper.ingest.runner.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.Partition;
@@ -30,7 +31,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
