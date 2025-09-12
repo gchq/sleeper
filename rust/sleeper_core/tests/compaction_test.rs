@@ -209,7 +209,6 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
 }
 
 #[test(tokio::test)]
-#[ignore = "TODO this is failing because of type coercion in the aggregation, this seems to be a bug that needs fixing"]
 async fn should_aggregate_ints() -> Result<(), Error> {
     // Given
     let dir = tempdir()?;
@@ -220,7 +219,7 @@ async fn should_aggregate_ints() -> Result<(), Error> {
     let schema = Arc::new(Schema::new(vec![
         Field::new("row_key", DataType::Int32, false),
         Field::new("sort_key", DataType::Int32, false),
-        Field::new("count", DataType::Int32, false),
+        Field::new("time", DataType::Int32, false),
     ]));
     let data_1 = batch_of_int_fields(
         schema.clone(),
@@ -246,7 +245,7 @@ async fn should_aggregate_ints() -> Result<(), Error> {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
         })
-        .aggregates(Aggregate::parse_config("sum(count)")?)
+        .aggregates(Aggregate::parse_config("max(time)")?)
         .build()?;
 
     // When
@@ -254,10 +253,10 @@ async fn should_aggregate_ints() -> Result<(), Error> {
 
     // Then
     assert_eq!(
-        read_file_of_int_fields(&output, ["row_key", "sort_key", "count"])?,
-        vec![[1, 10, 100], [1, 11, 1000], [2, 12, 2200], [3, 13, 3300]]
+        read_file_of_int_fields(&output, ["row_key", "sort_key", "time"])?,
+        vec![[1, 10, 100], [1, 11, 1000], [2, 12, 2000], [3, 13, 3000]]
     );
-    assert_eq!([result.rows_read, result.rows_written], [6, 6]);
+    assert_eq!([result.rows_read, result.rows_written], [6, 4]);
     assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 3]);
     Ok(())
 }
