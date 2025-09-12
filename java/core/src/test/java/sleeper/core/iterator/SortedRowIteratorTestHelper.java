@@ -17,24 +17,22 @@ package sleeper.core.iterator;
 
 import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
-import sleeper.core.schema.Schema;
-import sleeper.core.util.ObjectFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class SortedRowIteratorTestBase {
+/**
+ * Helpers for working with SortedRowIterator.
+ */
+public class SortedRowIteratorTestHelper {
 
-    protected static List<Row> apply(SortedRowIterator iterator, List<Row> rows) {
+    private SortedRowIteratorTestHelper() {
+    }
+
+    public static List<Row> apply(SortedRowIterator iterator, List<Row> rows) {
         List<Row> output = new ArrayList<>();
         iterator.apply(new WrappedIterator<>(rows.iterator()))
                 .forEachRemaining(output::add);
         return output;
-    }
-
-    protected static SortedRowIterator createIterator(IteratorConfig config, Schema schema) throws Exception {
-        return new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(config, schema);
     }
 }

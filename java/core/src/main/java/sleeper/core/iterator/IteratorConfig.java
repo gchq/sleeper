@@ -15,22 +15,38 @@
  */
 package sleeper.core.iterator;
 
+import sleeper.core.properties.table.TableProperties;
+
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
+
 /** Configuration for operations to be applied to processed rows with iterators. */
 public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
-    private final String filters;
+    private final String filteringString;
     private final String aggregationString;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
-        this.filters = builder.filters;
+        this.filteringString = builder.filteringString;
         this.aggregationString = builder.aggregationString;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static IteratorConfig from(TableProperties tableProperties) {
+        return builder()
+                .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
+                .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
+                .filteringString(tableProperties.get(FILTERING_CONFIG))
+                .aggregationString(tableProperties.get(AGGREGATION_CONFIG))
+                .build();
     }
 
     public String getIteratorClassName() {
@@ -41,8 +57,8 @@ public class IteratorConfig {
         return iteratorConfigString;
     }
 
-    public String getFilters() {
-        return filters;
+    public String getFilteringString() {
+        return filteringString;
     }
 
     public String getAggregationString() {
@@ -55,7 +71,7 @@ public class IteratorConfig {
      * @return true if the iterator should be applied, otherwise false
      */
     public boolean shouldIteratorBeApplied() {
-        return iteratorClassName != null || filters != null || aggregationString != null;
+        return iteratorClassName != null || filteringString != null || aggregationString != null;
     }
 
     /**
@@ -64,7 +80,7 @@ public class IteratorConfig {
     public static final class Builder {
         private String iteratorClassName;
         private String iteratorConfigString;
-        private String filters;
+        private String filteringString;
         private String aggregationString;
 
         private Builder() {
@@ -93,20 +109,20 @@ public class IteratorConfig {
         }
 
         /**
-         * Sets the filters string.
+         * Sets the filtering configuration.
          *
-         * @param  filters the filters string to be used for the iterator
-         * @return         builder for method chaining
+         * @param  filteringString the filtering configuration to be applied to the data
+         * @return                 builder for method chaining
          */
-        public Builder filters(String filters) {
-            this.filters = filters;
+        public Builder filteringString(String filteringString) {
+            this.filteringString = filteringString;
             return this;
         }
 
         /**
-         * Sets the aggregation string.
+         * Sets the aggregation configuration.
          *
-         * @param  aggregationString the aggregation string to be used for the iterator
+         * @param  aggregationString the aggregation configuration to be applied to the data
          * @return                   builder for method chaining
          */
         public Builder aggregationString(String aggregationString) {

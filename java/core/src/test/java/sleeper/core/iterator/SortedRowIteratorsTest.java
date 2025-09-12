@@ -28,14 +28,15 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.iterator.SortedRowIteratorTestHelper.apply;
 
-public class SortedRowIteratorsTest extends SortedRowIteratorTestBase {
+public class SortedRowIteratorsTest {
 
     @Test
     void shouldApplyMultipleIteratorsInSequence() {
         // Given
         SortedRowIterators iterators = new SortedRowIterators(List.of(
-                filterAcceptingFieldValue("key", 2),
+                filterOnValueField("key", 2),
                 limitRows(2)));
 
         // When
@@ -75,29 +76,24 @@ public class SortedRowIteratorsTest extends SortedRowIteratorTestBase {
                 .containsExactly("something", "value", "other", "thing", "else");
     }
 
-    private SortedRowIterator filterAcceptingFieldValue(String field, Object value) {
-        return simpleIterator(input -> new FilteringIterator<>(input, row -> Objects.equals(value, row.get(field))));
+    protected static SortedRowIterator filterOnValueField(String field, Object value) {
+        return withRequiredValueFields(List.of(field),
+                input -> new FilteringIterator<>(input, row -> Objects.equals(value, row.get(field))));
     }
 
-    private SortedRowIterator limitRows(int limit) {
-        return simpleIterator(input -> new LimitingIterator<>(limit, input));
+    protected static SortedRowIterator limitRows(int limit) {
+        return withNoRequiredValueFields(input -> new LimitingIterator<>(limit, input));
     }
 
-    private SortedRowIterator withRequiredValueFields(List<String> requiredValueFields) {
-        return new SortedRowIterator() {
-            @Override
-            public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
-                return input;
-            }
-
-            @Override
-            public List<String> getRequiredValueFields() {
-                return requiredValueFields;
-            }
-        };
+    protected static SortedRowIterator withRequiredValueFields(List<String> requiredValueFields) {
+        return withRequiredValueFields(requiredValueFields, input -> input);
     }
 
-    private SortedRowIterator simpleIterator(Function<CloseableIterator<Row>, CloseableIterator<Row>> apply) {
+    protected static SortedRowIterator withNoRequiredValueFields(Function<CloseableIterator<Row>, CloseableIterator<Row>> apply) {
+        return withRequiredValueFields(List.of(), apply);
+    }
+
+    private static SortedRowIterator withRequiredValueFields(List<String> requiredValueFields, Function<CloseableIterator<Row>, CloseableIterator<Row>> apply) {
         return new SortedRowIterator() {
             @Override
             public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
@@ -106,9 +102,8 @@ public class SortedRowIteratorsTest extends SortedRowIteratorTestBase {
 
             @Override
             public List<String> getRequiredValueFields() {
-                return List.of();
+                return requiredValueFields;
             }
         };
     }
-
 }

@@ -45,8 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_ROWS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
-import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getLotsOfRows;
@@ -600,7 +600,7 @@ class IngestRowsIT extends IngestRowsTestBase {
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build());
-        tableProperties.set(FILTERS_CONFIG, "ageOff(value,1000)");
+        tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
@@ -644,7 +644,7 @@ class IngestRowsIT extends IngestRowsTestBase {
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build());
-        tableProperties.set(AGGREGATIONS, "sum(value)");
+        tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
