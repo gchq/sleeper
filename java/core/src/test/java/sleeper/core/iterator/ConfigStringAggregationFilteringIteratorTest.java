@@ -18,6 +18,7 @@ package sleeper.core.iterator;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
