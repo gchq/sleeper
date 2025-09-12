@@ -20,10 +20,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.FilteringIterator;
 import sleeper.core.iterator.closeable.LimitingIterator;
-import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,7 +29,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SortedRowIteratorsTest {
+public class SortedRowIteratorsTest extends SortedRowIteratorTestBase {
 
     @Test
     void shouldApplyMultipleIteratorsInSequence() {
@@ -75,13 +73,6 @@ public class SortedRowIteratorsTest {
         // When / Then
         assertThat(iterators.getRequiredValueFields())
                 .containsExactly("something", "value", "other", "thing", "else");
-    }
-
-    private List<Row> apply(SortedRowIterator iterator, List<Row> rows) {
-        List<Row> output = new ArrayList<>();
-        iterator.apply(new WrappedIterator<>(rows.iterator()))
-                .forEachRemaining(output::add);
-        return output;
     }
 
     private SortedRowIterator filterAcceptingFieldValue(String field, Object value) {

@@ -17,142 +17,122 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.util.ObjectFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class IteratorFactoryTest {
+public class IteratorFactoryTest extends SortedRowIteratorTestBase {
 
     @Test
-    public void shouldInitialiseIterator() throws IteratorCreationException {
+    public void shouldInitialiseIterator() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new LongType()))
                 .build();
-        SortedRowIterator ageOffIterator = new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.builder()
-                        .iteratorClassName(AgeOffIterator.class.getName())
-                        .iteratorConfigString("value,1000")
-                        .build(), schema);
-
-        List<Row> rows = List.of(
-                new Row(Map.of("key", "test", "value", 10L)),
-                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
-        CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
+        SortedRowIterator ageOffIterator = createIterator(IteratorConfig.builder()
+                .iteratorClassName(AgeOffIterator.class.getName())
+                .iteratorConfigString("value,1000")
+                .build(), schema);
 
         // When
-        List<Row> filtered = new ArrayList<>();
-        ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
+        List<Row> filtered = apply(ageOffIterator, List.of(
+                new Row(Map.of("key", "test", "value", 10L)),
+                new Row(Map.of("key", "test2", "value", 9999999999999999L))));
 
         // Then
         assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
     }
 
     @Test
-    public void shouldCreateAggregatingIterator() throws IteratorCreationException {
+    public void shouldCreateAggregatingIterator() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new LongType()))
                 .build();
-        SortedRowIterator ageOffIterator = new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.builder()
-                        .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
-                        .iteratorConfigString(";ageoff=value,1000,")
-                        .build(), schema);
-
-        List<Row> rows = List.of(
-                new Row(Map.of("key", "test", "value", 10L)),
-                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
-        CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
+        SortedRowIterator ageOffIterator = createIterator(IteratorConfig.builder()
+                .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                .iteratorConfigString(";ageoff=value,1000,")
+                .build(), schema);
 
         // When
-        List<Row> filtered = new ArrayList<>();
-        ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
+        List<Row> filtered = apply(ageOffIterator, List.of(
+                new Row(Map.of("key", "test", "value", 10L)),
+                new Row(Map.of("key", "test2", "value", 9999999999999999L))));
 
         // Then
         assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
     }
 
     @Test
-    public void shouldUseFiltersDataOverClassNameWhenBothSet() throws IteratorCreationException {
-        //When
+    public void shouldUseFiltersDataOverClassNameWhenBothSet() throws Exception {
+        // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new LongType()),
                         new Field("otherValue", new LongType()))
                 .build();
-        SortedRowIterator iterator = new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.builder()
-                        .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
-                        .iteratorConfigString("someFakeConfig") //Would throw illegal argument exception if used
-                        .filters("ageOff(otherValue,1000)")
-                        .build(), schema);
+        SortedRowIterator iterator = createIterator(IteratorConfig.builder()
+                .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                .iteratorConfigString("someFakeConfig") //Would throw illegal argument exception if used
+                .filters("ageOff(otherValue,1000)")
+                .build(), schema);
 
-        //Then
+        // When / Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "otherValue");
     }
 
     @Test
-    public void shouldUseAggregationsDataOverClassNameWhenBothSet() throws IteratorCreationException {
-        //When
+    public void shouldUseAggregationsDataOverClassNameWhenBothSet() throws Exception {
+        // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new LongType()),
                         new Field("otherValue", new LongType()))
                 .build();
-        SortedRowIterator iterator = new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.builder()
-                        .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
-                        .iteratorConfigString("someFakeConfig") //Would throw illegal argument exception if used
-                        .aggregationString("sum(value),sum(otherValue)")
-                        .build(), schema);
+        SortedRowIterator iterator = createIterator(IteratorConfig.builder()
+                .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
+                .iteratorConfigString("someFakeConfig") //Would throw illegal argument exception if used
+                .aggregationString("sum(value),sum(otherValue)")
+                .build(), schema);
 
-        //Then
+        // When / Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value", "otherValue");
     }
 
     @Test
-    public void shouldUseClassNameWhenNeitherFiltersOrAggregationsSet() throws IteratorCreationException {
-        //When
+    public void shouldUseClassNameWhenNeitherFiltersOrAggregationsSet() throws Exception {
+        // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new LongType()),
                         new Field("otherValue", new LongType()))
                 .build();
-        SortedRowIterator iterator = new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(IteratorConfig.builder()
+        SortedRowIterator iterator = createIterator(
+                IteratorConfig.builder()
                         .iteratorClassName(DataEngine.AGGREGATION_ITERATOR_NAME)
                         .iteratorConfigString("value;ageOff=value,1000")
                         .filters(null)
                         .aggregationString(null)
-                        .build(), schema);
+                        .build(),
+                schema);
 
-        //Then
+        // When / Then
         assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
     }
 
     @Test
-    public void shouldThrowExceptionWhenUnknownFilterApplied() throws IteratorCreationException {
+    public void shouldThrowExceptionWhenUnknownFilterApplied() {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
@@ -162,16 +142,14 @@ public class IteratorFactoryTest {
                 .filters("someother(value,1000)")
                 .build();
 
-        //Then
-        assertThatThrownBy(() -> new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(config, schema))
+        // When / Then
+        assertThatThrownBy(() -> createIterator(config, schema))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Sleeper table filter not set to match ageOff(column,age), was: someother");
     }
 
     @Test
-    public void shouldThrowExceptionWhenCantPassFilterValue() throws IteratorCreationException {
+    public void shouldThrowExceptionWhenCantPassFilterValue() {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new IntType()))
@@ -181,10 +159,8 @@ public class IteratorFactoryTest {
                 .filters("ageoff(value,oops)")
                 .build();
 
-        //Then
-        assertThatThrownBy(() -> new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTest.class.getClassLoader()))
-                .getIterator(config, schema))
+        // When / Then
+        assertThatThrownBy(() -> createIterator(config, schema))
                 .isInstanceOf(NumberFormatException.class);
     }
 }
