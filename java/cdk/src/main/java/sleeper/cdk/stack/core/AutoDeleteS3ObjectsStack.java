@@ -65,13 +65,13 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     }
 
-    public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
+    public void grantAccessToCustomResource(Construct scope, String id, InstanceProperties instanceProperties,
             IBucket bucket, String bucketName) {
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
-        CustomResource.Builder.create(scope, scope.getNode().getId() + "-AutoDelete")
+        CustomResource.Builder.create(scope, id + "-AutoDelete")
                 .resourceType("Custom::AutoDeleteS3Objects")
                 .properties(Map.of("bucket", bucketName))
                 .serviceToken(provider.getServiceToken())
