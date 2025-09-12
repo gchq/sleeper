@@ -26,6 +26,8 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -47,10 +49,10 @@ public class SystemTestBucketStack extends NestedStack {
     public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(scope, id);
         String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
-        //AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(scope, id + "-AutoDelete", properties.toInstancePropertiesForCdkUtils(),
-        //        getLoggingStack(this, properties.toInstancePropertiesForCdkUtils()), jars);
+        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, id + "-AutoDelete", properties.toInstancePropertiesForCdkUtils(),
+                getLoggingStack(this, properties.toInstancePropertiesForCdkUtils()), jars);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
-        bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars);
+        bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars, autoDeleteS3ObjectsStack);
         Tags.of(this).add("DeploymentStack", id);
     }
 
@@ -60,12 +62,13 @@ public class SystemTestBucketStack extends NestedStack {
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));
-        //AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(scope, id + "-AutoDelete", properties, getLoggingStack(this, properties), jars);
-        bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars);
+        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, id + "-AutoDelete", properties, getLoggingStack(this, properties), jars);
+        bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars, autoDeleteS3ObjectsStack);
         Utils.addStackTagIfSet(this, properties);
     }
 
-    private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, BuiltJars jars) {
+    private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, BuiltJars jars,
+            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         IBucket bucket = Bucket.Builder.create(this, id)
                 .bucketName(bucketName)
                 .versioned(false)
@@ -74,7 +77,7 @@ public class SystemTestBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        //autoDeleteS3ObjectsStack.grantAccessToCustomResource(this, instanceProperties, bucket, bucketName);
+        autoDeleteS3ObjectsStack.grantAccessToCustomResource(id, instanceProperties, bucket, bucketName);
 
         return bucket;
     }
@@ -83,8 +86,8 @@ public class SystemTestBucketStack extends NestedStack {
         return bucket;
     }
 
-    // private LoggingStack getLoggingStack(Construct scope, InstanceProperties properties) {
-    //     return new LoggingStack(scope, "Logging", properties);
-    // }
+    private LoggingStack getLoggingStack(Construct scope, InstanceProperties properties) {
+        return new LoggingStack(scope, "Logging", properties);
+    }
 
 }
