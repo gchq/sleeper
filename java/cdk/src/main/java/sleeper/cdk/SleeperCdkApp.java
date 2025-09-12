@@ -48,7 +48,6 @@ import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack;
-import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
@@ -290,9 +289,7 @@ public class SleeperCdkApp extends Stack {
         // Stack for ingest jobs
         if (optionalStacks.contains(OptionalStack.IngestStack)) {
             autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
-                    this, "AutoStopEcsClusterTask", instanceProperties, jars,
-                    loggingStack.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
-                    loggingStack.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
+                    this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,

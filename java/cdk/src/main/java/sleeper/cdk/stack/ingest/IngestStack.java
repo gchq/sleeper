@@ -120,7 +120,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode, autoStopEcsClusterTasksStack);
+        ecsClusterForIngestTasks(id, jarsBucket, coreStacks, ingestJobQueue, lambdaCode, autoStopEcsClusterTasksStack);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
@@ -182,6 +182,7 @@ public class IngestStack extends NestedStack {
     }
 
     private Cluster ecsClusterForIngestTasks(
+            String id,
             IBucket jarsBucket,
             CoreStacks coreStacks,
             Queue ingestJobQueue,
@@ -242,7 +243,7 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
-        autoStopEcsClusterTasksStack.grantAccessToCustomResource(this, instanceProperties,
+        autoStopEcsClusterTasksStack.grantAccessToCustomResource(id, instanceProperties,
                 cluster, clusterName);
 
         return cluster;

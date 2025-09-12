@@ -79,6 +79,8 @@ public class LoggingStack extends NestedStack {
         METRICS_PUBLISHER("metrics-publisher"),
         AUTO_DELETE_S3_OBJECTS("s3-objects-autodelete"),
         AUTO_DELETE_S3_OBJECTS_PROVIDER("s3-objects-autodelete-provider"),
+        AUTO_STOP_ECS_CLUSTER_TASKS("ecs-cluster-tasks-autostop"),
+        AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER("ecs-cluster-tasks-autostop-provider"),
         BULK_EXPORT("bulk-export"),
         BULK_EXPORT_TASKS("FargateBulkExportTasks"),
         BULK_EXPORT_TASKS_CREATOR("bulk-export-task-creator"),

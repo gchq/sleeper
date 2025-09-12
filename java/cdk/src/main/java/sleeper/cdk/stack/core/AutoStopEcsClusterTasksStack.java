@@ -25,13 +25,13 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -46,13 +46,11 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
 
     private final IFunction lambda;
     private final Provider provider;
-    private final String id;
 
     public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            ILogGroup logGroup, ILogGroup providerLogGroup) {
-        super(scope, id);
+            LoggingStack loggingStack) {
 
-        this.id = id + "-AutoStop";
+        super(scope, id);
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -61,12 +59,12 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");
 
-        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, "AutoStopEcsClusterTasksLambda", builder -> builder
+        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, id + "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-stopping ECS tasks")
-                .logGroup(logGroup)
+                .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS))
                 .timeout(Duration.minutes(10)));
 
         // Grant this function permission to list tasks and stop tasks
@@ -81,17 +79,17 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
 
         provider = Provider.Builder.create(this, id + "Provider")
                 .onEventHandler(lambda)
-                .logGroup(providerLogGroup)
+                .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER))
                 .build();
 
         Utils.addStackTagIfSet(this, instanceProperties);
 
     }
 
-    public void grantAccessToCustomResource(Construct scope, InstanceProperties instanceProperties,
+    public void grantAccessToCustomResource(String id, InstanceProperties instanceProperties,
             ICluster cluster, String clusterName) {
 
-        CustomResource customResource = CustomResource.Builder.create(scope, id)
+        CustomResource customResource = CustomResource.Builder.create(this, id + "-AutoStop")
                 .resourceType("Custom::AutoStopEcsClusterTasks")
                 .properties(Map.of("cluster", clusterName))
                 .serviceToken(provider.getServiceToken())
