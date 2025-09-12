@@ -34,23 +34,71 @@ public class SortedRowIteratorTestHelper {
     private SortedRowIteratorTestHelper() {
     }
 
+    /**
+     * Applies an iterator to some data.
+     *
+     * @param  iterator the iterator
+     * @param  rows     the input data
+     * @return          the output data
+     */
+    public static List<Row> apply(SortedRowIterator iterator, List<Row> rows) {
+        List<Row> output = new ArrayList<>();
+        iterator.apply(new WrappedIterator<>(rows.iterator()))
+                .forEachRemaining(output::add);
+        return output;
+    }
+
+    /**
+     * Creates an iterator that filters out any fields that do not have a particular value for a specific value field.
+     *
+     * @param  field the field name
+     * @param  value the value to match
+     * @return       the iterator
+     */
     public static SortedRowIterator filterOnValueField(String field, Object value) {
         return withRequiredValueFields(List.of(field),
                 input -> new FilteringIterator<>(input, row -> Objects.equals(value, row.get(field))));
     }
 
+    /**
+     * Creates an iterator that only returns the first n rows.
+     *
+     * @param  limit the number of rows to return
+     * @return       the iterator
+     */
     public static SortedRowIterator limitRows(int limit) {
         return withNoRequiredValueFields(input -> new LimitingIterator<>(limit, input));
     }
 
+    /**
+     * Creates an iterator that requests specific value fields, and does not change the data.
+     *
+     * @param  requiredValueFields the required value fields
+     * @return                     the iterator
+     */
     public static SortedRowIterator withRequiredValueFields(List<String> requiredValueFields) {
         return withRequiredValueFields(requiredValueFields, input -> input);
     }
 
+    /**
+     * Creates an iterator that performs some operation on the underlying data, but does not require any extra value
+     * fields to be read.
+     *
+     * @param  apply the operation to apply
+     * @return       the iterator
+     */
     public static SortedRowIterator withNoRequiredValueFields(Function<CloseableIterator<Row>, CloseableIterator<Row>> apply) {
         return withRequiredValueFields(List.of(), apply);
     }
 
+    /**
+     * Creates an iterator based on which value fields need to be read, and an operation to perform on the underlying
+     * data.
+     *
+     * @param  requiredValueFields the required value fields
+     * @param  apply               the operation to apply
+     * @return                     the iterator
+     */
     public static SortedRowIterator withRequiredValueFields(List<String> requiredValueFields, Function<CloseableIterator<Row>, CloseableIterator<Row>> apply) {
         return new SortedRowIterator() {
             @Override
@@ -63,12 +111,5 @@ public class SortedRowIteratorTestHelper {
                 return requiredValueFields;
             }
         };
-    }
-
-    public static List<Row> apply(SortedRowIterator iterator, List<Row> rows) {
-        List<Row> output = new ArrayList<>();
-        iterator.apply(new WrappedIterator<>(rows.iterator()))
-                .forEachRemaining(output::add);
-        return output;
     }
 }

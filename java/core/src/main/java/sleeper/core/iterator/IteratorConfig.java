@@ -40,6 +40,13 @@ public class IteratorConfig {
         return new Builder();
     }
 
+    /**
+     * Creates the default iterator configuration for a Sleeper table. This includes the iterators which are applied
+     * during compaction.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the configuration
+     */
     public static IteratorConfig from(TableProperties tableProperties) {
         return builder()
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
