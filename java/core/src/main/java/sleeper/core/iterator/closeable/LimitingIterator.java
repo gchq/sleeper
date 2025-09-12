@@ -13,33 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
+package sleeper.core.iterator.closeable;
 
-import java.util.Iterator;
+import java.io.IOException;
 
 /**
- * Wraps an iterator with a close method that does nothing. Turns an iterator into a {@link CloseableIterator}.
+ * An iterator that will stop reading elements once it has processed a certain number.
  *
- * @param <T> the type of elements returned by this iterator
+ * @param <T> the element type
  */
-public class WrappedIterator<T> implements CloseableIterator<T> {
-    private final Iterator<T> iterator;
+public class LimitingIterator<T> implements CloseableIterator<T> {
+    private final long limit;
+    private final CloseableIterator<T> iterator;
+    private long numRead = 0;
 
-    public WrappedIterator(Iterator<T> iterator) {
+    public LimitingIterator(long limit, CloseableIterator<T> iterator) {
+        this.limit = limit;
         this.iterator = iterator;
     }
 
     @Override
     public boolean hasNext() {
-        return iterator.hasNext();
+        return numRead < limit && iterator.hasNext();
     }
 
     @Override
     public T next() {
-        return iterator.next();
+        T next = iterator.next();
+        numRead++;
+        return next;
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
+        iterator.close();
     }
+
 }

@@ -15,8 +15,8 @@
  */
 package sleeper.ingest.runner.impl;
 
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.IteratorConfig;

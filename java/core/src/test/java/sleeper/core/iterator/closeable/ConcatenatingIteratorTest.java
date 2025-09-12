@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
+package sleeper.core.iterator.closeable;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.EmptyIteratorWithFakeOnClose;
+import sleeper.core.iterator.FakeIteratorSupplier;
 import sleeper.core.row.Row;
 
 import java.io.IOException;

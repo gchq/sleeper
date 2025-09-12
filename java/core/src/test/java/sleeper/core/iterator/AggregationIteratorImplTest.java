@@ -17,6 +17,7 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 
 import java.util.List;

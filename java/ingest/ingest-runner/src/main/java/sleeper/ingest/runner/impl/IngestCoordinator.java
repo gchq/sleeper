@@ -18,8 +18,8 @@ package sleeper.ingest.runner.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;

@@ -19,7 +19,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.parquet.hadoop.ParquetReader;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.parquet.row.ParquetReaderIterator;
 

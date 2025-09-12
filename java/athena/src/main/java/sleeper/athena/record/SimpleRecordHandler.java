@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.FilterTranslator;
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;

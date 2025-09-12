@@ -15,7 +15,7 @@
  */
 package sleeper.query.core.output;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 

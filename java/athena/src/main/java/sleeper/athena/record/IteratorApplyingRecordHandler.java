@@ -37,8 +37,8 @@ import software.amazon.awssdk.utils.BinaryUtils;
 
 import sleeper.athena.FilterTranslator;
 import sleeper.configuration.jars.S3UserJarsLoader;
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
