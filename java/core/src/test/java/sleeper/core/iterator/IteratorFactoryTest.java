@@ -15,6 +15,7 @@
  */
 package sleeper.core.iterator;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -81,6 +82,32 @@ public class IteratorFactoryTest {
         // Then
         assertThat(filtered).containsExactly(
                 new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldApplyFilteringConfigAndThenCustomIterator() throws Exception {
+        // Given
+        tableProperties.setSchema(Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()))
+                .build());
+        tableProperties.set(FILTERING_CONFIG, "ageOff(value,100)");
+        tableProperties.set(ITERATOR_CLASS_NAME, LimitingConfigStringIterator.class.getName());
+        tableProperties.set(ITERATOR_CONFIG, "2");
+
+        // When
+        List<Row> output = applyIterator(List.of(
+                new Row(Map.of("key", 1, "value", 10L)),
+                new Row(Map.of("key", 2, "value", 9999999999999997L)),
+                new Row(Map.of("key", 3, "value", 9999999999999998L)),
+                new Row(Map.of("key", 4, "value", 9999999999999999L))));
+
+        // Then
+        assertThat(output).containsExactly(
+                new Row(Map.of("key", 2, "value", 9999999999999997L)),
+                new Row(Map.of("key", 3, "value", 9999999999999998L)));
+
     }
 
     @Test
