@@ -260,10 +260,10 @@ public class AggregationFilteringIteratorTest {
             // When
             List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "A", "timestamp", 9999999999999999L, "count", 10L)),
-                    new Row(Map.of("key", "A", "timestamp", 100L, "count", 20L)),
-                    new Row(Map.of("key", "B", "timestamp", 100L, "count", 10L)),
-                    new Row(Map.of("key", "C", "timestamp", 100L, "count", 10L)),
-                    new Row(Map.of("key", "C", "timestamp", 100L, "count", 20L)),
+                    new Row(Map.of("key", "A", "timestamp", 100L, "count", 20L)), // Filtered out due to age
+                    new Row(Map.of("key", "B", "timestamp", 100L, "count", 10L)), // Filtered out due to age
+                    new Row(Map.of("key", "C", "timestamp", 100L, "count", 10L)), // Filtered out due to age
+                    new Row(Map.of("key", "C", "timestamp", 100L, "count", 20L)), // Filtered out due to age
                     new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 10L)),
                     new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 20L))));
 
@@ -324,6 +324,23 @@ public class AggregationFilteringIteratorTest {
                     .isInstanceOf(IteratorCreationException.class)
                     .cause()
                     .hasMessage("Unable to parse operand. Operand: bop");
+        }
+
+        @Test
+        void shouldThrowExceptionWithNonExistentFieldIncludeAsAggregators() throws IteratorCreationException {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("failKey", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new StringType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MIN(failKey),MIN(sortKey),SUM(value)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(IteratorCreationException.class)
+                    .cause()
+                    .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
         }
 
         @Test
