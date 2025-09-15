@@ -82,10 +82,7 @@ public class IteratorFactory {
                 LOGGER.debug("Initialised iterator with config {}", iteratorConfig.getIteratorConfigString());
                 return iterator;
             } else {
-                AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-                iterator.setFilterAggregationConfig(getConfigFromProperties(iteratorConfig, schema));
-                iterator.setSchema(schema);
-                return iterator;
+                return new AggregationFilteringIterator(getConfigFromProperties(iteratorConfig, schema), schema);
             }
         } catch (RuntimeException | ObjectFactoryException exc) {
             throw new IteratorCreationException(exc);

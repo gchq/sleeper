@@ -68,7 +68,7 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
     /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
     public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
 
-    private final AggregationFilteringIterator iterator = new AggregationFilteringIterator();
+    private AggregationFilteringIterator iterator;
 
     @Override
     public List<String> getRequiredValueFields() {
@@ -84,8 +84,8 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
     public void init(String configString, Schema schema) {
         FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());
         validate(iteratorConfig, schema);
-        iterator.setFilterAggregationConfig(iteratorConfig);
-        iterator.setSchema(schema);
+        iterator = new AggregationFilteringIterator(iteratorConfig, schema);
+
     }
 
     /**

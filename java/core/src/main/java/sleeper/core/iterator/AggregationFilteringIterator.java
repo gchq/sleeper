@@ -46,11 +46,8 @@ public class AggregationFilteringIterator implements SortedRowIterator {
     /** Table schema being filtered. */
     private Schema schema;
 
-    public void setFilterAggregationConfig(FilterAggregationConfig config) {
+    public AggregationFilteringIterator(FilterAggregationConfig config, Schema schema) {
         this.config = config;
-    }
-
-    public void setSchema(Schema schema) {
         this.schema = schema;
     }
 
