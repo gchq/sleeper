@@ -277,16 +277,14 @@ public class AggregationFilteringIteratorTest {
     @Nested
     @DisplayName("Process iterator rows")
     class ProcessRows {
-        /*-
-        shouldAggregateOneDifferentThenTwoEqualRow
-        shouldAggregateTwoSameThenOneDifferentThenTwoEqualRow
-        shouldAggregateOneDifferentThenTwoSameThenOneDifferent
-        Other - Remove whitespace*/
+
+        @BeforeEach
+        void setUp() {
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+        }
+
         @Test
         void shouldAggregateZeroRows() throws Exception {
-            // Given
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
-
             // When / Then
             assertThat(applyIterator(List.of())).isEmpty();
         }
@@ -294,7 +292,6 @@ public class AggregationFilteringIteratorTest {
         @Test
         void shouldAggregateOneRow() throws Exception {
             // Given
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
             Row testRow = new Row(Map.of("key", "A", "value", 525L));
 
             // When
@@ -307,7 +304,6 @@ public class AggregationFilteringIteratorTest {
         @Test
         void shouldAggregateTwoDifferentKeyRows() throws Exception {
             // Given
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
             List<Row> testRows = List.of(
                     new Row(Map.of("key", "A", "value", 100L)),
                     new Row(Map.of("key", "B", "value", 1000L)));
@@ -321,20 +317,63 @@ public class AggregationFilteringIteratorTest {
 
         @Test
         void shouldAggregateTwoEqualThenOneDifferentRow() throws Exception {
-            // Given
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
-            List<Row> testRows = List.of(
+            // When
+            List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "A", "value", 100L)),
                     new Row(Map.of("key", "A", "value", 1000L)),
-                    new Row(Map.of("key", "B", "value", 500L)));
-
-            // When
-            List<Row> resultList = applyIterator(testRows);
+                    new Row(Map.of("key", "B", "value", 500L))));
 
             // Then
             assertThat(resultList).isEqualTo(List.of(
                     new Row(Map.of("key", "A", "value", 1100L)),
                     new Row(Map.of("key", "B", "value", 500L))));
+        }
+
+        @Test
+        void shouldAggregateOneDifferentThenTwoEqualRow() throws Exception {
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1000L)),
+                    new Row(Map.of("key", "B", "value", 500L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1500L))));
+        }
+
+        @Test
+        void shouldAggregateTwoSameThenOneDifferentThenTwoEqualRow() throws Exception {
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "A", "value", 1000L)),
+                    new Row(Map.of("key", "B", "value", 500L)),
+                    new Row(Map.of("key", "C", "value", 70L)),
+                    new Row(Map.of("key", "C", "value", 230L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 1100L)),
+                    new Row(Map.of("key", "B", "value", 500L)),
+                    new Row(Map.of("key", "C", "value", 300L))));
+        }
+
+        @Test
+        void shouldAggregateOneDifferentThenTwoSameThenOneDifferent() throws Exception {
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1000L)),
+                    new Row(Map.of("key", "B", "value", 500L)),
+                    new Row(Map.of("key", "C", "value", 70L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1500L)),
+                    new Row(Map.of("key", "C", "value", 70L))));
         }
 
     }
