@@ -16,6 +16,8 @@
 package sleeper.core.iterator;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -50,183 +52,179 @@ public class AggregationFilteringIteratorTest {
 
     }
 
-    @Test
-    public void shouldThrowOnUninitialisedApply() {
-        assertThatIllegalStateException().isThrownBy(() -> {
+    @Nested
+    @DisplayName("Apply filters")
+    class ApplyFilters {
+
+        @Test
+        public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws IteratorCreationException {
             // Given
-            AggregationFilteringIterator afi = new AggregationFilteringIterator();
-            afi.apply(null);
-        }).withMessage("AggregatingIterator has not been initialised, call init()");
-    }
+            SortedRowIterator iterator = buildFilterOnlyIterator("ageOff(value,1000)");
 
-    @Test
-    public void shouldThrowOnUninitialisedGetRequiredValues() {
-        assertThatIllegalStateException().isThrownBy(() -> {
+            // Then
+            assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
+        }
+
+        @ParameterizedTest
+        @CsvSource({"ageoff", "AGEOFF", "ageOff"})
+        public void shouldApplyAgeOffFilterFromProperties(String filters) throws IteratorCreationException {
             // Given
-            AggregationFilteringIterator afi = new AggregationFilteringIterator();
-            afi.getRequiredValueFields();
-        }).withMessage("AggregatingIterator has not been initialised, call init()");
+            SortedRowIterator ageOffIterator = buildFilterOnlyIterator(filters + "(value,1000)");
+
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", "test", "value", 10L)),
+                    new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+            CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
+
+            // When
+            List<Row> filtered = new ArrayList<>();
+            ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
+
+            // Then
+            assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+        }
     }
 
-    @Test
-    public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws IteratorCreationException {
-        // Given
-        SortedRowIterator iterator = buildFilterOnlyIterator("ageOff(value,1000)");
+    @Nested
+    @DisplayName("Apply aggregations against single fields")
+    class ApplyAggregations {
 
-        // Then
-        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
+        @ParameterizedTest
+        @CsvSource({"sum", "Sum", "SUM"})
+        public void shouldApplySumAggregationFromProperties(String aggregator) throws IteratorCreationException {
+            // Given
+            String parsedAggregatorString = aggregator + "(value)";
+            SortedRowIterator sumAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
+            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                    new Row(Map.of("key", "test", "value", 2214L)),
+                    new Row(Map.of("key", "test", "value", 87L)),
+                    new Row(Map.of("key", "test", "value", 7841L))).iterator());
+
+            // When
+            List<Row> resultList = new ArrayList<>();
+            sumAggregatorIterator.apply(iterator)
+                    .forEachRemaining(resultList::add);
+            // Then
+            assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 10142L))));
+        }
+
+        @ParameterizedTest
+        @CsvSource({"min", "Min", "MIN"})
+        public void shouldApplyMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
+            // Given
+            String parsedAggregatorString = aggregator + "(value)";
+            SortedRowIterator minAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
+            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                    new Row(Map.of("key", "test", "value", 619L)),
+                    new Row(Map.of("key", "test", "value", 321L)),
+                    new Row(Map.of("key", "test", "value", 97L))).iterator());
+
+            // When
+            List<Row> resultList = new ArrayList<>();
+            minAggregatorIterator.apply(iterator)
+                    .forEachRemaining(resultList::add);
+
+            // Then
+            assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 97L))));
+        }
+
+        @ParameterizedTest
+        @CsvSource({"max", "Max", "MAX"})
+        public void shouldApplyMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
+            // Given
+            String parsedAggregatorString = aggregator + "(value)";
+            SortedRowIterator maxAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
+            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                    new Row(Map.of("key", "test", "value", 458498L)),
+                    new Row(Map.of("key", "test", "value", 87L)),
+                    new Row(Map.of("key", "test", "value", 222474L))).iterator());
+
+            // When
+            List<Row> resultList = new ArrayList<>();
+            maxAggregatorIterator.apply(iterator)
+                    .forEachRemaining(resultList::add);
+
+            // Then
+            assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 458498L))));
+        }
     }
 
-    @ParameterizedTest
-    @CsvSource({"ageoff", "AGEOFF", "ageOff"})
-    public void shouldApplyAgeOffFilterFromProperties(String filters) throws IteratorCreationException {
-        // Given
-        SortedRowIterator ageOffIterator = buildFilterOnlyIterator(filters + "(value,1000)");
+    @Nested
+    @DisplayName("Apply aggregations against map fields")
+    class ApplyMapAggregations {
 
-        List<Row> rows = List.of(
-                new Row(Map.of("key", "test", "value", 10L)),
-                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
-        CloseableIterator<Row> iterator = new WrappedIterator<>(rows.iterator());
+        @ParameterizedTest
+        @CsvSource({"map_sum", "Map_Sum", "MAP_SUM"})
+        void shouldApplyMapSumAggregationFromProperties(String aggregator) throws IteratorCreationException {
+            // Given
 
-        // When
-        List<Row> filtered = new ArrayList<>();
-        ageOffIterator.apply(iterator).forEachRemaining(filtered::add);
+            String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
+            SortedRowIterator sumAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
 
-        // Then
-        assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
-    }
+            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                    new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
+                            Map.of("map_key1", 1L, "map_key2", 3L))),
+                    new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
+                            Map.of("map_key1", 3L, "map_key2", 4L))))
+                    .iterator());
 
-    @ParameterizedTest
-    @CsvSource({"sum", "Sum", "SUM"})
-    public void shouldApplySumAggregationFromProperties(String aggregator) throws IteratorCreationException {
-        // Given
-        String parsedAggregatorString = aggregator + "(value)";
-        SortedRowIterator sumAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
-        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                new Row(Map.of("key", "test", "value", 2214L)),
-                new Row(Map.of("key", "test", "value", 87L)),
-                new Row(Map.of("key", "test", "value", 7841L))).iterator());
+            // When
+            List<Row> resultList = new ArrayList<>();
+            sumAggregatorIterator.apply(iterator)
+                    .forEachRemaining(resultList::add);
 
-        // When
-        List<Row> resultList = new ArrayList<>();
-        sumAggregatorIterator.apply(iterator)
-                .forEachRemaining(resultList::add);
-        // Then
-        assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 10142L))));
-    }
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
+                            Map.of("map_key1", 4L, "map_key2", 7L))));
+        }
 
-    @ParameterizedTest
-    @CsvSource({"map_sum", "Map_Sum", "MAP_SUM"})
-    void shouldApplyMapSumAggregationFromProperties(String aggregator) throws IteratorCreationException {
-        // Given
+        @ParameterizedTest
+        @CsvSource({"map_min", "Map_Min", "MAP_MIN"})
+        void shouldApplyMapMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
+            // Given
+            String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
+            SortedRowIterator minAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
 
-        String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
-        SortedRowIterator sumAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
+            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                    new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
+                            Map.of("map_key1", 17L, "map_key2", 112L))),
+                    new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
+                            Map.of("map_key1", 9L, "map_key2", 2489L))))
+                    .iterator());
 
-        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
-                        Map.of("map_key1", 1L, "map_key2", 3L))),
-                new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                        Map.of("map_key1", 3L, "map_key2", 4L))))
-                .iterator());
+            // When
+            List<Row> resultList = new ArrayList<>();
+            minAggregatorIterator.apply(iterator)
+                    .forEachRemaining(resultList::add);
 
-        // When
-        List<Row> resultList = new ArrayList<>();
-        sumAggregatorIterator.apply(iterator)
-                .forEachRemaining(resultList::add);
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
+                            Map.of("map_key1", 9L, "map_key2", 112L))));
+        }
 
-        assertThat(resultList).containsExactly(
-                new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
-                        Map.of("map_key1", 4L, "map_key2", 7L))));
+        @ParameterizedTest
+        @CsvSource({"map_max", "Map_Max", "MAP_MAX"})
+        void shouldApplyMapMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
+            // Given
+            String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
+            SortedRowIterator maxAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
 
-    }
+            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                    new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
+                            Map.of("map_key1", 666L, "map_key2", 11L))),
+                    new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
+                            Map.of("map_key1", 245L, "map_key2", 2L))))
+                    .iterator());
 
-    @ParameterizedTest
-    @CsvSource({"min", "Min", "MIN"})
-    public void shouldApplyMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
-        // Given
-        String parsedAggregatorString = aggregator + "(value)";
-        SortedRowIterator minAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
-        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                new Row(Map.of("key", "test", "value", 619L)),
-                new Row(Map.of("key", "test", "value", 321L)),
-                new Row(Map.of("key", "test", "value", 97L))).iterator());
+            // When
+            List<Row> resultList = new ArrayList<>();
+            maxAggregatorIterator.apply(iterator)
+                    .forEachRemaining(resultList::add);
 
-        // When
-        List<Row> resultList = new ArrayList<>();
-        minAggregatorIterator.apply(iterator)
-                .forEachRemaining(resultList::add);
-
-        // Then
-        assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 97L))));
-    }
-
-    @ParameterizedTest
-    @CsvSource({"map_min", "Map_Min", "MAP_MIN"})
-    void shouldApplyMapMinAggregationFromProperties(String aggregator) throws IteratorCreationException {
-        // Given
-        String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
-        SortedRowIterator minAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
-
-        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
-                        Map.of("map_key1", 17L, "map_key2", 112L))),
-                new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                        Map.of("map_key1", 9L, "map_key2", 2489L))))
-                .iterator());
-
-        // When
-        List<Row> resultList = new ArrayList<>();
-        minAggregatorIterator.apply(iterator)
-                .forEachRemaining(resultList::add);
-
-        assertThat(resultList).containsExactly(
-                new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
-                        Map.of("map_key1", 9L, "map_key2", 112L))));
-    }
-
-    @ParameterizedTest
-    @CsvSource({"max", "Max", "MAX"})
-    public void shouldApplyMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
-        // Given
-        String parsedAggregatorString = aggregator + "(value)";
-        SortedRowIterator maxAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
-        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                new Row(Map.of("key", "test", "value", 458498L)),
-                new Row(Map.of("key", "test", "value", 87L)),
-                new Row(Map.of("key", "test", "value", 222474L))).iterator());
-
-        // When
-        List<Row> resultList = new ArrayList<>();
-        maxAggregatorIterator.apply(iterator)
-                .forEachRemaining(resultList::add);
-
-        // Then
-        assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 458498L))));
-    }
-
-    @ParameterizedTest
-    @CsvSource({"map_max", "Map_Max", "MAP_MAX"})
-    void shouldApplyMapMaxAggregationFromProperties(String aggregator) throws IteratorCreationException {
-        // Given
-        String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
-        SortedRowIterator maxAggregatorIterator = buildAggregatorOnlyIteratorForMap(parsedAggregatorString);
-
-        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
-                        Map.of("map_key1", 666L, "map_key2", 11L))),
-                new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                        Map.of("map_key1", 245L, "map_key2", 2L))))
-                .iterator());
-
-        // When
-        List<Row> resultList = new ArrayList<>();
-        maxAggregatorIterator.apply(iterator)
-                .forEachRemaining(resultList::add);
-
-        assertThat(resultList).containsExactly(
-                new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
-                        Map.of("map_key1", 666L, "map_key2", 11L))));
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
+                            Map.of("map_key1", 666L, "map_key2", 11L))));
+        }
     }
 
     @Test
@@ -307,6 +305,24 @@ public class AggregationFilteringIteratorTest {
                 .cause()
                 .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
 
+    }
+
+    @Test
+    public void shouldThrowOnUninitialisedApply() {
+        assertThatIllegalStateException().isThrownBy(() -> {
+            // Given
+            AggregationFilteringIterator afi = new AggregationFilteringIterator();
+            afi.apply(null);
+        }).withMessage("AggregatingIterator has not been initialised, call init()");
+    }
+
+    @Test
+    public void shouldThrowOnUninitialisedGetRequiredValues() {
+        assertThatIllegalStateException().isThrownBy(() -> {
+            // Given
+            AggregationFilteringIterator afi = new AggregationFilteringIterator();
+            afi.getRequiredValueFields();
+        }).withMessage("AggregatingIterator has not been initialised, call init()");
     }
 
     private SortedRowIterator buildFilterOnlyIterator(String filters) throws IteratorCreationException {
