@@ -23,10 +23,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.iterator.SortedRowIteratorTestHelper.apply;
-import static sleeper.core.iterator.SortedRowIteratorTestHelper.filterOnValueField;
-import static sleeper.core.iterator.SortedRowIteratorTestHelper.limitRows;
-import static sleeper.core.iterator.SortedRowIteratorTestHelper.withRequiredValueFields;
+import static sleeper.core.iterator.testutil.SortedRowIteratorTestHelper.apply;
+import static sleeper.core.iterator.testutil.SortedRowIteratorTestHelper.filterOnValueField;
+import static sleeper.core.iterator.testutil.SortedRowIteratorTestHelper.limitRows;
+import static sleeper.core.iterator.testutil.SortedRowIteratorTestHelper.withRequiredValueFields;
 
 public class SortedRowIteratorsTest {
 

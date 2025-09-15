@@ -18,6 +18,9 @@ package sleeper.core.iterator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.testutil.IteratorFactoryTestHelper;
+import sleeper.core.iterator.testutil.LimitingConfigStringIterator;
+import sleeper.core.iterator.testutil.SortedRowIteratorTestHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
