@@ -67,7 +67,10 @@ public class AggregationFilteringIteratorTest {
                     .valueFields(new Field("value", new LongType()),
                             new Field("notRequiredField", new IntType()))
                     .build());
-            SortedRowIterator iterator = buildFilterOnlyIterator("ageOff(value,1000)");
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
+
+            // When
+            SortedRowIterator iterator = createIterator();
 
             // Then
             assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
@@ -346,11 +349,6 @@ public class AggregationFilteringIteratorTest {
             AggregationFilteringIterator afi = new AggregationFilteringIterator();
             afi.getRequiredValueFields();
         }).withMessage("AggregatingIterator has not been initialised, call init()");
-    }
-
-    private SortedRowIterator buildFilterOnlyIterator(String filters) throws Exception {
-        tableProperties.set(FILTERING_CONFIG, filters);
-        return createIterator();
     }
 
     private SortedRowIterator buildAggregatorOnlyIterator(String aggregator) throws Exception {
