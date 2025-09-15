@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.cdk;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Tags;
@@ -43,6 +45,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BU
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 
 public class SystemTestBucketStack extends NestedStack {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestBucketStack.class);
 
     private final IBucket bucket;
 
@@ -58,6 +61,8 @@ public class SystemTestBucketStack extends NestedStack {
 
     public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, BuiltJars jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
+
+        LOGGER.info("In SystemTestBucketStack");
         String bucketName = String.join("-", "sleeper", properties.get(ID),
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
@@ -68,6 +73,7 @@ public class SystemTestBucketStack extends NestedStack {
 
     private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, BuiltJars jars,
             AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
+        LOGGER.info("In createBucket");
         IBucket bucket = Bucket.Builder.create(this, id)
                 .bucketName(bucketName)
                 .versioned(false)
