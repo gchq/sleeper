@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.iterator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.Aggregation;
-import sleeper.core.iterator.AggregationFilteringIterator;
-import sleeper.core.iterator.AggregationOp;
-import sleeper.core.iterator.ConfigStringAggregationFilteringIterator;
-import sleeper.core.iterator.ConfigStringIterator;
-import sleeper.core.iterator.FilterAggregationConfig;
-import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 
 import java.util.ArrayList;
 import java.util.Arrays;

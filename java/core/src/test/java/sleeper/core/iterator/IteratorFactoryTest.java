@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.AgeOffIterator;
-import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.model.DataEngine;
@@ -28,6 +25,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.util.ObjectFactory;
 
 import java.util.ArrayList;
 import java.util.List;
