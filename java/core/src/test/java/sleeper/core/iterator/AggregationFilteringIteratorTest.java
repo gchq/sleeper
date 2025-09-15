@@ -278,8 +278,6 @@ public class AggregationFilteringIteratorTest {
     @DisplayName("Process iterator rows")
     class ProcessRows {
         /*-
-        shouldAggregateTwoDifferentKeyRows
-        shouldAggregateTwoEqualThenOneDifferentRow
         shouldAggregateOneDifferentThenTwoEqualRow
         shouldAggregateTwoSameThenOneDifferentThenTwoEqualRow
         shouldAggregateOneDifferentThenTwoSameThenOneDifferent
@@ -304,6 +302,39 @@ public class AggregationFilteringIteratorTest {
 
             // Then
             assertThat(resultList).containsExactly(testRow);
+        }
+
+        @Test
+        void shouldAggregateTwoDifferentKeyRows() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+            List<Row> testRows = List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1000L)));
+
+            // When
+            List<Row> resultList = applyIterator(testRows);
+
+            // Then
+            assertThat(resultList).isEqualTo(testRows);
+        }
+
+        @Test
+        void shouldAggregateTwoEqualThenOneDifferentRow() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+            List<Row> testRows = List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "A", "value", 1000L)),
+                    new Row(Map.of("key", "B", "value", 500L)));
+
+            // When
+            List<Row> resultList = applyIterator(testRows);
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 1100L)),
+                    new Row(Map.of("key", "B", "value", 500L))));
         }
 
     }
