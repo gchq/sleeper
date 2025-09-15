@@ -109,7 +109,7 @@ public class IteratorFactory {
         String filterName = null;
 
         if (iteratorConfig.getFilteringString() != null && !iteratorConfig.getFilteringString().equals("")) {
-            String[] filterParts = iteratorConfig.getFilteringString().split("\\(");
+            String[] filterParts = StringUtils.deleteWhitespace(iteratorConfig.getFilteringString()).split("\\(");
             if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
                 String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
                 filterName = filterInput[0];
@@ -133,7 +133,7 @@ public class IteratorFactory {
 
     private List<Aggregation> generateAggregationsFromProperty(IteratorConfig iteratorConfig) {
         List<Aggregation> aggregations = new ArrayList<Aggregation>();
-        String[] aggregationSplits = iteratorConfig.getAggregationString().split("\\),");
+        String[] aggregationSplits = StringUtils.deleteWhitespace(iteratorConfig.getAggregationString()).split("\\),");
         Arrays.stream(aggregationSplits).forEach(presentAggregation -> {
             AggregationString aggObject = new AggregationString(presentAggregation
                     .replaceAll("\\)", "")

@@ -496,6 +496,46 @@ public class AggregationFilteringIteratorTest {
         }
     }
 
+    @Nested
+    @DisplayName("Config format flexibility")
+    class ConfigFormat {
+
+        @Test
+        void shouldRemoveWhitespaceFromFilterConfigurationAndApply() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, " ageOff ( value , 1000 ) ");
+
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", "test", "value", 10L)),
+                    new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+
+            // When
+            List<Row> filtered = applyIterator(rows);
+
+            // Then
+            assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldRemoveWhitespaceFromAggregatorConfigurationAndApply() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new LongType()), new Field("value2", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, " min ( value ) , sum ( value2 )");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L, "value2", 10L)),
+                    new Row(Map.of("key", "A", "value", 1000L, "value2", 20L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 100L, "value2", 30L))));
+        }
+    }
+
     @Test
     public void shouldThrowOnUninitialisedApply() {
         assertThatIllegalStateException().isThrownBy(() -> {
