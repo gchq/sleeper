@@ -133,6 +133,16 @@ public class Schema {
     }
 
     /**
+     * Streams all key fields in the schema. This includes row key and sort key fields.
+     *
+     * @return a stream of all key fields
+     */
+    public Stream<Field> streamKeyFields() {
+        return Stream.of(rowKeyFields, sortKeyFields)
+                .flatMap(List::stream);
+    }
+
+    /**
      * Gets a field by name.
      *
      * @param  fieldName the name of the field

@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
+package sleeper.core.iterator.testutil;
 
+import sleeper.core.iterator.IteratorConfig;
+import sleeper.core.iterator.IteratorFactory;
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
 

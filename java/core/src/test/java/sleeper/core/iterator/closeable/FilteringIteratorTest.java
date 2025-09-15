@@ -17,7 +17,7 @@ package sleeper.core.iterator.closeable;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.EmptyIteratorWithFakeOnClose;
+import sleeper.core.iterator.testutil.EmptyIteratorWithFakeOnClose;
 import sleeper.core.row.Row;
 
 import java.util.List;

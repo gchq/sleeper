@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
+package sleeper.core.iterator.testutil;
 
+import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.LimitingIterator;
 import sleeper.core.row.Row;
