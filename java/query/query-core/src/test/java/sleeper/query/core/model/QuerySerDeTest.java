@@ -15,15 +15,20 @@
  */
 package sleeper.query.core.model;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -40,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +54,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QuerySerDeTest {
 
@@ -776,13 +783,10 @@ public class QuerySerDeTest {
                         "type field must be provided");
     }
 
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionWithInvalidQueryType(boolean useTablePropertiesProvider) {
+    @Test
+    public void shouldThrowExceptionWithInvalidQueryType() {
         // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = "test-table";
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
+        tableProperties.setSchema(createSchemaWithKey("field1", new LongType()));
 
         String queryJson = "{\n" +
                 "  \"queryId\": \"id\",\n" +
@@ -793,11 +797,54 @@ public class QuerySerDeTest {
                 "  ]\n" +
                 "}\n";
 
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
+        // When / Then
+        assertThatThrownBy(() -> createSerDe().fromJsonOrLeafQuery(queryJson))
                 .isInstanceOf(QueryValidationException.class)
                 .hasMessage("Query validation failed for query \"id\": " +
                         "Unknown query type \"invalid-query-type\"");
+    }
+
+    @Nested
+    @DisplayName("Create SerDe directly from schema")
+    class CreateFromSchema {
+
+        @Test
+        void shouldSerDeParentQueryDirectlyFromSchema() {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("identifier", new StringType()))
+                    .valueFields(new Field("string", new StringType()), new Field("long", new LongType()))
+                    .build();
+            Query query = Query.builder()
+                    .queryId("test-query")
+                    .regions(List.of(regionWithOneRange(schema, factory -> factory
+                            .createExactRange("identifier", "b"))))
+                    .build();
+
+            // When
+            QuerySerDe serDe = new QuerySerDe(schema);
+        }
+
+        @Test
+        void shouldSerDeLeafQueryDirectlyFromSchema() {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("identifier", new StringType()))
+                    .valueFields(new Field("string", new StringType()), new Field("long", new LongType()))
+                    .build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "aaa")
+                    .buildTree();
+            LeafPartitionQuery query = LeafPartitionQuery.builder()
+                    .queryId("test-query")
+                    .leafPartitionId("test-subquery")
+                    .regions(List.of())
+                    .build();
+
+            // When
+            QuerySerDe serDe = new QuerySerDe(schema);
+        }
     }
 
     private QuerySerDe generateQuerySerDe(String tableName, Schema schema, boolean useTablePropertiesProvider) {
@@ -807,5 +854,13 @@ public class QuerySerDeTest {
             return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
         }
         return new QuerySerDe(schema);
+    }
+
+    private QuerySerDe createSerDe() {
+        return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
+    }
+
+    private Region regionWithOneRange(Schema schema, Function<RangeFactory, Range> createRange) {
+        return new Region(createRange.apply(new RangeFactory(schema)));
     }
 }
