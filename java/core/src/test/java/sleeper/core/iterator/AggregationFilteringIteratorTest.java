@@ -245,6 +245,42 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Nested
+    @DisplayName("Validate filter configuration")
+    class ValidateFilterConfiguration {
+        @Test
+        public void shouldThrowExceptionWhenUnknownFilterApplied() {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new IntType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "someother(value,1000)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(IteratorCreationException.class)
+                    .cause()
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Sleeper table filter not set to match ageOff(column,age), was: someother");
+        }
+
+        @Test
+        public void shouldThrowExceptionWhenCantPassFilterValue() {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new IntType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value,oops)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(IteratorCreationException.class)
+                    .hasCauseInstanceOf(NumberFormatException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("Validate aggregation configuration")
     class ValidateAggregationConfiguration {
 
