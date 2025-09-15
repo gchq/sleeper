@@ -275,6 +275,40 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Nested
+    @DisplayName("Process iterator rows")
+    class ProcessRows {
+        /*-
+        shouldAggregateTwoDifferentKeyRows
+        shouldAggregateTwoEqualThenOneDifferentRow
+        shouldAggregateOneDifferentThenTwoEqualRow
+        shouldAggregateTwoSameThenOneDifferentThenTwoEqualRow
+        shouldAggregateOneDifferentThenTwoSameThenOneDifferent
+        Other - Remove whitespace*/
+        @Test
+        void shouldAggregateZeroRows() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+
+            // When / Then
+            assertThat(applyIterator(List.of())).isEmpty();
+        }
+
+        @Test
+        void shouldAggregateOneRow() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+            Row testRow = new Row(Map.of("key", "A", "value", 525L));
+
+            // When
+            List<Row> resultList = applyIterator(List.of(testRow));
+
+            // Then
+            assertThat(resultList).containsExactly(testRow);
+        }
+
+    }
+
+    @Nested
     @DisplayName("Validate filter configuration")
     class ValidateFilterConfiguration {
         @Test
