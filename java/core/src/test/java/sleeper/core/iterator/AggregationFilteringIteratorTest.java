@@ -28,8 +28,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.util.IteratorConfig;
-import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 
 import java.util.ArrayList;
@@ -311,8 +309,12 @@ public class AggregationFilteringIteratorTest {
         return (AggregationFilteringIterator) new IteratorFactory(
                 new ObjectFactory(AggregationFilteringIteratorTest.class.getClassLoader()))
                 .getIterator(IteratorConfig.builder()
-                        .filters(filters)
+                        .filteringString(filters)
                         .build(), defaultSchema);
+    }
+
+    private SortedRowIterator buildAggregatorOnlyIterator(String aggregator) throws IteratorCreationException {
+        return buildAggregatorOnlyIteratorWithSchema(aggregator, defaultSchema);
     }
 
     private SortedRowIterator buildAggregatorOnlyIteratorWithSchema(String aggregator, Schema schema) throws IteratorCreationException {
@@ -321,11 +323,6 @@ public class AggregationFilteringIteratorTest {
                 .getIterator(IteratorConfig.builder()
                         .aggregationString(aggregator)
                         .build(), schema);
-    }
-
-    private SortedRowIterator buildAggregatorOnlyIterator(String aggregator) throws IteratorCreationException {
-        return buildAggregatorOnlyIteratorWithSchema(aggregator, defaultSchema);
-
     }
 
     private SortedRowIterator buildAggregatorOnlyIteratorForMap(String aggregator) throws IteratorCreationException {

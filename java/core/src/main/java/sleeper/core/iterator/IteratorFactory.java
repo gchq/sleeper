@@ -13,23 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.iterator;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.Aggregation;
-import sleeper.core.iterator.AggregationFilteringIterator;
-import sleeper.core.iterator.AggregationOp;
-import sleeper.core.iterator.ConfigStringAggregationFilteringIterator;
-import sleeper.core.iterator.ConfigStringIterator;
-import sleeper.core.iterator.FilterAggregationConfig;
-import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,7 +62,7 @@ public class IteratorFactory {
      */
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
-            if (iteratorConfig.getFilters() == null && iteratorConfig.getAggregationString() == null) {
+            if (iteratorConfig.getFilteringString() == null && iteratorConfig.getAggregationString() == null) {
                 ConfigStringIterator iterator;
                 String className = iteratorConfig.getIteratorClassName();
 
@@ -109,8 +103,8 @@ public class IteratorFactory {
         long maxAge = 0L;
         String filterName = null;
 
-        if (iteratorConfig.getFilters() != null && !iteratorConfig.getFilters().equals("")) {
-            String[] filterParts = iteratorConfig.getFilters().split("\\(");
+        if (iteratorConfig.getFilteringString() != null && !iteratorConfig.getFilteringString().equals("")) {
+            String[] filterParts = iteratorConfig.getFilteringString().split("\\(");
             if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
                 String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
                 filterName = filterInput[0];

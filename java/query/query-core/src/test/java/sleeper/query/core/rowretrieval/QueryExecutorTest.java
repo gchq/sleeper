@@ -59,8 +59,8 @@ import java.util.stream.StreamSupport;
 import static java.util.Spliterator.IMMUTABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
@@ -232,7 +232,7 @@ public class QueryExecutorTest {
         @Test
         void shouldApplyAgeOffIteratorFromTableProperty() throws Exception {
             // Given
-            tableProperties.set(FILTERS_CONFIG, "ageOff(value,1000)");
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
 
             // When
             List<Row> rows = getRows(queryAllRows());
@@ -280,7 +280,7 @@ public class QueryExecutorTest {
         @Test
         void shouldApplyAggregationFromTableProperty() throws Exception {
             // Given
-            tableProperties.set(AGGREGATIONS, "sum(value)");
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
 
             // When
             List<Row> rows = getRows(queryAllRows());
