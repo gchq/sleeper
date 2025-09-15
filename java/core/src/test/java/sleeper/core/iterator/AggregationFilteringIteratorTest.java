@@ -154,8 +154,7 @@ public class AggregationFilteringIteratorTest {
         void setUp() {
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key", new StringType()))
-                    .sortKeyFields(new Field("sort", new StringType()))
-                    .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
+                    .valueFields(new Field("map_value", new MapType(new StringType(), new LongType())))
                     .build());
         }
 
@@ -163,54 +162,54 @@ public class AggregationFilteringIteratorTest {
         @CsvSource({"map_sum", "Map_Sum", "MAP_SUM"})
         void shouldApplyMapSumAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value)," + aggregator + "(map_value2)");
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(map_value)");
 
             // When
             List<Row> resultList = applyIterator(List.of(
-                    new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
-                            Map.of("map_key1", 1L, "map_key2", 3L))),
-                    new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                            Map.of("map_key1", 3L, "map_key2", 4L)))));
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 1L, "map_key2", 3L))),
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 3L, "map_key2", 4L)))));
 
             assertThat(resultList).containsExactly(
-                    new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
-                            Map.of("map_key1", 4L, "map_key2", 7L))));
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 4L, "map_key2", 7L))));
         }
 
         @ParameterizedTest
         @CsvSource({"map_min", "Map_Min", "MAP_MIN"})
         void shouldApplyMapMinAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value)," + aggregator + "(map_value2)");
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(map_value)");
 
             // When
             List<Row> resultList = applyIterator(List.of(
-                    new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
-                            Map.of("map_key1", 17L, "map_key2", 112L))),
-                    new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                            Map.of("map_key1", 9L, "map_key2", 2489L)))));
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 17L, "map_key2", 112L))),
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 9L, "map_key2", 2489L)))));
 
             assertThat(resultList).containsExactly(
-                    new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
-                            Map.of("map_key1", 9L, "map_key2", 112L))));
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 9L, "map_key2", 112L))));
         }
 
         @ParameterizedTest
         @CsvSource({"map_max", "Map_Max", "MAP_MAX"})
         void shouldApplyMapMaxAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value)," + aggregator + "(map_value2)");
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(map_value)");
 
             // When
             List<Row> resultList = applyIterator(List.of(
-                    new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
-                            Map.of("map_key1", 666L, "map_key2", 11L))),
-                    new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                            Map.of("map_key1", 245L, "map_key2", 2L)))));
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 666L, "map_key2", 11L))),
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 245L, "map_key2", 2L)))));
 
             assertThat(resultList).containsExactly(
-                    new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
-                            Map.of("map_key1", 666L, "map_key2", 11L))));
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 666L, "map_key2", 11L))));
         }
     }
 
