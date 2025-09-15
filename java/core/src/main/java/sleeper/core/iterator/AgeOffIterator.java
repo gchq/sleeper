@@ -32,6 +32,10 @@ public class AgeOffIterator implements ConfigStringIterator {
     public AgeOffIterator() {
     }
 
+    public AgeOffIterator(AgeOffFilter filter) {
+        this.filter = filter;
+    }
+
     @Override
     public void init(String configString, Schema schema) {
         String[] fields = configString.split(",");
