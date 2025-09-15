@@ -15,8 +15,11 @@
  */
 package sleeper.core.iterator;
 
+import org.apache.commons.lang3.StringUtils;
+
 import sleeper.core.row.Row;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -30,6 +33,25 @@ public class AgeOffFilter implements Predicate<Row> {
     public AgeOffFilter(String fieldName, long ageOff) {
         this.fieldName = fieldName;
         this.ageOff = ageOff;
+    }
+
+    /**
+     * Parses a filtering configuration string.
+     *
+     * @param  configString the configuration string
+     * @return              the filtering configuration
+     */
+    public static List<AgeOffFilter> parseConfig(String configString) {
+        if (configString == null || configString.isEmpty()) {
+            return List.of();
+        }
+        String[] filterParts = StringUtils.deleteWhitespace(configString).split("\\(");
+        if ("ageoff".equalsIgnoreCase(filterParts[0])) {
+            String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
+            return List.of(new AgeOffFilter(filterInput[0], Long.parseLong(filterInput[1])));
+        } else {
+            throw new IllegalArgumentException("Sleeper table filter not set to match ageOff(column,age), was: " + filterParts[0]);
+        }
     }
 
     public String getFieldName() {
