@@ -102,7 +102,7 @@ public class IteratorFactory {
      * @param  schema         the Sleeper {@link Schema} of the {@link Row} objects
      * @return                filter aggregation config to be used in an iterator
      */
-    private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig, Schema schema) {
+    private FilterAggregationConfig getConfigFromProperties(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         List<String> groupingColumns = new ArrayList<>();
         groupingColumns.addAll(schema.getRowKeyFieldNames());
         groupingColumns.addAll(schema.getSortKeyFieldNames());
@@ -132,31 +132,34 @@ public class IteratorFactory {
                 aggregations);
     }
 
-    private List<Aggregation> generateAggregationsFromProperty(IteratorConfig iteratorConfig) {
+    private List<Aggregation> generateAggregationsFromProperty(IteratorConfig iteratorConfig) throws IteratorCreationException {
         List<Aggregation> aggregations = new ArrayList<Aggregation>();
         String[] aggregationSplits = iteratorConfig.getAggregationString().split("\\),");
-        Arrays.stream(aggregationSplits).forEach(presentAggregation -> {
-            AggregationString aggObject = new AggregationString(presentAggregation
-                    .replaceAll("\\)", "")
-                    .split("\\("));
-
-            try {
-                aggregations.add(new Aggregation(aggObject.getColumnName(),
-                        AggregationOp.valueOf(aggObject.getOpName().toUpperCase(Locale.ENGLISH).replaceFirst("^MAP_", ""))));
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Unable to parse operand. Operand: " + aggObject.getOpName());
-            }
-        });
+        try {
+            Arrays.stream(aggregationSplits).forEach(presentAggregation -> {
+                AggregationString aggObject = new AggregationString(presentAggregation
+                        .replaceAll("\\)", "")
+                        .split("\\("));
+                try {
+                    aggregations.add(new Aggregation(aggObject.getColumnName(),
+                            AggregationOp.valueOf(aggObject.getOpName().toUpperCase(Locale.ENGLISH).replaceFirst("^MAP_", ""))));
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Unable to parse operand. Operand: " + aggObject.getOpName());
+                }
+            });
+        } catch (IllegalArgumentException e) {
+            throw new IteratorCreationException(e.getMessage());
+        }
         return aggregations;
     }
 
-    private void validateAggregations(List<Aggregation> aggregations, Schema schema) {
+    private void validateAggregations(List<Aggregation> aggregations, Schema schema) throws IteratorCreationException {
         validateNoRowKeySortKeyAggregations(aggregations, schema);
         validateNoDuplicateAggregations(aggregations);
         validateAllColumnsHaveAggregations(aggregations, schema);
     }
 
-    private void validateNoRowKeySortKeyAggregations(List<Aggregation> aggregations, Schema schema) {
+    private void validateNoRowKeySortKeyAggregations(List<Aggregation> aggregations, Schema schema) throws IteratorCreationException {
         List<Aggregation> rowKeySortKeyViolations = aggregations.stream().filter(agg -> {
             return schema.getRowKeyFieldNames().contains(agg.column()) ||
                     schema.getSortKeyFieldNames().contains(agg.column());
@@ -166,20 +169,25 @@ public class IteratorFactory {
             String errStr = rowKeySortKeyViolations.stream()
                     .map(Aggregation::column)
                     .collect(Collectors.joining(", "));
-            throw new IllegalArgumentException("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: " + errStr);
+            throw new IteratorCreationException("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: " + errStr);
         }
     }
 
-    private void validateNoDuplicateAggregations(List<Aggregation> aggregations) {
+    private void validateNoDuplicateAggregations(List<Aggregation> aggregations) throws IteratorCreationException {
         HashMap<String, Boolean> aggMap = new HashMap<String, Boolean>();
-        aggregations.stream().forEach(aggregation -> {
-            if (aggMap.putIfAbsent(aggregation.column(), Boolean.TRUE) != null) {
-                throw new IllegalArgumentException("Not allowed duplicate columns for aggregation. Column name: " + aggregation.column());
-            }
-        });
+        try {
+            aggregations.stream().forEach(aggregation -> {
+                if (aggMap.putIfAbsent(aggregation.column(), Boolean.TRUE) != null) {
+                    throw new IllegalArgumentException("Not allowed duplicate columns for aggregation. Column name: " + aggregation.column());
+                }
+            });
+        } catch (IllegalArgumentException e) {
+            throw new IteratorCreationException(e.getMessage());
+        }
+
     }
 
-    private void validateAllColumnsHaveAggregations(List<Aggregation> aggregations, Schema schema) {
+    private void validateAllColumnsHaveAggregations(List<Aggregation> aggregations, Schema schema) throws IteratorCreationException {
         List<String> aggregationColumns = new ArrayList<String>();
         aggregations.stream().forEach(aggregation -> {
             aggregationColumns.add(aggregation.column());
@@ -189,7 +197,7 @@ public class IteratorFactory {
             String errStr = schema.getValueFieldNames().stream()
                     .filter(presCol -> !aggregationColumns.contains(presCol))
                     .collect(Collectors.joining(", "));
-            throw new IllegalArgumentException("Not all value fields have aggregation declared. Missing columns: " + errStr);
+            throw new IteratorCreationException("Not all value fields have aggregation declared. Missing columns: " + errStr);
         }
     }
 

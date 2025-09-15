@@ -37,8 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AggregationFilteringIteratorTest {
     private Schema defaultSchema;
@@ -264,9 +264,9 @@ public class AggregationFilteringIteratorTest {
 
     @Test
     void shouldThrowExceptionForInvalidOperandDeclared() throws IteratorCreationException {
-
-        assertThatIllegalArgumentException().isThrownBy(() -> buildAggregatorOnlyIterator("bop(VALUE)"))
-                .withMessage("Unable to parse operand. Operand: bop");
+        assertThatThrownBy(() -> buildAggregatorOnlyIterator("bop(VALUE)"))
+                .isInstanceOf(IteratorCreationException.class)
+                .hasMessage("Unable to parse operand. Operand: bop");
     }
 
     @Test
@@ -277,8 +277,9 @@ public class AggregationFilteringIteratorTest {
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
-        assertThatIllegalArgumentException().isThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(failKey),MIN(sortKey),SUM(value)", schema))
-                .withMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
+        assertThatThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(failKey),MIN(sortKey),SUM(value)", schema))
+                .isInstanceOf(IteratorCreationException.class)
+                .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
     }
 
     @Test
@@ -288,8 +289,9 @@ public class AggregationFilteringIteratorTest {
                 .valueFields(new Field("doubleValue", new LongType()))
                 .build();
 
-        assertThatIllegalArgumentException().isThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(doubleValue),SUM(doubleValue)", schema))
-                .withMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
+        assertThatThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(doubleValue),SUM(doubleValue)", schema))
+                .isInstanceOf(IteratorCreationException.class)
+                .hasMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
     }
 
     @Test
@@ -299,8 +301,9 @@ public class AggregationFilteringIteratorTest {
                 .valueFields(new Field("existsValue", new LongType()), new Field("ignoredValue", new LongType()))
                 .build();
 
-        assertThatIllegalArgumentException().isThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(existsValue)", schema))
-                .withMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
+        assertThatThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(existsValue)", schema))
+                .isInstanceOf(IteratorCreationException.class)
+                .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
 
     }
 
