@@ -58,23 +58,6 @@ public class AggregationFilteringIteratorTest {
     @DisplayName("Apply filters")
     class ApplyFilters {
 
-        @Test
-        public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws Exception {
-            // Given
-            tableProperties.setSchema(Schema.builder()
-                    .rowKeyFields(new Field("key", new IntType()))
-                    .valueFields(new Field("value", new LongType()),
-                            new Field("notRequiredField", new IntType()))
-                    .build());
-            tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
-
-            // When
-            SortedRowIterator iterator = createIterator();
-
-            // Then
-            assertThat(iterator.getRequiredValueFields()).containsExactly("key", "value");
-        }
-
         @ParameterizedTest
         @CsvSource({"ageoff", "AGEOFF", "ageOff"})
         public void shouldApplyAgeOffFilterFromProperties(String ageOff) throws Exception {
@@ -374,11 +357,6 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "B", "value", 1500L)),
                     new Row(Map.of("key", "C", "value", 70L))));
         }
-    }
-
-    @Nested
-    @DisplayName("Handle sort keys")
-    class HandleSortKeys {
 
         @Test
         void shouldAggregateRowsWhereRowAndSortKeyAreEqual() throws Exception {
@@ -400,6 +378,62 @@ public class AggregationFilteringIteratorTest {
             assertThat(resultList).containsExactly(
                     new Row(Map.of("key", "A", "sortKey", 1, "value", 1100L)),
                     new Row(Map.of("key", "A", "sortKey", 2, "value", 500L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Report required value fields")
+    class RequiredValueFields {
+
+        @Test
+        public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new IntType()))
+                    .valueFields(new Field("value", new LongType()),
+                            new Field("notRequiredField", new IntType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
+
+            // When / Then
+            // TODO this is incorrect, this should only specify the value field
+            // See https://github.com/gchq/sleeper/issues/5605
+            assertThat(createIterator().getRequiredValueFields()).containsExactly("key", "value");
+        }
+
+        @Test
+        void shouldSetRequiredValueFieldsWhenFilteringOnSortKey() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new LongType()))
+                    .valueFields(new Field("value", new IntType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(sortKey, 1000)");
+
+            // When / Then
+            // TODO this is incorrect, there should be no required value fields
+            // See https://github.com/gchq/sleeper/issues/5605
+            assertThat(createIterator().getRequiredValueFields()).containsExactly("key", "sortKey", "sortKey");
+        }
+
+        @Test
+        void shouldSetRequiredValueFieldsWhenAggregating() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new LongType()))
+                    .valueFields(
+                            new Field("value1", new IntType()),
+                            new Field("value2", new IntType()),
+                            new Field("value3", new IntType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value1), min(value2), max(value3)");
+
+            // When / Then
+            // TODO this is incorrect, there should be no required value fields
+            // See https://github.com/gchq/sleeper/issues/5605
+            assertThat(createIterator().getRequiredValueFields()).containsExactly("key", "sortKey", "value1", "value2", "value3");
         }
     }
 
