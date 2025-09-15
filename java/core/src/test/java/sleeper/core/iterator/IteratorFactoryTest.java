@@ -164,7 +164,7 @@ public class IteratorFactoryTest {
 
         // When / Then
         assertThatThrownBy(() -> createIterator())
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper table filter not set to match ageOff(column,age), was: someother");
     }
 
