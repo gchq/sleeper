@@ -17,6 +17,7 @@ package sleeper.core.iterator;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 

@@ -15,31 +15,33 @@
  */
 package sleeper.core.iterator;
 
-import java.util.Iterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.LimitingIterator;
+import sleeper.core.row.Row;
+import sleeper.core.schema.Schema;
+
+import java.util.List;
 
 /**
- * Wraps an iterator with a close method that does nothing. Turns an iterator into a {@link CloseableIterator}.
- *
- * @param <T> the type of elements returned by this iterator
+ * An example iterator that limits the number of rows read.
  */
-public class WrappedIterator<T> implements CloseableIterator<T> {
-    private final Iterator<T> iterator;
+public class LimitingConfigStringIterator implements ConfigStringIterator {
 
-    public WrappedIterator(Iterator<T> iterator) {
-        this.iterator = iterator;
+    private int limit;
+
+    @Override
+    public List<String> getRequiredValueFields() {
+        return List.of();
     }
 
     @Override
-    public boolean hasNext() {
-        return iterator.hasNext();
+    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+        return new LimitingIterator<>(limit, input);
     }
 
     @Override
-    public T next() {
-        return iterator.next();
+    public void init(String configString, Schema schema) {
+        limit = Integer.parseInt(configString);
     }
 
-    @Override
-    public void close() {
-    }
 }

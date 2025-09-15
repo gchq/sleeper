@@ -35,8 +35,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
-import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -65,7 +65,7 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         FileReference file2 = ingestRowsGetFile(data2);
 
         if (shouldUseFiltersConfig) {
-            tableProperties.set(FILTERS_CONFIG, "ageOff(timestamp,1000000)");
+            tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,1000000)");
         } else {
             tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
             tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
@@ -112,7 +112,7 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         FileReference file1 = ingestRowsGetFile(data1);
         FileReference file2 = ingestRowsGetFile(data2);
 
-        tableProperties.set(AGGREGATIONS, "min(timestamp),sum(value)");
+        tableProperties.set(AGGREGATION_CONFIG, "min(timestamp),sum(value)");
 
         CompactionJob compactionJob = compactionFactory().createCompactionJob(List.of(file1, file2), "root");
         assignJobIdToInputFiles(stateStore, compactionJob);
