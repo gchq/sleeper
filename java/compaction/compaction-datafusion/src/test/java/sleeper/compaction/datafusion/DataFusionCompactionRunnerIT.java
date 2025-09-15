@@ -73,8 +73,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -355,7 +355,7 @@ public class DataFusionCompactionRunnerIT {
                     .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
                     .build();
             tableProperties.setSchema(schema);
-            tableProperties.set(AGGREGATIONS, "sum(value), map_sum(map_value2)");
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value), map_sum(map_value2)");
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Row row1 = new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2", Map.of("map_key1", 1L, "map_key2", 3L)));
             Row row2 = new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2", Map.of("map_key1", 3L, "map_key2", 4L)));
@@ -391,7 +391,7 @@ public class DataFusionCompactionRunnerIT {
                     .valueFields(new Field("value", new LongType()))
                     .build();
             tableProperties.setSchema(schema);
-            tableProperties.set(FILTERS_CONFIG, "ageOff(timestamp,10)");
+            tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,10)");
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Row row1 = new Row(Map.of("key", "a", "timestamp", 999999999999998L, "value", 1L));
             Row row2 = new Row(Map.of("key", "a", "timestamp", 1L, "value", 2L));
@@ -430,8 +430,8 @@ public class DataFusionCompactionRunnerIT {
                     .valueFields(new Field("value", new LongType()))
                     .build();
             tableProperties.setSchema(schema);
-            tableProperties.set(FILTERS_CONFIG, "ageOff(timestamp,10)");
-            tableProperties.set(AGGREGATIONS, "sum(value)");
+            tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,10)");
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
             update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Row row1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 1L));
             Row row2 = new Row(Map.of("key", "a", "timestamp", 1L, "value", 2L));
