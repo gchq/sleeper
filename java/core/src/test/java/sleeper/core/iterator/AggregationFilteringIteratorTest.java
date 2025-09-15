@@ -240,9 +240,37 @@ public class AggregationFilteringIteratorTest {
                             "key2", "test", "value2", 88818L))));
 
             // Then
-            assertThat(resultList.get(0).toString()).isEqualTo(
-                    new Row(Map.of("key1", "test", "value1", 4431,
-                            "key2", "test", "value2", 88818L)).toString());
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key1", "test", "value1", 4431L,
+                            "key2", "test", "value2", 88818L)));
+        }
+
+        @Test
+        void shouldApplyAggregationAndFiltering() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(
+                            new Field("timestamp", new LongType()),
+                            new Field("count", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MAX(timestamp),SUM(count)");
+            tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,1000)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "timestamp", 9999999999999999L, "count", 10L)),
+                    new Row(Map.of("key", "A", "timestamp", 100L, "count", 20L)),
+                    new Row(Map.of("key", "B", "timestamp", 100L, "count", 10L)),
+                    new Row(Map.of("key", "C", "timestamp", 100L, "count", 10L)),
+                    new Row(Map.of("key", "C", "timestamp", 100L, "count", 20L)),
+                    new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 10L)),
+                    new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 20L))));
+
+            // Then
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "A", "timestamp", 9999999999999999L, "count", 10L)),
+                    new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 30L)));
         }
     }
 
