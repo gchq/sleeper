@@ -27,6 +27,7 @@ import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
@@ -53,6 +54,11 @@ public class AggregationFilteringIteratorTest {
         @Test
         public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws IteratorCreationException {
             // Given
+            schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new IntType()))
+                    .valueFields(new Field("value", new LongType()),
+                            new Field("notRequiredField", new IntType()))
+                    .build();
             SortedRowIterator iterator = buildFilterOnlyIterator("ageOff(value,1000)");
 
             // Then
