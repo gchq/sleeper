@@ -46,9 +46,9 @@ public class SystemTestApp extends SleeperCdkApp {
 
     @Override
     public void create() {
-        SystemTestProperties properties = getInstanceProperties();
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars);
         super.create();
+        SystemTestProperties properties = getInstanceProperties();
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, getAutoDeleteS3ObjectsStack());
         // Stack for writing random data
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
             new SystemTestClusterStack(this, "SystemTest", properties, bucketStack,

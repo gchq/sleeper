@@ -56,13 +56,12 @@ public class SystemTestBucketStack extends NestedStack {
         Tags.of(this).add("DeploymentStack", id);
     }
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, BuiltJars jars) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, BuiltJars jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
         String bucketName = String.join("-", "sleeper", properties.get(ID),
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));
-        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, id + "-AutoDelete", properties, getLoggingStack(this, properties), jars);
         bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars, autoDeleteS3ObjectsStack);
         Utils.addStackTagIfSet(this, properties);
     }

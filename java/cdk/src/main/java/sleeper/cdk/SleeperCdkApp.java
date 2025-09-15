@@ -106,6 +106,7 @@ public class SleeperCdkApp extends Stack {
     private QueryQueueStack queryQueueStack;
     private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
     private LoggingStack loggingStack;
+    private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -138,7 +139,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, loggingStack, jars);
+        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, loggingStack, jars);
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3ObjectsStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
@@ -356,6 +357,10 @@ public class SleeperCdkApp extends Stack {
 
     public LoggingStack getLoggingStack() {
         return loggingStack;
+    }
+
+    public AutoDeleteS3ObjectsStack getAutoDeleteS3ObjectsStack() {
+        return autoDeleteS3ObjectsStack;
     }
 
     private void addTags(Construct construct) {
