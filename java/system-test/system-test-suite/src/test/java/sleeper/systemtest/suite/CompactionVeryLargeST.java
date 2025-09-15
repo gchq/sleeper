@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
@@ -33,16 +34,16 @@ import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
-import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileReferenceRowCounts;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
 
 @SystemTest
 @Expensive // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
-public class CompactionDataFusionPerformanceST {
+public class CompactionVeryLargeST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
@@ -56,31 +57,42 @@ public class CompactionDataFusionPerformanceST {
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
+    // This test takes about 2 hours to run, or an hour and a half if the Sleeper instance is already deployed.
+    // We want to know compactions can deal with a very large amount of data.
+    // This test is based on our expectations for how much data will be compacted at once.
+    // The most data that can be compacted at once is the contents of a whole partition.
+    // At time of writing, by default a partition will be split if it contains 1 billion rows.
+    // With some allowance for the fact that partition splitting takes time, we test with 2 billion rows.
+    void shouldRunVeryLargeCompaction(SleeperSystemTest sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
-                DATA_ENGINE, DataEngine.DATAFUSION.toString()));
-        sleeper.systemTestCluster().runDataGenerationJobs(110,
-                builder -> builder.ingestMode(DIRECT).rowsPerIngest(40_000_000),
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
-                .waitForTotalFileReferences(110);
+                DATA_ENGINE, DataEngine.DATAFUSION.toString(),
+                COMPACTION_FILES_BATCH_SIZE, "40"));
+        sleeper.systemTestCluster().runDataGenerationJobs(10,
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(200_000_000),
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)))
+                // 200 million rows don't fit in the local file system store of a data generation task,
+                // so we end up with 4 files from each task.
+                .waitForTotalFileReferences(40);
 
         // When
-        sleeper.compaction().putTableOnlineUntilJobsAreCreated(10).waitForTasks(10)
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
+        sleeper.compaction().putTableOnlineUntilJobsAreCreated(1).waitForTasks(1)
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(5)));
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
-        assertThat(sumFileReferenceRowCounts(files)).isEqualTo(4_400_000_000L);
-        assertThat(files.streamFileReferences()).hasSize(10);
-        assertThat(files.getFilesWithReferences()).hasSize(10)
-                .first() // Only check one file because it's time consuming to read all rows
-                .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
-                        .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
+        assertThat(files.getFilesWithReferences())
+                .singleElement().satisfies(file -> {
+                    assertThat(file.getReferences())
+                            .singleElement()
+                            .extracting(FileReference::getNumberOfRows)
+                            .isEqualTo(2_000_000_000L);
+                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
+                            .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L));
+                });
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRowsPerSecondInRange(2_900_000, 4_000_000),
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_000_000, 4_000_000),
                         "meets expected performance");
     }
 }

@@ -25,13 +25,13 @@ use num_traits::NumAssign;
 /// The aggregation operation to peform inside of each map. The values
 /// of identical keys will be aggregated according to the specified operation.
 #[derive(Debug, Clone)]
-pub enum MapAggregatorOp {
+pub enum UdfMapAggregatorOp {
     Sum,
     Min,
     Max,
 }
 
-impl MapAggregatorOp {
+impl UdfMapAggregatorOp {
     pub fn op<T>(&self, acc: T, value: T) -> T
     where
         T: NumAssign + Ord,
