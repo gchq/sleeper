@@ -15,8 +15,6 @@
  */
 package sleeper.cdk.stack.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -38,16 +36,12 @@ import java.util.Map;
 
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(AutoDeleteS3ObjectsStack.class);
-
     private final IFunction lambda;
     private final Provider provider;
 
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, LoggingStack loggingStack, BuiltJars jars) {
 
         super(scope, id);
-
-        LOGGER.info("In AutoDeleteS3ObjectsStack");
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -74,7 +68,6 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     public void grantAccessToCustomResource(String id, InstanceProperties instanceProperties,
             IBucket bucket, String bucketName) {
 
-        LOGGER.info("In grantAccessToCustomResource for: " + id);
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
