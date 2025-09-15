@@ -16,6 +16,12 @@ information.
 The implementation of this can be chosen in the table property `sleeper.table.statestore.classname`, but usually this
 should be left as the default value.
 
+## Design data processing
+
+Sleeper can apply processing to table data such that all data in the table is seen to have that processing pre-applied.
+For example, this can be used to combine rows with the same values for row keys and sort keys, or to age off old data.
+See more information on this in the [design document](../design.md#iterators-and-continual-aggregation-and-filtering).
+
 ## Add/edit a table
 
 Scripts can be used to add, rename and delete tables in a Sleeper instance. If using the scripts, creating a new table
