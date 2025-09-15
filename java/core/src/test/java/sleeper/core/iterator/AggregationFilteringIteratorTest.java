@@ -87,7 +87,7 @@ public class AggregationFilteringIteratorTest {
 
     @Nested
     @DisplayName("Apply aggregations against single fields")
-    class ApplyAggregations {
+    class ApplySingleFieldAggregations {
 
         @ParameterizedTest
         @CsvSource({"sum", "Sum", "SUM"})
@@ -235,84 +235,93 @@ public class AggregationFilteringIteratorTest {
         }
     }
 
-    @Test
-    void shouldApplyTwoAggregatorFromProperties() throws IteratorCreationException {
-        // Given
-        schema = Schema.builder()
-                .rowKeyFields(List.of(
-                        new Field("key1", new StringType()),
-                        new Field("key2", new StringType())))
-                .valueFields(List.of(
-                        new Field("value1", new LongType()),
-                        new Field("value2", new LongType())))
-                .build();
+    @Nested
+    @DisplayName("Combine configuration together")
+    class CombineConfiguration {
 
-        SortedRowIterator doubleAggregatorIterator = buildAggregatorOnlyIterator("SUM(value1),MAX(value2)");
+        @Test
+        void shouldApplyTwoAggregatorFromProperties() throws IteratorCreationException {
+            // Given
+            schema = Schema.builder()
+                    .rowKeyFields(List.of(
+                            new Field("key1", new StringType()),
+                            new Field("key2", new StringType())))
+                    .valueFields(List.of(
+                            new Field("value1", new LongType()),
+                            new Field("value2", new LongType())))
+                    .build();
 
-        CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                new Row(Map.of("key1", "test", "value1", 4217L,
-                        "key2", "test", "value2", 367L)),
-                new Row(Map.of("key1", "test", "value1", 214L,
-                        "key2", "test", "value2", 88818L)))
-                .iterator());
-        // When
-        List<Row> resultList = new ArrayList<>();
-        doubleAggregatorIterator.apply(iterator)
-                .forEachRemaining(resultList::add);
+            SortedRowIterator doubleAggregatorIterator = buildAggregatorOnlyIterator("SUM(value1),MAX(value2)");
 
-        // Then
-        assertThat(resultList.get(0).toString()).isEqualTo(
-                new Row(Map.of("key1", "test", "value1", 4431,
-                        "key2", "test", "value2", 88818L)).toString());
+            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+                    new Row(Map.of("key1", "test", "value1", 4217L,
+                            "key2", "test", "value2", 367L)),
+                    new Row(Map.of("key1", "test", "value1", 214L,
+                            "key2", "test", "value2", 88818L)))
+                    .iterator());
+            // When
+            List<Row> resultList = new ArrayList<>();
+            doubleAggregatorIterator.apply(iterator)
+                    .forEachRemaining(resultList::add);
+
+            // Then
+            assertThat(resultList.get(0).toString()).isEqualTo(
+                    new Row(Map.of("key1", "test", "value1", 4431,
+                            "key2", "test", "value2", 88818L)).toString());
+        }
     }
 
-    @Test
-    void shouldThrowExceptionForInvalidOperandDeclared() throws IteratorCreationException {
-        assertThatThrownBy(() -> buildAggregatorOnlyIterator("bop(VALUE)"))
-                .isInstanceOf(IteratorCreationException.class)
-                .cause()
-                .hasMessage("Unable to parse operand. Operand: bop");
-    }
+    @Nested
+    @DisplayName("Validate aggregation configuration")
+    class ValidateAggregationConfiguration {
 
-    @Test
-    void shouldThrowExceptionWithKeyFieldIncludeAsAggregators() throws IteratorCreationException {
-        schema = Schema.builder()
-                .rowKeyFields(new Field("failKey", new StringType()))
-                .sortKeyFields(new Field("sortKey", new StringType()))
-                .valueFields(new Field("value", new LongType()))
-                .build();
+        @Test
+        void shouldThrowExceptionForInvalidOperandDeclared() throws IteratorCreationException {
+            assertThatThrownBy(() -> buildAggregatorOnlyIterator("bop(VALUE)"))
+                    .isInstanceOf(IteratorCreationException.class)
+                    .cause()
+                    .hasMessage("Unable to parse operand. Operand: bop");
+        }
 
-        assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(failKey),MIN(sortKey),SUM(value)"))
-                .isInstanceOf(IteratorCreationException.class)
-                .cause()
-                .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
-    }
+        @Test
+        void shouldThrowExceptionWithKeyFieldIncludeAsAggregators() throws IteratorCreationException {
+            schema = Schema.builder()
+                    .rowKeyFields(new Field("failKey", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new StringType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build();
 
-    @Test
-    void shouldThrowExceptionWhenDuplicateAggregators() {
-        schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("doubleValue", new LongType()))
-                .build();
+            assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(failKey),MIN(sortKey),SUM(value)"))
+                    .isInstanceOf(IteratorCreationException.class)
+                    .cause()
+                    .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
+        }
 
-        assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(doubleValue),SUM(doubleValue)"))
-                .isInstanceOf(IteratorCreationException.class)
-                .cause()
-                .hasMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
-    }
+        @Test
+        void shouldThrowExceptionWhenDuplicateAggregators() {
+            schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("doubleValue", new LongType()))
+                    .build();
 
-    @Test
-    void shouldThrowExceptionWhenNotAllValueFieldsIncludedAsAggregator() {
-        schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("existsValue", new LongType()), new Field("ignoredValue", new LongType()))
-                .build();
+            assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(doubleValue),SUM(doubleValue)"))
+                    .isInstanceOf(IteratorCreationException.class)
+                    .cause()
+                    .hasMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
+        }
 
-        assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(existsValue)"))
-                .isInstanceOf(IteratorCreationException.class)
-                .cause()
-                .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
+        @Test
+        void shouldThrowExceptionWhenNotAllValueFieldsIncludedAsAggregator() {
+            schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("existsValue", new LongType()), new Field("ignoredValue", new LongType()))
+                    .build();
 
+            assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(existsValue)"))
+                    .isInstanceOf(IteratorCreationException.class)
+                    .cause()
+                    .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
+        }
     }
 
     @Test
