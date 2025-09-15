@@ -274,7 +274,7 @@ public class AggregationFilteringIteratorTest {
     }
 
     @Nested
-    @DisplayName("Process iterator rows")
+    @DisplayName("Process rows from iterator")
     class ProcessRows {
 
         @BeforeEach
@@ -374,7 +374,33 @@ public class AggregationFilteringIteratorTest {
                     new Row(Map.of("key", "B", "value", 1500L)),
                     new Row(Map.of("key", "C", "value", 70L))));
         }
+    }
 
+    @Nested
+    @DisplayName("Handle sort keys")
+    class HandleSortKeys {
+
+        @Test
+        void shouldAggregateRowsWhereRowAndSortKeyAreEqual() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new IntType()))
+                    .valueFields(new Field("value", new IntType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "sortKey", 1, "value", 100L)),
+                    new Row(Map.of("key", "A", "sortKey", 1, "value", 1000L)),
+                    new Row(Map.of("key", "A", "sortKey", 2, "value", 500L))));
+
+            // Then
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "A", "sortKey", 1, "value", 1100L)),
+                    new Row(Map.of("key", "A", "sortKey", 2, "value", 500L)));
+        }
     }
 
     @Nested
