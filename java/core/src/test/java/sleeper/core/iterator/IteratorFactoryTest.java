@@ -164,6 +164,8 @@ public class IteratorFactoryTest {
 
         // When / Then
         assertThatThrownBy(() -> createIterator())
+                .isInstanceOf(IteratorCreationException.class)
+                .cause()
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper table filter not set to match ageOff(column,age), was: someother");
     }
@@ -179,7 +181,8 @@ public class IteratorFactoryTest {
 
         // When / Then
         assertThatThrownBy(() -> createIterator())
-                .isInstanceOf(NumberFormatException.class);
+                .isInstanceOf(IteratorCreationException.class)
+                .hasCauseInstanceOf(NumberFormatException.class);
     }
 
     private List<Row> applyIterator(List<Row> rows) throws Exception {

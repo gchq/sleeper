@@ -264,6 +264,7 @@ public class AggregationFilteringIteratorTest {
     void shouldThrowExceptionForInvalidOperandDeclared() throws IteratorCreationException {
         assertThatThrownBy(() -> buildAggregatorOnlyIterator("bop(VALUE)"))
                 .isInstanceOf(IteratorCreationException.class)
+                .cause()
                 .hasMessage("Unable to parse operand. Operand: bop");
     }
 
@@ -277,6 +278,7 @@ public class AggregationFilteringIteratorTest {
 
         assertThatThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(failKey),MIN(sortKey),SUM(value)", schema))
                 .isInstanceOf(IteratorCreationException.class)
+                .cause()
                 .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
     }
 
@@ -289,6 +291,7 @@ public class AggregationFilteringIteratorTest {
 
         assertThatThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(doubleValue),SUM(doubleValue)", schema))
                 .isInstanceOf(IteratorCreationException.class)
+                .cause()
                 .hasMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
     }
 
@@ -301,6 +304,7 @@ public class AggregationFilteringIteratorTest {
 
         assertThatThrownBy(() -> buildAggregatorOnlyIteratorWithSchema("MIN(existsValue)", schema))
                 .isInstanceOf(IteratorCreationException.class)
+                .cause()
                 .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
 
     }
