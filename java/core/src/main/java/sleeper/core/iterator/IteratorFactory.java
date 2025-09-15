@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -31,7 +32,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * A factory class for Sleeper iterators.
@@ -146,14 +151,14 @@ public class IteratorFactory {
     private void validateAggregations(List<Aggregation> aggregations, Schema schema) {
         validateNoRowKeySortKeyAggregations(aggregations, schema);
         validateNoDuplicateAggregations(aggregations);
-        validateAllColumnsHaveAggregations(aggregations, schema);
+        validateAggregatedColumnsMatchValueColumns(aggregations, schema);
     }
 
     private void validateNoRowKeySortKeyAggregations(List<Aggregation> aggregations, Schema schema) {
-        List<Aggregation> rowKeySortKeyViolations = aggregations.stream().filter(agg -> {
-            return schema.getRowKeyFieldNames().contains(agg.column()) ||
-                    schema.getSortKeyFieldNames().contains(agg.column());
-        }).toList();
+        Set<String> keyFields = schema.streamKeyFields()
+                .map(Field::getName)
+                .collect(toUnmodifiableSet());
+        List<Aggregation> rowKeySortKeyViolations = aggregations.stream().filter(agg -> keyFields.contains(agg.column())).toList();
 
         if (!rowKeySortKeyViolations.isEmpty()) {
             String errStr = rowKeySortKeyViolations.stream()
@@ -172,17 +177,21 @@ public class IteratorFactory {
         });
     }
 
-    private void validateAllColumnsHaveAggregations(List<Aggregation> aggregations, Schema schema) {
-        List<String> aggregationColumns = new ArrayList<String>();
-        aggregations.stream().forEach(aggregation -> {
-            aggregationColumns.add(aggregation.column());
-        });
+    private void validateAggregatedColumnsMatchValueColumns(List<Aggregation> aggregations, Schema schema) {
+        Set<String> aggregationColumns = aggregations.stream().map(Aggregation::column).collect(toUnmodifiableSet());
+        Set<String> valueFields = schema.getValueFields().stream().map(Field::getName).collect(toUnmodifiableSet());
 
-        if (!aggregationColumns.containsAll(schema.getValueFieldNames())) {
-            String errStr = schema.getValueFieldNames().stream()
+        if (!aggregationColumns.containsAll(valueFields)) {
+            String errStr = schema.getValueFields().stream().map(Field::getName)
                     .filter(presCol -> !aggregationColumns.contains(presCol))
-                    .collect(Collectors.joining(", "));
+                    .collect(joining(", "));
             throw new IllegalArgumentException("Not all value fields have aggregation declared. Missing columns: " + errStr);
+        }
+        if (!valueFields.containsAll(aggregationColumns)) {
+            String errStr = aggregations.stream().map(Aggregation::column)
+                    .filter(aggregationColumn -> !valueFields.contains(aggregationColumn))
+                    .collect(joining(", "));
+            throw new IllegalArgumentException("Not all aggregated fields are declared in the schema. Missing fields: " + errStr);
         }
     }
 

@@ -327,20 +327,19 @@ public class AggregationFilteringIteratorTest {
         }
 
         @Test
-        void shouldThrowExceptionWithNonExistentFieldIncludeAsAggregators() throws IteratorCreationException {
+        void shouldThrowExceptionWhenAggregatingNonExistentField() throws IteratorCreationException {
             // Given
             tableProperties.setSchema(Schema.builder()
-                    .rowKeyFields(new Field("failKey", new StringType()))
-                    .sortKeyFields(new Field("sortKey", new StringType()))
+                    .rowKeyFields(new Field("key", new StringType()))
                     .valueFields(new Field("value", new LongType()))
                     .build());
-            tableProperties.set(AGGREGATION_CONFIG, "MIN(failKey),MIN(sortKey),SUM(value)");
+            tableProperties.set(AGGREGATION_CONFIG, "SUM(value),SUM(abc)");
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
                     .isInstanceOf(IteratorCreationException.class)
                     .cause()
-                    .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
+                    .hasMessage("Not all aggregated fields are declared in the schema. Missing fields: abc");
         }
 
         @Test
