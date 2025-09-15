@@ -62,7 +62,7 @@ public class IteratorFactory {
      */
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
-            if (iteratorConfig.getFilters() == null && iteratorConfig.getAggregationString() == null) {
+            if (iteratorConfig.getFilteringString() == null && iteratorConfig.getAggregationString() == null) {
                 ConfigStringIterator iterator;
                 String className = iteratorConfig.getIteratorClassName();
 
@@ -101,8 +101,8 @@ public class IteratorFactory {
         long maxAge = 0L;
         String filterName = null;
 
-        if (iteratorConfig.getFilters() != null && !iteratorConfig.getFilters().equals("")) {
-            String[] filterParts = iteratorConfig.getFilters().split("\\(");
+        if (iteratorConfig.getFilteringString() != null && !iteratorConfig.getFilteringString().equals("")) {
+            String[] filterParts = iteratorConfig.getFilteringString().split("\\(");
             if ("ageoff".equals(filterParts[0].toLowerCase(Locale.ENGLISH))) {
                 String[] filterInput = StringUtils.chop(filterParts[1]).split(","); //Chop to remove the trailing ')'
                 filterName = filterInput[0];

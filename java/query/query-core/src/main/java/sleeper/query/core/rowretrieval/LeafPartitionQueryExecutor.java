@@ -76,8 +76,8 @@ public class LeafPartitionQueryExecutor {
         Schema tableSchema = tableProperties.getSchema();
         String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
         String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
-        String compactionFilters = tableProperties.get(TableProperty.FILTERS_CONFIG);
-        String compactionAggregationString = tableProperties.get(TableProperty.AGGREGATIONS);
+        String compactionFilters = tableProperties.get(TableProperty.FILTERING_CONFIG);
+        String compactionAggregationString = tableProperties.get(TableProperty.AGGREGATION_CONFIG);
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
 
@@ -85,13 +85,13 @@ public class LeafPartitionQueryExecutor {
             compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
                     .iteratorClassName(compactionIteratorClassName)
                     .iteratorConfigString(compactionIteratorConfig)
-                    .filters(compactionFilters)
+                    .filteringString(compactionFilters)
                     .aggregationString(compactionAggregationString)
                     .build());
             queryIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
                     .iteratorClassName(leafPartitionQuery.getQueryTimeIteratorClassName())
                     .iteratorConfigString(leafPartitionQuery.getQueryTimeIteratorConfig())
-                    .filters(leafPartitionQuery.getQueryTimeFilters())
+                    .filteringString(leafPartitionQuery.getQueryTimeFilters())
                     .aggregationString(leafPartitionQuery.getQueryTimeAggregations())
                     .build());
         } catch (IteratorCreationException e) {

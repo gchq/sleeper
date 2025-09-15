@@ -86,7 +86,7 @@ public class BespokeIngestCoordinator {
                 .iteratorConfig(IteratorConfig.builder()
                         .iteratorClassName(sleeperIteratorClassName)
                         .iteratorConfigString(sleeperIteratorConfig)
-                        .filters(sleeperFiltersConfig)
+                        .filteringString(sleeperFiltersConfig)
                         .aggregationString(sleeperAggregationString)
                         .build())
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)

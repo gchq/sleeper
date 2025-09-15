@@ -48,6 +48,17 @@ public class AgeOffIteratorTest {
                 .containsExactly(rows.get(1), rows.get(4));
     }
 
+    @Test
+    void shouldRequireAgeOffField() {
+        // Given
+        AgeOffIterator ageOffIterator = new AgeOffIterator();
+        ageOffIterator.init("timestamp,1000000", getSchema());
+
+        // When / Then
+        assertThat(ageOffIterator.getRequiredValueFields())
+                .containsExactly("timestamp");
+    }
+
     private static Schema getSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("id", new StringType()))

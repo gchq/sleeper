@@ -162,12 +162,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "https://github.com/gchq/sleeper/issues/4344 for DataFusion.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
-    TableProperty FILTERS_CONFIG = Index.propertyBuilder("sleeper.table.filters")
+    TableProperty FILTERING_CONFIG = Index.propertyBuilder("sleeper.table.filters")
             .description("Property to configure a filter on a column on a table. " +
                     "Currently only accepts ageOff(column,age).")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
-    TableProperty AGGREGATIONS = Index.propertyBuilder("sleeper.table.aggregations")
+    TableProperty AGGREGATION_CONFIG = Index.propertyBuilder("sleeper.table.aggregations")
             .description("Property to configure aggregation of columns from the table. Format accepted: " +
                     "op(column),op(column)")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)

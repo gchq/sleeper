@@ -70,8 +70,8 @@ import java.util.stream.Collectors;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.ROW_KEY_PREFIX_TEST;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 
@@ -266,8 +266,8 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
                 .getIterator(IteratorConfig.builder()
                         .iteratorClassName(iteratorClass)
                         .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                        .filters(tableProperties.get(FILTERS_CONFIG))
-                        .aggregationString(tableProperties.get(AGGREGATIONS))
+                        .filteringString(tableProperties.get(FILTERING_CONFIG))
+                        .aggregationString(tableProperties.get(AGGREGATION_CONFIG))
                         .build(), schema)
                 .apply(mergingIterator);
     }
