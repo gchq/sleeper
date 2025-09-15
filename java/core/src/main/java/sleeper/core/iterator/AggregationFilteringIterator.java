@@ -15,8 +15,6 @@
  */
 package sleeper.core.iterator;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
@@ -41,7 +39,7 @@ import java.util.stream.Stream;
 public class AggregationFilteringIterator implements SortedRowIterator {
 
     /** Combined configuration for the optional filtering and aggregation behaviour. */
-    @SuppressFBWarnings(value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR", justification = "Field is null checked before use")
+
     private FilterAggregationConfig config;
     /** Table schema being filtered. */
     private Schema schema;
