@@ -164,12 +164,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty FILTERING_CONFIG = Index.propertyBuilder("sleeper.table.filters")
             .description("Property to configure a filter on a column on a table. " +
-                    "Currently only accepts ageOff(column,age).")
+                    "Currently only accepts ageOff(column,age). TODO explain age off filter")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty AGGREGATION_CONFIG = Index.propertyBuilder("sleeper.table.aggregations")
             .description("Property to configure aggregation of columns from the table. Format accepted: " +
-                    "op(column),op(column)")
+                    "op(column),op(column) TODO list & explain aggregation types")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
