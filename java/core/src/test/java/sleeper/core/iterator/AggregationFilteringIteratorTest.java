@@ -22,8 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
@@ -34,7 +32,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -102,17 +99,14 @@ public class AggregationFilteringIteratorTest {
         @CsvSource({"sum", "Sum", "SUM"})
         public void shouldApplySumAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            String parsedAggregatorString = aggregator + "(value)";
-            SortedRowIterator sumAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
-            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                    new Row(Map.of("key", "test", "value", 2214L)),
-                    new Row(Map.of("key", "test", "value", 87L)),
-                    new Row(Map.of("key", "test", "value", 7841L))).iterator());
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(value)");
 
             // When
-            List<Row> resultList = new ArrayList<>();
-            sumAggregatorIterator.apply(iterator)
-                    .forEachRemaining(resultList::add);
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "test", "value", 2214L)),
+                    new Row(Map.of("key", "test", "value", 87L)),
+                    new Row(Map.of("key", "test", "value", 7841L))));
+
             // Then
             assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 10142L))));
         }
@@ -121,17 +115,13 @@ public class AggregationFilteringIteratorTest {
         @CsvSource({"min", "Min", "MIN"})
         public void shouldApplyMinAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            String parsedAggregatorString = aggregator + "(value)";
-            SortedRowIterator minAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
-            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                    new Row(Map.of("key", "test", "value", 619L)),
-                    new Row(Map.of("key", "test", "value", 321L)),
-                    new Row(Map.of("key", "test", "value", 97L))).iterator());
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(value)");
 
             // When
-            List<Row> resultList = new ArrayList<>();
-            minAggregatorIterator.apply(iterator)
-                    .forEachRemaining(resultList::add);
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "test", "value", 619L)),
+                    new Row(Map.of("key", "test", "value", 321L)),
+                    new Row(Map.of("key", "test", "value", 97L))));
 
             // Then
             assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 97L))));
@@ -141,17 +131,13 @@ public class AggregationFilteringIteratorTest {
         @CsvSource({"max", "Max", "MAX"})
         public void shouldApplyMaxAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            String parsedAggregatorString = aggregator + "(value)";
-            SortedRowIterator maxAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
-            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
-                    new Row(Map.of("key", "test", "value", 458498L)),
-                    new Row(Map.of("key", "test", "value", 87L)),
-                    new Row(Map.of("key", "test", "value", 222474L))).iterator());
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(value)");
 
             // When
-            List<Row> resultList = new ArrayList<>();
-            maxAggregatorIterator.apply(iterator)
-                    .forEachRemaining(resultList::add);
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "test", "value", 458498L)),
+                    new Row(Map.of("key", "test", "value", 87L)),
+                    new Row(Map.of("key", "test", "value", 222474L))));
 
             // Then
             assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 458498L))));
@@ -175,20 +161,14 @@ public class AggregationFilteringIteratorTest {
         @CsvSource({"map_sum", "Map_Sum", "MAP_SUM"})
         void shouldApplyMapSumAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
-            SortedRowIterator sumAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)," + aggregator + "(map_value2)");
 
-            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+            // When
+            List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
                             Map.of("map_key1", 1L, "map_key2", 3L))),
                     new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                            Map.of("map_key1", 3L, "map_key2", 4L))))
-                    .iterator());
-
-            // When
-            List<Row> resultList = new ArrayList<>();
-            sumAggregatorIterator.apply(iterator)
-                    .forEachRemaining(resultList::add);
+                            Map.of("map_key1", 3L, "map_key2", 4L)))));
 
             assertThat(resultList).containsExactly(
                     new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
@@ -199,20 +179,14 @@ public class AggregationFilteringIteratorTest {
         @CsvSource({"map_min", "Map_Min", "MAP_MIN"})
         void shouldApplyMapMinAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
-            SortedRowIterator minAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)," + aggregator + "(map_value2)");
 
-            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+            // When
+            List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
                             Map.of("map_key1", 17L, "map_key2", 112L))),
                     new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                            Map.of("map_key1", 9L, "map_key2", 2489L))))
-                    .iterator());
-
-            // When
-            List<Row> resultList = new ArrayList<>();
-            minAggregatorIterator.apply(iterator)
-                    .forEachRemaining(resultList::add);
+                            Map.of("map_key1", 9L, "map_key2", 2489L)))));
 
             assertThat(resultList).containsExactly(
                     new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
@@ -223,20 +197,14 @@ public class AggregationFilteringIteratorTest {
         @CsvSource({"map_max", "Map_Max", "MAP_MAX"})
         void shouldApplyMapMaxAggregationFromProperties(String aggregator) throws Exception {
             // Given
-            String parsedAggregatorString = "sum(value)," + aggregator + "(map_value2)";
-            SortedRowIterator maxAggregatorIterator = buildAggregatorOnlyIterator(parsedAggregatorString);
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)," + aggregator + "(map_value2)");
 
-            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+            // When
+            List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2",
                             Map.of("map_key1", 666L, "map_key2", 11L))),
                     new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2",
-                            Map.of("map_key1", 245L, "map_key2", 2L))))
-                    .iterator());
-
-            // When
-            List<Row> resultList = new ArrayList<>();
-            maxAggregatorIterator.apply(iterator)
-                    .forEachRemaining(resultList::add);
+                            Map.of("map_key1", 245L, "map_key2", 2L)))));
 
             assertThat(resultList).containsExactly(
                     new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2",
@@ -260,18 +228,14 @@ public class AggregationFilteringIteratorTest {
                             new Field("value2", new LongType())))
                     .build());
 
-            SortedRowIterator doubleAggregatorIterator = buildAggregatorOnlyIterator("SUM(value1),MAX(value2)");
+            tableProperties.set(AGGREGATION_CONFIG, "SUM(value1),MAX(value2)");
 
-            CloseableIterator<Row> iterator = new WrappedIterator<>(List.of(
+            // When
+            List<Row> resultList = applyIterator(List.of(
                     new Row(Map.of("key1", "test", "value1", 4217L,
                             "key2", "test", "value2", 367L)),
                     new Row(Map.of("key1", "test", "value1", 214L,
-                            "key2", "test", "value2", 88818L)))
-                    .iterator());
-            // When
-            List<Row> resultList = new ArrayList<>();
-            doubleAggregatorIterator.apply(iterator)
-                    .forEachRemaining(resultList::add);
+                            "key2", "test", "value2", 88818L))));
 
             // Then
             assertThat(resultList.get(0).toString()).isEqualTo(
@@ -286,7 +250,11 @@ public class AggregationFilteringIteratorTest {
 
         @Test
         void shouldThrowExceptionForInvalidOperandDeclared() throws IteratorCreationException {
-            assertThatThrownBy(() -> buildAggregatorOnlyIterator("bop(VALUE)"))
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "bop(VALUE)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
                     .isInstanceOf(IteratorCreationException.class)
                     .cause()
                     .hasMessage("Unable to parse operand. Operand: bop");
@@ -294,13 +262,16 @@ public class AggregationFilteringIteratorTest {
 
         @Test
         void shouldThrowExceptionWithKeyFieldIncludeAsAggregators() throws IteratorCreationException {
+            // Given
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("failKey", new StringType()))
                     .sortKeyFields(new Field("sortKey", new StringType()))
                     .valueFields(new Field("value", new LongType()))
                     .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MIN(failKey),MIN(sortKey),SUM(value)");
 
-            assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(failKey),MIN(sortKey),SUM(value)"))
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
                     .isInstanceOf(IteratorCreationException.class)
                     .cause()
                     .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
@@ -308,12 +279,15 @@ public class AggregationFilteringIteratorTest {
 
         @Test
         void shouldThrowExceptionWhenDuplicateAggregators() {
+            // Given
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key", new StringType()))
                     .valueFields(new Field("doubleValue", new LongType()))
                     .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MIN(doubleValue),SUM(doubleValue)");
 
-            assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(doubleValue),SUM(doubleValue)"))
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
                     .isInstanceOf(IteratorCreationException.class)
                     .cause()
                     .hasMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
@@ -321,12 +295,15 @@ public class AggregationFilteringIteratorTest {
 
         @Test
         void shouldThrowExceptionWhenNotAllValueFieldsIncludedAsAggregator() {
+            // Given
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key", new StringType()))
                     .valueFields(new Field("existsValue", new LongType()), new Field("ignoredValue", new LongType()))
                     .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MIN(existsValue)");
 
-            assertThatThrownBy(() -> buildAggregatorOnlyIterator("MIN(existsValue)"))
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
                     .isInstanceOf(IteratorCreationException.class)
                     .cause()
                     .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
@@ -349,11 +326,6 @@ public class AggregationFilteringIteratorTest {
             AggregationFilteringIterator afi = new AggregationFilteringIterator();
             afi.getRequiredValueFields();
         }).withMessage("AggregatingIterator has not been initialised, call init()");
-    }
-
-    private SortedRowIterator buildAggregatorOnlyIterator(String aggregator) throws Exception {
-        tableProperties.set(AGGREGATION_CONFIG, aggregator);
-        return createIterator();
     }
 
     private List<Row> applyIterator(List<Row> rows) throws Exception {
