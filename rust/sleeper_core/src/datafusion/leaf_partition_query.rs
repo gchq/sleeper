@@ -26,7 +26,7 @@ use crate::{
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
-use datafusion::logical_expr::col;
+use datafusion::logical_expr::ident;
 use datafusion::{common::plan_err, logical_expr::Expr, physical_plan::displayable};
 use datafusion::{
     dataframe::DataFrame,
@@ -57,8 +57,8 @@ impl Display for LeafPartitionQueryConfig<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Query config: {}, query ranges: {:?}",
-            self.common, self.ranges
+            "Query config: {}, query ranges: {:?}, requested_value_fields: {:?}",
+            self.common, self.ranges, self.requested_value_fields
         )
     }
 }
@@ -167,13 +167,13 @@ impl<'a> LeafPartitionQuery<'a> {
     /// Row key and sort key columns are always projected.
     fn maybe_project_columns(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         if let Some(value_fields) = &self.config.requested_value_fields {
-            let project_colums = self
+            let project_columns = self
                 .config
                 .common
                 .sorting_columns_iter()
                 .chain(value_fields.iter().map(String::as_str))
-                .map(col);
-            frame.select(project_colums)
+                .map(ident);
+            frame.select(project_columns)
         } else {
             Ok(frame)
         }

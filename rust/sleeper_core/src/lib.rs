@@ -172,7 +172,7 @@ impl Display for CommonConfig<'_> {
             self.region
         )?;
         match &self.output {
-            OutputType::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
+            OutputType::ArrowRecordBatch => write!(f, "output is Arrow RecordBatches"),
             OutputType::File {
                 output_file,
                 write_sketch_file,

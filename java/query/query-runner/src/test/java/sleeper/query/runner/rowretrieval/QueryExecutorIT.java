@@ -20,7 +20,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -1130,13 +1129,15 @@ public class QueryExecutorIT {
         }
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenQueryTimeIteratorApplied() throws IteratorCreationException, IOException, ObjectFactoryException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnCorrectDataWhenQueryTimeIteratorApplied(String queryEngine) throws IteratorCreationException, IOException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
@@ -1169,13 +1170,15 @@ public class QueryExecutorIT {
         }
     }
 
-    @Test
-    public void shouldReturnOnlyRequestedValuesWhenSpecified() throws IteratorCreationException, ObjectFactoryException, IOException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldReturnOnlyRequestedValuesWhenSpecified(String queryEngine) throws IteratorCreationException, ObjectFactoryException, IOException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getRows().iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
@@ -1200,13 +1203,15 @@ public class QueryExecutorIT {
         }
     }
 
-    @Test
-    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser() throws IteratorCreationException, ObjectFactoryException, IOException, QueryException {
+    @ParameterizedTest()
+    @MethodSource("queryEngineChoices")
+    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser(String queryEngine) throws IteratorCreationException, ObjectFactoryException, IOException, QueryException {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getRowsForQueryTimeIteratorTest("secret").iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);

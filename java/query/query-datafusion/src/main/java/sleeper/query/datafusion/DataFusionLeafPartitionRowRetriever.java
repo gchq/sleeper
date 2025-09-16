@@ -155,8 +155,12 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
         queryConfig.common.set(common);
+
+        // Copying logic in LeafPartitionQueryExecutor#createSchemaForDataRead, we see if the query has any
+        // requested value fields, if it does, grab the value fields from the dataReadSchema, since this
+        // will include extra value fields needed for Java iterators to execute
         if (query.getRequestedValueFields() != null) {
-            queryConfig.requested_value_fields.populate(query.getRequestedValueFields().toArray(String[]::new), false);
+            queryConfig.requested_value_fields.populate(dataReadSchema.getValueFieldNames().toArray(String[]::new), false);
             queryConfig.requested_value_fields_set.set(true);
         } else {
             queryConfig.requested_value_fields_set.set(false);
