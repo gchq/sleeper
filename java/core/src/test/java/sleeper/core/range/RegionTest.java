@@ -96,6 +96,120 @@ public class RegionTest {
     }
 
     @Test
+    public void getPartialRangesOrderedShouldReturnCorrectOrder() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("first", new IntType()),
+                new Field("second", new IntType()),
+                new Field("third", new IntType())).build();
+        Schema reverseSchema = Schema.builder().rowKeyFields(
+                new Field("third", new IntType()),
+                new Field("second", new IntType()),
+                new Field("first", new IntType())).build();
+        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
+        Range range1 = rangeFactory.createRange("first", 1, true, 2, true);
+        Range range2 = rangeFactory.createRange("second", 1, true, 2, true);
+        Range range3 = rangeFactory.createRange("third", 1, true, 2, true);
+
+        Region inSchemaOrder = new Region(List.of(range1, range2, range3));
+        Region notSchemaOrder = new Region(List.of(range1, range3, range2));
+        List<Range> expectedOrder = List.of(range1, range2, range3);
+        List<Range> expectedReverseOrder = List.of(range3, range2, range1);
+
+        // When
+        List<Range> ranges1 = inSchemaOrder.getPartialRangesOrdered(schema);
+        List<Range> ranges2 = notSchemaOrder.getPartialRangesOrdered(schema);
+        List<Range> ranges3 = inSchemaOrder.getPartialRangesOrdered(reverseSchema);
+        List<Range> ranges4 = notSchemaOrder.getPartialRangesOrdered(reverseSchema);
+
+        // Then
+        assertThat(ranges1).containsExactlyElementsOf(expectedOrder);
+        assertThat(ranges2).containsExactlyElementsOf(expectedOrder);
+        assertThat(ranges3).containsExactlyElementsOf(expectedReverseOrder);
+        assertThat(ranges4).containsExactlyElementsOf(expectedReverseOrder);
+    }
+
+    @Test
+    public void getPartialRangesOrderedShouldReturnCorrectPartialOrder() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("first", new IntType()),
+                new Field("second", new IntType()),
+                new Field("third", new IntType())).build();
+        Schema reverseSchema = Schema.builder().rowKeyFields(
+                new Field("third", new IntType()),
+                new Field("second", new IntType()),
+                new Field("first", new IntType())).build();
+        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
+        Range range1 = rangeFactory.createRange("first", 1, true, 2, true);
+        Range range3 = rangeFactory.createRange("third", 1, true, 2, true);
+
+        Region inSchemaOrder = new Region(List.of(range1, range3));
+        Region notSchemaOrder = new Region(List.of(range3, range1));
+        Region emptyRegion = new Region(List.of());
+        List<Range> expectedOrder = List.of(range1, range3);
+        List<Range> expectedReverseOrder = List.of(range3, range1);
+
+        // When
+        List<Range> ranges1 = inSchemaOrder.getPartialRangesOrdered(schema);
+        List<Range> ranges2 = notSchemaOrder.getPartialRangesOrdered(schema);
+        List<Range> ranges3 = inSchemaOrder.getPartialRangesOrdered(reverseSchema);
+        List<Range> ranges4 = notSchemaOrder.getPartialRangesOrdered(reverseSchema);
+        List<Range> ranges5 = emptyRegion.getPartialRangesOrdered(schema);
+
+        // Then
+        assertThat(ranges1).containsExactlyElementsOf(expectedOrder);
+        assertThat(ranges2).containsExactlyElementsOf(expectedOrder);
+        assertThat(ranges3).containsExactlyElementsOf(expectedReverseOrder);
+        assertThat(ranges4).containsExactlyElementsOf(expectedReverseOrder);
+        assertThat(ranges5).isEmpty();
+    }
+
+    @Test
+    public void getRowKeyColumnIndexesInRegionShouldWorkCorrectly() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("first", new IntType()),
+                new Field("second", new IntType()),
+                new Field("third", new IntType())).build();
+        Schema reverseSchema = Schema.builder().rowKeyFields(
+                new Field("third", new IntType()),
+                new Field("second", new IntType()),
+                new Field("first", new IntType())).build();
+        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
+        Range range1 = rangeFactory.createRange("first", 1, true, 2, true);
+        Range range2 = rangeFactory.createRange("second", 1, true, 2, true);
+        Range range3 = rangeFactory.createRange("third", 1, true, 2, true);
+
+        Region inSchemaOrder = new Region(List.of(range1, range2, range3));
+        Region notSchemaOrder = new Region(List.of(range2, range3, range1));
+        Region partialRegionOrder = new Region(List.of(range1, range3));
+        Region emptyRegion = new Region(List.of());
+        List<Integer> expectedOrder = List.of(0, 1, 2);
+        List<Integer> expectedPartialRegionOrder = List.of(0, 2);
+
+        // When
+        List<Integer> indexes1 = inSchemaOrder.getRowKeyColumnIndexesInRegion(schema);
+        List<Integer> indexes2 = notSchemaOrder.getRowKeyColumnIndexesInRegion(schema);
+        List<Integer> indexes3 = partialRegionOrder.getRowKeyColumnIndexesInRegion(schema);
+        List<Integer> indexes4 = inSchemaOrder.getRowKeyColumnIndexesInRegion(reverseSchema);
+        List<Integer> indexes5 = notSchemaOrder.getRowKeyColumnIndexesInRegion(reverseSchema);
+        List<Integer> indexes6 = partialRegionOrder.getRowKeyColumnIndexesInRegion(reverseSchema);
+        List<Integer> indexes7 = emptyRegion.getRowKeyColumnIndexesInRegion(schema);
+
+        // Then
+        assertThat(indexes1).containsExactlyElementsOf(expectedOrder);
+        assertThat(indexes2).containsExactlyElementsOf(expectedOrder);
+        assertThat(indexes3).containsExactlyElementsOf(expectedPartialRegionOrder);
+        // When testing against reverse schema, the indexes should still be in ascending order, it's
+        // just the schema column names that have changed.
+        assertThat(indexes4).containsExactlyElementsOf(expectedOrder);
+        assertThat(indexes5).containsExactlyElementsOf(expectedOrder);
+        assertThat(indexes6).containsExactlyElementsOf(expectedPartialRegionOrder);
+        assertThat(indexes7).isEmpty();
+    }
+
+    @Test
     public void equalsAndHashcodeShouldWorkCorrectlyIntKey() {
         // Given
         Schema schema = schemaWithSingleKeyOfType(new IntType());
