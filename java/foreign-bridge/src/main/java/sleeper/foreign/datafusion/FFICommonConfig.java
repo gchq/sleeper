@@ -80,6 +80,10 @@ public class FFICommonConfig extends Struct {
     public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
     /** Compaction iterator configuration. This is optional. */
     public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
+    /** Compaction aggregation configuration. This is optional. */
+    public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
+    /** Compaction filtering configuration. This is optional. */
+    public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
         this(runtime, Optional.empty());
