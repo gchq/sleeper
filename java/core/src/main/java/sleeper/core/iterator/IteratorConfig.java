@@ -38,9 +38,9 @@ public class IteratorConfig {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
         this.filteringString = builder.filteringString;
-        this.filters = builder.filters;
+        this.filters = builder.filters != null ? builder.filters : List.of();
         this.aggregationString = builder.aggregationString;
-        this.aggregations = builder.aggregations;
+        this.aggregations = builder.aggregations != null ? builder.aggregations : List.of();
     }
 
     public static Builder builder() {
@@ -55,14 +55,12 @@ public class IteratorConfig {
      * @return                 the configuration
      */
     public static IteratorConfig from(TableProperties tableProperties) {
-
         return builder()
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                 .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
                 .filters(tableProperties.get(FILTERING_CONFIG))
                 .aggregations(tableProperties.get(AGGREGATION_CONFIG), tableProperties.getSchema())
                 .build();
-
     }
 
     public String getIteratorClassName() {
