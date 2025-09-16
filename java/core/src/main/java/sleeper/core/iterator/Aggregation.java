@@ -55,8 +55,10 @@ public record Aggregation(String column, AggregationOp op) {
      */
     public static List<Aggregation> parseConfig(String configString, Schema schema) {
         List<Aggregation> aggregations = parseConfigWithAnyGrouping(configString, schema);
-        validateNoRowKeySortKeyAggregations(aggregations, schema);
-        validateAggregatedColumnsMatchValueColumns(aggregations, schema);
+        if (!aggregations.isEmpty()) {
+            validateNoRowKeySortKeyAggregations(aggregations, schema);
+            validateAggregatedColumnsMatchValueColumns(aggregations, schema);
+        }
         return aggregations;
     }
 
