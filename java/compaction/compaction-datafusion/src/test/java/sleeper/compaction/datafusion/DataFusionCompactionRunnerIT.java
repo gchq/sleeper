@@ -73,6 +73,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -274,8 +276,8 @@ public class DataFusionCompactionRunnerIT {
     }
 
     @Nested
-    @DisplayName("Handle aggregation")
-    class HandleAggregation {
+    @DisplayName("Handle old aggregation configuration")
+    class HandleOldAggregationConfig {
         @Test
         void shouldMergeAndAggregate() throws Exception {
             // Given
@@ -338,6 +340,121 @@ public class DataFusionCompactionRunnerIT {
                     .containsExactly(output1);
             assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
                     .isEqualTo(SketchesDeciles.from(schema, List.of(output1)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle aggregation and filtering")
+    class HandleAggregationAndFiltering {
+        @Test
+        void shouldAggregate() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sort", new StringType()))
+                    .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
+                    .build();
+            tableProperties.setSchema(schema);
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value), map_sum(map_value2)");
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Row row1 = new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2", Map.of("map_key1", 1L, "map_key2", 3L)));
+            Row row2 = new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2", Map.of("map_key1", 3L, "map_key2", 4L)));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of(
+                            "key", "a",
+                            "sort", "b",
+                            "value", 3L,
+                            "map_value2", Map.of(
+                                    "map_key1", 4L,
+                                    "map_key2", 7L))));
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 1));
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .isEqualTo(expected);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, expected));
+        }
+
+        @Test
+        void shouldFilter() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("timestamp", new LongType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build();
+            tableProperties.setSchema(schema);
+            tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,10)");
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Row row1 = new Row(Map.of("key", "a", "timestamp", 999999999999998L, "value", 1L));
+            Row row2 = new Row(Map.of("key", "a", "timestamp", 1L, "value", 2L));
+            Row row3 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 3L));
+
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2, row3));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of(
+                            "key", "a",
+                            "timestamp", 999999999999998L,
+                            "value", 1L)),
+                    new Row(Map.of(
+                            "key", "a",
+                            "timestamp", 999999999999999L,
+                            "value", 3L)));
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .isEqualTo(expected);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, expected));
+        }
+
+        @Test
+        void shouldFilterAndAggregate() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("timestamp", new LongType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build();
+            tableProperties.setSchema(schema);
+            tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,10)");
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            Row row1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 1L));
+            Row row2 = new Row(Map.of("key", "a", "timestamp", 1L, "value", 2L));
+            Row row3 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 3L));
+
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2, row3));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of(
+                            "key", "a",
+                            "timestamp", 999999999999999L,
+                            "value", 4L)));
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 1));
+            assertThat(readDataFile(schema, job.getOutputFile()))
+                    .isEqualTo(expected);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, expected));
         }
     }
 

@@ -16,7 +16,8 @@
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
 use sleeper_core::{
-    CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperPartitionRegion, run_compaction,
+    CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperPartitionRegion,
+    filter_aggregation_config::aggregate::Aggregate, run_compaction,
 };
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tempfile::tempdir;
@@ -37,7 +38,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperPartitionRegion::new(single_int_range("key", 0, 5)))
         .output(OutputType::File {
             output_file: output.clone(),
@@ -69,7 +70,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperPartitionRegion::new(single_int_range("key", 0, 5)))
         .output(OutputType::File {
             output_file: output.clone(),
@@ -101,7 +102,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperPartitionRegion::new(single_int_range("key", 2, 4)))
         .output(OutputType::File {
             output_file: output.clone(),
@@ -139,7 +140,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key1", "key2"]))
+        .row_key_cols(col_names(["key1", "key2"]))
         .region(SleeperPartitionRegion::new(HashMap::from([
             region_entry("key1", int_range(2, 4)),
             region_entry("key2", int_range(13, 23)),
@@ -183,7 +184,7 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key2"]))
+        .row_key_cols(col_names(["key2"]))
         .region(SleeperPartitionRegion::new(HashMap::from([region_entry(
             "key2",
             int_range(11, 25),
@@ -208,6 +209,59 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
 }
 
 #[test(tokio::test)]
+async fn should_aggregate_ints() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+    let output = file(&dir, "output.parquet");
+    let sketches = file(&dir, "output.sketches");
+    let schema = Arc::new(Schema::new(vec![
+        Field::new("row_key", DataType::Int32, false),
+        Field::new("sort_key", DataType::Int32, false),
+        Field::new("time", DataType::Int32, false),
+    ]));
+    let data_1 = batch_of_int_fields(
+        schema.clone(),
+        [vec![1, 2, 3], vec![10, 12, 13], vec![100, 200, 300]],
+    )?;
+    let data_2 = batch_of_int_fields(
+        schema.clone(),
+        [vec![1, 2, 3], vec![11, 12, 13], vec![1000, 2000, 3000]],
+    )?;
+    write_file(&file_1, &data_1)?;
+    write_file(&file_2, &data_2)?;
+
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(col_names(["row_key"]))
+        .sort_key_cols(col_names(["sort_key"]))
+        .region(SleeperPartitionRegion::new(HashMap::from([region_entry(
+            "row_key",
+            int_range(0, 100),
+        )])))
+        .output(OutputType::File {
+            output_file: output.clone(),
+            opts: SleeperParquetOptions::default(),
+        })
+        .aggregates(Aggregate::parse_config("max(time)")?)
+        .build()?;
+
+    // When
+    let result = run_compaction(&input).await?;
+
+    // Then
+    assert_eq!(
+        read_file_of_int_fields(&output, ["row_key", "sort_key", "time"])?,
+        vec![[1, 10, 100], [1, 11, 1000], [2, 12, 2000], [3, 13, 3000]]
+    );
+    assert_eq!([result.rows_read, result.rows_written], [6, 4]);
+    assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 3]);
+    Ok(())
+}
+
+#[test(tokio::test)]
 async fn should_merge_empty_files() -> Result<(), Error> {
     // Given
     let dir = tempdir()?;
@@ -221,7 +275,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperPartitionRegion::new(HashMap::from([region_entry(
             "key",
             int_range(0, 5),

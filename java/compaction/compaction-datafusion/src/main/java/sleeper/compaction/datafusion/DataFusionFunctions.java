@@ -97,6 +97,10 @@ public interface DataFusionFunctions extends ForeignFunctions {
         public FFISleeperRegion regionRef;
         /** Compaction iterator configuration. This is optional. */
         public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
+        /** Compaction aggregation configuration. This is optional. */
+        public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
+        /** Compaction filtering configuration. This is optional. */
+        public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
 
         public DataFusionCommonConfig(jnr.ffi.Runtime runtime) {
             super(runtime);
@@ -133,6 +137,8 @@ public interface DataFusionFunctions extends ForeignFunctions {
             Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
             Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
             Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
+            Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
+            Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
         }
     }
 
