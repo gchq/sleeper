@@ -15,6 +15,7 @@
  */
 package sleeper.query.core.model;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Nested;
@@ -71,6 +72,101 @@ public class QuerySerDeTest {
             .build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.set(TABLE_ID, "test-table-id");
+    }
+
+    @Nested
+    @DisplayName("Read and write all fields")
+    class ReadAndWriteAllFields {
+
+        @BeforeEach
+        void setUp() {
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("identifier", new StringType()))
+                    .valueFields(new Field("integer", new IntType()), new Field("long", new LongType()))
+                    .build());
+        }
+
+        QueryProcessingConfig processingConfigWithAllFieldsSet = QueryProcessingConfig.builder()
+                .queryTimeIteratorClassName("TestIterator")
+                .queryTimeIteratorConfig("config")
+                .requestedValueFields(List.of("integer"))
+                .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, "results-target"))
+                .statusReportDestinations(List.of(Map.of(ResultsOutput.DESTINATION, "status-report-target")))
+                .build();
+
+        @ParameterizedTest
+        @MethodSource("serDeConstructors")
+        void shouldSerDeParentQueryDirectlyFromSchema(QuerySerDeConstructor constructor) {
+            // Given
+            Query query = Query.builder()
+                    .queryId("test-query")
+                    .tableName("test-table")
+                    .regions(List.of(regionWithOneRange(factory -> factory
+                            .createRange("identifier", "b", "f"))))
+                    .processingConfig(processingConfigWithAllFieldsSet)
+                    .build();
+
+            // When
+            QuerySerDe serDe = constructor.createSerDe(tableProperties);
+            String json = serDe.toJson(query);
+            Query found = serDe.fromJson(json);
+
+            // Then
+            assertThat(found).isEqualTo(query);
+        }
+
+        @ParameterizedTest
+        @MethodSource("serDeConstructors")
+        void shouldSerDeLeafQueryDirectlyFromSchema(QuerySerDeConstructor constructor) {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "m")
+                    .buildTree();
+            LeafPartitionQuery query = LeafPartitionQuery.builder()
+                    .queryId("test-query")
+                    .subQueryId("test-subquery")
+                    .tableId("test-table-id")
+                    .leafPartitionId("L")
+                    .regions(List.of(regionWithOneRange(factory -> factory
+                            .createRange("identifier", "b", "f"))))
+                    .partitionRegion(tree.getPartition("L").getRegion())
+                    .files(List.of("file-1", "file-2"))
+                    .processingConfig(processingConfigWithAllFieldsSet)
+                    .build();
+
+            // When
+            QuerySerDe serDe = constructor.createSerDe(tableProperties);
+            String json = serDe.toJson(query);
+            LeafPartitionQuery found = serDe.fromJsonOrLeafQuery(json).asLeafQuery();
+
+            // Then
+            assertThat(found).isEqualTo(query);
+        }
+
+        private static Stream<Arguments> serDeConstructors() {
+            return Stream.of(
+                    Arguments.of(Named.of("QuerySerDe from schema", serDeFromSchema())),
+                    Arguments.of(Named.of("QuerySerDe from table properties provider", serDeFromPropertiesProvider())));
+        }
+
+        private static QuerySerDeConstructor serDeFromSchema() {
+            return properties -> new QuerySerDe(properties.getSchema());
+        }
+
+        private static QuerySerDeConstructor serDeFromPropertiesProvider() {
+            return properties -> new QuerySerDe(new FixedTablePropertiesProvider(properties));
+        }
+
+        public interface QuerySerDeConstructor {
+            QuerySerDe createSerDe(TableProperties tableProperties);
+        }
+    }
 
     @ParameterizedTest()
     @MethodSource("alternateTestParameters")
@@ -804,49 +900,6 @@ public class QuerySerDeTest {
                         "Unknown query type \"invalid-query-type\"");
     }
 
-    @Nested
-    @DisplayName("Create SerDe directly from schema")
-    class CreateFromSchema {
-
-        @Test
-        void shouldSerDeParentQueryDirectlyFromSchema() {
-            // Given
-            Schema schema = Schema.builder()
-                    .rowKeyFields(new Field("identifier", new StringType()))
-                    .valueFields(new Field("string", new StringType()), new Field("long", new LongType()))
-                    .build();
-            Query query = Query.builder()
-                    .queryId("test-query")
-                    .regions(List.of(regionWithOneRange(schema, factory -> factory
-                            .createExactRange("identifier", "b"))))
-                    .build();
-
-            // When
-            QuerySerDe serDe = new QuerySerDe(schema);
-        }
-
-        @Test
-        void shouldSerDeLeafQueryDirectlyFromSchema() {
-            // Given
-            Schema schema = Schema.builder()
-                    .rowKeyFields(new Field("identifier", new StringType()))
-                    .valueFields(new Field("string", new StringType()), new Field("long", new LongType()))
-                    .build();
-            PartitionTree tree = new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "aaa")
-                    .buildTree();
-            LeafPartitionQuery query = LeafPartitionQuery.builder()
-                    .queryId("test-query")
-                    .leafPartitionId("test-subquery")
-                    .regions(List.of())
-                    .build();
-
-            // When
-            QuerySerDe serDe = new QuerySerDe(schema);
-        }
-    }
-
     private QuerySerDe generateQuerySerDe(String tableName, Schema schema, boolean useTablePropertiesProvider) {
         if (useTablePropertiesProvider) {
             tableProperties.set(TABLE_NAME, tableName);
@@ -860,7 +913,7 @@ public class QuerySerDeTest {
         return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
     }
 
-    private Region regionWithOneRange(Schema schema, Function<RangeFactory, Range> createRange) {
-        return new Region(createRange.apply(new RangeFactory(schema)));
+    private Region regionWithOneRange(Function<RangeFactory, Range> createRange) {
+        return new Region(createRange.apply(new RangeFactory(tableProperties.getSchema())));
     }
 }
