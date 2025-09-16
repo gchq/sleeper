@@ -53,13 +53,17 @@ public class IteratorConfig {
      * @param  tableProperties the table properties
      * @return                 the configuration
      */
-    public static IteratorConfig from(TableProperties tableProperties) {
-        return builder()
-                .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
-                .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                .filteringString(tableProperties.get(FILTERING_CONFIG))
-                .aggregationString(tableProperties.get(AGGREGATION_CONFIG))
-                .build();
+    public static IteratorConfig from(TableProperties tableProperties) throws IteratorCreationException {
+        try {
+            return builder()
+                    .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
+                    .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
+                    .filters(AgeOffFilter.parseConfig(tableProperties.get(FILTERING_CONFIG)))
+                    .aggregations(Aggregation.parseConfig(tableProperties.get(AGGREGATION_CONFIG), tableProperties.getSchema()))
+                    .build();
+        } catch (RuntimeException e) {
+            throw new IteratorCreationException(e);
+        }
     }
 
     public String getIteratorClassName() {

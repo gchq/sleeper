@@ -56,15 +56,12 @@ public class IteratorFactory {
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
             List<SortedRowIterator> iterators = new ArrayList<>();
-            if (iteratorConfig.getFilteringString() != null) {
-                for (AgeOffFilter filter : AgeOffFilter.parseConfig(iteratorConfig.getFilteringString())) {
-                    iterators.add(new AgeOffIterator(filter));
-                }
+            if (!iteratorConfig.getFilters().isEmpty()) {
+                iteratorConfig.getFilters().forEach(filter -> iterators.add(new AgeOffIterator(filter)));
             }
-            if (iteratorConfig.getAggregationString() != null) {
-                List<Aggregation> aggregations = Aggregation.parseConfig(iteratorConfig.getAggregationString(), schema);
+            if (!iteratorConfig.getAggregations().isEmpty()) {
                 List<String> groupingFields = schema.streamKeyFields().map(Field::getName).toList();
-                FilterAggregationConfig config = new FilterAggregationConfig(groupingFields, Optional.empty(), 0, aggregations);
+                FilterAggregationConfig config = new FilterAggregationConfig(groupingFields, Optional.empty(), 0, iteratorConfig.getAggregations());
                 iterators.add(new AggregationFilteringIterator(config, schema));
             }
             if (iteratorConfig.getIteratorClassName() != null) {
