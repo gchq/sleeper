@@ -1,6 +1,5 @@
 {
   "tableName": "my-table",
-  "tableId": null,
   "queryId": "test-query",
   "type": "Query",
   "regions": [
@@ -26,9 +25,5 @@
     {
       "destination": "status-report-target"
     }
-  ],
-  "subQueryId": null,
-  "leafPartitionId": null,
-  "partitionRegion": null,
-  "files": null
+  ]
 }

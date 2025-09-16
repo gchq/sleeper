@@ -45,8 +45,7 @@ public class QuerySerDe {
     private final SchemaLoader schemaLoader;
 
     public QuerySerDe(SchemaLoader schemaLoader) {
-        GsonBuilder builder = new GsonBuilder()
-                .serializeNulls();
+        GsonBuilder builder = new GsonBuilder();
         gson = builder.create();
         gsonPrettyPrinting = builder.setPrettyPrinting().create();
         this.schemaLoader = schemaLoader;

@@ -1,5 +1,4 @@
 {
-  "tableName": null,
   "tableId": "my-table-id",
   "queryId": "test-query",
   "type": "LeafPartitionQuery",
