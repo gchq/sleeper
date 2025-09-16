@@ -33,7 +33,7 @@ public class AggregationIteratorTest {
 
     /**
      * Note further coverage of this is in {@link AggregationFilteringIteratorTest}. This is to avoid coupling too much
-     * to the structure of the aggregation configuration classes.
+     * to the structure of the aggregation iterator/configuration classes.
      */
     @Test
     void shouldAggregate() {
