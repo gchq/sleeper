@@ -50,7 +50,7 @@ public class FFISleeperRegion extends Struct {
      * Schema column indexes. Regions don't always have one range per row key column.
      * This array specifies column indexes into the schema that are specified by this region.
      */
-    public final FFIArray<java.lang.Integer> region_dimensions = new FFIArray<>(this);
+    public final FFIArray<java.lang.Integer> dimension_indexes = new FFIArray<>(this);
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
         this(runtime, null, null);
@@ -107,7 +107,7 @@ public class FFISleeperRegion extends Struct {
         }
         {
             List<Integer> rowKeyIndexes = region.getRowKeyColumnIndexesInRegion(schema);
-            this.region_dimensions.populate(rowKeyIndexes.toArray(Integer[]::new), false);
+            this.dimension_indexes.populate(rowKeyIndexes.toArray(Integer[]::new), false);
         }
 
         validate();
@@ -123,7 +123,7 @@ public class FFISleeperRegion extends Struct {
         maxs.validate();
         mins_inclusive.validate();
         maxs_inclusive.validate();
-        region_dimensions.validate();
+        dimension_indexes.validate();
 
         // Check lengths
         long rowKeys = mins.length();
@@ -136,8 +136,8 @@ public class FFISleeperRegion extends Struct {
         if (rowKeys != maxs_inclusive.length()) {
             throw new IllegalStateException("region maxs inclusive has length " + maxs_inclusive.length() + " but there are " + rowKeys + " row key columns in region");
         }
-        if (rowKeys != region_dimensions.length()) {
-            throw new IllegalStateException("region dimensions has length " + region_dimensions.length() + " but there are " + rowKeys + " row key columns in region");
+        if (rowKeys != dimension_indexes.length()) {
+            throw new IllegalStateException("region dimension indexes has length " + dimension_indexes.length() + " but there are " + rowKeys + " row key columns in region");
         }
     }
 }

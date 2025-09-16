@@ -36,7 +36,7 @@ public class FFISleeperRegionTest {
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
         Integer[] dimensions = new Integer[]{0, 1, 2, 3, 4};
-        region.region_dimensions.populate(dimensions, false);
+        region.dimension_indexes.populate(dimensions, false);
 
         // Then
         assertThatIllegalStateException()
@@ -58,7 +58,7 @@ public class FFISleeperRegionTest {
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
         Integer[] dimensions = new Integer[]{0, 1, 2, 3, 4};
-        region.region_dimensions.populate(dimensions, false);
+        region.dimension_indexes.populate(dimensions, false);
 
         // Then
         assertThatIllegalStateException()
@@ -80,7 +80,7 @@ public class FFISleeperRegionTest {
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
         Integer[] dimensions = new Integer[]{0, 1, 2, 3, 4};
-        region.region_dimensions.populate(dimensions, false);
+        region.dimension_indexes.populate(dimensions, false);
 
         // Then
         assertThatIllegalStateException()
@@ -102,12 +102,12 @@ public class FFISleeperRegionTest {
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
         Integer[] dimensions = new Integer[]{0, 1, 2, 3};
-        region.region_dimensions.populate(dimensions, false);
+        region.dimension_indexes.populate(dimensions, false);
 
         // Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
-                .withMessage("region dimensions has length 4 but there are 5 row key columns in region");
+                .withMessage("region dimension indexes has length 4 but there are 5 row key columns in region");
     }
 
     @Test
@@ -124,7 +124,7 @@ public class FFISleeperRegionTest {
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
         Integer[] dimensions = new Integer[]{0, 1, 2, 3, 4};
-        region.region_dimensions.populate(dimensions, false);
+        region.dimension_indexes.populate(dimensions, false);
 
         // Then
         region.validate();

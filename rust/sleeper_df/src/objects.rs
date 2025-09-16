@@ -53,6 +53,7 @@ pub struct FFIFileResult {
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
     pub mins_len: usize,
+    // The region_mins array may NOT contain null pointers
     pub mins: *const *const c_void,
     pub maxs_len: usize,
     // The region_maxs array may contain null pointers!!
@@ -61,6 +62,8 @@ pub struct FFISleeperRegion {
     pub mins_inclusive: *const *const bool,
     pub maxs_inclusive_len: usize,
     pub maxs_inclusive: *const *const bool,
+    pub dimension_indexes_len: usize,
+    pub dimension_indexes: *const *const i32,
 }
 
 /// Column type for row key columns in Sleeper schema.
@@ -96,6 +99,7 @@ impl<'a> FFISleeperRegion {
         if region.mins_len != region.maxs_len
             || region.mins_len != region.mins_inclusive_len
             || region.mins_len != region.maxs_inclusive_len
+            || region.mins_len != region.dimension_indexes_len
         {
             bail!("All array lengths in a SleeperRegion must be same length");
         }
@@ -108,8 +112,13 @@ impl<'a> FFISleeperRegion {
 
         let region_maxs = unpack_variant_array(region.maxs, region.maxs_len, schema_types, true)?;
 
+        let dimension_indexes =
+            unpack_typed_array(region.dimension_indexes, region.dimension_indexes_len)?;
+
         let mut map = HashMap::with_capacity(row_key_cols.len());
-        for (idx, row_key) in row_key_cols.iter().enumerate() {
+
+        for idx in dimension_indexes {
+            let row_key = row_key_cols[idx];
             map.insert(
                 String::from(row_key.borrow()),
                 ColRange {
@@ -120,6 +129,7 @@ impl<'a> FFISleeperRegion {
                 },
             );
         }
+
         Ok(SleeperRegion::new(map))
     }
 }
