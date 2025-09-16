@@ -54,7 +54,7 @@ public class IteratorFactory {
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
             List<SortedRowIterator> iterators = new ArrayList<>();
-            iteratorConfig.getFilters().forEach(filter -> iterators.add(new AgeOffIterator(filter)));
+            iteratorConfig.getFilters().forEach(filter -> iterators.add(new AgeOffIterator(schema, filter)));
             if (!iteratorConfig.getAggregations().isEmpty()) {
                 iterators.add(new AggregationIterator(schema, iteratorConfig.getAggregations()));
             }

@@ -409,9 +409,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(FILTERING_CONFIG, "ageOff(sortKey, 1000)");
 
             // When / Then
-            // TODO this is incorrect, there should be no required value fields
-            // See https://github.com/gchq/sleeper/issues/5605
-            assertThat(createIterator().getRequiredValueFields()).containsExactly("sortKey");
+            assertThat(createIterator().getRequiredValueFields()).isEmpty();
         }
 
         @Test

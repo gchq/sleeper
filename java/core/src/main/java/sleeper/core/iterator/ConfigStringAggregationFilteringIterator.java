@@ -85,7 +85,7 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
         FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());
         validate(iteratorConfig, schema);
         List<SortedRowIterator> iterators = new ArrayList<>();
-        iteratorConfig.ageOffFilter().map(AgeOffIterator::new).ifPresent(iterators::add);
+        iteratorConfig.ageOffFilter().map(filter -> new AgeOffIterator(schema, filter)).ifPresent(iterators::add);
         if (!iteratorConfig.aggregations().isEmpty()) {
             iterators.add(new AggregationIterator(schema, iteratorConfig.groupingColumns(), iteratorConfig.aggregations()));
         }

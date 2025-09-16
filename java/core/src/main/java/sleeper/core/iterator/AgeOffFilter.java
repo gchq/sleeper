@@ -18,6 +18,8 @@ package sleeper.core.iterator;
 import org.apache.commons.lang3.StringUtils;
 
 import sleeper.core.row.Row;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
 
 import java.util.List;
 import java.util.Objects;
@@ -56,6 +58,22 @@ public class AgeOffFilter implements Predicate<Row> {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+    /**
+     * Returns which value fields in the schema need to be read to apply this filter.
+     *
+     * @param  schema the schema
+     * @return        the required value fields
+     */
+    public List<String> getRequiredValueFields(Schema schema) {
+        if (schema.streamRowKeysThenSortKeys()
+                .map(Field::getName)
+                .noneMatch(key -> key.equals(fieldName))) {
+            return List.of(fieldName);
+        } else {
+            return List.of();
+        }
     }
 
     @Override
