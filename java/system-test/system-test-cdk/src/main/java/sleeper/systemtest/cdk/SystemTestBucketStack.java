@@ -27,7 +27,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
-import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -46,11 +45,9 @@ public class SystemTestBucketStack extends NestedStack {
 
     private final IBucket bucket;
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
         String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
-        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", properties.toInstancePropertiesForCdkUtils(),
-                getLoggingStack(this, properties.toInstancePropertiesForCdkUtils()), jars);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars, autoDeleteS3ObjectsStack);
         Tags.of(this).add("DeploymentStack", id);
@@ -84,10 +81,6 @@ public class SystemTestBucketStack extends NestedStack {
 
     public IBucket getBucket() {
         return bucket;
-    }
-
-    private LoggingStack getLoggingStack(Construct scope, InstanceProperties properties) {
-        return new LoggingStack(scope, "Logging", properties);
     }
 
 }
