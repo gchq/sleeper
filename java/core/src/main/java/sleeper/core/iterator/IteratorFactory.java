@@ -20,14 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A factory class for Sleeper iterators.
@@ -63,9 +61,7 @@ public class IteratorFactory {
             }
             if (iteratorConfig.getAggregationString() != null) {
                 List<Aggregation> aggregations = Aggregation.parseConfig(iteratorConfig.getAggregationString(), schema);
-                List<String> groupingFields = schema.streamKeyFields().map(Field::getName).toList();
-                FilterAggregationConfig config = new FilterAggregationConfig(groupingFields, Optional.empty(), 0, aggregations);
-                iterators.add(new AggregationFilteringIterator(config, schema));
+                iterators.add(new AggregationIterator(schema, aggregations));
             }
             if (iteratorConfig.getIteratorClassName() != null) {
                 ConfigStringIterator iterator;

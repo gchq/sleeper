@@ -428,9 +428,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(AGGREGATION_CONFIG, "sum(value1), min(value2), max(value3)");
 
             // When / Then
-            // TODO this is incorrect, there should be no required value fields
-            // See https://github.com/gchq/sleeper/issues/5605
-            assertThat(createIterator().getRequiredValueFields()).containsExactly("key", "sortKey", "value1", "value2", "value3");
+            assertThat(createIterator().getRequiredValueFields()).isEmpty();
         }
     }
 

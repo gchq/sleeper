@@ -76,7 +76,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         iterator.init("timestamp;,min(value)", schema);
 
         // Then
-        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "timestamp", "value");
+        assertThat(iterator.getRequiredValueFields()).isEmpty();
     }
 
     @Test

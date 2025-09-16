@@ -16,7 +16,6 @@
 package sleeper.query.core.rowretrieval;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -215,7 +214,6 @@ public class QueryExecutorTest {
     class RequestValueFieldsWithAggregationAndFiltering {
 
         @Test
-        @Disabled("TODO")
         void shouldLimitFieldsReadWhenApplyingAggregation() throws Exception {
             // Given
             tableProperties.setSchema(Schema.builder()
