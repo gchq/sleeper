@@ -34,12 +34,9 @@ import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 import sleeper.query.core.output.ResultsOutput;
 
 import java.util.List;
@@ -57,13 +54,9 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QuerySerDeTest {
 
-    private final Field field = new Field("key", new IntType());
-    private final Schema schema = Schema.builder()
-            .rowKeyFields(field)
-            .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
-            .build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties,
+            createSchemaWithKey("key", new IntType()));
 
     @BeforeEach
     void setUp() {
