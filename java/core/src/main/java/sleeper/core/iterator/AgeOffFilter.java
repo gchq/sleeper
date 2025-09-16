@@ -62,6 +62,7 @@ public class AgeOffFilter implements Predicate<Row> {
 
     /**
      * Returns which value fields in the schema need to be read to apply this filter.
+     * If the field we're filtering on is a value field, it will be returned.
      *
      * @param  schema the schema
      * @return        the required value fields
