@@ -76,8 +76,8 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> t) {
-        return iterator.apply(t);
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> t) {
+        return iterator.applyTransform(t);
     }
 
     @Override

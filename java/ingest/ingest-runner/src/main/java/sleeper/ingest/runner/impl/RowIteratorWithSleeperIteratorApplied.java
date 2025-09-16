@@ -52,7 +52,7 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
         this.inputIterator = requireNonNull(sourceIterator);
         this.outputIterator = new IteratorFactory(objectFactory)
                 .getIterator(iteratorConfig, schema)
-                .apply(sourceIterator);
+                .applyTransform(sourceIterator);
     }
 
     @Override

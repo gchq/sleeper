@@ -21,21 +21,21 @@ import sleeper.core.row.Row;
 import java.util.List;
 
 /**
- * A function to transform an iterator of rows. For example, this may exclude some rows, perform an aggregation,
+ * A function to transform an iterator of sorted rows. For example, this may exclude some rows, perform an aggregation,
  * or perform some computation on the values to produce or remove fields.
  */
 public interface SortedRowIterator {
 
     /**
-     * Transforms an iterator of rows to produce a new iterator of the output rows. This should not consume the data
-     * from the input iterator immediately, but should apply any transformation to the data at the point at which the
-     * data is retrieved from the output iterator. Note that it is also valid behaviour to return the input iterator
-     * unchanged as the output. If no iterators are configured that is how this will be implemented.
+     * Transforms an iterator of sorted rows to produce a new iterator of the output rows. This should not consume the
+     * data from the input iterator immediately, but should apply any transformation to the data when it is retrieved
+     * from the output iterator. Note that it is also valid behaviour to return the input iterator unchanged as the
+     * output. If no iterators are configured that is how this will be implemented.
      *
      * @param  input the input data
      * @return       the output data
      */
-    CloseableIterator<Row> apply(CloseableIterator<Row> input);
+    CloseableIterator<Row> applyTransform(CloseableIterator<Row> input);
 
     /**
      * Provides a list of value fields which will be read by the iterator. This is to ensure that those fields will

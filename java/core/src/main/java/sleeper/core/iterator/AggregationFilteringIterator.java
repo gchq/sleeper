@@ -57,7 +57,7 @@ public class AggregationFilteringIterator implements SortedRowIterator {
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> source) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> source) {
         if (config == null) {
             throw new IllegalStateException("AggregatingIterator has not been initialised, call init()");
         }
@@ -87,7 +87,7 @@ public class AggregationFilteringIterator implements SortedRowIterator {
             AgeOffIterator ageoff = new AgeOffIterator();
             // Age off iterator operates in milliseconds
             ageoff.init(String.format("%s,%d", filter_col, config.maxAge()), schema);
-            return ageoff.apply(source);
+            return ageoff.applyTransform(source);
         }).orElse(source);
     }
 }

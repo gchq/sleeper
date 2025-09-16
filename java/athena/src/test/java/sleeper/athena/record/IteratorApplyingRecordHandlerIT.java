@@ -428,7 +428,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         }
 
         @Override
-        public CloseableIterator<Row> apply(CloseableIterator<Row> rowCloseableIterator) {
+        public CloseableIterator<Row> applyTransform(CloseableIterator<Row> rowCloseableIterator) {
             return new CountAggregatorIteratorImpl(rowCloseableIterator);
         }
 

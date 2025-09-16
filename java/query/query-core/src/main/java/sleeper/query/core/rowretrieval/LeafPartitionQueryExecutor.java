@@ -103,9 +103,9 @@ public class LeafPartitionQueryExecutor {
         try {
             CloseableIterator<Row> iterator = retriever.getRows(leafPartitionQuery, dataReadSchema);
             // Apply compaction time iterator
-            iterator = compactionIterator.apply(iterator);
+            iterator = compactionIterator.applyTransform(iterator);
             // Apply query time iterator
-            iterator = queryIterator.apply(iterator);
+            iterator = queryIterator.applyTransform(iterator);
 
             return iterator;
         } catch (RowRetrievalException e) {

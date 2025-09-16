@@ -149,7 +149,7 @@ public class JavaCompactionRunner implements CompactionRunner {
                 .build();
         return new IteratorFactory(objectFactory)
                 .getIterator(config, schema)
-                .apply(mergingIterator);
+                .applyTransform(mergingIterator);
     }
 
     @Override

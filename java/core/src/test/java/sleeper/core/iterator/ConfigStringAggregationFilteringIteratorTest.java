@@ -53,7 +53,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
 
         // When
         iterator.init(";ageoff=timestamp,10,", schema);
-        CloseableIterator<Row> filtered = iterator.apply(rowIter);
+        CloseableIterator<Row> filtered = iterator.applyTransform(rowIter);
         List<Row> result = new ArrayList<>();
         filtered.forEachRemaining(result::add);
 
@@ -380,7 +380,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
         ConfigStringAggregationFilteringIterator aggregationIterator = new ConfigStringAggregationFilteringIterator();
         aggregationIterator.init("sort_key,sort_key2;,sum(value1),min(value2)", schema);
 
-        try (CloseableIterator<Row> aggregator = aggregationIterator.apply(it)) {
+        try (CloseableIterator<Row> aggregator = aggregationIterator.applyTransform(it)) {
             List<Row> list = new ArrayList<>();
             aggregator.forEachRemaining(list::add);
             return list;
