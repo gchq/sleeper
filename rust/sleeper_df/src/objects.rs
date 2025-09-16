@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 use crate::unpack::{
-    unpack_aws_config, unpack_string_array, unpack_typed_array, unpack_typed_ref_array,
-    unpack_variant_array,
+    unpack_aws_config, unpack_str, unpack_string, unpack_string_array, unpack_string_opt,
+    unpack_typed_array, unpack_typed_ref_array, unpack_variant_array,
 };
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
     ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
     SleeperParquetOptions, SleeperPartitionRegion,
+    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
 use std::{
     borrow::Borrow,
     collections::HashMap,
-    ffi::{CStr, c_char, c_void},
+    ffi::{c_char, c_void},
 };
 use url::Url;
 
@@ -150,6 +151,8 @@ pub struct FFICommonConfig {
     pub dict_enc_values: bool,
     pub region: *const FFISleeperRegion,
     pub iterator_config: *const c_char,
+    pub aggregation_config: *const c_char,
+    pub filtering_config: *const c_char,
 }
 
 impl FFICommonConfig {
@@ -182,6 +185,12 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
         if params.iterator_config.is_null() {
             bail!("FFICommonConfig iterator_config is NULL");
         }
+        if params.aggregation_config.is_null() {
+            bail!("FFICommonConfig aggregation_config is NULL");
+        }
+        if params.filtering_config.is_null() {
+            bail!("FFICommonConfig filtering_config is NULL");
+        }
         if params.output_file.is_null() {
             bail!("FFICommonConfig output_file is NULL");
         }
@@ -202,24 +211,11 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
         let ffi_region = unsafe { params.region.as_ref() }.unwrap();
         let region = FFISleeperRegion::to_sleeper_region(ffi_region, &row_key_cols, &schema_types)?;
 
-        // Extract iterator config
-        let iterator_config = Some(
-            unsafe { CStr::from_ptr(params.iterator_config) }
-                .to_str()?
-                .to_owned(),
-        )
-        // Set option to None if config is empty
-        .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
-
         let opts = SleeperParquetOptions {
             max_row_group_size: params.max_row_group_size,
             max_page_size: params.max_page_size,
-            compression: unsafe { CStr::from_ptr(params.compression) }
-                .to_str()?
-                .to_owned(),
-            writer_version: unsafe { CStr::from_ptr(params.writer_version) }
-                .to_str()?
-                .to_owned(),
+            compression: unpack_string(params.compression)?,
+            writer_version: unpack_string(params.writer_version)?,
             column_truncate_length: params.column_truncate_length,
             stats_truncate_length: params.stats_truncate_length,
             dict_enc_row_keys: params.dict_enc_row_keys,
@@ -245,12 +241,14 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
             )
             .region(region)
             .output(OutputType::File {
-                output_file: unsafe { CStr::from_ptr(params.output_file) }
-                    .to_str()
-                    .map(Url::parse)??,
+                output_file: unpack_str(params.output_file).map(Url::parse)??,
                 opts,
             })
-            .iterator_config(iterator_config)
+            .iterator_config(unpack_string_opt(params.iterator_config)?)
+            .aggregates(Aggregate::parse_config(unpack_str(
+                params.aggregation_config,
+            )?)?)
+            .filters(Filter::parse_config(unpack_str(params.filtering_config)?)?)
             .build()
     }
 }
