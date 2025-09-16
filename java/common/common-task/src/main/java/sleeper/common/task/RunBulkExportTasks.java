@@ -15,6 +15,12 @@
  */
 package sleeper.common.task;
 
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.s3.S3Client;
+
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+
 /**
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
  * configurable maximum.
@@ -22,11 +28,19 @@ package sleeper.common.task;
 public class RunBulkExportTasks {
 
     public static void main(String[] args) {
-        if (args.length != 1) {
+        if (args.length != 2) {
             System.out.println("Usage: <instance-id> <number-of-tasks>");
             return;
         }
-        RunDataProcessingTasks.run(args[0], Integer.parseInt(args[1]), false);
+
+        try (S3Client s3Client = S3Client.create();
+                EcsClient ecsClient = EcsClient.create()) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+
+            RunDataProcessingTasks.createForBulkExport(instanceProperties, ecsClient)
+                    .runToMeetTargetTasks(Integer.parseInt(args[1]));
+
+        }
     }
 
     private RunBulkExportTasks() {

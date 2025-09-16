@@ -27,9 +27,7 @@ import software.amazon.awssdk.services.ecs.model.NetworkConfiguration;
 import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
-import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.CompactionECSLaunchType;
 
@@ -72,21 +70,6 @@ public class RunDataProcessingTasks {
         this.taskCounts = builder.taskCounts;
         this.taskLauncher = builder.taskLauncher;
         this.maximumRunningTasks = builder.maximumRunningTasks;
-    }
-
-    public static void run(String instanceId, int numberOfTasks, boolean compactionTask) {
-        try (S3Client s3Client = S3Client.create();
-                EcsClient ecsClient = EcsClient.create();
-                AutoScalingClient asClient = AutoScalingClient.create();
-                Ec2Client ec2Client = Ec2Client.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-
-            if (compactionTask) {
-                createForCompactions(instanceProperties, ecsClient, asClient, ec2Client).runToMeetTargetTasks(numberOfTasks);
-            } else {
-                createForBulkExport(instanceProperties, ecsClient).runToMeetTargetTasks(numberOfTasks);
-            }
-        }
     }
 
     public static Builder builder() {
