@@ -106,7 +106,10 @@ pub fn unpack_variant_array<'a>(
     schema_types: &[FFIRowKeySchemaType],
     nulls_present: bool,
 ) -> Result<Vec<PartitionBound<'a>>> {
-    assert_eq!(len, schema_types.len());
+    assert!(
+        len <= schema_types.len(),
+        "More array elements than schema_types!"
+    );
     if array_base.is_null() {
         bail!("NULL pointer for array_base in variant array");
     }

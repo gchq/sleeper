@@ -50,7 +50,7 @@ public class FFISleeperRegion extends Struct {
      * Schema column indexes. Regions don't always have one range per row key column.
      * This array specifies column indexes into the schema that are specified by this region.
      */
-    public final FFIArray<> dimension_indexes = new FFIArray<>(this);
+    public final FFIArray<java.lang.Integer> dimension_indexes = new FFIArray<>(this);
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
         this(runtime, null, null);

@@ -57,7 +57,7 @@ impl Display for LeafPartitionQueryConfig<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Query config: {}, ranges: {:?}",
+            "Query config: {}, query ranges: {:?}",
             self.common, self.ranges
         )
     }
@@ -95,7 +95,7 @@ impl<'a> LeafPartitionQuery<'a> {
             return plan_err!("No query regions specified");
         }
         let ops = SleeperOperations::new(&self.config.common);
-        info!("DataFusion query: {ops}");
+        info!("DataFusion query: {}", self.config);
         // Create query frame and sketches if it has been enabled
         let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
 
