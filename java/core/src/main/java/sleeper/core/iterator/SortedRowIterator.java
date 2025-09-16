@@ -22,7 +22,9 @@ import java.util.List;
 
 /**
  * A function to transform an iterator of sorted rows. For example, this may exclude some rows, perform an aggregation,
- * or perform some computation on the values to produce or remove fields.
+ * or perform some computation on the values to produce or remove fields. This is called an iterator because that's what
+ * it's called in Accumulo, and it provides an implementation to operate on rows as it iterates through them. In
+ * practice it takes an input iterator, and creates an output iterator that may apply a transformation to the rows.
  */
 public interface SortedRowIterator {
 
