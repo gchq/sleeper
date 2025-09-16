@@ -66,7 +66,7 @@ public class AggregationFilteringIterator implements SortedRowIterator {
 
         // Do any aggregations need to be performed?
         if (!config.aggregations().isEmpty()) {
-            return new AggregatorIteratorImpl(config, input);
+            return new AggregatorIteratorImpl(config, input, schema);
         } else {
             return input;
         }

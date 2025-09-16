@@ -70,10 +70,6 @@ import java.util.stream.Collectors;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.ROW_KEY_PREFIX_TEST;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
-import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
  * Retrieves data using Parquet's predicate pushdown, applying compaction time iterators. Searches within a single
@@ -259,12 +255,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     private CloseableIterator<Row> applyCompactionIterators(CloseableIterator<Row> mergingIterator, Schema schema, TableProperties tableProperties) throws IteratorCreationException {
         return new IteratorFactory(objectFactory)
-                .getIterator(IteratorConfig.builder()
-                        .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
-                        .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                        .filteringString(tableProperties.get(FILTERING_CONFIG))
-                        .aggregationString(tableProperties.get(AGGREGATION_CONFIG))
-                        .build(), schema)
+                .getIterator(IteratorConfig.from(tableProperties), schema)
                 .applyTransform(mergingIterator);
     }
 }

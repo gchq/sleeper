@@ -24,7 +24,6 @@ import sleeper.core.iterator.IteratorFactory;
 import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -74,25 +73,16 @@ public class LeafPartitionQueryExecutor {
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
-        String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
-        String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
-        String compactionFilters = tableProperties.get(TableProperty.FILTERING_CONFIG);
-        String compactionAggregationString = tableProperties.get(TableProperty.AGGREGATION_CONFIG);
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
 
         try {
-            compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
-                    .iteratorClassName(compactionIteratorClassName)
-                    .iteratorConfigString(compactionIteratorConfig)
-                    .filteringString(compactionFilters)
-                    .aggregationString(compactionAggregationString)
-                    .build());
+            compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.from(tableProperties));
             queryIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
                     .iteratorClassName(leafPartitionQuery.getQueryTimeIteratorClassName())
                     .iteratorConfigString(leafPartitionQuery.getQueryTimeIteratorConfig())
-                    .filteringString(leafPartitionQuery.getQueryTimeFilters())
-                    .aggregationString(leafPartitionQuery.getQueryTimeAggregations())
+                    .filters(leafPartitionQuery.getQueryTimeFilters())
+                    .aggregations(leafPartitionQuery.getQueryTimeAggregations(), tableSchema)
                     .build());
         } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);
