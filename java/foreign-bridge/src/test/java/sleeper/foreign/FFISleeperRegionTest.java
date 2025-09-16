@@ -35,11 +35,13 @@ public class FFISleeperRegionTest {
         Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
+        Integer[] dimensions = new Integer[]{0, 1, 2, 3, 4};
+        region.region_dimensions.populate(dimensions, false);
 
         // Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
-                .withMessage("region maxs has length 4 but there are 5 row key columns");
+                .withMessage("region maxs has length 4 but there are 5 row key columns in region");
     }
 
     @Test
@@ -55,11 +57,13 @@ public class FFISleeperRegionTest {
         Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
+        Integer[] dimensions = new Integer[]{0, 1, 2, 3, 4};
+        region.region_dimensions.populate(dimensions, false);
 
         // Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
-                .withMessage("region mins inclusive has length 4 but there are 5 row key columns");
+                .withMessage("region mins inclusive has length 4 but there are 5 row key columns in region");
     }
 
     @Test
@@ -75,11 +79,35 @@ public class FFISleeperRegionTest {
         Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false};
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
+        Integer[] dimensions = new Integer[]{0, 1, 2, 3, 4};
+        region.region_dimensions.populate(dimensions, false);
 
         // Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
-                .withMessage("region maxs inclusive has length 4 but there are 5 row key columns");
+                .withMessage("region maxs inclusive has length 4 but there are 5 row key columns in region");
+    }
+
+    @Test
+    void shouldThrowOnRegionValidateDimensionsIncorrectLength() {
+        // Given
+        jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
+        FFISleeperRegion region = new FFISleeperRegion(runtime);
+        Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
+        Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
+        region.mins.populate(minBounds, false);
+        region.maxs.populate(maxBounds, false);
+        Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false, false};
+        Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
+        region.mins_inclusive.populate(minbBoolBounds, false);
+        region.maxs_inclusive.populate(maxBoolBounds, false);
+        Integer[] dimensions = new Integer[]{0, 1, 2, 3};
+        region.region_dimensions.populate(dimensions, false);
+
+        // Then
+        assertThatIllegalStateException()
+                .isThrownBy(() -> region.validate())
+                .withMessage("region dimensions has length 4 but there are 5 row key columns in region");
     }
 
     @Test
@@ -95,6 +123,8 @@ public class FFISleeperRegionTest {
         Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
         region.mins_inclusive.populate(minbBoolBounds, false);
         region.maxs_inclusive.populate(maxBoolBounds, false);
+        Integer[] dimensions = new Integer[]{0, 1, 2, 3, 4};
+        region.region_dimensions.populate(dimensions, false);
 
         // Then
         region.validate();
