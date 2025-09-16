@@ -151,6 +151,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, dataReadSchema, query.getPartitionRegion());
         common.setRegion(partitionRegion);
         common.write_sketch_file.set(false);
+        common.aggregation_config.set(query.getQueryTimeAggregations() == null ? "" : query.getQueryTimeAggregations());
+        common.filtering_config.set(query.getQueryTimeFilters() == null ? "" : query.getQueryTimeFilters());
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);

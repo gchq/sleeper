@@ -195,7 +195,7 @@ pub extern "C" fn native_query_stream(
     let details = match params.to_leaf_config(false) {
         Ok(d) => d,
         Err(e) => {
-            error!("Couldn't convert compaction input data {e}");
+            error!("Couldn't convert query input data {e}");
             return EINVAL;
         }
     };
@@ -290,7 +290,7 @@ pub extern "C" fn native_query_file(
     let details = match params.to_leaf_config(true) {
         Ok(d) => d,
         Err(e) => {
-            error!("Couldn't convert compaction input data {e}");
+            error!("Couldn't convert query input data {e}");
             return EINVAL;
         }
     };
