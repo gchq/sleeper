@@ -18,6 +18,8 @@
   ],
   "queryTimeIteratorClassName": "TestIterator",
   "queryTimeIteratorConfig": "config",
+  "queryTimeFilters": "ageOff(sort)",
+  "queryTimeAggregations": "sum(value1), max(value2)",
   "resultsPublisherConfig": {
     "destination": "results-target"
   },

@@ -34,6 +34,8 @@ import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -68,13 +70,20 @@ public class QuerySerDeTest {
     @DisplayName("Read and write all fields")
     class ReadAndWriteAllFields {
 
-        PartitionTree partitions = new PartitionsBuilder(tableProperties)
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+                .build();
+        PartitionTree partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 100)
                 .buildTree();
-        QueryProcessingConfig processingConfigWithAllFieldsSet = QueryProcessingConfig.builder()
+        QueryProcessingConfig processingConfig = QueryProcessingConfig.builder()
                 .queryTimeIteratorClassName("TestIterator")
                 .queryTimeIteratorConfig("config")
+                .queryTimeAggregations("sum(value1), max(value2)")
+                .queryTimeFilters("ageOff(sort)")
                 .requestedValueFields(List.of("integer"))
                 .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, "results-target"))
                 .statusReportDestinations(List.of(Map.of(ResultsOutput.DESTINATION, "status-report-target")))
@@ -84,10 +93,10 @@ public class QuerySerDeTest {
                 .tableName("my-table")
                 .regions(List.of(regionWithOneRange(factory -> factory
                         .createRange("key", 10, 20))))
-                .processingConfig(processingConfigWithAllFieldsSet)
+                .processingConfig(processingConfig)
                 .build();
         LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
-                .parentQuery(query)
+                .queryId("test-query")
                 .subQueryId("test-subquery")
                 .tableId("my-table-id")
                 .leafPartitionId("L")
@@ -95,7 +104,13 @@ public class QuerySerDeTest {
                         .createRange("key", 10, 20))))
                 .partitionRegion(partitions.getPartition("L").getRegion())
                 .files(List.of("file-1", "file-2"))
+                .processingConfig(processingConfig)
                 .build();
+
+        @BeforeEach
+        void setUp() {
+            tableProperties.setSchema(schema);
+        }
 
         @ParameterizedTest
         @MethodSource("serDeConstructors")
