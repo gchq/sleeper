@@ -70,7 +70,6 @@ import java.util.stream.Collectors;
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.ROW_KEY_PREFIX_TEST;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 
 /**
  * Retrieves data using Parquet's predicate pushdown, applying compaction time iterators. Searches within a single

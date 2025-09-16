@@ -18,6 +18,8 @@ package sleeper.core.iterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
+import java.util.List;
+
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
@@ -27,14 +29,18 @@ import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
+    private final List<AgeOffFilter> filters;
     private final String filteringString;
+    private final List<Aggregation> aggregations;
     private final String aggregationString;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
         this.filteringString = builder.filteringString;
+        this.filters = builder.filters;
         this.aggregationString = builder.aggregationString;
+        this.aggregations = builder.aggregations;
     }
 
     public static Builder builder() {
@@ -87,13 +93,16 @@ public class IteratorConfig {
     public boolean shouldIteratorBeApplied() {
         return iteratorClassName != null || !filters.isEmpty() || !aggregations.isEmpty();
     }
+
     /**
      * Builder for iterator config object.
      */
     public static final class Builder {
         private String iteratorClassName;
         private String iteratorConfigString;
+        private List<AgeOffFilter> filters;
         private String filteringString;
+        private List<Aggregation> aggregations;
         private String aggregationString;
 
         private Builder() {
@@ -138,7 +147,6 @@ public class IteratorConfig {
          * @param  filterString the filter configuration to be applied to the data
          * @return              builder for method chaining
          */
-
         public Builder filters(String filterString) {
             this.filters = AgeOffFilter.parseConfig(filterString);
             return this;
