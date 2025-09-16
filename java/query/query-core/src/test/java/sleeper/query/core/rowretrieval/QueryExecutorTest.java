@@ -16,6 +16,7 @@
 package sleeper.query.core.rowretrieval;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -154,18 +155,16 @@ public class QueryExecutorTest {
     @DisplayName("Request value fields")
     class RequestValueFields {
 
-        private final Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(
-                        new Field("A", new StringType()),
-                        new Field("B", new LongType()),
-                        new Field("C", new ByteArrayType()))
-                .build();
-
         @BeforeEach
         void setUp() throws Exception {
-            tableProperties.setSchema(schema);
-            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .valueFields(
+                            new Field("A", new StringType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new ByteArrayType()))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         }
 
         @Test
@@ -208,6 +207,108 @@ public class QueryExecutorTest {
             // Then
             assertThat(rows).containsExactly(
                     new Row(Map.of("key", 1L, "A", "first")));
+        }
+    }
+
+    @Nested
+    @DisplayName("Request value fields with aggregation and filtering enabled")
+    class RequestValueFieldsWithAggregationAndFiltering {
+
+        @Test
+        @Disabled("TODO")
+        void shouldLimitFieldsReadWhenApplyingAggregation() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .sortKeyFields(new Field("sort", new LongType()))
+                    .valueFields(
+                            new Field("A", new LongType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "sum(A),min(B),max(C)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryAllRowsBuilder()
+                    .processingConfig(requestValueFields("A"))
+                    .build());
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", 1L, "sort", 10L, "A", 100L)));
+        }
+
+        @Test
+        void shouldLimitFieldsReadWhenApplyingFilterOnValueField() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .sortKeyFields(new Field("sort", new LongType()))
+                    .valueFields(
+                            new Field("A", new LongType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new LongType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(A, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 9999999999999999L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryAllRowsBuilder()
+                    .processingConfig(requestValueFields("A"))
+                    .build());
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldLimitFieldsReadWhenApplyingFilterOnSortKey() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .sortKeyFields(new Field("sort", new LongType()))
+                    .valueFields(
+                            new Field("A", new LongType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new LongType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(sort, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 9999999999999999L,
+                            "A", 100L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryAllRowsBuilder()
+                    .processingConfig(requestValueFields("A"))
+                    .build());
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 9999999999999999L,
+                            "A", 100L)));
         }
     }
 
