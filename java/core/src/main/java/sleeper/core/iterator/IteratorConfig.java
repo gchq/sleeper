@@ -17,8 +17,6 @@ package sleeper.core.iterator;
 
 import sleeper.core.properties.table.TableProperties;
 
-import java.util.List;
-
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
@@ -29,17 +27,13 @@ public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
     private final String filteringString;
-    private final List<AgeOffFilter> filters;
     private final String aggregationString;
-    private final List<Aggregation> aggregations;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
         this.filteringString = builder.filteringString;
-        this.filters = builder.filters;
         this.aggregationString = builder.aggregationString;
-        this.aggregations = builder.aggregations;
     }
 
     public static Builder builder() {
@@ -74,16 +68,8 @@ public class IteratorConfig {
         return filteringString;
     }
 
-    public List<AgeOffFilter> getFilters() {
-        return filters;
-    }
-
     public String getAggregationString() {
         return aggregationString;
-    }
-
-    public List<Aggregation> getAggregations() {
-        return aggregations;
     }
 
     /**
@@ -102,9 +88,7 @@ public class IteratorConfig {
         private String iteratorClassName;
         private String iteratorConfigString;
         private String filteringString;
-        private List<AgeOffFilter> filters;
         private String aggregationString;
-        private List<Aggregation> aggregations;
 
         private Builder() {
         }
@@ -143,17 +127,6 @@ public class IteratorConfig {
         }
 
         /**
-         * Sets the filtering configuration.
-         *
-         * @param  filters the filter configuration to be applied to the data
-         * @return         builder for method chaining
-         */
-        public Builder filters(List<AgeOffFilter> filters) {
-            this.filters = filters;
-            return this;
-        }
-
-        /**
          * Sets the aggregation configuration.
          *
          * @param  aggregationString the aggregation configuration to be applied to the data
@@ -161,17 +134,6 @@ public class IteratorConfig {
          */
         public Builder aggregationString(String aggregationString) {
             this.aggregationString = aggregationString;
-            return this;
-        }
-
-        /**
-         * Sets the aggregation configuration.
-         *
-         * @param  aggregations the aggregation configuration to be applied to the data
-         * @return              builder for method chaining
-         */
-        public Builder aggregations(List<Aggregation> aggregations) {
-            this.aggregations = aggregations;
             return this;
         }
 
