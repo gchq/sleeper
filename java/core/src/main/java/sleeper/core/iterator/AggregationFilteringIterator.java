@@ -39,10 +39,9 @@ import java.util.stream.Stream;
 public class AggregationFilteringIterator implements SortedRowIterator {
 
     /** Combined configuration for the optional filtering and aggregation behaviour. */
-
-    private FilterAggregationConfig config;
+    private final FilterAggregationConfig config;
     /** Table schema being filtered. */
-    private Schema schema;
+    private final Schema schema;
 
     public AggregationFilteringIterator(FilterAggregationConfig config, Schema schema) {
         this.config = config;
