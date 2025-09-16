@@ -45,11 +45,11 @@ public class SystemTestBucketStack extends NestedStack {
 
     private final IBucket bucket;
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
         String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
-        bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars);
+        bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars, autoDeleteS3ObjectsStack);
         Tags.of(this).add("DeploymentStack", id);
     }
 
@@ -75,18 +75,6 @@ public class SystemTestBucketStack extends NestedStack {
                 .build();
 
         autoDeleteS3ObjectsStack.grantAccessToCustomResource(id, instanceProperties, bucket, bucketName);
-
-        return bucket;
-    }
-
-    private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, BuiltJars jars) {
-        IBucket bucket = Bucket.Builder.create(this, id)
-                .bucketName(bucketName)
-                .versioned(false)
-                .encryption(BucketEncryption.S3_MANAGED)
-                .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
-                .removalPolicy(RemovalPolicy.DESTROY)
-                .build();
 
         return bucket;
     }
