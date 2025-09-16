@@ -44,7 +44,7 @@ public class AggregationIterator implements SortedRowIterator {
     private final List<String> requiredValueFields;
 
     public AggregationIterator(Schema schema, List<String> groupingColumns, List<Aggregation> aggregations) {
-        this.groupingFields = groupingColumns.stream().flatMap(field -> schema.getField(field).stream()).toList();
+        this.groupingFields = groupingColumns.stream().map(field -> schema.getField(field).orElseThrow()).toList();
         this.aggregations = aggregations;
         Set<String> keyFields = schema.streamRowKeysThenSortKeys().map(Field::getName).collect(toUnmodifiableSet());
         this.requiredValueFields = groupingColumns.stream().filter(not(keyFields::contains)).toList();
