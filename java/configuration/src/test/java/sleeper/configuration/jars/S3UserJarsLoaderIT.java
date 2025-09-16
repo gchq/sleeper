@@ -64,7 +64,7 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
             "    public void init(String configString, Schema schema) {}\n" +
             "\n" +
             "    @Override\n" +
-            "    public CloseableIterator<Row> apply(CloseableIterator<Row> it) {return it;}\n" +
+            "    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> it) {return it;}\n" +
             "\n" +
             "    @Override\n" +
             "    public String toString() {return \"MyIterator\";}\n" +
