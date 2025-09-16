@@ -81,9 +81,9 @@ impl Aggregate {
     /// If the type of the column could not be computed, or a map aggregation is set for a non-map column.
     pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
         Ok(match &self.operation {
-            AggOp::Sum => non_null_sum(col(&self.column)),
-            AggOp::Min => non_null_min(col(&self.column)),
-            AggOp::Max => non_null_max(col(&self.column)),
+            AggOp::Sum => non_null_sum(ident(&self.column)),
+            AggOp::Min => non_null_min(ident(&self.column)),
+            AggOp::Max => non_null_max(ident(&self.column)),
             AggOp::MapAggregate(op) => {
                 let col_dt = ident(&self.column).get_type(frame.schema())?;
                 let map_sum = Arc::new(MapAggregator::try_new(&col_dt, op.to_udf_op())?);

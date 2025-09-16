@@ -278,7 +278,7 @@ impl<'a> SleeperOperations<'a> {
             .map(|agg| agg.to_expr(&frame))
             .collect::<Result<Vec<_>, _>>()?;
         frame.aggregate(
-            group_by_cols.iter().map(|e| col(*e)).collect(),
+            group_by_cols.iter().map(|e| ident(*e)).collect(),
             aggregation_expressions,
         )
     }

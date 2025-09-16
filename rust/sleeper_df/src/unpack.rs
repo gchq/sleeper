@@ -21,7 +21,7 @@ use color_eyre::{
 };
 use sleeper_core::PartitionBound;
 use std::{
-    ffi::{c_char, c_void},
+    ffi::{CStr, c_char, c_void},
     slice,
 };
 

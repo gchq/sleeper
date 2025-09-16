@@ -20,7 +20,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::{CompactionResult, LeafPartitionQuery};
+use crate::{
+    datafusion::{CompactionResult, LeafPartitionQuery},
+    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
+};
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
 use aws_config::Region;

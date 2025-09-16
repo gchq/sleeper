@@ -369,7 +369,7 @@ async fn should_return_results_as_file_without_sketch() -> Result<(), Error> {
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 0, 6)))
         .output(OutputType::File {
             output_file: output.clone(),

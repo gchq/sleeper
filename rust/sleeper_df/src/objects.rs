@@ -15,19 +15,20 @@
  * limitations under the License.
  */
 use crate::unpack::{
-    unpack_aws_config, unpack_str, unpack_string, unpack_string_array, unpack_string_opt,
-    unpack_typed_array, unpack_typed_ref_array, unpack_variant_array,
+    unpack_str, unpack_string_array, unpack_string_opt, unpack_typed_array, unpack_variant_array,
 };
+use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
-    ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
-    SleeperParquetOptions, SleeperPartitionRegion,
+    AwsConfig, ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
+    SleeperParquetOptions, SleeperRegion,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
 use std::{
     borrow::Borrow,
     collections::HashMap,
-    ffi::{c_char, c_void},
+    ffi::{CStr, c_char, c_void},
+    slice,
 };
 use url::Url;
 
@@ -333,11 +334,11 @@ impl FFICommonConfig {
             )
             .region(region)
             .output(output)
-            .iterator_config(unpack_string_opt(params.iterator_config)?)
+            .iterator_config(unpack_string_opt(self.iterator_config)?)
             .aggregates(Aggregate::parse_config(unpack_str(
-                params.aggregation_config,
+                self.aggregation_config,
             )?)?)
-            .filters(Filter::parse_config(unpack_str(params.filtering_config)?)?)
+            .filters(Filter::parse_config(unpack_str(self.filtering_config)?)?)
             .build()
     }
 }

@@ -16,7 +16,8 @@
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
 use sleeper_core::{
-    CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperRegion, run_compaction,
+    CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperRegion,
+    filter_aggregation_config::aggregate::Aggregate, run_compaction,
 };
 use std::{collections::HashMap, path::Path, sync::Arc};
 use tempfile::tempdir;
@@ -241,12 +242,13 @@ async fn should_aggregate_ints() -> Result<(), Error> {
         .input_files_sorted(true)
         .row_key_cols(col_names(["row_key"]))
         .sort_key_cols(col_names(["sort_key"]))
-        .region(SleeperPartitionRegion::new(HashMap::from([region_entry(
+        .region(SleeperRegion::new(HashMap::from([region_entry(
             "row_key",
             int_range(0, 100),
         )])))
         .output(OutputType::File {
             output_file: output.clone(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         })
         .aggregates(Aggregate::parse_config("max(time)")?)
