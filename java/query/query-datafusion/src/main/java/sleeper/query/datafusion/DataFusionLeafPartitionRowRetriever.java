@@ -22,7 +22,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
 import sleeper.core.rowbatch.arrow.RowIteratorFromArrowReader;
