@@ -395,8 +395,6 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
 
             // When / Then
-            // TODO this is incorrect, this should only specify the value field
-            // See https://github.com/gchq/sleeper/issues/5605
             assertThat(createIterator().getRequiredValueFields()).containsExactly("value");
         }
 
