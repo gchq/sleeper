@@ -1653,7 +1653,7 @@ sleeper.default.statestore.committer.update.every.commit=false
 # before adding a batch of transactions in the asynchronous state store committer.
 sleeper.default.statestore.committer.update.every.batch=true
 
-# Select which data engine to use for the table. DataFusion support is experimental. Even with
-# DataFusion enabled, DataFusion will only be used in queries if environment variable DF_QUERY is non
-# null. Valid values are: [java, datafusion]
+# Select which data engine to use for the table. DataFusion support is experimental and can be enabled
+# for compactions and queries, or just compactions. Valid values are: [java,
+# datafusion_compaction_only, datafusion]
 sleeper.default.table.data.engine=JAVA

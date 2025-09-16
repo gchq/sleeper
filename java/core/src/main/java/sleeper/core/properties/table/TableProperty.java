@@ -145,9 +145,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .includedInTemplate(false).build();
     TableProperty DATA_ENGINE = Index.propertyBuilder("sleeper.table.data.engine")
             .defaultProperty(DEFAULT_DATA_ENGINE)
-            .description("Select which data engine to use for the table. DataFusion support is experimental. " +
-                    "Even with DataFusion enabled, DataFusion will only be used in queries if environment variable " +
-                    "DF_QUERY is non null. Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
+            .description("Select which data engine to use for the table. DataFusion support is experimental and " +
+                    "can be enabled for compactions and queries, or just compactions. " +
+                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")

@@ -36,8 +36,6 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     private final ExecutorService executorService;
     /** Hadoop configuration needed to Java based query code. */
     private final Configuration configuration;
-    /** Temporary DF query enabling environmental variable. */
-    private static final String EXPERIMENT_ENV_VAR = "DF_QUERY";
 
     public QueryEngineSelector(ExecutorService executorService, Configuration configuration) {
         this.executorService = Objects.requireNonNull(executorService, "executorService");
@@ -50,10 +48,8 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
             case DATAFUSION:
-                // Since DF queries are still experimental, we require a environment variable to be set
-                if (System.getenv(EXPERIMENT_ENV_VAR) != null) {
-                    return DataFusionLeafPartitionRowRetriever.builder().build();
-                }
+                return DataFusionLeafPartitionRowRetriever.builder().build();
+            case DATAFUSION_COMPACTION_ONLY:
             case JAVA:
             default:
                 return new LeafPartitionRowRetrieverImpl(executorService, configuration, tableProperties);
