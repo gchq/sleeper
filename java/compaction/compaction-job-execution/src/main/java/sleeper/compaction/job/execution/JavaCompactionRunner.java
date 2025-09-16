@@ -26,16 +26,16 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.MergingIterator;
+import sleeper.core.iterator.IteratorFactory;
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.MergingIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
-import sleeper.core.util.IteratorConfig;
-import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
@@ -145,14 +145,11 @@ public class JavaCompactionRunner implements CompactionRunner {
                 .iteratorClassName(compactionJob.getIteratorClassName())
                 .iteratorConfigString(compactionJob.getIteratorConfig())
                 .filters(compactionJob.getFilterConfig())
-                .aggregationString(compactionJob.getAggregationConfig())
+                .aggregations(compactionJob.getAggregationConfig(), schema)
                 .build();
-        if (config.shouldIteratorBeApplied()) {
-            mergingIterator = new IteratorFactory(objectFactory)
-                    .getIterator(config, schema)
-                    .apply(mergingIterator);
-        }
-        return mergingIterator;
+        return new IteratorFactory(objectFactory)
+                .getIterator(config, schema)
+                .applyTransform(mergingIterator);
     }
 
     @Override

@@ -14,18 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::unpack::{unpack_string_array, unpack_typed_array, unpack_variant_array};
-use arrow::ffi_stream::FFI_ArrowArrayStream;
+use crate::unpack::{
+    unpack_aws_config, unpack_str, unpack_string, unpack_string_array, unpack_string_opt,
+    unpack_typed_array, unpack_typed_ref_array, unpack_variant_array,
+};
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
-    SleeperParquetOptions, SleeperRegion,
+    ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
+    SleeperParquetOptions, SleeperPartitionRegion,
+    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
 use std::{
     borrow::Borrow,
     collections::HashMap,
-    ffi::{CStr, c_char, c_void},
-    slice,
+    ffi::{c_char, c_void},
 };
 use url::Url;
 
@@ -212,6 +214,8 @@ pub struct FFICommonConfig {
     pub dict_enc_values: bool,
     pub region: *const FFISleeperRegion,
     pub iterator_config: *const c_char,
+    pub aggregation_config: *const c_char,
+    pub filtering_config: *const c_char,
 }
 
 impl FFICommonConfig {
@@ -252,6 +256,12 @@ impl FFICommonConfig {
         if file_output_enabled && self.output_file.is_null() {
             bail!("FFICommonConfig output_file is NULL, file output selected");
         }
+        if self.aggregation_config.is_null() {
+            bail!("FFICommonConfig aggregation_config is NULL");
+        }
+        if self.filtering_config.is_null() {
+            bail!("FFICommonConfig filtering_config is NULL");
+        }
         if self.compression.is_null() {
             bail!("FFICommonConfig compression is NULL");
         }
@@ -268,15 +278,6 @@ impl FFICommonConfig {
 
         let ffi_region = unsafe { self.region.as_ref() }.unwrap();
         let region = FFISleeperRegion::to_sleeper_region(ffi_region, &row_key_cols, &schema_types)?;
-
-        // Extract iterator config
-        let iterator_config = Some(
-            unsafe { CStr::from_ptr(self.iterator_config) }
-                .to_str()?
-                .to_owned(),
-        )
-        // Set option to None if config is empty
-        .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
 
         let output = if file_output_enabled {
             let opts = SleeperParquetOptions {
@@ -332,7 +333,11 @@ impl FFICommonConfig {
             )
             .region(region)
             .output(output)
-            .iterator_config(iterator_config)
+            .iterator_config(unpack_string_opt(params.iterator_config)?)
+            .aggregates(Aggregate::parse_config(unpack_str(
+                params.aggregation_config,
+            )?)?)
+            .filters(Filter::parse_config(unpack_str(params.filtering_config)?)?)
             .build()
     }
 }

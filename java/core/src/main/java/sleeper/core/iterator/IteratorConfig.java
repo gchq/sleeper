@@ -13,24 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.iterator;
 
-/** Config class for getting iterator's from the iterator factory. */
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
+
+import java.util.List;
+
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
+
+/** Configuration for operations to be applied to processed rows with iterators. */
 public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
-    private final String filters;
-    private final String aggregationString;
+    private final List<AgeOffFilter> filters;
+    private final List<Aggregation> aggregations;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
-        this.filters = builder.filters;
-        this.aggregationString = builder.aggregationString;
+        this.filters = builder.filters != null ? builder.filters : List.of();
+        this.aggregations = builder.aggregations != null ? builder.aggregations : List.of();
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates the default iterator configuration for a Sleeper table. This includes the iterators which are applied
+     * during compaction.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the configuration
+     */
+    public static IteratorConfig from(TableProperties tableProperties) {
+        return builder()
+                .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
+                .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
+                .filters(tableProperties.get(FILTERING_CONFIG))
+                .aggregations(tableProperties.get(AGGREGATION_CONFIG), tableProperties.getSchema())
+                .build();
     }
 
     public String getIteratorClassName() {
@@ -41,12 +67,12 @@ public class IteratorConfig {
         return iteratorConfigString;
     }
 
-    public String getFilters() {
+    public List<AgeOffFilter> getFilters() {
         return filters;
     }
 
-    public String getAggregationString() {
-        return aggregationString;
+    public List<Aggregation> getAggregations() {
+        return aggregations;
     }
 
     /**
@@ -55,7 +81,7 @@ public class IteratorConfig {
      * @return true if the iterator should be applied, otherwise false
      */
     public boolean shouldIteratorBeApplied() {
-        return iteratorClassName != null || filters != null || aggregationString != null;
+        return iteratorClassName != null || !filters.isEmpty() || !aggregations.isEmpty();
     }
 
     /**
@@ -64,8 +90,8 @@ public class IteratorConfig {
     public static final class Builder {
         private String iteratorClassName;
         private String iteratorConfigString;
-        private String filters;
-        private String aggregationString;
+        private List<AgeOffFilter> filters;
+        private List<Aggregation> aggregations;
 
         private Builder() {
         }
@@ -93,24 +119,25 @@ public class IteratorConfig {
         }
 
         /**
-         * Sets the filters string.
+         * Sets the filtering configuration.
          *
-         * @param  filters the filters string to be used for the iterator
-         * @return         builder for method chaining
+         * @param  filterString the filter configuration to be applied to the data
+         * @return              builder for method chaining
          */
-        public Builder filters(String filters) {
-            this.filters = filters;
+        public Builder filters(String filterString) {
+            this.filters = AgeOffFilter.parseConfig(filterString);
             return this;
         }
 
         /**
-         * Sets the aggregation string.
+         * Sets the aggregation configuration.
          *
-         * @param  aggregationString the aggregation string to be used for the iterator
+         * @param  aggregationString the aggregation configuration to be applied to the data
+         * @param  schema            the table schema
          * @return                   builder for method chaining
          */
-        public Builder aggregationString(String aggregationString) {
-            this.aggregationString = aggregationString;
+        public Builder aggregations(String aggregationString, Schema schema) {
+            this.aggregations = Aggregation.parseConfig(aggregationString, schema);
             return this;
         }
 

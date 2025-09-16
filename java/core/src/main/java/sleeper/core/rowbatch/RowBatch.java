@@ -15,7 +15,7 @@
  */
 package sleeper.core.rowbatch;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 
 import java.io.IOException;

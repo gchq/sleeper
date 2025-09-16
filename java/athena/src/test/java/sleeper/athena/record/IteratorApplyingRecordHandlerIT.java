@@ -37,8 +37,8 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConfigStringIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -428,7 +428,7 @@ public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
         }
 
         @Override
-        public CloseableIterator<Row> apply(CloseableIterator<Row> rowCloseableIterator) {
+        public CloseableIterator<Row> applyTransform(CloseableIterator<Row> rowCloseableIterator) {
             return new CountAggregatorIteratorImpl(rowCloseableIterator);
         }
 

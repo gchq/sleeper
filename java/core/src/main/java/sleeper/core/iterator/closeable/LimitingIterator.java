@@ -13,49 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
-
-import sleeper.core.row.Row;
+package sleeper.core.iterator.closeable;
 
 import java.io.IOException;
 
 /**
- * A test fake for an empty iterator that applies some action when it is closed.
+ * An iterator that will stop reading elements once it has processed a certain number.
+ *
+ * @param <T> the element type
  */
-public class EmptyIteratorWithFakeOnClose implements CloseableIterator<Row> {
+public class LimitingIterator<T> implements CloseableIterator<T> {
+    private final long limit;
+    private final CloseableIterator<T> iterator;
+    private long numRead = 0;
 
-    private final OnClose onClose;
-
-    public EmptyIteratorWithFakeOnClose(OnClose onClose) {
-        this.onClose = onClose;
-    }
-
-    /**
-     * Performs some test action when the iterator is closed.
-     */
-    @FunctionalInterface
-    public interface OnClose {
-
-        /**
-         * Triggers the test action.
-         *
-         * @throws IOException if the close method should throw an exception
-         */
-        void close() throws IOException;
+    public LimitingIterator(long limit, CloseableIterator<T> iterator) {
+        this.limit = limit;
+        this.iterator = iterator;
     }
 
     @Override
     public boolean hasNext() {
-        return false;
+        return numRead < limit && iterator.hasNext();
     }
 
     @Override
-    public Row next() {
-        return null;
+    public T next() {
+        T next = iterator.next();
+        numRead++;
+        return next;
     }
 
     @Override
     public void close() throws IOException {
-        onClose.close();
+        iterator.close();
     }
+
 }

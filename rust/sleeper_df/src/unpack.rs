@@ -25,6 +25,20 @@ use std::{
     slice,
 };
 
+pub fn unpack_str<'a>(pointer: *const c_char) -> Result<&'a str> {
+    Ok(unsafe { CStr::from_ptr(pointer) }.to_str()?)
+}
+
+pub fn unpack_string(pointer: *const c_char) -> Result<String> {
+    unpack_str(pointer).map(ToOwned::to_owned)
+}
+
+pub fn unpack_string_opt(pointer: *const c_char) -> Result<Option<String>> {
+    Ok(Some(unpack_string(pointer)?)
+        // Set option to None if config is empty
+        .and_then(|v| if v.trim().is_empty() { None } else { Some(v) }))
+}
+
 /// Create a vector from a C pointer to an array of strings.
 ///
 /// # Errors

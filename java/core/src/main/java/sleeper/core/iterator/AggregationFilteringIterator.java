@@ -15,8 +15,7 @@
  */
 package sleeper.core.iterator;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
@@ -40,16 +39,12 @@ import java.util.stream.Stream;
 public class AggregationFilteringIterator implements SortedRowIterator {
 
     /** Combined configuration for the optional filtering and aggregation behaviour. */
-    @SuppressFBWarnings(value = "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR", justification = "Field is null checked before use")
-    private FilterAggregationConfig config;
+    private final FilterAggregationConfig config;
     /** Table schema being filtered. */
-    private Schema schema;
+    private final Schema schema;
 
-    public void setFilterAggregationConfig(FilterAggregationConfig config) {
+    public AggregationFilteringIterator(FilterAggregationConfig config, Schema schema) {
         this.config = config;
-    }
-
-    public void setSchema(Schema schema) {
         this.schema = schema;
     }
 
@@ -62,7 +57,7 @@ public class AggregationFilteringIterator implements SortedRowIterator {
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> source) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> source) {
         if (config == null) {
             throw new IllegalStateException("AggregatingIterator has not been initialised, call init()");
         }
@@ -71,7 +66,7 @@ public class AggregationFilteringIterator implements SortedRowIterator {
 
         // Do any aggregations need to be performed?
         if (!config.aggregations().isEmpty()) {
-            return new AggregatorIteratorImpl(config, input);
+            return new AggregatorIteratorImpl(config, input, schema);
         } else {
             return input;
         }
@@ -92,7 +87,7 @@ public class AggregationFilteringIterator implements SortedRowIterator {
             AgeOffIterator ageoff = new AgeOffIterator();
             // Age off iterator operates in milliseconds
             ageoff.init(String.format("%s,%d", filter_col, config.maxAge()), schema);
-            return ageoff.apply(source);
+            return ageoff.applyTransform(source);
         }).orElse(source);
     }
 }

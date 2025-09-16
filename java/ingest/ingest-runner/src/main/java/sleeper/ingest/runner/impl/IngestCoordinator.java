@@ -18,8 +18,9 @@ package sleeper.ingest.runner.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -32,7 +33,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
@@ -51,11 +51,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.core.properties.table.TableProperty.AGGREGATIONS;
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
  * Writes data to Sleeper partition files. The ingest process works as follows:
@@ -474,12 +470,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
         public Builder<T> tableProperties(TableProperties tableProperties) {
             return schema(tableProperties.getSchema())
-                    .iteratorConfig(IteratorConfig.builder()
-                            .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
-                            .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                            .filters(tableProperties.get(FILTERS_CONFIG))
-                            .aggregationString(tableProperties.get(AGGREGATIONS))
-                            .build())
+                    .iteratorConfig(IteratorConfig.from(tableProperties))
                     .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
         }
 

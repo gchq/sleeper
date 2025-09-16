@@ -56,7 +56,7 @@ public class CompactionDataFusionPerformanceST {
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandardsWithDataFusion(SleeperSystemTest sleeper) {
+    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",

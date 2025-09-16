@@ -15,31 +15,33 @@
  */
 package sleeper.query.core.model;
 
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 import sleeper.query.core.output.ResultsOutput;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,765 +49,254 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QuerySerDeTest {
 
-    private static Stream<Arguments> alternateTestParameters() {
-        return Stream.of(
-                Arguments.of(Named.of("Create QuerySerDe using Map", false)),
-                Arguments.of(Named.of("Create QuerySerDe using TablePropertiesProvider", true)));
-    }
-
-    private final Field field = new Field("key", new IntType());
-    private final Schema schema = Schema.builder()
-            .rowKeyFields(field)
-            .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
-            .build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties,
+            createSchemaWithKey("key", new IntType()));
 
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeFromJSONStringMinInclusiveMaxExclusive(boolean useTablePropertiesProvider) {
-        // Given
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema, useTablePropertiesProvider);
-        String serialisedQuery = "{\n" +
-                "  \"queryId\": \"my-query\",\n" +
-                "  \"requestedValueFields\": [\n" +
-                "    \"value1\"\n" +
-                "  ],\n" +
-                "  \"tableName\": \"my-table\",\n" +
-                "  \"resultsPublisherConfig\": {},\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"regions\": [\n" +
-                "    {\n" +
-                "      \"key\": {\n" +
-                "        \"min\": 1,\n" +
-                "        \"minInclusive\": true,\n" +
-                "        \"max\": 2,\n" +
-                "        \"maxInclusive\": false\n" +
-                "      },\n" +
-                "      \"stringsBase64Encoded\": true\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
-
-        // When
-        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
-
-        // Then
-        assertThat(query.getQueryId()).isEqualTo("my-query");
-        assertThat(query.getTableName()).isEqualTo("my-table");
-        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, false));
-        assertThat(query.getRegions()).containsExactly(expectedRegion);
-        assertThat(query.getRequestedValueFields()).isEqualTo(Collections.singletonList("value1"));
+    @BeforeEach
+    void setUp() {
+        tableProperties.set(TABLE_NAME, "my-table");
+        tableProperties.set(TABLE_ID, "my-table-id");
     }
 
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeFromJSONStringMinInclusiveMaxInclusive(boolean useTablePropertiesProvider) {
-        // Given
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema, useTablePropertiesProvider);
-        String serialisedQuery = "{\n" +
-                "  \"queryId\": \"my-query\",\n" +
-                "  \"tableName\": \"my-table\",\n" +
-                "  \"resultsPublisherConfig\": {},\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"regions\": [\n" +
-                "    {\n" +
-                "      \"key\": {\n" +
-                "        \"min\": 1,\n" +
-                "        \"minInclusive\": true,\n" +
-                "        \"max\": 2,\n" +
-                "        \"maxInclusive\": true\n" +
-                "      },\n" +
-                "      \"stringsBase64Encoded\": true\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
+    @Nested
+    @DisplayName("Read and write all fields")
+    class ReadAndWriteAllFields {
 
-        // When
-        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
-
-        // Then
-        assertThat(query.getQueryId()).isEqualTo("my-query");
-        assertThat(query.getTableName()).isEqualTo("my-table");
-        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, true, 2, true));
-        assertThat(query.getRegions()).containsExactly(expectedRegion);
-        assertThat(query.getRequestedValueFields()).isNull();
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeFromJSONStringMinExclusiveMaxInclusive(boolean useTablePropertiesProvider) {
-        // Given
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema, useTablePropertiesProvider);
-        String serialisedQuery = "{\n" +
-                "  \"queryId\": \"my-query\",\n" +
-                "  \"tableName\": \"my-table\",\n" +
-                "  \"resultsPublisherConfig\": {},\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"regions\": [\n" +
-                "    {\n" +
-                "      \"key\": {\n" +
-                "        \"min\": 1,\n" +
-                "        \"minInclusive\": false,\n" +
-                "        \"max\": 2,\n" +
-                "        \"maxInclusive\": true\n" +
-                "      },\n" +
-                "      \"stringsBase64Encoded\": true\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
-
-        // When
-        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
-
-        // Then
-        assertThat(query.getQueryId()).isEqualTo("my-query");
-        assertThat(query.getTableName()).isEqualTo("my-table");
-        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, true));
-        assertThat(query.getRegions()).containsExactly(expectedRegion);
-        assertThat(query.getRequestedValueFields()).isNull();
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeFromJSONStringMinExclusiveMaxExclusive(boolean useTablePropertiesProvider) {
-        // Given
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        QuerySerDe querySerDe = generateQuerySerDe("my-table", schema, useTablePropertiesProvider);
-        String serialisedQuery = "{\n" +
-                "  \"queryId\": \"my-query\",\n" +
-                "  \"tableName\": \"my-table\",\n" +
-                "  \"resultsPublisherConfig\": {},\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"regions\": [\n" +
-                "    {\n" +
-                "      \"key\": {\n" +
-                "        \"min\": 1,\n" +
-                "        \"minInclusive\": false,\n" +
-                "        \"max\": 2,\n" +
-                "        \"maxInclusive\": false\n" +
-                "      },\n" +
-                "      \"stringsBase64Encoded\": true\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
-
-        // When
-        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
-
-        // Then
-        assertThat(query.getQueryId()).isEqualTo("my-query");
-        assertThat(query.getTableName()).isEqualTo("my-table");
-        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, 2, false));
-        assertThat(query.getRegions()).containsExactly(expectedRegion);
-        assertThat(query.getRequestedValueFields()).isNull();
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeFromJSONStringMinExclusiveNullMax(boolean useTablePropertiesProvider) {
-        // Given
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = "my-table";
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-        String serialisedQuery = "{\n" +
-                "  \"queryId\": \"my-query\",\n" +
-                "  \"tableName\": \"my-table\",\n" +
-                "  \"resultsPublisherConfig\": {},\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"regions\": [\n" +
-                "    {\n" +
-                "      \"key\": {\n" +
-                "        \"min\": 1,\n" +
-                "        \"minInclusive\": false,\n" +
-                "        \"max\": null,\n" +
-                "        \"maxInclusive\": false\n" +
-                "      },\n" +
-                "      \"stringsBase64Encoded\": true\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}";
-
-        // When
-        Query query = querySerDe.fromJsonOrLeafQuery(serialisedQuery).asParentQuery();
-
-        // Then
-        assertThat(query.getQueryId()).isEqualTo("my-query");
-        assertThat(query.getTableName()).isEqualTo("my-table");
-        assertThat(query.getResultsPublisherConfig()).isEqualTo(new HashMap<>());
-        Region expectedRegion = new Region(rangeFactory.createRange(field, 1, false, null, false));
-        assertThat(query.getRegions()).containsExactly(expectedRegion);
-        assertThat(query.getRequestedValueFields()).isNull();
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeWhenSchemaHasIntKey(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new IntType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createExactRange(field, 1));
+        PartitionTree partitions = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 100)
+                .buildTree();
+        QueryProcessingConfig processingConfigWithAllFieldsSet = QueryProcessingConfig.builder()
+                .queryTimeIteratorClassName("TestIterator")
+                .queryTimeIteratorConfig("config")
+                .requestedValueFields(List.of("integer"))
+                .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, "results-target"))
+                .statusReportDestinations(List.of(Map.of(ResultsOutput.DESTINATION, "status-report-target")))
+                .build();
         Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region))
+                .queryId("test-query")
+                .tableName("my-table")
+                .regions(List.of(regionWithOneRange(factory -> factory
+                        .createRange("key", 10, 20))))
+                .processingConfig(processingConfigWithAllFieldsSet)
                 .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query, true))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeWhenSchemaHasLongKey(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createExactRange(field, 1L));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region))
+        LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
+                .parentQuery(query)
+                .subQueryId("test-subquery")
+                .tableId("my-table-id")
+                .leafPartitionId("L")
+                .regions(List.of(regionWithOneRange(factory -> factory
+                        .createRange("key", 10, 20))))
+                .partitionRegion(partitions.getPartition("L").getRegion())
+                .files(List.of("file-1", "file-2"))
                 .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
+        @ParameterizedTest
+        @MethodSource("serDeConstructors")
+        void shouldSerDeParentQuery(QuerySerDeConstructor constructor) {
+            // When
+            QuerySerDe serDe = constructor.createSerDe(tableProperties);
+            String json = serDe.toJson(query);
+            Query found = serDe.fromJson(json);
 
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeWhenSchemaHasStringKey(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createExactRange(field, "1"));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeWhenSchemaHasByteArrayKey(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeMultipleByteArrayRegions(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
-        Region region2 = new Region(rangeFactory.createExactRange(field, new byte[]{3, 4}));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region1, region2))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeByteArrayRegionWithPublisherConfig(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region1 = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
-        Region region2 = new Region(rangeFactory.createExactRange(field, new byte[]{3, 4}));
-        Map<String, String> publisherConfig = new HashMap<>();
-        publisherConfig.put(ResultsOutput.DESTINATION, "s3");
-        publisherConfig.put("other-config", "test-value");
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region1, region2))
-                .processingConfig(QueryProcessingConfig.builder()
-                        .resultsPublisherConfig(publisherConfig)
-                        .build())
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeIntKeyQueryDifferentIncludeExcludes(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new IntType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region1 = new Region(rangeFactory.createRange(field, 1, true, 2, true));
-        Region region2 = new Region(rangeFactory.createRange(field, 3, true, 4, false));
-        Region region3 = new Region(rangeFactory.createRange(field, 5, false, 6, true));
-        Region region4 = new Region(rangeFactory.createRange(field, 7, false, 8, false));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region1, region2, region3, region4))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeLongKeyQueryDifferentIncludeExcludes(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region1 = new Region(rangeFactory.createRange(field, 1L, true, 2L, true));
-        Region region2 = new Region(rangeFactory.createRange(field, 3L, true, 4L, false));
-        Region region3 = new Region(rangeFactory.createRange(field, 5L, false, 6L, true));
-        Region region4 = new Region(rangeFactory.createRange(field, 7L, false, 8L, false));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region1, region2, region3, region4))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeStringKeyQueryDifferentIncludeExcludes(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region1 = new Region(rangeFactory.createRange(field, "1", true, "2", true));
-        Region region2 = new Region(rangeFactory.createRange(field, "3", true, "4", false));
-        Region region3 = new Region(rangeFactory.createRange(field, "5", false, "6", true));
-        Region region4 = new Region(rangeFactory.createRange(field, "7", false, "8", false));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region1, region2, region3, region4))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeStringKeyQueryWithNull(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new StringType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createRange(field, "A", true, null, false));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeByteArrayKeyQueryDifferentIncludeExcludes(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region1 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, true));
-        Region region2 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, false));
-        Region region3 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, true));
-        Region region4 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, false, new byte[]{4}, false));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region1, region2, region3, region4))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeByteArrayQueryWithNull(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createRange(field, new byte[]{1, 2}, true, null, false));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region))
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeByteArrayKeyLeafPartitionQuery(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        List<String> files = new ArrayList<>();
-        files.add("file1");
-        files.add("file2");
-        files.add("file3");
-        Region region = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, new byte[]{4}));
-        Region partitionRegion = new Region(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
-        Query parentQuery = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region))
-                .build();
-        LeafPartitionQuery query = LeafPartitionQuery.builder()
-                .parentQuery(parentQuery).regions(parentQuery.getRegions())
-                .tableId(tableProperties.get(TABLE_ID)).subQueryId("subid").leafPartitionId("leaf")
-                .partitionRegion(partitionRegion).files(files)
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        System.out.println(querySerDe.toJson(query));
-
-        LeafPartitionQuery deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query)).asLeafQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeMultipleByteArrayKeyLeafPartitionQuery(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        List<String> files = new ArrayList<>();
-        files.add("file1");
-        files.add("file2");
-        files.add("file3");
-        Region region1 = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, true, new byte[]{4}, true));
-        Region region2 = new Region(rangeFactory.createRange(field, new byte[]{10}, true, new byte[]{20}, true));
-        Region partitionRegion = new Region(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
-        Query parentQuery = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region1, region2))
-                .build();
-        LeafPartitionQuery query = LeafPartitionQuery.builder()
-                .parentQuery(parentQuery).regions(parentQuery.getRegions())
-                .tableId(tableProperties.get(TABLE_ID)).subQueryId("subid").leafPartitionId("leaf")
-                .partitionRegion(partitionRegion).files(files)
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        LeafPartitionQuery deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query)).asLeafQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @Test
-    void shouldSerDeLeafPartitionQueryWithDifferentRegionsFromParent() {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        List<String> files = new ArrayList<>();
-        files.add("file1");
-        files.add("file2");
-        files.add("file3");
-        Region region1 = new Region(rangeFactory.createRange(field, -100L, true, -10L, true));
-        Region region2 = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
-        Region partitionRegion = new Region(rangeFactory.createRange(field, 0L, 1000L));
-        Query parentQuery = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region1, region2))
-                .build();
-        LeafPartitionQuery query = LeafPartitionQuery.builder()
-                .parentQuery(parentQuery).regions(List.of(region2))
-                .tableId(tableProperties.get(TABLE_ID)).subQueryId("subid").leafPartitionId("leaf")
-                .partitionRegion(partitionRegion).files(files)
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, true);
-
-        // When
-        LeafPartitionQuery deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query)).asLeafQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldSerDeIntKeyWithIterator(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new IntType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createRange(field, 1, true, 5, true));
-        Query query = Query.builder()
-                .tableName(tableName)
-                .queryId("id")
-                .regions(List.of(region))
-                .processingConfig(QueryProcessingConfig.builder()
-                        .queryTimeIteratorClassName("iteratorClassName")
-                        .queryTimeIteratorConfig("iteratorConfig")
-                        .build())
-                .build();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When
-        Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(querySerDe.toJson(query))
-                .asParentQuery();
-
-        // Then
-        assertThat(deserialisedQuery).isEqualTo(query);
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionWithNullTableName(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        // When / Then
-        assertThatThrownBy(() -> querySerDe.toJson(Query.builder()
-                .queryId("id")
-                .regions(List.of(region))
-                .build()))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed for query \"id\": " +
-                        "tableName field must be provided");
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionNoQueryId(boolean useTablePropertiesProvider) {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = "test-table";
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        String queryJson = "{\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"tableName\": \"test-table\",\n" +
-                "  \"keys\": [\n" +
-                "  \t{\"field1\": 10}\n" +
-                "  ]\n" +
-                "}\n";
-
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed: queryId field must be provided");
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionNoTableName(boolean useTablePropertiesProvider) {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = UUID.randomUUID().toString();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        String queryJson = "{\n" +
-                "  \"queryId\": \"id\",\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"keys\": [\n" +
-                "  \t{\"field1\": 10}\n" +
-                "  ]\n" +
-                "}\n";
-
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed for query \"id\": " +
-                        "tableName field must be provided");
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionNoQueryType(boolean useTablePropertiesProvider) {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = UUID.randomUUID().toString();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        String queryJson = "{\n" +
-                "  \"queryId\": \"id\",\n" +
-                "  \"tableName\": \"test-table\",\n" +
-                "  \"keys\": [\n" +
-                "  \t{\"field1\": 10}\n" +
-                "  ]\n" +
-                "}\n";
-
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed for query \"id\": " +
-                        "type field must be provided");
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionWithInvalidQueryType(boolean useTablePropertiesProvider) {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = "test-table";
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        String queryJson = "{\n" +
-                "  \"queryId\": \"id\",\n" +
-                "  \"type\": \"invalid-query-type\",\n" +
-                "  \"tableName\": \"test-table\",\n" +
-                "  \"keys\": [\n" +
-                "  \t{\"field1\": 10}\n" +
-                "  ]\n" +
-                "}\n";
-
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed for query \"id\": " +
-                        "Unknown query type \"invalid-query-type\"");
-    }
-
-    private QuerySerDe generateQuerySerDe(String tableName, Schema schema, boolean useTablePropertiesProvider) {
-        if (useTablePropertiesProvider) {
-            tableProperties.set(TABLE_NAME, tableName);
-            tableProperties.setSchema(schema);
-            return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
+            // Then
+            assertThat(found).isEqualTo(query);
         }
-        return new QuerySerDe(schema);
+
+        @ParameterizedTest
+        @MethodSource("serDeConstructors")
+        void shouldSerDeLeafQuery(QuerySerDeConstructor constructor) {
+            // When
+            QuerySerDe serDe = constructor.createSerDe(tableProperties);
+            String json = serDe.toJson(leafPartitionQuery);
+            LeafPartitionQuery found = serDe.fromJsonOrLeafQuery(json).asLeafQuery();
+
+            // Then
+            assertThat(found).isEqualTo(leafPartitionQuery);
+        }
+
+        @Test
+        void shouldGenerateExpectedJsonForParentQuery() {
+            Approvals.verify(
+                    createSerDe().toJsonPrettyPrint(query),
+                    new Options().forFile().withName("all-fields-parent-query", ".json"));
+        }
+
+        @Test
+        void shouldGenerateExpectedJsonForLeafQuery() {
+            Approvals.verify(
+                    createSerDe().toJsonPrettyPrint(leafPartitionQuery),
+                    new Options().forFile().withName("all-fields-leaf-query", ".json"));
+        }
+
+        private static Stream<Arguments> serDeConstructors() {
+            return Stream.of(
+                    Arguments.of(Named.of("QuerySerDe from schema", serDeFromSchema())),
+                    Arguments.of(Named.of("QuerySerDe from table properties provider", serDeFromPropertiesProvider())));
+        }
+
+        private static QuerySerDeConstructor serDeFromSchema() {
+            return properties -> new QuerySerDe(properties.getSchema());
+        }
+
+        private static QuerySerDeConstructor serDeFromPropertiesProvider() {
+            return properties -> new QuerySerDe(new FixedTablePropertiesProvider(properties));
+        }
+
+        public interface QuerySerDeConstructor {
+            QuerySerDe createSerDe(TableProperties tableProperties);
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle regions")
+    class HandleRegions {
+
+        @Test
+        public void shouldSerDeMultipleByteArrayRegions() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new ByteArrayType()));
+            Query query = Query.builder()
+                    .tableName("my-table")
+                    .queryId("id")
+                    .regions(List.of(
+                            regionWithOneRange(factory -> factory
+                                    .createExactRange("key", new byte[]{0, 1, 2})),
+                            regionWithOneRange(factory -> factory
+                                    .createExactRange("key", new byte[]{3, 4}))))
+                    .build();
+
+            // When
+            QuerySerDe querySerDe = createSerDe();
+            String json = querySerDe.toJson(query);
+            Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(json).asParentQuery();
+
+            // Then
+            assertThat(deserialisedQuery).isEqualTo(query);
+        }
+
+        @Test
+        void shouldSerDeLeafPartitionQueryWithDifferentRegionsFromParent() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new LongType()));
+            PartitionTree partitions = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 1000L)
+                    .buildTree();
+            Region region1 = regionWithOneRange(factory -> factory.createRange("key", -100L, true, -10L, true));
+            Region region2 = regionWithOneRange(factory -> factory.createRange("key", 10L, true, 100L, true));
+            Query parentQuery = Query.builder()
+                    .tableName("my-table")
+                    .queryId("id")
+                    .regions(List.of(region1, region2))
+                    .build();
+            LeafPartitionQuery query = LeafPartitionQuery.builder()
+                    .parentQuery(parentQuery).regions(List.of(region2))
+                    .tableId(tableProperties.get(TABLE_ID))
+                    .subQueryId("subid")
+                    .leafPartitionId("L")
+                    .partitionRegion(partitions.getPartition("L").getRegion())
+                    .files(List.of("file1", "file2", "file3"))
+                    .build();
+
+            // When
+            QuerySerDe querySerDe = createSerDe();
+            String json = querySerDe.toJson(query);
+            LeafPartitionQuery deserialisedQuery = querySerDe.fromJsonOrLeafQuery(json).asLeafQuery();
+
+            // Then
+            assertThat(deserialisedQuery).isEqualTo(query);
+        }
+    }
+
+    @Nested
+    @DisplayName("Validation")
+    class Validation {
+
+        @Test
+        public void shouldThrowExceptionWithNoTableName() {
+            // Given
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"type\": \"Query\"," +
+                    "  \"regions\": []" +
+                    "}";
+
+            // When / Then
+            QuerySerDe querySerDe = createSerDe();
+            assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessage("Query validation failed for query \"id\": tableName field must be provided");
+        }
+
+        @Test
+        public void shouldThrowExceptionWithNoQueryId() {
+            // Given
+            tableProperties.set(TABLE_NAME, "test-table");
+
+            String queryJson = "{" +
+                    "  \"type\": \"Query\"," +
+                    "  \"tableName\": \"test-table\"," +
+                    "  \"regions\": []" +
+                    "}";
+
+            // When / Then
+            QuerySerDe querySerDe = createSerDe();
+            assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessage("Query validation failed: queryId field must be provided");
+        }
+
+        @Test
+        public void shouldThrowExceptionWithNoQueryType() {
+            // Given
+            tableProperties.set(TABLE_NAME, "test-table");
+
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"tableName\": \"test-table\"," +
+                    "  \"regions\": []" +
+                    "}\n";
+
+            // When / Then
+            QuerySerDe querySerDe = createSerDe();
+            assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessage("Query validation failed for query \"id\": " +
+                            "type field must be provided");
+        }
+
+        @Test
+        public void shouldThrowExceptionWithInvalidQueryType() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("field1", new LongType()));
+
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"type\": \"invalid-query-type\"," +
+                    "  \"tableName\": \"test-table\"," +
+                    "  \"regions\": []" +
+                    "}\n";
+
+            // When / Then
+            assertThatThrownBy(() -> createSerDe().fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessage("Query validation failed for query \"id\": " +
+                            "Unknown query type \"invalid-query-type\"");
+        }
+    }
+
+    private QuerySerDe createSerDe() {
+        return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
+    }
+
+    private Region regionWithOneRange(Function<RangeFactory, Range> createRange) {
+        return new Region(createRange.apply(new RangeFactory(tableProperties.getSchema())));
     }
 }

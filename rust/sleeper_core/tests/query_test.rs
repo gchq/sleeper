@@ -35,7 +35,7 @@ async fn should_return_subset_results_with_query_subset_of_partition() -> Result
     let input = CommonConfigBuilder::new()
         .input_files(Vec::from([file_1, file_2]))
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 0, 5)))
         .output(OutputType::ArrowRecordBatch)
         .build()?;
@@ -76,7 +76,7 @@ async fn should_return_subset_results_with_query_subset_of_partition_unsorted_in
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(false)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 1, 7)))
         .output(OutputType::ArrowRecordBatch)
         .build()?;
@@ -117,7 +117,7 @@ async fn should_return_subset_results_with_overlapping_query_and_partition_range
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 0, 6)))
         .output(OutputType::ArrowRecordBatch)
         .build()?;
@@ -158,7 +158,7 @@ async fn should_return_zero_results_with_non_overlapping_query_and_partition_ran
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 0, 3)))
         .output(OutputType::ArrowRecordBatch)
         .build()?;
@@ -198,7 +198,7 @@ async fn should_return_results_from_two_overlapping_query_ranges() -> Result<(),
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", -10, 11)))
         .output(OutputType::ArrowRecordBatch)
         .build()?;
@@ -241,7 +241,7 @@ async fn should_return_results_from_two_non_overlapping_query_ranges() -> Result
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", -10, 11)))
         .output(OutputType::ArrowRecordBatch)
         .build()?;
@@ -284,7 +284,7 @@ async fn should_error_with_no_query_ranges() -> Result<(), Error> {
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 0, 3)))
         .output(OutputType::ArrowRecordBatch)
         .build()?;
@@ -323,7 +323,7 @@ async fn should_return_results_as_file_with_sketch() -> Result<(), Error> {
     let input = CommonConfigBuilder::new()
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
-        .row_key_cols(row_key_cols(["key"]))
+        .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 0, 6)))
         .output(OutputType::File {
             output_file: output.clone(),

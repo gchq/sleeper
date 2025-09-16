@@ -13,33 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
+package sleeper.core.iterator.closeable;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * Wraps an iterator with a close method that does nothing. Turns an iterator into a {@link CloseableIterator}.
+ * An iterator with a close method. Uses {@link AutoCloseable} to allow use with try-with-resource statements.
  *
  * @param <T> the type of elements returned by this iterator
  */
-public class WrappedIterator<T> implements CloseableIterator<T> {
-    private final Iterator<T> iterator;
-
-    public WrappedIterator(Iterator<T> iterator) {
-        this.iterator = iterator;
-    }
+public interface CloseableIterator<T> extends Iterator<T>, AutoCloseable {
 
     @Override
-    public boolean hasNext() {
-        return iterator.hasNext();
-    }
-
-    @Override
-    public T next() {
-        return iterator.next();
-    }
-
-    @Override
-    public void close() {
-    }
+    void close() throws IOException;
 }

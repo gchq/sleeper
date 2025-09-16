@@ -32,6 +32,9 @@ use std::fmt::{Display, Formatter};
 use url::Url;
 
 mod datafusion;
+pub mod filter_aggregation_config;
+#[cfg(test)]
+mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
@@ -110,6 +113,8 @@ pub struct CommonConfig<'a> {
     output: OutputType,
     /// Iterator config. Filters, aggregators, etc.
     iterator_config: Option<String>,
+    aggregates: Vec<Aggregate>,
+    filters: Vec<Filter>,
 }
 
 impl Default for CommonConfig<'_> {
@@ -123,6 +128,8 @@ impl Default for CommonConfig<'_> {
             region: SleeperRegion::default(),
             output: OutputType::default(),
             iterator_config: Option::default(),
+            aggregates: Vec::default(),
+            filters: Vec::default(),
         }
     }
 }
@@ -196,6 +203,8 @@ pub struct CommonConfigBuilder<'a> {
     region: SleeperRegion<'a>,
     output: OutputType,
     iterator_config: Option<String>,
+    aggregates: Vec<Aggregate>,
+    filters: Vec<Filter>,
 }
 
 impl<'a> CommonConfigBuilder<'a> {
@@ -252,6 +261,18 @@ impl<'a> CommonConfigBuilder<'a> {
         self
     }
 
+    #[must_use]
+    pub fn aggregates(mut self, aggregates: Vec<Aggregate>) -> Self {
+        self.aggregates = aggregates;
+        self
+    }
+
+    #[must_use]
+    pub fn filters(mut self, filters: Vec<Filter>) -> Self {
+        self.filters = filters;
+        self
+    }
+
     /// Build the `CommonConfig`, consuming the builder and validating required fields.
     ///
     /// # Errors
@@ -273,6 +294,8 @@ impl<'a> CommonConfigBuilder<'a> {
             region: self.region,
             output,
             iterator_config: self.iterator_config,
+            aggregates: self.aggregates,
+            filters: self.filters,
         })
     }
 

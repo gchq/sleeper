@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core;
+package sleeper.core.iterator.closeable;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.MergingIterator;
-import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;

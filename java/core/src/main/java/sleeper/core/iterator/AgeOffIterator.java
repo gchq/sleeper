@@ -15,10 +15,11 @@
  */
 package sleeper.core.iterator;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.FilteringIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -26,10 +27,13 @@ import java.util.List;
  * time ago then the row is removed. This is an example implementation of {@link ConfigStringIterator}.
  */
 public class AgeOffIterator implements ConfigStringIterator {
-    private String fieldName;
-    private long ageOff;
+    private AgeOffFilter filter;
 
     public AgeOffIterator() {
+    }
+
+    public AgeOffIterator(AgeOffFilter filter) {
+        this.filter = filter;
     }
 
     @Override
@@ -38,20 +42,16 @@ public class AgeOffIterator implements ConfigStringIterator {
         if (2 != fields.length) {
             throw new IllegalArgumentException("Configuration string should have 2 fields: field name and age off time");
         }
-        fieldName = fields[0];
-        ageOff = Long.parseLong(fields[1]);
+        filter = new AgeOffFilter(fields[0], Long.parseLong(fields[1]));
     }
 
     @Override
     public List<String> getRequiredValueFields() {
-        return Collections.singletonList(fieldName);
+        return List.of(filter.getFieldName());
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
-        return new FilteringIterator<>(input, row -> {
-            Long value = (Long) row.get(fieldName);
-            return null != value && System.currentTimeMillis() - value < ageOff;
-        });
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
+        return new FilteringIterator<>(input, filter);
     }
 }

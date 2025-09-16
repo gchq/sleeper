@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::map_aggregate::{MapAggregatorOp, aggregator::PrimBuilderType, state::MapNullState};
+use crate::map_aggregate::{UdfMapAggregatorOp, aggregator::PrimBuilderType, state::MapNullState};
 use arrow::{
     array::{
         ArrayBuilder, ArrayRef, ArrowPrimitiveType, AsArray, BooleanArray, MapBuilder,
@@ -49,7 +49,7 @@ where
     inner_field_type: DataType,
     group_maps: Vec<PrimitiveMap<KBuilder, VBuilder>>,
     nulls: MapNullState,
-    op: MapAggregatorOp,
+    op: UdfMapAggregatorOp,
 }
 
 impl<KBuilder, VBuilder> PrimGroupMapAccumulator<KBuilder, VBuilder>
@@ -65,7 +65,7 @@ where
     // # Errors
     // If the incorrect type of data type is provided. Must me a map type with an
     // inner Struct type.
-    pub fn try_new(map_type: &DataType, op: MapAggregatorOp) -> Result<Self> {
+    pub fn try_new(map_type: &DataType, op: UdfMapAggregatorOp) -> Result<Self> {
         if let DataType::Map(field, _) = map_type {
             let DataType::Struct(_) = field.data_type() else {
                 return plan_err!(
@@ -120,7 +120,7 @@ where
 fn update_prim_map_group<KBuilder, VBuilder>(
     input: Option<&StructArray>,
     map: &mut PrimitiveMap<KBuilder, VBuilder>,
-    op: &MapAggregatorOp,
+    op: &UdfMapAggregatorOp,
 ) where
     KBuilder: ArrayBuilder + PrimBuilderType,
     VBuilder: ArrayBuilder + PrimBuilderType,
@@ -259,7 +259,7 @@ mod tests {
     use crate::{
         assert_error,
         map_aggregate::{
-            MapAggregatorOp,
+            UdfMapAggregatorOp,
             aggregator::map_test_common::make_map_datatype,
             group_accumulator::prim_group_accumulator::{
                 PrimGroupMapAccumulator, update_prim_map_group,
@@ -287,7 +287,7 @@ mod tests {
         // When
         let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -300,7 +300,7 @@ mod tests {
         let mt = DataType::Int16;
         let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -317,7 +317,7 @@ mod tests {
         let mt = DataType::Map(Arc::new(Field::new("test", DataType::Int16, false)), false);
         let acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -337,7 +337,7 @@ mod tests {
             inner_field_type: DataType::Int16,
             group_maps: Vec::with_capacity(1000),
             nulls: MapNullState::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // Then - should panic
@@ -354,7 +354,7 @@ mod tests {
             ])),
             group_maps: Vec::with_capacity(1000),
             nulls: MapNullState::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // When
@@ -377,7 +377,7 @@ mod tests {
             ])),
             group_maps: Vec::with_capacity(1000),
             nulls: MapNullState::new(),
-            op: MapAggregatorOp::Sum,
+            op: UdfMapAggregatorOp::Sum,
         };
 
         // When
@@ -397,7 +397,11 @@ mod tests {
         let expected_map = map.clone();
 
         // When
-        update_prim_map_group::<Int64Builder, Int64Builder>(None, &mut map, &MapAggregatorOp::Sum);
+        update_prim_map_group::<Int64Builder, Int64Builder>(
+            None,
+            &mut map,
+            &UdfMapAggregatorOp::Sum,
+        );
 
         // Then - expect no changes
         assert_eq!(map, expected_map);
@@ -423,7 +427,7 @@ mod tests {
         update_prim_map_group::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then - expect no changes
@@ -462,7 +466,7 @@ mod tests {
         update_prim_map_group::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -503,7 +507,7 @@ mod tests {
         update_prim_map_group::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
 
         // Then
@@ -549,7 +553,7 @@ mod tests {
         update_prim_map_group::<Int64Builder, Int64Builder>(
             Some(&entry_builder.finish()),
             &mut map,
-            &MapAggregatorOp::Sum,
+            &UdfMapAggregatorOp::Sum,
         );
     }
 
@@ -559,7 +563,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
 
         // When
@@ -593,7 +597,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
 
@@ -612,7 +616,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
 
@@ -633,7 +637,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
         let mut expected_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
@@ -658,7 +662,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
         let mut expected_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
@@ -689,7 +693,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
         let mut expected_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
@@ -732,7 +736,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
         let mut expected_first_group_map = HashMap::<i64, i64, BuildNoHashHasher<i64>>::default();
@@ -789,7 +793,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
         let expected = HashMap::from([(3, 10), (1, 9), (2, 7)]);
@@ -826,7 +830,7 @@ mod tests {
         let mt = make_map_datatype(DataType::Int64, DataType::Int64);
         let mut acc = PrimGroupMapAccumulator::<Int64Builder, Int64Builder>::try_new(
             &mt,
-            MapAggregatorOp::Sum,
+            UdfMapAggregatorOp::Sum,
         )?;
         let mut builder = acc.make_map_builder(10);
         let expected_first_group = HashMap::from([(3, 10), (1, 10), (2, 7), (4, 11)]);
