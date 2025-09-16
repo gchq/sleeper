@@ -1,0 +1,45 @@
+{
+  "tableName": null,
+  "tableId": "my-table-id",
+  "queryId": "test-query",
+  "type": "LeafPartitionQuery",
+  "regions": [
+    {
+      "key": {
+        "min": 10,
+        "minInclusive": true,
+        "max": 20,
+        "maxInclusive": false
+      },
+      "stringsBase64Encoded": true
+    }
+  ],
+  "requestedValueFields": [
+    "integer"
+  ],
+  "queryTimeIteratorClassName": "TestIterator",
+  "queryTimeIteratorConfig": "config",
+  "resultsPublisherConfig": {
+    "destination": "results-target"
+  },
+  "statusReportDestinations": [
+    {
+      "destination": "status-report-target"
+    }
+  ],
+  "subQueryId": "test-subquery",
+  "leafPartitionId": "L",
+  "partitionRegion": {
+    "key": {
+      "min": -2147483648,
+      "minInclusive": true,
+      "max": 100,
+      "maxInclusive": false
+    },
+    "stringsBase64Encoded": true
+  },
+  "files": [
+    "file-1",
+    "file-2"
+  ]
+}

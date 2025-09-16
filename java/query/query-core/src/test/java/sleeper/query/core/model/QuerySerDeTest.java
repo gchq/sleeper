@@ -15,6 +15,8 @@
  */
 package sleeper.query.core.model;
 
+import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Named;
@@ -73,6 +75,10 @@ public class QuerySerDeTest {
     @DisplayName("Read and write all fields")
     class ReadAndWriteAllFields {
 
+        PartitionTree partitions = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 100)
+                .buildTree();
         QueryProcessingConfig processingConfigWithAllFieldsSet = QueryProcessingConfig.builder()
                 .queryTimeIteratorClassName("TestIterator")
                 .queryTimeIteratorConfig("config")
@@ -80,19 +86,27 @@ public class QuerySerDeTest {
                 .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, "results-target"))
                 .statusReportDestinations(List.of(Map.of(ResultsOutput.DESTINATION, "status-report-target")))
                 .build();
+        Query query = Query.builder()
+                .queryId("test-query")
+                .tableName("my-table")
+                .regions(List.of(regionWithOneRange(factory -> factory
+                        .createRange("key", 10, 20))))
+                .processingConfig(processingConfigWithAllFieldsSet)
+                .build();
+        LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
+                .parentQuery(query)
+                .subQueryId("test-subquery")
+                .tableId("my-table-id")
+                .leafPartitionId("L")
+                .regions(List.of(regionWithOneRange(factory -> factory
+                        .createRange("key", 10, 20))))
+                .partitionRegion(partitions.getPartition("L").getRegion())
+                .files(List.of("file-1", "file-2"))
+                .build();
 
         @ParameterizedTest
         @MethodSource("serDeConstructors")
-        void shouldSerDeParentQueryDirectlyFromSchema(QuerySerDeConstructor constructor) {
-            // Given
-            Query query = Query.builder()
-                    .queryId("test-query")
-                    .tableName("my-table")
-                    .regions(List.of(regionWithOneRange(factory -> factory
-                            .createRange("key", 10, 20))))
-                    .processingConfig(processingConfigWithAllFieldsSet)
-                    .build();
-
+        void shouldSerDeParentQuery(QuerySerDeConstructor constructor) {
             // When
             QuerySerDe serDe = constructor.createSerDe(tableProperties);
             String json = serDe.toJson(query);
@@ -104,31 +118,28 @@ public class QuerySerDeTest {
 
         @ParameterizedTest
         @MethodSource("serDeConstructors")
-        void shouldSerDeLeafQueryDirectlyFromSchema(QuerySerDeConstructor constructor) {
-            // Given
-            PartitionTree partitions = new PartitionsBuilder(tableProperties)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 100)
-                    .buildTree();
-            LeafPartitionQuery query = LeafPartitionQuery.builder()
-                    .queryId("test-query")
-                    .subQueryId("test-subquery")
-                    .tableId("my-table-id")
-                    .leafPartitionId("L")
-                    .regions(List.of(regionWithOneRange(factory -> factory
-                            .createRange("key", 10, 20))))
-                    .partitionRegion(partitions.getPartition("L").getRegion())
-                    .files(List.of("file-1", "file-2"))
-                    .processingConfig(processingConfigWithAllFieldsSet)
-                    .build();
-
+        void shouldSerDeLeafQuery(QuerySerDeConstructor constructor) {
             // When
             QuerySerDe serDe = constructor.createSerDe(tableProperties);
-            String json = serDe.toJson(query);
+            String json = serDe.toJson(leafPartitionQuery);
             LeafPartitionQuery found = serDe.fromJsonOrLeafQuery(json).asLeafQuery();
 
             // Then
-            assertThat(found).isEqualTo(query);
+            assertThat(found).isEqualTo(leafPartitionQuery);
+        }
+
+        @Test
+        void shouldGenerateExpectedJsonForParentQuery() {
+            Approvals.verify(
+                    createSerDe().toJsonPrettyPrint(query),
+                    new Options().forFile().withName("all-fields-parent-query", ".json"));
+        }
+
+        @Test
+        void shouldGenerateExpectedJsonForLeafQuery() {
+            Approvals.verify(
+                    createSerDe().toJsonPrettyPrint(leafPartitionQuery),
+                    new Options().forFile().withName("all-fields-leaf-query", ".json"));
         }
 
         private static Stream<Arguments> serDeConstructors() {

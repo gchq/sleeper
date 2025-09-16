@@ -1,0 +1,34 @@
+{
+  "tableName": "my-table",
+  "tableId": null,
+  "queryId": "test-query",
+  "type": "Query",
+  "regions": [
+    {
+      "key": {
+        "min": 10,
+        "minInclusive": true,
+        "max": 20,
+        "maxInclusive": false
+      },
+      "stringsBase64Encoded": true
+    }
+  ],
+  "requestedValueFields": [
+    "integer"
+  ],
+  "queryTimeIteratorClassName": "TestIterator",
+  "queryTimeIteratorConfig": "config",
+  "resultsPublisherConfig": {
+    "destination": "results-target"
+  },
+  "statusReportDestinations": [
+    {
+      "destination": "status-report-target"
+    }
+  ],
+  "subQueryId": null,
+  "leafPartitionId": null,
+  "partitionRegion": null,
+  "files": null
+}
