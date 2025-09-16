@@ -51,11 +51,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
-import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 
 /**
  * Writes data to Sleeper partition files. The ingest process works as follows:
@@ -474,12 +470,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
 
         public Builder<T> tableProperties(TableProperties tableProperties) {
             return schema(tableProperties.getSchema())
-                    .iteratorConfig(IteratorConfig.builder()
-                            .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
-                            .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                            .filteringString(tableProperties.get(FILTERING_CONFIG))
-                            .aggregationString(tableProperties.get(AGGREGATION_CONFIG))
-                            .build())
+                    .iteratorConfig(IteratorConfig.from(tableProperties))
                     .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
         }
 

@@ -16,6 +16,9 @@
 package sleeper.core.iterator;
 
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
+
+import java.util.List;
 
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
@@ -26,14 +29,14 @@ import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
-    private final String filteringString;
-    private final String aggregationString;
+    private final List<AgeOffFilter> filters;
+    private final List<Aggregation> aggregations;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
-        this.filteringString = builder.filteringString;
-        this.aggregationString = builder.aggregationString;
+        this.filters = builder.filters != null ? builder.filters : List.of();
+        this.aggregations = builder.aggregations != null ? builder.aggregations : List.of();
     }
 
     public static Builder builder() {
@@ -51,8 +54,8 @@ public class IteratorConfig {
         return builder()
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                 .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                .filteringString(tableProperties.get(FILTERING_CONFIG))
-                .aggregationString(tableProperties.get(AGGREGATION_CONFIG))
+                .filters(tableProperties.get(FILTERING_CONFIG))
+                .aggregations(tableProperties.get(AGGREGATION_CONFIG), tableProperties.getSchema())
                 .build();
     }
 
@@ -64,12 +67,21 @@ public class IteratorConfig {
         return iteratorConfigString;
     }
 
-    public String getFilteringString() {
-        return filteringString;
+    public List<AgeOffFilter> getFilters() {
+        return filters;
     }
 
-    public String getAggregationString() {
-        return aggregationString;
+    public List<Aggregation> getAggregations() {
+        return aggregations;
+    }
+
+    /**
+     * Checks if a iterator should be applied based on if a class name or filters have been set.
+     *
+     * @return true if the iterator should be applied, otherwise false
+     */
+    public boolean shouldIteratorBeApplied() {
+        return iteratorClassName != null || !filters.isEmpty() || !aggregations.isEmpty();
     }
 
     /**
@@ -78,8 +90,8 @@ public class IteratorConfig {
     public static final class Builder {
         private String iteratorClassName;
         private String iteratorConfigString;
-        private String filteringString;
-        private String aggregationString;
+        private List<AgeOffFilter> filters;
+        private List<Aggregation> aggregations;
 
         private Builder() {
         }
@@ -109,11 +121,11 @@ public class IteratorConfig {
         /**
          * Sets the filtering configuration.
          *
-         * @param  filteringString the filtering configuration to be applied to the data
-         * @return                 builder for method chaining
+         * @param  filterString the filter configuration to be applied to the data
+         * @return              builder for method chaining
          */
-        public Builder filteringString(String filteringString) {
-            this.filteringString = filteringString;
+        public Builder filters(String filterString) {
+            this.filters = AgeOffFilter.parseConfig(filterString);
             return this;
         }
 
@@ -121,10 +133,11 @@ public class IteratorConfig {
          * Sets the aggregation configuration.
          *
          * @param  aggregationString the aggregation configuration to be applied to the data
+         * @param  schema            the table schema
          * @return                   builder for method chaining
          */
-        public Builder aggregationString(String aggregationString) {
-            this.aggregationString = aggregationString;
+        public Builder aggregations(String aggregationString, Schema schema) {
+            this.aggregations = Aggregation.parseConfig(aggregationString, schema);
             return this;
         }
 

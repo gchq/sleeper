@@ -448,8 +448,6 @@ public class AggregationFilteringIteratorTest {
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
-                    .isInstanceOf(IteratorCreationException.class)
-                    .cause()
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper table filter not set to match ageOff(column,age), was: someother");
         }
@@ -465,8 +463,7 @@ public class AggregationFilteringIteratorTest {
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
-                    .isInstanceOf(IteratorCreationException.class)
-                    .hasCauseInstanceOf(NumberFormatException.class);
+                    .isInstanceOf(NumberFormatException.class);
         }
     }
 
@@ -481,8 +478,7 @@ public class AggregationFilteringIteratorTest {
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
-                    .isInstanceOf(IteratorCreationException.class)
-                    .cause()
+                    .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Unable to parse operand. Operand: bop");
         }
 
@@ -497,8 +493,7 @@ public class AggregationFilteringIteratorTest {
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
-                    .isInstanceOf(IteratorCreationException.class)
-                    .cause()
+                    .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Not all aggregated fields are declared in the schema. Missing fields: abc");
         }
 
@@ -514,8 +509,7 @@ public class AggregationFilteringIteratorTest {
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
-                    .isInstanceOf(IteratorCreationException.class)
-                    .cause()
+                    .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
         }
 
@@ -530,8 +524,7 @@ public class AggregationFilteringIteratorTest {
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
-                    .isInstanceOf(IteratorCreationException.class)
-                    .cause()
+                    .isInstanceOf(java.lang.IllegalArgumentException.class)
                     .hasMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
         }
 
@@ -546,8 +539,7 @@ public class AggregationFilteringIteratorTest {
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
-                    .isInstanceOf(IteratorCreationException.class)
-                    .cause()
+                    .isInstanceOf(java.lang.IllegalArgumentException.class)
                     .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
         }
     }

@@ -53,6 +53,9 @@ public record Aggregation(String column, AggregationOp op) {
      * @return              the configuration
      */
     public static List<Aggregation> parseConfig(String configString, Schema schema) {
+        if (configString == null || configString.isEmpty()) {
+            return List.of();
+        }
         List<Aggregation> aggregations = new ArrayList<Aggregation>();
         String[] aggregationSplits = StringUtils.deleteWhitespace(configString).split("\\),");
         Arrays.stream(aggregationSplits).forEach(presentAggregation -> {

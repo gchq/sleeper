@@ -16,12 +16,11 @@
 package sleeper.core.iterator;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.key.Key;
 import sleeper.core.row.Row;
+import sleeper.core.row.RowComparator;
+import sleeper.core.schema.Schema;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
@@ -34,6 +33,9 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
     private final FilterAggregationConfig config;
     /** Source iterator. */
     private final CloseableIterator<Row> input;
+
+    private final Schema schema;
+
     /**
      * The row retrieved from the row source that is the start of the next aggregation group. If this is null,
      * then either we are at the start of the iteration (no input rows retrieved yet), or the input iterator
@@ -46,10 +48,12 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
      *
      * @param input  the source iterator
      * @param config the configuration
+     * @param schema the table schema
      */
-    AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<Row> input) {
+    AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<Row> input, Schema schema) {
         this.config = Objects.requireNonNull(config, "config");
         this.input = Objects.requireNonNull(input, "input");
+        this.schema = Objects.requireNonNull(schema, "schema");
     }
 
     @Override
@@ -69,6 +73,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
+        RowComparator rowCompare = new RowComparator(schema);
         // There must be at least one more row, either stashed by us or in the input iterator
         Row aggregated = (startOfNextAggregationGroup != null) ? startOfNextAggregationGroup : input.next();
         // We may have just re-assigned the startOfNextAggregation group, so null it out
@@ -76,7 +81,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
         // Now aggregate more rows on to this one until we find an unequal one or run out of data
         while (startOfNextAggregationGroup == null && input.hasNext()) {
             Row next = input.next();
-            if (rowsEqual(aggregated, next, config)) {
+            if (rowCompare.compare(aggregated, next) == 0) {
                 aggregateOnTo(aggregated, next, config);
             } else {
                 startOfNextAggregationGroup = next;
@@ -99,23 +104,5 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
             Object newValue = toBeAggregated.get(agg.column());
             aggregated.put(agg.column(), agg.op().apply(currentValue, newValue));
         }
-    }
-
-    /**
-     * Determines if two rows are equal.
-     *
-     * @param  lhs    a row
-     * @param  rhs    another row
-     * @param  config the grouping configuration
-     * @return        true if they are considered equal
-     */
-    public static boolean rowsEqual(Row lhs, Row rhs, FilterAggregationConfig config) {
-        List<Object> keys1 = new ArrayList<>();
-        List<Object> keys2 = new ArrayList<>();
-        for (String key : config.groupingColumns()) {
-            keys1.add(lhs.get(key));
-            keys2.add(rhs.get(key));
-        }
-        return Key.create(keys1).equals(Key.create(keys2));
     }
 }

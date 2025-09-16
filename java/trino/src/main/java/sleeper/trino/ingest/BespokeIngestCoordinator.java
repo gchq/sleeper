@@ -39,7 +39,6 @@ public class BespokeIngestCoordinator {
     private BespokeIngestCoordinator() {
     }
 
-    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public static IngestCoordinator<Page> asyncFromPage(
             ObjectFactory objectFactory,
             StateStore sleeperStateStore,
@@ -47,10 +46,6 @@ public class BespokeIngestCoordinator {
             TableProperties tableProperties,
             SleeperConfig sleeperConfig,
             Configuration hadoopConfiguration,
-            String sleeperIteratorClassName,
-            String sleeperIteratorConfig,
-            String sleeperFiltersConfig,
-            String sleeperAggregationString,
             int ingestPartitionRefreshFrequencyInSeconds,
             S3AsyncClient s3AsyncClient,
             BufferAllocator arrowBufferAllocator) {
@@ -83,12 +78,7 @@ public class BespokeIngestCoordinator {
                 .objectFactory(objectFactory)
                 .stateStore(sleeperStateStore)
                 .schema(tableProperties.getSchema())
-                .iteratorConfig(IteratorConfig.builder()
-                        .iteratorClassName(sleeperIteratorClassName)
-                        .iteratorConfigString(sleeperIteratorConfig)
-                        .filteringString(sleeperFiltersConfig)
-                        .aggregationString(sleeperAggregationString)
-                        .build())
+                .iteratorConfig(IteratorConfig.from(tableProperties))
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
                 .rowBatchFactory(rowBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory)
