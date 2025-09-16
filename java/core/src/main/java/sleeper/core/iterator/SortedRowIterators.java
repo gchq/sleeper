@@ -37,10 +37,10 @@ public class SortedRowIterators implements SortedRowIterator {
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
         CloseableIterator<Row> rows = input;
         for (SortedRowIterator iterator : iterators) {
-            rows = iterator.apply(rows);
+            rows = iterator.applyTransform(rows);
         }
         return rows;
     }

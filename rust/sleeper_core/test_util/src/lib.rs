@@ -43,7 +43,7 @@ pub fn file(dir: &TempDir, name: &str) -> Url {
     Url::from_file_path(dir.path().join(name)).unwrap()
 }
 
-pub fn row_key_cols<const N: usize>(names: [&str; N]) -> Vec<String> {
+pub fn col_names<const N: usize>(names: [&str; N]) -> Vec<String> {
     names.into_iter().map(String::from).collect()
 }
 

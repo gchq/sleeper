@@ -18,8 +18,6 @@ package sleeper.core.iterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 
-import java.util.List;
-
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
@@ -30,17 +28,13 @@ public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
     private final String filteringString;
-    private final List<AgeOffFilter> filters;
     private final String aggregationString;
-    private final List<Aggregation> aggregations;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
         this.filteringString = builder.filteringString;
-        this.filters = builder.filters;
         this.aggregationString = builder.aggregationString;
-        this.aggregations = builder.aggregations;
     }
 
     public static Builder builder() {
@@ -77,10 +71,6 @@ public class IteratorConfig {
         return filteringString;
     }
 
-    public List<AgeOffFilter> getFilters() {
-        return filters;
-    }
-
     public String getAggregationString() {
         return aggregationString;
     }
@@ -97,7 +87,6 @@ public class IteratorConfig {
     public boolean shouldIteratorBeApplied() {
         return iteratorClassName != null || !filters.isEmpty() || !aggregations.isEmpty();
     }
-
     /**
      * Builder for iterator config object.
      */
@@ -105,9 +94,7 @@ public class IteratorConfig {
         private String iteratorClassName;
         private String iteratorConfigString;
         private String filteringString;
-        private List<AgeOffFilter> filters;
         private String aggregationString;
-        private List<Aggregation> aggregations;
 
         private Builder() {
         }

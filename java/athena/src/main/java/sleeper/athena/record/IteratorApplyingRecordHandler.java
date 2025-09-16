@@ -255,11 +255,8 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
      */
 
     private CloseableIterator<Row> applyCompactionIterators(CloseableIterator<Row> mergingIterator, Schema schema, TableProperties tableProperties) throws IteratorCreationException {
-        if (tableProperties.get(ITERATOR_CLASS_NAME) == null) {
-            return mergingIterator;
-        }
         return new IteratorFactory(objectFactory)
                 .getIterator(IteratorConfig.from(tableProperties), schema)
-                .apply(mergingIterator);
+                .applyTransform(mergingIterator);
     }
 }

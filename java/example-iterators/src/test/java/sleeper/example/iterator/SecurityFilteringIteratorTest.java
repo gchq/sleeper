@@ -41,7 +41,7 @@ public class SecurityFilteringIteratorTest {
         securityFilteringIterator.init("securityLabel,public", getSchema());
 
         // When
-        Iterator<Row> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = securityFilteringIterator.applyTransform(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
@@ -57,7 +57,7 @@ public class SecurityFilteringIteratorTest {
         securityFilteringIterator.init("securityLabel", getSchema());
 
         // When
-        Iterator<Row> filtered = securityFilteringIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = securityFilteringIterator.applyTransform(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()

@@ -32,7 +32,7 @@ public class FixedAgeOffIterator implements ConfigStringIterator {
     private long minValue;
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
         return new FilteringIterator<>(input, row -> {
             Long value = (Long) row.get(fieldName);
             return null != value && value >= minValue;

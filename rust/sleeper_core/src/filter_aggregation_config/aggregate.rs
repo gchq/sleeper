@@ -37,6 +37,9 @@ pub enum AggregateConfigError {
 }
 
 impl Aggregate {
+    /// Parse an aggregation configuration from a string.
+    /// # Errors
+    /// If the configuration string could not be read, or an aggregation function was unrecognised or invalid.
     pub fn parse_config(config_string: &str) -> Result<Vec<Self>, AggregateConfigError> {
         FunctionReader::from(config_string)
             .map(|result| match result {
