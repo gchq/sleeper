@@ -42,7 +42,6 @@ import sleeper.query.core.output.ResultsOutput;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -55,12 +54,6 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QuerySerDeTest {
-
-    private static Stream<Arguments> alternateTestParameters() {
-        return Stream.of(
-                Arguments.of(Named.of("Create QuerySerDe using Map", false)),
-                Arguments.of(Named.of("Create QuerySerDe using TablePropertiesProvider", true)));
-    }
 
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder()
@@ -176,7 +169,7 @@ public class QuerySerDeTest {
                     .build();
 
             // When
-            QuerySerDe querySerDe = createQuerySerDe();
+            QuerySerDe querySerDe = createSerDe();
             String json = querySerDe.toJson(query);
             Query deserialisedQuery = querySerDe.fromJsonOrLeafQuery(json).asParentQuery();
 
@@ -209,7 +202,7 @@ public class QuerySerDeTest {
                     .build();
 
             // When
-            QuerySerDe querySerDe = createQuerySerDe();
+            QuerySerDe querySerDe = createSerDe();
             String json = querySerDe.toJson(query);
             LeafPartitionQuery deserialisedQuery = querySerDe.fromJsonOrLeafQuery(json).asLeafQuery();
 
@@ -218,127 +211,81 @@ public class QuerySerDeTest {
         }
     }
 
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionWithNullTableName(boolean useTablePropertiesProvider) {
-        // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        String tableName = UUID.randomUUID().toString();
-        Region region = new Region(rangeFactory.createExactRange(field, new byte[]{0, 1, 2}));
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
+    @Nested
+    @DisplayName("Validation")
+    class Validation {
 
-        // When / Then
-        assertThatThrownBy(() -> querySerDe.toJson(Query.builder()
-                .queryId("id")
-                .regions(List.of(region))
-                .build()))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed for query \"id\": " +
-                        "tableName field must be provided");
-    }
+        @Test
+        public void shouldThrowExceptionWithNoTableName() {
+            // Given
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"type\": \"Query\"," +
+                    "  \"regions\": []" +
+                    "}";
 
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionNoQueryId(boolean useTablePropertiesProvider) {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = "test-table";
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        String queryJson = "{\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"tableName\": \"test-table\",\n" +
-                "  \"keys\": [\n" +
-                "  \t{\"field1\": 10}\n" +
-                "  ]\n" +
-                "}\n";
-
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed: queryId field must be provided");
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionNoTableName(boolean useTablePropertiesProvider) {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = UUID.randomUUID().toString();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        String queryJson = "{\n" +
-                "  \"queryId\": \"id\",\n" +
-                "  \"type\": \"Query\",\n" +
-                "  \"keys\": [\n" +
-                "  \t{\"field1\": 10}\n" +
-                "  ]\n" +
-                "}\n";
-
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed for query \"id\": " +
-                        "tableName field must be provided");
-    }
-
-    @ParameterizedTest()
-    @MethodSource("alternateTestParameters")
-    public void shouldThrowExceptionNoQueryType(boolean useTablePropertiesProvider) {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = UUID.randomUUID().toString();
-        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
-
-        String queryJson = "{\n" +
-                "  \"queryId\": \"id\",\n" +
-                "  \"tableName\": \"test-table\",\n" +
-                "  \"keys\": [\n" +
-                "  \t{\"field1\": 10}\n" +
-                "  ]\n" +
-                "}\n";
-
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed for query \"id\": " +
-                        "type field must be provided");
-    }
-
-    @Test
-    public void shouldThrowExceptionWithInvalidQueryType() {
-        // Given
-        tableProperties.setSchema(createSchemaWithKey("field1", new LongType()));
-
-        String queryJson = "{\n" +
-                "  \"queryId\": \"id\",\n" +
-                "  \"type\": \"invalid-query-type\",\n" +
-                "  \"tableName\": \"test-table\",\n" +
-                "  \"keys\": [\n" +
-                "  \t{\"field1\": 10}\n" +
-                "  ]\n" +
-                "}\n";
-
-        // When / Then
-        assertThatThrownBy(() -> createSerDe().fromJsonOrLeafQuery(queryJson))
-                .isInstanceOf(QueryValidationException.class)
-                .hasMessage("Query validation failed for query \"id\": " +
-                        "Unknown query type \"invalid-query-type\"");
-    }
-
-    private QuerySerDe createQuerySerDe() {
-        return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
-    }
-
-    private QuerySerDe generateQuerySerDe(String tableName, Schema schema, boolean useTablePropertiesProvider) {
-        if (useTablePropertiesProvider) {
-            tableProperties.set(TABLE_NAME, tableName);
-            tableProperties.setSchema(schema);
-            return new QuerySerDe(new FixedTablePropertiesProvider(tableProperties));
+            // When / Then
+            QuerySerDe querySerDe = createSerDe();
+            assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessage("Query validation failed for query \"id\": tableName field must be provided");
         }
-        return new QuerySerDe(schema);
+
+        @Test
+        public void shouldThrowExceptionWithNoQueryId() {
+            // Given
+            tableProperties.set(TABLE_NAME, "test-table");
+
+            String queryJson = "{" +
+                    "  \"type\": \"Query\"," +
+                    "  \"tableName\": \"test-table\"," +
+                    "  \"regions\": []" +
+                    "}";
+
+            // When / Then
+            QuerySerDe querySerDe = createSerDe();
+            assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessage("Query validation failed: queryId field must be provided");
+        }
+
+        @Test
+        public void shouldThrowExceptionWithNoQueryType() {
+            // Given
+            tableProperties.set(TABLE_NAME, "test-table");
+
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"tableName\": \"test-table\"," +
+                    "  \"regions\": []" +
+                    "}\n";
+
+            // When / Then
+            QuerySerDe querySerDe = createSerDe();
+            assertThatThrownBy(() -> querySerDe.fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessage("Query validation failed for query \"id\": " +
+                            "type field must be provided");
+        }
+
+        @Test
+        public void shouldThrowExceptionWithInvalidQueryType() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("field1", new LongType()));
+
+            String queryJson = "{" +
+                    "  \"queryId\": \"id\"," +
+                    "  \"type\": \"invalid-query-type\"," +
+                    "  \"tableName\": \"test-table\"," +
+                    "  \"regions\": []" +
+                    "}\n";
+
+            // When / Then
+            assertThatThrownBy(() -> createSerDe().fromJsonOrLeafQuery(queryJson))
+                    .isInstanceOf(QueryValidationException.class)
+                    .hasMessage("Query validation failed for query \"id\": " +
+                            "Unknown query type \"invalid-query-type\"");
+        }
     }
 
     private QuerySerDe createSerDe() {
