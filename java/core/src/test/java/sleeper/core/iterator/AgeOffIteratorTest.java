@@ -41,7 +41,7 @@ public class AgeOffIteratorTest {
         ageOffIterator.init("timestamp,1000000", getSchema());
 
         // When
-        Iterator<Row> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = ageOffIterator.applyTransform(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()

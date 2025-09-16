@@ -36,7 +36,7 @@ public class LimitingConfigStringIterator implements ConfigStringIterator {
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
         return new LimitingIterator<>(limit, input);
     }
 

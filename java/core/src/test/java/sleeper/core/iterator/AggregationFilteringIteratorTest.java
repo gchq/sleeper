@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
@@ -396,9 +395,7 @@ public class AggregationFilteringIteratorTest {
             tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
 
             // When / Then
-            // TODO this is incorrect, this should only specify the value field
-            // See https://github.com/gchq/sleeper/issues/5605
-            assertThat(createIterator().getRequiredValueFields()).containsExactly("key", "value");
+            assertThat(createIterator().getRequiredValueFields()).containsExactly("value");
         }
 
         @Test
@@ -414,7 +411,7 @@ public class AggregationFilteringIteratorTest {
             // When / Then
             // TODO this is incorrect, there should be no required value fields
             // See https://github.com/gchq/sleeper/issues/5605
-            assertThat(createIterator().getRequiredValueFields()).containsExactly("key", "sortKey", "sortKey");
+            assertThat(createIterator().getRequiredValueFields()).containsExactly("sortKey");
         }
 
         @Test
@@ -593,24 +590,6 @@ public class AggregationFilteringIteratorTest {
             assertThat(resultList).isEqualTo(List.of(
                     new Row(Map.of("key", "A", "value", 100L, "value2", 30L))));
         }
-    }
-
-    @Test
-    public void shouldThrowOnUninitialisedApply() {
-        assertThatIllegalStateException().isThrownBy(() -> {
-            // Given
-            AggregationFilteringIterator afi = new AggregationFilteringIterator();
-            afi.apply(null);
-        }).withMessage("AggregatingIterator has not been initialised, call init()");
-    }
-
-    @Test
-    public void shouldThrowOnUninitialisedGetRequiredValues() {
-        assertThatIllegalStateException().isThrownBy(() -> {
-            // Given
-            AggregationFilteringIterator afi = new AggregationFilteringIterator();
-            afi.getRequiredValueFields();
-        }).withMessage("AggregatingIterator has not been initialised, call init()");
     }
 
     private List<Row> applyIterator(List<Row> rows) throws Exception {

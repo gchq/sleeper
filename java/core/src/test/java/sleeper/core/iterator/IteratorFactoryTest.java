@@ -15,7 +15,6 @@
  */
 package sleeper.core.iterator;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.testutil.IteratorFactoryTestHelper;
@@ -34,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
@@ -87,7 +85,6 @@ public class IteratorFactoryTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldApplyFilteringConfigAndThenCustomIterator() throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
@@ -112,47 +109,14 @@ public class IteratorFactoryTest {
     }
 
     @Test
-    public void shouldUseFilteringConfigOverClassNameWhenBothSet() throws Exception {
-        // Given
-        tableProperties.setSchema(Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType()),
-                        new Field("otherValue", new LongType()))
-                .build());
-        tableProperties.set(ITERATOR_CLASS_NAME, DataEngine.AGGREGATION_ITERATOR_NAME);
-        tableProperties.set(ITERATOR_CONFIG, "someFakeConfig"); //Would throw illegal argument exception if used
-        tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
+    void shouldCreateNoOpIterator() throws Exception {
+        // Given no configuration
+        List<Row> rows = List.of(
+                new Row(Map.of("key", "A", "value", 123L)),
+                new Row(Map.of("key", "A", "value", 456L)));
 
-        // When
-        List<Row> filtered = applyIterator(List.of(
-                new Row(Map.of("key", "test", "value", 10L)),
-                new Row(Map.of("key", "test2", "value", 9999999999999999L))));
-
-        // Then
-        assertThat(filtered).containsExactly(
-                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
-    }
-
-    @Test
-    public void shouldUseAggregationConfigOverClassNameWhenBothSet() throws Exception {
-        // Given
-        tableProperties.setSchema(Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType()),
-                        new Field("otherValue", new LongType()))
-                .build());
-        tableProperties.set(ITERATOR_CLASS_NAME, DataEngine.AGGREGATION_ITERATOR_NAME);
-        tableProperties.set(ITERATOR_CONFIG, "someFakeConfig"); //Would throw illegal argument exception if used
-        tableProperties.set(AGGREGATION_CONFIG, "sum(value),sum(otherValue)");
-
-        // When
-        List<Row> filtered = applyIterator(List.of(
-                new Row(Map.of("key", "test", "value", 100L, "otherValue", 200L)),
-                new Row(Map.of("key", "test", "value", 1000L, "otherValue", 2000L))));
-
-        // Then
-        assertThat(filtered).containsExactly(
-                new Row(Map.of("key", "test", "value", 1100L, "otherValue", 2200L)));
+        // When / Then
+        assertThat(applyIterator(rows)).isEqualTo(rows);
     }
 
     private List<Row> applyIterator(List<Row> rows) throws Exception {
