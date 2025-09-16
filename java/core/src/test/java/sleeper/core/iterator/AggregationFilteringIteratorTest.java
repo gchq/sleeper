@@ -463,7 +463,7 @@ public class AggregationFilteringIteratorTest {
 
             // When / Then
             assertThatThrownBy(() -> createIterator())
-                    .hasCauseInstanceOf(NumberFormatException.class);
+                    .isInstanceOf(NumberFormatException.class);
         }
     }
 
