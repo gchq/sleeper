@@ -160,6 +160,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         } else {
             params.iterator_config.set("");
         }
+        params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
+        params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
 
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
         List<Range> orderedRanges = region.getRangesOrdered(schema);

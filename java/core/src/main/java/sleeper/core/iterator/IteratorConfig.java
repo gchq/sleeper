@@ -73,15 +73,6 @@ public class IteratorConfig {
     }
 
     /**
-     * Checks if a iterator should be applied based on if a class name or filters have been set.
-     *
-     * @return true if the iterator should be applied, otherwise false
-     */
-    public boolean shouldIteratorBeApplied() {
-        return iteratorClassName != null || filteringString != null || aggregationString != null;
-    }
-
-    /**
      * Builder for iterator config object.
      */
     public static final class Builder {

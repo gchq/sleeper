@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
+package sleeper.core.iterator.testutil;
 
+import sleeper.core.iterator.ConfigStringIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.LimitingIterator;
 import sleeper.core.row.Row;
@@ -35,7 +36,7 @@ public class LimitingConfigStringIterator implements ConfigStringIterator {
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
         return new LimitingIterator<>(limit, input);
     }
 

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.iterator;
+package sleeper.core.iterator.testutil;
 
+import sleeper.core.iterator.SortedRowIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.FilteringIterator;
 import sleeper.core.iterator.closeable.LimitingIterator;
@@ -43,7 +44,7 @@ public class SortedRowIteratorTestHelper {
      */
     public static List<Row> apply(SortedRowIterator iterator, List<Row> rows) {
         List<Row> output = new ArrayList<>();
-        iterator.apply(new WrappedIterator<>(rows.iterator()))
+        iterator.applyTransform(new WrappedIterator<>(rows.iterator()))
                 .forEachRemaining(output::add);
         return output;
     }
@@ -102,7 +103,7 @@ public class SortedRowIteratorTestHelper {
     public static SortedRowIterator withRequiredValueFields(List<String> requiredValueFields, Function<CloseableIterator<Row>, CloseableIterator<Row>> apply) {
         return new SortedRowIterator() {
             @Override
-            public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+            public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
                 return apply.apply(input);
             }
 

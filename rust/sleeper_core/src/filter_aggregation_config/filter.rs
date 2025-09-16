@@ -37,6 +37,9 @@ pub enum FilterConfigError {
 }
 
 impl Filter {
+    /// Parse a filtering configuration from a string.
+    /// # Errors
+    /// If the configuration string could not be read, or a filter function was unrecognised or invalid.
     pub fn parse_config(config_string: &str) -> Result<Vec<Self>, FilterConfigError> {
         FunctionReader::from(config_string)
             .map(|result| match result {
