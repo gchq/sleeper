@@ -117,8 +117,9 @@ impl<'a> FFISleeperRegion {
 
         let mut map = HashMap::with_capacity(row_key_cols.len());
 
-        for idx in dimension_indexes {
-            let row_key = row_key_cols[idx];
+        for dimension in dimension_indexes {
+            let idx = usize::try_from(dimension)?;
+            let row_key = &row_key_cols[idx];
             map.insert(
                 String::from(row_key.borrow()),
                 ColRange {
