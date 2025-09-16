@@ -44,7 +44,7 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
     private Row startOfNextAggregationGroup = null;
 
     AggregatorIteratorImpl(List<Field> groupingFields, List<Aggregation> aggregations, CloseableIterator<Row> input) {
-        this.rowComparator = new RowComparator(Objects.requireNonNull(groupingFields, "groupingFields"));
+        this.rowComparator = RowComparator.compareByFields(groupingFields);
         this.aggregations = Objects.requireNonNull(aggregations, "aggregations");
         this.input = Objects.requireNonNull(input, "input");
     }
