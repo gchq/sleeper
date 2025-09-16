@@ -103,13 +103,9 @@ public class LeafPartitionQueryExecutor {
         try {
             CloseableIterator<Row> iterator = retriever.getRows(leafPartitionQuery, dataReadSchema);
             // Apply compaction time iterator
-            if (null != compactionIterator) {
-                iterator = compactionIterator.apply(iterator);
-            }
+            iterator = compactionIterator.apply(iterator);
             // Apply query time iterator
-            if (null != queryIterator) {
-                iterator = queryIterator.apply(iterator);
-            }
+            iterator = queryIterator.apply(iterator);
 
             return iterator;
         } catch (RowRetrievalException e) {
@@ -149,10 +145,7 @@ public class LeafPartitionQueryExecutor {
             Schema schema,
             ObjectFactory objectFactory,
             IteratorConfig iteratorConfig) throws IteratorCreationException {
-        if (iteratorConfig.shouldIteratorBeApplied()) {
-            return new IteratorFactory(objectFactory)
-                    .getIterator(iteratorConfig, schema);
-        }
-        return null;
+        return new IteratorFactory(objectFactory)
+                .getIterator(iteratorConfig, schema);
     }
 }
