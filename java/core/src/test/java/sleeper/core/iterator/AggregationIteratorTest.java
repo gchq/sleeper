@@ -32,8 +32,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class AggregationIteratorTest {
 
     /**
-     * Note further coverage of this is in {@link AggregationFilteringIteratorTest}. This is to avoid coupling too much
-     * to the structure of the aggregation iterator/configuration classes.
+     * We've mostly avoided testing directly against this iterator to avoid coupling too much to the structure of the
+     * aggregation iterator/configuration classes. Further coverage of this is in
+     * {@link AggregationFilteringIteratorTest}.
      */
     @Test
     void shouldAggregate() {
