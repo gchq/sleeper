@@ -79,7 +79,7 @@ public class QuerySerDeTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 100)
                 .buildTree();
-        QueryProcessingConfig processingConfigWithAllFieldsSet = QueryProcessingConfig.builder()
+        QueryProcessingConfig processingConfig = QueryProcessingConfig.builder()
                 .queryTimeIteratorClassName("TestIterator")
                 .queryTimeIteratorConfig("config")
                 .queryTimeAggregations("sum(value1), max(value2)")
@@ -93,10 +93,10 @@ public class QuerySerDeTest {
                 .tableName("my-table")
                 .regions(List.of(regionWithOneRange(factory -> factory
                         .createRange("key", 10, 20))))
-                .processingConfig(processingConfigWithAllFieldsSet)
+                .processingConfig(processingConfig)
                 .build();
         LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
-                .parentQuery(query)
+                .queryId("test-query")
                 .subQueryId("test-subquery")
                 .tableId("my-table-id")
                 .leafPartitionId("L")
@@ -104,6 +104,7 @@ public class QuerySerDeTest {
                         .createRange("key", 10, 20))))
                 .partitionRegion(partitions.getPartition("L").getRegion())
                 .files(List.of("file-1", "file-2"))
+                .processingConfig(processingConfig)
                 .build();
 
         @BeforeEach
