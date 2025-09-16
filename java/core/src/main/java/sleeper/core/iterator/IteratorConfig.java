@@ -30,16 +30,12 @@ public class IteratorConfig {
     private final String iteratorClassName;
     private final String iteratorConfigString;
     private final List<AgeOffFilter> filters;
-    private final String filteringString;
     private final List<Aggregation> aggregations;
-    private final String aggregationString;
 
     public IteratorConfig(Builder builder) {
         this.iteratorClassName = builder.iteratorClassName;
         this.iteratorConfigString = builder.iteratorConfigString;
-        this.filteringString = builder.filteringString;
         this.filters = builder.filters != null ? builder.filters : List.of();
-        this.aggregationString = builder.aggregationString;
         this.aggregations = builder.aggregations != null ? builder.aggregations : List.of();
     }
 
@@ -71,16 +67,8 @@ public class IteratorConfig {
         return iteratorConfigString;
     }
 
-    public String getFilteringString() {
-        return filteringString;
-    }
-
     public List<AgeOffFilter> getFilters() {
         return filters;
-    }
-
-    public String getAggregationString() {
-        return aggregationString;
     }
 
     public List<Aggregation> getAggregations() {
@@ -103,9 +91,7 @@ public class IteratorConfig {
         private String iteratorClassName;
         private String iteratorConfigString;
         private List<AgeOffFilter> filters;
-        private String filteringString;
         private List<Aggregation> aggregations;
-        private String aggregationString;
 
         private Builder() {
         }
@@ -135,33 +121,11 @@ public class IteratorConfig {
         /**
          * Sets the filtering configuration.
          *
-         * @param  filteringString the filtering configuration to be applied to the data
-         * @return                 builder for method chaining
-         */
-        public Builder filteringString(String filteringString) {
-            this.filteringString = filteringString;
-            return this;
-        }
-
-        /**
-         * Sets the filtering configuration.
-         *
          * @param  filterString the filter configuration to be applied to the data
          * @return              builder for method chaining
          */
         public Builder filters(String filterString) {
             this.filters = AgeOffFilter.parseConfig(filterString);
-            return this;
-        }
-
-        /**
-         * Sets the aggregation configuration.
-         *
-         * @param  aggregationString the aggregation configuration to be applied to the data
-         * @return                   builder for method chaining
-         */
-        public Builder aggregationString(String aggregationString) {
-            this.aggregationString = aggregationString;
             return this;
         }
 
