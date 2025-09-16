@@ -80,7 +80,7 @@ public record Aggregation(String column, AggregationOp op) {
     }
 
     private static void validateNoRowKeySortKeyAggregations(List<Aggregation> aggregations, Schema schema) {
-        Set<String> keyFields = schema.streamKeyFields()
+        Set<String> keyFields = schema.streamRowKeysThenSortKeys()
                 .map(Field::getName)
                 .collect(toUnmodifiableSet());
         List<Aggregation> rowKeySortKeyViolations = aggregations.stream().filter(agg -> keyFields.contains(agg.column())).toList();

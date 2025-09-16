@@ -26,19 +26,19 @@ import java.util.List;
  * Compares rows by row keys then sort keys.
  */
 public class RowComparator implements Comparator<Row> {
-    private final Schema schema;
+    private final List<Field> compareByFields;
 
     public RowComparator(Schema schema) {
-        this.schema = schema;
+        this(schema.streamRowKeysThenSortKeys().toList());
+    }
+
+    public RowComparator(List<Field> compareByFields) {
+        this.compareByFields = compareByFields;
     }
 
     @Override
     public int compare(Row row1, Row row2) {
-        int rowKeyDiff = compare(schema.getRowKeyFields(), row1, row2);
-        if (rowKeyDiff != 0) {
-            return rowKeyDiff;
-        }
-        return compare(schema.getSortKeyFields(), row1, row2);
+        return compare(compareByFields, row1, row2);
     }
 
     private static int compare(List<Field> fields, Row row1, Row row2) {

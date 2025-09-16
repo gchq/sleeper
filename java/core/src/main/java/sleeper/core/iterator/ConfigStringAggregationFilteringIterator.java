@@ -92,26 +92,6 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
         iterator = new SortedRowIterators(iterators);
     }
 
-    /**
-     * Parses a configuration string for aggregation.
-     *
-     * The string must be in the correct format. Row key columns are automatically "group by" columns for any
-     * aggregation
-     * so the list of row key columns is added into the returned {@link FilterAggregationConfig}.
-     *
-     * Note that the configuration is NOT validated! Use
-     * {@link AggregationFilteringIterator#validate(FilterAggregationConfig)}
-     * to check the returned configuration is valid.
-     *
-     * @implNote                          This is a minimum viable parser for the configuration for
-     *                                    filters/aggregators. It is a really good example of how NOT to do it.
-     *                                    This routine has some odd behaviour.
-     *
-     * @param    configString             the filter and aggregation string to parse
-     * @param    rowkeyNames              the list of all the row key column names from the schema
-     * @return                            an un-validated configuration for aggregation
-     * @throws   IllegalArgumentException if {@code configString} is invalid
-     */
     private static FilterAggregationConfig parseConfiguration(String configString, List<String> rowkeyNames) {
         // This is a minimum viable parser for the configuration for
         // filters/aggregators.

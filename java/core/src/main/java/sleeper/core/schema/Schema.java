@@ -137,7 +137,7 @@ public class Schema {
      *
      * @return a stream of all key fields
      */
-    public Stream<Field> streamKeyFields() {
+    public Stream<Field> streamRowKeysThenSortKeys() {
         return Stream.of(rowKeyFields, sortKeyFields)
                 .flatMap(List::stream);
     }

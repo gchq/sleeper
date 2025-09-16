@@ -21,7 +21,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import static java.util.function.Predicate.not;
@@ -40,26 +39,26 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
  */
 public class AggregationIterator implements SortedRowIterator {
 
-    private final List<String> groupingColumns;
+    private final List<Field> groupingFields;
     private final List<Aggregation> aggregations;
     private final List<String> requiredValueFields;
 
     public AggregationIterator(Schema schema, List<String> groupingColumns, List<Aggregation> aggregations) {
-        this.groupingColumns = groupingColumns;
+        this.groupingFields = groupingColumns.stream().flatMap(field -> schema.getField(field).stream()).toList();
         this.aggregations = aggregations;
-        Set<String> keyFields = schema.streamKeyFields().map(Field::getName).collect(toUnmodifiableSet());
+        Set<String> keyFields = schema.streamRowKeysThenSortKeys().map(Field::getName).collect(toUnmodifiableSet());
         this.requiredValueFields = groupingColumns.stream().filter(not(keyFields::contains)).toList();
     }
 
     public AggregationIterator(Schema schema, List<Aggregation> aggregations) {
-        this.groupingColumns = schema.streamKeyFields().map(Field::getName).toList();
+        this.groupingFields = schema.streamRowKeysThenSortKeys().toList();
         this.aggregations = aggregations;
         this.requiredValueFields = List.of();
     }
 
     @Override
     public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
-        return new AggregatorIteratorImpl(new FilterAggregationConfig(groupingColumns, Optional.empty(), 0, aggregations), input);
+        return new AggregatorIteratorImpl(groupingFields, aggregations, input);
     }
 
     @Override
