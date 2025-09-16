@@ -16,6 +16,7 @@
 package sleeper.core.iterator;
 
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
 
 import java.util.List;
 
@@ -58,8 +59,8 @@ public class IteratorConfig {
         return builder()
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                 .iteratorConfigString(tableProperties.get(ITERATOR_CONFIG))
-                .filters(AgeOffFilter.parseConfig(tableProperties.get(FILTERING_CONFIG)))
-                .aggregations(Aggregation.parseConfig(tableProperties.get(AGGREGATION_CONFIG), tableProperties.getSchema()))
+                .filters(tableProperties.get(FILTERING_CONFIG))
+                .aggregations(tableProperties.get(AGGREGATION_CONFIG), tableProperties.getSchema())
                 .build();
 
     }
@@ -94,7 +95,7 @@ public class IteratorConfig {
      * @return true if the iterator should be applied, otherwise false
      */
     public boolean shouldIteratorBeApplied() {
-        return iteratorClassName != null || filteringString != null || aggregationString != null;
+        return iteratorClassName != null || !filters.isEmpty() || !aggregations.isEmpty();
     }
 
     /**
@@ -147,11 +148,12 @@ public class IteratorConfig {
         /**
          * Sets the filtering configuration.
          *
-         * @param  filters the filter configuration to be applied to the data
-         * @return         builder for method chaining
+         * @param  filterString the filter configuration to be applied to the data
+         * @return              builder for method chaining
          */
-        public Builder filters(List<AgeOffFilter> filters) {
-            this.filters = filters;
+
+        public Builder filters(String filterString) {
+            this.filters = AgeOffFilter.parseConfig(filterString);
             return this;
         }
 
@@ -169,11 +171,12 @@ public class IteratorConfig {
         /**
          * Sets the aggregation configuration.
          *
-         * @param  aggregations the aggregation configuration to be applied to the data
-         * @return              builder for method chaining
+         * @param  aggregationString the aggregation configuration to be applied to the data
+         * @param  schema            the table schema
+         * @return                   builder for method chaining
          */
-        public Builder aggregations(List<Aggregation> aggregations) {
-            this.aggregations = aggregations;
+        public Builder aggregations(String aggregationString, Schema schema) {
+            this.aggregations = Aggregation.parseConfig(aggregationString, schema);
             return this;
         }
 
