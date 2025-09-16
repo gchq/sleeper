@@ -46,13 +46,28 @@ public record Aggregation(String column, AggregationOp op) {
     }
 
     /**
-     * Parses an aggregation configuration string, and validates against a table schema.
+     * Parses an aggregation configuration string, and validates against a table schema. Only allows aggregating value
+     * fields. Assumes grouping by all key fields.
      *
      * @param  configString the configuration string
      * @param  schema       the schema
      * @return              the configuration
      */
     public static List<Aggregation> parseConfig(String configString, Schema schema) {
+        List<Aggregation> aggregations = parseConfigWithAnyGrouping(configString, schema);
+        validateNoRowKeySortKeyAggregations(aggregations, schema);
+        validateAggregatedColumnsMatchValueColumns(aggregations, schema);
+        return aggregations;
+    }
+
+    /**
+     * Parses an aggregation configuration string, and validates against a table schema. Allows grouping by any column.
+     *
+     * @param  configString the configuration string
+     * @param  schema       the schema
+     * @return              the configuration
+     */
+    public static List<Aggregation> parseConfigWithAnyGrouping(String configString, Schema schema) {
         if (configString == null || configString.isEmpty()) {
             return List.of();
         }
@@ -69,14 +84,8 @@ public record Aggregation(String column, AggregationOp op) {
                 throw new IllegalArgumentException("Unable to parse operand. Operand: " + aggObject.getOpName(), e);
             }
         });
-        validateAggregations(aggregations, schema);
-        return aggregations;
-    }
-
-    private static void validateAggregations(List<Aggregation> aggregations, Schema schema) {
-        validateNoRowKeySortKeyAggregations(aggregations, schema);
         validateNoDuplicateAggregations(aggregations);
-        validateAggregatedColumnsMatchValueColumns(aggregations, schema);
+        return aggregations;
     }
 
     private static void validateNoRowKeySortKeyAggregations(List<Aggregation> aggregations, Schema schema) {
