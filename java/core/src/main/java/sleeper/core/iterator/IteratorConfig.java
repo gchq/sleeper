@@ -77,6 +77,10 @@ public class IteratorConfig {
         return filteringString;
     }
 
+    public List<AgeOffFilter> getFilters() {
+        return filters;
+    }
+
     public String getAggregationString() {
         return aggregationString;
     }
