@@ -21,13 +21,10 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.services.logs.ILogGroup;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
-import sleeper.cdk.util.Utils;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
@@ -40,24 +37,12 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 
 public class SystemTestStandaloneApp extends Stack {
 
-    private final ILogGroup logGroup;
-    private final ILogGroup providerLogGroup;
-
     public SystemTestStandaloneApp(
             App app, String id, StackProps props, SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(app, id, props);
 
-        logGroup = LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
-                .logGroupName("s3-bucket-autodelete")
-                .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
-                .build();
-        providerLogGroup = LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
-                .logGroupName("s3-bucket-autodelete-provider")
-                .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
-                .build();
-
         AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", properties.toInstancePropertiesForCdkUtils(),
-                jars, logGroup, providerLogGroup);
+                jars, properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS));
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars, autoDeleteS3ObjectsStack);
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
