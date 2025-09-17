@@ -40,37 +40,23 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     private IFunction lambda;
     private Provider provider;
-    private ILogGroup logGroup;
-    private ILogGroup providerLogGroup;
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            LoggingStack loggingStack) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, LoggingStack loggingStack) {
         super(scope, id);
-        create(id, instanceProperties, jars, loggingStack);
+        createLambda(id, instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS),
+                loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER));
     }
 
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, Integer retentionDays) {
         super(scope, id);
-        create(id, instanceProperties, jars, retentionDays);
-    }
-
-    private void create(String id, InstanceProperties instanceProperties, BuiltJars jars, LoggingStack loggingStack) {
-        logGroup = loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS);
-        providerLogGroup = loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER);
-
-        createLambda(id, instanceProperties, jars, logGroup, providerLogGroup);
-    }
-
-    private void create(String id, InstanceProperties instanceProperties, BuiltJars jars, Integer retentionDays) {
-        logGroup = LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
+        ILogGroup logGroup = = LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
                 .logGroupName("s3-bucket-autodelete")
                 .retention(Utils.getRetentionDays(retentionDays))
                 .build();
-        providerLogGroup = LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
+        ILogGroup providerLogGroup = LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
                 .logGroupName("s3-bucket-autodelete-provider")
                 .retention(Utils.getRetentionDays(retentionDays))
                 .build();
-
         createLambda(id, instanceProperties, jars, logGroup, providerLogGroup);
     }
 
