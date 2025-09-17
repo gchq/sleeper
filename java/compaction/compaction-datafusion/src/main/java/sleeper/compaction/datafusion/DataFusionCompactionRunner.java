@@ -54,9 +54,9 @@ import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LE
 @SuppressFBWarnings("UUF_UNUSED_FIELD")
 public class DataFusionCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionCompactionRunner.class);
+    /** Maximum number of rows in a Parquet row group. */
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    /** Maximum number of rows in a Parquet row group. */
     private static final DataFusionCompactionFunctions NATIVE_COMPACTION;
     private final FFIAwsConfig awsConfig;
     private final Configuration hadoopConf;
