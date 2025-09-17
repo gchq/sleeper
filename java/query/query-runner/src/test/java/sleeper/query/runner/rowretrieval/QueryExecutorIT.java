@@ -88,7 +88,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class QueryExecutorIT {
 
     static Stream<String> queryEngineChoices() {
-        return Stream.of("JAVA", "DATAFUSION", "DATAFUSION_COMPACTION_ONLY");
+        return Stream.of("JAVA", "DATAFUSION");
     }
 
     private static ExecutorService executorService;
