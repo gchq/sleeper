@@ -18,6 +18,9 @@ on:
       - 'java/core/**'
       - 'java/common/localstack-test/**'
       - 'java/foreign-bridge/**'
+      - 'java/query/pom.xml'
+      - 'java/query/query-core/**'
+      - 'java/example-iterators/**'
 
 jobs:
   chunk-workflow:

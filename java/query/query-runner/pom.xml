@@ -94,7 +94,6 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <version>${junit.version}</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
