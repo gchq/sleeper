@@ -121,10 +121,10 @@ public class Region {
     }
 
     /**
-     * Returns the indexes of row key fields from the schema that have a corresponding range in this region.
+     * Returns the column indexes of row key columns from the schema that have a corresponding range in this region.
      *
-     * For each row key field in schema order, the index is included in the returned list if this region
-     * contains a range for that field.
+     * For each row key column in schema order, its column index is included in the returned list if this region
+     * contains a range for that column.
      *
      * @param  schema the schema to use for ordering and field names
      * @return        a list of indexes for row key fields present in this region
