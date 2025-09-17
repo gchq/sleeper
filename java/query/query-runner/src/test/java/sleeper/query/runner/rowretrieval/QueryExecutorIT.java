@@ -31,6 +31,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.range.Range;
@@ -54,7 +55,10 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -84,7 +88,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class QueryExecutorIT {
 
     static Stream<String> queryEngineChoices() {
-        return Stream.of("JAVA", "DATAFUSION");
+        return Stream.of("JAVA", "DATAFUSION", "DATAFUSION_COMPACTION_ONLY");
     }
 
     private static ExecutorService executorService;
@@ -100,6 +104,33 @@ public class QueryExecutorIT {
     @AfterAll
     public static void shutdownExecutorService() {
         executorService.shutdown();
+    }
+
+    @ParameterizedTest
+    @MethodSource("queryEngineChoices")
+    public void shouldSelectCorrectDataEngine(String queryEngine) throws Exception {
+        // Given
+        InstanceProperties instanceProperties = createInstanceProperties();
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TableProperty.DATA_ENGINE, queryEngine);
+        LeafPartitionRowRetrieverProvider provider = new QueryEngineSelector(executorService, new Configuration());
+        DataEngine engine = DataEngine.valueOf(queryEngine);
+
+        // When
+        LeafPartitionRowRetriever retriever = provider.getRowRetriever(tableProperties);
+
+        // Then
+        switch (engine) {
+            case JAVA:
+            case DATAFUSION_COMPACTION_ONLY:
+                assertThat(retriever).isInstanceOf(LeafPartitionRowRetrieverImpl.class);
+                break;
+            case DATAFUSION:
+                assertThat(retriever).isInstanceOf(DataFusionLeafPartitionRowRetriever.class);
+                break;
+            default:
+                throw new IllegalArgumentException("unrecognised data engine");
+        }
     }
 
     @ParameterizedTest()
