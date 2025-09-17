@@ -28,6 +28,7 @@ on:
       - 'java/ingest/ingest-batcher-store/**'
       - 'java/common/common-task/**'
       - 'java/query/query-runner/**'
+      - 'java/query/query-datafusion/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/bulk-import/bulk-import-core/**'
