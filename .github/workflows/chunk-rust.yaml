@@ -11,6 +11,7 @@ on:
       - 'java/pom.xml'
       - 'java/compaction/pom.xml'
       - 'java/compaction/compaction-datafusion/**'
+      - 'java/query/query-datafusion/**'
       - 'java/compaction/compaction-core/**'
       - 'java/sketches/**'
       - 'java/parquet/**'
