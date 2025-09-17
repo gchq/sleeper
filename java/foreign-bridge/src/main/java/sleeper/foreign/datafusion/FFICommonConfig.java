@@ -38,7 +38,7 @@ import java.util.Optional;
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
-@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class FFICommonConfig extends Struct {
     /** Specifies AWS default configuration been overriden. */
     public final Struct.Boolean override_aws_config = new Struct.Boolean();

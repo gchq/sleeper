@@ -36,7 +36,7 @@ import java.util.Objects;
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
-@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
 public class FFISleeperRegion extends Struct {
     /** Region partition region minimums. */
     public final FFIArray<Object> mins = new FFIArray<>(this);
