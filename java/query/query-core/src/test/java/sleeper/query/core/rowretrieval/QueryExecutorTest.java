@@ -154,18 +154,16 @@ public class QueryExecutorTest {
     @DisplayName("Request value fields")
     class RequestValueFields {
 
-        private final Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(
-                        new Field("A", new StringType()),
-                        new Field("B", new LongType()),
-                        new Field("C", new ByteArrayType()))
-                .build();
-
         @BeforeEach
         void setUp() throws Exception {
-            tableProperties.setSchema(schema);
-            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .valueFields(
+                            new Field("A", new StringType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new ByteArrayType()))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         }
 
         @Test
@@ -208,6 +206,117 @@ public class QueryExecutorTest {
             // Then
             assertThat(rows).containsExactly(
                     new Row(Map.of("key", 1L, "A", "first")));
+        }
+    }
+
+    @Nested
+    @DisplayName("Request value fields with aggregation and filtering enabled")
+    class RequestValueFieldsWithAggregationAndFiltering {
+
+        @BeforeEach
+        void setUp() {
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .sortKeyFields(new Field("sort", new LongType()))
+                    .valueFields(
+                            new Field("A", new LongType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new LongType()))
+                    .build());
+        }
+
+        Query queryOnlyFieldA = queryAllRowsBuilder()
+                .processingConfig(requestValueFields("A"))
+                .build();
+
+        @Test
+        void shouldNotReadAnyExtraFieldsWhenApplyingAggregation() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "sum(A),min(B),max(C)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", 1L, "sort", 10L, "A", 100L)));
+        }
+
+        @Test
+        void shouldFilterOnRequestedValueField() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(A, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 9999999999999999L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldReadExtraFieldWhenFilteringOnAFieldThatWasNotRequested() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(B, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 9999999999999999L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldNotAffectRequestedFieldsWhenApplyingFilterOnSortKey() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(sort, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 9999999999999999L,
+                            "A", 100L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 9999999999999999L,
+                            "A", 100L)));
         }
     }
 
