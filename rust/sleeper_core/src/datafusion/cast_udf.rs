@@ -23,7 +23,7 @@ use arrow::{
     util::display::FormatOptions,
 };
 use datafusion::{
-    common::{exec_err, internal_err, plan_datafusion_err, plan_err},
+    common::{exec_err, internal_err, plan_datafusion_err},
     error::Result,
     logical_expr::{
         ColumnarValue, ReturnFieldArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
@@ -31,10 +31,7 @@ use datafusion::{
     },
     scalar::ScalarValue,
 };
-use std::{
-    hash::{DefaultHasher, Hash, Hasher},
-    sync::Arc,
-};
+use std::{hash::Hash, sync::Arc};
 
 /// A UDF for performing primitive casting, but without producing errors if a narrowing conversion
 /// would be outside the target type's range. Casts are performed in the "standard" way, i.e. truncating
@@ -77,7 +74,7 @@ impl ScalarUDFImpl for CastUDF {
 
     fn return_type(
         &self,
-        arg_types: &[arrow::datatypes::DataType],
+        _arg_types: &[arrow::datatypes::DataType],
     ) -> datafusion::error::Result<arrow::datatypes::DataType> {
         internal_err!("Expected return_type_from_args, found call to return_type")
     }
@@ -156,7 +153,7 @@ impl ScalarUDFImpl for CastUDF {
         }
     }
 
-    fn return_field_from_args(&self, args: ReturnFieldArgs) -> Result<FieldRef> {
+    fn return_field_from_args(&self, _args: ReturnFieldArgs) -> Result<FieldRef> {
         Ok(Arc::new(Field::new("", self.output_type().clone(), false)))
     }
 

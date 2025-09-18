@@ -31,9 +31,9 @@ use crate::{
     filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
-use arrow::{compute::SortOptions, datatypes::DataType};
+use arrow::compute::SortOptions;
 use datafusion::{
-    common::{DFSchema, plan_datafusion_err, plan_err},
+    common::{DFSchema, plan_err},
     dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
@@ -41,7 +41,6 @@ use datafusion::{
     logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
-    scalar::ScalarValue,
 };
 use log::{info, warn};
 use objectstore_ext::s3::ObjectStoreFactory;
