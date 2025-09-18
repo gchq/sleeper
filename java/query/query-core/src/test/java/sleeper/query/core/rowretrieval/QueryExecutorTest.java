@@ -213,9 +213,8 @@ public class QueryExecutorTest {
     @DisplayName("Request value fields with aggregation and filtering enabled")
     class RequestValueFieldsWithAggregationAndFiltering {
 
-        @Test
-        void shouldLimitFieldsReadWhenApplyingAggregation() throws Exception {
-            // Given
+        @BeforeEach
+        void setUp() {
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key", new LongType()))
                     .sortKeyFields(new Field("sort", new LongType()))
@@ -224,6 +223,15 @@ public class QueryExecutorTest {
                             new Field("B", new LongType()),
                             new Field("C", new LongType()))
                     .build());
+        }
+
+        Query queryOnlyFieldA = queryAllRowsBuilder()
+                .processingConfig(requestValueFields("A"))
+                .build();
+
+        @Test
+        void shouldNotReadAnyExtraFieldsWhenApplyingAggregation() throws Exception {
+            // Given
             tableProperties.set(AGGREGATION_CONFIG, "sum(A),min(B),max(C)");
             addRootFile("file.parquet", List.of(
                     new Row(Map.of(
@@ -234,9 +242,7 @@ public class QueryExecutorTest {
                             "C", 10000L))));
 
             // When
-            List<Row> rows = getRows(queryAllRowsBuilder()
-                    .processingConfig(requestValueFields("A"))
-                    .build());
+            List<Row> rows = getRows(queryOnlyFieldA);
 
             // Then
             assertThat(rows).containsExactly(
@@ -244,16 +250,8 @@ public class QueryExecutorTest {
         }
 
         @Test
-        void shouldLimitFieldsReadWhenApplyingFilterOnValueField() throws Exception {
+        void shouldApplyFilterOnRequestedValueField() throws Exception {
             // Given
-            tableProperties.setSchema(Schema.builder()
-                    .rowKeyFields(new Field("key", new LongType()))
-                    .sortKeyFields(new Field("sort", new LongType()))
-                    .valueFields(
-                            new Field("A", new LongType()),
-                            new Field("B", new LongType()),
-                            new Field("C", new LongType()))
-                    .build());
             tableProperties.set(FILTERING_CONFIG, "ageOff(A, 1000)");
             addRootFile("file.parquet", List.of(
                     new Row(Map.of(
@@ -264,9 +262,7 @@ public class QueryExecutorTest {
                             "C", 10000L))));
 
             // When
-            List<Row> rows = getRows(queryAllRowsBuilder()
-                    .processingConfig(requestValueFields("A"))
-                    .build());
+            List<Row> rows = getRows(queryOnlyFieldA);
 
             // Then
             assertThat(rows).containsExactly(
@@ -277,16 +273,32 @@ public class QueryExecutorTest {
         }
 
         @Test
-        void shouldLimitFieldsReadWhenApplyingFilterOnSortKey() throws Exception {
+        void shouldReadExtraFieldWhenFilteringOnThatField() throws Exception {
             // Given
-            tableProperties.setSchema(Schema.builder()
-                    .rowKeyFields(new Field("key", new LongType()))
-                    .sortKeyFields(new Field("sort", new LongType()))
-                    .valueFields(
-                            new Field("A", new LongType()),
-                            new Field("B", new LongType()),
-                            new Field("C", new LongType()))
-                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(B, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 9999999999999999L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldNotAffectRequestedFieldsWhenApplyingFilterOnSortKey() throws Exception {
+            // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(sort, 1000)");
             addRootFile("file.parquet", List.of(
                     new Row(Map.of(
@@ -297,9 +309,7 @@ public class QueryExecutorTest {
                             "C", 10000L))));
 
             // When
-            List<Row> rows = getRows(queryAllRowsBuilder()
-                    .processingConfig(requestValueFields("A"))
-                    .build());
+            List<Row> rows = getRows(queryOnlyFieldA);
 
             // Then
             assertThat(rows).containsExactly(
