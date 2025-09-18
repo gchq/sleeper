@@ -24,7 +24,7 @@ use crate::{
         output::Completer,
         sketch::Sketcher,
         util::{
-            calculate_upload_size, check_for_sort_exec, register_store,
+            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
             remove_coalesce_physical_stage, retrieve_input_size, unalias_view_projection_columns,
         },
     },
@@ -363,10 +363,14 @@ impl<'a> SleeperOperations<'a> {
                 // Remove aliased column names to make things look correct for Java
                 let physical_plan = unalias_view_projection_columns(physical_plan)?;
                 // This may have been done in parallel, which will break sort order, so add a SortPreservingMergeExec stage
-                Arc::new(SortPreservingMergeExec::new(
-                    ordering.clone(),
-                    physical_plan,
-                ))
+                if output_partition_count(&physical_plan) > 1 {
+                    Arc::new(SortPreservingMergeExec::new(
+                        ordering.clone(),
+                        physical_plan,
+                    ))
+                } else {
+                    physical_plan
+                }
             } else {
                 physical_plan
             },

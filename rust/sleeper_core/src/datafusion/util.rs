@@ -26,7 +26,7 @@ use datafusion::{
     execution::{SessionStateBuilder, context::SessionContext},
     physical_expr::LexOrdering,
     physical_plan::{
-        ExecutionPlan, accept,
+        ExecutionPlan, Partitioning, accept,
         coalesce_partitions::CoalescePartitionsExec,
         projection::ProjectionExec,
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
@@ -242,6 +242,18 @@ pub fn unalias_view_projection_columns(
             )
         })
         .map(|v| v.data)
+}
+
+/// Returns the number of output partitions for a given physical execution plan.
+///
+/// This inspects the output partitioning property of the plan and returns the partition count.
+pub fn output_partition_count(plan: &Arc<dyn ExecutionPlan>) -> usize {
+    let partitions = plan.properties().output_partitioning();
+    match partitions {
+        Partitioning::Hash(_, count)
+        | Partitioning::RoundRobinBatch(count)
+        | Partitioning::UnknownPartitioning(count) => *count,
+    }
 }
 
 /// Collect statistics from an executed physical plan.
