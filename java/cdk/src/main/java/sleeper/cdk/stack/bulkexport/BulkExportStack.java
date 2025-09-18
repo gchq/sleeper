@@ -76,7 +76,6 @@ public class BulkExportStack extends NestedStack {
             BuiltJars jars,
             CoreStacks coreStacks,
             AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
-        //            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);

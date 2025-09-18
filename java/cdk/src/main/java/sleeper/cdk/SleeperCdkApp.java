@@ -104,8 +104,6 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
-    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
-    private LoggingStack loggingStack;
     private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
@@ -124,7 +122,7 @@ public class SleeperCdkApp extends Stack {
 
         List<IMetric> errorMetrics = new ArrayList<>();
 
-        loggingStack = new LoggingStack(this, "Logging", instanceProperties);
+        LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
 
         // Stack for Checking VPC configuration
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
@@ -139,6 +137,8 @@ public class SleeperCdkApp extends Stack {
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
+        AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
+                this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
         autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3ObjectsStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
@@ -289,8 +289,6 @@ public class SleeperCdkApp extends Stack {
         }
         // Stack for ingest jobs
         if (optionalStacks.contains(OptionalStack.IngestStack)) {
-            autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
-                    this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
@@ -353,10 +351,6 @@ public class SleeperCdkApp extends Stack {
 
     public IngestBatcherStack getIngestBatcherStack() {
         return ingestBatcherStack;
-    }
-
-    public LoggingStack getLoggingStack() {
-        return loggingStack;
     }
 
     public AutoDeleteS3ObjectsStack getAutoDeleteS3ObjectsStack() {
