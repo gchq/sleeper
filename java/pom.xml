@@ -194,7 +194,7 @@
         <aspectj.version>1.9.24</aspectj.version>
         <pty4j.version>0.13.11</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
-        <bouncycastle.version>1.81</bouncycastle.version>
+        <bouncycastle.version>1.82</bouncycastle.version>
         <athena.version>2025.15.1</athena.version>
         <trino.version>435</trino.version>
         <!-- Trino requires an old version of JGraphT -->
