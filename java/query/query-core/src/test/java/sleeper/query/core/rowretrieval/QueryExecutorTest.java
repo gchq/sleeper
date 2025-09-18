@@ -250,7 +250,7 @@ public class QueryExecutorTest {
         }
 
         @Test
-        void shouldApplyFilterOnRequestedValueField() throws Exception {
+        void shouldFilterOnRequestedValueField() throws Exception {
             // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(A, 1000)");
             addRootFile("file.parquet", List.of(
@@ -273,7 +273,7 @@ public class QueryExecutorTest {
         }
 
         @Test
-        void shouldReadExtraFieldWhenFilteringOnThatField() throws Exception {
+        void shouldReadExtraFieldWhenFilteringOnAFieldThatWasNotRequested() throws Exception {
             // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(B, 1000)");
             addRootFile("file.parquet", List.of(
