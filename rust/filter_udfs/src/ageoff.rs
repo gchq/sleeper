@@ -36,7 +36,7 @@ use std::{
 /// A filtering expression (returns bool) for an integer (typically 64-bit, known as "long" elsewhere in the codebase,
 /// other bit-widths will be automatically coerced) column based upon a given threshold. If the value in a given column is
 /// lower than the given threshold, it will be filtered out.
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct AgeOff {
     /// Threshold value (milliseconds since UNIX epoch)
     threshold: i64,

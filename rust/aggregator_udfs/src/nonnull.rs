@@ -39,6 +39,7 @@ use datafusion::{
 };
 use std::{
     any::Any,
+    hash::{Hash, Hasher},
     sync::{Arc, LazyLock},
 };
 
@@ -70,7 +71,7 @@ pub fn non_null_sum(expression: Expr) -> Expr {
         vec![expression],
         false,
         None,
-        None,
+        vec![],
         None,
     ))
 }
@@ -82,7 +83,7 @@ pub fn non_null_min(expression: Expr) -> Expr {
         vec![expression],
         false,
         None,
-        None,
+        vec![],
         None,
     ))
 }
@@ -94,7 +95,7 @@ pub fn non_null_max(expression: Expr) -> Expr {
         vec![expression],
         false,
         None,
-        None,
+        vec![],
         None,
     ))
 }
@@ -174,6 +175,21 @@ impl NonNullable {
 impl From<Arc<dyn AggregateUDFImpl>> for NonNullable {
     fn from(value: Arc<dyn AggregateUDFImpl>) -> Self {
         Self::new(value)
+    }
+}
+
+impl PartialEq for NonNullable {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner.dyn_eq(&other.inner) && self.func_name == other.func_name
+    }
+}
+
+impl Eq for NonNullable {}
+
+impl Hash for NonNullable {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.inner.dyn_hash(state);
+        self.func_name.hash(state);
     }
 }
 

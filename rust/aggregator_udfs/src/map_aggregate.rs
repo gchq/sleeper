@@ -24,7 +24,7 @@ use num_traits::NumAssign;
 
 /// The aggregation operation to peform inside of each map. The values
 /// of identical keys will be aggregated according to the specified operation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub enum UdfMapAggregatorOp {
     Sum,
     Min,

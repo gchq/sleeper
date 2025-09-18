@@ -91,7 +91,7 @@ fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a
 }
 
 /// A aggregator for map columns. See module documentation.
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct MapAggregator {
     /// Defines what column types this function can work on
     signature: Signature,
