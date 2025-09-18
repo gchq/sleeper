@@ -36,6 +36,9 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
 
+/**
+ * Delete's S3 objects for a CloudFormation stack.
+ */
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     private IFunction lambda;
@@ -83,6 +86,14 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .build();
     }
 
+    /**
+     * Allows the stack to delete the bucket and it's contents.
+     *
+     * @param id                 the resource id
+     * @param instanceProperties the instance properties
+     * @param bucket             the bucket to delete
+     * @param bucketName         the bucket name
+     */
     public void grantAccessToCustomResource(String id, InstanceProperties instanceProperties,
             IBucket bucket, String bucketName) {
 

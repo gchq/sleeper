@@ -41,6 +41,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Stops ECS Cluster tasks for the CloudFormation stack.
+ */
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AutoStopEcsClusterTasksStack extends NestedStack {
 
@@ -86,6 +89,14 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
 
     }
 
+    /**
+     * Allow the stack to stop cluster tasks.
+     *
+     * @param id                 the resource id
+     * @param instanceProperties the instance properties
+     * @param cluster            the ECS cluster
+     * @param clusterName        the ECS cluster name
+     */
     public void grantAccessToCustomResource(String id, InstanceProperties instanceProperties,
             ICluster cluster, String clusterName) {
 
