@@ -20,6 +20,7 @@
 use crate::{
     CommonConfig,
     datafusion::{
+        cast_udf::CastUDF,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         output::Completer,
         sketch::Sketcher,
@@ -31,16 +32,17 @@ use crate::{
     filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
-use arrow::compute::SortOptions;
+use arrow::{compute::SortOptions, datatypes::DataType};
 use datafusion::{
     common::{DFSchema, plan_err},
     dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
+    logical_expr::{Expr, LogicalPlanBuilder, ScalarUDF, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
+    prelude::ident,
 };
 use log::{info, warn};
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -270,10 +272,27 @@ impl<'a> SleeperOperations<'a> {
             .iter()
             .map(|agg| agg.to_expr(&frame))
             .collect::<Result<Vec<_>, _>>()?;
-        frame.aggregate(
+        let out_frame = frame.aggregate(
             group_by_cols.iter().map(|e| col(*e)).collect(),
             aggregation_expressions,
-        )
+        )?;
+
+        let column_bind = out_frame.schema().columns();
+        let col_names = column_bind
+            .iter()
+            .map(datafusion::common::Column::name)
+            .collect::<Vec<_>>();
+
+        let mut col_names_expr = Vec::new();
+        for col_name in col_names {
+            if col_name == "timestamp" {
+                let func = ScalarUDF::from(CastUDF::new(&DataType::Int64, &DataType::Int32));
+                col_names_expr.push(func.call(vec![ident("timestamp")]))
+            } else {
+                col_names_expr.push(ident(col_name))
+            }
+        }
+        out_frame.select(col_names_expr)
     }
 
     /// Create a sketching object to manage creation of quantile sketches.
