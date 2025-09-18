@@ -94,7 +94,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .isThrownBy(() -> {
                     iterator.init("key;,sum(value)", schema);
                 })
-                .withMessage("Aggregation grouping column key is already a row key column or is duplicated");
+                .withMessage("Aggregation grouping field key is already a row key field or is duplicated");
     }
 
     @Test
@@ -112,11 +112,11 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .isThrownBy(() -> {
                     iterator.init("timestamp,timestamp;,sum(value)", schema);
                 })
-                .withMessage("Aggregation grouping column timestamp is already a row key column or is duplicated");
+                .withMessage("Aggregation grouping field timestamp is already a row key field or is duplicated");
     }
 
     @Test
-    public void shouldFailValidationWhenGroupingByNonExistentColumn() {
+    public void shouldFailValidationWhenGroupingByNonExistentField() {
         // Given
         ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -130,7 +130,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .isThrownBy(() -> {
                     iterator.init("not_there;,sum(value)", schema);
                 })
-                .withMessage("Aggregation grouping column not_there doesn't exist");
+                .withMessage("Aggregation grouping field not_there doesn't exist");
     }
 
     @Test
@@ -148,11 +148,11 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .isThrownBy(() -> {
                     iterator.init(";,sum(value),sum(key),sum(timestamp)", schema);
                 })
-                .withMessage("Row key/extra grouping column key cannot have an aggregation");
+                .withMessage("Row key/extra grouping field key cannot have an aggregation");
     }
 
     @Test
-    public void shouldFailValidationWhenAggregatingNonExistentColumn() {
+    public void shouldFailValidationWhenAggregatingNonExistentField() {
         // Given
         ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -166,11 +166,11 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .isThrownBy(() -> {
                     iterator.init(";,sum(value),sum(not_there),sum(timestamp)", schema);
                 })
-                .withMessage("Aggregation column not_there doesn't exist");
+                .withMessage("Aggregation field not_there doesn't exist");
     }
 
     @Test
-    public void shouldFailValidationWhenAggregatingColumnTwice() {
+    public void shouldFailValidationWhenAggregatingFieldTwice() {
         // Given
         ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -184,11 +184,11 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .isThrownBy(() -> {
                     iterator.init(";,sum(value),sum(value),sum(timestamp)", schema);
                 })
-                .withMessage("Aggregation column value duplicated");
+                .withMessage("Aggregation field value duplicated");
     }
 
     @Test
-    public void shouldFailValidationWhenOneColumnIsNotAggregated() {
+    public void shouldFailValidationWhenOneFieldIsNotAggregated() {
         // Given
         ConfigStringAggregationFilteringIterator iterator = new ConfigStringAggregationFilteringIterator();
         Schema schema = Schema.builder()
@@ -202,7 +202,7 @@ public class ConfigStringAggregationFilteringIteratorTest {
                 .isThrownBy(() -> {
                     iterator.init(";,sum(value)", schema);
                 })
-                .withMessage("Column timestamp doesn't have a aggregation operator specified");
+                .withMessage("Field timestamp doesn't have a aggregation operator specified");
     }
 
     @Test
