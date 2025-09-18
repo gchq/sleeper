@@ -85,9 +85,9 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
     private void aggregateOnTo(Row aggregated, Row toBeAggregated) {
         for (Aggregation agg : aggregations) {
             // Extract current and new value
-            Object currentValue = aggregated.get(agg.column());
-            Object newValue = toBeAggregated.get(agg.column());
-            aggregated.put(agg.column(), agg.op().apply(currentValue, newValue));
+            Object currentValue = aggregated.get(agg.fieldName());
+            Object newValue = toBeAggregated.get(agg.fieldName());
+            aggregated.put(agg.fieldName(), agg.op().apply(currentValue, newValue));
         }
     }
 }
