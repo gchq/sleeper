@@ -35,11 +35,13 @@ public class RunBulkExportTasks {
 
         try (S3Client s3Client = S3Client.create();
                 EcsClient ecsClient = EcsClient.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+            String instanceId = args[0];
+            int numberOfTasks = Integer.parseInt(args[1]);
+
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             RunDataProcessingTasks.createForBulkExport(instanceProperties, ecsClient)
-                    .runToMeetTargetTasks(Integer.parseInt(args[1]));
-
+                    .runToMeetTargetTasks(numberOfTasks);
         }
     }
 

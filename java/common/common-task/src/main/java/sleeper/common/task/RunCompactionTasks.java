@@ -39,10 +39,13 @@ public class RunCompactionTasks {
                 EcsClient ecsClient = EcsClient.create();
                 AutoScalingClient asClient = AutoScalingClient.create();
                 Ec2Client ec2Client = Ec2Client.create()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
+            String instanceId = args[0];
+            int numberOfTasks = Integer.parseInt(args[1]);
+
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             RunDataProcessingTasks.createForCompactions(instanceProperties, ecsClient, asClient, ec2Client)
-                    .runToMeetTargetTasks(Integer.parseInt(args[1]));
+                    .runToMeetTargetTasks(numberOfTasks);
         }
     }
 
