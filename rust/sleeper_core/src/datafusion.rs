@@ -373,7 +373,9 @@ impl<'a> SleeperOperations<'a> {
         frame: &DataFrame,
     ) -> Result<Option<LexOrdering>, DataFusionError> {
         let plan_schema = frame.schema().as_arrow();
+        info!("{:?}", plan_schema);
         let sorting_columns = self.config.sorting_columns();
+        info!("{:?}", sorting_columns);
 
         Ok(LexOrdering::new(
             sorting_columns

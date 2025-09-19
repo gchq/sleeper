@@ -112,10 +112,17 @@ async fn execute_compaction_plan<'a>(
     frame: DataFrame,
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
+
+    let foo = frame.clone().create_physical_plan().await?;
+    info!(
+        "FOO Physical plan\n{}",
+        displayable(foo.as_ref()).indent(true)
+    );
+
     let physical_plan = ops.to_physical_plan(frame).await?;
     info!(
         "Physical plan\n{}",
-        displayable(&*physical_plan).indent(true)
+        displayable(physical_plan.as_ref()).indent(true)
     );
     match completer.execute_frame(physical_plan, task_ctx).await? {
         CompletedOutput::File(stats) => Ok(stats),
