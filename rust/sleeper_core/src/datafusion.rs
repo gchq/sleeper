@@ -20,7 +20,6 @@
 use crate::{
     CommonConfig,
     datafusion::{
-        cast_udf::CastUDF,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         output::Completer,
         sketch::Sketcher,
@@ -32,17 +31,16 @@ use crate::{
     filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
-use arrow::{compute::SortOptions, datatypes::DataType};
+use arrow::compute::SortOptions;
 use datafusion::{
     common::{DFSchema, plan_err},
     dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{Expr, LogicalPlanBuilder, ScalarUDF, SortExpr, col},
+    logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
-    prelude::ident,
 };
 use log::{info, warn};
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -275,7 +273,7 @@ impl<'a> SleeperOperations<'a> {
         frame.aggregate(
             group_by_cols.iter().map(|e| col(*e)).collect(),
             aggregation_expressions,
-        )?
+        )
     }
 
     /// Create a sketching object to manage creation of quantile sketches.
@@ -325,7 +323,7 @@ impl<'a> SleeperOperations<'a> {
     pub async fn to_physical_plan(
         &self,
         frame: DataFrame,
-        sort_ordering: &Option<LexOrdering>,
+        sort_ordering: Option<&LexOrdering>,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
         // Consume frame and generate initial physical plan
         let mut physical_plan = frame.create_physical_plan().await?;

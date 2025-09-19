@@ -109,7 +109,7 @@ impl<'a> LeafPartitionQuery<'a> {
         let frame = completer.complete_frame(frame)?;
         let task_ctx = Arc::new(frame.task_ctx());
 
-        let physical_plan = ops.to_physical_plan(frame, &sort_ordering).await?;
+        let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
 
         if self.config.explain_plans {
             info!(

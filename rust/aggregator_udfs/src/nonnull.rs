@@ -478,7 +478,6 @@ mod tests {
             simplify::SimplifyContext,
             utils::AggregateOrderSensitivity,
         },
-        physical_expr::LexOrdering,
         scalar::ScalarValue,
     };
     use mockall::predicate::*;
@@ -550,7 +549,7 @@ mod tests {
     impl PartialEq for MockUDFImpl {
         fn eq(&self, _: &Self) -> bool {
             // Mock instances are identical
-            return true;
+            true
         }
     }
     impl Eq for MockUDFImpl {}

@@ -68,7 +68,8 @@ pub async fn compact(
     explain_plan(&frame).await?;
 
     // Run plan
-    let stats = execute_compaction_plan(&ops, completer.as_ref(), frame, &sort_ordering).await?;
+    let stats =
+        execute_compaction_plan(&ops, completer.as_ref(), frame, sort_ordering.as_ref()).await?;
 
     // Write the frame out and collect stats
     output_sketch(store_factory, output_file, sketcher.sketch()).await?;
@@ -123,7 +124,7 @@ async fn execute_compaction_plan<'a>(
     ops: &SleeperOperations<'_>,
     completer: &(dyn Completer + 'a),
     frame: DataFrame,
-    sort_ordering: &Option<LexOrdering>,
+    sort_ordering: Option<&LexOrdering>,
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
     let physical_plan = ops.to_physical_plan(frame, sort_ordering).await?;

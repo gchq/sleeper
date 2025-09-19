@@ -292,7 +292,7 @@ mod tests {
     use datafusion::{
         error::DataFusionError,
         logical_expr::{AggregateUDFImpl, function::AccumulatorArgs},
-        physical_expr::{LexOrdering, PhysicalSortExpr},
+        physical_expr::PhysicalSortExpr,
     };
 
     use crate::{assert_error, map_aggregate::aggregator::map_test_common::make_map_datatype};

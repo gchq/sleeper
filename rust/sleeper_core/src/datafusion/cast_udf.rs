@@ -64,7 +64,7 @@ impl ScalarUDFImpl for CastUDF {
         self
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "cast_simple"
     }
 
@@ -79,6 +79,8 @@ impl ScalarUDFImpl for CastUDF {
         internal_err!("Expected return_type_from_args, found call to return_type")
     }
 
+    // Allow this warning as we explicitly want narrowing conversions to truncate
+    #[allow(clippy::cast_possible_truncation)]
     fn invoke_with_args(&self, mut args: ScalarFunctionArgs) -> Result<ColumnarValue> {
         if args.args.len() > 1 {
             return exec_err!(
@@ -101,7 +103,7 @@ impl ScalarUDFImpl for CastUDF {
                             DataType::Int64 => Ok(ColumnarValue::Array(Arc::new(
                                 array
                                     .as_primitive::<Int32Type>()
-                                    .unary::<_, Int64Type>(|v| v as i64),
+                                    .unary::<_, Int64Type>(i64::from),
                             ))),
                             _ => exec_err!("Can't cast to {}", self.output_type()),
                         },
@@ -115,20 +117,19 @@ impl ScalarUDFImpl for CastUDF {
                             _ => exec_err!("Can't cast to {}", self.output_type()),
                         },
                         _ => {
-                            return exec_err!(
+                            exec_err!(
                                 "Row type {} not supported for {}",
                                 array.data_type(),
                                 self.name()
-                            );
+                            )
                         }
                     }
                 }
-
                 ColumnarValue::Scalar(ScalarValue::Int32(Some(value))) => {
                     match self.output_type() {
                         DataType::Int32 => unreachable!("Shouldn't need to cast!"),
                         DataType::Int64 => Ok(ColumnarValue::Scalar(ScalarValue::Int64(Some(
-                            *value as i64,
+                            i64::from(*value),
                         )))),
                         _ => exec_err!("Can't cast to {}", self.output_type()),
                     }
@@ -143,11 +144,11 @@ impl ScalarUDFImpl for CastUDF {
                     }
                 }
                 x @ ColumnarValue::Scalar(_) => {
-                    return exec_err!(
+                    exec_err!(
                         "Row type {} not supported for {}",
                         x.data_type(),
                         self.name()
-                    );
+                    )
                 }
             }
         }
@@ -184,7 +185,7 @@ impl ScalarUDFImpl for CastUDF {
                 // Input interval doesn't fit into output type (e.g. 64 bit interval into a 32bit interval)
                 let widen_cast = full_range_output.cast_to(&lower.data_type(), &CAST_OPTIONS)?;
                 if let Some(intersection) = interval.intersect(widen_cast)? {
-                    let output_cast = intersection.cast_to(&self.output_type(), &CAST_OPTIONS)?;
+                    let output_cast = intersection.cast_to(self.output_type(), &CAST_OPTIONS)?;
                     result = result.union(output_cast)?;
                 }
             }
