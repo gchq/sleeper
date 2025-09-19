@@ -18,7 +18,6 @@ package sleeper.core.iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactory;
@@ -49,7 +48,6 @@ public class IteratorFactory {
      * @return                           an initialised iterator
      * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
      *                                   found
-     * @see                              ConfigStringAggregationFilteringIterator
      */
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
@@ -61,13 +59,8 @@ public class IteratorFactory {
             if (iteratorConfig.getIteratorClassName() != null) {
                 ConfigStringIterator iterator;
                 String className = iteratorConfig.getIteratorClassName();
+                iterator = inner.getObject(className, ConfigStringIterator.class);
 
-                // If aggregation keyword is used, create specific iterator
-                if (className.equalsIgnoreCase(DataEngine.AGGREGATION_ITERATOR_NAME)) {
-                    iterator = new ConfigStringAggregationFilteringIterator();
-                } else {
-                    iterator = inner.getObject(className, ConfigStringIterator.class);
-                }
                 LOGGER.debug("Created iterator of class {}", className);
                 iterator.init(iteratorConfig.getIteratorConfigString(), schema);
                 LOGGER.debug("Initialised iterator with config {}", iteratorConfig.getIteratorConfigString());

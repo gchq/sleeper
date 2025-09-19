@@ -35,7 +35,6 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
  *
  * This class can be used in a wrapper class that configures it in a specifc way.
  *
- * @see ConfigStringAggregationFilteringIterator
  */
 public class AggregationIterator implements SortedRowIterator {
 
