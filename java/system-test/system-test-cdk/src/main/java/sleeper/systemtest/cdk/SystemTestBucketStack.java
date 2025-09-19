@@ -36,6 +36,7 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import java.util.List;
 import java.util.Locale;
 
+import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
@@ -66,15 +67,18 @@ public class SystemTestBucketStack extends NestedStack {
 
     private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, BuiltJars jars,
             AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         IBucket bucket = Bucket.Builder.create(this, id)
                 .bucketName(bucketName)
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
-                .removalPolicy(RemovalPolicy.DESTROY)
+                .removalPolicy(removalPolicy)
                 .build();
 
-        autoDeleteS3ObjectsStack.grantAccessToCustomResource(id, instanceProperties, bucket, bucketName);
+        if (removalPolicy == RemovalPolicy.DESTROY) {
+            autoDeleteS3ObjectsStack.grantAccessToCustomResource(id, instanceProperties, bucket, bucketName);
+        }
 
         return bucket;
     }
