@@ -20,26 +20,25 @@
 use crate::{
     CommonConfig,
     datafusion::{
-        cast_udf::CastUDF,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         output::Completer,
         sketch::Sketcher,
         util::{
-            calculate_upload_size, check_for_sort_exec, register_store,
+            add_numeric_casts, calculate_upload_size, check_for_sort_exec, register_store,
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
     filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
-use arrow::{compute::SortOptions, datatypes::DataType};
+use arrow::compute::SortOptions;
 use datafusion::{
     common::{DFSchema, plan_err},
     dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{Expr, LogicalPlanBuilder, ScalarUDF, SortExpr, col, ident},
+    logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
 };
@@ -279,21 +278,9 @@ impl<'a> SleeperOperations<'a> {
             aggregation_expressions,
         )?;
         let agg_schema = agg_frame.schema().clone();
-        let column_proj = orig_schema
-            .fields()
-            .iter()
-            .zip(agg_schema.fields().iter())
-            .map(
-                |(orig_field, agg_field)| match (orig_field.data_type(), agg_field.data_type()) {
-                    (DataType::Int64, DataType::Int32) | (DataType::Int32, DataType::Int64) => {
-                        ScalarUDF::from(CastUDF::new(agg_field.data_type(), orig_field.data_type()))
-                            .call(vec![ident(orig_field.name())])
-                            .alias(orig_field.name())
-                    }
-                    (_, _) => ident(orig_field.name()),
-                },
-            );
-        agg_frame.select(column_proj)
+
+        // Cast column schemas back if necessary
+        add_numeric_casts(agg_frame, &orig_schema, &agg_schema)
     }
 
     /// Create a sketching object to manage creation of quantile sketches.
