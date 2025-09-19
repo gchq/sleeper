@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -43,6 +44,7 @@ import java.util.Objects;
 /**
  * Delete's S3 objects for a CloudFormation stack.
  */
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     private IFunction lambda;
