@@ -38,4 +38,13 @@ public record FilterAggregationConfig(List<String> groupingColumns, Optional<Str
         Objects.requireNonNull(ageOffColumn, "ageOffColumn");
         Objects.requireNonNull(aggregations, "aggregations");
     }
+
+    /**
+     * Retrieves the filtering configuration if set.
+     *
+     * @return the configuration
+     */
+    public Optional<AgeOffFilter> ageOffFilter() {
+        return ageOffColumn.map(column -> new AgeOffFilter(column, maxAge));
+    }
 }

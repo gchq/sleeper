@@ -21,24 +21,36 @@ import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Compares rows by row keys then sort keys.
  */
 public class RowComparator implements Comparator<Row> {
-    private final Schema schema;
+    private final List<Field> compareByFields;
 
     public RowComparator(Schema schema) {
-        this.schema = schema;
+        this(schema.streamRowKeysThenSortKeys().toList());
+    }
+
+    private RowComparator(List<Field> compareByFields) {
+        this.compareByFields = compareByFields;
+    }
+
+    /**
+     * Creates a row comparator comparing by the value of specific fields. Rows are equal if the values are equal for
+     * all fields.
+     *
+     * @param  compareByFields the fields to compare by, in order of precedence
+     * @return                 the comparator
+     */
+    public static RowComparator compareByFields(List<Field> compareByFields) {
+        return new RowComparator(Objects.requireNonNull(compareByFields, "compareByFields must not be null"));
     }
 
     @Override
     public int compare(Row row1, Row row2) {
-        int rowKeyDiff = compare(schema.getRowKeyFields(), row1, row2);
-        if (rowKeyDiff != 0) {
-            return rowKeyDiff;
-        }
-        return compare(schema.getSortKeyFields(), row1, row2);
+        return compare(compareByFields, row1, row2);
     }
 
     private static int compare(List<Field> fields, Row row1, Row row2) {

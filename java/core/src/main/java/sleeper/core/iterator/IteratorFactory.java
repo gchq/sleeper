@@ -20,14 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A factory class for Sleeper iterators.
@@ -56,13 +54,9 @@ public class IteratorFactory {
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
         try {
             List<SortedRowIterator> iterators = new ArrayList<>();
-            if (!iteratorConfig.getFilters().isEmpty()) {
-                iteratorConfig.getFilters().forEach(filter -> iterators.add(new AgeOffIterator(filter)));
-            }
+            iteratorConfig.getFilters().forEach(filter -> iterators.add(new AgeOffIterator(schema, filter)));
             if (!iteratorConfig.getAggregations().isEmpty()) {
-                List<String> groupingFields = schema.streamKeyFields().map(Field::getName).toList();
-                FilterAggregationConfig config = new FilterAggregationConfig(groupingFields, Optional.empty(), 0, iteratorConfig.getAggregations());
-                iterators.add(new AggregationFilteringIterator(config, schema));
+                iterators.add(new AggregationIterator(schema, iteratorConfig.getAggregations()));
             }
             if (iteratorConfig.getIteratorClassName() != null) {
                 ConfigStringIterator iterator;
