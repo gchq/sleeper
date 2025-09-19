@@ -270,10 +270,12 @@ impl<'a> SleeperOperations<'a> {
             .iter()
             .map(|agg| agg.to_expr(&frame))
             .collect::<Result<Vec<_>, _>>()?;
-        frame.aggregate(
+        let frame=frame.aggregate(
             group_by_cols.iter().map(|e| col(*e)).collect(),
             aggregation_expressions,
-        )
+        )?;
+
+
     }
 
     /// Create a sketching object to manage creation of quantile sketches.
