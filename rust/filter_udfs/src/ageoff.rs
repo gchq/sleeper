@@ -190,6 +190,7 @@ mod tests {
     };
     use datafusion::{
         common::exec_err,
+        config::ConfigOptions,
         error::DataFusionError,
         logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl},
         scalar::ScalarValue,
@@ -289,6 +290,7 @@ mod tests {
             args: vec![],
             return_field: Arc::new(Field::new("", DataType::Boolean, false)),
             arg_fields: vec![],
+            config_options: Arc::new(ConfigOptions::default()),
         });
 
         assert_error!(
@@ -315,6 +317,7 @@ mod tests {
                 Arc::new(Field::new("", DataType::Boolean, false)),
                 Arc::new(Field::new("", DataType::Boolean, false)),
             ],
+            config_options: Arc::new(ConfigOptions::default()),
         });
 
         assert_error!(
@@ -335,6 +338,7 @@ mod tests {
             args: vec![ColumnarValue::Scalar(ScalarValue::Float32(None))],
             return_field: Arc::new(Field::new("", DataType::Boolean, false)),
             arg_fields: vec![Arc::new(Field::new("", DataType::Float32, false))],
+            config_options: Arc::new(ConfigOptions::default()),
         });
 
         assert_error!(
@@ -355,6 +359,7 @@ mod tests {
             args: vec![ColumnarValue::Scalar(ScalarValue::Int64(None))],
             return_field: Arc::new(Field::new("", DataType::Boolean, false)),
             arg_fields: vec![Arc::new(Field::new("", DataType::Int64, true))],
+            config_options: Arc::new(ConfigOptions::default()),
         });
 
         assert_error!(
@@ -375,6 +380,7 @@ mod tests {
             args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(1000)))],
             return_field: Arc::new(Field::new("", DataType::Boolean, false)),
             arg_fields: vec![Arc::new(Field::new("", DataType::Int64, true))],
+            config_options: Arc::new(ConfigOptions::default()),
         })?;
 
         // Then
@@ -396,6 +402,7 @@ mod tests {
             args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(999)))],
             return_field: Arc::new(Field::new("", DataType::Boolean, false)),
             arg_fields: vec![Arc::new(Field::new("", DataType::Int64, true))],
+            config_options: Arc::new(ConfigOptions::default()),
         })?;
 
         // Then
@@ -423,6 +430,7 @@ mod tests {
             args: vec![ColumnarValue::Array(vals)],
             return_field: Arc::new(Field::new("", DataType::Boolean, false)),
             arg_fields: vec![Arc::new(Field::new("", DataType::Int64, true))],
+            config_options: Arc::new(ConfigOptions::default()),
         })?;
 
         // Then

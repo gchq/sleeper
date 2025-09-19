@@ -41,7 +41,7 @@ use datafusion::{
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
     logical_expr::{Expr, LogicalPlanBuilder, ScalarUDF, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
-    physical_plan::{ExecutionPlan, displayable, expressions::Column},
+    physical_plan::{ExecutionPlan, expressions::Column},
     prelude::ident,
 };
 use log::{info, warn};

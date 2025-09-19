@@ -21,7 +21,6 @@ use crate::{
         OutputType, SleeperOperations,
         metrics::RowCounts,
         output::{CompletedOutput, Completer},
-        printy,
         sketch::{Sketcher, output_sketch},
         util::explain_plan,
     },
@@ -61,8 +60,7 @@ pub async fn compact(
 
     // Make compaction DataFrame
     let completer = config.output.finisher(&ops);
-    let (sketcher, frame) =
-        build_compaction_dataframe(&ops, completer.as_ref(), store_factory).await?;
+    let (sketcher, frame) = build_compaction_dataframe(&ops, store_factory).await?;
 
     let (sort_ordering, frame) = add_completion_stage(&ops, completer.as_ref(), frame)?;
 
@@ -89,7 +87,6 @@ pub async fn compact(
 /// Each step of compaction may produce an error. Any are reported back to the caller.
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
-    completer: &(dyn Completer + 'a),
     store_factory: &ObjectStoreFactory,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
     let sf = ops
