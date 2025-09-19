@@ -80,10 +80,22 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
 
+        // Grant this function permission to list buckets
+        // PolicyStatement policyStatement = PolicyStatement.Builder
+        //         .create()
+        //         .resources(List.of("*"))
+        //         .actions(List.of("s3:ListBucket", "iam:PassRole"))
+        //         .build();
+        // IRole role = Objects.requireNonNull(lambda.getRole());
+        // role.addToPrincipalPolicy(policyStatement);
+
         provider = Provider.Builder.create(this, id + "Provider")
                 .onEventHandler(lambda)
                 .logGroup(providerLogGroup)
                 .build();
+
+        Utils.addStackTagIfSet(this, instanceProperties);
+
     }
 
     /**
