@@ -21,13 +21,17 @@ use crate::{
         OutputType, SleeperOperations,
         metrics::RowCounts,
         output::{CompletedOutput, Completer},
+        printy,
         sketch::{Sketcher, output_sketch},
         util::explain_plan,
     },
 };
 use datafusion::{
-    common::plan_err, dataframe::DataFrame, error::DataFusionError,
-    execution::config::SessionConfig, execution::context::SessionContext,
+    common::plan_err,
+    dataframe::DataFrame,
+    error::DataFusionError,
+    execution::{config::SessionConfig, context::SessionContext},
+    physical_expr::LexOrdering,
     physical_plan::displayable,
 };
 use log::info;
@@ -60,11 +64,13 @@ pub async fn compact(
     let (sketcher, frame) =
         build_compaction_dataframe(&ops, completer.as_ref(), store_factory).await?;
 
+    let (sort_ordering, frame) = add_completion_stage(&ops, completer.as_ref(), frame)?;
+
     // Explain logical plan
     explain_plan(&frame).await?;
 
     // Run plan
-    let stats = execute_compaction_plan(&ops, completer.as_ref(), frame).await?;
+    let stats = execute_compaction_plan(&ops, completer.as_ref(), frame, &sort_ordering).await?;
 
     // Write the frame out and collect stats
     output_sketch(store_factory, output_file, sketcher.sketch()).await?;
@@ -96,8 +102,18 @@ async fn build_compaction_dataframe<'a>(
     frame = ops.apply_aggregations(frame)?;
     let sketcher = ops.create_sketcher(frame.schema());
     frame = sketcher.apply_sketch(frame)?;
-    frame = completer.complete_frame(frame)?;
     Ok((sketcher, frame))
+}
+
+fn add_completion_stage<'a>(
+    ops: &'a SleeperOperations<'a>,
+    completer: &(dyn Completer + 'a),
+    frame: DataFrame,
+) -> Result<(Option<LexOrdering>, DataFrame), DataFusionError> {
+    // Create sort ordering from schema and row key and sort key columns
+    let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
+    let frame = completer.complete_frame(frame)?;
+    Ok((sort_ordering, frame))
 }
 
 /// Runs the plan in the frame.
@@ -110,16 +126,10 @@ async fn execute_compaction_plan<'a>(
     ops: &SleeperOperations<'_>,
     completer: &(dyn Completer + 'a),
     frame: DataFrame,
+    sort_ordering: &Option<LexOrdering>,
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
-
-    let foo = frame.clone().create_physical_plan().await?;
-    info!(
-        "FOO Physical plan\n{}",
-        displayable(foo.as_ref()).indent(true)
-    );
-
-    let physical_plan = ops.to_physical_plan(frame).await?;
+    let physical_plan = ops.to_physical_plan(frame, sort_ordering).await?;
     info!(
         "Physical plan\n{}",
         displayable(physical_plan.as_ref()).indent(true)

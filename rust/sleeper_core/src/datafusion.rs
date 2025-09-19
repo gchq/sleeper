@@ -41,7 +41,7 @@ use datafusion::{
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
     logical_expr::{Expr, LogicalPlanBuilder, ScalarUDF, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
-    physical_plan::{ExecutionPlan, expressions::Column},
+    physical_plan::{ExecutionPlan, displayable, expressions::Column},
     prelude::ident,
 };
 use log::{info, warn};
@@ -342,14 +342,13 @@ impl<'a> SleeperOperations<'a> {
     pub async fn to_physical_plan(
         &self,
         frame: DataFrame,
+        sort_ordering: &Option<LexOrdering>,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
-        // Create sort ordering from schema and row key and sort key columns
-        let ordering = self.create_sort_expr_ordering(&frame)?;
         // Consume frame and generate initial physical plan
         let mut physical_plan = frame.create_physical_plan().await?;
         // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
-        if let Some(order) = ordering {
-            physical_plan = remove_coalesce_physical_stage(&order, physical_plan)?;
+        if let Some(order) = sort_ordering {
+            physical_plan = remove_coalesce_physical_stage(order, physical_plan)?;
         }
         // Check physical plan is free of `SortExec` stages.
         // Issue <https://github.com/gchq/sleeper/issues/5248>
@@ -373,9 +372,7 @@ impl<'a> SleeperOperations<'a> {
         frame: &DataFrame,
     ) -> Result<Option<LexOrdering>, DataFusionError> {
         let plan_schema = frame.schema().as_arrow();
-        info!("{:?}", plan_schema);
         let sorting_columns = self.config.sorting_columns();
-        info!("{:?}", sorting_columns);
 
         Ok(LexOrdering::new(
             sorting_columns
@@ -395,6 +392,18 @@ impl<'a> SleeperOperations<'a> {
     pub fn create_output_completer(&self) -> Box<dyn Completer + '_> {
         self.config.output.finisher(self)
     }
+}
+
+pub async fn printy(frame: &DataFrame, c: usize) -> Result<(), DataFusionError> {
+    let plan_schema = frame.schema().as_arrow();
+    info!("{} {} {} {} {:?}", c, c, c, c, plan_schema);
+    let foo = frame.clone().create_physical_plan().await?;
+    info!(
+        "FOO {} Physical plan\n{}",
+        c,
+        displayable(foo.as_ref()).indent(true)
+    );
+    Ok(())
 }
 
 impl std::fmt::Display for SleeperOperations<'_> {
