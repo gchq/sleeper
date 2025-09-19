@@ -272,27 +272,10 @@ impl<'a> SleeperOperations<'a> {
             .iter()
             .map(|agg| agg.to_expr(&frame))
             .collect::<Result<Vec<_>, _>>()?;
-        let out_frame = frame.aggregate(
+        frame.aggregate(
             group_by_cols.iter().map(|e| col(*e)).collect(),
             aggregation_expressions,
-        )?;
-
-        let column_bind = out_frame.schema().columns();
-        let col_names = column_bind
-            .iter()
-            .map(datafusion::common::Column::name)
-            .collect::<Vec<_>>();
-
-        let mut col_names_expr = Vec::new();
-        for col_name in col_names {
-            if col_name == "timestamp" {
-                let func = ScalarUDF::from(CastUDF::new(&DataType::Int64, &DataType::Int32));
-                col_names_expr.push(func.call(vec![ident("timestamp")]))
-            } else {
-                col_names_expr.push(ident(col_name))
-            }
-        }
-        out_frame.select(col_names_expr)
+        )?
     }
 
     /// Create a sketching object to manage creation of quantile sketches.
