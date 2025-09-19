@@ -394,18 +394,6 @@ impl<'a> SleeperOperations<'a> {
     }
 }
 
-pub async fn printy(frame: &DataFrame, c: usize) -> Result<(), DataFusionError> {
-    let plan_schema = frame.schema().as_arrow();
-    info!("{} {} {} {} {:?}", c, c, c, c, plan_schema);
-    let foo = frame.clone().create_physical_plan().await?;
-    info!(
-        "FOO {} Physical plan\n{}",
-        c,
-        displayable(foo.as_ref()).indent(true)
-    );
-    Ok(())
-}
-
 impl std::fmt::Display for SleeperOperations<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.config)
