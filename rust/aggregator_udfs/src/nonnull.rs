@@ -549,6 +549,7 @@ mod tests {
     }
     impl PartialEq for MockUDFImpl {
         fn eq(&self, _: &Self) -> bool {
+            // Mock instances are identical
             return true;
         }
     }
