@@ -15,13 +15,10 @@
  */
 package sleeper.cdk.stack.core;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
-import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.LogGroup;
@@ -37,14 +34,11 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Delete's S3 objects for a CloudFormation stack.
  */
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     private IFunction lambda;
@@ -105,15 +99,6 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
      */
     public void grantAccessToCustomResource(String id, InstanceProperties instanceProperties,
             IBucket bucket, String bucketName) {
-
-        // Grant this function permission to list buckets
-        PolicyStatement policyStatement = PolicyStatement.Builder
-                .create()
-                .resources(List.of("*"))
-                .actions(List.of("s3:ListBucket", "iam:PassRole"))
-                .build();
-        IRole role = Objects.requireNonNull(lambda.getRole());
-        role.addToPrincipalPolicy(policyStatement);
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
