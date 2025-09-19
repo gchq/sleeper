@@ -20,6 +20,7 @@
 use crate::{
     CommonConfig,
     datafusion::{
+        cast_udf::CastUDF,
         filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
         output::Completer,
         sketch::Sketcher,
@@ -31,14 +32,14 @@ use crate::{
     filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
-use arrow::compute::SortOptions;
+use arrow::{compute::SortOptions, datatypes::DataType};
 use datafusion::{
     common::{DFSchema, plan_err},
     dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
+    logical_expr::{Expr, LogicalPlanBuilder, ScalarUDF, SortExpr, col, ident},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
 };
@@ -264,18 +265,35 @@ impl<'a> SleeperOperations<'a> {
             return Ok(frame);
         }
         info!("Applying Sleeper aggregation: {aggregates:?}");
+        let orig_schema = frame.schema().clone();
         let group_by_cols = self.config.sorting_columns();
         validate_aggregations(&group_by_cols, frame.schema(), aggregates)?;
+
         let aggregation_expressions = aggregates
             .iter()
             .map(|agg| agg.to_expr(&frame))
             .collect::<Result<Vec<_>, _>>()?;
-        let frame=frame.aggregate(
+
+        let agg_frame = frame.aggregate(
             group_by_cols.iter().map(|e| col(*e)).collect(),
             aggregation_expressions,
         )?;
-
-
+        let agg_schema = agg_frame.schema().clone();
+        let column_proj = orig_schema
+            .fields()
+            .iter()
+            .zip(agg_schema.fields().iter())
+            .map(
+                |(orig_field, agg_field)| match (orig_field.data_type(), agg_field.data_type()) {
+                    (DataType::Int64, DataType::Int32) | (DataType::Int32, DataType::Int64) => {
+                        ScalarUDF::from(CastUDF::new(agg_field.data_type(), orig_field.data_type()))
+                            .call(vec![ident(orig_field.name())])
+                            .alias(orig_field.name())
+                    }
+                    (_, _) => ident(orig_field.name()),
+                },
+            );
+        agg_frame.select(column_proj)
     }
 
     /// Create a sketching object to manage creation of quantile sketches.

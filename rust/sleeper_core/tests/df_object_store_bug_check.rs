@@ -89,7 +89,7 @@ async fn should_fail_on_datafusion_bug() -> Result<()> {
         .await?;
     let mem_read = frame.clone().show().await;
     assert!(mem_read.is_ok());
-    let expected = vec![
+    let expected = [
         "+------+------+",
         "| key1 | key2 |",
         "+------+------+",
@@ -109,7 +109,7 @@ async fn should_fail_on_datafusion_bug() -> Result<()> {
         .await?;
     let mem_read = frame.clone().show().await;
     assert!(mem_read.is_ok());
-    let expected = vec![
+    let expected = [
         "+------+------+",
         "| key1 | key2 |",
         "+------+------+",
@@ -139,7 +139,7 @@ async fn should_fail_on_datafusion_bug() -> Result<()> {
         .await?;
     let mem_read = frame.clone().show().await;
     assert!(mem_read.is_ok());
-    let expected = vec![
+    let expected = [
         "+------+------+",
         "| key1 | key2 |",
         "+------+------+",

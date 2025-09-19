@@ -16,7 +16,6 @@
 use arrow::{
     array::{Array, ArrayRef, Int32Array, RecordBatch},
     datatypes::{DataType, Field, Schema},
-    util::pretty::pretty_format_batches,
 };
 use color_eyre::eyre::{Error, OptionExt, eyre};
 use datafusion::{
