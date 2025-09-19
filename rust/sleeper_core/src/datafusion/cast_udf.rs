@@ -23,7 +23,7 @@ use arrow::{
     util::display::FormatOptions,
 };
 use datafusion::{
-    common::{exec_err, internal_err, plan_datafusion_err},
+    common::{exec_err, internal_err, plan_datafusion_err, plan_err},
     error::Result,
     logical_expr::{
         ColumnarValue, ReturnFieldArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility,
@@ -118,7 +118,7 @@ impl ScalarUDFImpl for CastUDF {
                         },
                         _ => {
                             exec_err!(
-                                "Row type {} not supported for {}",
+                                "Column type {} not supported for {}",
                                 array.data_type(),
                                 self.name()
                             )
@@ -127,7 +127,9 @@ impl ScalarUDFImpl for CastUDF {
                 }
                 ColumnarValue::Scalar(ScalarValue::Int32(Some(value))) => {
                     match self.output_type() {
-                        DataType::Int32 => unreachable!("Shouldn't need to cast!"),
+                        DataType::Int32 => {
+                            Ok(ColumnarValue::Scalar(ScalarValue::Int32(Some(*value))))
+                        }
                         DataType::Int64 => Ok(ColumnarValue::Scalar(ScalarValue::Int64(Some(
                             i64::from(*value),
                         )))),
@@ -139,13 +141,15 @@ impl ScalarUDFImpl for CastUDF {
                         DataType::Int32 => Ok(ColumnarValue::Scalar(ScalarValue::Int32(Some(
                             *value as i32,
                         )))),
-                        DataType::Int64 => unreachable!("Shouldn't need to cast!"),
+                        DataType::Int64 => {
+                            Ok(ColumnarValue::Scalar(ScalarValue::Int64(Some(*value))))
+                        }
                         _ => exec_err!("Can't cast to {}", self.output_type()),
                     }
                 }
                 x @ ColumnarValue::Scalar(_) => {
                     exec_err!(
-                        "Row type {} not supported for {}",
+                        "Column type {} not supported for {}",
                         x.data_type(),
                         self.name()
                     )
@@ -159,42 +163,201 @@ impl ScalarUDFImpl for CastUDF {
     }
 
     fn evaluate_bounds(&self, input: &[&Interval]) -> Result<Interval> {
-        const CAST_OPTIONS: CastOptions = CastOptions {
-            safe: false,
-            format_options: FormatOptions::new(),
-        };
-        let full_range_output = Interval::try_new(
-            ScalarValue::min(self.output_type()).ok_or(plan_datafusion_err!(
-                "Bounds type is not a numeric type {:?}",
-                self.output_type()
-            ))?,
-            ScalarValue::max(self.output_type()).ok_or(plan_datafusion_err!(
-                "Bounds type is not a numeric type {:?}",
-                self.output_type()
-            ))?,
-        )?;
+        if input.is_empty() {
+            return create_full_range(self.output_type());
+        }
 
-        let mut result = Interval::make_zero(self.output_type())?;
+        let mut result: Option<Interval> = None;
         for interval in input {
-            let lower = interval.lower();
-            // Will input interval fit in range of output data type?
-            if lower.data_type().size() < self.output_type.size() {
-                let casted = interval.cast_to(self.output_type(), &CAST_OPTIONS)?;
-                result = result.union(casted)?;
-            } else {
-                // Input interval doesn't fit into output type (e.g. 64 bit interval into a 32bit interval)
-                let widen_cast = full_range_output.cast_to(&lower.data_type(), &CAST_OPTIONS)?;
-                if let Some(intersection) = interval.intersect(widen_cast)? {
-                    let output_cast = intersection.cast_to(self.output_type(), &CAST_OPTIONS)?;
-                    result = result.union(output_cast)?;
-                }
+            if let Some(casted) = create_output_interval(interval, self.output_type())? {
+                result = match result {
+                    None => Some(casted),
+                    Some(i) => Some(i.union(casted)?),
+                };
             }
         }
-        Ok(result)
+
+        Ok(result.unwrap_or(create_full_range(self.output_type())?))
     }
 
     fn preserves_lex_ordering(&self, _inputs: &[ExprProperties]) -> Result<bool> {
         // narrowing conversions will not preserve lex ordering
         Ok(false)
+    }
+}
+
+const CAST_OPTIONS: CastOptions = CastOptions {
+    safe: false,
+    format_options: FormatOptions::new(),
+};
+
+/// Perform an interval type cast if output type is narrower.
+fn create_output_interval(interval: &Interval, output_type: &DataType) -> Result<Option<Interval>> {
+    if !output_type.is_numeric() {
+        return plan_err!("output type is not numeric: {}", output_type);
+    }
+    let full_range_output = create_full_range(output_type)?;
+
+    let lower = interval.lower();
+    // Will input interval fit in range of output data type?
+    Ok(
+        if lower.data_type().primitive_width().unwrap() <= output_type.primitive_width().unwrap() {
+            Some(interval.cast_to(output_type, &CAST_OPTIONS)?)
+        } else {
+            // Input interval doesn't fit into output type (e.g. 64 bit interval into a 32bit interval)
+            let widen_cast = full_range_output.cast_to(&lower.data_type(), &CAST_OPTIONS)?;
+            if let Some(intersection) = interval.intersect(widen_cast)? {
+                Some(intersection.cast_to(output_type, &CAST_OPTIONS)?)
+            } else {
+                None
+            }
+        },
+    )
+}
+
+/// Get an [`Interval`] respresenting full range of a given type.
+fn create_full_range(output_type: &DataType) -> Result<Interval> {
+    let full_range_output = Interval::try_new(
+        ScalarValue::min(output_type).ok_or(plan_datafusion_err!(
+            "Bounds type is not a numeric type {:?}",
+            output_type
+        ))?,
+        ScalarValue::max(output_type).ok_or(plan_datafusion_err!(
+            "Bounds type is not a numeric type {:?}",
+            output_type
+        ))?,
+    )?;
+    Ok(full_range_output)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use arrow::datatypes::DataType;
+    use datafusion::logical_expr::interval_arithmetic::Interval;
+    use datafusion::scalar::ScalarValue;
+
+    fn make_interval(lower: &ScalarValue, upper: &ScalarValue) -> Interval {
+        Interval::try_new(lower.clone(), upper.clone()).unwrap()
+    }
+
+    #[test]
+    fn should_widen_bounds_from_int32_to_int64() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64);
+        let intervals = vec![
+            make_interval(&ScalarValue::Int32(Some(1)), &ScalarValue::Int32(Some(10))),
+            make_interval(
+                &ScalarValue::Int32(Some(-100)),
+                &ScalarValue::Int32(Some(200)),
+            ),
+        ];
+        let inputs = intervals.iter().collect::<Vec<_>>();
+
+        // When
+        let result = udf.evaluate_bounds(&inputs).unwrap();
+
+        // Then
+        assert_eq!(*result.lower(), ScalarValue::Int64(Some(-100)));
+        assert_eq!(*result.upper(), ScalarValue::Int64(Some(200)));
+    }
+
+    #[test]
+    fn should_narrow_bounds_from_int64_to_int32_and_truncate() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int64, &DataType::Int32);
+        let intervals = vec![
+            make_interval(
+                &ScalarValue::Int64(Some(i64::from(i32::MIN) - 1)), // -2147483649
+                &ScalarValue::Int64(Some(i64::from(i32::MAX) + 1)), // 2147483648
+            ),
+            make_interval(
+                &ScalarValue::Int64(Some(50)),
+                &ScalarValue::Int64(Some(100)),
+            ),
+        ];
+        let inputs = intervals.iter().collect::<Vec<_>>();
+
+        // When
+        let result = udf.evaluate_bounds(&inputs).unwrap();
+
+        // Then
+        assert_eq!(*result.lower(), ScalarValue::Int32(Some(i32::MIN)));
+        assert_eq!(*result.upper(), ScalarValue::Int32(Some(i32::MAX)));
+    }
+
+    #[test]
+    fn should_return_same_bounds_when_types_match() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int32);
+        let intervals = vec![
+            make_interval(
+                &ScalarValue::Int32(Some(50)),
+                &ScalarValue::Int32(Some(200)),
+            ),
+            make_interval(
+                &ScalarValue::Int64(Some(150)),
+                &ScalarValue::Int64(Some(300)),
+            ),
+        ];
+        let inputs = intervals.iter().collect::<Vec<_>>();
+
+        // When
+        let result = udf.evaluate_bounds(&inputs).unwrap();
+
+        // Then
+        assert_eq!(*result.lower(), ScalarValue::Int32(Some(50)));
+        assert_eq!(*result.upper(), ScalarValue::Int32(Some(300)));
+    }
+
+    #[test]
+    fn should_error_on_non_numeric_bounds_type() {
+        // Given
+        let udf = CastUDF::new(&DataType::Utf8, &DataType::Utf8);
+        let intervals = [make_interval(
+            &ScalarValue::Utf8(Some("a".to_string())),
+            &ScalarValue::Utf8(Some("z".to_string())),
+        )];
+        let inputs = intervals.iter().collect::<Vec<_>>();
+
+        // When
+        let result = udf.evaluate_bounds(&inputs);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Bounds type is not a numeric type"));
+    }
+
+    #[test]
+    fn should_return_max_interval_for_empty_input() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64);
+        let inputs: Vec<&Interval> = vec![];
+
+        // When
+        let result = udf.evaluate_bounds(&inputs).unwrap();
+
+        // Then
+        assert_eq!(*result.lower(), ScalarValue::Int64(Some(i64::MIN)));
+        assert_eq!(*result.upper(), ScalarValue::Int64(Some(i64::MAX)));
+    }
+
+    #[test]
+    fn should_error_on_mixed_input_interval_types() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64);
+        // One input interval is Int32, another is Int64.
+        let intervals = vec![
+            make_interval(&ScalarValue::Int32(Some(1)), &ScalarValue::Int32(Some(10))),
+            make_interval(&ScalarValue::Int64(Some(20)), &ScalarValue::Int64(Some(30))),
+        ];
+        let inputs = intervals.iter().collect::<Vec<_>>();
+
+        // When
+        let result = udf.evaluate_bounds(&inputs);
+
+        // Then
+        assert!(result.is_err());
     }
 }
