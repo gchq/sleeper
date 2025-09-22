@@ -68,18 +68,24 @@ operations. This can be applied with the Java or DataFusion data engine.
 
 For arbitrary data processing, you can write your own iterator implementing the Java interface `ConfigStringIterator`.
 This lets you insert operations to be performed on rows as Sleeper reads the underlying data, which is usually done in
-parallel across many machines. If you set this against a Sleeper table it will be applied during compactions, but that
-forces use of the Java data engine, which is much more expensive and slower. You can also set this against a query,
-which does not force use of the Java data engine. Note that this will have an impact on startup time during queries, as
-your code will be loaded from S3 at runtime.
+parallel across many machines.
 
-This is a function that takes as input a `CloseableIterator<Row>` and returns a `CloseableIterator<Row>`. Examples of
-iterators that perform aggregation or filtering can be found in the `example-iterators` module. The iterator should
-respect the general constraints of a compaction: there could be many hundreds of millions of rows processed by a single
-compaction job, so there should be no attempt to buffer lots of rows in memory; there is no guarantee of the order the
-files in a partition will be compacted, or that all of them will be compacted at the same time so the logic should be
-commutative and associative; the output should be sorted by key so in general the row and sort keys should not be
-changed by the iterator.
+If you set this against a Sleeper table it will be applied both during compactions and during queries, which will apply
+the results to the table as a whole persistently. That forces use of the Java data engine, which is much more expensive
+and slower. You can also set this against a query, which will not affect the underlying data. Applying an iterator in a
+query does not force use of the Java data engine, and is much cheaper than during compaction as it processes much less
+data.
+
+Note that any custom iterator will have an impact on startup time during queries, as your code will be loaded from S3 at
+runtime.
+
+A custom iterator is a function that takes as input a `CloseableIterator<Row>` and returns a `CloseableIterator<Row>`.
+Examples of iterators that perform aggregation or filtering can be found in the `example-iterators` module. The iterator
+should respect the general constraints of a compaction: there could be many hundreds of millions of rows processed by a
+single compaction job, so there should be no attempt to buffer lots of rows in memory; there is no guarantee of the
+order the files in a partition will be compacted, or that all of them will be compacted at the same time so the logic
+should be commutative and associative; the output should be sorted by key so in general the row and sort keys should not
+be changed by the iterator.
 
 If one of the fields in a table is a byte array then that could be a serialised version of an arbitrary Java object.
 This allows aggregation of fields that contain complex values, e.g. Accumulo's iterators in
@@ -92,13 +98,13 @@ To include your own jar in the classpath to retrieve this iterator, upload it to
 instance property `sleeper.jars.bucket`, and add the object key to a comma-separated list in the instance property
 `sleeper.userjars`. See the [instance properties documentation](properties/instance/user/common.md).
 
-This should usually be used in a query. In Java you can set this in the `QueryProcessingConfig` object that's set in
+This will usually be used in a query. In Java you can set this in the `QueryProcessingConfig` object that's set in
 the field `Query.processingConfig`. When submitting a query as JSON, you can set the JSON
 fields `queryTimeIteratorClassName` and `queryTimeIteratorConfig`. The iterator class name field should be the fully
 qualified name of your class that implements `ConfigStringIterator`. The iterator config should be the string you want
 to be passed into `ConfigStringIterator.init`.
 
-We currently allow setting this to be applied during compactions as well, as part of the definition of a table. This
-forces use of the Java data engine for compaction. Compaction in Java is much slower and more expensive, so this is not
-recommended. We may remove this in the future. This is set in the table properties `sleeper.table.iterator.class.name`
-and `sleeper.table.iterator.config`. See the the [table properties documentation](properties/table/data_definition.md).
+To apply a custom iterator to write the results back to the table, during both compactions and queries, you can set it
+in the table properties. We may remove this in the future due to the performance and cost implications. This is set in
+the table properties `sleeper.table.iterator.class.name` and `sleeper.table.iterator.config`. See
+the [table properties documentation](properties/table/data_definition.md).
