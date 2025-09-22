@@ -20,9 +20,9 @@ Note that you can choose which data engine should be used in the table property
 [`sleeper.table.data.engine`](properties/table/data_definition.md).
 
 Aggregation and filtering configuration should be preferred in all cases over custom iterators, as it is much more
-efficient to apply this in DataFusion than in Java. If you set a custom iterator against a table, this forces
-use of the Java data engine for compaction. Compaction in Java is much slower and more expensive, so this is not
-recommended.
+efficient to apply this in DataFusion than to apply iterators in Java. If you set a custom iterator against a table,
+this forces use of the Java data engine for compaction. Compaction in Java is much slower and more expensive, so this is
+not recommended.
 
 We intend to keep the configuration as simple as possible for aggregation and filtering, rather than introducing many
 operations and options. We are planning alternatives to apply other types of processing in DataFusion.
