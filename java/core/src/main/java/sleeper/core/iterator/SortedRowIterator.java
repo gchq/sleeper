@@ -25,6 +25,12 @@ import java.util.List;
  * or perform some computation on the values to produce or remove fields. This is called an iterator because it creates
  * a Java Iterator, as an implementation to operate on rows as it iterates through them. This is also the name used in
  * Accumulo. It takes an input iterator, and creates an output iterator that may apply a transformation to the rows.
+ * <p>
+ * The iterator should respect the general constraints of a compaction. There could be many hundreds of millions of rows
+ * processed by a single compaction job, so there should be no attempt to buffer lots of rows in memory. There is no
+ * guarantee of the order the files in a partition will be compacted, or that all of them will be compacted at the same
+ * time so the logic should be commutative and associative. The output should be sorted by key so in general the row and
+ * sort keys should not be changed by the iterator.
  */
 public interface SortedRowIterator {
 
