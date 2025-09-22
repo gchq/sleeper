@@ -57,8 +57,9 @@ timestamp is older than 2 weeks. We can achieve this by setting `sleeper.table.f
 to `ageOff(timestamp, 1209600000)`. The second parameter is the maximum age in milliseconds.
 
 This means that every time a compaction or a query runs, rows will be excluded from the output if they have a timestamp
-that's older than the specified age. This becomes part of the definition of the table, and you will never see data that
-has a timestamp older than that according to the clock of the query processor.
+that's older than the specified age. As this is applied during compactions, the data which is too old is effectively
+deleted from the table. This becomes part of the definition of the table, and you will never see data that has a
+timestamp older than that according to the clock of the query processor.
 
 See the the [table properties documentation](properties/table/data_definition.md) for the supported filtering
 operations. This can be applied with the Java or DataFusion data engine.
