@@ -9,11 +9,21 @@ query:
 - Custom iterators over sorted data
 
 Aggregation and filtering can be configured against a Sleeper table in table properties, and will be applied whenever
-the table data is read. These are implemented in both the Java and DataFusion data engines.
+the table data is read. These are implemented in both the Java and DataFusion data engines. This means that if the table
+is configured to run compaction in DataFusion, but queries run in Java, the same logic will be applied in both places.
+In time we will replace the Java implementation with queries in DataFusion as well.
 
 Custom iterators can be configured either against a Sleeper table in table properties, or in a field on a query. This is
 currently only supported in Java. If you set a custom iterator against a table, this forces compactions to use the Java
 data engine. Compaction in Java is much slower and more expensive, so this is not recommended.
+
+Note that you can choose which data engine should be used in the table property
+[`sleeper.table.data.engine`](properties/table/data_definition.md).
+
+Aggregation and filtering configuration should be preferred in all cases to custom iterators, as it is much more
+efficient to apply this in DataFusion than in Java. We intend to keep the configuration as simple as possible for
+aggregation and filtering, rather than introducing many operations and options. We are planning alternatives to apply
+other types of processing in DataFusion.
 
 ## Types of processing
 
@@ -57,6 +67,21 @@ For arbitrary data processing, you can write your own iterator implementing the 
 This lets you insert operations to be performed on rows as Sleeper reads the underlying data, which is usually done in
 parallel across many machines. Note that this will have an impact on startup time during queries, as your code will be
 loaded from S3 at runtime.
+
+This is a function that takes as input a `CloseableIterator<Row>` and returns a `CloseableIterator<Row>`. Examples of
+iterators that perform aggregation or filtering can be found in the `example-iterators` module. The iterator should
+respect the general constraints of a compaction: there could be many hundreds of millions of rows processed by a single
+compaction job, so there should be no attempt to buffer lots of rows in memory; there is no guarantee of the order the
+files in a partition will be compacted, or that all of them will be compacted at the same time so the logic should be
+commutative and associative; the output should be sorted by key so in general the row and sort keys should not be
+changed by the iterator.
+
+If one of the fields in a table is a byte array then that could be a serialised version of an arbitrary Java object.
+This allows aggregation of fields that contain complex values, e.g. Accumulo's iterators in
+[Gaffer](https://github.com/gchq/Gaffer) are used to maintain HyperLogLog sketches which are used to quickly
+approximate the degree of a vertex.
+
+#### Configuration
 
 To include your own jar in the classpath to retrieve this iterator, upload it to the jars bucket configured in the
 instance property `sleeper.jars.bucket`, and add the object key to a comma-separated list in the instance property
