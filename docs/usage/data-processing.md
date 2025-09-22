@@ -70,13 +70,14 @@ For arbitrary data processing, you can write your own iterator implementing the 
 This lets you insert operations to be performed on rows as Sleeper reads the underlying data, which is usually done in
 parallel across many machines.
 
-You can apply a custom iterator against a query. This is much cheaper to apply than during compaction as it processes
-much less data, and does not force use of a particular data engine. This will not affect the underlying data in the
-table. A good use case for this is for filtering results based on a user's permissions.
+You can apply a custom iterator against a query. A good use case for this is for filtering results based on a user's
+permissions. This is usually much cheaper than during compaction as it processes much less data, and does not force use
+of a particular data engine. This will not affect the underlying data in the table.
 
 You can apply a custom iterator against a Sleeper table to apply it both during compactions and during queries. This
-will apply the results to the table as a whole persistently. That forces use of the Java data engine, which is much more
-expensive and slower. As a result we do not recommend this, and we may remove this option in the future.
+will apply the results to the table as a whole persistently. That forces use of the Java data engine during compaction,
+which is much more expensive and slower. As a result we do not recommend this, and we may remove this option in the
+future.
 
 Note that any custom iterator will have an impact on startup time during queries, as your code will be loaded from S3 at
 runtime.
