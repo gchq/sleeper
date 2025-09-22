@@ -13,7 +13,7 @@ the table data is read. These are implemented in both the Java and DataFusion da
 is configured to run compaction in DataFusion, but queries run in Java, the same logic will be applied in both places.
 In time we will replace the Java implementation with queries in DataFusion as well.
 
-Custom iterators allow for arbitrary processing. This can be configured either against a Sleeper table in table
+Custom iterators let you add your own data processing. This can be configured either against a Sleeper table in table
 properties, or in a field on a query. This is currently only supported in Java. If you set a custom iterator against a
 table, this forces compactions to use the Java data engine. Compaction in Java is much slower and more expensive, so
 this is not recommended.
