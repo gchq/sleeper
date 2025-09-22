@@ -230,7 +230,9 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on. Valid values are X86_64 and ARM64.\n" +
-                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html")
+                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html\n" +
+                    "When `sleeper.compaction.ecs.launch.type` is set to EC2, this must match the architecture of the " +
+                    "EC2 type set in `sleeper.compaction.ec2.type`.")
             .defaultValue("X86_64")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
@@ -284,7 +286,8 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
-            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions).")
+            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions). " +
+                    "Note that the architecture configured in `sleeper.compaction.task.cpu.architecture` must match.")
             .defaultValue("t3.xlarge")
             .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
