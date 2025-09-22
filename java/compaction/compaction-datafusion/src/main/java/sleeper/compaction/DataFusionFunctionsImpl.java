@@ -20,11 +20,20 @@ import sleeper.foreign.bridge.FFIBridge;
 
 import java.io.IOException;
 
+/**
+ * Links to the DataFusion code for compactions in Rust. This is done in a separate class to delay static
+ * initialization until it is needed.
+ */
 public class DataFusionFunctionsImpl {
 
     private DataFusionFunctionsImpl() {
     }
 
+    /**
+     * Creates the link to the DataFusion code in Rust.
+     *
+     * @return the Rust DataFusion implementation
+     */
     public static DataFusionFunctions create() {
         try {
             return FFIBridge.createForeignInterface(DataFusionFunctions.class);
