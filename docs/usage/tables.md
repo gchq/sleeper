@@ -20,7 +20,7 @@ should be left as the default value.
 
 Sleeper can apply processing to table data such that all data in the table is seen to have that processing pre-applied.
 For example, this can be used to combine rows with the same values for row keys and sort keys, or to age off old data.
-See more information on this in the [design document](../design.md#iterators-and-continual-aggregation-and-filtering).
+See more information on this in the [data processing document](data-processing.md).
 
 ## Add/edit a table
 
