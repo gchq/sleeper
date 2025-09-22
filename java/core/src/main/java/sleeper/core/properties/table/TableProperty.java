@@ -150,10 +150,11 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
-            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
-                    "Defaults to nothing. This forces use of the Java data engine for compaction. This is not " +
-                    "recommended, as the Java implementation is much slower and much more expensive. Consider using " +
-                    "the aggregation and filtering properties, or using your iterator on queries instead.")
+            .description("Fully qualified class of a custom iterator to apply to this table. Defaults to nothing. " +
+                    "This will be applied both during queries and during compaction, and will apply the results to " +
+                    "the underlying table data persistently. This forces use of the Java data engine for compaction. " +
+                    "This is not recommended, as the Java implementation is much slower and much more expensive. " +
+                    "Consider using the aggregation and filtering properties instead.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
