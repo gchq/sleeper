@@ -20,9 +20,6 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
-import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.LogGroup;
@@ -38,9 +35,7 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Delete's S3 objects for a CloudFormation stack.
@@ -86,16 +81,6 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .description("Lambda for auto-deleting S3 objects")
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
-
-        // Grant this function permission to list tasks and stop tasks
-        PolicyStatement policyStatement = PolicyStatement.Builder
-                .create()
-                .resources(List.of("*"))
-                .actions(List.of("s3:ListBucket", "iam:PassRole"))
-                .build();
-        IRole role = Objects.requireNonNull(lambda.getRole());
-        role.addToPrincipalPolicy(policyStatement);
-        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AmazonS3FullAccess"));
 
         provider = Provider.Builder.create(this, id + "Provider")
                 .onEventHandler(lambda)
