@@ -68,8 +68,10 @@ operations. This can be applied with the Java or DataFusion data engine.
 
 For arbitrary data processing, you can write your own iterator implementing the Java interface `ConfigStringIterator`.
 This lets you insert operations to be performed on rows as Sleeper reads the underlying data, which is usually done in
-parallel across many machines. Note that this will have an impact on startup time during queries, as your code will be
-loaded from S3 at runtime.
+parallel across many machines. If you set this against a Sleeper table it will be applied during compactions, but that
+forces use of the Java data engine, which is much more expensive and slower. You can also set this against a query,
+which does not force use of the Java data engine. Note that this will have an impact on startup time during queries, as
+your code will be loaded from S3 at runtime.
 
 This is a function that takes as input a `CloseableIterator<Row>` and returns a `CloseableIterator<Row>`. Examples of
 iterators that perform aggregation or filtering can be found in the `example-iterators` module. The iterator should
