@@ -51,9 +51,9 @@ public class SystemTestApp extends SleeperCdkApp {
     public void create() {
 
         SystemTestProperties properties = getInstanceProperties();
-        LoggingStack loggingStack = new LoggingStack(this, "SystemTestLogging", properties);
-        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "SystemTestAutoDeleteS3ObjectsStack", properties, jars, loggingStack);
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, autoDeleteS3ObjectsStack);
+        LoggingStack systemTestLoggingStack = new LoggingStack(this, "SystemTestLogging", properties);
+        AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "SystemTestAutoDeleteS3ObjectsStack", properties, jars, systemTestLoggingStack);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, systemTestAutoDeleteS3ObjectsStack);
 
         // super.create() is here as the system test stacks need to be created first, before creating the rest of the stack.
         super.create();
