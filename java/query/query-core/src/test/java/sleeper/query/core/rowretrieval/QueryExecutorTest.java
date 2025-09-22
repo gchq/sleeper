@@ -350,22 +350,6 @@ public class QueryExecutorTest {
             assertThat(rows).containsExactly(
                     new Row(Map.of("key", "B", "value", 9999999999999999L)));
         }
-
-        @Test
-        void shouldApplyAgeOffIteratorFromQueryProperty() throws Exception {
-            // Given
-            Query query = queryAllRowsBuilder()
-                    .processingConfig(QueryProcessingConfig.builder()
-                            .queryTimeFilters("ageOff(value,1000)").build())
-                    .build();
-
-            // When
-            List<Row> rows = getRows(query);
-
-            // Then
-            assertThat(rows).containsExactly(
-                    new Row(Map.of("key", "B", "value", 9999999999999999L)));
-        }
     }
 
     @Nested
@@ -393,22 +377,6 @@ public class QueryExecutorTest {
 
             // When
             List<Row> rows = getRows(queryAllRows());
-
-            // Then
-            assertThat(rows).containsExactly(
-                    new Row(Map.of("key", "A", "value", 6)));
-        }
-
-        @Test
-        void shouldApplyAggregationFromQueryProperty() throws Exception {
-            // Given
-            Query query = queryAllRowsBuilder()
-                    .processingConfig(QueryProcessingConfig.builder()
-                            .queryTimeAggregations("sum(value)").build())
-                    .build();
-
-            // When
-            List<Row> rows = getRows(query);
 
             // Then
             assertThat(rows).containsExactly(

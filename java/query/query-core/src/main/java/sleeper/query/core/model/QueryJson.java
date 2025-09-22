@@ -44,8 +44,6 @@ class QueryJson {
     private final List<String> requestedValueFields;
     private final String queryTimeIteratorClassName;
     private final String queryTimeIteratorConfig;
-    private final String queryTimeFilters;
-    private final String queryTimeAggregations;
     private final Map<String, String> resultsPublisherConfig;
     private final List<Map<String, String>> statusReportDestinations;
     private final String subQueryId;
@@ -62,8 +60,6 @@ class QueryJson {
         requestedValueFields = builder.requestedValueFields;
         queryTimeIteratorClassName = builder.queryTimeIteratorClassName;
         queryTimeIteratorConfig = builder.queryTimeIteratorConfig;
-        queryTimeFilters = builder.queryTimeFilters;
-        queryTimeAggregations = builder.queryTimeAggregations;
         resultsPublisherConfig = builder.resultsPublisherConfig;
         statusReportDestinations = builder.statusReportDestinations;
         subQueryId = builder.subQueryId;
@@ -129,8 +125,6 @@ class QueryJson {
         return QueryProcessingConfig.builder()
                 .queryTimeIteratorClassName(queryTimeIteratorClassName)
                 .queryTimeIteratorConfig(queryTimeIteratorConfig)
-                .queryTimeFilters(queryTimeFilters)
-                .queryTimeAggregations(queryTimeAggregations)
                 .resultsPublisherConfig(Objects.requireNonNullElseGet(resultsPublisherConfig, Map::of))
                 .statusReportDestinations(Objects.requireNonNullElseGet(statusReportDestinations, List::of))
                 .requestedValueFields(requestedValueFields)
@@ -220,8 +214,6 @@ class QueryJson {
         private List<String> requestedValueFields;
         private String queryTimeIteratorClassName;
         private String queryTimeIteratorConfig;
-        private String queryTimeFilters;
-        private String queryTimeAggregations;
         private Map<String, String> resultsPublisherConfig;
         private List<Map<String, String>> statusReportDestinations;
         private String subQueryId;
@@ -261,8 +253,6 @@ class QueryJson {
             return requestedValueFields(processingConfig.getRequestedValueFields())
                     .queryTimeIteratorClassName(processingConfig.getQueryTimeIteratorClassName())
                     .queryTimeIteratorConfig(processingConfig.getQueryTimeIteratorConfig())
-                    .queryTimeFilters(processingConfig.getQueryTimeFilters())
-                    .queryTimeAggregations(processingConfig.getQueryTimeAggregations())
                     .resultsPublisherConfig(processingConfig.getResultsPublisherConfig())
                     .statusReportDestinations(processingConfig.getStatusReportDestinations());
         }
@@ -279,16 +269,6 @@ class QueryJson {
 
         public Builder queryTimeIteratorConfig(String queryTimeIteratorConfig) {
             this.queryTimeIteratorConfig = queryTimeIteratorConfig;
-            return this;
-        }
-
-        public Builder queryTimeFilters(String queryTimeFilters) {
-            this.queryTimeFilters = queryTimeFilters;
-            return this;
-        }
-
-        public Builder queryTimeAggregations(String queryTimeAggregations) {
-            this.queryTimeAggregations = queryTimeAggregations;
             return this;
         }
 
