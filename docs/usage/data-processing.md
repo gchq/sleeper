@@ -54,3 +54,21 @@ operations. This can be applied with the Java or DataFusion data engine.
 ### Custom iterators
 
 For arbitrary data processing, you can write your own iterator implementing the Java interface `ConfigStringIterator`.
+This lets you insert operations to be performed on rows as Sleeper reads the underlying data, which is usually done in
+parallel across many machines. Note that this will have an impact on startup time during queries, as your code will be
+loaded from S3 at runtime.
+
+To include your own jar in the classpath to retrieve this iterator, upload it to the jars bucket configured in the
+instance property `sleeper.jars.bucket`, and add the object key to a comma-separated list in the instance property
+`sleeper.userjars`. See the [instance properties documentation](properties/instance/user/common.md).
+
+This should usually be used in a query. In Java you can set this in the `QueryProcessingConfig` object that's set in
+the field `Query.processingConfig`. When submitting a query as JSON, you can set the JSON
+fields `queryTimeIteratorClassName` and `queryTimeIteratorConfig`. The iterator class name field should be the fully
+qualified name of your class that implements `ConfigStringIterator`. The iterator config should be the string you want
+to be passed into `ConfigStringIterator.init`.
+
+We currently allow setting this to be applied during compactions as well, as part of the definition of a table. This
+forces use of the Java data engine for compaction. Compaction in Java is much slower and more expensive, so this is not
+recommended. We may remove this in the future. This is set in the table properties `sleeper.table.iterator.class.name`
+and `sleeper.table.iterator.config`. See the the [table properties documentation](properties/table/data_definition.md).
