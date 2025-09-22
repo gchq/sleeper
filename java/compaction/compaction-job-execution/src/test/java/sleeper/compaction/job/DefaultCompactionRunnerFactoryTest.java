@@ -24,9 +24,11 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
 import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
+import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.util.ObjectFactory;
 import sleeper.sketches.store.NoSketchesStore;
 
@@ -34,6 +36,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -41,7 +45,7 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 public class DefaultCompactionRunnerFactoryTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
-    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new LongType()));
 
     @Test
     void shouldSetDataFusionEngine() {
@@ -56,6 +60,17 @@ public class DefaultCompactionRunnerFactoryTest {
     void shouldSetJavaEngine() {
         // Given
         tableProperties.setEnum(DATA_ENGINE, DataEngine.JAVA);
+
+        // When / Then
+        assertThat(createRunner()).isInstanceOf(JavaCompactionRunner.class);
+    }
+
+    @Test
+    void shouldForceJavaEngineWhenCustomTableIteratorIsSet() {
+        // Given
+        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
+        tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
+        tableProperties.set(ITERATOR_CONFIG, "key,1000");
 
         // When / Then
         assertThat(createRunner()).isInstanceOf(JavaCompactionRunner.class);
