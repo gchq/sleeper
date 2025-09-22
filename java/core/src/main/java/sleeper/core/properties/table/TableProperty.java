@@ -145,7 +145,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .includedInTemplate(false).build();
     TableProperty DATA_ENGINE = Index.propertyBuilder("sleeper.table.data.engine")
             .defaultProperty(DEFAULT_DATA_ENGINE)
-            .description("Select which data engine to use for the table. DataFusion support is experimental. " +
+            .description("Select which data engine to use for the table. " +
                     "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
