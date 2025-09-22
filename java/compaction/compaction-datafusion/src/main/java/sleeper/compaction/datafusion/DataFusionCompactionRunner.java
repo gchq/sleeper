@@ -236,9 +236,4 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
     }
-
-    @Override
-    public String implementationLanguage() {
-        return "Rust";
-    }
 }

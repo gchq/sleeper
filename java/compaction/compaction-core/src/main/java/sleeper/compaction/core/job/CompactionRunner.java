@@ -23,7 +23,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import java.io.IOException;
 
 @FunctionalInterface
-public interface CompactionRunner extends CompactionRunnerDetails {
+public interface CompactionRunner {
 
     RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException;
 }
