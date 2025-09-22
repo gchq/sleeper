@@ -71,8 +71,8 @@ This lets you insert operations to be performed on rows as Sleeper reads the und
 parallel across many machines.
 
 You can apply a custom iterator against a query. A good use case for this is for filtering results based on a user's
-permissions. This is usually much cheaper than during compaction as it processes much less data, and does not force use
-of a particular data engine. This will not affect the underlying data in the table.
+permissions. This is usually much cheaper than applying to a table as a whole during compaction, as it processes much
+less data, and does not force use of a particular data engine. This will not affect the underlying data in the table.
 
 You can apply a custom iterator against a Sleeper table to apply it both during compactions and during queries. This
 will apply the results to the table as a whole persistently. That forces use of the Java data engine during compaction,
