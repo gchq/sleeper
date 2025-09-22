@@ -105,6 +105,8 @@ public class SleeperCdkApp extends Stack {
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
     private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
+    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
+    private LoggingStack loggingStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -122,7 +124,7 @@ public class SleeperCdkApp extends Stack {
 
         List<IMetric> errorMetrics = new ArrayList<>();
 
-        LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
+        loggingStack = new LoggingStack(this, "Logging", instanceProperties);
 
         // Stack for Checking VPC configuration
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
@@ -132,14 +134,14 @@ public class SleeperCdkApp extends Stack {
                     + "in very significant NAT charges.");
         }
 
+        // Custom Stacks
+        this.generateCustomStacks();
+
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
-                this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
-        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3ObjectsStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
@@ -365,6 +367,12 @@ public class SleeperCdkApp extends Stack {
     protected void generateProperties() {
         // Stack for writing properties
         new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
+    }
+
+    protected void generateCustomStacks() {
+        autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
+                this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
+        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
     }
 
     public static void main(String[] args) {

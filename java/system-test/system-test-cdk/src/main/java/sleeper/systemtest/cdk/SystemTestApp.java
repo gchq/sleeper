@@ -23,6 +23,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -37,6 +39,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  */
 public class SystemTestApp extends SleeperCdkApp {
     private boolean readyToGenerateProperties = false;
+    private boolean readyToGenerateCustomStacks = false;
     private final BuiltJars jars;
 
     public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
@@ -46,9 +49,14 @@ public class SystemTestApp extends SleeperCdkApp {
 
     @Override
     public void create() {
-        super.create();
+
         SystemTestProperties properties = getInstanceProperties();
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, getAutoDeleteS3ObjectsStack());
+        LoggingStack loggingStack = new LoggingStack(this, "SystemTestLogging", properties);
+        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "SystemTestAutoDeleteS3ObjectsStack", properties, jars, loggingStack);
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, autoDeleteS3ObjectsStack);
+
+        // super.create() is here as the system test stacks need to be created first, before creating the rest of the stack.
+        super.create();
         // Stack for writing random data
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
             new SystemTestClusterStack(this, "SystemTest", properties, bucketStack,
@@ -57,12 +65,22 @@ public class SystemTestApp extends SleeperCdkApp {
 
         readyToGenerateProperties = true;
         generateProperties();
+
+        readyToGenerateCustomStacks = true;
+        generateCustomStacks();
     }
 
     @Override
     protected void generateProperties() {
         if (readyToGenerateProperties) {
             super.generateProperties();
+        }
+    }
+
+    @Override
+    protected void generateCustomStacks() {
+        if (readyToGenerateCustomStacks) {
+            super.generateCustomStacks();
         }
     }
 
