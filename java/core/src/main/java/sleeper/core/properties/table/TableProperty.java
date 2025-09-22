@@ -151,25 +151,34 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
             .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
-                    "Defaults to nothing. May also have special value \"" + DataEngine.AGGREGATION_ITERATOR_NAME + "\" indicating the use of experimental " +
-                    "iterators that are only usable with the DataFusion compactor. When this marker is present, attempting " +
-                    "to compact with the table with the default Java compactor will fail.")
+                    "Defaults to nothing. This forces use of the Java data engine for compaction. This is not " +
+                    "recommended, as the Java implementation is much slower and much more expensive.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
-            .description("Iterator configuration. An iterator will be initialised with the following configuration. " +
-                    "If a DataFusion only iterator is specified, then the configuration should be as described in " +
-                    "https://github.com/gchq/sleeper/issues/4344 for DataFusion.")
+            .description("A configuration string to be passed to the iterator specified in " +
+                    "`sleeper.table.iterator.class.name`. This will be read by the custom iterator object.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty FILTERING_CONFIG = Index.propertyBuilder("sleeper.table.filters")
-            .description("Property to configure a filter on a column on a table. " +
-                    "Currently only accepts ageOff(column,age). TODO explain age off filter")
+            .description("Sets how rows are filtered out and deleted from the table. This is applied every time the " +
+                    "data is read, e.g. during compactions or queries. Defaults to retaining all rows.\n" +
+                    "Currently this can only be `ageOff(field,age)`, to age off old data. The first parameter is the " +
+                    "name of the timestamp field to check against, which must be of type long, in milliseconds since " +
+                    "the epoch. The second parameter is the maximum age in milliseconds, e.g. 1209600000 for 2 weeks.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty AGGREGATION_CONFIG = Index.propertyBuilder("sleeper.table.aggregations")
-            .description("Property to configure aggregation of columns from the table. Format accepted: " +
-                    "op(column),op(column) TODO list & explain aggregation types")
+            .description("Sets how to combine rows that have the same values for all row and sort keys. This is " +
+                    "applied every time the data is read, e.g. during compactions or queries. Defaults to leaving " +
+                    "them as separate rows.\n" +
+                    "This must be in the format `op(field),op(field)`. This must define an operation for every value " +
+                    "field, passing the field name as the parameter. All value fields must be of a numeric or map " +
+                    "type. The available operations are as follows:\n" +
+                    "sum: adds the values together for equal rows\n" +
+                    "max: takes the maximum value out of all equal rows\n" +
+                    "min: takes the minimum value out of all equal rows\n" +
+                    "map_sum, map_max, map_min: applies the given operation to every sub-field of a map")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
