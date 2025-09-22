@@ -76,7 +76,7 @@ table. A good use case for this is for filtering results based on a user's permi
 
 You can apply a custom iterator against a Sleeper table to apply it both during compactions and during queries. This
 will apply the results to the table as a whole persistently. That forces use of the Java data engine, which is much more
-expensive and slower. As a result we do not recommend this.
+expensive and slower. As a result we do not recommend this, and we may remove this option in the future.
 
 Note that any custom iterator will have an impact on startup time during queries, as your code will be loaded from S3 at
 runtime.
