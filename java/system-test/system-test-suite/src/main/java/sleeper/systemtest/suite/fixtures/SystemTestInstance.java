@@ -43,8 +43,11 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_CPU;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_MEMORY;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
@@ -174,6 +177,7 @@ public class SystemTestInstance {
                 // Enable GC to reduce the number of files needing deletion during teardown
                 List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+        properties.set(COMPACTION_EC2_TYPE, "t3.xlarge");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
         properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
@@ -189,9 +193,10 @@ public class SystemTestInstance {
                 // Enable GC to reduce the number of files needing deletion during teardown
                 List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+        properties.set(COMPACTION_EC2_TYPE, "t4g.xlarge");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "ARM64");
-        properties.set(COMPACTION_TASK_X86_CPU, "4096");
-        properties.set(COMPACTION_TASK_X86_MEMORY, "8192");
+        properties.set(COMPACTION_TASK_ARM_CPU, "4096");
+        properties.set(COMPACTION_TASK_ARM_MEMORY, "8192");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
         properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
         setSystemTestTags(properties, "compactionOnDataFusion", "Sleeper Maven system test compaction performance on DataFusion");
