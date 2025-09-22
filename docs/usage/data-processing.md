@@ -14,17 +14,18 @@ is configured to run compaction in DataFusion, but queries run in Java, the same
 In time we will replace the Java implementation with queries in DataFusion as well.
 
 Custom iterators let you add your own data processing. This can be configured either against a Sleeper table in table
-properties, or in a field on a query. This is currently only supported in Java. If you set a custom iterator against a
-table, this forces compactions to use the Java data engine. Compaction in Java is much slower and more expensive, so
-this is not recommended.
+properties, or in a field on a query. This is currently only possible with the Java data engine.
 
 Note that you can choose which data engine should be used in the table property
 [`sleeper.table.data.engine`](properties/table/data_definition.md).
 
-Aggregation and filtering configuration should be preferred in all cases to custom iterators, as it is much more
-efficient to apply this in DataFusion than in Java. We intend to keep the configuration as simple as possible for
-aggregation and filtering, rather than introducing many operations and options. We are planning alternatives to apply
-other types of processing in DataFusion.
+Aggregation and filtering configuration should be preferred in all cases over custom iterators, as it is much more
+efficient to apply this in DataFusion than in Java. If you set a custom iterator against a table, this forces
+use of the Java data engine for compaction. Compaction in Java is much slower and more expensive, so this is not
+recommended.
+
+We intend to keep the configuration as simple as possible for aggregation and filtering, rather than introducing many
+operations and options. We are planning alternatives to apply other types of processing in DataFusion.
 
 ## Types of processing
 
