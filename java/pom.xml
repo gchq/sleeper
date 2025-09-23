@@ -1947,6 +1947,9 @@
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${dependency-check.plugin.version}</version>
                     <configuration>
+                        <!-- Temporarily disabled use of OSS Index as it now requires authentication. -->
+                        <!-- See issue https://github.com/gchq/sleeper/issues/5707 -->
+                        <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
                         <failBuildOnAnyVulnerability>true</failBuildOnAnyVulnerability>
                         <suppressionFile>../code-style/dependency-check-suppressions.xml</suppressionFile>
                     </configuration>

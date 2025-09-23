@@ -19,6 +19,7 @@ package sleeper.systemtest.suite.fixtures;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
@@ -70,6 +71,7 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_ROW_BATCH_TYPE;
@@ -108,6 +110,8 @@ public class SystemTestInstance {
             .useSystemTestIngestSourceBucket(false)
             .build();
 
+    // These instance types are set to give EMR more options when creating a cluster, and avoid problems due to
+    // insufficient resource availability. This is not used during performance tests.
     private static final String MAIN_EMR_MASTER_TYPES = "m7i.xlarge,m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m7i.4xlarge,m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
 
@@ -176,6 +180,7 @@ public class SystemTestInstance {
         properties.setEnumList(OPTIONAL_STACKS,
                 // Enable GC to reduce the number of files needing deletion during teardown
                 List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
+        properties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_EC2_TYPE, "t3.xlarge");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
@@ -192,6 +197,7 @@ public class SystemTestInstance {
         properties.setEnumList(OPTIONAL_STACKS,
                 // Enable GC to reduce the number of files needing deletion during teardown
                 List.of(OptionalStack.CompactionStack, OptionalStack.GarbageCollectorStack));
+        properties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.DATAFUSION);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_EC2_TYPE, "t4g.xlarge");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "ARM64");
