@@ -73,10 +73,7 @@ public class TransactionLogHead<T> {
     private final ThreadSleep retryWaiter;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
-    private final Duration timeBetweenSnapshotChecks;
-    private final Duration timeBetweenTransactionChecks;
     private final Supplier<Instant> stateUpdateClock;
-    private final long minTransactionsAheadToLoadSnapshot;
     private T state;
     private long lastTransactionNumber;
     private Instant nextSnapshotCheckTime;
@@ -92,10 +89,7 @@ public class TransactionLogHead<T> {
         retryWaiter = builder.retryWaiter;
         transactionType = builder.transactionType;
         snapshotLoader = builder.snapshotLoader;
-        timeBetweenSnapshotChecks = Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS));
-        timeBetweenTransactionChecks = Duration.ofMillis(tableProperties.getLong(TIME_BETWEEN_TRANSACTION_CHECKS_MS));
         stateUpdateClock = builder.stateUpdateClock;
-        minTransactionsAheadToLoadSnapshot = tableProperties.getLong(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT);
         state = builder.state;
         lastTransactionNumber = builder.lastTransactionNumber;
     }
@@ -238,7 +232,7 @@ public class TransactionLogHead<T> {
         Optional<TransactionLogSnapshot> snapshotOpt = range.withMinTransactionNumber(minTransactionNumberToLoadSnapshot)
                 .flatMap(snapshotRange -> snapshotLoader.loadLatestSnapshotInRange(snapshotRange));
         Instant finishTime = stateUpdateClock.get();
-        nextSnapshotCheckTime = finishTime.plus(timeBetweenSnapshotChecks);
+        nextSnapshotCheckTime = finishTime.plus(Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)));
         snapshotOpt.ifPresentOrElse(snapshot -> {
             state = snapshot.getState();
             lastTransactionNumber = snapshot.getTransactionNumber();
@@ -257,7 +251,7 @@ public class TransactionLogHead<T> {
         if (lastTransactionNumber < 1) { // Always load snapshot when no transactions have been read yet
             return 1;
         } else {
-            return lastTransactionNumber + minTransactionsAheadToLoadSnapshot;
+            return lastTransactionNumber + tableProperties.getLong(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT);
         }
     }
 
@@ -269,7 +263,7 @@ public class TransactionLogHead<T> {
                 .ifPresent(readRange -> logStore.readTransactions(readRange).forEach(this::applyTransaction));
         long readTransactions = lastTransactionNumber - transactionNumberBeforeLogLoad;
         Instant finishTime = stateUpdateClock.get();
-        nextTransactionCheckTime = finishTime.plus(timeBetweenTransactionChecks);
+        nextTransactionCheckTime = finishTime.plus(Duration.ofMillis(tableProperties.getLong(TIME_BETWEEN_TRANSACTION_CHECKS_MS)));
         if (readTransactions > 0) {
             LOGGER.info("Updated {} for table {}, read {} transactions from log in {}, last transaction number is {}",
                     state.getClass().getSimpleName(), sleeperTable,
