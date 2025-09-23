@@ -18,7 +18,6 @@ package sleeper.core.statestore.testutils;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
-import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -96,9 +95,8 @@ public class InMemoryTransactionLogs {
                 .partitionsLogStore(partitionsLogStore)
                 .partitionsSnapshotLoader(partitionsSnapshots)
                 .transactionBodyStore(transactionBodyStore)
-                .retryBackoff(new ExponentialBackoffWithJitter(
-                        TransactionLogStateStore.retryWaitRange(tableProperties),
-                        constantJitterFraction(0.5), retryWaiter));
+                .randomJitterFraction(constantJitterFraction(0.5))
+                .retryWaiter(retryWaiter);
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,12 +32,14 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.Set
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshots;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBase;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
+import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
+import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
@@ -48,6 +51,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private final InMemoryTransactionLogSnapshots fileSnapshots = transactionLogs.getFilesSnapshots();
     private final InMemoryTransactionLogSnapshots partitionSnapshots = transactionLogs.getPartitionsSnapshots();
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 1);
+    }
 
     @Nested
     @DisplayName("Get snapshot on first load")
@@ -90,9 +98,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldNotLoadFilesSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
             // Given
-            StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2)
-                    .timeBetweenSnapshotChecks(Duration.ZERO));
+            tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+            tableProperties.setNumber(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS, 0);
+            StateStore stateStore = stateStore();
             FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
             FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
             update(stateStore).addFile(logFile);
@@ -109,9 +117,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldLoadFilesSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
             // Given
-            StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2)
-                    .timeBetweenSnapshotChecks(Duration.ZERO));
+            tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+            tableProperties.setNumber(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS, 0);
+            StateStore stateStore = stateStore();
             FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
             FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
             update(stateStore).addFile(logFile);
@@ -128,9 +136,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldNotLoadPartitionsSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
             // Given
-            StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2)
-                    .timeBetweenSnapshotChecks(Duration.ZERO));
+            tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+            tableProperties.setNumber(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS, 0);
+            StateStore stateStore = stateStore();
             List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
             List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
             update(stateStore).initialise(logPartitions);
@@ -147,9 +155,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldLoadPartitionsSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
             // Given
-            StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2)
-                    .timeBetweenSnapshotChecks(Duration.ZERO));
+            tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+            tableProperties.setNumber(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS, 0);
+            StateStore stateStore = stateStore();
             List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
             List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
             update(stateStore).initialise(logPartitions);
@@ -166,8 +174,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldIgnoreMinTransactionsAheadOnFirstQuery() throws Exception {
             // Given
+            tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 5);
             FileReference file = fileFactory().rootFile(123);
-            StateStore stateStore = stateStore(builder -> builder.minTransactionsAheadToLoadSnapshot(5));
+            StateStore stateStore = stateStore();
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(1, store -> {
@@ -186,8 +195,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldNotCheckForFilesTransactionWhenLessThanConfiguredTimeHasPassed() throws Exception {
             // Given
+            tableProperties.setNumber(TIME_BETWEEN_TRANSACTION_CHECKS_MS, 60000);
             StateStore stateStore = stateStore(builder -> builder
-                    .timeBetweenTransactionChecks(Duration.ofMinutes(1))
                     .filesStateUpdateClock(List.of(
                             Instant.parse("2024-05-17T15:15:00Z"), // Check time adding first file
                             Instant.parse("2024-05-17T15:15:01Z"), // Start reading transactions adding first file
@@ -208,8 +217,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldCheckForFilesTransactionWhenConfiguredTimeHasPassed() throws Exception {
             // Given
+            tableProperties.setNumber(TIME_BETWEEN_TRANSACTION_CHECKS_MS, 60000);
             StateStore stateStore = stateStore(builder -> builder
-                    .timeBetweenTransactionChecks(Duration.ofMinutes(1))
                     .filesStateUpdateClock(List.of(
                             Instant.parse("2024-05-17T15:15:00Z"), // Check time adding first file
                             Instant.parse("2024-05-17T15:15:01Z"), // Start reading transactions adding first file
@@ -232,8 +241,8 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldCheckForFilesTransactionWhenAnotherUpdateIsMadeBeforeConfiguredTimeHasPassed() throws Exception {
             // Given
+            tableProperties.setNumber(TIME_BETWEEN_TRANSACTION_CHECKS_MS, 60000);
             StateStore stateStore = stateStore(builder -> builder
-                    .timeBetweenTransactionChecks(Duration.ofMinutes(1))
                     .filesStateUpdateClock(List.of(
                             Instant.parse("2024-05-17T15:15:00Z"), // Check time adding file 1
                             Instant.parse("2024-05-17T15:15:01Z"), // Start reading transactions adding file 1
@@ -266,9 +275,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldNotCheckForFilesSnapshotWhenLessThanConfiguredTimeHasPassed() throws Exception {
             // Given
+            tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+            tableProperties.setNumber(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS, 60);
             StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2)
-                    .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
                     .filesStateUpdateClock(List.of(
                             Instant.parse("2024-05-17T15:15:00Z"), // Check time adding first file
                             Instant.parse("2024-05-17T15:15:01Z"), // Start reading transactions adding first file
@@ -293,9 +302,9 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         @Test
         void shouldCheckForFilesSnapshotWhenConfiguredTimeHasPassed() throws Exception {
             // Given
+            tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+            tableProperties.setNumber(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS, 60);
             StateStore stateStore = stateStore(builder -> builder
-                    .minTransactionsAheadToLoadSnapshot(2)
-                    .timeBetweenSnapshotChecks(Duration.ofMinutes(1))
                     .filesStateUpdateClock(List.of(
                             Instant.parse("2024-05-17T15:15:00Z"), // Check time adding first file
                             Instant.parse("2024-05-17T15:15:01Z"), // Start reading transactions adding first file
@@ -328,8 +337,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     }
 
     private StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = stateStoreBuilder(schema)
-                .minTransactionsAheadToLoadSnapshot(1);
+        TransactionLogStateStore.Builder builder = stateStoreBuilder(schema);
         config.accept(builder);
         return stateStore(builder);
     }

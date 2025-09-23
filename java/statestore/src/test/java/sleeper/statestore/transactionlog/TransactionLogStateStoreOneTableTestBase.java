@@ -22,10 +22,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver;
-
-import java.util.function.Consumer;
 
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -68,10 +65,8 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
-    protected StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = stateStoreBuilder(tableProperties);
-        config.accept(builder);
-        return stateStore(builder);
+    protected StateStore stateStore() {
+        return stateStore(stateStoreBuilder(tableProperties));
     }
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(

@@ -18,6 +18,7 @@ package sleeper.core.statestore.transactionlog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
@@ -34,12 +35,20 @@ import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.table.TableProperty.MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
+import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
+import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 
 /**
  * Tracks some state derived from a transaction log, at a position in the log. This can perform an update to the state
@@ -315,6 +324,18 @@ public class TransactionLogHead<T> {
     }
 
     /**
+     * Reads the configured wait range for retrying transactions. To be used with {@link ExponentialBackoffWithJitter}.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the wait range
+     */
+    public static WaitRange retryWaitRange(TableProperties tableProperties) {
+        return WaitRange.firstAndMaxWaitCeilingSecs(
+                tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
+                tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0);
+    }
+
+    /**
      * Builder to initialise the head to read from a transaction log and snapshots.
      *
      * @param <T> the type of the state derived from the log
@@ -336,6 +357,21 @@ public class TransactionLogHead<T> {
         private long minTransactionsAheadToLoadSnapshot = 1;
 
         private Builder() {
+        }
+
+        /**
+         * Sets the Sleeper table the state store is for, and configures the state store from the table properties.
+         *
+         * @param  tableProperties the table properties
+         * @return                 the builder
+         */
+        public Builder<T> tableProperties(TableProperties tableProperties) {
+            return sleeperTable(tableProperties.getStatus())
+                    .timeBetweenSnapshotChecks(Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)))
+                    .timeBetweenTransactionChecks(Duration.ofMillis(tableProperties.getLong(TIME_BETWEEN_TRANSACTION_CHECKS_MS)))
+                    .minTransactionsAheadToLoadSnapshot(tableProperties.getLong(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT))
+                    .maxAddTransactionAttempts(tableProperties.getInt(ADD_TRANSACTION_MAX_ATTEMPTS))
+                    .retryBackoff(new ExponentialBackoffWithJitter(retryWaitRange(tableProperties)));
         }
 
         /**
