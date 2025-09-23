@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class IngestBatcherTest extends IngestBatcherTestBase {
 
     @Test
-    void shouldNotCreateJobWhenTableIsDeleted() {
+    void shouldDeleteFileWhenTableWasDeleted() {
         // Given
         addFileToStore(ingestRequest()
                 .tableId("deleted-table")
@@ -38,23 +38,25 @@ public class IngestBatcherTest extends IngestBatcherTestBase {
 
         // Then
         assertThat(queues.getMessagesByQueueUrl()).isEmpty();
+        assertThat(store.getAllFilesNewestFirst()).isEmpty();
     }
 
     @Test
     void shouldCreateJobsWhenOneTableWasDeleted() {
         // Given
-        addFileToStore(ingestRequest()
+        IngestBatcherTrackedFile file1 = ingestRequest()
                 .tableId("table-1")
                 .file("file-1")
-                .build());
-        addFileToStore(ingestRequest()
+                .build();
+        IngestBatcherTrackedFile file2 = ingestRequest()
                 .tableId("table-2-deleted")
                 .file("file-2-ignore")
-                .build());
-        addFileToStore(ingestRequest()
+                .build();
+        IngestBatcherTrackedFile file3 = ingestRequest()
                 .tableId("table-3")
                 .file("file-3")
-                .build());
+                .build();
+        addFilesToStore(file1, file2, file3);
         List<TableProperties> tables = List.of(
                 createTableProperties("table-1"),
                 createTableProperties("table-3"));
@@ -74,6 +76,9 @@ public class IngestBatcherTest extends IngestBatcherTestBase {
                         .id("job-2")
                         .files(List.of("file-3"))
                         .build()));
+        assertThat(store.getAllFilesNewestFirst()).containsExactly(
+                file3.toBuilder().jobId("job-2").build(),
+                file1.toBuilder().jobId("job-1").build());
     }
 
 }

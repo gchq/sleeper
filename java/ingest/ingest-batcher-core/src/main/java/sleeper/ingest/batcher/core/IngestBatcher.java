@@ -88,7 +88,8 @@ public class IngestBatcher {
             TableProperties properties = tablePropertiesProvider.getById(tableId);
             batchTableFiles(properties, inputFiles, time);
         } catch (TableNotFoundException e) {
-            LOGGER.warn("Ignoring {} pending files for non-existing table with ID \"{}\"", inputFiles.size(), tableId);
+            LOGGER.warn("Deleting {} pending files for non-existing table with ID \"{}\"", inputFiles.size(), tableId);
+            store.deleteFiles(inputFiles);
         }
     }
 
