@@ -22,7 +22,9 @@ use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
     ColRange, CommonConfigBuilder, OutputType, PartitionBound, SleeperParquetOptions,
-    SleeperRegion, run_compaction,
+    SleeperRegion,
+    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
+    run_compaction,
 };
 use std::{collections::HashMap, io::Write};
 use url::Url;

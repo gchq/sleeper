@@ -22,7 +22,9 @@ use futures::StreamExt;
 use human_panic::setup_panic;
 use sleeper_core::{
     ColRange, CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,
-    PartitionBound, SleeperRegion, run_query,
+    PartitionBound, SleeperRegion,
+    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
+    run_query,
 };
 use std::{collections::HashMap, io::Write};
 use url::Url;
