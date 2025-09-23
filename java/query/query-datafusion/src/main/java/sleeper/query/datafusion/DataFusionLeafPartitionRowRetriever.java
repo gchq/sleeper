@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.Row;
 import sleeper.core.rowbatch.arrow.RowIteratorFromArrowReader;
 import sleeper.core.schema.Schema;
@@ -144,15 +143,13 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.row_key_cols.populate(dataReadSchema.getRowKeyFieldNames().toArray(String[]::new), false);
         common.row_key_schema.populate(FFICommonConfig.getKeyTypes(dataReadSchema.getRowKeyTypes()), false);
         common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
-        // Is there an aggregation/filtering iterator set?
-        if (DataEngine.AGGREGATION_ITERATOR_NAME.equals(query.getQueryTimeIteratorClassName())) {
-            common.iterator_config.set(query.getQueryTimeIteratorConfig());
-        }
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, dataReadSchema, query.getPartitionRegion());
         common.setRegion(partitionRegion);
         common.write_sketch_file.set(false);
-        common.aggregation_config.set(query.getQueryTimeAggregations() == null ? "" : query.getQueryTimeAggregations());
-        common.filtering_config.set(query.getQueryTimeFilters() == null ? "" : query.getQueryTimeFilters());
+        // TODO pass through configuration & test
+        common.iterator_config.set("");
+        common.aggregation_config.set("");
+        common.filtering_config.set("");
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
