@@ -151,14 +151,4 @@ public class JavaCompactionRunner implements CompactionRunner {
                 .getIterator(config, schema)
                 .applyTransform(mergingIterator);
     }
-
-    @Override
-    public String implementationLanguage() {
-        return "Java";
-    }
-
-    @Override
-    public boolean isHardwareAccelerated() {
-        return false;
-    }
 }
