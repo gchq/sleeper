@@ -69,7 +69,8 @@ public class TransactionLogHead<T> {
     private final TransactionLogStore logStore;
     private final TransactionBodyStore transactionBodyStore;
     private final boolean updateLogBeforeAddTransaction;
-    private final ExponentialBackoffWithJitter retryBackoff;
+    private final DoubleSupplier randomJitterFraction;
+    private final ThreadSleep retryWaiter;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
     private final Duration timeBetweenSnapshotChecks;
@@ -87,10 +88,8 @@ public class TransactionLogHead<T> {
         logStore = builder.logStore;
         transactionBodyStore = builder.transactionBodyStore;
         updateLogBeforeAddTransaction = builder.updateLogBeforeAddTransaction;
-        retryBackoff = new ExponentialBackoffWithJitter(
-                retryWaitRange(tableProperties),
-                builder.randomJitterFraction,
-                builder.retryWaiter);
+        randomJitterFraction = builder.randomJitterFraction;
+        retryWaiter = builder.retryWaiter;
         transactionType = builder.transactionType;
         snapshotLoader = builder.snapshotLoader;
         timeBetweenSnapshotChecks = Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS));
@@ -124,8 +123,9 @@ public class TransactionLogHead<T> {
         request = request.storeTransactionBodyIfTooBig(sleeperTable, transactionBodyStore);
         Exception failure = new IllegalArgumentException("No attempts made");
         int maxAddTransactionAttempts = tableProperties.getInt(ADD_TRANSACTION_MAX_ATTEMPTS);
+        ExponentialBackoffWithJitter retryBackoff = readRetryBackoff();
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
-            prepareAddTransactionAttempt(attempt, request.getTransaction());
+            prepareAddTransactionAttempt(attempt, retryBackoff, request.getTransaction());
             try {
                 attemptAddTransaction(updateTime, request);
                 LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
@@ -143,13 +143,13 @@ public class TransactionLogHead<T> {
         throw new StateStoreException("Failed adding transaction", failure);
     }
 
-    private void prepareAddTransactionAttempt(int attempt, StateStoreTransaction<T> transaction) throws StateStoreException {
+    private void prepareAddTransactionAttempt(int attempt, ExponentialBackoffWithJitter retryBackoff, StateStoreTransaction<T> transaction) throws StateStoreException {
         if (updateLogBeforeAddTransaction) {
-            waitBeforeAttempt(attempt);
+            waitBeforeAttempt(attempt, retryBackoff);
             forceUpdate();
             validate(transaction);
         } else if (attempt > 1) {
-            waitBeforeAttempt(attempt - 1);
+            waitBeforeAttempt(attempt - 1, retryBackoff);
             forceUpdate();
             validate(transaction);
         } else {
@@ -169,7 +169,7 @@ public class TransactionLogHead<T> {
         LOGGER.debug("Validated transaction in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
 
-    private void waitBeforeAttempt(int attempt) throws StateStoreException {
+    private static void waitBeforeAttempt(int attempt, ExponentialBackoffWithJitter retryBackoff) throws StateStoreException {
         try {
             retryBackoff.waitBeforeAttempt(attempt);
         } catch (InterruptedException e) {
@@ -329,16 +329,12 @@ public class TransactionLogHead<T> {
         lastTransactionNumber = 0;
     }
 
-    /**
-     * Reads the configured wait range for retrying transactions. To be used with {@link ExponentialBackoffWithJitter}.
-     *
-     * @param  tableProperties the table properties
-     * @return                 the wait range
-     */
-    public static WaitRange retryWaitRange(TableProperties tableProperties) {
-        return WaitRange.firstAndMaxWaitCeilingSecs(
+    private ExponentialBackoffWithJitter readRetryBackoff() {
+        WaitRange waitRange = WaitRange.firstAndMaxWaitCeilingSecs(
                 tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
                 tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0);
+        return new ExponentialBackoffWithJitter(
+                waitRange, randomJitterFraction, retryWaiter);
     }
 
     /**
