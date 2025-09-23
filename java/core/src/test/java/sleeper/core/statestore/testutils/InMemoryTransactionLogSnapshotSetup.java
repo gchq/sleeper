@@ -101,7 +101,7 @@ public class InMemoryTransactionLogSnapshotSetup {
     public TransactionLogSnapshot createFilesSnapshot(long transactionNumber) throws StateStoreException {
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.filesInitialState();
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                snapshot, filesLog, transactionBodyStore, FileReferenceTransaction.class, tableProperties.getStatus())
+                snapshot, filesLog, transactionBodyStore, FileReferenceTransaction.class, tableProperties)
                 .orElse(snapshot);
         return new TransactionLogSnapshot((StateStoreFiles) snapshot.getState(), transactionNumber);
     }
@@ -117,7 +117,7 @@ public class InMemoryTransactionLogSnapshotSetup {
     public TransactionLogSnapshot createPartitionsSnapshot(long transactionNumber) throws StateStoreException {
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.partitionsInitialState();
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                snapshot, partitionsLog, transactionBodyStore, PartitionTransaction.class, tableProperties.getStatus())
+                snapshot, partitionsLog, transactionBodyStore, PartitionTransaction.class, tableProperties)
                 .orElse(snapshot);
         return new TransactionLogSnapshot((StateStorePartitions) snapshot.getState(), transactionNumber);
     }

@@ -18,11 +18,11 @@ package sleeper.core.statestore.transactionlog.snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogHead;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
-import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
 
@@ -47,7 +47,7 @@ public class TransactionLogSnapshotCreator {
      * @param  logStore             the transaction log to read from
      * @param  transactionBodyStore the store to read the body of large transactions
      * @param  transactionType      the type of transactions to read from the log
-     * @param  tableStatus          the Sleeper table the log is for, to be used in logging
+     * @param  tableProperties      the configuration of the Sleeper table the log is for
      * @return                      the new snapshot, if there were updates since the last snapshot
      */
     public static <T> Optional<TransactionLogSnapshot> createSnapshotIfChanged(
@@ -55,9 +55,9 @@ public class TransactionLogSnapshotCreator {
             TransactionLogStore logStore,
             TransactionBodyStore transactionBodyStore,
             Class<? extends StateStoreTransaction<T>> transactionType,
-            TableStatus tableStatus) {
+            TableProperties tableProperties) {
         TransactionLogSnapshot newSnapshot = updateState(
-                lastSnapshot, transactionType, logStore, transactionBodyStore, tableStatus);
+                lastSnapshot, transactionType, logStore, transactionBodyStore, tableProperties);
         if (lastSnapshot.getTransactionNumber() >= newSnapshot.getTransactionNumber()) {
             LOGGER.info("No new {}s found after transaction number {}, skipping snapshot creation.",
                     transactionType.getSimpleName(),
@@ -76,7 +76,7 @@ public class TransactionLogSnapshotCreator {
             Class<? extends StateStoreTransaction<T>> transactionType,
             TransactionLogStore logStore,
             TransactionBodyStore transactionBodyStore,
-            TableStatus table) {
+            TableProperties tableProperties) {
         T state = lastSnapshot.getState();
         TransactionLogHead<T> head = TransactionLogHead.builder()
                 .transactionType(transactionType)
@@ -84,7 +84,7 @@ public class TransactionLogSnapshotCreator {
                 .transactionBodyStore(transactionBodyStore)
                 .lastTransactionNumber(lastSnapshot.getTransactionNumber())
                 .state(state)
-                .sleeperTable(table)
+                .tableProperties(tableProperties)
                 .build();
         head.update();
         return new TransactionLogSnapshot(state, head.getLastTransactionNumber());

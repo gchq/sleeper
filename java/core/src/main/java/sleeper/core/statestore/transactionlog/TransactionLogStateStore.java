@@ -54,10 +54,8 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                 .tableProperties(builder.tableProperties)
                 .transactionBodyStore(builder.transactionBodyStore)
                 .updateLogBeforeAddTransaction(builder.updateLogBeforeAddTransaction)
-                .retryBackoff(new ExponentialBackoffWithJitter(
-                        TransactionLogHead.retryWaitRange(builder.tableProperties),
-                        builder.randomJitterFraction,
-                        builder.retryWaiter)));
+                .randomJitterFraction(builder.randomJitterFraction)
+                .retryWaiter(builder.retryWaiter));
     }
 
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
