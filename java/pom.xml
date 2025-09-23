@@ -130,7 +130,7 @@
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.18</logback.version>
-        <aws-java-sdk-v2.version>2.33.13</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.34.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -183,7 +183,7 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
-        <google.errorprone.version>2.41.0</google.errorprone.version>
+        <google.errorprone.version>2.42.0</google.errorprone.version>
         <cdk.version>2.215.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
@@ -222,7 +222,7 @@
         <!-- Testing -->
         <junit.version>5.13.4</junit.version>
         <junit.platform.version>1.13.4</junit.platform.version>
-        <mockito.version>5.19.0</mockito.version>
+        <mockito.version>5.20.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <wiremock.version>3.13.1</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
@@ -253,7 +253,7 @@
         <shade.plugin.version>3.6.1</shade.plugin.version>
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
         <jar.plugin.version>3.4.2</jar.plugin.version>
-        <compiler.plugin.version>3.14.0</compiler.plugin.version>
+        <compiler.plugin.version>3.14.1</compiler.plugin.version>
         <enforcer.plugin.version>3.6.1</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
         <spotbugs.version>4.9.6</spotbugs.version>
@@ -1947,6 +1947,9 @@
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${dependency-check.plugin.version}</version>
                     <configuration>
+                        <!-- Temporarily disabled use of OSS Index as it now requires authentication. -->
+                        <!-- See issue https://github.com/gchq/sleeper/issues/5707 -->
+                        <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
                         <failBuildOnAnyVulnerability>true</failBuildOnAnyVulnerability>
                         <suppressionFile>../code-style/dependency-check-suppressions.xml</suppressionFile>
                     </configuration>

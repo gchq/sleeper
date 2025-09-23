@@ -39,7 +39,6 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFISleeperRegion;
-import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
@@ -66,18 +65,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private final DataFusionAwsConfig awsConfig;
     private final Configuration hadoopConf;
 
-    private static final DataFusionFunctions NATIVE_COMPACTION;
-
-    static {
-        // Obtain native library. This throws an exception if native library can't be
-        // loaded and linked
-        try {
-            NATIVE_COMPACTION = FFIBridge.createForeignInterface(DataFusionFunctions.class);
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
     public DataFusionCompactionRunner(Configuration hadoopConf) {
         this(DataFusionAwsConfig.getDefault(), hadoopConf);
     }
@@ -89,7 +76,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionFunctions.INSTANCE);
 
         DataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
@@ -232,8 +219,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction
-        try (FFIContext context = new FFIContext(NATIVE_COMPACTION)) {
-            int result = NATIVE_COMPACTION.compact(context, compactionParams, compactionData);
+        try (FFIContext context = new FFIContext(DataFusionFunctions.INSTANCE)) {
+            int result = DataFusionFunctions.INSTANCE.compact(context, compactionParams, compactionData);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion compaction failed, return code: {}", result);
@@ -248,10 +235,5 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
-    }
-
-    @Override
-    public String implementationLanguage() {
-        return "Rust";
     }
 }

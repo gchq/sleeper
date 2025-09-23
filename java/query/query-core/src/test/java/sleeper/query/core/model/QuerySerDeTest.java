@@ -82,8 +82,6 @@ public class QuerySerDeTest {
         QueryProcessingConfig processingConfig = QueryProcessingConfig.builder()
                 .queryTimeIteratorClassName("TestIterator")
                 .queryTimeIteratorConfig("config")
-                .queryTimeAggregations("sum(value1), max(value2)")
-                .queryTimeFilters("ageOff(sort)")
                 .requestedValueFields(List.of("integer"))
                 .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, "results-target"))
                 .statusReportDestinations(List.of(Map.of(ResultsOutput.DESTINATION, "status-report-target")))

@@ -24,8 +24,10 @@ import software.amazon.awscdk.services.ec2.BlockDevice;
 import software.amazon.awscdk.services.ec2.BlockDeviceVolume;
 import software.amazon.awscdk.services.ec2.EbsDeviceOptions;
 import software.amazon.awscdk.services.ec2.EbsDeviceVolumeType;
+import software.amazon.awscdk.services.ec2.IMachineImage;
 import software.amazon.awscdk.services.ec2.ISecurityGroup;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.InstanceArchitecture;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
 import software.amazon.awscdk.services.ec2.InstanceType;
@@ -141,13 +143,8 @@ public class CompactionOnEc2Resources {
                 .functionName(customTermination.getFunctionArn())
                 .build();
 
-        SecurityGroup scalingSecurityGroup = SecurityGroup.Builder.create(stack, "CompactionScalingDefaultSG")
-                .vpc(vpc)
-                .allowAllOutbound(true)
-                .build();
-
-        InstanceProfile roleProfile = InstanceProfile.Builder.create(stack, "CompactionScalingInstanceProfile")
-                .build();
+        InstanceType instanceType = lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE));
+        IMachineImage machineImage = lookupEC2AMI(instanceType);
 
         LaunchTemplate scalingLaunchTemplate = LaunchTemplate.Builder.create(stack, "CompactionScalingTemplate")
                 .associatePublicIpAddress(false)
@@ -162,13 +159,13 @@ public class CompactionOnEc2Resources {
                                         .build()))
                         .build()))
                 .userData(customUserData)
-                .instanceType(lookupEC2InstanceType(instanceProperties.get(COMPACTION_EC2_TYPE)))
-                .machineImage(EcsOptimizedImage.amazonLinux2(AmiHardwareType.STANDARD,
-                        EcsOptimizedImageOptions.builder()
-                                .cachedInContext(false)
-                                .build()))
-                .securityGroup(scalingSecurityGroup)
-                .instanceProfile(roleProfile)
+                .instanceType(instanceType)
+                .machineImage(machineImage)
+                .securityGroup(SecurityGroup.Builder.create(stack, "CompactionScalingDefaultSG")
+                        .vpc(vpc)
+                        .allowAllOutbound(true)
+                        .build())
+                .instanceProfile(InstanceProfile.Builder.create(stack, "CompactionScalingInstanceProfile").build())
                 .build();
         addSecurityGroupReferences(stack, instanceProperties)
                 .forEach(scalingLaunchTemplate::addSecurityGroup);
@@ -253,6 +250,25 @@ public class CompactionOnEc2Resources {
         InstanceSize instanceSize = InstanceSize.valueOf(normalisedSize);
 
         return InstanceType.of(instanceClass, instanceSize);
+    }
+
+    private static IMachineImage lookupEC2AMI(InstanceType instanceType) {
+        return EcsOptimizedImage.amazonLinux2023(
+                lookupAmiHardwareType(instanceType.getArchitecture()),
+                EcsOptimizedImageOptions.builder()
+                        .cachedInContext(false)
+                        .build());
+    }
+
+    private static AmiHardwareType lookupAmiHardwareType(InstanceArchitecture architecture) {
+        switch (architecture) {
+            case ARM_64:
+                return AmiHardwareType.ARM;
+            case X86_64:
+                return AmiHardwareType.STANDARD;
+            default:
+                throw new IllegalArgumentException("Unrecognised architecture: " + architecture);
+        }
     }
 
     private static List<ISecurityGroup> addSecurityGroupReferences(Construct scope, InstanceProperties instanceProperties) {

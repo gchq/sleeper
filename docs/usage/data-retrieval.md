@@ -13,6 +13,8 @@ for details of how to execute them from Python.
 These instructions will assume you start in the project root directory and Sleeper has been built
 (see [the developer guide](../developer-guide.md) for how to set that up).
 
+Also see the [data processing document](data-processing.md) for how to apply data processing during queries.
+
 ## Running queries directly using the Java client
 
 The simplest way to retrieve data is to use the `query.sh` script. This simply calls the Java
