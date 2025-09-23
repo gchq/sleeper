@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,6 +22,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -32,6 +33,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.InitialiseWithFilesPresentException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBase;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 
 import java.util.List;
 
@@ -337,7 +339,6 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         }
 
         @Test
-        @Disabled("TODO")
         void shouldFailSplittingAPartitionWhenChildrenAreNotSpecifiedOnParentInOrderOfSplitPoint() {
             // Given
             Schema schema = createSchemaWithKey("key", new LongType());
@@ -354,6 +355,64 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     parent,
                     tree.getPartition("L"),
                     tree.getPartition("R")))
+                    .isInstanceOf(StateStoreException.class);
+        }
+
+        @Test
+        void shouldFailSplittingAPartitionWhenTooFewChildrenAreSet() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0L)
+                    .buildTree();
+            SplitPartitionTransaction transaction = new SplitPartitionTransaction(
+                    tree.getPartition("root"),
+                    List.of(tree.getPartition("L")));
+
+            // When / Then
+            assertThatThrownBy(() -> transaction.synchronousCommit(store))
+                    .isInstanceOf(StateStoreException.class);
+        }
+
+        @Test
+        void shouldFailSplittingAPartitionWhenDimensionIsNotInSchema() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0L)
+                    .buildTree();
+            Partition parent = tree.getPartition("root")
+                    .toBuilder().dimension(1).build();
+
+            // When / Then
+            assertThatThrownBy(() -> update(store).atomicallyUpdatePartitionAndCreateNewOnes(
+                    parent,
+                    tree.getPartition("L"),
+                    tree.getPartition("R")))
+                    .isInstanceOf(StateStoreException.class);
+        }
+
+        @Test
+        void shouldFailSplittingAPartitionWhenChildPartitionsDoNotMeetAtSplitPoint() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            Field keyField = schema.getField("key").orElseThrow();
+            initialiseWithSchema(schema);
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0L)
+                    .buildTree();
+            Partition parent = tree.getPartition("root");
+            Partition left = tree.getPartition("L");
+            Partition right = tree.getPartition("R")
+                    .toBuilder().region(new Region(new Range(keyField, 1L, null))).build();
+
+            // When / Then
+            assertThatThrownBy(() -> update(store).atomicallyUpdatePartitionAndCreateNewOnes(parent, left, right))
                     .isInstanceOf(StateStoreException.class);
         }
 
