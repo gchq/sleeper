@@ -124,7 +124,7 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
 
     private static FFIAwsConfig createAwsConfig() {
         LocalStackContainer container = SleeperLocalStackContainer.INSTANCE;
-        return FFIAwsConfig.overrideEndpoint(DataFusionCompactionRunner.getNativeRuntime(),
+        return FFIAwsConfig.overrideEndpoint(jnr.ffi.Runtime.getRuntime(DataFusionCompactionFunctions.INSTANCE),
                 container.getEndpoint().toString());
     }
 

@@ -70,7 +70,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionFunctions.INSTANCE);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionCompactionFunctions.INSTANCE);
 
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
@@ -156,7 +156,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
-        try (FFIContext context = new FFIContext(DataFusionFunctions.INSTANCE)) {
+        try (FFIContext context = new FFIContext(DataFusionCompactionFunctions.INSTANCE)) {
             int result = DataFusionCompactionFunctions.INSTANCE.compact(context, compactionParams, compactionData);
             // Check result
             if (result != 0) {
