@@ -501,11 +501,11 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // Given
             IngestBatcherTrackedFile request1 = fileRequest()
                     .file("test-bucket/file.parquet")
-                    .tableId("table1")
+                    .tableId(tableId1)
                     .build();
             IngestBatcherTrackedFile request2 = fileRequest()
                     .file("test-bucket/file.parquet")
-                    .tableId("table2")
+                    .tableId(tableId2)
                     .build();
             store.addFile(request1);
             store.addFile(request2);
