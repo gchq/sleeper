@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -30,6 +31,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -70,19 +72,24 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorIT {
     private static ExecutorService executorService;
 
     @TempDir
-    public Path folder;
+    public Path tempDir;
+
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @BeforeAll
     public static void initExecutorService() {
@@ -94,13 +101,19 @@ public class QueryExecutorIT {
         executorService.shutdown();
     }
 
+    @BeforeEach
+    void setUp() throws IOException {
+        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, createTempDirectory(tempDir, null).toString());
+        instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
+    }
+
     @Test
     public void shouldReturnNothingWhenThereAreNoFiles() throws Exception {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
@@ -136,8 +149,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
@@ -206,8 +218,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRows().iterator());
@@ -268,8 +279,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
@@ -332,8 +342,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
@@ -458,8 +467,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
@@ -567,8 +575,7 @@ public class QueryExecutorIT {
                 .rowKeyFields(field1, field2)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
@@ -693,8 +700,7 @@ public class QueryExecutorIT {
                 .rowKeyFields(field1, field2)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         //  Partitions:
         //  - Root partition covers the whole space
         //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
@@ -993,8 +999,7 @@ public class QueryExecutorIT {
                 .sortKeyFields(new Field("value1", new LongType()))
                 .valueFields(new Field("value2", new LongType()))
                 .build();
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
@@ -1047,8 +1052,7 @@ public class QueryExecutorIT {
                 .rowKeyFields(field)
                 .valueFields(new Field("timestamp", new LongType()))
                 .build();
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
@@ -1104,8 +1108,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
@@ -1143,8 +1146,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getRows().iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
@@ -1174,8 +1176,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setSchema(schema);
         StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getRowsForQueryTimeIteratorTest("secret").iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
@@ -1238,7 +1239,7 @@ public class QueryExecutorIT {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
-                .localDir(createTempDirectory(folder, null).toString())
+                .localDir(createTempDirectory(tempDir, null).toString())
                 .instanceProperties(instanceProperties)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
@@ -1343,13 +1344,5 @@ public class QueryExecutorIT {
         row.put("value1", value1);
         row.put("value2", value2);
         return row;
-    }
-
-    private InstanceProperties createInstanceProperties() throws IOException {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
-        return instanceProperties;
     }
 }
