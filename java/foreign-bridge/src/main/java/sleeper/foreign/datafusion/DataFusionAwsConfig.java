@@ -15,6 +15,9 @@
  */
 package sleeper.foreign.datafusion;
 
+/**
+ * The AWS configuration to be supplied to DataFusion.
+ */
 public class DataFusionAwsConfig {
 
     private final String region;
