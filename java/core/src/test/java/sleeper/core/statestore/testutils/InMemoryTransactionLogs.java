@@ -16,7 +16,6 @@
 package sleeper.core.statestore.testutils;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.table.TableStatus;
@@ -87,13 +86,12 @@ public class InMemoryTransactionLogs {
     /**
      * Creates a builder for a state store backed by the transaction logs held in this class.
      *
-     * @param  sleeperTable the status of the table the state store is for
-     * @param  schema       the schema of the table the state store is for
-     * @return              the builder
+     * @param  tableProperties the configuration of the table the state store is for
+     * @return                 the builder
      */
-    public TransactionLogStateStore.Builder stateStoreBuilder(TableStatus sleeperTable, Schema schema) {
+    public TransactionLogStateStore.Builder stateStoreBuilder(TableProperties tableProperties) {
         return TransactionLogStateStore.builder()
-                .sleeperTable(sleeperTable)
+                .sleeperTable(tableProperties.getStatus())
                 .filesLogStore(filesLogStore)
                 .filesSnapshotLoader(filesSnapshots)
                 .partitionsLogStore(partitionsLogStore)

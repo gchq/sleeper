@@ -81,7 +81,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
 
     protected TransactionLogStateStore.Builder stateStoreBuilder(Schema schema) {
         tableProperties.setSchema(schema);
-        return transactionLogs.stateStoreBuilder(tableProperties.getStatus(), tableProperties.getSchema());
+        return transactionLogs.stateStoreBuilder(tableProperties);
     }
 
     protected void createSnapshots() {
