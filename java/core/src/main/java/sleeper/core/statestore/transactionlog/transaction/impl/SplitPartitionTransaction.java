@@ -23,8 +23,12 @@ import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * Atomically splits a partition to create child partitions. This is done by setting child partitions for a partition
@@ -65,8 +69,9 @@ public class SplitPartitionTransaction implements PartitionTransaction {
             throw new StateStoreException("Parent should not be a leaf partition after split");
         }
 
-        List<String> newIds = newChildren.stream().map(Partition::getId).toList();
-        if (!Objects.equals(parent.getChildPartitionIds(), newIds)) {
+        Set<String> childIdsOnParent = new HashSet<>(parent.getChildPartitionIds());
+        Set<String> newIds = newChildren.stream().map(Partition::getId).collect(toUnmodifiableSet());
+        if (!childIdsOnParent.equals(newIds)) {
             throw new StateStoreException("Child partition IDs on parent do not match new children");
         }
 

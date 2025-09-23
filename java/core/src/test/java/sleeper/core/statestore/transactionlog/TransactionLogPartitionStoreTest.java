@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -248,8 +249,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     tree.getPartition("rightChild"));
 
             // Then
-            assertThat(store.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
+            assertThat(new PartitionTree(store.getAllPartitions())).isEqualTo(tree);
         }
 
         @Test
@@ -317,7 +317,28 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         }
 
         @Test
-        public void shouldFailSplittingAPartitionWithChildrenInNonMatchingOrder() {
+        public void shouldSplitAPartitionWithChildrenInNonMatchingOrder() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0L)
+                    .buildTree();
+
+            // When
+            update(store).atomicallyUpdatePartitionAndCreateNewOnes(
+                    tree.getPartition("root"),
+                    tree.getPartition("R"),
+                    tree.getPartition("L"));
+
+            // When / Then
+            assertThat(new PartitionTree(store.getAllPartitions())).isEqualTo(tree);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldFailSplittingAPartitionWhenChildrenAreNotSpecifiedOnParentInOrderOfSplitPoint() {
             // Given
             Schema schema = createSchemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
