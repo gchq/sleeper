@@ -15,10 +15,12 @@
  */
 package sleeper.query.runner.rowretrieval;
 
+import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
@@ -36,10 +38,18 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     private final ExecutorService executorService;
     /** Hadoop configuration needed to Java based query code. */
     private final Configuration configuration;
+    private final BufferAllocator arrowAllocator;
+    private final FFIContext ffiContext;
 
     public QueryEngineSelector(ExecutorService executorService, Configuration configuration) {
+        this(executorService, configuration, null, null);
+    }
+
+    public QueryEngineSelector(ExecutorService executorService, Configuration configuration, BufferAllocator arrowAllocator, FFIContext ffiContext) {
         this.executorService = Objects.requireNonNull(executorService, "executorService");
         this.configuration = Objects.requireNonNull(configuration, "configuration");
+        this.arrowAllocator = arrowAllocator;
+        this.ffiContext = ffiContext;
     }
 
     @Override
@@ -48,7 +58,10 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
             case DATAFUSION:
-                return DataFusionLeafPartitionRowRetriever.builder().build();
+                return DataFusionLeafPartitionRowRetriever.builder()
+                        .allocator(arrowAllocator)
+                        .context(ffiContext)
+                        .build();
             case DATAFUSION_COMPACTION_ONLY:
             case JAVA:
             default:

@@ -28,6 +28,8 @@ import sleeper.foreign.bridge.ForeignFunctions;
  */
 public interface DataFusionQueryFunctions extends ForeignFunctions {
 
+    DataFusionQueryFunctions INSTANCE = DataFusionQueryFunctionsImpl.create();
+
     /**
      * Invokes a native query. This function returns a stream of Arrow record batches.
      *

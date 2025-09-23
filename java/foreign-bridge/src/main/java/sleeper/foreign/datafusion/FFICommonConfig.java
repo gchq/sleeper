@@ -28,7 +28,6 @@ import sleeper.foreign.bridge.FFIArray;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * The common DataFusion input data that will be populated from the Java side.
@@ -86,12 +85,17 @@ public class FFICommonConfig extends Struct {
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
-        this(runtime, Optional.empty());
+        this(runtime, null);
     }
 
-    public FFICommonConfig(jnr.ffi.Runtime runtime, Optional<FFIAwsConfig> awsConfig) {
+    public FFICommonConfig(jnr.ffi.Runtime runtime, DataFusionAwsConfig awsConfig) {
         super(runtime);
-        this.setAWSCredentials(runtime, awsConfig);
+        if (awsConfig != null) {
+            this.override_aws_config.set(true);
+            this.aws_config.set(awsConfig.toFfi(runtime));
+        } else {
+            this.override_aws_config.set(false);
+        }
         setDefaults();
     }
 
@@ -112,21 +116,6 @@ public class FFICommonConfig extends Struct {
     public void setRegion(FFISleeperRegion newRegion) {
         newRegion.validate();
         this.region.set(newRegion);
-    }
-
-    /**
-     * Configure the AWS credentials.
-     *
-     * @param runtime the JNR runtime
-     * @param config  the optional AWS credentials
-     */
-    public void setAWSCredentials(jnr.ffi.Runtime runtime, Optional<FFIAwsConfig> config) {
-        config.ifPresentOrElse(awsConfig -> {
-            this.override_aws_config.set(true);
-            this.aws_config.set(awsConfig);
-        }, () -> {
-            this.override_aws_config.set(false);
-        });
     }
 
     /**
