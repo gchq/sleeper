@@ -127,6 +127,12 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         return new Builder();
     }
 
+    /**
+     * Reads the configured wait range for retrying transactions. To be used with {@link ExponentialBackoffWithJitter}.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the wait range
+     */
     public static WaitRange retryWaitRange(TableProperties tableProperties) {
         return WaitRange.firstAndMaxWaitCeilingSecs(
                 tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
