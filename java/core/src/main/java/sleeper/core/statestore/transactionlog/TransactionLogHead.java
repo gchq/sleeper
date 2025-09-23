@@ -139,7 +139,9 @@ public class TransactionLogHead<T> {
 
     private void prepareAddTransactionAttempt(int attempt, ExponentialBackoffWithJitter retryBackoff, StateStoreTransaction<T> transaction) throws StateStoreException {
         // Wait before the attempt if necessary (usually because it failed previously due to a conflict)
-        // Update the local state from the log if necessary or configured
+        // Update the local state from the log if:
+        // - There was a conflict with another process, and we need to get the update it applied
+        // - We've configured to always update the local state first (because we expect this to be worth the work)
         // Validate the transaction we want to add against the local state
         if (updateLogBeforeAddTransaction) {
             waitBeforeAttempt(attempt, retryBackoff);
