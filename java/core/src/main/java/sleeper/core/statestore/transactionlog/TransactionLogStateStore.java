@@ -127,6 +127,12 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         return new Builder();
     }
 
+    public static WaitRange retryWaitRange(TableProperties tableProperties) {
+        return WaitRange.firstAndMaxWaitCeilingSecs(
+                tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
+                tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0);
+    }
+
     /**
      * Builder to create a state store backed by a transaction log.
      */
@@ -161,9 +167,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                     .timeBetweenTransactionChecks(Duration.ofMillis(tableProperties.getLong(TIME_BETWEEN_TRANSACTION_CHECKS_MS)))
                     .minTransactionsAheadToLoadSnapshot(tableProperties.getLong(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT))
                     .maxAddTransactionAttempts(tableProperties.getInt(ADD_TRANSACTION_MAX_ATTEMPTS))
-                    .retryBackoff(new ExponentialBackoffWithJitter(WaitRange.firstAndMaxWaitCeilingSecs(
-                            tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
-                            tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0)));
+                    .retryBackoff(new ExponentialBackoffWithJitter(retryWaitRange(tableProperties)));
         }
 
         /**
