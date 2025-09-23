@@ -425,6 +425,23 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
+        void shouldDeleteJobAssignedFile() {
+            // Given
+            IngestBatcherTrackedFile request = fileRequest()
+                    .file("test-bucket/file.parquet")
+                    .build();
+            store.addFile(request);
+            store.assignJobGetAssigned("test-job", List.of(request));
+
+            // When
+            store.deleteFiles(List.of(request.toBuilder().jobId("test-job").build()));
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .isEmpty();
+        }
+
+        @Test
         void shouldDeleteNoFiles() {
             // Given
             IngestBatcherTrackedFile request = fileRequest()
@@ -441,7 +458,22 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
-        void shouldDeleteMultiplePendingFiles() {
+        void shouldIgnoreNonExistentFile() {
+            // Given
+            IngestBatcherTrackedFile request = fileRequest()
+                    .file("test-bucket/file.parquet")
+                    .build();
+
+            // When
+            store.deleteFiles(List.of(request));
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldDeleteMultipleFiles() {
             // Given
             IngestBatcherTrackedFile request1 = fileRequest()
                     .file("test-bucket/file1.parquet")
@@ -462,6 +494,28 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(request3);
+        }
+
+        @Test
+        void shouldDeleteFileOnlyInOneTable() {
+            // Given
+            IngestBatcherTrackedFile request1 = fileRequest()
+                    .file("test-bucket/file.parquet")
+                    .tableId("table1")
+                    .build();
+            IngestBatcherTrackedFile request2 = fileRequest()
+                    .file("test-bucket/file.parquet")
+                    .tableId("table2")
+                    .build();
+            store.addFile(request1);
+            store.addFile(request2);
+
+            // When
+            store.deleteFiles(List.of(request1));
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(request2);
         }
     }
 

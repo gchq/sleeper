@@ -77,6 +77,13 @@ public class DynamoDBIngestRequestFormat {
                 .build();
     }
 
+    public static Map<String, AttributeValue> createKey(IngestBatcherTrackedFile fileIngestRequest) {
+        return new DynamoDBRecordBuilder()
+                .string(JOB_ID, getJobIdOrUnassigned(fileIngestRequest))
+                .string(FILE_PATH, fileIngestRequest.getTableId() + "/" + fileIngestRequest.getFile())
+                .build();
+    }
+
     private static long getExpiryTimeEpochSeconds(TableProperties properties, IngestBatcherTrackedFile fileIngestRequest) {
         int ttlMinutes = properties.getInt(INGEST_BATCHER_TRACKING_TTL_MINUTES);
         return fileIngestRequest.getReceivedTime()

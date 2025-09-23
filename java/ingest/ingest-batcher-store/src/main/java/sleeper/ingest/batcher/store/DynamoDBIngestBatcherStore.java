@@ -55,7 +55,6 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIGNED_TO_JOB;
-import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.createUnassignedKey;
 
 public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestBatcherStore.class);
@@ -183,7 +182,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                             files.stream()
                                     .map(request -> WriteRequest.builder()
                                             .deleteRequest(DeleteRequest.builder()
-                                                    .key(createUnassignedKey(request))
+                                                    .key(DynamoDBIngestRequestFormat.createKey(request))
                                                     .build())
                                             .build())
                                     .collect(Collectors.toList())))
