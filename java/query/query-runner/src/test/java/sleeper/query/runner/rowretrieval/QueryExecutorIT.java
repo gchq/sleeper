@@ -90,6 +90,7 @@ public class QueryExecutorIT {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
 
     @BeforeAll
     public static void initExecutorService() {
@@ -112,16 +113,13 @@ public class QueryExecutorIT {
     @Test
     public void shouldReturnNothingWhenThereAreNoFiles() throws Exception {
         // Given
-        Schema schema = getLongKeySchema();
-        Field field = schema.getRowKeyFields().get(0);
-        tableProperties.setSchema(schema);
-        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
-        queryExecutor.init();
-        RangeFactory rangeFactory = new RangeFactory(schema);
+        tableProperties.setSchema(getLongKeySchema());
+        update(stateStore).initialise(tableProperties);
+        QueryExecutor queryExecutor = initQueryExecutor();
+        RangeFactory rangeFactory = rangeFactory();
 
         // When 1
-        Region region = new Region(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange("key", 1L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -129,7 +127,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -137,7 +135,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(queryWithRegion(region));
 
         // Then 3
@@ -147,22 +145,15 @@ public class QueryExecutorIT {
     @Test
     public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartition() throws Exception {
         // Given
-        Schema schema = getLongKeySchema();
-        Field field = schema.getRowKeyFields().get(0);
-        tableProperties.setSchema(schema);
-        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
-        tableProperties.set(COMPRESSION_CODEC, "snappy");
-        ingestData(instanceProperties, stateStore, tableProperties, getRows().iterator());
-        List<String> files = stateStore.getFileReferences().stream()
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList());
-        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
-        queryExecutor.init();
-        RangeFactory rangeFactory = new RangeFactory(schema);
+        tableProperties.setSchema(getLongKeySchema());
+        update(stateStore).initialise(tableProperties);
+        ingestData(getRows().iterator());
+        List<String> files = filenamesInPartition("root");
+        QueryExecutor queryExecutor = initQueryExecutor();
+        RangeFactory rangeFactory = rangeFactory();
 
         // When 1
-        Region region = new Region(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange("key", 1L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -171,7 +162,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = new Region(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange("key", 0L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -179,7 +170,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = new Region(rangeFactory.createRange(field, -10L, true, 1L, true));
+        region = new Region(rangeFactory.createRange("key", -10L, true, 1L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -188,14 +179,14 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
+        region = new Region(rangeFactory.createRange("key", 10L, true, 100L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
             // Then 4
             assertThat(results).isExhausted();
         }
 
         // When 5
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -208,7 +199,7 @@ public class QueryExecutorIT {
                         .subQueryId("ignored")
                         .regions(List.of(region))
                         .leafPartitionId("root")
-                        .partitionRegion(rootPartition.getRegion())
+                        .partitionRegion(rootPartitionRegion())
                         .files(files)
                         .build());
     }
@@ -216,21 +207,15 @@ public class QueryExecutorIT {
     @Test
     public void shouldReturnCorrectDataWhenMultipleIdenticalRowsInOneFileInOnePartition() throws Exception {
         // Given
-        Schema schema = getLongKeySchema();
-        Field field = schema.getRowKeyFields().get(0);
-        tableProperties.setSchema(schema);
-        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
-        ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRows().iterator());
-        List<String> files = stateStore.getFileReferences().stream()
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList());
-        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
-        queryExecutor.init();
-        RangeFactory rangeFactory = new RangeFactory(schema);
+        tableProperties.setSchema(getLongKeySchema());
+        update(stateStore).initialise(tableProperties);
+        ingestData(getMultipleIdenticalRows().iterator());
+        List<String> files = filenamesInPartition("root");
+        QueryExecutor queryExecutor = initQueryExecutor();
+        RangeFactory rangeFactory = rangeFactory();
 
         // When 1
-        Region region = new Region(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange("key", 1L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -239,7 +224,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = new Region(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange("key", 0L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -247,7 +232,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -256,7 +241,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -269,7 +254,7 @@ public class QueryExecutorIT {
                         .subQueryId("ignored")
                         .regions(List.of(region))
                         .leafPartitionId("root")
-                        .partitionRegion(rootPartition.getRegion())
+                        .partitionRegion(rootPartitionRegion())
                         .files(files)
                         .build());
     }
@@ -277,23 +262,17 @@ public class QueryExecutorIT {
     @Test
     public void shouldReturnCorrectDataWhenIdenticalRowsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = getLongKeySchema();
-        Field field = schema.getRowKeyFields().get(0);
-        tableProperties.setSchema(schema);
-        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
+        tableProperties.setSchema(getLongKeySchema());
+        update(stateStore).initialise(tableProperties);
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, tableProperties, getRows().iterator());
+            ingestData(getRows().iterator());
         }
-        List<String> files = stateStore.getFileReferences().stream()
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList());
-        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
-        queryExecutor.init();
-        RangeFactory rangeFactory = new RangeFactory(schema);
+        List<String> files = filenamesInPartition("root");
+        QueryExecutor queryExecutor = initQueryExecutor();
+        RangeFactory rangeFactory = rangeFactory();
 
         // When 1
-        Region region = new Region(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange("key", 1L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -302,7 +281,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = new Region(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange("key", 0L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -310,7 +289,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -319,7 +298,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -332,7 +311,7 @@ public class QueryExecutorIT {
                         .subQueryId("ignored")
                         .regions(List.of(region))
                         .leafPartitionId("root")
-                        .partitionRegion(rootPartition.getRegion())
+                        .partitionRegion(rootPartitionRegion())
                         .files(files)
                         .build());
     }
@@ -340,23 +319,17 @@ public class QueryExecutorIT {
     @Test
     public void shouldReturnCorrectDataWhenRowsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = getLongKeySchema();
-        Field field = schema.getRowKeyFields().get(0);
-        tableProperties.setSchema(schema);
-        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
+        tableProperties.setSchema(getLongKeySchema());
+        update(stateStore).initialise(tableProperties);
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRows().iterator());
+            ingestData(getMultipleRows().iterator());
         }
-        List<String> files = stateStore.getFileReferences().stream()
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList());
-        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
-        queryExecutor.init();
-        RangeFactory rangeFactory = new RangeFactory(schema);
+        List<String> files = filenamesInPartition("root");
+        QueryExecutor queryExecutor = initQueryExecutor();
+        RangeFactory rangeFactory = rangeFactory();
 
         // When 1
-        Region region = new Region(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange("key", 1L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -365,7 +338,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = new Region(rangeFactory.createExactRange(field, 5L));
+        region = new Region(rangeFactory.createExactRange("key", 5L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -374,7 +347,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = new Region(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange("key", 0L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -382,7 +355,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
@@ -391,7 +364,7 @@ public class QueryExecutorIT {
         }
 
         // When 5
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
@@ -402,7 +375,7 @@ public class QueryExecutorIT {
         }
 
         // When 6
-        region = new Region(rangeFactory.createRange(field, 1L, false, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, false, 10L, false));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 6
@@ -413,7 +386,7 @@ public class QueryExecutorIT {
         }
 
         // When 7
-        region = new Region(rangeFactory.createRange(field, 1L, false, 10L, true));
+        region = new Region(rangeFactory.createRange("key", 1L, false, 10L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 7
@@ -424,7 +397,7 @@ public class QueryExecutorIT {
         }
 
         // When 8
-        region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
+        region = new Region(rangeFactory.createRange("key", -100000L, true, 123456789L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 8
@@ -433,7 +406,7 @@ public class QueryExecutorIT {
         }
 
         // When 9
-        region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
+        region = new Region(rangeFactory.createRange("key", 5L, true, 123456789L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 9
@@ -444,7 +417,7 @@ public class QueryExecutorIT {
         }
 
         // When 10
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -457,7 +430,7 @@ public class QueryExecutorIT {
                         .subQueryId("ignored")
                         .regions(List.of(region))
                         .leafPartitionId("root")
-                        .partitionRegion(rootPartition.getRegion())
+                        .partitionRegion(rootPartitionRegion())
                         .files(files)
                         .build());
     }
@@ -465,34 +438,23 @@ public class QueryExecutorIT {
     @Test
     public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitions() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
-        Schema schema = getLongKeySchema();
-        Field field = schema.getRowKeyFields().get(0);
-        tableProperties.setSchema(schema);
-        PartitionTree tree = new PartitionsBuilder(schema)
+        tableProperties.setSchema(getLongKeySchema());
+        PartitionTree tree = new PartitionsBuilder(tableProperties)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
                 .buildTree();
-        StateStore stateStore = initialiseStateStore(tableProperties, tree.getAllPartitions());
-        Partition leftPartition = tree.getPartition("left");
-        Partition rightPartition = tree.getPartition("right");
+        update(stateStore).initialise(tree);
 
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRows().iterator());
+            ingestData(getMultipleRows().iterator());
         }
-        List<String> filesInLeftPartition = stateStore.getFileReferences().stream()
-                .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList());
-        List<String> filesInRightPartition = stateStore.getFileReferences().stream()
-                .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList());
-        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
-        queryExecutor.init();
-        RangeFactory rangeFactory = new RangeFactory(schema);
+        List<String> filesInLeftPartition = filenamesInPartition("left");
+        List<String> filesInRightPartition = filenamesInPartition("right");
+        QueryExecutor queryExecutor = initQueryExecutor();
+        RangeFactory rangeFactory = rangeFactory();
 
         // When 1
-        Region region = new Region(rangeFactory.createExactRange(field, 1L));
+        Region region = new Region(rangeFactory.createExactRange("key", 1L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 1
@@ -501,7 +463,7 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        region = new Region(rangeFactory.createExactRange(field, 5L));
+        region = new Region(rangeFactory.createExactRange("key", 5L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 2
@@ -510,7 +472,7 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        region = new Region(rangeFactory.createExactRange(field, 0L));
+        region = new Region(rangeFactory.createExactRange("key", 0L));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 3
@@ -518,7 +480,7 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        region = new Region(rangeFactory.createRange(field, -100000L, true, 123456789L, true));
+        region = new Region(rangeFactory.createRange("key", -100000L, true, 123456789L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 4
@@ -527,7 +489,7 @@ public class QueryExecutorIT {
         }
 
         // When 5
-        region = new Region(rangeFactory.createRange(field, 5L, true, 123456789L, true));
+        region = new Region(rangeFactory.createRange("key", 5L, true, 123456789L, true));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
             // Then 5
@@ -538,7 +500,7 @@ public class QueryExecutorIT {
         }
 
         // When 6
-        region = new Region(rangeFactory.createRange(field, 1L, true, 10L, false));
+        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
@@ -551,8 +513,8 @@ public class QueryExecutorIT {
                                 .tableId(tableProperties.get(TABLE_ID))
                                 .subQueryId("ignored")
                                 .regions(List.of(region))
-                                .leafPartitionId(leftPartition.getId())
-                                .partitionRegion(leftPartition.getRegion())
+                                .leafPartitionId("left")
+                                .partitionRegion(tree.getPartition("left").getRegion())
                                 .files(filesInLeftPartition)
                                 .build(),
                         LeafPartitionQuery.builder()
@@ -560,8 +522,8 @@ public class QueryExecutorIT {
                                 .tableId(tableProperties.get(TABLE_ID))
                                 .subQueryId("ignored")
                                 .regions(List.of(region))
-                                .leafPartitionId(rightPartition.getId())
-                                .partitionRegion(rightPartition.getRegion())
+                                .leafPartitionId("right")
+                                .partitionRegion(tree.getPartition("right").getRegion())
                                 .files(filesInRightPartition)
                                 .build());
     }
@@ -569,43 +531,26 @@ public class QueryExecutorIT {
     @Test
     public void shouldReturnCorrectDataWithMultidimRowKey() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
-        Field field1 = new Field("key1", new LongType());
-        Field field2 = new Field("key2", new StringType());
-        Schema schema = Schema.builder()
-                .rowKeyFields(field1, field2)
+        tableProperties.setSchema(Schema.builder()
+                .rowKeyFields(new Field("key1", new LongType()), new Field("key2", new StringType()))
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build();
-        tableProperties.setSchema(schema);
-        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
+                .build());
+        PartitionTree tree = new PartitionsBuilder(tableProperties)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
-                .buildList());
-        Partition leftPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> (long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE)
-                .findFirst()
-                .orElseThrow();
-        Partition rightPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> (long) p.getRegion().getRange("key1").getMin() == 5L)
-                .findFirst()
-                .orElseThrow();
+                .buildTree();
+        update(stateStore).initialise(tree);
         for (int i = 0; i < 10; i++) {
-            ingestData(instanceProperties, stateStore, tableProperties, getMultipleRowsMultidimRowKey().iterator());
+            ingestData(getMultipleRowsMultidimRowKey().iterator());
         }
-        List<String> filesInLeftPartition = stateStore.getFileReferences().stream()
-                .filter(f -> f.getPartitionId().equals(leftPartition.getId()))
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList());
-        List<String> filesInRightPartition = stateStore.getFileReferences().stream()
-                .filter(f -> f.getPartitionId().equals(rightPartition.getId()))
-                .map(FileReference::getFilename)
-                .collect(Collectors.toList());
-        QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
-        queryExecutor.init();
-        RangeFactory rangeFactory = new RangeFactory(schema);
+        List<String> filesInLeftPartition = filenamesInPartition("left");
+        List<String> filesInRightPartition = filenamesInPartition("right");
+        QueryExecutor queryExecutor = initQueryExecutor();
+        RangeFactory rangeFactory = rangeFactory();
 
         // When 1
-        Range range1 = rangeFactory.createExactRange(field1, 1L);
-        Range range2 = rangeFactory.createExactRange(field2, "1");
+        Range range1 = rangeFactory.createExactRange("key1", 1L);
+        Range range2 = rangeFactory.createExactRange("key2", "1");
         Region region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
@@ -615,8 +560,8 @@ public class QueryExecutorIT {
         }
 
         // When 2
-        range1 = rangeFactory.createExactRange(field1, 5L);
-        range2 = rangeFactory.createExactRange(field2, "5");
+        range1 = rangeFactory.createExactRange("key1", 5L);
+        range2 = rangeFactory.createExactRange("key2", "5");
         region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
@@ -626,8 +571,8 @@ public class QueryExecutorIT {
         }
 
         // When 3
-        range1 = rangeFactory.createExactRange(field1, 8L);
-        range2 = rangeFactory.createExactRange(field2, "notthere");
+        range1 = rangeFactory.createExactRange("key1", 8L);
+        range2 = rangeFactory.createExactRange("key2", "notthere");
         region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
@@ -636,8 +581,8 @@ public class QueryExecutorIT {
         }
 
         // When 4
-        range1 = rangeFactory.createRange(field1, -100000L, true, 123456789L, true);
-        range2 = rangeFactory.createRange(field2, "0", true, "99999999999", true);
+        range1 = rangeFactory.createRange("key1", -100000L, true, 123456789L, true);
+        range2 = rangeFactory.createRange("key2", "0", true, "99999999999", true);
         region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
@@ -647,8 +592,8 @@ public class QueryExecutorIT {
         }
 
         // When 5
-        range1 = rangeFactory.createRange(field1, 2L, true, 5L, true);
-        range2 = rangeFactory.createRange(field2, "3", true, "6", true);
+        range1 = rangeFactory.createRange("key1", 2L, true, 5L, true);
+        range2 = rangeFactory.createRange("key2", "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
         try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
 
@@ -661,8 +606,8 @@ public class QueryExecutorIT {
         }
 
         // When 6
-        range1 = rangeFactory.createRange(field1, 2L, true, 500L, true);
-        range2 = rangeFactory.createRange(field2, "3", true, "6", true);
+        range1 = rangeFactory.createRange("key1", 2L, true, 500L, true);
+        range2 = rangeFactory.createRange("key2", "3", true, "6", true);
         region = new Region(Arrays.asList(range1, range2));
         Query query = queryWithRegion(region);
         List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
@@ -676,8 +621,8 @@ public class QueryExecutorIT {
                                 .tableId(tableProperties.get(TABLE_ID))
                                 .subQueryId("ignored")
                                 .regions(List.of(region))
-                                .leafPartitionId(leftPartition.getId())
-                                .partitionRegion(leftPartition.getRegion())
+                                .leafPartitionId("left")
+                                .partitionRegion(tree.getPartition("left").getRegion())
                                 .files(filesInLeftPartition)
                                 .build(),
                         LeafPartitionQuery.builder()
@@ -685,8 +630,8 @@ public class QueryExecutorIT {
                                 .tableId(tableProperties.get(TABLE_ID))
                                 .subQueryId("ignored")
                                 .regions(List.of(region))
-                                .leafPartitionId(rightPartition.getId())
-                                .partitionRegion(rightPartition.getRegion())
+                                .leafPartitionId("right")
+                                .partitionRegion(tree.getPartition("right").getRegion())
                                 .files(filesInRightPartition)
                                 .build());
     }
@@ -1202,6 +1147,10 @@ public class QueryExecutorIT {
         }
     }
 
+    private RangeFactory rangeFactory() {
+        return new RangeFactory(tableProperties.getSchema());
+    }
+
     private StateStore initialiseStateStore(TableProperties tableProperties, List<Partition> partitions) {
         return InMemoryTransactionLogStateStore.createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
     }
@@ -1210,6 +1159,14 @@ public class QueryExecutorIT {
         return new QueryExecutor(ObjectFactory.noUserJars(),
                 tableProperties, stateStore,
                 new QueryEngineSelector(executorService, new Configuration()).getRowRetriever(tableProperties));
+    }
+
+    private QueryExecutor initQueryExecutor() {
+        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(),
+                tableProperties, stateStore,
+                new QueryEngineSelector(executorService, new Configuration()).getRowRetriever(tableProperties));
+        executor.init();
+        return executor;
     }
 
     private Query queryWithRegion(Region region) {
@@ -1234,6 +1191,18 @@ public class QueryExecutorIT {
                 .build();
     }
 
+    private void ingestData(Iterator<Row> rowIterator) throws IOException, IteratorCreationException {
+        tableProperties.set(COMPRESSION_CODEC, "snappy");
+        IngestFactory factory = IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(createTempDirectory(tempDir, null).toString())
+                .instanceProperties(instanceProperties)
+                .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
+                .hadoopConfiguration(new Configuration())
+                .build();
+        factory.ingestFromRowIterator(tableProperties, rowIterator);
+    }
+
     private void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
             TableProperties tableProperties, Iterator<Row> rowIterator) throws IOException, IteratorCreationException {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
@@ -1245,6 +1214,17 @@ public class QueryExecutorIT {
                 .hadoopConfiguration(new Configuration())
                 .build();
         factory.ingestFromRowIterator(tableProperties, rowIterator);
+    }
+
+    private Region rootPartitionRegion() {
+        return new PartitionTree(stateStore.getAllPartitions()).getRootPartition().getRegion();
+    }
+
+    private List<String> filenamesInPartition(String partitionId) {
+        return stateStore.getFileReferences().stream()
+                .filter(f -> f.getPartitionId().equals(partitionId))
+                .map(FileReference::getFilename)
+                .toList();
     }
 
     private List<Row> getRows() {
