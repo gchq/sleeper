@@ -65,6 +65,11 @@ public class InMemoryIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public void deleteAllPending() {
-        getPendingFilesOldestFirst().forEach(fileIngestRequest -> requests.remove(keyFor(fileIngestRequest)));
+        deleteFiles(getPendingFilesOldestFirst());
+    }
+
+    @Override
+    public void deleteFiles(List<IngestBatcherTrackedFile> files) {
+        files.forEach(request -> requests.remove(keyFor(request)));
     }
 }
