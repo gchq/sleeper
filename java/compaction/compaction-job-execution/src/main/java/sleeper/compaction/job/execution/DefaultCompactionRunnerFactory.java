@@ -49,16 +49,16 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
 
     @Override
     public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
+        if (job.getIteratorClassName() != null) {
+            CompactionRunner runner = createJavaRunner();
+            LOGGER.info("Table has a Java iterator set, so selecting {} for job ID {}, table {}",
+                    runner.getClass().getSimpleName(), job.getId(), tableProperties.getStatus());
+            return runner;
+        }
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         CompactionRunner runner = createRunnerForEngine(engine);
-
-        // Is a Java iterator specifed?
-        if (job.getIteratorClassName() != null) {
-            LOGGER.debug("Table has a Java iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
-            runner = createJavaRunner();
-        }
-
-        LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
+        LOGGER.info("Selecting {} for job ID {}, table {}",
+                runner.getClass().getSimpleName(), job.getId(), tableProperties.getStatus());
         return runner;
     }
 

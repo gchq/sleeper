@@ -28,12 +28,14 @@ import java.util.List;
  */
 public class AgeOffIterator implements ConfigStringIterator {
     private AgeOffFilter filter;
+    private List<String> requiredValueFields;
 
     public AgeOffIterator() {
     }
 
-    public AgeOffIterator(AgeOffFilter filter) {
+    public AgeOffIterator(Schema schema, AgeOffFilter filter) {
         this.filter = filter;
+        this.requiredValueFields = filter.getRequiredValueFields(schema);
     }
 
     @Override
@@ -43,11 +45,12 @@ public class AgeOffIterator implements ConfigStringIterator {
             throw new IllegalArgumentException("Configuration string should have 2 fields: field name and age off time");
         }
         filter = new AgeOffFilter(fields[0], Long.parseLong(fields[1]));
+        requiredValueFields = filter.getRequiredValueFields(schema);
     }
 
     @Override
     public List<String> getRequiredValueFields() {
-        return List.of(filter.getFieldName());
+        return requiredValueFields;
     }
 
     @Override

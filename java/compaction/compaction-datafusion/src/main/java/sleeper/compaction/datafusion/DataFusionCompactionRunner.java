@@ -32,7 +32,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
-import sleeper.foreign.bridge.FFIBridge;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.FFIAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
@@ -57,26 +56,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     /** Maximum number of rows in a Parquet row group. */
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    private static final DataFusionCompactionFunctions NATIVE_COMPACTION;
     private final FFIAwsConfig awsConfig;
     private final Configuration hadoopConf;
 
-    static {
-        // Obtain native library. This throws an exception if native library can't be
-        // loaded and linked
-        try {
-            NATIVE_COMPACTION = FFIBridge.createForeignInterface(DataFusionCompactionFunctions.class);
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
-    static jnr.ffi.Runtime getNativeRuntime() {
-        return jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
-    }
-
     public DataFusionCompactionRunner(Configuration hadoopConf) {
-        this(FFIAwsConfig.getDefault(jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION)), hadoopConf);
+        this(FFIAwsConfig.getDefault(jnr.ffi.Runtime.getRuntime(DataFusionCompactionFunctions.INSTANCE)), hadoopConf);
     }
 
     public DataFusionCompactionRunner(FFIAwsConfig awsConfig, Configuration hadoopConf) {
@@ -86,7 +70,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionFunctions.INSTANCE);
 
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
@@ -172,8 +156,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
-        try (FFIContext context = new FFIContext(NATIVE_COMPACTION)) {
-            int result = NATIVE_COMPACTION.compact(context, compactionParams, compactionData);
+        try (FFIContext context = new FFIContext(DataFusionFunctions.INSTANCE)) {
+            int result = DataFusionCompactionFunctions.INSTANCE.compact(context, compactionParams, compactionData);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion compaction failed, return code: {}", result);
@@ -188,10 +172,5 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
-    }
-
-    @Override
-    public String implementationLanguage() {
-        return "Rust";
     }
 }

@@ -81,8 +81,6 @@ public class LeafPartitionQueryExecutor {
             queryIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
                     .iteratorClassName(leafPartitionQuery.getQueryTimeIteratorClassName())
                     .iteratorConfigString(leafPartitionQuery.getQueryTimeIteratorConfig())
-                    .filters(leafPartitionQuery.getQueryTimeFilters())
-                    .aggregations(leafPartitionQuery.getQueryTimeAggregations(), tableSchema)
                     .build());
         } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);

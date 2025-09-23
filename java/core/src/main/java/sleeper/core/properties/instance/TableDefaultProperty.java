@@ -365,10 +365,9 @@ public interface TableDefaultProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_DATA_ENGINE = Index.propertyBuilder("sleeper.default.table.data.engine")
-            .description("Select which data engine to use for the table. DataFusion support is experimental and " +
-                    "can be enabled for compactions and queries, or just compactions. " +
+            .description("Select which data engine to use for the table. " +
                     "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
-            .defaultValue(DataEngine.JAVA.toString())
+            .defaultValue(DataEngine.DATAFUSION.toString())
             .validationPredicate(DataEngine::isValid)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
 

@@ -39,22 +39,22 @@ import java.util.stream.Stream;
  * The format for the iterator's configuration string mirrors that of the
  * DataFusion code. It should follow this format:
  * <p>
- * {@code <extra aggregation columns>;<filter>,<aggregation>}.
+ * {@code <extra aggregation fields>;<filter>,<aggregation>}.
  * <p>
  * Any of the components may be empty. The extra aggregation
- * columns should be a comma separated list of columns beyond the row_key
- * columns to aggregate over. Note the semi-colon
- * after the last column before the filter component. The filter component will
+ * fields should be a comma separated list of fields beyond the row_key
+ * fields to aggregate over. Note the semi-colon
+ * after the last field before the filter component. The filter component will
  * expose one possible filter: age off.
  * <p>
  * Only one filter will be specifiable at a time on a table (this is a minimum
  * reasonable effort!).
  * <ul>
- * <li>Age off filter format is `ageoff='column','time_period'`. If the elapsed
+ * <li>Age off filter format is `ageoff='field','time_period'`. If the elapsed
  * time from the integer value in the given
- * column to "now" is lower than the time_period value, the row is retained.
+ * field to "now" is lower than the time_period value, the row is retained.
  * Values in seconds.</li>
- * <li>Aggregation filter format is OP(column_name) where OP is one of sum, min,
+ * <li>Aggregation filter format is OP(field_name) where OP is one of sum, min,
  * max, map_sum, map_min or map_max.</li>
  * </ul>
  *
@@ -65,10 +65,10 @@ import java.util.stream.Stream;
  * aggregation filters should be comma separated.
  */
 public class ConfigStringAggregationFilteringIterator implements ConfigStringIterator {
-    /** Pattern to match aggregation functions, e.g. "SUM(my_column)". */
+    /** Pattern to match aggregation functions, e.g. "SUM(my_field)". */
     public static final Pattern AGGREGATE_REGEX = Pattern.compile("(\\w+)\\((\\w+)\\)");
 
-    private AggregationFilteringIterator iterator;
+    private SortedRowIterator iterator;
 
     @Override
     public List<String> getRequiredValueFields() {
@@ -76,38 +76,22 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
     }
 
     @Override
-    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> t) {
-        return iterator.applyTransform(t);
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
+        return iterator.applyTransform(input);
     }
 
     @Override
     public void init(String configString, Schema schema) {
         FilterAggregationConfig iteratorConfig = parseConfiguration(configString, schema.getRowKeyFieldNames());
         validate(iteratorConfig, schema);
-        iterator = new AggregationFilteringIterator(iteratorConfig, schema);
-
+        List<SortedRowIterator> iterators = new ArrayList<>();
+        iteratorConfig.ageOffFilter().map(filter -> new AgeOffIterator(schema, filter)).ifPresent(iterators::add);
+        if (!iteratorConfig.aggregations().isEmpty()) {
+            iterators.add(new AggregationIterator(schema, iteratorConfig.groupingColumns(), iteratorConfig.aggregations()));
+        }
+        iterator = new SortedRowIterators(iterators);
     }
 
-    /**
-     * Parses a configuration string for aggregation.
-     *
-     * The string must be in the correct format. Row key columns are automatically "group by" columns for any
-     * aggregation
-     * so the list of row key columns is added into the returned {@link FilterAggregationConfig}.
-     *
-     * Note that the configuration is NOT validated! Use
-     * {@link AggregationFilteringIterator#validate(FilterAggregationConfig)}
-     * to check the returned configuration is valid.
-     *
-     * @implNote                          This is a minimum viable parser for the configuration for
-     *                                    filters/aggregators. It is a really good example of how NOT to do it.
-     *                                    This routine has some odd behaviour.
-     *
-     * @param    configString             the filter and aggregation string to parse
-     * @param    rowkeyNames              the list of all the row key column names from the schema
-     * @return                            an un-validated configuration for aggregation
-     * @throws   IllegalArgumentException if {@code configString} is invalid
-     */
     private static FilterAggregationConfig parseConfiguration(String configString, List<String> rowkeyNames) {
         // This is a minimum viable parser for the configuration for
         // filters/aggregators.
@@ -117,9 +101,9 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
         if (configParts.length != 2) {
             throw new IllegalArgumentException("Should be exactly one ; in aggregation configuation");
         }
-        // Extract the aggregation grouping columns and trim and split the remaining
-        Stream<String> splitGroupColumns = Arrays.stream(configParts[0].split(",")).map(String::strip).filter(name -> !name.isEmpty());
-        List<String> groupingColumns = Stream.concat(rowkeyNames.stream(), splitGroupColumns).toList();
+        // Extract the aggregation grouping fields and trim and split the remaining
+        Stream<String> splitGroupFields = Arrays.stream(configParts[0].split(",")).map(String::strip).filter(name -> !name.isEmpty());
+        List<String> groupingFields = Stream.concat(rowkeyNames.stream(), splitGroupFields).toList();
 
         // Following list needs to be mutable, hence Collectors.toList()
         List<String> filterAggs = Arrays.stream(configParts[1].split(",")).map(String::strip).collect(Collectors.toList());
@@ -138,7 +122,7 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
                 filterAggs.remove(0);
             }
         }
-        // We use a regular expression to extract the aggregation operation and column for each remaining part
+        // We use a regular expression to extract the aggregation operation and field for each remaining part
         List<Aggregation> aggregations = new ArrayList<>();
         for (String agg : filterAggs) {
             Matcher matcher = AGGREGATE_REGEX.matcher(agg);
@@ -151,7 +135,7 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
                 aggregations.add(new Aggregation(aggCol, op));
             }
         }
-        return new FilterAggregationConfig(groupingColumns, filter, maxAge, aggregations);
+        return new FilterAggregationConfig(groupingFields, filter, maxAge, aggregations);
     }
 
     /**
@@ -163,11 +147,11 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
      * </ul>
      * OR:
      * <ol>
-     * <li>All columns that are NOT query aggregation columns have an aggregation
+     * <li>All fields that are NOT query aggregation fields have an aggregation
      * operation specified for them.</li>
-     * <li>No query aggregation columns have aggregations specified.</li>
-     * <li>No query aggregation column is duplicated.</li>
-     * <li>Aggregation columns must be valid in schema.</li>
+     * <li>No query aggregation fields have aggregations specified.</li>
+     * <li>No query aggregation field is duplicated.</li>
+     * <li>Aggregation fields must be valid in schema.</li>
      * </ol>
      *
      * @param  iteratorConfig           the configuration to check
@@ -179,39 +163,39 @@ public class ConfigStringAggregationFilteringIterator implements ConfigStringIte
         if (iteratorConfig.aggregations().isEmpty()) {
             return;
         }
-        // Check grouping columns are not already row key columns, are not duplicated and are valid
-        List<String> allColumns = schema.getAllFieldNames();
-        Set<String> allGroupingColumns = new HashSet<>();
+        // Check grouping fields are not already row key fields, are not duplicated and are valid
+        List<String> allFields = schema.getAllFieldNames();
+        Set<String> allGroupingFields = new HashSet<>();
         for (String col : iteratorConfig.groupingColumns()) {
             // Duplicated?
-            if (!allGroupingColumns.add(col)) {
-                throw new IllegalArgumentException("Aggregation grouping column " + col + " is already a row key column or is duplicated");
+            if (!allGroupingFields.add(col)) {
+                throw new IllegalArgumentException("Aggregation grouping field " + col + " is already a row key field or is duplicated");
             }
             // Is valid?
-            if (!allColumns.contains(col)) {
-                throw new IllegalArgumentException("Aggregation grouping column " + col + " doesn't exist");
+            if (!allFields.contains(col)) {
+                throw new IllegalArgumentException("Aggregation grouping field " + col + " doesn't exist");
             }
         }
-        // Check every non aggregation column (i.e. row key columns and extra grouping columns) have an aggregation specified
-        List<String> nonGroupingColumns = new ArrayList<>(allColumns);
-        nonGroupingColumns.removeIf(allGroupingColumns::contains);
+        // Check every non aggregation field (i.e. row key fields and extra grouping fields) have an aggregation specified
+        List<String> nonGroupingFields = new ArrayList<>(allFields);
+        nonGroupingFields.removeIf(allGroupingFields::contains);
         Set<String> duplicateAggregationCheck = new HashSet<>();
-        // Loop through each aggregation column
-        for (String aggColumn : iteratorConfig.aggregations().stream().map(Aggregation::column).toList()) {
-            if (allGroupingColumns.contains(aggColumn)) {
-                throw new IllegalArgumentException("Row key/extra grouping column " + aggColumn + " cannot have an aggregation");
+        // Loop through each aggregation field
+        for (String aggFieldName : iteratorConfig.aggregations().stream().map(Aggregation::fieldName).toList()) {
+            if (allGroupingFields.contains(aggFieldName)) {
+                throw new IllegalArgumentException("Row key/extra grouping field " + aggFieldName + " cannot have an aggregation");
             }
-            if (!nonGroupingColumns.contains(aggColumn)) {
-                throw new IllegalArgumentException("Aggregation column " + aggColumn + " doesn't exist");
+            if (!nonGroupingFields.contains(aggFieldName)) {
+                throw new IllegalArgumentException("Aggregation field " + aggFieldName + " doesn't exist");
             }
-            if (!duplicateAggregationCheck.add(aggColumn)) {
-                throw new IllegalArgumentException("Aggregation column " + aggColumn + " duplicated");
+            if (!duplicateAggregationCheck.add(aggFieldName)) {
+                throw new IllegalArgumentException("Aggregation field " + aggFieldName + " duplicated");
             }
         }
-        // Finally, check all non row key and extra grouping columns have an aggregation specified
-        for (String column : nonGroupingColumns) {
-            if (!duplicateAggregationCheck.contains(column)) {
-                throw new IllegalArgumentException("Column " + column + " doesn't have a aggregation operator specified");
+        // Finally, check all non row key and extra grouping fields have an aggregation specified
+        for (String field : nonGroupingFields) {
+            if (!duplicateAggregationCheck.contains(field)) {
+                throw new IllegalArgumentException("Field " + field + " doesn't have a aggregation operator specified");
             }
         }
     }
