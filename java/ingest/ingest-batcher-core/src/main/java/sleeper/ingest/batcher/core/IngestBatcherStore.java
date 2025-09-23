@@ -29,7 +29,5 @@ public interface IngestBatcherStore {
 
     void deleteAllPending();
 
-    default void deleteFiles(List<IngestBatcherTrackedFile> files) {
-
-    }
+    void deleteFiles(List<IngestBatcherTrackedFile> files);
 }
