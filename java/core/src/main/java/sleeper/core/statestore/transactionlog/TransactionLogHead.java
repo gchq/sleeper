@@ -159,7 +159,7 @@ public class TransactionLogHead<T> {
 
     private void validate(StateStoreTransaction<T> transaction) throws StateStoreException {
         Instant startTime = Instant.now();
-        transaction.validate(state);
+        transaction.validate(state, tableProperties);
         LOGGER.debug("Validated transaction in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
 

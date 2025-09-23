@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
@@ -59,7 +60,7 @@ public class SplitPartitionTransaction implements PartitionTransaction {
     }
 
     @Override
-    public void validate(StateStorePartitions stateStorePartitions) throws StateStoreException {
+    public void validate(StateStorePartitions stateStorePartitions, TableProperties tableProperties) throws StateStoreException {
         Partition existingParent = stateStorePartitions.byId(parent.getId())
                 .orElseThrow(() -> new StateStoreException("Parent partition not found"));
         if (!existingParent.isLeafPartition()) {
