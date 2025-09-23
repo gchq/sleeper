@@ -172,11 +172,15 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public void deleteAllPending() {
-        List<IngestBatcherTrackedFile> pendingFiles = getPendingFilesOldestFirst();
-        if (!pendingFiles.isEmpty()) {
+        deleteFiles(getPendingFilesOldestFirst());
+    }
+
+    @Override
+    public void deleteFiles(List<IngestBatcherTrackedFile> files) {
+        if (!files.isEmpty()) {
             dynamoDB.batchWriteItem(BatchWriteItemRequest.builder()
                     .requestItems(Map.of(requestsTableName,
-                            pendingFiles.stream()
+                            files.stream()
                                     .map(request -> WriteRequest.builder()
                                             .deleteRequest(DeleteRequest.builder()
                                                     .key(createUnassignedKey(request))
