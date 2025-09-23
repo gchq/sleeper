@@ -69,7 +69,6 @@ public class TransactionLogHead<T> {
     private final TransactionLogStore logStore;
     private final TransactionBodyStore transactionBodyStore;
     private final boolean updateLogBeforeAddTransaction;
-    private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
@@ -88,7 +87,6 @@ public class TransactionLogHead<T> {
         logStore = builder.logStore;
         transactionBodyStore = builder.transactionBodyStore;
         updateLogBeforeAddTransaction = builder.updateLogBeforeAddTransaction;
-        maxAddTransactionAttempts = tableProperties.getInt(ADD_TRANSACTION_MAX_ATTEMPTS);
         retryBackoff = new ExponentialBackoffWithJitter(
                 retryWaitRange(tableProperties),
                 builder.randomJitterFraction,
@@ -125,6 +123,7 @@ public class TransactionLogHead<T> {
                 request.getTransactionType(), sleeperTable);
         request = request.storeTransactionBodyIfTooBig(sleeperTable, transactionBodyStore);
         Exception failure = new IllegalArgumentException("No attempts made");
+        int maxAddTransactionAttempts = tableProperties.getInt(ADD_TRANSACTION_MAX_ATTEMPTS);
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
             prepareAddTransactionAttempt(attempt, request.getTransaction());
             try {
