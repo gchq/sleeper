@@ -340,7 +340,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(tableProperties.getStatus(), tableProperties.getSchema(), setupState);
+        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(tableProperties, setupState);
         fileSnapshots.setLatestSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
         partitionSnapshots.setLatestSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
     }

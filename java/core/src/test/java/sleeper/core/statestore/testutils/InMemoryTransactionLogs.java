@@ -18,7 +18,6 @@ package sleeper.core.statestore.testutils;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
@@ -106,10 +105,10 @@ public class InMemoryTransactionLogs {
     /**
      * Fakes creating snapshots of the current state of the transaction logs.
      *
-     * @param tableStatus the Sleeper table status
+     * @param tableProperties the Sleeper table properties
      */
-    public void createSnapshots(TableStatus tableStatus) {
-        InMemoryTransactionLogSnapshotSetup setup = new InMemoryTransactionLogSnapshotSetup(tableStatus, filesLogStore, partitionsLogStore, transactionBodyStore);
+    public void createSnapshots(TableProperties tableProperties) {
+        InMemoryTransactionLogSnapshotSetup setup = new InMemoryTransactionLogSnapshotSetup(tableProperties, filesLogStore, partitionsLogStore, transactionBodyStore);
         filesSnapshots.setLatestSnapshot(setup.createFilesSnapshot(filesLogStore.getLastTransactionNumber()));
         partitionsSnapshots.setLatestSnapshot(setup.createPartitionsSnapshot(partitionsLogStore.getLastTransactionNumber()));
     }

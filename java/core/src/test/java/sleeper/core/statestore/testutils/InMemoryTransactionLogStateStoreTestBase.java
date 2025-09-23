@@ -85,7 +85,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
     }
 
     protected void createSnapshots() {
-        transactionLogs.createSnapshots(tableProperties.getStatus());
+        transactionLogs.createSnapshots(tableProperties);
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {

@@ -76,8 +76,7 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(
-                tableProperties.getStatus(), tableProperties.getSchema(), setupState);
+        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(tableProperties, setupState);
         DynamoDBTransactionLogSnapshotSaver snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(instanceProperties, tableProperties, dynamoClient, s3Client, s3TransferManager);
         snapshotSaver.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
         snapshotSaver.savePartitionsSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
