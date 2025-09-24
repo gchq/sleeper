@@ -703,112 +703,143 @@ public class QueryExecutorIT {
         }
     }
 
-    @Test
-    public void shouldReturnCorrectDataWithMultidimRowKey() throws Exception {
-        // Given
-        tableProperties.setSchema(Schema.builder()
+    @Nested
+    @DisplayName("Multidimensional row key with one split point")
+    class MultidimensionalRowKeyOneSplitPoint {
+
+        Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new LongType()), new Field("key2", new StringType()))
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build());
-        PartitionTree tree = new PartitionsBuilder(tableProperties)
+                .build();
+        PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
                 .buildTree();
-        update(stateStore).initialise(tree);
-        for (int i = 0; i < 10; i++) {
-            ingestData(getMultipleRowsMultidimRowKey().iterator());
-        }
-        List<String> filesInLeftPartition = filenamesInPartition("left");
-        List<String> filesInRightPartition = filenamesInPartition("right");
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
 
-        // When 1
-        Range range1 = rangeFactory.createExactRange("key1", 1L);
-        Range range2 = rangeFactory.createExactRange("key2", "1");
-        Region region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 1
-            assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(schema);
+            update(stateStore).initialise(tree);
+            for (int i = 0; i < 10; i++) {
+                ingestData(getMultipleRowsMultidimRowKey());
+            }
         }
 
-        // When 2
-        range1 = rangeFactory.createExactRange("key1", 5L);
-        range2 = rangeFactory.createExactRange("key2", "5");
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnFirstRowsByExactMatch() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createExactRange("key1", 1L);
+            Range range2 = rangeFactory().createExactRange("key2", "1");
+            Region region = new Region(Arrays.asList(range1, range2));
 
-            // Then 2
-            assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(10)
+                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
+            }
         }
 
-        // When 3
-        range1 = rangeFactory.createExactRange("key1", 8L);
-        range2 = rangeFactory.createExactRange("key2", "notthere");
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnMiddleRowsByExactMatch() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createExactRange("key1", 5L);
+            Range range2 = rangeFactory().createExactRange("key2", "5");
+            Region region = new Region(Arrays.asList(range1, range2));
 
-            // Then 3
-            assertThat(results).isExhausted();
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(10)
+                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
+            }
         }
 
-        // When 4
-        range1 = rangeFactory.createRange("key1", -100000L, true, 123456789L, true);
-        range2 = rangeFactory.createRange("key2", "0", true, "99999999999", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnNoRowsByExactMatch() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createExactRange("key1", 8L);
+            Range range2 = rangeFactory().createExactRange("key2", "notthere");
+            Region region = new Region(Arrays.asList(range1, range2));
 
-            // Then 4
-            assertThat(results).toIterable().hasSize(100)
-                    .hasSameElementsAs(getMultipleRowsMultidimRowKey());
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
         }
 
-        // When 5
-        range1 = rangeFactory.createRange("key1", 2L, true, 5L, true);
-        range2 = rangeFactory.createRange("key2", "3", true, "6", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", -100000L, true, 123456789L, true);
+            Range range2 = rangeFactory().createRange("key2", "0", true, "99999999999", true);
+            Region region = new Region(Arrays.asList(range1, range2));
 
-            // Then 5
-            assertThat(results).toIterable().hasSize(30)
-                    .hasSameElementsAs(getMultipleRowsMultidimRowKey().stream()
-                            .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
-                            .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0 && ((String) r.get("key2")).compareTo("6") <= 0)
-                            .collect(Collectors.toList()));
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(100)
+                        .hasSameElementsAs(getMultipleRowsMultidimRowKey());
+            }
         }
 
-        // When 6
-        range1 = rangeFactory.createRange("key1", 2L, true, 500L, true);
-        range2 = rangeFactory.createRange("key2", "3", true, "6", true);
-        region = new Region(Arrays.asList(range1, range2));
-        Query query = queryWithRegion(region);
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        @Test
+        void shouldReturnSomeRowsByRangePartiallyCoveringData() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", 2L, true, 5L, true);
+            Range range2 = rangeFactory().createRange("key2", "3", true, "6", true);
+            Region region = new Region(Arrays.asList(range1, range2));
 
-        // Then 6
-        assertThat(leafPartitionQueries)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                .containsExactlyInAnyOrder(
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
-                                .regions(List.of(region))
-                                .leafPartitionId("left")
-                                .partitionRegion(tree.getPartition("left").getRegion())
-                                .files(filesInLeftPartition)
-                                .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
-                                .regions(List.of(region))
-                                .leafPartitionId("right")
-                                .partitionRegion(tree.getPartition("right").getRegion())
-                                .files(filesInRightPartition)
-                                .build());
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(30)
+                        .hasSameElementsAs(getMultipleRowsMultidimRowKey().stream()
+                                .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
+                                .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0 && ((String) r.get("key2")).compareTo("6") <= 0)
+                                .collect(Collectors.toList()));
+            }
+        }
+
+        @Test
+        void shouldSplitQueryByRange() {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", 2L, true, 500L, true);
+            Range range2 = rangeFactory().createRange("key2", "3", true, "6", true);
+            Region region = new Region(Arrays.asList(range1, range2));
+            Query query = queryWithRegion(region);
+            List<String> filesInLeftPartition = filenamesInPartition("left");
+            List<String> filesInRightPartition = filenamesInPartition("right");
+
+            // When / Then
+            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                    .containsExactlyInAnyOrder(
+                            LeafPartitionQuery.builder()
+                                    .parentQuery(query)
+                                    .tableId(tableProperties.get(TABLE_ID))
+                                    .subQueryId("ignored")
+                                    .regions(List.of(region))
+                                    .leafPartitionId("left")
+                                    .partitionRegion(tree.getPartition("left").getRegion())
+                                    .files(filesInLeftPartition)
+                                    .build(),
+                            LeafPartitionQuery.builder()
+                                    .parentQuery(query)
+                                    .tableId(tableProperties.get(TABLE_ID))
+                                    .subQueryId("ignored")
+                                    .regions(List.of(region))
+                                    .leafPartitionId("right")
+                                    .partitionRegion(tree.getPartition("right").getRegion())
+                                    .files(filesInRightPartition)
+                                    .build());
+        }
     }
 
     @Test
