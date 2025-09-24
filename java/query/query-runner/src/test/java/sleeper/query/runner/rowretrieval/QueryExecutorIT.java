@@ -1031,6 +1031,79 @@ public class QueryExecutorIT {
         }
 
         @Test
+        void shouldExcludeLastRowsWhenRegionCoversAllRowsWithMaxEqualToLastRowAndNotInclusive() throws Exception {
+            // Given
+            // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
+            Range range1 = rangeFactory().createRange("key1", "C", true, "P", false);
+            Range range2 = rangeFactory().createRange("key2", "H", true, "Z", false);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(9)
+                        .hasSameElementsAs(Arrays.asList(row1, row2, row3));
+            }
+        }
+
+        @Test
+        void shouldReturnAllRowsWhenRegionCoversAllRowsWithMaxEqualToLastRowAndIsInclusive() throws Exception {
+            // Given
+            // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
+            Range range1 = rangeFactory().createRange("key1", "C", true, "P", true);
+            Range range2 = rangeFactory().createRange("key2", "H", true, "Z", true);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(12)
+                        .hasSameElementsAs(Arrays.asList(row1, row2, row3, row4));
+            }
+        }
+
+        // Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
+        // Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
+        // Row row3 = createRowMultidimensionalKey("C", "X", 100000L, 1000000L);
+        // Row row4 = createRowMultidimensionalKey("P", "Z", 10000000L, 100000000L);
+        @Test
+        void shouldExcludeRowsAtEdgeOfRangesWhenRegionCoversAllRowsWithBoundsNotInclusive() throws Exception {
+            // Given
+            // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min; 4 - excluded by key1 max and key2 max
+            Range range1 = rangeFactory().createRange("key1", "C", false, "P", false);
+            Range range2 = rangeFactory().createRange("key2", "H", false, "Z", false);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(3)
+                        .hasSameElementsAs(Collections.singletonList(row1));
+            }
+
+        }
+
+        @Test
+        void shouldIncludeRowsAtMaxOfRangesWhenRegionCoversAllRowsWithMinExclusiveMaxInclusive() throws Exception {
+            // Given
+            // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min; 4 - yes
+            Range range1 = rangeFactory().createRange("key1", "C", false, "P", true);
+            Range range2 = rangeFactory().createRange("key2", "H", false, "Z", true);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(6)
+                        .hasSameElementsAs(Arrays.asList(row1, row4));
+            }
+        }
+
+        @Test
         void shouldSplitQueryByRange() {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", false, "P", true);
@@ -1087,124 +1160,6 @@ public class QueryExecutorIT {
                                     .build());
         }
 
-    }
-
-    @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws Exception {
-        // Given
-        tableProperties.setSchema(Schema.builder()
-                .rowKeyFields(
-                        new Field("key1", new StringType()),
-                        new Field("key2", new StringType()))
-                .valueFields(
-                        new Field("value1", new LongType()),
-                        new Field("value2", new LongType()))
-                .build());
-        //  Partitions:
-        //  - Root partition covers the whole space
-        //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
-        //  - There are 4 leaf partitions:
-        //      null +-----------+-----------+
-        //           |     3     |    4      |
-        //           |           |           |
-        //       "T" +-----------+-----------+
-        //           |           |           |
-        //           |     1     |    2      |
-        //           |           |           |
-        //           |           |           |
-        //        "" +-----------+-----------+
-        //           ""         "I"          null      (Dimension 1)
-        // Add 4 rows - row i is in the center of partition i
-        Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
-        Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
-        Row row3 = createRowMultidimensionalKey("C", "X", 100000L, 1000000L);
-        Row row4 = createRowMultidimensionalKey("P", "Z", 10000000L, 100000000L);
-        List<Row> rows = Arrays.asList(row1, row2, row3, row4);
-
-        update(stateStore).initialise(tableProperties);
-
-        ingestData(rows.iterator());
-
-        // Split the root partition into 2:
-        PartitionTree partialTree = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
-                .buildTree();
-        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
-                partialTree.getPartition("left"), partialTree.getPartition("right"));
-
-        ingestData(rows.iterator());
-
-        PartitionTree tree = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
-                .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
-                .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
-                .buildTree();
-        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("left"),
-                tree.getPartition("P1"), tree.getPartition("P3"));
-        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
-                tree.getPartition("P2"), tree.getPartition("P4"));
-        ingestData(rows.iterator());
-
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
-
-        Range range1;
-        Range range2;
-        Region region;
-
-        // When 12 - query for a range where the boundaries cover all 4 rows, min is
-        // inclusive, max is not inclusive
-        // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
-        range1 = rangeFactory.createRange("key1", "C", true, "P", false);
-        range2 = rangeFactory.createRange("key2", "H", true, "Z", false);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 12
-            assertThat(results).toIterable().hasSize(9)
-                    .hasSameElementsAs(Arrays.asList(row1, row2, row3));
-        }
-
-        // When 13 - query for a range where the boundaries cover all 4 rows, min is
-        // inclusive, and max is inclusive
-        // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
-        range1 = rangeFactory.createRange("key1", "C", true, "P", true);
-        range2 = rangeFactory.createRange("key2", "H", true, "Z", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 13
-            assertThat(results).toIterable().hasSize(12)
-                    .hasSameElementsAs(Arrays.asList(row1, row2, row3, row4));
-        }
-
-        // When 14 - query for a range where the boundaries cover all 4 rows, min is not
-        // inclusive, and max is not inclusive
-        // Row i is in range? 1 - yes; 2 - no; 3 - no; 4 - no
-        range1 = rangeFactory.createRange("key1", "C", false, "P", false);
-        range2 = rangeFactory.createRange("key2", "H", false, "Z", false);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 14
-            assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(row1));
-        }
-
-        // When 15 - query for a range where the boundaries cover all 4 rows, min is not
-        // inclusive, and max is inclusive
-        // Row i is in range? 1 - yes; 2 - no; 3 - no; 4 - yes
-        range1 = rangeFactory.createRange("key1", "C", false, "P", true);
-        range2 = rangeFactory.createRange("key2", "H", false, "Z", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 15
-            assertThat(results).toIterable().hasSize(6)
-                    .hasSameElementsAs(Arrays.asList(row1, row4));
-        }
     }
 
     @Test
