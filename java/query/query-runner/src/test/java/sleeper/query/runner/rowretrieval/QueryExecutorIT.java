@@ -802,7 +802,8 @@ public class QueryExecutorIT {
                 assertThat(results).toIterable().hasSize(30)
                         .hasSameElementsAs(getMultipleRowsMultidimRowKey().stream()
                                 .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
-                                .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0 && ((String) r.get("key2")).compareTo("6") <= 0)
+                                .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0
+                                        && ((String) r.get("key2")).compareTo("6") <= 0)
                                 .collect(Collectors.toList()));
             }
         }
@@ -842,8 +843,254 @@ public class QueryExecutorIT {
         }
     }
 
+    @Nested
+    @DisplayName("Data in multiple levels of multidimensional partition tree")
+    class MultiplePartitionTreeLevelsAndDimensions {
+
+        Schema schema = Schema.builder()
+                .rowKeyFields(
+                        new Field("key1", new StringType()),
+                        new Field("key2", new StringType()))
+                .valueFields(
+                        new Field("value1", new LongType()),
+                        new Field("value2", new LongType()))
+                .build();
+        // Partitions:
+        // - Root partition covers the whole space
+        // - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
+        // - There are 4 leaf partitions:
+        // null +-----------+-----------+
+        // | 3 | 4 |
+        // | | |
+        // "T" +-----------+-----------+
+        // | | |
+        // | 1 | 2 |
+        // | | |
+        // | | |
+        // "" +-----------+-----------+
+        // "" "I" null (Dimension 1)
+        // Add 4 rows - row i is in the center of partition i
+        Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
+        Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
+        Row row3 = createRowMultidimensionalKey("C", "X", 100000L, 1000000L);
+        Row row4 = createRowMultidimensionalKey("P", "Z", 10000000L, 100000000L);
+        List<Row> rows = List.of(row1, row2, row3, row4);
+        PartitionTree rootOnlyTree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+        PartitionTree partialTree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
+                .buildTree();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
+                .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
+                .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
+                .buildTree();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(schema);
+            update(stateStore).initialise(rootOnlyTree);
+            ingestData(rows);
+            update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
+                    partialTree.getPartition("left"), partialTree.getPartition("right"));
+            ingestData(rows);
+            update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("left"),
+                    tree.getPartition("P1"), tree.getPartition("P3"));
+            update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
+                    tree.getPartition("P2"), tree.getPartition("P4"));
+            ingestData(rows);
+        }
+
+        @Test
+        void shouldReturnAllRowsByRange() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "", true, null, false);
+            Range range2 = rangeFactory().createRange("key2", "", true, null, false);
+            Region region = new Region(List.of(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(12) // 12 because the same data was added 3 times at different
+                                                             // levels of the tree
+                        .hasSameElementsAs(rows);
+            }
+        }
+
+        @Test
+        void shouldQueryPartition1ByRange() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "", true, "H", true);
+            Range range2 = rangeFactory().createRange("key2", "", true, "S", true);
+            Region region = new Region(List.of(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(3)
+                        .hasSameElementsAs(List.of(row1));
+            }
+        }
+
+        @Test
+        void shouldQueryPartition1And2ByRange() throws Exception {
+
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "", true, "Z", true);
+            Range range2 = rangeFactory().createRange("key2", "", true, "S", true);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(6)
+                        .hasSameElementsAs(Arrays.asList(row1, row2));
+            }
+        }
+
+        @Test
+        void shouldFindNoRowsInRegionToRightOfAllData() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "T", true, "Z", true);
+            Range range2 = rangeFactory().createRange("key2", "", true, "Z", true);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
+        }
+
+        @Test
+        void shouldQueryByOneDimensionalRegion() throws Exception {
+            // Given
+            Range range = rangeFactory().createRange("key1", "J", true, "Z", true);
+            Region region = new Region(range);
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(6)
+                        .hasSameElementsAs(List.of(row2, row4));
+            }
+        }
+
+        @Test
+        void shouldQueryByRegionWithExactMatchOnFirstDimension() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createExactRange("key1", "C");
+            Range range2 = rangeFactory().createRange("key2", "", true, null, true);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(3)
+                        .hasSameElementsAs(List.of(row3));
+            }
+        }
+
+        @Test
+        void shouldFindNoRowsInRegionWhereMaxEqualsRow1AndMaxIsNotInclusive() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "", true, "D", false);
+            Range range2 = rangeFactory().createRange("key2", "", true, "T", true);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
+        }
+
+        @Test
+        void shouldFindFirstRowsInRegionWhereMaxEqualsRow1AndMaxIsInclusive() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "", true, "D", true);
+            Range range2 = rangeFactory().createRange("key2", "", true, "T", true);
+            Region region = new Region(Arrays.asList(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(3)
+                        .hasSameElementsAs(List.of(row1));
+            }
+        }
+
+        @Test
+        void shouldSplitQueryByRange() {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "C", false, "P", true);
+            Range range2 = rangeFactory().createRange("key2", "H", false, "Z", true);
+            Region region = new Region(List.of(range1, range2));
+            Query query = queryWithRegion(region);
+            List<String> filesInLeafPartition1 = filenamesInPartition("P1", "left", "root");
+            List<String> filesInLeafPartition2 = filenamesInPartition("P2", "right", "root");
+            List<String> filesInLeafPartition3 = filenamesInPartition("P3", "left", "root");
+            List<String> filesInLeafPartition4 = filenamesInPartition("P4", "right", "root");
+
+            // When / Then
+            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
+                    .usingRecursiveFieldByFieldElementComparator(RecursiveComparisonConfiguration.builder()
+                            .withIgnoredFields("subQueryId")
+                            .withIgnoredCollectionOrderInFields("files")
+                            .build())
+                    .containsExactlyInAnyOrder(
+                            LeafPartitionQuery.builder()
+                                    .parentQuery(query)
+                                    .tableId(tableProperties.get(TABLE_ID))
+                                    .subQueryId("ignored")
+                                    .regions(List.of(region))
+                                    .leafPartitionId("P1")
+                                    .partitionRegion(tree.getPartition("P1").getRegion())
+                                    .files(filesInLeafPartition1)
+                                    .build(),
+                            LeafPartitionQuery.builder()
+                                    .parentQuery(query)
+                                    .tableId(tableProperties.get(TABLE_ID))
+                                    .subQueryId("ignored")
+                                    .regions(List.of(region))
+                                    .leafPartitionId("P2")
+                                    .partitionRegion(tree.getPartition("P2").getRegion())
+                                    .files(filesInLeafPartition2)
+                                    .build(),
+                            LeafPartitionQuery.builder()
+                                    .parentQuery(query)
+                                    .tableId(tableProperties.get(TABLE_ID))
+                                    .subQueryId("ignored")
+                                    .regions(List.of(region))
+                                    .leafPartitionId("P3")
+                                    .partitionRegion(tree.getPartition("P3").getRegion())
+                                    .files(filesInLeafPartition3)
+                                    .build(),
+                            LeafPartitionQuery.builder()
+                                    .parentQuery(query)
+                                    .tableId(tableProperties.get(TABLE_ID))
+                                    .subQueryId("ignored")
+                                    .regions(List.of(region))
+                                    .leafPartitionId("P4")
+                                    .partitionRegion(tree.getPartition("P4").getRegion())
+                                    .files(filesInLeafPartition4)
+                                    .build());
+        }
+
+    }
+
     @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws Exception {
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey()
+            throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(
@@ -853,20 +1100,20 @@ public class QueryExecutorIT {
                         new Field("value1", new LongType()),
                         new Field("value2", new LongType()))
                 .build());
-        //  Partitions:
-        //  - Root partition covers the whole space
-        //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
-        //  - There are 4 leaf partitions:
-        //      null +-----------+-----------+
-        //           |     3     |    4      |
-        //           |           |           |
-        //       "T" +-----------+-----------+
-        //           |           |           |
-        //           |     1     |    2      |
-        //           |           |           |
-        //           |           |           |
-        //        "" +-----------+-----------+
-        //           ""         "I"          null      (Dimension 1)
+        // Partitions:
+        // - Root partition covers the whole space
+        // - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
+        // - There are 4 leaf partitions:
+        // null +-----------+-----------+
+        // | 3 | 4 |
+        // | | |
+        // "T" +-----------+-----------+
+        // | | |
+        // | 1 | 2 |
+        // | | |
+        // | | |
+        // "" +-----------+-----------+
+        // "" "I" null (Dimension 1)
         // Add 4 rows - row i is in the center of partition i
         Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
         Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
@@ -900,134 +1147,15 @@ public class QueryExecutorIT {
                 tree.getPartition("P2"), tree.getPartition("P4"));
         ingestData(rows.iterator());
 
-        List<String> filesInLeafPartition1 = filenamesInPartition("P1", "left", "root");
-        List<String> filesInLeafPartition2 = filenamesInPartition("P2", "right", "root");
-        List<String> filesInLeafPartition3 = filenamesInPartition("P3", "left", "root");
-        List<String> filesInLeafPartition4 = filenamesInPartition("P4", "right", "root");
-
         QueryExecutor queryExecutor = initQueryExecutor();
         RangeFactory rangeFactory = rangeFactory();
 
-        // When 1 - query for entire space
-        Range range1 = rangeFactory.createRange("key1", "", true, null, false);
-        Range range2 = rangeFactory.createRange("key2", "", true, null, false);
-        Region region = new Region(Arrays.asList(range1, range2));
+        Range range1;
+        Range range2;
+        Region region;
 
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 1
-            assertThat(results).toIterable().hasSize(12) // 12 because the same data was added 3 times at different levels of the tree
-                    .hasSameElementsAs(rows);
-        }
-
-        // When 2 - query for range within partition 1
-        range1 = rangeFactory.createRange("key1", "", true, "H", true);
-        range2 = rangeFactory.createRange("key2", "", true, "S", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 2
-            assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(row1));
-        }
-
-        // When 3 - query for range within partition 1
-        range1 = rangeFactory.createRange("key1", "", true, "H", false);
-        range2 = rangeFactory.createRange("key2", "", true, "S", false);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 3
-            assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(row1));
-        }
-
-        // When 4 - query for range within partition 1
-        range1 = rangeFactory.createRange("key1", "", false, "H", true);
-        range2 = rangeFactory.createRange("key2", "", false, "S", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 4
-            assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(row1));
-        }
-
-        // When 5 - query for range within partition 1
-        range1 = rangeFactory.createRange("key1", "", false, "H", false);
-        range2 = rangeFactory.createRange("key2", "", false, "S", false);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 5
-            assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(row1));
-        }
-
-        // When 6 - query for range within partitions 1 and 2
-        range1 = rangeFactory.createRange("key1", "", true, "Z", true);
-        range2 = rangeFactory.createRange("key2", "", true, "S", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 6
-            assertThat(results).toIterable().hasSize(6)
-                    .hasSameElementsAs(Arrays.asList(row1, row2));
-        }
-
-        // When 7 - query for range to the right of the data in partitions 2 and 4
-        range1 = rangeFactory.createRange("key1", "T", true, "Z", true);
-        range2 = rangeFactory.createRange("key2", "", true, "Z", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 7
-            assertThat(results).isExhausted();
-        }
-
-        // When 8 - query for a 1-dimensional range
-        range1 = rangeFactory.createRange("key1", "J", true, "Z", true);
-        region = new Region(range1);
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 8
-            assertThat(results).toIterable().hasSize(6)
-                    .hasSameElementsAs(Arrays.asList(row2, row4));
-        }
-
-        // When 9 - query for a range where the first dimension is constant
-        range1 = rangeFactory.createExactRange("key1", "C");
-        range2 = rangeFactory.createRange("key2", "", true, null, true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 9
-            assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(row3));
-        }
-
-        // When 10 - query for a range where the max equals row1 and max is not inclusive
-        range1 = rangeFactory.createRange("key1", "", true, "D", false);
-        range2 = rangeFactory.createRange("key2", "", true, "T", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 10
-            assertThat(results).isExhausted();
-        }
-
-        // When 11 - query for a range where the max equals row1 and max is inclusive
-        range1 = rangeFactory.createRange("key1", "", true, "D", true);
-        range2 = rangeFactory.createRange("key2", "", true, "T", true);
-        region = new Region(Arrays.asList(range1, range2));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 11
-            assertThat(results).toIterable().hasSize(3)
-                    .hasSameElementsAs(Collections.singletonList(row1));
-        }
-
-        // When 12 - query for a range where the boundaries cover all 4 rows, min is inclusive, max is not inclusive
+        // When 12 - query for a range where the boundaries cover all 4 rows, min is
+        // inclusive, max is not inclusive
         // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
         range1 = rangeFactory.createRange("key1", "C", true, "P", false);
         range2 = rangeFactory.createRange("key2", "H", true, "Z", false);
@@ -1039,7 +1167,8 @@ public class QueryExecutorIT {
                     .hasSameElementsAs(Arrays.asList(row1, row2, row3));
         }
 
-        // When 13 - query for a range where the boundaries cover all 4 rows, min is inclusive, and max is inclusive
+        // When 13 - query for a range where the boundaries cover all 4 rows, min is
+        // inclusive, and max is inclusive
         // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
         range1 = rangeFactory.createRange("key1", "C", true, "P", true);
         range2 = rangeFactory.createRange("key2", "H", true, "Z", true);
@@ -1051,7 +1180,8 @@ public class QueryExecutorIT {
                     .hasSameElementsAs(Arrays.asList(row1, row2, row3, row4));
         }
 
-        // When 14 - query for a range where the boundaries cover all 4 rows, min is not inclusive, and max is not inclusive
+        // When 14 - query for a range where the boundaries cover all 4 rows, min is not
+        // inclusive, and max is not inclusive
         // Row i is in range? 1 - yes; 2 - no; 3 - no; 4 - no
         range1 = rangeFactory.createRange("key1", "C", false, "P", false);
         range2 = rangeFactory.createRange("key2", "H", false, "Z", false);
@@ -1063,7 +1193,8 @@ public class QueryExecutorIT {
                     .hasSameElementsAs(Collections.singletonList(row1));
         }
 
-        // When 15 - query for a range where the boundaries cover all 4 rows, min is not inclusive, and max is inclusive
+        // When 15 - query for a range where the boundaries cover all 4 rows, min is not
+        // inclusive, and max is inclusive
         // Row i is in range? 1 - yes; 2 - no; 3 - no; 4 - yes
         range1 = rangeFactory.createRange("key1", "C", false, "P", true);
         range2 = rangeFactory.createRange("key2", "H", false, "Z", true);
@@ -1074,57 +1205,6 @@ public class QueryExecutorIT {
             assertThat(results).toIterable().hasSize(6)
                     .hasSameElementsAs(Arrays.asList(row1, row4));
         }
-
-        // When 16
-        range1 = rangeFactory.createRange("key1", "C", false, "P", true);
-        range2 = rangeFactory.createRange("key2", "H", false, "Z", true);
-        region = new Region(Arrays.asList(range1, range2));
-        Query query = queryWithRegion(region);
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-
-        // Then 16
-        assertThat(leafPartitionQueries)
-                .usingRecursiveFieldByFieldElementComparator(RecursiveComparisonConfiguration.builder()
-                        .withIgnoredFields("subQueryId")
-                        .withIgnoredCollectionOrderInFields("files")
-                        .build())
-                .containsExactlyInAnyOrder(
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
-                                .regions(List.of(region))
-                                .leafPartitionId("P1")
-                                .partitionRegion(tree.getPartition("P1").getRegion())
-                                .files(filesInLeafPartition1)
-                                .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
-                                .regions(List.of(region))
-                                .leafPartitionId("P2")
-                                .partitionRegion(tree.getPartition("P2").getRegion())
-                                .files(filesInLeafPartition2)
-                                .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
-                                .regions(List.of(region))
-                                .leafPartitionId("P3")
-                                .partitionRegion(tree.getPartition("P3").getRegion())
-                                .files(filesInLeafPartition3)
-                                .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
-                                .regions(List.of(region))
-                                .leafPartitionId("P4")
-                                .partitionRegion(tree.getPartition("P4").getRegion())
-                                .files(filesInLeafPartition4)
-                                .build());
     }
 
     @Test
@@ -1179,7 +1259,8 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied() throws Exception {
+    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied()
+            throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("id", new StringType()))
@@ -1319,7 +1400,8 @@ public class QueryExecutorIT {
         try (CloseableIterator<Row> results = queryExecutor.execute(query)) {
 
             // Then
-            assertThat(results).hasNext().toIterable().allSatisfy(result -> assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
+            assertThat(results).hasNext().toIterable()
+                    .allSatisfy(result -> assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
         }
     }
 
