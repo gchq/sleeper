@@ -71,6 +71,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -254,59 +255,83 @@ public class QueryExecutorIT {
         }
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenMultipleIdenticalRowsInOneFileInOnePartition() throws Exception {
-        // Given
-        tableProperties.setSchema(getLongKeySchema());
-        update(stateStore).initialise(tableProperties);
-        ingestData(getMultipleIdenticalRows().iterator());
-        List<String> files = filenamesInPartition("root");
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
+    @Nested
+    @DisplayName("Multiple identical rows, one file, one partition")
+    class MultipleIdenticalRows {
+        Row row = new Row(Map.of(
+                "key", 1L,
+                "value1", 10L,
+                "value2", 100L));
+        List<Row> rows = IntStream.range(0, 10).mapToObj(i -> row).toList();
 
-        // When 1
-        Region region = new Region(rangeFactory.createExactRange("key", 1L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 1
-            assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(row -> assertThat(row).isEqualTo(getRows().get(0)));
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(tableProperties);
+            ingestData(rows);
         }
 
-        // When 2
-        region = new Region(rangeFactory.createExactRange("key", 0L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnAllRowsByExactMatch() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 1L));
 
-            // Then 2
-            assertThat(results).isExhausted();
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable()
+                        .containsExactlyElementsOf(rows);
+            }
         }
 
-        // When 3
-        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, true));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnNoRowsByExactMatch() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 0L));
 
-            // Then 3
-            assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(row -> assertThat(row).isEqualTo(getRows().get(0)));
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
         }
 
-        // When 4
-        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
-        Query query = queryWithRegion(region);
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        @Test
+        void shouldReturnAllRowsByRange() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, true));
 
-        // Then 4
-        assertThat(leafPartitionQueries)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                .containsExactly(LeafPartitionQuery.builder()
-                        .parentQuery(query)
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .subQueryId("ignored")
-                        .regions(List.of(region))
-                        .leafPartitionId("root")
-                        .partitionRegion(rootPartitionRegion())
-                        .files(files)
-                        .build());
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable()
+                        .containsExactlyElementsOf(rows);
+            }
+        }
+
+        @Test
+        void shouldSplitQueryByRange() {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
+            Query query = queryWithRegion(region);
+            List<String> files = filenamesInPartition("root");
+
+            // When / Then
+            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                    .containsExactly(LeafPartitionQuery.builder()
+                            .parentQuery(query)
+                            .tableId(tableProperties.get(TABLE_ID))
+                            .subQueryId("ignored")
+                            .regions(List.of(region))
+                            .leafPartitionId("root")
+                            .partitionRegion(rootPartitionRegion())
+                            .files(files)
+                            .build());
+        }
     }
 
     @Test
