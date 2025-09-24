@@ -57,9 +57,8 @@ public class IteratorFactory {
                 iterators.add(new AggregationIterator(schema, iteratorConfig.getAggregations()));
             }
             if (iteratorConfig.getIteratorClassName() != null) {
-                ConfigStringIterator iterator;
                 String className = iteratorConfig.getIteratorClassName();
-                iterator = inner.getObject(className, ConfigStringIterator.class);
+                ConfigStringIterator iterator = inner.getObject(className, ConfigStringIterator.class);
 
                 LOGGER.debug("Created iterator of class {}", className);
                 iterator.init(iteratorConfig.getIteratorConfigString(), schema);
