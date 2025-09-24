@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.iterator.AgeOffIterator;
-import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -48,12 +47,10 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
-import sleeper.core.util.ObjectFactoryException;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 
@@ -122,7 +119,7 @@ public class QueryExecutorIT {
         @BeforeEach
         void setUp() {
             tableProperties.setSchema(getLongKeySchema());
-            update(stateStore).initialise(tableProperties);
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         }
 
         @Test
@@ -175,7 +172,7 @@ public class QueryExecutorIT {
         @BeforeEach
         void setUp() throws Exception {
             tableProperties.setSchema(getLongKeySchema());
-            update(stateStore).initialise(tableProperties);
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
             ingestData(List.of(row));
         }
 
@@ -267,7 +264,7 @@ public class QueryExecutorIT {
         @BeforeEach
         void setUp() throws Exception {
             tableProperties.setSchema(getLongKeySchema());
-            update(stateStore).initialise(tableProperties);
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
             ingestData(rows);
         }
 
@@ -334,184 +331,257 @@ public class QueryExecutorIT {
         }
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenIdenticalRowsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
-        // Given
-        tableProperties.setSchema(getLongKeySchema());
-        update(stateStore).initialise(tableProperties);
-        for (int i = 0; i < 10; i++) {
-            ingestData(getRows().iterator());
-        }
-        List<String> files = filenamesInPartition("root");
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
+    @Nested
+    @DisplayName("Multiple identical files, one partition, one row each")
+    class MultipleIdenticalSingleRowFiles {
+        Row row = new Row(Map.of(
+                "key", 1L,
+                "value1", 10L,
+                "value2", 100L));
+        List<Row> rows = IntStream.range(0, 10).mapToObj(i -> row).toList();
 
-        // When 1
-        Region region = new Region(rangeFactory.createExactRange("key", 1L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 1
-            assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(row -> assertThat(row).isEqualTo(getRows().get(0)));
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            for (int i = 0; i < 10; i++) {
+                ingestData(List.of(row));
+            }
         }
 
-        // When 2
-        region = new Region(rangeFactory.createExactRange("key", 0L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnAllRowsByExactMatch() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 1L));
 
-            // Then 2
-            assertThat(results).isExhausted();
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable()
+                        .containsExactlyElementsOf(rows);
+            }
         }
 
-        // When 3
-        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, true));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnNoRowsByExactMatch() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 0L));
 
-            // Then 3
-            assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(row -> assertThat(row).isEqualTo(getRows().get(0)));
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
         }
 
-        // When 4
-        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
-        Query query = queryWithRegion(region);
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        @Test
+        void shouldReturnAllRowsByRange() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, true));
 
-        // Then 4
-        assertThat(leafPartitionQueries)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                .containsExactly(LeafPartitionQuery.builder()
-                        .parentQuery(query)
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .subQueryId("ignored")
-                        .regions(List.of(region))
-                        .leafPartitionId("root")
-                        .partitionRegion(rootPartitionRegion())
-                        .files(files)
-                        .build());
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable()
+                        .containsExactlyElementsOf(rows);
+            }
+        }
+
+        @Test
+        void shouldSplitQueryByRange() {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
+            Query query = queryWithRegion(region);
+            List<String> files = filenamesInPartition("root");
+
+            // When / Then
+            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                    .containsExactly(LeafPartitionQuery.builder()
+                            .parentQuery(query)
+                            .tableId(tableProperties.get(TABLE_ID))
+                            .subQueryId("ignored")
+                            .regions(List.of(region))
+                            .leafPartitionId("root")
+                            .partitionRegion(rootPartitionRegion())
+                            .files(files)
+                            .build());
+        }
+    }
+
+    @Nested
+    @DisplayName("Multiple identical files, one partition, multiple rows each")
+    class MultipleIdenticalMultiRowFiles {
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(tableProperties);
+            for (int i = 0; i < 10; i++) {
+                ingestData(getMultipleRows());
+            }
+        }
+
+        @Test
+        void shouldReturnSomeRowsByExactMatch() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 1L));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(10)
+                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
+            }
+        }
+
+        @Test
+        void shouldReturnOtherRowsByExactMatch() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 5L));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(10)
+                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
+            }
+        }
+
+        @Test
+        void shouldReturnNoRowsByExactMatch() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 0L));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
+        }
+
+        @Test
+        void shouldReturnAllRowsByExactRange() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, true));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(100)
+                        .hasSameElementsAs(getMultipleRows());
+            }
+        }
+
+        @Test
+        void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", -100000L, true, 123456789L, true));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(100)
+                        .hasSameElementsAs(getMultipleRows());
+            }
+        }
+
+        @Test
+        void shouldReturnSomeRowsByRangePartiallyCoveringData() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 5L, true, 123456789L, true));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(60)
+                        .hasSameElementsAs(getMultipleRows().stream()
+                                .filter(r -> ((long) r.get("key")) >= 5L)
+                                .collect(Collectors.toList()));
+            }
+        }
+
+        @Test
+        void shouldExcludeLastValueWhenMaxIsNotInclusive() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(90)
+                        .hasSameElementsAs(getMultipleRows().stream()
+                                .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L)
+                                .collect(Collectors.toList()));
+            }
+        }
+
+        @Test
+        void shouldExcludeFirstValueWhenMinIsNotInclusive() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, false, 10L, true));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then 7
+                assertThat(results).toIterable().hasSize(90)
+                        .hasSameElementsAs(getMultipleRows().stream()
+                                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L)
+                                .collect(Collectors.toList()));
+            }
+        }
+
+        @Test
+        void shouldExcludeFirstAndLastValueWhenMaxAndMinAreNotInclusive() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, false, 10L, false));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().hasSize(80)
+                        .hasSameElementsAs(getMultipleRows().stream()
+                                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L)
+                                .collect(Collectors.toList()));
+            }
+        }
+
+        @Test
+        void shouldSplitQueryByRange() {
+            // Given
+            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
+            Query query = queryWithRegion(region);
+            List<String> files = filenamesInPartition("root");
+
+            // When / Then
+            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                    .containsExactly(LeafPartitionQuery.builder()
+                            .parentQuery(query)
+                            .tableId(tableProperties.get(TABLE_ID))
+                            .subQueryId("ignored")
+                            .regions(List.of(region))
+                            .leafPartitionId("root")
+                            .partitionRegion(rootPartitionRegion())
+                            .files(files)
+                            .build());
+        }
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
-        // Given
-        tableProperties.setSchema(getLongKeySchema());
-        update(stateStore).initialise(tableProperties);
-        for (int i = 0; i < 10; i++) {
-            ingestData(getMultipleRows().iterator());
-        }
-        List<String> files = filenamesInPartition("root");
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
-
-        // When 1
-        Region region = new Region(rangeFactory.createExactRange("key", 1L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 1
-            assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
-        }
-
-        // When 2
-        region = new Region(rangeFactory.createExactRange("key", 5L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 2
-            assertThat(results).toIterable().hasSize(10)
-                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
-        }
-
-        // When 3
-        region = new Region(rangeFactory.createExactRange("key", 0L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 3
-            assertThat(results).isExhausted();
-        }
-
-        // When 4
-        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, true));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 4
-            assertThat(results).toIterable().hasSize(100)
-                    .hasSameElementsAs(getMultipleRows());
-        }
-
-        // When 5
-        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 5
-            assertThat(results).toIterable().hasSize(90)
-                    .hasSameElementsAs(getMultipleRows().stream()
-                            .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L)
-                            .collect(Collectors.toList()));
-        }
-
-        // When 6
-        region = new Region(rangeFactory.createRange("key", 1L, false, 10L, false));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 6
-            assertThat(results).toIterable().hasSize(80)
-                    .hasSameElementsAs(getMultipleRows().stream()
-                            .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L)
-                            .collect(Collectors.toList()));
-        }
-
-        // When 7
-        region = new Region(rangeFactory.createRange("key", 1L, false, 10L, true));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 7
-            assertThat(results).toIterable().hasSize(90)
-                    .hasSameElementsAs(getMultipleRows().stream()
-                            .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L)
-                            .collect(Collectors.toList()));
-        }
-
-        // When 8
-        region = new Region(rangeFactory.createRange("key", -100000L, true, 123456789L, true));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 8
-            assertThat(results).toIterable().hasSize(100)
-                    .hasSameElementsAs(getMultipleRows());
-        }
-
-        // When 9
-        region = new Region(rangeFactory.createRange("key", 5L, true, 123456789L, true));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 9
-            assertThat(results).toIterable().hasSize(60)
-                    .hasSameElementsAs(getMultipleRows().stream()
-                            .filter(r -> ((long) r.get("key")) >= 5L)
-                            .collect(Collectors.toList()));
-        }
-
-        // When 10
-        region = new Region(rangeFactory.createRange("key", 1L, true, 10L, false));
-        Query query = queryWithRegion(region);
-        List<LeafPartitionQuery> leafPartitionQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
-
-        // Then 10
-        assertThat(leafPartitionQueries)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                .containsExactly(LeafPartitionQuery.builder()
-                        .parentQuery(query)
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .subQueryId("ignored")
-                        .regions(List.of(region))
-                        .leafPartitionId("root")
-                        .partitionRegion(rootPartitionRegion())
-                        .files(files)
-                        .build());
-    }
-
-    @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitions() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitions() throws Exception {
         // Given
         tableProperties.setSchema(getLongKeySchema());
         PartitionTree tree = new PartitionsBuilder(tableProperties)
@@ -604,7 +674,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWithMultidimRowKey() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWithMultidimRowKey() throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("key1", new LongType()), new Field("key2", new StringType()))
@@ -712,7 +782,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws QueryException, IOException, IteratorCreationException, ObjectFactoryException {
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(
@@ -997,7 +1067,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnDataCorrectlySorted() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnDataCorrectlySorted() throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("key", new LongType()))
@@ -1048,7 +1118,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied() throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("id", new StringType()))
@@ -1104,7 +1174,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenQueryTimeIteratorApplied() throws IteratorCreationException, IOException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenQueryTimeIteratorApplied() throws Exception {
         // Given
         tableProperties.setSchema(getSecurityLabelSchema());
         update(stateStore).initialise(new PartitionsBuilder(tableProperties)
@@ -1138,7 +1208,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnOnlyRequestedValuesWhenSpecified() throws IteratorCreationException, ObjectFactoryException, IOException, QueryException {
+    public void shouldReturnOnlyRequestedValuesWhenSpecified() throws Exception {
         // Given
         tableProperties.setSchema(getLongKeySchema());
         update(stateStore).initialise(tableProperties);
@@ -1165,7 +1235,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser() throws IteratorCreationException, ObjectFactoryException, IOException, QueryException {
+    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser() throws Exception {
         // Given
         tableProperties.setSchema(getSecurityLabelSchema());
         update(stateStore).initialise(tableProperties);
@@ -1219,18 +1289,18 @@ public class QueryExecutorIT {
                 .build();
     }
 
-    protected Schema getSecurityLabelSchema() {
+    private Schema getSecurityLabelSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(new Field("value", new LongType()), new Field("securityLabel", new StringType()))
                 .build();
     }
 
-    private void ingestData(List<Row> rows) throws IOException, IteratorCreationException {
+    private void ingestData(List<Row> rows) throws Exception {
         ingestData(rows.iterator());
     }
 
-    private void ingestData(Iterator<Row> rowIterator) throws IOException, IteratorCreationException {
+    private void ingestData(Iterator<Row> rowIterator) throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -1264,15 +1334,7 @@ public class QueryExecutorIT {
         return rows;
     }
 
-    protected List<Row> getMultipleIdenticalRows() {
-        List<Row> rows = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            rows.addAll(getRows());
-        }
-        return rows;
-    }
-
-    protected List<Row> getMultipleRows() {
+    private List<Row> getMultipleRows() {
         List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
             Row row = new Row();
@@ -1284,7 +1346,7 @@ public class QueryExecutorIT {
         return rows;
     }
 
-    protected List<Row> getMultipleRowsMultidimRowKey() {
+    private List<Row> getMultipleRowsMultidimRowKey() {
         List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
             Row row = new Row();
@@ -1297,7 +1359,7 @@ public class QueryExecutorIT {
         return rows;
     }
 
-    protected List<Row> getMultipleRowsForTestingSorting() {
+    private List<Row> getMultipleRowsForTestingSorting() {
         List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
             for (int j = 1000; j >= 900; j--) {
@@ -1311,7 +1373,7 @@ public class QueryExecutorIT {
         return rows;
     }
 
-    protected List<Row> getRowsForAgeOffIteratorTest() {
+    private List<Row> getRowsForAgeOffIteratorTest() {
         List<Row> rows = new ArrayList<>();
         Row row1 = new Row();
         row1.put("id", "1");
@@ -1332,7 +1394,7 @@ public class QueryExecutorIT {
         return rows;
     }
 
-    protected List<Row> getRowsForQueryTimeIteratorTest(String securityLabel) {
+    private List<Row> getRowsForQueryTimeIteratorTest(String securityLabel) {
         List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
             Row row = new Row();
