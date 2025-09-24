@@ -855,20 +855,20 @@ public class QueryExecutorIT {
                         new Field("value1", new LongType()),
                         new Field("value2", new LongType()))
                 .build();
-        // Partitions:
-        // - Root partition covers the whole space
-        // - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
-        // - There are 4 leaf partitions:
-        // null +-----------+-----------+
-        // | 3 | 4 |
-        // | | |
-        // "T" +-----------+-----------+
-        // | | |
-        // | 1 | 2 |
-        // | | |
-        // | | |
-        // "" +-----------+-----------+
-        // "" "I" null (Dimension 1)
+        //  Partitions:
+        //  - Root partition covers the whole space
+        //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
+        //  - There are 4 leaf partitions:
+        //      null +-----------+-----------+
+        //           |     3     |    4      |
+        //           |           |           |
+        //       "T" +-----------+-----------+
+        //           |           |           |
+        //           |     1     |    2      |
+        //           |           |           |
+        //           |           |           |
+        //        "" +-----------+-----------+
+        //           ""         "I"          null      (Dimension 1)
         // Add 4 rows - row i is in the center of partition i
         Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
         Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
@@ -913,8 +913,9 @@ public class QueryExecutorIT {
             try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
 
                 // Then
-                assertThat(results).toIterable().hasSize(12) // 12 because the same data was added 3 times at different
-                                                             // levels of the tree
+                assertThat(results).toIterable()
+                        // 12 because the same data was added 3 times at different levels of the tree
+                        .hasSize(12)
                         .hasSameElementsAs(rows);
             }
         }
@@ -1089,8 +1090,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey()
-            throws Exception {
+    public void shouldReturnCorrectDataWhenRowsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(
@@ -1100,20 +1100,20 @@ public class QueryExecutorIT {
                         new Field("value1", new LongType()),
                         new Field("value2", new LongType()))
                 .build());
-        // Partitions:
-        // - Root partition covers the whole space
-        // - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
-        // - There are 4 leaf partitions:
-        // null +-----------+-----------+
-        // | 3 | 4 |
-        // | | |
-        // "T" +-----------+-----------+
-        // | | |
-        // | 1 | 2 |
-        // | | |
-        // | | |
-        // "" +-----------+-----------+
-        // "" "I" null (Dimension 1)
+        //  Partitions:
+        //  - Root partition covers the whole space
+        //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
+        //  - There are 4 leaf partitions:
+        //      null +-----------+-----------+
+        //           |     3     |    4      |
+        //           |           |           |
+        //       "T" +-----------+-----------+
+        //           |           |           |
+        //           |     1     |    2      |
+        //           |           |           |
+        //           |           |           |
+        //        "" +-----------+-----------+
+        //           ""         "I"          null      (Dimension 1)
         // Add 4 rows - row i is in the center of partition i
         Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
         Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
@@ -1259,8 +1259,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied()
-            throws Exception {
+    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied() throws Exception {
         // Given
         tableProperties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("id", new StringType()))
