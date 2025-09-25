@@ -38,6 +38,7 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
+    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
     logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
@@ -69,6 +70,12 @@ pub use region::SleeperPartitionRegion;
 #[derive(Debug)]
 pub struct SleeperOperations<'a> {
     config: &'a CommonConfig<'a>,
+    /// Sleeper aggregation configuration
+    #[arg(short = 'a', long, required = false, num_args = 1)]
+    aggregation_config: Option<String>,
+    /// Sleeper filter configuration
+    #[arg(short = 'f', long, required = false, num_args = 1)]
+    filter_config: Option<String>,
 }
 
 impl<'a> SleeperOperations<'a> {
@@ -192,10 +199,12 @@ impl<'a> SleeperOperations<'a> {
         &self,
     ) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
         self.config
-            .iterator_config
-            .as_ref()
-            .map(|s| FilterAggregationConfig::try_from(s.as_str()))
-            .transpose()
+            .aggregates(Aggregate::parse_config(
+                &args.aggregation_config.unwrap_or_default(),
+            )?)
+            .filters(Filter::parse_config(
+                &args.filter_config.unwrap_or_default(),
+            )?)
     }
 
     /// Apply any configured filters to the `DataFusion` operation if any are present.
