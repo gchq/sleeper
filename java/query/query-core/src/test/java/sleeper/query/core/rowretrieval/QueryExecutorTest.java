@@ -42,6 +42,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.example.iterator.AdditionIterator;
 import sleeper.example.iterator.SecurityFilteringIterator;
+import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
@@ -64,6 +65,7 @@ import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -73,7 +75,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final InMemoryRowStore rowStore = new InMemoryRowStore();
-    private final Schema schema = createSchemaWithKey("key");
+    private final Schema schema = createSchemaWithKey("key", new LongType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
 
@@ -495,6 +497,105 @@ public class QueryExecutorTest {
         }
     }
 
+    @Nested
+    @DisplayName("Split queries into leaf partition queries")
+    class SplitQueries {
+
+        @Test
+        void shouldCreateNoSubqueriesWhenNoFilesArePresent() throws Exception {
+            // Given
+            Query query = queryRange(1L, 10L);
+
+            // When / Then
+            assertThat(executor().splitIntoLeafPartitionQueries(query))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldCreateOneSubqueryWithOneFileInOnePartition() throws Exception {
+            // Given
+            addRootFile("test.parquet", List.of(new Row(Map.of("key", 1L))));
+            Region region = range(0L, 10L);
+            Query query = queryRegions(region);
+
+            // When / Then
+            assertThat(executor().splitIntoLeafPartitionQueries(query))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                    .containsExactly(LeafPartitionQuery.builder()
+                            .parentQuery(query)
+                            .tableId(tableProperties.get(TABLE_ID))
+                            .subQueryId("ignored")
+                            .regions(List.of(region))
+                            .leafPartitionId("root")
+                            .partitionRegion(rootPartitionRegion())
+                            .files(List.of("test.parquet"))
+                            .build());
+        }
+
+        @Test
+        void shouldCreateOneSubqueryWithMultipleFilesInOnePartition() throws Exception {
+            // Given
+            addRootFile("file1.parquet", List.of(new Row(Map.of("key", 1L))));
+            addRootFile("file2.parquet", List.of(new Row(Map.of("key", 2L))));
+            addRootFile("file3.parquet", List.of(new Row(Map.of("key", 3L))));
+            Region region = range(0L, 5L);
+            Query query = queryRegions(region);
+
+            // When / Then
+            assertThat(executor().splitIntoLeafPartitionQueries(query))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                    .containsExactly(LeafPartitionQuery.builder()
+                            .parentQuery(query)
+                            .tableId(tableProperties.get(TABLE_ID))
+                            .subQueryId("ignored")
+                            .regions(List.of(region))
+                            .leafPartitionId("root")
+                            .partitionRegion(rootPartitionRegion())
+                            .files(List.of("file1.parquet", "file2.parquet", "file3.parquet"))
+                            .build());
+        }
+
+        @Test
+        void shouldCreateTwoSubqueriesWithTwoLeafPartitions() throws Exception {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 5L)
+                    .buildTree();
+            update(stateStore).initialise(tree);
+            addPartitionFile("left", "left1.parquet", List.of(new Row(Map.of("key", 1L))));
+            addPartitionFile("left", "left2.parquet", List.of(new Row(Map.of("key", 1L))));
+            addPartitionFile("right", "right1.parquet", List.of(new Row(Map.of("key", 2L))));
+            addPartitionFile("right", "right2.parquet", List.of(new Row(Map.of("key", 2L))));
+            Region region = range(0L, 10L);
+            Query query = queryRegions(region);
+
+            // When / Then
+            assertThat(executor().splitIntoLeafPartitionQueries(query))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
+                    .containsExactlyInAnyOrder(
+                            LeafPartitionQuery.builder()
+                                    .parentQuery(query)
+                                    .tableId(tableProperties.get(TABLE_ID))
+                                    .subQueryId("ignored")
+                                    .regions(List.of(region))
+                                    .leafPartitionId("left")
+                                    .partitionRegion(tree.getPartition("left").getRegion())
+                                    .files(List.of("left1.parquet", "left2.parquet"))
+                                    .build(),
+                            LeafPartitionQuery.builder()
+                                    .parentQuery(query)
+                                    .tableId(tableProperties.get(TABLE_ID))
+                                    .subQueryId("ignored")
+                                    .regions(List.of(region))
+                                    .leafPartitionId("right")
+                                    .partitionRegion(tree.getPartition("right").getRegion())
+                                    .files(List.of("right1.parquet", "right2.parquet"))
+                                    .build());
+        }
+
+    }
+
     private void addRootFile(String filename, List<Row> rows) {
         addFile(fileReferenceFactory().rootFile(filename, rows.size()), rows);
     }
@@ -575,6 +676,10 @@ public class QueryExecutorTest {
 
     private FileReferenceFactory fileReferenceFactory() {
         return FileReferenceFactory.from(stateStore);
+    }
+
+    private Region rootPartitionRegion() {
+        return new PartitionTree(stateStore.getAllPartitions()).getRootPartition().getRegion();
     }
 
     private static QueryProcessingConfig requestValueFields(String... fields) {

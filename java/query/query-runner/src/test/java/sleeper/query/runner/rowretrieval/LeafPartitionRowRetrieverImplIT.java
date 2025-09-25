@@ -137,17 +137,6 @@ public class LeafPartitionRowRetrieverImplIT {
             // Then
             assertThat(results).isEmpty();
         }
-
-        @Test
-        void shouldSplitQueryByRange() {
-            // When
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
-
-            // When / Then
-            assertThat(initQueryExecutor()
-                    .splitIntoLeafPartitionQueries(queryWithRegion(region)))
-                    .isEmpty();
-        }
     }
 
     @Nested
@@ -201,27 +190,6 @@ public class LeafPartitionRowRetrieverImplIT {
             // Then
             assertThat(results).isEmpty();
         }
-
-        @Test
-        void shouldSplitQueryByRange() {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
-            Query query = queryWithRegion(region);
-            List<String> files = filenamesInPartition("root");
-
-            // When / Then
-            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                    .containsExactly(LeafPartitionQuery.builder()
-                            .parentQuery(query)
-                            .tableId(tableProperties.get(TABLE_ID))
-                            .subQueryId("ignored")
-                            .regions(List.of(region))
-                            .leafPartitionId("root")
-                            .partitionRegion(rootPartitionRegion())
-                            .files(files)
-                            .build());
-        }
     }
 
     @Nested
@@ -265,27 +233,6 @@ public class LeafPartitionRowRetrieverImplIT {
 
             // Then
             assertThat(results).containsExactlyElementsOf(rows);
-        }
-
-        @Test
-        void shouldSplitQueryByRange() {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
-            Query query = queryWithRegion(region);
-            List<String> files = filenamesInPartition("root");
-
-            // When / Then
-            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                    .containsExactly(LeafPartitionQuery.builder()
-                            .parentQuery(query)
-                            .tableId(tableProperties.get(TABLE_ID))
-                            .subQueryId("ignored")
-                            .regions(List.of(region))
-                            .leafPartitionId("root")
-                            .partitionRegion(rootPartitionRegion())
-                            .files(files)
-                            .build());
         }
     }
 
@@ -332,27 +279,6 @@ public class LeafPartitionRowRetrieverImplIT {
 
             // Then
             assertThat(results).containsExactlyElementsOf(rows);
-        }
-
-        @Test
-        void shouldSplitQueryByRange() {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
-            Query query = queryWithRegion(region);
-            List<String> files = filenamesInPartition("root");
-
-            // When / Then
-            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                    .containsExactly(LeafPartitionQuery.builder()
-                            .parentQuery(query)
-                            .tableId(tableProperties.get(TABLE_ID))
-                            .subQueryId("ignored")
-                            .regions(List.of(region))
-                            .leafPartitionId("root")
-                            .partitionRegion(rootPartitionRegion())
-                            .files(files)
-                            .build());
         }
     }
 
@@ -465,27 +391,6 @@ public class LeafPartitionRowRetrieverImplIT {
                             .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L)
                             .collect(Collectors.toList()));
         }
-
-        @Test
-        void shouldSplitQueryByRange() {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
-            Query query = queryWithRegion(region);
-            List<String> files = filenamesInPartition("root");
-
-            // When / Then
-            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                    .containsExactly(LeafPartitionQuery.builder()
-                            .parentQuery(query)
-                            .tableId(tableProperties.get(TABLE_ID))
-                            .subQueryId("ignored")
-                            .regions(List.of(region))
-                            .leafPartitionId("root")
-                            .partitionRegion(rootPartitionRegion())
-                            .files(files)
-                            .build());
-        }
     }
 
     @Nested
@@ -556,38 +461,6 @@ public class LeafPartitionRowRetrieverImplIT {
                     .hasSameElementsAs(getMultipleRows()
                             .stream().filter(r -> ((long) r.get("key")) >= 5L)
                             .collect(Collectors.toList()));
-        }
-
-        @Test
-        void shouldSplitQueryByRange() {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
-            Query query = queryWithRegion(region);
-            List<String> filesInLeftPartition = filenamesInPartition("left");
-            List<String> filesInRightPartition = filenamesInPartition("right");
-
-            // When / Then
-            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                    .containsExactlyInAnyOrder(
-                            LeafPartitionQuery.builder()
-                                    .parentQuery(query)
-                                    .tableId(tableProperties.get(TABLE_ID))
-                                    .subQueryId("ignored")
-                                    .regions(List.of(region))
-                                    .leafPartitionId("left")
-                                    .partitionRegion(tree.getPartition("left").getRegion())
-                                    .files(filesInLeftPartition)
-                                    .build(),
-                            LeafPartitionQuery.builder()
-                                    .parentQuery(query)
-                                    .tableId(tableProperties.get(TABLE_ID))
-                                    .subQueryId("ignored")
-                                    .regions(List.of(region))
-                                    .leafPartitionId("right")
-                                    .partitionRegion(tree.getPartition("right").getRegion())
-                                    .files(filesInRightPartition)
-                                    .build());
         }
     }
 
