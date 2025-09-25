@@ -30,32 +30,6 @@ use datafusion::{
 use filter_udfs::ageoff::AgeOff;
 use std::sync::Arc;
 
-/// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.
-///
-/// Aggregation must be performed on all value columns, or none at all. This condition will be validated by the
-/// [`validate_aggregations`] function.
-#[derive(Debug, Default)]
-pub struct FilterAggregationConfig {
-    /// Single filtering option
-    filter: Option<Filter>,
-    /// Aggregation columns. These must not include any row key columns or columns mentioned in `agg_cols`.
-    aggregation: Option<Vec<Aggregate>>,
-}
-
-impl FilterAggregationConfig {
-    /// Get the filter configuration if present.
-    #[must_use]
-    pub fn filter(&self) -> Option<&Filter> {
-        self.filter.as_ref()
-    }
-
-    /// Aggregation configuration if present.
-    #[must_use]
-    pub fn aggregation(&self) -> Option<&Vec<Aggregate>> {
-        self.aggregation.as_ref()
-    }
-}
-
 impl Filter {
     /// Creates a filtering expression for this filter instance. The returned
     /// expression can be passed to [`DataFrame::filter`].
