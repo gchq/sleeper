@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 use crate::unpack::{
-    unpack_aws_config, unpack_str, unpack_string, unpack_string_array, unpack_string_opt,
-    unpack_typed_array, unpack_typed_ref_array, unpack_variant_array,
+    unpack_aws_config, unpack_str, unpack_string, unpack_string_array, unpack_typed_array,
+    unpack_typed_ref_array, unpack_variant_array,
 };
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
@@ -150,7 +150,6 @@ pub struct FFICommonConfig {
     pub dict_enc_sort_keys: bool,
     pub dict_enc_values: bool,
     pub region: *const FFISleeperRegion,
-    pub iterator_config: *const c_char,
     pub aggregation_config: *const c_char,
     pub filtering_config: *const c_char,
 }
@@ -182,9 +181,6 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
     type Error = color_eyre::Report;
 
     fn try_from(params: &'a FFICommonConfig) -> Result<CommonConfig<'a>, Self::Error> {
-        if params.iterator_config.is_null() {
-            bail!("FFICommonConfig iterator_config is NULL");
-        }
         if params.aggregation_config.is_null() {
             bail!("FFICommonConfig aggregation_config is NULL");
         }
@@ -244,7 +240,6 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
                 output_file: unpack_str(params.output_file).map(Url::parse)??,
                 opts,
             })
-            .iterator_config(unpack_string_opt(params.iterator_config)?)
             .aggregates(Aggregate::parse_config(unpack_str(
                 params.aggregation_config,
             )?)?)
