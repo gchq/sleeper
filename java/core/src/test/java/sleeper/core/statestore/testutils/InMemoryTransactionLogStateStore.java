@@ -41,8 +41,7 @@ public class InMemoryTransactionLogStateStore {
      * @return                 the state store
      */
     public static TransactionLogStateStore create(TableProperties tableProperties, InMemoryTransactionLogs transactionLogs) {
-        return transactionLogs.stateStoreBuilder(tableProperties.getStatus(), tableProperties.getSchema())
-                .build();
+        return transactionLogs.stateStoreBuilder(tableProperties).build();
     }
 
     /**

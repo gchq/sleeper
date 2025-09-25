@@ -30,7 +30,6 @@ import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotCre
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
-import sleeper.core.table.TableStatus;
 import sleeper.statestore.StateStoreArrowFileReadStore;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
@@ -45,7 +44,7 @@ import java.util.Optional;
  */
 public class DynamoDBTransactionLogSnapshotCreator {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotCreator.class);
-    private final TableStatus tableStatus;
+    private final TableProperties tableProperties;
     private final TransactionLogStore filesLogStore;
     private final TransactionLogStore partitionsLogStore;
     private final TransactionBodyStore transactionBodyStore;
@@ -83,7 +82,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, TransactionBodyStore transactionBodyStore,
             S3Client s3Client, S3TransferManager s3TransferManager,
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver) {
-        this.tableStatus = tableProperties.getStatus();
+        this.tableProperties = tableProperties;
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
         this.transactionBodyStore = transactionBodyStore;
@@ -97,7 +96,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
      * Creates a snapshot by reading the latest snapshot for the table and writing a new one if necessary.
      */
     public void createSnapshot() {
-        LOGGER.info("Creating snapshot for table {}", tableStatus);
+        LOGGER.info("Creating snapshot for table {}", tableProperties.getStatus());
         LatestSnapshots latestSnapshots = latestMetadataLoader.load();
         LOGGER.info("Found latest snapshots: {}", latestSnapshots);
         updateFilesSnapshot(latestSnapshots);
@@ -110,13 +109,13 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 .orElseGet(TransactionLogSnapshot::filesInitialState);
         try {
             Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                    oldSnapshot, filesLogStore, transactionBodyStore, FileReferenceTransaction.class, tableStatus);
+                    oldSnapshot, filesLogStore, transactionBodyStore, FileReferenceTransaction.class, tableProperties);
             if (newSnapshot.isPresent()) {
                 snapshotSaver.saveFilesSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new files snapshot");
             }
         } catch (DuplicateSnapshotException | IOException e) {
-            LOGGER.error("Failed to create files snapshot for table {}", tableStatus);
+            LOGGER.error("Failed to create files snapshot for table {}", tableProperties.getStatus());
             throw new RuntimeException(e);
         }
     }
@@ -127,13 +126,13 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 .orElseGet(TransactionLogSnapshot::partitionsInitialState);
         try {
             Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                    oldSnapshot, partitionsLogStore, transactionBodyStore, PartitionTransaction.class, tableStatus);
+                    oldSnapshot, partitionsLogStore, transactionBodyStore, PartitionTransaction.class, tableProperties);
             if (newSnapshot.isPresent()) {
                 snapshotSaver.savePartitionsSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new partitions snapshot");
             }
         } catch (DuplicateSnapshotException | IOException e) {
-            LOGGER.error("Failed to create partitions snapshot for table {}", tableStatus);
+            LOGGER.error("Failed to create partitions snapshot for table {}", tableProperties.getStatus());
             throw new RuntimeException(e);
         }
     }
