@@ -18,6 +18,7 @@ package sleeper.core.statestore.transactionlog.transaction.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -98,7 +99,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
     }
 
     @Override
-    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles, TableProperties tableProperties) throws StateStoreException {
         // We want to update the job tracker whether the new files are valid or not, and the job tracker is updated
         // based on the transaction log. This means we still want to add the transaction to the log if it's invalid.
         // We discard any invalid files at the point when we apply the transaction in the apply method.
