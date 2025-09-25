@@ -18,6 +18,7 @@ package sleeper.core.statestore.transactionlog.transaction.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -64,7 +65,7 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
     }
 
     @Override
-    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles, TableProperties tableProperties) throws StateStoreException {
         for (AssignJobIdRequest request : requests) {
             for (String filename : request.getFilenames()) {
                 StateStoreFile existingFile = stateStoreFiles.file(filename)

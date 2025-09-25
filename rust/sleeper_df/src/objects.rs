@@ -14,9 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::unpack::{
-    unpack_str, unpack_string_array, unpack_string_opt, unpack_typed_array, unpack_variant_array,
-};
+use crate::unpack::{unpack_str, unpack_string_array, unpack_typed_array, unpack_variant_array};
 use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
@@ -214,7 +212,6 @@ pub struct FFICommonConfig {
     pub dict_enc_sort_keys: bool,
     pub dict_enc_values: bool,
     pub region: *const FFISleeperRegion,
-    pub iterator_config: *const c_char,
     pub aggregation_config: *const c_char,
     pub filtering_config: *const c_char,
 }
@@ -251,9 +248,6 @@ impl FFICommonConfig {
         &self,
         file_output_enabled: bool,
     ) -> Result<CommonConfig<'a>, color_eyre::Report> {
-        if self.iterator_config.is_null() {
-            bail!("FFICommonConfig iterator_config is NULL");
-        }
         if file_output_enabled && self.output_file.is_null() {
             bail!("FFICommonConfig output_file is NULL, file output selected");
         }
@@ -334,7 +328,6 @@ impl FFICommonConfig {
             )
             .region(region)
             .output(output)
-            .iterator_config(unpack_string_opt(self.iterator_config)?)
             .aggregates(Aggregate::parse_config(unpack_str(
                 self.aggregation_config,
             )?)?)

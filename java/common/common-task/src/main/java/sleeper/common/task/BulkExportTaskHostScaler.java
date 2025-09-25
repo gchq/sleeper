@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.common.task;
 
-package sleeper.ingest.batcher.core;
+public class BulkExportTaskHostScaler implements TaskHostScaler {
 
-import java.util.List;
+    @Override
+    public void scaleTo(int numberOfTasks) {
+        // Bulk Export doesn't currently scale so do nothing
+    }
 
-public interface IngestBatcherStore {
-    void addFile(IngestBatcherTrackedFile fileIngestRequest);
-
-    List<String> assignJobGetAssigned(String jobId, List<IngestBatcherTrackedFile> filesInJob);
-
-    List<IngestBatcherTrackedFile> getAllFilesNewestFirst();
-
-    List<IngestBatcherTrackedFile> getPendingFilesOldestFirst();
-
-    void deleteAllPending();
-
-    void deleteFiles(List<IngestBatcherTrackedFile> files);
 }

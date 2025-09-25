@@ -77,8 +77,6 @@ public class FFICommonConfig extends Struct {
     public final Struct.Boolean dict_enc_values = new Struct.Boolean();
     /** The Sleeper compaction region. */
     public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
-    /** Compaction iterator configuration. This is optional. */
-    public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
     /** Compaction aggregation configuration. This is optional. */
     public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
     /** Compaction filtering configuration. This is optional. */
@@ -105,7 +103,6 @@ public class FFICommonConfig extends Struct {
         output_file.set("");
         compression.set("");
         writer_version.set("");
-        iterator_config.set("");
     }
 
     /**
@@ -135,7 +132,6 @@ public class FFICommonConfig extends Struct {
         Objects.requireNonNull(output_file.get(), "Output file is null");
         Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
         Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
-        Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
     }
 
     /**

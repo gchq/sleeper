@@ -13,21 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.common.task;
 
-package sleeper.ingest.batcher.core;
-
-import java.util.List;
-
-public interface IngestBatcherStore {
-    void addFile(IngestBatcherTrackedFile fileIngestRequest);
-
-    List<String> assignJobGetAssigned(String jobId, List<IngestBatcherTrackedFile> filesInJob);
-
-    List<IngestBatcherTrackedFile> getAllFilesNewestFirst();
-
-    List<IngestBatcherTrackedFile> getPendingFilesOldestFirst();
-
-    void deleteAllPending();
-
-    void deleteFiles(List<IngestBatcherTrackedFile> files);
+public interface TaskHostScaler {
+    void scaleTo(int numberOfTasks);
 }

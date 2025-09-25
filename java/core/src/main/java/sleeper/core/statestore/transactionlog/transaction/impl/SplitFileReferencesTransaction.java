@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
@@ -84,7 +85,7 @@ public class SplitFileReferencesTransaction implements FileReferenceTransaction 
     }
 
     @Override
-    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles, TableProperties tableProperties) throws StateStoreException {
         for (SplitFileReferenceRequest request : requests) {
             StateStoreFile file = stateStoreFiles.file(request.getFilename())
                     .orElseThrow(() -> new FileNotFoundException(request.getFilename()));
