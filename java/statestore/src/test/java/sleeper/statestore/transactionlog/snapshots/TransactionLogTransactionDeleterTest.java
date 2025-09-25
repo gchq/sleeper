@@ -31,7 +31,6 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
-import sleeper.core.table.TableStatus;
 import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter;
 
 import java.time.Duration;
@@ -51,12 +50,11 @@ public class TransactionLogTransactionDeleterTest {
     private final Schema schema = createSchemaWithKey("key", new StringType());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final TableStatus tableStatus = tableProperties.getStatus();
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("root");
     private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     private final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
     private final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
-    private final StateStore stateStore = transactionLogs.stateStoreBuilder(tableStatus, schema).build();
+    private final StateStore stateStore = transactionLogs.stateStoreBuilder(tableProperties).build();
     private final InMemoryTransactionLogSnapshotMetadataStore snapshots = new InMemoryTransactionLogSnapshotMetadataStore();
 
     @Test

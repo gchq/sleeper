@@ -42,8 +42,6 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.core.util.ExponentialBackoffWithJitter;
-import sleeper.core.util.ThreadSleepTestHelper;
 
 import java.time.Duration;
 import java.util.List;
@@ -54,12 +52,12 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 
 public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -135,7 +133,8 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         @Test
         void shouldFailAfterTooManyConflictsAddingTransaction() {
             // Given we only allow one attempt adding a transaction
-            store = stateStore(builder -> builder.maxAddTransactionAttempts(1));
+            tableProperties.setNumber(ADD_TRANSACTION_MAX_ATTEMPTS, 1);
+            store = stateStore();
             // And we cause a transaction conflict by adding another file during an update
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
@@ -155,7 +154,8 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         @Test
         void shouldFailIfNoAttemptsConfigured() {
             // Given
-            store = stateStore(builder -> builder.maxAddTransactionAttempts(0));
+            tableProperties.setNumber(ADD_TRANSACTION_MAX_ATTEMPTS, 0);
+            store = stateStore();
             FileReference file = fileFactory().rootFile("file.parquet", 100);
 
             // When / Then
@@ -277,13 +277,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
 
         @Test
         void shouldBackoffExponentiallyOnRetries() {
-            // Given
-            store = stateStore(builder -> builder
-                    .maxAddTransactionAttempts(TransactionLogStateStore.DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS)
-                    .retryBackoff(new ExponentialBackoffWithJitter(
-                            TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE,
-                            constantJitterFraction(0.5), ThreadSleepTestHelper.recordWaits(retryWaits))));
-            // And we cause a transaction conflict by adding another file during each update
+            // Given we cause a transaction conflict by adding another file during each update
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             List<FileReference> otherProcessFiles = IntStream.rangeClosed(1, TransactionLogStateStore.DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS)
                     .mapToObj(i -> fileFactory().rootFile("file-" + i + ".parquet", i * 100))
@@ -314,10 +308,6 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         void shouldSkipFirstWaitWhenNotUpdatingLogBeforeAddingTransaction() {
             // Given
             store = stateStore(builder -> builder
-                    .maxAddTransactionAttempts(TransactionLogStateStore.DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS)
-                    .retryBackoff(new ExponentialBackoffWithJitter(
-                            TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE,
-                            constantJitterFraction(0.5), ThreadSleepTestHelper.recordWaits(retryWaits)))
                     .updateLogBeforeAddTransaction(false));
             // And we cause a transaction conflict by adding another file during each update
             FileReference file = fileFactory().rootFile("file.parquet", 100);
