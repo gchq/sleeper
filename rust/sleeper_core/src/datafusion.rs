@@ -38,7 +38,6 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
     logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
