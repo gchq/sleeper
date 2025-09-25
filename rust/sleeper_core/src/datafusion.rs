@@ -28,7 +28,6 @@ use crate::{
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
-    filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
@@ -215,14 +214,7 @@ impl<'a> SleeperOperations<'a> {
     /// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified,
     /// then an error will result.
     fn apply_aggregations(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        Ok(self.apply_aggregation(&self.config.aggregates, frame)?)
-    }
-
-    fn apply_aggregation(
-        &self,
-        aggregates: &[Aggregate],
-        frame: DataFrame,
-    ) -> Result<DataFrame, DataFusionError> {
+        let aggregates = &self.config.aggregates;
         if aggregates.is_empty() {
             return Ok(frame);
         }
