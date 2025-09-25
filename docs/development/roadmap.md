@@ -18,9 +18,9 @@ The following are likely to be worked on in the near future:
 The following improvements will be worked on in future (these are in no particular order):
 
 - https://github.com/gchq/sleeper/issues/4213 Batch up partition splitting commits.
+- https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
 - https://github.com/gchq/sleeper/issues/1393 Bulk export queries, tracking, restore from export.
 - https://github.com/gchq/sleeper/issues/4396 Failure handling / backpressure for state store updates.
-- https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
 - https://github.com/gchq/sleeper/issues/3693 Improvements to declarative deployment with infrastructure as code.
 - https://github.com/gchq/sleeper/issues/576 Use Arrow types in the table schema.
 - https://github.com/gchq/sleeper/issues/4398 Trigger compaction dispatch in transaction log follower.
