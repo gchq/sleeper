@@ -22,7 +22,7 @@ use aggregator_udfs::{
     nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
 };
 use datafusion::{
-    common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
+    common::{Column, DFSchema, HashSet, plan_err},
     dataframe::DataFrame,
     error::{DataFusionError, Result},
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
