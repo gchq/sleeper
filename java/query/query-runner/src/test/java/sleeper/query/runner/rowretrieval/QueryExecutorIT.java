@@ -861,12 +861,8 @@ public class QueryExecutorIT {
         //  - There are 4 leaf partitions:
         //      null +-----------+-----------+
         //           |     3     |    4      |
-        //           |           |           |
         //       "T" +-----------+-----------+
-        //           |           |           |
         //           |     1     |    2      |
-        //           |           |           |
-        //           |           |           |
         //        "" +-----------+-----------+
         //           ""         "I"          null      (Dimension 1)
         // Add 4 rows - row i is in the center of partition i
@@ -921,18 +917,94 @@ public class QueryExecutorIT {
         }
 
         @Test
-        void shouldQueryPartition1ByRange() throws Exception {
+        void shouldFindFirstRowsByRange() throws Exception {
             // Given
-            Range range1 = rangeFactory().createRange("key1", "", true, "H", true);
-            Range range2 = rangeFactory().createRange("key2", "", true, "S", true);
+            Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
+            Range range2 = rangeFactory().createRange("key2", "I", true, "K", true);
             Region region = new Region(List.of(range1, range2));
 
             // When
             try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
 
                 // Then
-                assertThat(results).toIterable().hasSize(3)
-                        .hasSameElementsAs(List.of(row1));
+                assertThat(results).toIterable()
+                        .containsExactly(row1, row1, row1);
+            }
+        }
+
+        @Test
+        void shouldFindFirstRowsByExactMatchOnBothKeys() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createExactRange("key1", "D");
+            Range range2 = rangeFactory().createExactRange("key2", "J");
+            Region region = new Region(List.of(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable()
+                        .containsExactly(row1, row1, row1);
+            }
+        }
+
+        @Test
+        void shouldExcludeFirstRowsByKey1MinNotInclusive() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "D", false, "E", true);
+            Range range2 = rangeFactory().createRange("key2", "I", true, "K", true);
+            Region region = new Region(List.of(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
+        }
+
+        @Test
+        void shouldExcludeFirstRowsByKey1MaxNotInclusive() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "C", true, "D", false);
+            Range range2 = rangeFactory().createRange("key2", "I", true, "K", true);
+            Region region = new Region(List.of(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
+        }
+
+        @Test
+        void shouldExcludeFirstRowsByKey2MinNotInclusive() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
+            Range range2 = rangeFactory().createRange("key2", "J", false, "K", true);
+            Region region = new Region(List.of(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
+        }
+
+        @Test
+        void shouldExcludeFirstRowsByKey2MaxNotInclusive() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
+            Range range2 = rangeFactory().createRange("key2", "I", true, "J", false);
+            Region region = new Region(List.of(range1, range2));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
             }
         }
 
