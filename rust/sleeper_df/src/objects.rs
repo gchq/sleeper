@@ -150,7 +150,6 @@ pub struct FFICommonConfig {
     pub dict_enc_sort_keys: bool,
     pub dict_enc_values: bool,
     pub region: *const FFISleeperRegion,
-    pub iterator_config: *const c_char,
     pub aggregation_config: *const c_char,
     pub filtering_config: *const c_char,
 }
@@ -182,9 +181,6 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
     type Error = color_eyre::Report;
 
     fn try_from(params: &'a FFICommonConfig) -> Result<CommonConfig<'a>, Self::Error> {
-        if params.iterator_config.is_null() {
-            bail!("FFICommonConfig iterator_config is NULL");
-        }
         if params.aggregation_config.is_null() {
             bail!("FFICommonConfig aggregation_config is NULL");
         }

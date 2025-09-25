@@ -140,7 +140,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
-        params.iterator_config.set("");
         params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
         params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
 

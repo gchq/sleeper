@@ -99,8 +99,6 @@ public interface DataFusionFunctions extends ForeignFunctions {
         public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
         /** Strong reference to prevent GC. */
         public FFISleeperRegion regionRef;
-        /** Compaction iterator configuration. This is optional. */
-        public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
         /** Compaction aggregation configuration. This is optional. */
         public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
         /** Compaction filtering configuration. This is optional. */
@@ -140,7 +138,6 @@ public interface DataFusionFunctions extends ForeignFunctions {
             Objects.requireNonNull(output_file.get(), "Output file is null");
             Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
             Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
-            Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
             Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
             Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
         }
