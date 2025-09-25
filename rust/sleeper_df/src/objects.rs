@@ -14,7 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::unpack::{unpack_str, unpack_string_array, unpack_typed_array, unpack_variant_array};
+use crate::unpack::{
+    unpack_str, unpack_string, unpack_string_array, unpack_typed_array, unpack_variant_array,
+};
 use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
@@ -25,7 +27,7 @@ use sleeper_core::{
 use std::{
     borrow::Borrow,
     collections::HashMap,
-    ffi::{CStr, c_char, c_void},
+    ffi::{c_char, c_void},
     slice,
 };
 use url::Url;
@@ -167,16 +169,10 @@ impl TryFrom<&FFIAwsConfig> for AwsConfig {
             bail!("FFIAwsConfig secret_key pointer is NULL");
         }
         Ok(AwsConfig {
-            region: unsafe { CStr::from_ptr(value.region) }.to_str()?.to_owned(),
-            endpoint: unsafe { CStr::from_ptr(value.endpoint) }
-                .to_str()?
-                .to_owned(),
-            access_key: unsafe { CStr::from_ptr(value.access_key) }
-                .to_str()?
-                .to_owned(),
-            secret_key: unsafe { CStr::from_ptr(value.secret_key) }
-                .to_str()?
-                .to_owned(),
+            region: unpack_string(value.region)?,
+            endpoint: unpack_string(value.endpoint)?,
+            access_key: unpack_string(value.access_key)?,
+            secret_key: unpack_string(value.secret_key)?,
             allow_http: value.allow_http,
         })
     }
@@ -278,12 +274,8 @@ impl FFICommonConfig {
             let opts = SleeperParquetOptions {
                 max_row_group_size: self.max_row_group_size,
                 max_page_size: self.max_page_size,
-                compression: unsafe { CStr::from_ptr(self.compression) }
-                    .to_str()?
-                    .to_owned(),
-                writer_version: unsafe { CStr::from_ptr(self.writer_version) }
-                    .to_str()?
-                    .to_owned(),
+                compression: unpack_string(self.compression)?,
+                writer_version: unpack_string(self.writer_version)?,
                 column_truncate_length: self.column_truncate_length,
                 stats_truncate_length: self.stats_truncate_length,
                 dict_enc_row_keys: self.dict_enc_row_keys,
@@ -291,9 +283,7 @@ impl FFICommonConfig {
                 dict_enc_values: self.dict_enc_values,
             };
             OutputType::File {
-                output_file: unsafe { CStr::from_ptr(self.output_file) }
-                    .to_str()
-                    .map(Url::parse)??,
+                output_file: unpack_str(self.output_file).map(Url::parse)??,
                 write_sketch_file: self.write_sketch_file,
                 opts,
             }
