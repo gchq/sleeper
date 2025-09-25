@@ -28,10 +28,7 @@ use datafusion::{
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
 };
 use filter_udfs::ageoff::AgeOff;
-use regex::Regex;
 use std::sync::Arc;
-
-pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
 
 /// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.
 ///
