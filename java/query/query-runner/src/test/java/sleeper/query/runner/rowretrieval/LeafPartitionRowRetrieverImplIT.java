@@ -16,7 +16,6 @@
 package sleeper.query.runner.rowretrieval;
 
 import org.apache.hadoop.conf.Configuration;
-import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +39,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
@@ -48,7 +46,6 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.QueryExecutor;
@@ -58,10 +55,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -77,7 +72,6 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -589,12 +583,13 @@ public class LeafPartitionRowRetrieverImplIT {
         //  - Root partition covers the whole space
         //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
         //  - There are 4 leaf partitions:
+        // (Dimension 1, second splits)
         //      null +-----------+-----------+
         //           |     3     |    4      |
         //       "T" +-----------+-----------+
         //           |     1     |    2      |
         //        "" +-----------+-----------+
-        //           ""         "I"          null      (Dimension 1)
+        //           ""         "I"          null      (Dimension 0, first split)
         // Add 4 rows - row i is in the center of partition i
         Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
         Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
@@ -865,64 +860,6 @@ public class LeafPartitionRowRetrieverImplIT {
             assertThat(results).hasSize(6)
                     .hasSameElementsAs(Arrays.asList(row1, row4));
         }
-
-        @Test
-        void shouldSplitQueryByRange() {
-            // Given
-            Range range1 = rangeFactory().createRange("key1", "C", false, "P", true);
-            Range range2 = rangeFactory().createRange("key2", "H", false, "Z", true);
-            Region region = new Region(List.of(range1, range2));
-            Query query = queryWithRegion(region);
-            List<String> filesInLeafPartition1 = filenamesInPartition("P1", "left", "root");
-            List<String> filesInLeafPartition2 = filenamesInPartition("P2", "right", "root");
-            List<String> filesInLeafPartition3 = filenamesInPartition("P3", "left", "root");
-            List<String> filesInLeafPartition4 = filenamesInPartition("P4", "right", "root");
-
-            // When / Then
-            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
-                    .usingRecursiveFieldByFieldElementComparator(RecursiveComparisonConfiguration.builder()
-                            .withIgnoredFields("subQueryId")
-                            .withIgnoredCollectionOrderInFields("files")
-                            .build())
-                    .containsExactlyInAnyOrder(
-                            LeafPartitionQuery.builder()
-                                    .parentQuery(query)
-                                    .tableId(tableProperties.get(TABLE_ID))
-                                    .subQueryId("ignored")
-                                    .regions(List.of(region))
-                                    .leafPartitionId("P1")
-                                    .partitionRegion(tree.getPartition("P1").getRegion())
-                                    .files(filesInLeafPartition1)
-                                    .build(),
-                            LeafPartitionQuery.builder()
-                                    .parentQuery(query)
-                                    .tableId(tableProperties.get(TABLE_ID))
-                                    .subQueryId("ignored")
-                                    .regions(List.of(region))
-                                    .leafPartitionId("P2")
-                                    .partitionRegion(tree.getPartition("P2").getRegion())
-                                    .files(filesInLeafPartition2)
-                                    .build(),
-                            LeafPartitionQuery.builder()
-                                    .parentQuery(query)
-                                    .tableId(tableProperties.get(TABLE_ID))
-                                    .subQueryId("ignored")
-                                    .regions(List.of(region))
-                                    .leafPartitionId("P3")
-                                    .partitionRegion(tree.getPartition("P3").getRegion())
-                                    .files(filesInLeafPartition3)
-                                    .build(),
-                            LeafPartitionQuery.builder()
-                                    .parentQuery(query)
-                                    .tableId(tableProperties.get(TABLE_ID))
-                                    .subQueryId("ignored")
-                                    .regions(List.of(region))
-                                    .leafPartitionId("P4")
-                                    .partitionRegion(tree.getPartition("P4").getRegion())
-                                    .files(filesInLeafPartition4)
-                                    .build());
-        }
-
     }
 
     @Nested
@@ -1168,18 +1105,6 @@ public class LeafPartitionRowRetrieverImplIT {
                 .hadoopConfiguration(new Configuration())
                 .build();
         factory.ingestFromRowIterator(tableProperties, rows.iterator());
-    }
-
-    private Region rootPartitionRegion() {
-        return new PartitionTree(stateStore.getAllPartitions()).getRootPartition().getRegion();
-    }
-
-    private List<String> filenamesInPartition(String... partitionIds) {
-        Set<String> ids = new HashSet<>(List.of(partitionIds));
-        return stateStore.getFileReferences().stream()
-                .filter(f -> ids.contains(f.getPartitionId()))
-                .map(FileReference::getFilename)
-                .toList();
     }
 
     private List<Row> getMultipleRows() {

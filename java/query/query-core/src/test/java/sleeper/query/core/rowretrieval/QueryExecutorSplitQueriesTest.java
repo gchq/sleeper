@@ -15,10 +15,12 @@
  */
 package sleeper.query.core.rowretrieval;
 
+import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
@@ -172,6 +174,100 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
                                 .partitionRegion(tree.getPartition("right").getRegion())
                                 .files(List.of("right.parquet"))
                                 .build());
+    }
+
+    @Test
+    void shouldCreateFourSubqueriesWithMultidimensionalKeyAndTwoSplitPoints() throws Exception {
+        // Given
+        tableProperties.setSchema(Schema.builder()
+                .rowKeyFields(
+                        new Field("key1", new StringType()),
+                        new Field("key2", new StringType()))
+                .build());
+        PartitionTree tree = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "L", "R", 0, "I")
+                .splitToNewChildrenOnDimension("L", "LL", "LR", 1, "T")
+                .splitToNewChildrenOnDimension("R", "RL", "RR", 1, "T")
+                .buildTree();
+        update(stateStore).initialise(tree);
+        //  Leaf partitions:
+        //
+        //  (Dimension 1,  null +----------+----------+
+        //   key2, second       |    LR    |    RR    |
+        //        splits)   "T" +----------+----------+
+        //                      |    LL    |    RL    |
+        //                   "" +----------+----------+
+        //                      ""        "I"         null   (Dimension 0, key1, first split)
+
+        // Example rows - each row is in the partition with the same name
+        Row rowLL = createRowMultidimensionalKey("D", "J");
+        Row rowLR = createRowMultidimensionalKey("C", "X");
+        Row rowRL = createRowMultidimensionalKey("K", "H");
+        Row rowRR = createRowMultidimensionalKey("P", "Z");
+        addPartitionFile("root", "root.parquet", List.of(rowLL, rowRL, rowLR, rowRR));
+        addPartitionFile("L", "L.parquet", List.of(rowLL, rowLR));
+        addPartitionFile("R", "R.parquet", List.of(rowRL, rowRR));
+        addPartitionFile("LL", "LL.parquet", List.of(rowLL));
+        addPartitionFile("LR", "LR.parquet", List.of(rowLR));
+        addPartitionFile("RL", "RL.parquet", List.of(rowRL));
+        addPartitionFile("RR", "RR.parquet", List.of(rowRR));
+
+        Range range1 = rangeFactory().createRange("key1", "C", false, "P", true);
+        Range range2 = rangeFactory().createRange("key2", "H", false, "Z", true);
+        Region region = new Region(List.of(range1, range2));
+        Query query = queryRegions(region);
+
+        // When / Then
+        assertThat(executor().splitIntoLeafPartitionQueries(query))
+                .usingRecursiveFieldByFieldElementComparator(RecursiveComparisonConfiguration.builder()
+                        .withIgnoredFields("subQueryId")
+                        .withIgnoredCollectionOrderInFields("files")
+                        .build())
+                .containsExactlyInAnyOrder(
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("LL")
+                                .partitionRegion(tree.getPartition("LL").getRegion())
+                                .files(List.of("root.parquet", "L.parquet", "LL.parquet"))
+                                .build(),
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("LR")
+                                .partitionRegion(tree.getPartition("LR").getRegion())
+                                .files(List.of("root.parquet", "L.parquet", "LR.parquet"))
+                                .build(),
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("RL")
+                                .partitionRegion(tree.getPartition("RL").getRegion())
+                                .files(List.of("root.parquet", "R.parquet", "RL.parquet"))
+                                .build(),
+                        LeafPartitionQuery.builder()
+                                .parentQuery(query)
+                                .tableId(tableProperties.get(TABLE_ID))
+                                .subQueryId("ignored")
+                                .regions(List.of(region))
+                                .leafPartitionId("RR")
+                                .partitionRegion(tree.getPartition("RR").getRegion())
+                                .files(List.of("root.parquet", "R.parquet", "RR.parquet"))
+                                .build());
+    }
+
+    private static Row createRowMultidimensionalKey(String key1, String key2) {
+        Row row = new Row();
+        row.put("key1", key1);
+        row.put("key2", key2);
+        return row;
     }
 
 }
