@@ -1381,7 +1381,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenQueryTimeIteratorApplied() throws Exception {
+    public void shouldApplyQueryTimeIterator() throws Exception {
         // Given
         tableProperties.setSchema(getSecurityLabelSchema());
         update(stateStore).initialise(new PartitionsBuilder(tableProperties)
