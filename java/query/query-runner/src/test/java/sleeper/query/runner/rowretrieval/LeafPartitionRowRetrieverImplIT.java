@@ -608,6 +608,10 @@ public class LeafPartitionRowRetrieverImplIT {
                 .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
                 .buildTree();
 
+        private static Row createRowMultidimensionalKey(String key1, String key2, long value1, long value2) {
+            return new Row(Map.of("key1", key1, "key2", key2, "value1", value1, "value2", value2));
+        }
+
         @BeforeEach
         void setUp() throws Exception {
             tableProperties.setSchema(schema);
@@ -1046,15 +1050,11 @@ public class LeafPartitionRowRetrieverImplIT {
     }
 
     private List<Row> executeQueryByRange(Range range) throws Exception {
-        return executeQueryByRegion(new Region(range));
+        return execute(queryWithRegion(new Region(range)));
     }
 
     private List<Row> executeQueryByRanges(Range... ranges) throws Exception {
-        return executeQueryByRegion(new Region(List.of(ranges)));
-    }
-
-    private List<Row> executeQueryByRegion(Region region) throws Exception {
-        return execute(queryWithRegion(region));
+        return execute(queryWithRegion(new Region(List.of(ranges))));
     }
 
     private List<Row> execute(Query query) throws Exception {
@@ -1129,14 +1129,5 @@ public class LeafPartitionRowRetrieverImplIT {
             rows.add(row);
         }
         return rows;
-    }
-
-    private static Row createRowMultidimensionalKey(String key1, String key2, long value1, long value2) {
-        Row row = new Row();
-        row.put("key1", key1);
-        row.put("key2", key2);
-        row.put("value1", value1);
-        row.put("value2", value2);
-        return row;
     }
 }
