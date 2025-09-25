@@ -122,28 +122,20 @@ public class LeafPartitionRowRetrieverImplIT {
 
         @Test
         void shouldQueryByExactRange() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 1L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldQueryByRange() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, false));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
@@ -176,56 +168,38 @@ public class LeafPartitionRowRetrieverImplIT {
 
         @Test
         void shouldFindRowByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 1L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactly(row);
-            }
+            // Then
+            assertThat(results).containsExactly(row);
         }
 
         @Test
         void shouldFindNothingByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 0L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldFindRowByRange() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", -10L, true, 1L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", -10L, true, 1L, true));
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactly(row);
-            }
+            // Then
+            assertThat(results).containsExactly(row);
         }
 
         @Test
         void shouldFindNothingByRange() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 10L, true, 100L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 10L, true, 100L, true));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
@@ -268,43 +242,29 @@ public class LeafPartitionRowRetrieverImplIT {
 
         @Test
         void shouldReturnAllRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 1L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactlyElementsOf(rows);
-            }
+            // Then
+            assertThat(results).containsExactlyElementsOf(rows);
         }
 
         @Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 0L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldReturnAllRowsByRange() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactlyElementsOf(rows);
-            }
+            // Then
+            assertThat(results).containsExactlyElementsOf(rows);
         }
 
         @Test
@@ -349,43 +309,29 @@ public class LeafPartitionRowRetrieverImplIT {
 
         @Test
         void shouldReturnAllRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 1L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactlyElementsOf(rows);
-            }
+            // Then
+            assertThat(results).containsExactlyElementsOf(rows);
         }
 
         @Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 0L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldReturnAllRowsByRange() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactlyElementsOf(rows);
-            }
+            // Then
+            assertThat(results).containsExactlyElementsOf(rows);
         }
 
         @Test
@@ -425,135 +371,99 @@ public class LeafPartitionRowRetrieverImplIT {
 
         @Test
         void shouldReturnFirstRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 1L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
 
-                // Then
-                assertThat(results).toIterable().hasSize(10)
-                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
-            }
+            // Then
+            assertThat(results).hasSize(10)
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
         }
 
         @Test
         void shouldReturnMiddleRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 5L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 5L));
 
-                // Then
-                assertThat(results).toIterable().hasSize(10)
-                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
-            }
+            // Then
+            assertThat(results).hasSize(10)
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
         }
 
         @Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 0L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldReturnAllRowsByExactRange() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
 
-                // Then
-                assertThat(results).toIterable().hasSize(100)
-                        .hasSameElementsAs(getMultipleRows());
-            }
+            // Then
+            assertThat(results).hasSize(100)
+                    .hasSameElementsAs(getMultipleRows());
         }
 
         @Test
         void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", -100000L, true, 123456789L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", -100000L, true, 123456789L, true));
 
-                // Then
-                assertThat(results).toIterable().hasSize(100)
-                        .hasSameElementsAs(getMultipleRows());
-            }
+            // Then
+            assertThat(results).hasSize(100)
+                    .hasSameElementsAs(getMultipleRows());
         }
 
         @Test
         void shouldReturnSomeRowsByRangePartiallyCoveringData() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 5L, true, 123456789L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 5L, true, 123456789L, true));
 
-                // Then
-                assertThat(results).toIterable().hasSize(60)
-                        .hasSameElementsAs(getMultipleRows().stream()
-                                .filter(r -> ((long) r.get("key")) >= 5L)
-                                .collect(Collectors.toList()));
-            }
+            // Then
+            assertThat(results).hasSize(60)
+                    .hasSameElementsAs(getMultipleRows().stream()
+                            .filter(r -> ((long) r.get("key")) >= 5L)
+                            .collect(Collectors.toList()));
         }
 
         @Test
         void shouldExcludeLastValueWhenMaxIsNotInclusive() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, true, 10L, false));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, false));
 
-                // Then
-                assertThat(results).toIterable().hasSize(90)
-                        .hasSameElementsAs(getMultipleRows().stream()
-                                .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L)
-                                .collect(Collectors.toList()));
-            }
+            // Then
+            assertThat(results).hasSize(90)
+                    .hasSameElementsAs(getMultipleRows().stream()
+                            .filter(r -> ((long) r.get("key")) >= 1L && ((long) r.get("key")) < 10L)
+                            .collect(Collectors.toList()));
         }
 
         @Test
         void shouldExcludeFirstValueWhenMinIsNotInclusive() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, false, 10L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, false, 10L, true));
 
-                // Then 7
-                assertThat(results).toIterable().hasSize(90)
-                        .hasSameElementsAs(getMultipleRows().stream()
-                                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L)
-                                .collect(Collectors.toList()));
-            }
+            // Then
+            assertThat(results).hasSize(90)
+                    .hasSameElementsAs(getMultipleRows().stream()
+                            .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) <= 10L)
+                            .collect(Collectors.toList()));
         }
 
         @Test
         void shouldExcludeFirstAndLastValueWhenMaxAndMinAreNotInclusive() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 1L, false, 10L, false));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, false, 10L, false));
 
-                // Then
-                assertThat(results).toIterable().hasSize(80)
-                        .hasSameElementsAs(getMultipleRows().stream()
-                                .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L)
-                                .collect(Collectors.toList()));
-            }
+            // Then
+            assertThat(results).hasSize(80)
+                    .hasSameElementsAs(getMultipleRows().stream()
+                            .filter(r -> ((long) r.get("key")) > 1L && ((long) r.get("key")) < 10L)
+                            .collect(Collectors.toList()));
         }
 
         @Test
@@ -599,73 +509,53 @@ public class LeafPartitionRowRetrieverImplIT {
 
         @Test
         void shouldReturnFirstRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 1L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
 
-                // Then
-                assertThat(results).toIterable().hasSize(10)
-                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
-            }
+            // Then
+            assertThat(results).hasSize(10)
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
         }
 
         @Test
         void shouldReturnMiddleRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 5L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 5L));
 
-                // Then
-                assertThat(results).toIterable().hasSize(10)
-                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
-            }
+            // Then
+            assertThat(results).hasSize(10)
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
         }
 
         @Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 0L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", -100000L, true, 123456789L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", -100000L, true, 123456789L, true));
 
-                // Then
-                assertThat(results).toIterable().hasSize(100)
-                        .hasSameElementsAs(getMultipleRows());
-            }
+            // Then
+            assertThat(results).hasSize(100)
+                    .hasSameElementsAs(getMultipleRows());
         }
 
         @Test
         void shouldReturnSomeRowsByRangePartiallyCoveringData() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createRange("key", 5L, true, 123456789L, true));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 5L, true, 123456789L, true));
 
-                // Then
-                assertThat(results).toIterable().hasSize(60)
-                        .hasSameElementsAs(getMultipleRows()
-                                .stream().filter(r -> ((long) r.get("key")) >= 5L)
-                                .collect(Collectors.toList()));
-            }
+            // Then
+            assertThat(results).hasSize(60)
+                    .hasSameElementsAs(getMultipleRows()
+                            .stream().filter(r -> ((long) r.get("key")) >= 5L)
+                            .collect(Collectors.toList()));
         }
 
         @Test
@@ -741,15 +631,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", 1L);
             Range range2 = rangeFactory().createExactRange("key2", "1");
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(10)
-                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
-            }
+            // Then
+            assertThat(results).hasSize(10)
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
         }
 
         @Test
@@ -757,15 +645,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", 5L);
             Range range2 = rangeFactory().createExactRange("key2", "5");
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(10)
-                        .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
-            }
+            // Then
+            assertThat(results).hasSize(10)
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
         }
 
         @Test
@@ -773,14 +659,12 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", 8L);
             Range range2 = rangeFactory().createExactRange("key2", "notthere");
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
@@ -788,15 +672,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", -100000L, true, 123456789L, true);
             Range range2 = rangeFactory().createRange("key2", "0", true, "99999999999", true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(100)
-                        .hasSameElementsAs(getMultipleRowsMultidimRowKey());
-            }
+            // Then
+            assertThat(results).hasSize(100)
+                    .hasSameElementsAs(getMultipleRowsMultidimRowKey());
         }
 
         @Test
@@ -804,19 +686,17 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", 2L, true, 5L, true);
             Range range2 = rangeFactory().createRange("key2", "3", true, "6", true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(30)
-                        .hasSameElementsAs(getMultipleRowsMultidimRowKey().stream()
-                                .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
-                                .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0
-                                        && ((String) r.get("key2")).compareTo("6") <= 0)
-                                .collect(Collectors.toList()));
-            }
+            // Then
+            assertThat(results).hasSize(30)
+                    .hasSameElementsAs(getMultipleRowsMultidimRowKey().stream()
+                            .filter(r -> ((long) r.get("key1")) >= 2L && ((long) r.get("key1")) <= 5L)
+                            .filter(r -> ((String) r.get("key2")).compareTo("3") >= 0
+                                    && ((String) r.get("key2")).compareTo("6") <= 0)
+                            .collect(Collectors.toList()));
         }
 
         @Test
@@ -914,17 +794,15 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "", true, null, false);
             Range range2 = rangeFactory().createRange("key2", "", true, null, false);
-            Region region = new Region(List.of(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable()
-                        // 12 because the same data was added 3 times at different levels of the tree
-                        .hasSize(12)
-                        .hasSameElementsAs(rows);
-            }
+            // Then
+            assertThat(results)
+                    // 12 because the same data was added 3 times at different levels of the tree
+                    .hasSize(12)
+                    .hasSameElementsAs(rows);
         }
 
         @Test
@@ -932,15 +810,12 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
             Range range2 = rangeFactory().createRange("key2", "I", true, "K", true);
-            Region region = new Region(List.of(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactly(row1, row1, row1);
-            }
+            // Then
+            assertThat(results).containsExactly(row1, row1, row1);
         }
 
         @Test
@@ -948,15 +823,12 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", "D");
             Range range2 = rangeFactory().createExactRange("key2", "J");
-            Region region = new Region(List.of(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactly(row1, row1, row1);
-            }
+            // Then
+            assertThat(results).containsExactly(row1, row1, row1);
         }
 
         @Test
@@ -964,14 +836,12 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "D", false, "E", true);
             Range range2 = rangeFactory().createRange("key2", "I", true, "K", true);
-            Region region = new Region(List.of(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
@@ -979,14 +849,12 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", true, "D", false);
             Range range2 = rangeFactory().createRange("key2", "I", true, "K", true);
-            Region region = new Region(List.of(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
@@ -994,14 +862,12 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
             Range range2 = rangeFactory().createRange("key2", "J", false, "K", true);
-            Region region = new Region(List.of(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
@@ -1009,14 +875,12 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
             Range range2 = rangeFactory().createRange("key2", "I", true, "J", false);
-            Region region = new Region(List.of(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
@@ -1025,15 +889,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "", true, "Z", true);
             Range range2 = rangeFactory().createRange("key2", "", true, "S", true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(6)
-                        .hasSameElementsAs(Arrays.asList(row1, row2));
-            }
+            // Then
+            assertThat(results).hasSize(6)
+                    .hasSameElementsAs(Arrays.asList(row1, row2));
         }
 
         @Test
@@ -1041,29 +903,23 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "T", true, "Z", true);
             Range range2 = rangeFactory().createRange("key2", "", true, "Z", true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldQueryByOneDimensionalRegion() throws Exception {
-            // Given
-            Range range = rangeFactory().createRange("key1", "J", true, "Z", true);
-            Region region = new Region(range);
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory()
+                    .createRange("key1", "J", true, "Z", true));
 
-                // Then
-                assertThat(results).toIterable().hasSize(6)
-                        .hasSameElementsAs(List.of(row2, row4));
-            }
+            // Then
+            assertThat(results).hasSize(6)
+                    .hasSameElementsAs(List.of(row2, row4));
         }
 
         @Test
@@ -1071,15 +927,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", "C");
             Range range2 = rangeFactory().createRange("key2", "", true, null, true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(3)
-                        .hasSameElementsAs(List.of(row3));
-            }
+            // Then
+            assertThat(results).hasSize(3)
+                    .hasSameElementsAs(List.of(row3));
         }
 
         @Test
@@ -1087,14 +941,12 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "", true, "D", false);
             Range range2 = rangeFactory().createRange("key2", "", true, "T", true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
@@ -1102,15 +954,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Given
             Range range1 = rangeFactory().createRange("key1", "", true, "D", true);
             Range range2 = rangeFactory().createRange("key2", "", true, "T", true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(3)
-                        .hasSameElementsAs(List.of(row1));
-            }
+            // Then
+            assertThat(results).hasSize(3)
+                    .hasSameElementsAs(List.of(row1));
         }
 
         @Test
@@ -1119,15 +969,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
             Range range1 = rangeFactory().createRange("key1", "C", true, "P", false);
             Range range2 = rangeFactory().createRange("key2", "H", true, "Z", false);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(9)
-                        .hasSameElementsAs(Arrays.asList(row1, row2, row3));
-            }
+            // Then
+            assertThat(results).hasSize(9)
+                    .hasSameElementsAs(Arrays.asList(row1, row2, row3));
         }
 
         @Test
@@ -1136,15 +984,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
             Range range1 = rangeFactory().createRange("key1", "C", true, "P", true);
             Range range2 = rangeFactory().createRange("key2", "H", true, "Z", true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(12)
-                        .hasSameElementsAs(Arrays.asList(row1, row2, row3, row4));
-            }
+            // Then
+            assertThat(results).hasSize(12)
+                    .hasSameElementsAs(Arrays.asList(row1, row2, row3, row4));
         }
 
         // Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
@@ -1157,16 +1003,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min; 4 - excluded by key1 max and key2 max
             Range range1 = rangeFactory().createRange("key1", "C", false, "P", false);
             Range range2 = rangeFactory().createRange("key2", "H", false, "Z", false);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(3)
-                        .hasSameElementsAs(Collections.singletonList(row1));
-            }
-
+            // Then
+            assertThat(results).hasSize(3)
+                    .hasSameElementsAs(Collections.singletonList(row1));
         }
 
         @Test
@@ -1175,15 +1018,13 @@ public class LeafPartitionRowRetrieverImplIT {
             // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min; 4 - yes
             Range range1 = rangeFactory().createRange("key1", "C", false, "P", true);
             Range range2 = rangeFactory().createRange("key2", "H", false, "Z", true);
-            Region region = new Region(Arrays.asList(range1, range2));
 
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-                // Then
-                assertThat(results).toIterable().hasSize(6)
-                        .hasSameElementsAs(Arrays.asList(row1, row4));
-            }
+            // Then
+            assertThat(results).hasSize(6)
+                    .hasSameElementsAs(Arrays.asList(row1, row4));
         }
 
         @Test
@@ -1287,43 +1128,29 @@ public class LeafPartitionRowRetrieverImplIT {
 
         @Test
         void shouldReturnSortedDataByFirstKeyValue() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 1L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactlyElementsOf(getSortedRowsForTestingSortingWithKey(1));
-            }
+            // Then
+            assertThat(results).containsExactlyElementsOf(getSortedRowsForTestingSortingWithKey(1));
         }
 
         @Test
         void shouldReturnSortedDataByMidKeyValue() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 5L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 5L));
 
-                // Then
-                assertThat(results).toIterable()
-                        .containsExactlyElementsOf(getSortedRowsForTestingSortingWithKey(5));
-            }
+            // Then
+            assertThat(results).containsExactlyElementsOf(getSortedRowsForTestingSortingWithKey(5));
         }
 
         @Test
         void shouldReturnNoDataByKeyWithNoData() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("key", 0L));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
     }
 
@@ -1349,67 +1176,47 @@ public class LeafPartitionRowRetrieverImplIT {
 
         @Test
         void shouldFindRowNotAgedOffAtCurrentTime() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("id", "1"));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("id", "1"));
 
-                // Then
-                assertThat(results).toIterable().containsExactly(row1);
-            }
+            // Then
+            assertThat(results).containsExactly(row1);
         }
 
         @Test
         void shouldNotFindRowThatWasNotWritten() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("id", "0"));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("id", "0"));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldNotFindRowThatAgedOffALongTimeAgo() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("id", "2"));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> rows = executeQueryByRange(rangeFactory().createExactRange("id", "2"));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(rows).isEmpty();
         }
 
         @Test
         void shouldNotFindRowThatAgedOffSomeTimeAgo() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("id", "3"));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("id", "3"));
 
-                // Then
-                assertThat(results).isExhausted();
-            }
+            // Then
+            assertThat(results).isEmpty();
         }
 
         @Test
         void shouldFindRowAfterRowsThatAgedOff() throws Exception {
-            // Given
-            Region region = new Region(rangeFactory().createExactRange("id", "4"));
-
             // When
-            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("id", "4"));
 
-                // Then
-                assertThat(results).toIterable().containsExactly(row4);
-            }
+            // Then
+            assertThat(results).containsExactly(row4);
         }
     }
 
@@ -1435,14 +1242,10 @@ public class LeafPartitionRowRetrieverImplIT {
                         .build())
                 .build();
 
-        // When
-        try (CloseableIterator<Row> results = initQueryExecutor().execute(query)) {
-
-            // Then
-            Row expected = getRowsForQueryTimeIteratorTest("notsecret").get(0);
-            assertThat(results).toIterable().hasSize(5)
-                    .allSatisfy(result -> assertThat(result).isEqualTo(expected));
-        }
+        // When / Then
+        Row expected = getRowsForQueryTimeIteratorTest("notsecret").get(0);
+        assertThat(execute(query)).hasSize(5)
+                .allSatisfy(result -> assertThat(result).isEqualTo(expected));
     }
 
     @Test
@@ -1464,15 +1267,12 @@ public class LeafPartitionRowRetrieverImplIT {
                         .build())
                 .build();
 
-        // When
-        try (CloseableIterator<Row> results = initQueryExecutor().execute(query)) {
-
-            // Then
-            assertThat(results).toIterable().hasSize(1)
-                    .flatExtracting(Row::getKeys)
-                    .doesNotContain("value1")
-                    .contains("key", "value2");
-        }
+        // When / Then
+        assertThat(execute(query))
+                .hasSize(1)
+                .flatExtracting(Row::getKeys)
+                .doesNotContain("value1")
+                .contains("key", "value2");
     }
 
     @Test
@@ -1493,18 +1293,35 @@ public class LeafPartitionRowRetrieverImplIT {
                         .build())
                 .build();
 
-        // When
-        try (CloseableIterator<Row> results = initQueryExecutor().execute(query)) {
-
-            // Then
-            assertThat(results).toIterable().hasSize(1)
-                    .allSatisfy(result -> assertThat(result.getKeys())
-                            .contains("key", "value", "securityLabel"));
-        }
+        // When / Then
+        assertThat(execute(query))
+                .hasSize(1)
+                .allSatisfy(result -> assertThat(result.getKeys())
+                        .contains("key", "value", "securityLabel"));
     }
 
     private RangeFactory rangeFactory() {
         return new RangeFactory(tableProperties.getSchema());
+    }
+
+    private List<Row> executeQueryByRange(Range range) throws Exception {
+        return executeQueryByRegion(new Region(range));
+    }
+
+    private List<Row> executeQueryByRanges(Range... ranges) throws Exception {
+        return executeQueryByRegion(new Region(List.of(ranges)));
+    }
+
+    private List<Row> executeQueryByRegion(Region region) throws Exception {
+        return execute(queryWithRegion(region));
+    }
+
+    private List<Row> execute(Query query) throws Exception {
+        List<Row> rows = new ArrayList<>();
+        try (CloseableIterator<Row> results = initQueryExecutor().execute(query)) {
+            results.forEachRemaining(rows::add);
+        }
+        return rows;
     }
 
     private QueryExecutor initQueryExecutor() {
