@@ -26,7 +26,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCommonConfig;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
-import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -141,12 +140,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
-        // Is there an aggregation/filtering iterator set?
-        if (DataEngine.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName())) {
-            params.iterator_config.set(job.getIteratorConfig());
-        } else {
-            params.iterator_config.set("");
-        }
+        params.iterator_config.set("");
         params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
         params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
 
