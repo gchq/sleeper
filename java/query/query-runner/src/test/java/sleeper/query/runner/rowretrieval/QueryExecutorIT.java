@@ -59,7 +59,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -69,6 +68,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -1234,110 +1234,149 @@ public class QueryExecutorIT {
 
     }
 
-    @Test
-    public void shouldReturnDataCorrectlySorted() throws Exception {
-        // Given
-        tableProperties.setSchema(Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .sortKeyFields(new Field("value1", new LongType()))
-                .valueFields(new Field("value2", new LongType()))
-                .build());
-        update(stateStore).initialise(new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 5L)
-                .buildList());
-        ingestData(getMultipleRowsForTestingSorting().iterator());
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
+    @Nested
+    @DisplayName("Return sorted data")
+    class ReturnSortedData {
 
-        // When 1
-        Region region = new Region(rangeFactory.createExactRange("key", 1L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 1
-            assertThat(results).toIterable()
-                    .containsExactlyElementsOf(getMultipleRowsForTestingSorting()
-                            .stream()
-                            .filter(r -> (long) r.get("key") == 1L)
-                            .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
-                            .collect(Collectors.toList()));
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .sortKeyFields(new Field("value1", new LongType()))
+                    .valueFields(new Field("value2", new LongType()))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 5L)
+                    .buildList());
+            ingestData(getMultipleRowsForTestingSorting());
         }
 
-        // When 2
-        region = new Region(rangeFactory.createExactRange("key", 5L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnSortedDataByFirstKeyValue() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 1L));
 
-            // Then 2
-            assertThat(results).toIterable()
-                    .containsExactlyElementsOf(getMultipleRowsForTestingSorting()
-                            .stream()
-                            .filter(r -> ((long) r.get("key")) == 5L)
-                            .sorted(Comparator.comparing(r -> (Long) r.get("value1")))
-                            .collect(Collectors.toList()));
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable()
+                        .containsExactlyElementsOf(getSortedRowsForTestingSortingWithKey(1));
+            }
         }
 
-        // When 3
-        region = new Region(rangeFactory.createExactRange("key", 0L));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldReturnSortedDataByMidKeyValue() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 5L));
 
-            // Then 3
-            assertThat(results).isExhausted();
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable()
+                        .containsExactlyElementsOf(getSortedRowsForTestingSortingWithKey(5));
+            }
+        }
+
+        @Test
+        void shouldReturnNoDataByKeyWithNoData() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("key", 0L));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
         }
     }
 
-    @Test
-    public void shouldReturnCorrectDataWhenOneRowInOneFileInOnePartitionAndCompactionIteratorApplied() throws Exception {
-        // Given
-        tableProperties.setSchema(Schema.builder()
-                .rowKeyFields(new Field("id", new StringType()))
-                .valueFields(new Field("timestamp", new LongType()))
-                .build());
-        tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
-        tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
-        update(stateStore).initialise(tableProperties);
-        List<Row> rows = getRowsForAgeOffIteratorTest();
-        ingestData(rows.iterator());
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
+    @Nested
+    @DisplayName("Apply compaction iterator")
+    class ApplyCompactionIterator {
+        Row row1 = new Row(Map.of("id", "1", "timestamp", System.currentTimeMillis()));
+        Row row2 = new Row(Map.of("id", "2", "timestamp", System.currentTimeMillis() - 1_000_000_000L));
+        Row row3 = new Row(Map.of("id", "3", "timestamp", System.currentTimeMillis() - 2_000_000L));
+        Row row4 = new Row(Map.of("id", "4", "timestamp", System.currentTimeMillis()));
 
-        // When 1
-        Region region = new Region(rangeFactory.createExactRange("id", "1"));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
-
-            // Then 1
-            assertThat(results).toIterable().containsExactly(rows.get(0));
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("id", new StringType()))
+                    .valueFields(new Field("timestamp", new LongType()))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            ingestData(List.of(row1, row2, row3, row4));
+            tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
+            tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
         }
 
-        // When 2
-        region = new Region(rangeFactory.createExactRange("id", "0"));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldFindRowNotAgedOffAtCurrentTime() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("id", "1"));
 
-            // Then 2
-            assertThat(results).isExhausted();
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().containsExactly(row1);
+            }
         }
 
-        // When 3
-        region = new Region(rangeFactory.createExactRange("id", "2"));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldNotFindRowThatWasNotWritten() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("id", "0"));
 
-            // Then 3
-            assertThat(results).isExhausted();
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
         }
 
-        // When 4
-        region = new Region(rangeFactory.createExactRange("id", "3"));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldNotFindRowThatAgedOffALongTimeAgo() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("id", "2"));
 
-            // Then 4
-            assertThat(results).isExhausted();
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
         }
 
-        // When 5
-        region = new Region(rangeFactory.createExactRange("id", "4"));
-        try (CloseableIterator<Row> results = queryExecutor.execute(queryWithRegion(region))) {
+        @Test
+        void shouldNotFindRowThatAgedOffSomeTimeAgo() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("id", "3"));
 
-            // Then 5
-            assertThat(results).toIterable().containsExactly(rows.get(3));
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).isExhausted();
+            }
+        }
+
+        @Test
+        void shouldFindRowAfterRowsThatAgedOff() throws Exception {
+            // Given
+            Region region = new Region(rangeFactory().createExactRange("id", "4"));
+
+            // When
+            try (CloseableIterator<Row> results = initQueryExecutor().execute(queryWithRegion(region))) {
+
+                // Then
+                assertThat(results).toIterable().containsExactly(row4);
+            }
         }
     }
 
@@ -1529,17 +1568,25 @@ public class QueryExecutorIT {
     }
 
     private List<Row> getMultipleRowsForTestingSorting() {
-        List<Row> rows = new ArrayList<>();
-        for (int i = 1; i <= 10; i++) {
-            for (int j = 1000; j >= 900; j--) {
-                Row row = new Row();
-                row.put("key", (long) i);
-                row.put("value1", (long) j);
-                row.put("value2", i * 100L);
-                rows.add(row);
-            }
-        }
-        return rows;
+        return LongStream.rangeClosed(1, 10)
+                .mapToObj(i -> LongStream.rangeClosed(0, 100)
+                        .map(n -> 1000 - n)
+                        .mapToObj(j -> rowForTestingSorting(i, j)))
+                .flatMap(stream -> stream)
+                .toList();
+    }
+
+    private List<Row> getSortedRowsForTestingSortingWithKey(long i) {
+        return LongStream.rangeClosed(900, 1000)
+                .mapToObj(j -> rowForTestingSorting(i, j))
+                .toList();
+    }
+
+    private Row rowForTestingSorting(long i, long j) {
+        return new Row(Map.of(
+                "key", i,
+                "value1", j,
+                "value2", i * 100));
     }
 
     private List<Row> getRowsForAgeOffIteratorTest() {
