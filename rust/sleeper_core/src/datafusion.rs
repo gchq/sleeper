@@ -184,16 +184,6 @@ impl<'a> SleeperOperations<'a> {
             .collect::<Vec<_>>()
     }
 
-    // Process the iterator configuration and create a filter and aggregation object from it.
-    //
-    // # Errors
-    // If there is an error in parsing the configuration string.
-    pub fn parse_iterator_config(
-        &self,
-    ) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
-        filter_aggregation_config(self.config.aggregates, self.config.filters)
-    }
-
     /// Apply any configured filters to the `DataFusion` operation if any are present.
     ///
     /// # Errors
@@ -204,18 +194,7 @@ impl<'a> SleeperOperations<'a> {
         for filter in &self.config.filters {
             out_frame = out_frame.filter(filter.create_filter_expr()?)?;
         }
-        Ok(
-            if let Some(filter) = self
-                .parse_iterator_config()?
-                .as_ref()
-                .and_then(FilterAggregationConfig::filter)
-            {
-                info!("Applying Sleeper filters: {filter:?}");
-                out_frame.filter(filter.create_filter_expr()?)?
-            } else {
-                out_frame
-            },
-        )
+        Ok(out_frame)
     }
 
     /// Apply a general sort to the frame based on the sort ordering from row keys and
@@ -236,18 +215,7 @@ impl<'a> SleeperOperations<'a> {
     /// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified,
     /// then an error will result.
     fn apply_aggregations(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        let out_frame = self.apply_aggregation(&self.config.aggregates, frame)?;
-        Ok(
-            if let Some(aggregates) = self
-                .parse_iterator_config()?
-                .as_ref()
-                .and_then(FilterAggregationConfig::aggregation)
-            {
-                self.apply_aggregation(aggregates, out_frame)?
-            } else {
-                out_frame
-            },
-        )
+        Ok(self.apply_aggregation(&self.config.aggregates, frame)?)
     }
 
     fn apply_aggregation(
