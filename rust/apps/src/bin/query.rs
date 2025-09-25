@@ -22,7 +22,9 @@ use futures::StreamExt;
 use human_panic::setup_panic;
 use sleeper_core::{
     ColRange, CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,
-    PartitionBound, SleeperPartitionRegion, run_query,
+    PartitionBound, SleeperPartitionRegion,
+    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
+    run_query,
 };
 use std::{collections::HashMap, io::Write};
 use url::Url;
@@ -60,9 +62,12 @@ struct CmdLineArgs {
     /// Row count to write to standard output
     #[arg(short = 'c', long, required = false, default_value_t = 1000)]
     row_count: usize,
-    /// Sleeper iterator configuration
-    #[arg(short = 'i', long, required = false, num_args = 1)]
-    iterator_config: Option<String>,
+    /// Sleeper aggregation configuration
+    #[arg(short = 'a', long, required = false, num_args = 1)]
+    aggregation_config: Option<String>,
+    /// Sleeper filter configuration
+    #[arg(short = 'f', long, required = false, num_args = 1)]
+    filter_config: Option<String>,
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -157,7 +162,12 @@ async fn main() -> color_eyre::Result<()> {
         .sort_key_cols(args.sort_keys)
         .region(SleeperPartitionRegion::new(map))
         .output(OutputType::ArrowRecordBatch)
-        .iterator_config(args.iterator_config)
+        .aggregates(Aggregate::parse_config(
+            &args.aggregation_config.unwrap_or_default(),
+        )?)
+        .filters(Filter::parse_config(
+            &args.filter_config.unwrap_or_default(),
+        )?)
         .build()?;
 
     let query_config = LeafPartitionQueryConfig {
