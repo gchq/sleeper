@@ -571,40 +571,6 @@ public class LeafPartitionRowRetrieverImplIT {
                                     && ((String) r.get("key2")).compareTo("6") <= 0)
                             .collect(Collectors.toList()));
         }
-
-        @Test
-        void shouldSplitQueryByRange() {
-            // Given
-            Range range1 = rangeFactory().createRange("key1", 2L, true, 500L, true);
-            Range range2 = rangeFactory().createRange("key2", "3", true, "6", true);
-            Region region = new Region(Arrays.asList(range1, range2));
-            Query query = queryWithRegion(region);
-            List<String> filesInLeftPartition = filenamesInPartition("left");
-            List<String> filesInRightPartition = filenamesInPartition("right");
-
-            // When / Then
-            assertThat(initQueryExecutor().splitIntoLeafPartitionQueries(query))
-                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                    .containsExactlyInAnyOrder(
-                            LeafPartitionQuery.builder()
-                                    .parentQuery(query)
-                                    .tableId(tableProperties.get(TABLE_ID))
-                                    .subQueryId("ignored")
-                                    .regions(List.of(region))
-                                    .leafPartitionId("left")
-                                    .partitionRegion(tree.getPartition("left").getRegion())
-                                    .files(filesInLeftPartition)
-                                    .build(),
-                            LeafPartitionQuery.builder()
-                                    .parentQuery(query)
-                                    .tableId(tableProperties.get(TABLE_ID))
-                                    .subQueryId("ignored")
-                                    .regions(List.of(region))
-                                    .leafPartitionId("right")
-                                    .partitionRegion(tree.getPartition("right").getRegion())
-                                    .files(filesInRightPartition)
-                                    .build());
-        }
     }
 
     @Nested
