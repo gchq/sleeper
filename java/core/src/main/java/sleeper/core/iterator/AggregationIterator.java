@@ -32,8 +32,6 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
  *
  * We may decide to expand the list of allowable operations. Additional
  * aggregation filters should be comma separated.
- *
- *
  */
 public class AggregationIterator implements SortedRowIterator {
 
