@@ -15,7 +15,6 @@
  */
 package sleeper.query.runner.rowretrieval;
 
-import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterAll;
@@ -60,7 +59,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -725,6 +723,19 @@ public class QueryExecutorIT {
             }
         }
 
+        private List<Row> getMultipleRowsMultidimRowKey() {
+            List<Row> rows = new ArrayList<>();
+            for (int i = 1; i <= 10; i++) {
+                Row row = new Row();
+                row.put("key1", (long) i);
+                row.put("key2", String.valueOf(i));
+                row.put("value1", i * 10L);
+                row.put("value2", i * 100L);
+                rows.add(row);
+            }
+            return rows;
+        }
+
         @Test
         void shouldReturnFirstRowsByExactMatch() throws Exception {
             // Given
@@ -1252,6 +1263,28 @@ public class QueryExecutorIT {
             ingestData(getMultipleRowsForTestingSorting());
         }
 
+        private List<Row> getMultipleRowsForTestingSorting() {
+            return LongStream.rangeClosed(1, 10)
+                    .mapToObj(i -> LongStream.rangeClosed(0, 100)
+                            .map(n -> 1000 - n)
+                            .mapToObj(j -> rowForTestingSorting(i, j)))
+                    .flatMap(stream -> stream)
+                    .toList();
+        }
+
+        private List<Row> getSortedRowsForTestingSortingWithKey(long i) {
+            return LongStream.rangeClosed(900, 1000)
+                    .mapToObj(j -> rowForTestingSorting(i, j))
+                    .toList();
+        }
+
+        private Row rowForTestingSorting(long i, long j) {
+            return new Row(Map.of(
+                    "key", i,
+                    "value1", j,
+                    "value2", i * 100));
+        }
+
         @Test
         void shouldReturnSortedDataByFirstKeyValue() throws Exception {
             // Given
@@ -1389,7 +1422,7 @@ public class QueryExecutorIT {
                 .splitToNewChildren("root", "left", "right", 5L)
                 .buildList());
         for (int i = 0; i < 10; i++) {
-            ingestData(getRowsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
+            ingestData(getRowsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret"));
         }
         QueryExecutor queryExecutor = initQueryExecutor();
         RangeFactory rangeFactory = rangeFactory();
@@ -1419,25 +1452,28 @@ public class QueryExecutorIT {
         // Given
         tableProperties.setSchema(getLongKeySchema());
         update(stateStore).initialise(tableProperties);
-        ingestData(getRows().iterator());
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
-
-        // When
-        Region region = new Region(rangeFactory.createExactRange("key", 1L));
+        ingestData(List.of(new Row(Map.of(
+                "key", 1L,
+                "value1", 10L,
+                "value2", 100L))));
         Query query = Query.builder()
                 .tableName("unused")
                 .queryId("abc")
-                .regions(List.of(region))
+                .regions(List.of(new Region(rangeFactory()
+                        .createExactRange("key", 1L))))
                 .processingConfig(QueryProcessingConfig.builder()
-                        .requestedValueFields(Lists.newArrayList("value2"))
+                        .requestedValueFields(List.of("value2"))
                         .build())
                 .build();
-        try (CloseableIterator<Row> results = queryExecutor.execute(query)) {
+
+        // When
+        try (CloseableIterator<Row> results = initQueryExecutor().execute(query)) {
 
             // Then
             assertThat(results).toIterable().hasSize(1)
-                    .flatExtracting(Row::getKeys).doesNotContain("value1").contains("key", "value2");
+                    .flatExtracting(Row::getKeys)
+                    .doesNotContain("value1")
+                    .contains("key", "value2");
         }
     }
 
@@ -1446,27 +1482,26 @@ public class QueryExecutorIT {
         // Given
         tableProperties.setSchema(getSecurityLabelSchema());
         update(stateStore).initialise(tableProperties);
-        ingestData(getRowsForQueryTimeIteratorTest("secret").iterator());
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
-
-        // When
-        Region region = new Region(rangeFactory.createExactRange("key", 1L));
+        ingestData(getRowsForQueryTimeIteratorTest("secret"));
         Query query = Query.builder()
                 .tableName("unused")
                 .queryId("abc")
-                .regions(List.of(region))
+                .regions(List.of(new Region(rangeFactory()
+                        .createExactRange("key", 1L))))
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName(SecurityFilteringIterator.class.getName())
                         .queryTimeIteratorConfig("securityLabel,secret")
-                        .requestedValueFields(Lists.newArrayList("value"))
+                        .requestedValueFields(List.of("value"))
                         .build())
                 .build();
-        try (CloseableIterator<Row> results = queryExecutor.execute(query)) {
+
+        // When
+        try (CloseableIterator<Row> results = initQueryExecutor().execute(query)) {
 
             // Then
-            assertThat(results).hasNext().toIterable()
-                    .allSatisfy(result -> assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
+            assertThat(results).toIterable().hasSize(1)
+                    .allSatisfy(result -> assertThat(result.getKeys())
+                            .contains("key", "value", "securityLabel"));
         }
     }
 
@@ -1505,10 +1540,6 @@ public class QueryExecutorIT {
     }
 
     private void ingestData(List<Row> rows) throws Exception {
-        ingestData(rows.iterator());
-    }
-
-    private void ingestData(Iterator<Row> rowIterator) throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -1517,7 +1548,7 @@ public class QueryExecutorIT {
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
                 .hadoopConfiguration(new Configuration())
                 .build();
-        factory.ingestFromRowIterator(tableProperties, rowIterator);
+        factory.ingestFromRowIterator(tableProperties, rows.iterator());
     }
 
     private Region rootPartitionRegion() {
@@ -1532,16 +1563,6 @@ public class QueryExecutorIT {
                 .toList();
     }
 
-    private List<Row> getRows() {
-        List<Row> rows = new ArrayList<>();
-        Row row = new Row();
-        row.put("key", 1L);
-        row.put("value1", 10L);
-        row.put("value2", 100L);
-        rows.add(row);
-        return rows;
-    }
-
     private List<Row> getMultipleRows() {
         List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
@@ -1551,62 +1572,6 @@ public class QueryExecutorIT {
             row.put("value2", i * 100L);
             rows.add(row);
         }
-        return rows;
-    }
-
-    private List<Row> getMultipleRowsMultidimRowKey() {
-        List<Row> rows = new ArrayList<>();
-        for (int i = 1; i <= 10; i++) {
-            Row row = new Row();
-            row.put("key1", (long) i);
-            row.put("key2", String.valueOf(i));
-            row.put("value1", i * 10L);
-            row.put("value2", i * 100L);
-            rows.add(row);
-        }
-        return rows;
-    }
-
-    private List<Row> getMultipleRowsForTestingSorting() {
-        return LongStream.rangeClosed(1, 10)
-                .mapToObj(i -> LongStream.rangeClosed(0, 100)
-                        .map(n -> 1000 - n)
-                        .mapToObj(j -> rowForTestingSorting(i, j)))
-                .flatMap(stream -> stream)
-                .toList();
-    }
-
-    private List<Row> getSortedRowsForTestingSortingWithKey(long i) {
-        return LongStream.rangeClosed(900, 1000)
-                .mapToObj(j -> rowForTestingSorting(i, j))
-                .toList();
-    }
-
-    private Row rowForTestingSorting(long i, long j) {
-        return new Row(Map.of(
-                "key", i,
-                "value1", j,
-                "value2", i * 100));
-    }
-
-    private List<Row> getRowsForAgeOffIteratorTest() {
-        List<Row> rows = new ArrayList<>();
-        Row row1 = new Row();
-        row1.put("id", "1");
-        row1.put("timestamp", System.currentTimeMillis());
-        rows.add(row1);
-        Row row2 = new Row();
-        row2.put("id", "2");
-        row2.put("timestamp", System.currentTimeMillis() - 1_000_000_000L);
-        rows.add(row2);
-        Row row3 = new Row();
-        row3.put("id", "3");
-        row3.put("timestamp", System.currentTimeMillis() - 2_000_000L);
-        rows.add(row3);
-        Row row4 = new Row();
-        row4.put("id", "4");
-        row4.put("timestamp", System.currentTimeMillis());
-        rows.add(row4);
         return rows;
     }
 
