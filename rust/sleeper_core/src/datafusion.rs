@@ -70,12 +70,6 @@ pub use region::SleeperPartitionRegion;
 #[derive(Debug)]
 pub struct SleeperOperations<'a> {
     config: &'a CommonConfig<'a>,
-    /// Sleeper aggregation configuration
-    #[arg(short = 'a', long, required = false, num_args = 1)]
-    aggregation_config: Option<String>,
-    /// Sleeper filter configuration
-    #[arg(short = 'f', long, required = false, num_args = 1)]
-    filter_config: Option<String>,
 }
 
 impl<'a> SleeperOperations<'a> {
@@ -195,9 +189,7 @@ impl<'a> SleeperOperations<'a> {
     //
     // # Errors
     // If there is an error in parsing the configuration string.
-    pub fn parse_iterator_config(
-        &self,
-    ) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
+    pub fn parse_iterator_config(&self) -> Result<Option<FilterAggregationConfig>> {
         self.config
             .aggregates(Aggregate::parse_config(
                 &args.aggregation_config.unwrap_or_default(),
