@@ -1424,21 +1424,19 @@ public class QueryExecutorIT {
         for (int i = 0; i < 10; i++) {
             ingestData(getRowsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret"));
         }
-        QueryExecutor queryExecutor = initQueryExecutor();
-        RangeFactory rangeFactory = rangeFactory();
-
-        // When
-        Region region = new Region(rangeFactory.createExactRange("key", 1L));
         Query query = Query.builder()
                 .tableName("myTable")
                 .queryId("id")
-                .regions(List.of(region))
+                .regions(List.of(new Region(rangeFactory()
+                        .createExactRange("key", 1L))))
                 .processingConfig(QueryProcessingConfig.builder()
                         .queryTimeIteratorClassName(SecurityFilteringIterator.class.getName())
                         .queryTimeIteratorConfig("securityLabel,notsecret")
                         .build())
                 .build();
-        try (CloseableIterator<Row> results = queryExecutor.execute(query)) {
+
+        // When
+        try (CloseableIterator<Row> results = initQueryExecutor().execute(query)) {
 
             // Then
             Row expected = getRowsForQueryTimeIteratorTest("notsecret").get(0);
