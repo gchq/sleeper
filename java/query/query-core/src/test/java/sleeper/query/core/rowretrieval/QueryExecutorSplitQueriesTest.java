@@ -59,10 +59,7 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         // When / Then
         assertThat(executor().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                .containsExactly(LeafPartitionQuery.builder()
-                        .parentQuery(query)
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .subQueryId("ignored")
+                .containsExactly(subQueryOf(query)
                         .regions(List.of(region))
                         .leafPartitionId("root")
                         .partitionRegion(rootPartitionRegion())
@@ -82,10 +79,7 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         // When / Then
         assertThat(executor().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
-                .containsExactly(LeafPartitionQuery.builder()
-                        .parentQuery(query)
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .subQueryId("ignored")
+                .containsExactly(subQueryOf(query)
                         .regions(List.of(region))
                         .leafPartitionId("root")
                         .partitionRegion(rootPartitionRegion())
@@ -112,19 +106,13 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         assertThat(executor().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
                 .containsExactlyInAnyOrder(
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
+                        subQueryOf(query)
                                 .regions(List.of(region))
                                 .leafPartitionId("left")
                                 .partitionRegion(tree.getPartition("left").getRegion())
                                 .files(List.of("left1.parquet", "left2.parquet"))
                                 .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
+                        subQueryOf(query)
                                 .regions(List.of(region))
                                 .leafPartitionId("right")
                                 .partitionRegion(tree.getPartition("right").getRegion())
@@ -156,19 +144,13 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         assertThat(executor().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
                 .containsExactlyInAnyOrder(
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
+                        subQueryOf(query)
                                 .regions(List.of(region))
                                 .leafPartitionId("left")
                                 .partitionRegion(tree.getPartition("left").getRegion())
                                 .files(List.of("left.parquet"))
                                 .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
+                        subQueryOf(query)
                                 .regions(List.of(region))
                                 .leafPartitionId("right")
                                 .partitionRegion(tree.getPartition("right").getRegion())
@@ -225,37 +207,25 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
                         .withIgnoredCollectionOrderInFields("files")
                         .build())
                 .containsExactlyInAnyOrder(
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
+                        subQueryOf(query)
                                 .regions(List.of(region))
                                 .leafPartitionId("LL")
                                 .partitionRegion(tree.getPartition("LL").getRegion())
                                 .files(List.of("root.parquet", "L.parquet", "LL.parquet"))
                                 .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
+                        subQueryOf(query)
                                 .regions(List.of(region))
                                 .leafPartitionId("LR")
                                 .partitionRegion(tree.getPartition("LR").getRegion())
                                 .files(List.of("root.parquet", "L.parquet", "LR.parquet"))
                                 .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
+                        subQueryOf(query)
                                 .regions(List.of(region))
                                 .leafPartitionId("RL")
                                 .partitionRegion(tree.getPartition("RL").getRegion())
                                 .files(List.of("root.parquet", "R.parquet", "RL.parquet"))
                                 .build(),
-                        LeafPartitionQuery.builder()
-                                .parentQuery(query)
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .subQueryId("ignored")
+                        subQueryOf(query)
                                 .regions(List.of(region))
                                 .leafPartitionId("RR")
                                 .partitionRegion(tree.getPartition("RR").getRegion())
@@ -268,6 +238,13 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         row.put("key1", key1);
         row.put("key2", key2);
         return row;
+    }
+
+    private LeafPartitionQuery.Builder subQueryOf(Query parentQuery) {
+        return LeafPartitionQuery.builder()
+                .parentQuery(parentQuery)
+                .tableId(tableProperties.get(TABLE_ID))
+                .subQueryId("ignored");
     }
 
 }
