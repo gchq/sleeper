@@ -82,7 +82,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class QueryExecutorIT {
+public class LeafPartitionRowRetrieverImplIT {
     private static ExecutorService executorService;
 
     @TempDir
