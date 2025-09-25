@@ -114,8 +114,6 @@ pub struct CommonConfig<'a> {
     region: SleeperPartitionRegion<'a>,
     /// How output from operation should be returned
     output: OutputType,
-    /// Iterator config. Filters, aggregators, etc.
-    iterator_config: Option<String>,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
 }
@@ -130,7 +128,6 @@ impl Default for CommonConfig<'_> {
             sort_key_cols: Vec::default(),
             region: SleeperPartitionRegion::default(),
             output: OutputType::default(),
-            iterator_config: Option::default(),
             aggregates: Vec::default(),
             filters: Vec::default(),
         }
@@ -200,7 +197,6 @@ pub struct CommonConfigBuilder<'a> {
     sort_key_cols: Vec<String>,
     region: SleeperPartitionRegion<'a>,
     output: OutputType,
-    iterator_config: Option<String>,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
 }
@@ -254,12 +250,6 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 
     #[must_use]
-    pub fn iterator_config(mut self, iterator_config: Option<String>) -> Self {
-        self.iterator_config = iterator_config;
-        self
-    }
-
-    #[must_use]
     pub fn aggregates(mut self, aggregates: Vec<Aggregate>) -> Self {
         self.aggregates = aggregates;
         self
@@ -291,7 +281,6 @@ impl<'a> CommonConfigBuilder<'a> {
             sort_key_cols: self.sort_key_cols,
             region: self.region,
             output,
-            iterator_config: self.iterator_config,
             aggregates: self.aggregates,
             filters: self.filters,
         })

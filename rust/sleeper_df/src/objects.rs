@@ -244,7 +244,6 @@ impl<'a> TryFrom<&'a FFICommonConfig> for CommonConfig<'a> {
                 output_file: unpack_str(params.output_file).map(Url::parse)??,
                 opts,
             })
-            .iterator_config(unpack_string_opt(params.iterator_config)?)
             .aggregates(Aggregate::parse_config(unpack_str(
                 params.aggregation_config,
             )?)?)

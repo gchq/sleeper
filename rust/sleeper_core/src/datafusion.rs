@@ -20,7 +20,7 @@
 use crate::{
     CommonConfig,
     datafusion::{
-        filter_aggregation_config::{FilterAggregationConfig, validate_aggregations},
+        filter_aggregation_config::validate_aggregations,
         output::Completer,
         sketch::Sketcher,
         util::{
