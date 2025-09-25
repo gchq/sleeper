@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 use crate::unpack::{
-    unpack_aws_config, unpack_str, unpack_string, unpack_string_array, unpack_string_opt,
-    unpack_typed_array, unpack_typed_ref_array, unpack_variant_array,
+    unpack_aws_config, unpack_str, unpack_string, unpack_string_array, unpack_typed_array,
+    unpack_typed_ref_array, unpack_variant_array,
 };
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
