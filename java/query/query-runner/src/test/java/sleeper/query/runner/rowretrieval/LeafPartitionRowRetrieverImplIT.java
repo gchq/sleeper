@@ -1154,72 +1154,33 @@ public class LeafPartitionRowRetrieverImplIT {
         }
     }
 
-    @Nested
-    @DisplayName("Apply compaction iterator")
-    class ApplyCompactionIterator {
+    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
+    // is not pushed down to Parquet and can therefore be tested in memory.
+    @Test
+    void shouldApplyCompactionIterator() throws Exception {
+        // Given
         Row row1 = new Row(Map.of("id", "1", "timestamp", System.currentTimeMillis()));
         Row row2 = new Row(Map.of("id", "2", "timestamp", System.currentTimeMillis() - 1_000_000_000L));
         Row row3 = new Row(Map.of("id", "3", "timestamp", System.currentTimeMillis() - 2_000_000L));
         Row row4 = new Row(Map.of("id", "4", "timestamp", System.currentTimeMillis()));
+        tableProperties.setSchema(Schema.builder()
+                .rowKeyFields(new Field("id", new StringType()))
+                .valueFields(new Field("timestamp", new LongType()))
+                .build());
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+        ingestData(List.of(row1, row2, row3, row4));
+        tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
+        tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
 
-        @BeforeEach
-        void setUp() throws Exception {
-            tableProperties.setSchema(Schema.builder()
-                    .rowKeyFields(new Field("id", new StringType()))
-                    .valueFields(new Field("timestamp", new LongType()))
-                    .build());
-            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
-            ingestData(List.of(row1, row2, row3, row4));
-            tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
-            tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
-        }
+        // When
+        List<Row> results = executeQueryByRange(rangeFactory().createRange("id", "0", "5"));
 
-        @Test
-        void shouldFindRowNotAgedOffAtCurrentTime() throws Exception {
-            // When
-            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("id", "1"));
-
-            // Then
-            assertThat(results).containsExactly(row1);
-        }
-
-        @Test
-        void shouldNotFindRowThatWasNotWritten() throws Exception {
-            // When
-            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("id", "0"));
-
-            // Then
-            assertThat(results).isEmpty();
-        }
-
-        @Test
-        void shouldNotFindRowThatAgedOffALongTimeAgo() throws Exception {
-            // When
-            List<Row> rows = executeQueryByRange(rangeFactory().createExactRange("id", "2"));
-
-            // Then
-            assertThat(rows).isEmpty();
-        }
-
-        @Test
-        void shouldNotFindRowThatAgedOffSomeTimeAgo() throws Exception {
-            // When
-            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("id", "3"));
-
-            // Then
-            assertThat(results).isEmpty();
-        }
-
-        @Test
-        void shouldFindRowAfterRowsThatAgedOff() throws Exception {
-            // When
-            List<Row> results = executeQueryByRange(rangeFactory().createExactRange("id", "4"));
-
-            // Then
-            assertThat(results).containsExactly(row4);
-        }
+        // Then
+        assertThat(results).containsExactly(row1, row4);
     }
 
+    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
+    // is not pushed down to Parquet and can therefore be tested in memory.
     @Test
     public void shouldApplyQueryTimeIterator() throws Exception {
         // Given
@@ -1248,11 +1209,13 @@ public class LeafPartitionRowRetrieverImplIT {
                 .allSatisfy(result -> assertThat(result).isEqualTo(expected));
     }
 
+    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
+    // is not pushed down to Parquet and can therefore be tested in memory.
     @Test
     public void shouldReturnOnlyRequestedValuesWhenSpecified() throws Exception {
         // Given
         tableProperties.setSchema(getLongKeySchema());
-        update(stateStore).initialise(tableProperties);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         ingestData(List.of(new Row(Map.of(
                 "key", 1L,
                 "value1", 10L,
@@ -1275,11 +1238,13 @@ public class LeafPartitionRowRetrieverImplIT {
                 .contains("key", "value2");
     }
 
+    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
+    // is not pushed down to Parquet and can therefore be tested in memory.
     @Test
-    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser() throws Exception {
+    public void shouldReadFieldRequiredByIteratorEvenWhenUserRequestedDifferentFields() throws Exception {
         // Given
         tableProperties.setSchema(getSecurityLabelSchema());
-        update(stateStore).initialise(tableProperties);
+        update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         ingestData(getRowsForQueryTimeIteratorTest("secret"));
         Query query = Query.builder()
                 .tableName("unused")
