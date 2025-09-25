@@ -15,8 +15,6 @@
  */
 package sleeper.common.task;
 
-import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
-import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -27,7 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
  * Finds the number of messages on a queue, and starts up one EC2 or Fargate task for each, up to a
  * configurable maximum.
  */
-public class RunCompactionTasks {
+public class RunBulkExportTasks {
 
     public static void main(String[] args) {
         if (args.length != 2) {
@@ -36,19 +34,17 @@ public class RunCompactionTasks {
         }
 
         try (S3Client s3Client = S3Client.create();
-                EcsClient ecsClient = EcsClient.create();
-                AutoScalingClient asClient = AutoScalingClient.create();
-                Ec2Client ec2Client = Ec2Client.create()) {
+                EcsClient ecsClient = EcsClient.create()) {
             String instanceId = args[0];
             int numberOfTasks = Integer.parseInt(args[1]);
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
-            RunDataProcessingTasks.createForCompactions(instanceProperties, ecsClient, asClient, ec2Client)
+            RunDataProcessingTasks.createForBulkExport(instanceProperties, ecsClient)
                     .runToMeetTargetTasks(numberOfTasks);
         }
     }
 
-    private RunCompactionTasks() {
+    private RunBulkExportTasks() {
     }
 }
