@@ -189,7 +189,9 @@ impl<'a> SleeperOperations<'a> {
     //
     // # Errors
     // If there is an error in parsing the configuration string.
-    pub fn parse_iterator_config(&self) -> Result<Option<FilterAggregationConfig>> {
+    pub fn parse_iterator_config(
+        &self,
+    ) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
         self.config
             .aggregates(Aggregate::parse_config(
                 &args.aggregation_config.unwrap_or_default(),
