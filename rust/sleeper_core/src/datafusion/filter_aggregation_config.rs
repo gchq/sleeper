@@ -24,7 +24,7 @@ use aggregator_udfs::{
 use datafusion::{
     common::{Column, DFSchema, HashSet, plan_err},
     dataframe::DataFrame,
-    error::{DataFusionError, Result},
+    error::Result,
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
 };
 use filter_udfs::ageoff::AgeOff;
