@@ -84,6 +84,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     private static final LeafPartitionRowRetriever ROW_RETRIEVER = DataFusionLeafPartitionRowRetriever.builder()
             .context(FFI_CONTEXT)
             .allocator(ALLOCATOR)
+            // DataFusion spends time trying to auth with AWS unless you override it
             .awsConfig(DataFusionAwsConfig.overrideEndpoint("dummy"))
             .build();
 
