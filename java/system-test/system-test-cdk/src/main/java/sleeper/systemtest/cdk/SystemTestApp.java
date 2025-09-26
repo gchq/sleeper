@@ -39,7 +39,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  */
 public class SystemTestApp extends SleeperCdkApp {
     private boolean readyToGenerateProperties = false;
-    private boolean readyToGenerateCustomStacks = false;
     private final BuiltJars jars;
 
     public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
@@ -54,9 +53,6 @@ public class SystemTestApp extends SleeperCdkApp {
         LoggingStack systemTestLoggingStack = new LoggingStack(this, "SystemTestLogging", properties);
         AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "SystemTestAutoDeleteS3ObjectsStack", properties, jars, systemTestLoggingStack);
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, systemTestAutoDeleteS3ObjectsStack);
-
-        readyToGenerateCustomStacks = true;
-        generateCustomStacks();
 
         // super.create() is here as the system test stacks need to be created first, before creating the rest of the stack.
         super.create();
@@ -74,13 +70,6 @@ public class SystemTestApp extends SleeperCdkApp {
     protected void generateProperties() {
         if (readyToGenerateProperties) {
             super.generateProperties();
-        }
-    }
-
-    @Override
-    protected void generateCustomStacks() {
-        if (readyToGenerateCustomStacks) {
-            super.generateCustomStacks();
         }
     }
 
