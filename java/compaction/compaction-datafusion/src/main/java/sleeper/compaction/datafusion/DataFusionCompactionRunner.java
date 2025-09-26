@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCommonConfig;
-import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
+import sleeper.compaction.datafusion.DataFusionCompactionFunctions.DataFusionCommonConfig;
+import sleeper.compaction.datafusion.DataFusionCompactionFunctions.DataFusionCompactionResult;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
@@ -75,7 +75,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionFunctions.INSTANCE);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionCompactionFunctions.INSTANCE);
 
         DataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
@@ -212,8 +212,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction
-        try (FFIContext context = new FFIContext(DataFusionFunctions.INSTANCE)) {
-            int result = DataFusionFunctions.INSTANCE.compact(context, compactionParams, compactionData);
+        try (FFIContext context = new FFIContext(DataFusionCompactionFunctions.INSTANCE)) {
+            int result = DataFusionCompactionFunctions.INSTANCE.compact(context, compactionParams, compactionData);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion compaction failed, return code: {}", result);

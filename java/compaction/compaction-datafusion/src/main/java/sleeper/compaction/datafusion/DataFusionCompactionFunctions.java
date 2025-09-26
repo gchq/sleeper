@@ -31,9 +31,9 @@ import java.util.Objects;
 /**
  * The interface for the native library we are calling.
  */
-public interface DataFusionFunctions extends ForeignFunctions {
+public interface DataFusionCompactionFunctions extends ForeignFunctions {
 
-    DataFusionFunctions INSTANCE = DataFusionFunctionsImpl.create();
+    DataFusionCompactionFunctions INSTANCE = DataFusionCompactionFunctionsImpl.create();
 
     /**
      * The compaction output data that the native code will populate.
