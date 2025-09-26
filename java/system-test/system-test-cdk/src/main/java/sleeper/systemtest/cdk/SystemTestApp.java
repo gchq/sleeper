@@ -50,6 +50,7 @@ public class SystemTestApp extends SleeperCdkApp {
     public void create() {
 
         SystemTestProperties properties = getInstanceProperties();
+
         AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "SystemTestAutoDeleteS3ObjectsStack", properties, jars,
                 properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS));
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, systemTestAutoDeleteS3ObjectsStack);
