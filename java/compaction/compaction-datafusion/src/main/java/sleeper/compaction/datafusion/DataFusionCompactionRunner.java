@@ -150,22 +150,22 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         {
             // This array can't contain nulls
             Object[] regionMins = orderedRanges.stream().map(Range::getMin).toArray();
-            partitionRegion.region_mins.populate(regionMins, false);
+            partitionRegion.mins.populate(regionMins, false);
         }
         {
             Boolean[] regionMinInclusives = orderedRanges.stream().map(Range::isMinInclusive)
                     .toArray(Boolean[]::new);
-            partitionRegion.region_mins_inclusive.populate(regionMinInclusives, false);
+            partitionRegion.mins_inclusive.populate(regionMinInclusives, false);
         }
         {
             // This array can contain nulls
             Object[] regionMaxs = orderedRanges.stream().map(Range::getMax).toArray();
-            partitionRegion.region_maxs.populate(regionMaxs, true);
+            partitionRegion.maxs.populate(regionMaxs, true);
         }
         {
             Boolean[] regionMaxInclusives = orderedRanges.stream().map(Range::isMaxInclusive)
                     .toArray(Boolean[]::new);
-            partitionRegion.region_maxs_inclusive.populate(regionMaxInclusives, false);
+            partitionRegion.maxs_inclusive.populate(regionMaxInclusives, false);
         }
         params.setRegion(partitionRegion);
         params.validate();

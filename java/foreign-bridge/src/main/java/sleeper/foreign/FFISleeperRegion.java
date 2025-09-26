@@ -29,13 +29,13 @@ import sleeper.foreign.bridge.FFIArray;
 @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class FFISleeperRegion extends Struct {
     /** Region partition region minimums. */
-    public final FFIArray<Object> region_mins = new FFIArray<>(this);
+    public final FFIArray<Object> mins = new FFIArray<>(this);
     /** Region partition region maximums. MUST BE SAME LENGTH AS region_mins. */
-    public final FFIArray<Object> region_maxs = new FFIArray<>(this);
+    public final FFIArray<Object> maxs = new FFIArray<>(this);
     /** Region partition region minimums are inclusive? MUST BE SAME LENGTH AS region_mins. */
-    public final FFIArray<java.lang.Boolean> region_mins_inclusive = new FFIArray<>(this);
+    public final FFIArray<java.lang.Boolean> mins_inclusive = new FFIArray<>(this);
     /** Region partition region maximums are inclusive? MUST BE SAME LENGTH AS region_mins. */
-    public final FFIArray<java.lang.Boolean> region_maxs_inclusive = new FFIArray<>(this);
+    public final FFIArray<java.lang.Boolean> maxs_inclusive = new FFIArray<>(this);
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -47,21 +47,21 @@ public class FFISleeperRegion extends Struct {
      * @throws IllegalStateException when a invariant fails
      */
     public void validate() {
-        region_mins.validate();
-        region_maxs.validate();
-        region_mins_inclusive.validate();
-        region_maxs_inclusive.validate();
+        mins.validate();
+        maxs.validate();
+        mins_inclusive.validate();
+        maxs_inclusive.validate();
 
         // Check lengths
-        long rowKeys = region_mins.length();
-        if (rowKeys != region_maxs.length()) {
-            throw new IllegalStateException("region maxs has length " + region_maxs.length() + " but there are " + rowKeys + " row key columns");
+        long rowKeys = mins.length();
+        if (rowKeys != maxs.length()) {
+            throw new IllegalStateException("region maxs has length " + maxs.length() + " but there are " + rowKeys + " row key columns");
         }
-        if (rowKeys != region_mins_inclusive.length()) {
-            throw new IllegalStateException("region mins inclusive has length " + region_mins_inclusive.length() + " but there are " + rowKeys + " row key columns");
+        if (rowKeys != mins_inclusive.length()) {
+            throw new IllegalStateException("region mins inclusive has length " + mins_inclusive.length() + " but there are " + rowKeys + " row key columns");
         }
-        if (rowKeys != region_maxs_inclusive.length()) {
-            throw new IllegalStateException("region maxs inclusive has length " + region_maxs_inclusive.length() + " but there are " + rowKeys + " row key columns");
+        if (rowKeys != maxs_inclusive.length()) {
+            throw new IllegalStateException("region maxs inclusive has length " + maxs_inclusive.length() + " but there are " + rowKeys + " row key columns");
         }
     }
 }

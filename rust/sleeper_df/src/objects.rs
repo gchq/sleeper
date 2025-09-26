@@ -31,9 +31,13 @@ use std::{
 };
 use url::Url;
 
-/// Contains all output data from a compaction operation.
+/// Contains all output data from a file output operation.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIFileResult.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
-pub struct FFICompactionResult {
+pub struct FFIFileResult {
     /// The total number of rows read by a compaction.
     pub rows_read: usize,
     /// The total number of rows written by a compaction.
@@ -43,13 +47,18 @@ pub struct FFICompactionResult {
 /// Represents a Sleeper region in a C ABI struct.
 ///
 /// Java arrays are transferred with a length. They should all be the same length in this struct.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFISleeperRegion.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
     pub mins_len: usize,
+    // The mins array may NOT contain null pointers
     pub mins: *const *const c_void,
     pub maxs_len: usize,
-    // The region_maxs array may contain null pointers!!
+    // The maxs array may contain null pointers!!
     pub maxs: *const *const c_void,
     pub mins_inclusive_len: usize,
     pub mins_inclusive: *const *const bool,
