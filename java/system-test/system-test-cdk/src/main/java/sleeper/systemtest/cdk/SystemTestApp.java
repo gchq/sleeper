@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
-import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -33,6 +32,7 @@ import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 
 /**
  * Deploys Sleeper and additional stacks used for large-scale system tests.
@@ -50,8 +50,8 @@ public class SystemTestApp extends SleeperCdkApp {
     public void create() {
 
         SystemTestProperties properties = getInstanceProperties();
-        LoggingStack systemTestLoggingStack = new LoggingStack(this, "SystemTestLogging", properties);
-        AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "SystemTestAutoDeleteS3ObjectsStack", properties, jars, systemTestLoggingStack);
+        AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "SystemTestAutoDeleteS3ObjectsStack", properties, jars,
+                properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS));
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, systemTestAutoDeleteS3ObjectsStack);
 
         // super.create() is here as the system test stacks need to be created first, before creating the rest of the stack.
