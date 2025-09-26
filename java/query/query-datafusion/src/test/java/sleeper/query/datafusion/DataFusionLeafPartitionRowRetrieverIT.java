@@ -47,6 +47,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
@@ -80,7 +81,11 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class DataFusionLeafPartitionRowRetrieverIT {
     private static final FFIContext FFI_CONTEXT = DataFusionLeafPartitionRowRetriever.createContext();
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
-    private static final LeafPartitionRowRetriever ROW_RETRIEVER = DataFusionLeafPartitionRowRetriever.builder().context(FFI_CONTEXT).allocator(ALLOCATOR).build();
+    private static final LeafPartitionRowRetriever ROW_RETRIEVER = DataFusionLeafPartitionRowRetriever.builder()
+            .context(FFI_CONTEXT)
+            .allocator(ALLOCATOR)
+            .awsConfig(DataFusionAwsConfig.overrideEndpoint("dummy"))
+            .build();
 
     @TempDir
     public Path tempDir;
