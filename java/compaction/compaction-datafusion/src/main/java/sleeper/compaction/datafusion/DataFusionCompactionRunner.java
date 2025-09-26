@@ -117,11 +117,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         FFICommonConfig params = new FFICommonConfig(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
-            params.aws_region.set(awsConfig.getRegion());
-            params.aws_endpoint.set(awsConfig.getEndpoint());
-            params.aws_allow_http.set(awsConfig.isAllowHttp());
-            params.aws_access_key.set(awsConfig.getAccessKey());
-            params.aws_secret_key.set(awsConfig.getSecretKey());
+            params.aws_config.set(awsConfig.toFfi(runtime));
         } else {
             params.override_aws_config.set(false);
         }

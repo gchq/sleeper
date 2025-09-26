@@ -35,11 +35,8 @@ import java.util.Objects;
 public class FFICommonConfig extends Struct {
     /** Optional AWS configuration. */
     public final Struct.Boolean override_aws_config = new Struct.Boolean();
-    public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_endpoint = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_access_key = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef aws_secret_key = new Struct.UTF8StringRef();
-    public final Struct.Boolean aws_allow_http = new Struct.Boolean();
+    /** Optional AWS configuration. */
+    public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
     /** Array of input files to compact. */
     public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
     /** States if the input files individually sorted based on row key and the sort key columns. */
