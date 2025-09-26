@@ -16,10 +16,25 @@
 package sleeper.foreign;
 
 import jnr.ffi.Runtime;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class FFISleeperRegionTest {
     jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
@@ -97,5 +112,115 @@ public class FFISleeperRegionTest {
         // When / Then
         assertThatCode(() -> region.validate())
                 .doesNotThrowAnyException();
+    }
+
+    @Nested
+    @DisplayName("Map to and from a Sleeper region")
+    class MapToFromSleeperRegion {
+
+        @Test
+        void shouldMapOneLongKey() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            Region region = new Region(new RangeFactory(schema).createRange("key", 0L, true, 100L, false));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
+
+        @Test
+        void shouldMapOneIntKey() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new IntType());
+            Region region = new Region(new RangeFactory(schema).createRange("key", 0, true, 100, false));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
+
+        @Test
+        void shouldMapOneStringKey() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new StringType());
+            Region region = new Region(new RangeFactory(schema).createRange("key", "a", true, "z", false));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
+
+        @Test
+        void shouldMapOneByteArrayKey() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new ByteArrayType());
+            Region region = new Region(new RangeFactory(schema).createRange("key", new byte[]{1, 2}, true, new byte[]{3, 4}, false));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
+
+        @Test
+        void shouldMapMinAndMaxInclusive() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new IntType());
+            Region region = new Region(new RangeFactory(schema).createRange("key", 0, true, 100, true));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
+
+        @Test
+        void shouldMapMinAndMaxExclusive() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new IntType());
+            Region region = new Region(new RangeFactory(schema).createRange("key", 0, false, 100, false));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
+
+        @Test
+        void shouldMapMultidimensionalKeyWithAllValues() {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(
+                            new Field("key1", new IntType()),
+                            new Field("key2", new IntType()))
+                    .build();
+            RangeFactory rangeFactory = new RangeFactory(schema);
+            Region region = new Region(List.of(
+                    rangeFactory.createRange("key1", 1, true, 10, false),
+                    rangeFactory.createRange("key2", 20, false, 50, true)));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
     }
 }

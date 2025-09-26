@@ -18,7 +18,16 @@ package sleeper.foreign;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
+import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.foreign.bridge.FFIArray;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A C ABI compatible representation of a Sleeper region.
@@ -63,5 +72,51 @@ public class FFISleeperRegion extends Struct {
         if (rowKeys != maxs_inclusive.length()) {
             throw new IllegalStateException("region maxs inclusive has length " + maxs_inclusive.length() + " but there are " + rowKeys + " row key columns");
         }
+    }
+
+    /**
+     * Maps from a Sleeper region object.
+     *
+     * @param  region  the region
+     * @param  schema  the schema
+     * @param  runtime the FFI runtime
+     * @return         the FFI region
+     */
+    public static FFISleeperRegion from(Region region, Schema schema, jnr.ffi.Runtime runtime) {
+        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
+        List<Range> orderedRanges = region.getRangesOrdered(schema);
+        // This array can't contain nulls
+        partitionRegion.mins.populate(orderedRanges.stream().map(Range::getMin).toArray(), false);
+        partitionRegion.mins_inclusive.populate(
+                orderedRanges.stream().map(Range::isMinInclusive).toArray(java.lang.Boolean[]::new), false);
+        // This array can contain nulls
+        partitionRegion.maxs.populate(orderedRanges.stream().map(Range::getMax).toArray(), true);
+        partitionRegion.maxs_inclusive.populate(orderedRanges.stream().map(Range::isMaxInclusive)
+                .toArray(java.lang.Boolean[]::new), false);
+        partitionRegion.validate();
+        return partitionRegion;
+    }
+
+    /**
+     * Maps to a Sleeper region object.
+     *
+     * @param  schema the schema
+     * @return        the region
+     */
+    public Region toSleeperRegion(Schema schema) {
+        List<Field> rowKeys = schema.getRowKeyFields();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        java.lang.Boolean[] minsInclusive = mins_inclusive.readBack(java.lang.Boolean.class, false);
+        java.lang.Boolean[] maxsInclusive = maxs_inclusive.readBack(java.lang.Boolean.class, false);
+        List<Range> ranges = new ArrayList<>(minsInclusive.length);
+        jnr.ffi.Runtime runtime = getRuntime();
+        for (int i = 0; i < rowKeys.size(); i++) {
+            Field field = rowKeys.get(i);
+            PrimitiveType type = (PrimitiveType) field.getType();
+            Object min = mins.getFieldValue(i, type, false, runtime);
+            Object max = maxs.getFieldValue(i, type, true, runtime);
+            ranges.add(rangeFactory.createRange(field, min, minsInclusive[i], max, maxsInclusive[i]));
+        }
+        return new Region(ranges);
     }
 }
