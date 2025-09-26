@@ -21,7 +21,7 @@ use crate::unpack::{
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
     ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
-    SleeperParquetOptions, SleeperPartitionRegion,
+    SleeperParquetOptions, SleeperRegion,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
 use std::{
@@ -95,7 +95,7 @@ impl<'a> FFISleeperRegion {
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
         schema_types: &[FFIRowKeySchemaType],
-    ) -> Result<SleeperPartitionRegion<'a>, color_eyre::Report> {
+    ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
         if region.mins_len != region.maxs_len
             || region.mins_len != region.mins_inclusive_len
             || region.mins_len != region.maxs_inclusive_len
@@ -123,7 +123,7 @@ impl<'a> FFISleeperRegion {
                 },
             );
         }
-        Ok(SleeperPartitionRegion::new(map))
+        Ok(SleeperRegion::new(map))
     }
 }
 
