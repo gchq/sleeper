@@ -35,6 +35,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
@@ -210,7 +211,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private static RowsProcessed invokeDataFusion(CompactionJob job,
             FFICommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
-        DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
+        FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
         try (FFIContext context = new FFIContext(DataFusionCompactionFunctions.INSTANCE)) {
             int result = DataFusionCompactionFunctions.INSTANCE.compact(context, compactionParams, compactionData);

@@ -24,9 +24,11 @@ import sleeper.foreign.bridge.FFIArray;
 import java.util.Objects;
 
 /**
- * The compaction input data that will be populated from the Java side. If you updated
- * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
- * in rust/compaction/src/lib.rs. The order and types of the fields must match exactly.
+ * The common DataFusion input data that will be populated from the Java side.
+ *
+ * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
 @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})

@@ -19,6 +19,7 @@ import jnr.ffi.Pointer;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
+import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.bridge.ForeignFunctions;
 import sleeper.foreign.datafusion.FFICommonConfig;
@@ -42,10 +43,10 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
      * @return                       indication of success
      * @throws IllegalStateException if the context has already been closed
      */
-    default int compact(FFIContext context, FFICommonConfig input, DataFusionCompactionResult result) {
+    default int compact(FFIContext context, FFICommonConfig input, FFIFileResult result) {
         return native_compact(context.getForeignContext(), input, result);
     }
 
     @SuppressWarnings(value = "checkstyle:parametername")
-    int native_compact(Pointer context, @In FFICommonConfig input, @Out DataFusionCompactionResult result);
+    int native_compact(Pointer context, @In FFICommonConfig input, @Out FFIFileResult result);
 }
