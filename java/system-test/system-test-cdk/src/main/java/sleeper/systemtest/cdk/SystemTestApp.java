@@ -55,6 +55,9 @@ public class SystemTestApp extends SleeperCdkApp {
         AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "SystemTestAutoDeleteS3ObjectsStack", properties, jars, systemTestLoggingStack);
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, systemTestAutoDeleteS3ObjectsStack);
 
+        readyToGenerateCustomStacks = true;
+        generateCustomStacks();
+
         // super.create() is here as the system test stacks need to be created first, before creating the rest of the stack.
         super.create();
         // Stack for writing random data
@@ -65,9 +68,6 @@ public class SystemTestApp extends SleeperCdkApp {
 
         readyToGenerateProperties = true;
         generateProperties();
-
-        readyToGenerateCustomStacks = true;
-        generateCustomStacks();
     }
 
     @Override
