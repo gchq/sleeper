@@ -15,9 +15,7 @@
  */
 package sleeper.compaction.datafusion;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Pointer;
-import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
@@ -31,20 +29,6 @@ import sleeper.foreign.datafusion.FFICommonConfig;
 public interface DataFusionCompactionFunctions extends ForeignFunctions {
 
     DataFusionCompactionFunctions INSTANCE = DataFusionCompactionFunctionsImpl.create();
-
-    /**
-     * The compaction output data that the native code will populate.
-     */
-    @SuppressWarnings(value = {"checkstyle:membername", "checkstyle:parametername"})
-    @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    class DataFusionCompactionResult extends Struct {
-        public final Struct.size_t rows_read = new Struct.size_t();
-        public final Struct.size_t rows_written = new Struct.size_t();
-
-        public DataFusionCompactionResult(jnr.ffi.Runtime runtime) {
-            super(runtime);
-        }
-    }
 
     /**
      * Invokes a native compaction.
