@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.datafusion;
+package sleeper.foreign.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
@@ -30,7 +30,7 @@ import java.util.Objects;
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
 @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class DataFusionCommonConfig extends Struct {
+public class FFICommonConfig extends Struct {
     /** Optional AWS configuration. */
     public final Struct.Boolean override_aws_config = new Struct.Boolean();
     public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
@@ -77,7 +77,7 @@ public class DataFusionCommonConfig extends Struct {
     /** Compaction filtering configuration. This is optional. */
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
 
-    public DataFusionCommonConfig(jnr.ffi.Runtime runtime) {
+    public FFICommonConfig(jnr.ffi.Runtime runtime) {
         super(runtime);
     }
 

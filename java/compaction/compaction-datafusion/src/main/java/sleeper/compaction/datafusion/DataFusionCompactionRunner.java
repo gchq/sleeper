@@ -38,6 +38,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
@@ -76,7 +77,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionCompactionFunctions.INSTANCE);
 
-        DataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+        FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
 
@@ -109,10 +110,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static DataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
+    private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        DataFusionCommonConfig params = new DataFusionCommonConfig(runtime);
+        FFICommonConfig params = new FFICommonConfig(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
             params.aws_region.set(awsConfig.getRegion());
@@ -207,7 +208,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
     private static RowsProcessed invokeDataFusion(CompactionJob job,
-            DataFusionCommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+            FFICommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction
