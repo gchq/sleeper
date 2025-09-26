@@ -163,7 +163,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                     .toArray(Boolean[]::new);
             partitionRegion.maxs_inclusive.populate(regionMaxInclusives, false);
         }
-        params.setRegion(partitionRegion);
+        partitionRegion.validate();
+        params.region.set(partitionRegion);
         params.validate();
 
         return params;

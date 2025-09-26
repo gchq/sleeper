@@ -69,8 +69,6 @@ public class FFICommonConfig extends Struct {
     public final Struct.Boolean dict_enc_values = new Struct.Boolean();
     /** The Sleeper compaction region. */
     public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
-    /** Strong reference to prevent GC. */
-    public FFISleeperRegion regionRef;
     /** Compaction aggregation configuration. This is optional. */
     public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
     /** Compaction filtering configuration. This is optional. */
@@ -78,16 +76,6 @@ public class FFICommonConfig extends Struct {
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
         super(runtime);
-    }
-
-    /**
-     * Set the Sleeper partition region.
-     *
-     * @param newRegion region to transfer across to foreign function
-     */
-    public void setRegion(FFISleeperRegion newRegion) {
-        this.regionRef = newRegion;
-        this.region.set(newRegion);
     }
 
     /**
@@ -100,9 +88,6 @@ public class FFICommonConfig extends Struct {
         row_key_cols.validate();
         row_key_schema.validate();
         sort_key_cols.validate();
-        if (regionRef != null) {
-            regionRef.validate();
-        }
         if (row_key_cols.length() != row_key_schema.length()) {
             throw new IllegalStateException("row_key_schema has length " + row_key_schema.length() + " but there are " + row_key_cols.length() + " row key columns");
         }
