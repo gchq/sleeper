@@ -62,7 +62,7 @@ pub use compact::compact;
 pub use config::ParquetWriterConfigurer;
 pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};
 pub use output::OutputType;
-pub use region::SleeperPartitionRegion;
+pub use region::SleeperRegion;
 
 /// Drives common operations in processing of `DataFusion` for Sleeper.
 #[derive(Debug)]

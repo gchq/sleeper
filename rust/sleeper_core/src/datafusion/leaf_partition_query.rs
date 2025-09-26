@@ -16,7 +16,7 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, SleeperPartitionRegion,
+    CommonConfig, SleeperRegion,
     datafusion::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
@@ -45,7 +45,7 @@ pub struct LeafPartitionQueryConfig<'a> {
     /// Basic information
     pub common: CommonConfig<'a>,
     /// Query ranges
-    pub ranges: Vec<SleeperPartitionRegion<'a>>,
+    pub ranges: Vec<SleeperRegion<'a>>,
     /// Should sketches be produced?
     pub write_quantile_sketch: bool,
     /// Should logical/physical plan explanation be logged?

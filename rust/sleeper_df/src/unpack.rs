@@ -14,50 +14,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{FFICommonConfig, objects::FFIRowKeySchemaType};
+use crate::objects::FFIRowKeySchemaType;
 use color_eyre::{
     Report,
     eyre::{Result, bail, eyre},
 };
-use sleeper_core::{AwsConfig, PartitionBound};
+use sleeper_core::PartitionBound;
 use std::{
     ffi::{CStr, c_char, c_void},
     slice,
 };
-
-pub fn unpack_aws_config(params: &FFICommonConfig) -> Result<Option<AwsConfig>> {
-    Ok(if params.override_aws_config {
-        if params.aws_region.is_null() {
-            bail!("FFICompactionsParams aws_region pointer is NULL");
-        }
-        if params.aws_endpoint.is_null() {
-            bail!("FFICompactionsParams aws_endpoint pointer is NULL");
-        }
-        if params.aws_access_key.is_null() {
-            bail!("FFICompactionsParams aws_access_key pointer is NULL");
-        }
-        if params.aws_secret_key.is_null() {
-            bail!("FFICompactionsParams aws_secret_key pointer is NULL");
-        }
-        Some(AwsConfig {
-            region: unsafe { CStr::from_ptr(params.aws_region) }
-                .to_str()?
-                .to_owned(),
-            endpoint: unsafe { CStr::from_ptr(params.aws_endpoint) }
-                .to_str()?
-                .to_owned(),
-            access_key: unsafe { CStr::from_ptr(params.aws_access_key) }
-                .to_str()?
-                .to_owned(),
-            secret_key: unsafe { CStr::from_ptr(params.aws_secret_key) }
-                .to_str()?
-                .to_owned(),
-            allow_http: params.aws_allow_http,
-        })
-    } else {
-        None
-    })
-}
 
 pub fn unpack_str<'a>(pointer: *const c_char) -> Result<&'a str> {
     Ok(unsafe { CStr::from_ptr(pointer) }.to_str()?)

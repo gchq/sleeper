@@ -25,11 +25,11 @@ use std::collections::HashMap;
 /// If a table has only on row-key column then a region is a single row range. A region in a
 /// table with two row-key columns would be a rectangle, etc.
 #[derive(Debug, Default)]
-pub struct SleeperPartitionRegion<'a> {
+pub struct SleeperRegion<'a> {
     pub region: HashMap<String, ColRange<'a>>,
 }
 
-impl<'a> SleeperPartitionRegion<'a> {
+impl<'a> SleeperRegion<'a> {
     /// Create new region.
     #[must_use]
     pub fn new(region: HashMap<String, ColRange<'a>>) -> Self {
@@ -53,8 +53,8 @@ impl<'a> SleeperPartitionRegion<'a> {
 ///
 /// For each column in the row keys, we look up the partition range for that
 /// column and create a expression tree that combines all the various filtering conditions.
-impl From<&SleeperPartitionRegion<'_>> for Option<Expr> {
-    fn from(value: &SleeperPartitionRegion<'_>) -> Self {
+impl From<&SleeperRegion<'_>> for Option<Expr> {
+    fn from(value: &SleeperRegion<'_>) -> Self {
         let mut col_expr: Option<Expr> = None;
         for (name, range) in &value.region {
             let lower_expr = lower_bound_expr(range, name);

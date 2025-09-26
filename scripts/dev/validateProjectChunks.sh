@@ -19,12 +19,9 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
-pushd "$PROJECT_ROOT/rust"
-cargo build --release --package sleeper_df --target x86_64-unknown-linux-gnu
-popd
-
-pushd "$PROJECT_ROOT/java"
-
-# The foreign-bridge module uses maven-resources-plugin, which defaults to running in the process-resources phase
-mvn process-resources -DskipRust
+CHUNKS_YAML="$PROJECT_ROOT/.github/config/chunks.yaml"
+MAVEN_PROJECT="$PROJECT_ROOT/java"
+pushd "$MAVEN_PROJECT/build"
+mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.chunks.ValidateProjectChunks \
+    -Dexec.args="$CHUNKS_YAML $MAVEN_PROJECT"
 popd

@@ -22,7 +22,7 @@ use futures::StreamExt;
 use human_panic::setup_panic;
 use sleeper_core::{
     ColRange, CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,
-    PartitionBound, SleeperPartitionRegion,
+    PartitionBound, SleeperRegion,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
     run_query,
 };
@@ -160,7 +160,7 @@ async fn main() -> color_eyre::Result<()> {
         .input_files_sorted(true)
         .row_key_cols(args.row_keys)
         .sort_key_cols(args.sort_keys)
-        .region(SleeperPartitionRegion::new(map))
+        .region(SleeperRegion::new(map))
         .output(OutputType::ArrowRecordBatch)
         .aggregates(Aggregate::parse_config(
             &args.aggregation_config.unwrap_or_default(),
@@ -172,7 +172,7 @@ async fn main() -> color_eyre::Result<()> {
 
     let query_config = LeafPartitionQueryConfig {
         common,
-        ranges: vec![SleeperPartitionRegion::new(query_map)],
+        ranges: vec![SleeperRegion::new(query_map)],
         explain_plans: true,
         write_quantile_sketch: false,
     };
