@@ -38,6 +38,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
