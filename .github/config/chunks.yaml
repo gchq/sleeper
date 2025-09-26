@@ -79,6 +79,5 @@ chunks:
       - query/query-core
       - query/query-runner
       - query/query-lambda
-      - query/query-datafusion
       - athena
       - trino
