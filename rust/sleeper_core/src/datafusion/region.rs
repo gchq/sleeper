@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 use crate::{ColRange, PartitionBound};
-use datafusion::logical_expr::{Expr, col, lit};
+use datafusion::logical_expr::{Expr, ident, lit};
 use log::error;
 use std::collections::HashMap;
 
@@ -25,11 +25,11 @@ use std::collections::HashMap;
 /// If a table has only on row-key column then a region is a single row range. A region in a
 /// table with two row-key columns would be a rectangle, etc.
 #[derive(Debug, Default)]
-pub struct SleeperPartitionRegion<'a> {
+pub struct SleeperRegion<'a> {
     pub region: HashMap<String, ColRange<'a>>,
 }
 
-impl<'a> SleeperPartitionRegion<'a> {
+impl<'a> SleeperRegion<'a> {
     /// Create new region.
     #[must_use]
     pub fn new(region: HashMap<String, ColRange<'a>>) -> Self {
@@ -53,8 +53,8 @@ impl<'a> SleeperPartitionRegion<'a> {
 ///
 /// For each column in the row keys, we look up the partition range for that
 /// column and create a expression tree that combines all the various filtering conditions.
-impl From<&SleeperPartitionRegion<'_>> for Option<Expr> {
-    fn from(value: &SleeperPartitionRegion<'_>) -> Self {
+impl From<&SleeperRegion<'_>> for Option<Expr> {
+    fn from(value: &SleeperRegion<'_>) -> Self {
         let mut col_expr: Option<Expr> = None;
         for (name, range) in &value.region {
             let lower_expr = lower_bound_expr(range, name);
@@ -87,9 +87,9 @@ fn upper_bound_expr(range: &ColRange, name: &String) -> Option<Expr> {
     } else {
         let max_bound = bound_to_lit_expr(&range.upper);
         if range.upper_inclusive {
-            Some(col(name).lt_eq(max_bound))
+            Some(ident(name).lt_eq(max_bound))
         } else {
-            Some(col(name).lt(max_bound))
+            Some(ident(name).lt(max_bound))
         }
     }
 }
@@ -106,9 +106,9 @@ fn lower_bound_expr(range: &ColRange, name: &String) -> Option<Expr> {
     } else {
         let min_bound = bound_to_lit_expr(&range.lower);
         if range.lower_inclusive {
-            Some(col(name).gt_eq(min_bound))
+            Some(ident(name).gt_eq(min_bound))
         } else {
-            Some(col(name).gt(min_bound))
+            Some(ident(name).gt(min_bound))
         }
     }
 }
@@ -128,7 +128,7 @@ fn bound_to_lit_expr(bound: &PartitionBound) -> Expr {
         PartitionBound::ByteArray(val) => lit(val.to_owned()),
         PartitionBound::Unbounded => {
             error!("Can't create filter expression for unbounded partition range!");
-            panic!("Can't create filter expression for unbounded partition range!");
+            std::process::abort();
         }
     }
 }

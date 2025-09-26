@@ -19,8 +19,11 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
-pushd "${PROJECT_ROOT}/java"
+pushd "$PROJECT_ROOT/rust"
+cargo build --release --package sleeper_df --target x86_64-unknown-linux-gnu
+popd
 
+pushd "$PROJECT_ROOT/java"
 # The foreign-bridge module uses maven-resources-plugin, which defaults to running in the process-resources phase
 mvn process-resources -DskipRust
 popd

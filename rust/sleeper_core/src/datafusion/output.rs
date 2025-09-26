@@ -46,6 +46,8 @@ pub enum OutputType {
     File {
         /// Output file Url
         output_file: Url,
+        /// Should a quantile sketch be written out?
+        write_sketch_file: bool,
         /// Parquet output options
         opts: SleeperParquetOptions,
     },
@@ -59,6 +61,7 @@ impl OutputType {
             Self::ArrowRecordBatch => Box::new(ArrowOutputCompleter::new(ops)),
             Self::File {
                 output_file: _,
+                write_sketch_file: _,
                 opts: _,
             } => Box::new(FileOutputCompleter::new(ops)),
         }
@@ -128,6 +131,7 @@ impl Completer for FileOutputCompleter<'_> {
         match &self.ops.config.output {
             OutputType::File {
                 output_file: _,
+                write_sketch_file: _,
                 opts: parquet_options,
             } => {
                 let configurer = ParquetWriterConfigurer { parquet_options };
@@ -168,6 +172,7 @@ impl Completer for ArrowOutputCompleter<'_> {
         match &self.ops.config.output {
             OutputType::File {
                 output_file: _,
+                write_sketch_file: _,
                 opts: _,
             } => {
                 plan_err!("Can't use ArrowOutputCompleter with CompletionOptions::File")

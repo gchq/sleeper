@@ -21,7 +21,7 @@
 * limitations under the License.
 */
 use crate::{
-    datafusion::LeafPartitionQuery,
+    datafusion::{CompactionResult, LeafPartitionQuery},
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
 #[cfg(doc)]
@@ -41,7 +41,7 @@ mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
-    LeafPartitionQueryConfig, OutputType, SleeperPartitionRegion,
+    LeafPartitionQueryConfig, OutputType, SleeperRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
     stream_to_ffi_arrow_stream,
 };
@@ -111,7 +111,7 @@ pub struct CommonConfig<'a> {
     /// Names of sort-key columns
     sort_key_cols: Vec<String>,
     /// Ranges for each column to filter input files
-    region: SleeperPartitionRegion<'a>,
+    region: SleeperRegion<'a>,
     /// How output from operation should be returned
     output: OutputType,
     aggregates: Vec<Aggregate>,
@@ -126,7 +126,7 @@ impl Default for CommonConfig<'_> {
             input_files_sorted: true,
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
-            region: SleeperPartitionRegion::default(),
+            region: SleeperRegion::default(),
             output: OutputType::default(),
             aggregates: Vec::default(),
             filters: Vec::default(),
@@ -144,6 +144,7 @@ fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec
 
     if let OutputType::File {
         output_file,
+        write_sketch_file: _,
         opts: _,
     } = &mut output
         && output_file.scheme() == "s3a"
@@ -178,11 +179,15 @@ impl Display for CommonConfig<'_> {
             self.region
         )?;
         match &self.output {
-            OutputType::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
+            OutputType::ArrowRecordBatch => write!(f, "output is Arrow RecordBatches"),
             OutputType::File {
                 output_file,
+                write_sketch_file,
                 opts: _,
-            } => write!(f, "output file {output_file:?}"),
+            } => write!(
+                f,
+                "output file {output_file:?} write sketch file {write_sketch_file}"
+            ),
         }
     }
 }
@@ -195,7 +200,7 @@ pub struct CommonConfigBuilder<'a> {
     input_files_sorted: bool,
     row_key_cols: Vec<String>,
     sort_key_cols: Vec<String>,
-    region: SleeperPartitionRegion<'a>,
+    region: SleeperRegion<'a>,
     output: OutputType,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
@@ -238,7 +243,7 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 
     #[must_use]
-    pub fn region(mut self, region: SleeperPartitionRegion<'a>) -> Self {
+    pub fn region(mut self, region: SleeperRegion<'a>) -> Self {
         self.region = region;
         self
     }
@@ -315,18 +320,6 @@ pub struct AwsConfig {
     pub allow_http: bool,
 }
 
-/// Contains compaction results.
-///
-/// This provides the details of compaction results that Sleeper
-/// will use to update its record keeping.
-///
-pub struct CompactionResult {
-    /// The total number of rows read by a compaction.
-    pub rows_read: usize,
-    /// The total number of rows written by a compaction.
-    pub rows_written: usize,
-}
-
 /// Compacts the given Parquet files and reads the schema from the first.
 ///
 /// The `aws_creds` are optional if you are not attempting to read/write files from S3.
@@ -337,7 +330,7 @@ pub struct CompactionResult {
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_compaction, CommonConfig, CommonConfigBuilder, PartitionBound, ColRange,
-/// # OutputType, SleeperParquetOptions, SleeperPartitionRegion};
+/// # OutputType, SleeperParquetOptions, SleeperRegion};
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -349,9 +342,11 @@ pub struct CompactionResult {
 /// let mut compaction_input = CommonConfigBuilder::new()
 ///     .input_files_sorted(true)
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
-///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
+///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(),
+///         write_sketch_file: true,
+///         opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
-///     .region(SleeperPartitionRegion::new(region))
+///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// # tokio_test::block_on(async {
 /// let result = run_compaction(&compaction_input).await;
@@ -365,7 +360,6 @@ pub struct CompactionResult {
 ///
 pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResult> {
     let store_factory = create_object_store_factory(config.aws_config.as_ref()).await;
-
     crate::datafusion::compact(&store_factory, config)
         .await
         .map_err(Into::into)
@@ -381,7 +375,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_query, CommonConfigBuilder, PartitionBound, ColRange,
-/// # OutputType, SleeperParquetOptions, SleeperPartitionRegion};
+/// # OutputType, SleeperParquetOptions, SleeperRegion};
 /// # use sleeper_core::LeafPartitionQueryConfig;
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
@@ -394,9 +388,11 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// let mut common = CommonConfigBuilder::new()
 ///     .input_files_sorted(true)
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
-///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
+///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(),
+///         write_sketch_file: true,
+///         opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
-///     .region(SleeperPartitionRegion::new(region))
+///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// let mut leaf_config = LeafPartitionQueryConfig::default();
 /// leaf_config.common = common;
@@ -407,7 +403,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 ///     upper: PartitionBound::String("h"),
 ///     upper_inclusive: true,
 /// });
-/// leaf_config.ranges = vec![SleeperPartitionRegion::new(query_region)];
+/// leaf_config.ranges = vec![SleeperRegion::new(query_region)];
 ///
 /// # tokio_test::block_on(async {
 /// let result = run_query(&leaf_config).await;
@@ -467,6 +463,7 @@ mod tests {
         ];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -490,6 +487,7 @@ mod tests {
         let input_files = vec![Url::parse("https://example.com/key").unwrap()];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -511,6 +509,7 @@ mod tests {
         let input_files = vec![Url::parse("https://example.com/key").unwrap()];
         let output = OutputType::File {
             output_file: Url::parse("s3a://bucket/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -531,6 +530,7 @@ mod tests {
         let input_files: Vec<Url> = vec![];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -569,7 +569,7 @@ mod tests {
         // Given
         let input_files: Vec<Url> = vec![];
         let row_key_cols = vec!["key".to_string()];
-        let region = SleeperPartitionRegion::default();
+        let region = SleeperRegion::default();
         let builder = CommonConfigBuilder::new()
             .input_files(input_files)
             .row_key_cols(row_key_cols)
@@ -588,7 +588,7 @@ mod tests {
         // Given
         let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
         let row_key_cols = vec!["key1".to_string(), "key2".to_string()];
-        let region = SleeperPartitionRegion::new(HashMap::from([(
+        let region = SleeperRegion::new(HashMap::from([(
             "col".to_string(),
             ColRange {
                 lower: PartitionBound::String("a"),
@@ -623,7 +623,7 @@ mod tests {
         // Given
         let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
         let row_key_cols = vec!["key".to_string()];
-        let region = SleeperPartitionRegion::new(HashMap::from([(
+        let region = SleeperRegion::new(HashMap::from([(
             "col".to_string(),
             ColRange {
                 lower: PartitionBound::String("a"),
