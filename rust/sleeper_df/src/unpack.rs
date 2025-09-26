@@ -14,12 +14,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{FFICommonConfig, objects::FFIRowKeySchemaType};
+use crate::objects::FFIRowKeySchemaType;
 use color_eyre::{
     Report,
     eyre::{Result, bail, eyre},
 };
-use sleeper_core::{AwsConfig, PartitionBound};
+use sleeper_core::PartitionBound;
 use std::{
     ffi::{CStr, c_char, c_void},
     slice,
