@@ -203,6 +203,20 @@ public class FFISleeperRegionTest {
         }
 
         @Test
+        void shouldMapNullMax() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new StringType());
+            Region region = new Region(new RangeFactory(schema).createRange("key", "", true, null, false));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
+
+        @Test
         void shouldMapMultidimensionalKeyWithAllValues() {
             // Given
             Schema schema = Schema.builder()
@@ -214,6 +228,27 @@ public class FFISleeperRegionTest {
             Region region = new Region(List.of(
                     rangeFactory.createRange("key1", 1, true, 10, false),
                     rangeFactory.createRange("key2", 20, false, 50, true)));
+
+            // When
+            FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);
+            Region found = ffiRegion.toSleeperRegion(schema);
+
+            // Then
+            assertThat(found).isEqualTo(region);
+        }
+
+        @Test
+        void shouldMapMultidimensionalKeyWithOnlyMiddleValue() {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(
+                            new Field("key1", new IntType()),
+                            new Field("key2", new IntType()),
+                            new Field("key3", new IntType()))
+                    .build();
+            RangeFactory rangeFactory = new RangeFactory(schema);
+            Region region = new Region(List.of(
+                    rangeFactory.createRange("key2", 1, true, 10, false)));
 
             // When
             FFISleeperRegion ffiRegion = FFISleeperRegion.from(region, schema, runtime);

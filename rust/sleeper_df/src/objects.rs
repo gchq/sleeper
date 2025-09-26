@@ -64,6 +64,8 @@ pub struct FFISleeperRegion {
     pub mins_inclusive: *const *const bool,
     pub maxs_inclusive_len: usize,
     pub maxs_inclusive: *const *const bool,
+    pub dimension_indexes_len: usize,
+    pub dimension_indexes: *const *const i32,
 }
 
 /// Column type for row key columns in Sleeper schema.

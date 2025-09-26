@@ -45,6 +45,11 @@ public class FFISleeperRegion extends Struct {
     public final FFIArray<java.lang.Boolean> mins_inclusive = new FFIArray<>(this);
     /** Region partition region maximums are inclusive? MUST BE SAME LENGTH AS region_mins. */
     public final FFIArray<java.lang.Boolean> maxs_inclusive = new FFIArray<>(this);
+    /**
+     * Schema column indexes. Regions don't always have one range per row key column.
+     * This array specifies column indexes into the schema that are specified by this region.
+     */
+    public final FFIArray<java.lang.Integer> dimension_indexes = new FFIArray<>(this);
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -84,15 +89,33 @@ public class FFISleeperRegion extends Struct {
      */
     public static FFISleeperRegion from(Region region, Schema schema, jnr.ffi.Runtime runtime) {
         FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
-        List<Range> orderedRanges = region.getRangesOrdered(schema);
-        // This array can't contain nulls
-        partitionRegion.mins.populate(orderedRanges.stream().map(Range::getMin).toArray(), false);
-        partitionRegion.mins_inclusive.populate(
-                orderedRanges.stream().map(Range::isMinInclusive).toArray(java.lang.Boolean[]::new), false);
-        // This array can contain nulls
-        partitionRegion.maxs.populate(orderedRanges.stream().map(Range::getMax).toArray(), true);
-        partitionRegion.maxs_inclusive.populate(orderedRanges.stream().map(Range::isMaxInclusive)
-                .toArray(java.lang.Boolean[]::new), false);
+        int numRanges = region.getRangesUnordered().size();
+        List<Object> mins = new ArrayList<>(numRanges);
+        List<java.lang.Boolean> minsInclusive = new ArrayList<>(numRanges);
+        List<Object> maxs = new ArrayList<>(numRanges);
+        List<java.lang.Boolean> maxsInclusive = new ArrayList<>(numRanges);
+        List<java.lang.Integer> dimensionIndexes = new ArrayList<>(numRanges);
+        List<Field> rowKeys = schema.getRowKeyFields();
+        for (int dimension = 0; dimension < rowKeys.size(); dimension++) {
+            Field field = rowKeys.get(dimension);
+            Range range = region.getRange(field.getName());
+            if (range == null) {
+                continue;
+            }
+            mins.add(range.getMin());
+            minsInclusive.add(range.isMinInclusive());
+            maxs.add(range.getMax());
+            maxsInclusive.add(range.isMaxInclusive());
+            dimensionIndexes.add(dimension);
+        }
+
+        // Mins can't contain nulls
+        partitionRegion.mins.populate(mins.toArray(), false);
+        partitionRegion.mins_inclusive.populate(minsInclusive.toArray(java.lang.Boolean[]::new), false);
+        // Maxs can contain nulls
+        partitionRegion.maxs.populate(maxs.toArray(), true);
+        partitionRegion.maxs_inclusive.populate(maxsInclusive.toArray(java.lang.Boolean[]::new), false);
+        partitionRegion.dimension_indexes.populate(dimensionIndexes.toArray(java.lang.Integer[]::new), false);
         partitionRegion.validate();
         return partitionRegion;
     }
@@ -109,10 +132,11 @@ public class FFISleeperRegion extends Struct {
         RangeFactory rangeFactory = new RangeFactory(schema);
         java.lang.Boolean[] minsInclusive = mins_inclusive.readBack(java.lang.Boolean.class, false);
         java.lang.Boolean[] maxsInclusive = maxs_inclusive.readBack(java.lang.Boolean.class, false);
+        java.lang.Integer[] dimensionIndexes = dimension_indexes.readBack(java.lang.Integer.class, false);
         List<Range> ranges = new ArrayList<>(minsInclusive.length);
         jnr.ffi.Runtime runtime = getRuntime();
-        for (int i = 0; i < rowKeys.size(); i++) {
-            Field field = rowKeys.get(i);
+        for (int i = 0; i < dimensionIndexes.length; i++) {
+            Field field = rowKeys.get(dimensionIndexes[i]);
             PrimitiveType type = (PrimitiveType) field.getType();
             Object min = mins.getFieldValue(i, type, false, runtime);
             Object max = maxs.getFieldValue(i, type, true, runtime);
