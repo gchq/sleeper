@@ -43,71 +43,74 @@ public class FFISleeperRegionTest {
     void shouldThrowOnRegionValidateMaxsIncorrectLength() {
         // Given
         FFISleeperRegion region = new FFISleeperRegion(runtime);
-        Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
-        Integer[] maxBounds = new Integer[]{1, 2, 3, 4};
-        region.mins.populate(minBounds, false);
-        region.maxs.populate(maxBounds, false);
-        Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false, false};
-        Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
-        region.mins_inclusive.populate(minbBoolBounds, false);
-        region.maxs_inclusive.populate(maxBoolBounds, false);
+        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.maxs.populate(new Integer[]{1, 2, 3, 4}, false);
+        region.mins_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
+        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
+        region.dimension_indexes.populate(new Integer[]{1, 2, 3, 4, 5}, false);
 
         // When / Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
-                .withMessage("region maxs has length 4 but there are 5 row key columns");
+                .withMessage("region maxs has length 4 but there are 5 row keys in region");
     }
 
     @Test
     void shouldThrowOnRegionValidateMinsInclusiveIncorrectLength() {
         // Given
         FFISleeperRegion region = new FFISleeperRegion(runtime);
-        Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
-        Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
-        region.mins.populate(minBounds, false);
-        region.maxs.populate(maxBounds, false);
-        Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false};
-        Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
-        region.mins_inclusive.populate(minbBoolBounds, false);
-        region.maxs_inclusive.populate(maxBoolBounds, false);
+        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.maxs.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.mins_inclusive.populate(new Boolean[]{false, false, false, false}, false);
+        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
 
         // When / Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
-                .withMessage("region mins inclusive has length 4 but there are 5 row key columns");
+                .withMessage("region mins inclusive has length 4 but there are 5 row keys in region");
     }
 
     @Test
     void shouldThrowOnRegionValidateMaxsInclusiveIncorrectLength() {
         // Given
         FFISleeperRegion region = new FFISleeperRegion(runtime);
-        Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
-        Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
-        region.mins.populate(minBounds, false);
-        region.maxs.populate(maxBounds, false);
-        Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false, false};
-        Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false};
-        region.mins_inclusive.populate(minbBoolBounds, false);
-        region.maxs_inclusive.populate(maxBoolBounds, false);
+        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.maxs.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.mins_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
+        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false}, false);
+        region.dimension_indexes.populate(new Integer[]{1, 2, 3, 4, 5}, false);
 
         // When / Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
-                .withMessage("region maxs inclusive has length 4 but there are 5 row key columns");
+                .withMessage("region maxs inclusive has length 4 but there are 5 row keys in region");
+    }
+
+    @Test
+    void shouldThrowOnRegionValidateDimensionIndexesIncorrectLength() {
+        // Given
+        FFISleeperRegion region = new FFISleeperRegion(runtime);
+        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.maxs.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.mins_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
+        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
+        region.dimension_indexes.populate(new Integer[]{1, 2, 3, 4}, false);
+
+        // When / Then
+        assertThatIllegalStateException()
+                .isThrownBy(() -> region.validate())
+                .withMessage("region dimension indexes has length 4 but there are 5 row keys in region");
     }
 
     @Test
     void shouldValidate() {
         // Given
         FFISleeperRegion region = new FFISleeperRegion(runtime);
-        Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
-        Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
-        region.mins.populate(minBounds, false);
-        region.maxs.populate(maxBounds, false);
-        Boolean[] minbBoolBounds = new Boolean[]{false, false, false, false, false};
-        Boolean[] maxBoolBounds = new Boolean[]{false, false, false, false, false};
-        region.mins_inclusive.populate(minbBoolBounds, false);
-        region.maxs_inclusive.populate(maxBoolBounds, false);
+        region.mins.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.maxs.populate(new Integer[]{1, 2, 3, 4, 5}, false);
+        region.mins_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
+        region.maxs_inclusive.populate(new Boolean[]{false, false, false, false, false}, false);
+        region.dimension_indexes.populate(new Integer[]{1, 2, 3, 4, 5}, false);
 
         // When / Then
         assertThatCode(() -> region.validate())

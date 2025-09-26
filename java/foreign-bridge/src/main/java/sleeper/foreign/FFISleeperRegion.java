@@ -15,7 +15,6 @@
  */
 package sleeper.foreign;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
 import sleeper.core.range.Range;
@@ -35,21 +34,20 @@ import java.util.List;
  * All arrays MUST be same length.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})
-@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class FFISleeperRegion extends Struct {
     /** Region partition region minimums. */
-    public final FFIArray<Object> mins = new FFIArray<>(this);
+    final FFIArray<Object> mins = new FFIArray<>(this);
     /** Region partition region maximums. MUST BE SAME LENGTH AS region_mins. */
-    public final FFIArray<Object> maxs = new FFIArray<>(this);
+    final FFIArray<Object> maxs = new FFIArray<>(this);
     /** Region partition region minimums are inclusive? MUST BE SAME LENGTH AS region_mins. */
-    public final FFIArray<java.lang.Boolean> mins_inclusive = new FFIArray<>(this);
+    final FFIArray<java.lang.Boolean> mins_inclusive = new FFIArray<>(this);
     /** Region partition region maximums are inclusive? MUST BE SAME LENGTH AS region_mins. */
-    public final FFIArray<java.lang.Boolean> maxs_inclusive = new FFIArray<>(this);
+    final FFIArray<java.lang.Boolean> maxs_inclusive = new FFIArray<>(this);
     /**
      * Schema column indexes. Regions don't always have one range per row key column.
      * This array specifies column indexes into the schema that are specified by this region.
      */
-    public final FFIArray<java.lang.Integer> dimension_indexes = new FFIArray<>(this);
+    final FFIArray<java.lang.Integer> dimension_indexes = new FFIArray<>(this);
 
     public FFISleeperRegion(jnr.ffi.Runtime runtime) {
         super(runtime);
@@ -70,16 +68,16 @@ public class FFISleeperRegion extends Struct {
         // Check lengths
         long rowKeys = mins.length();
         if (rowKeys != maxs.length()) {
-            throw new IllegalStateException("region maxs has length " + maxs.length() + " but there are " + rowKeys + " row key columns");
+            throw new IllegalStateException("region maxs has length " + maxs.length() + " but there are " + rowKeys + " row keys in region");
         }
         if (rowKeys != mins_inclusive.length()) {
-            throw new IllegalStateException("region mins inclusive has length " + mins_inclusive.length() + " but there are " + rowKeys + " row key columns");
+            throw new IllegalStateException("region mins inclusive has length " + mins_inclusive.length() + " but there are " + rowKeys + " row keys in region");
         }
         if (rowKeys != maxs_inclusive.length()) {
-            throw new IllegalStateException("region maxs inclusive has length " + maxs_inclusive.length() + " but there are " + rowKeys + " row key columns");
+            throw new IllegalStateException("region maxs inclusive has length " + maxs_inclusive.length() + " but there are " + rowKeys + " row keys in region");
         }
         if (rowKeys != dimension_indexes.length()) {
-            throw new IllegalStateException("region dimension indexes has length " + dimension_indexes.length() + " but there are " + rowKeys + " row key columns in region");
+            throw new IllegalStateException("region dimension indexes has length " + dimension_indexes.length() + " but there are " + rowKeys + " row keys in region");
         }
     }
 
@@ -120,7 +118,6 @@ public class FFISleeperRegion extends Struct {
         partitionRegion.maxs.populate(maxs.toArray(), true);
         partitionRegion.maxs_inclusive.populate(maxsInclusive.toArray(java.lang.Boolean[]::new), false);
         partitionRegion.dimension_indexes.populate(dimensionIndexes.toArray(java.lang.Integer[]::new), false);
-        partitionRegion.validate();
         return partitionRegion;
     }
 
