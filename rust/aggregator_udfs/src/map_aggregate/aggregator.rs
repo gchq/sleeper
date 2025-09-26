@@ -91,7 +91,7 @@ fn validate_map_struct_type<'a>(acc_args: &'a AccumulatorArgs<'_>) -> Result<&'a
 }
 
 /// A aggregator for map columns. See module documentation.
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub struct MapAggregator {
     /// Defines what column types this function can work on
     signature: Signature,
@@ -292,7 +292,7 @@ mod tests {
     use datafusion::{
         error::DataFusionError,
         logical_expr::{AggregateUDFImpl, function::AccumulatorArgs},
-        physical_expr::LexOrdering,
+        physical_expr::PhysicalSortExpr,
     };
 
     use crate::{assert_error, map_aggregate::aggregator::map_test_common::make_map_datatype};
@@ -324,7 +324,7 @@ mod tests {
             return_field: Arc::new(Field::new("", DataType::Int64, false)),
             schema: &Schema::empty(),
             ignore_nulls: true,
-            ordering_req: LexOrdering::empty(),
+            order_bys: &[],
             is_reversed: false,
             is_distinct: false,
         };
@@ -351,7 +351,7 @@ mod tests {
             )),
             schema: &Schema::empty(),
             ignore_nulls: true,
-            ordering_req: LexOrdering::empty(),
+            order_bys: &[],
             is_reversed: false,
             is_distinct: false,
         };
@@ -389,7 +389,7 @@ mod tests {
             )),
             schema: &Schema::empty(),
             ignore_nulls: true,
-            ordering_req: LexOrdering::empty(),
+            order_bys: &[],
             is_reversed: false,
             is_distinct: false,
         };
@@ -408,7 +408,7 @@ mod tests {
         // Given
         let dt = make_map_datatype(DataType::Boolean, DataType::Boolean);
         let schema = Schema::empty();
-        let lex = LexOrdering::empty();
+        let lex = &[];
         let args = make_accumulator_args(&schema, lex, &dt);
         let result = validate_map_struct_type(&args).map_err(|e| e.to_string());
 
@@ -467,14 +467,14 @@ mod tests {
 
     fn make_accumulator_args<'a>(
         schema: &'a Schema,
-        lex: &'a LexOrdering,
+        order_bys: &'a [PhysicalSortExpr],
         map_type: &'a DataType,
     ) -> AccumulatorArgs<'a> {
         AccumulatorArgs {
             return_field: Arc::new(Field::new("", map_type.clone(), false)),
             schema,
             ignore_nulls: true,
-            ordering_req: lex,
+            order_bys,
             is_reversed: false,
             name: "test",
             is_distinct: false,
@@ -502,7 +502,7 @@ mod tests {
         // Then
         assert!(agg.groups_accumulator_supported(make_accumulator_args(
             &Schema::empty(),
-            LexOrdering::empty(),
+            &[],
             &map_type
         )));
         Ok(())
@@ -532,11 +532,7 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
-        let _acc = agg.accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ))?;
+        let _acc = agg.accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type))?;
         Ok(())
     }
 
@@ -545,11 +541,7 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
-        let acc = agg.accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ));
+        let acc = agg.accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type));
 
         // Then
         assert_error!(
@@ -565,11 +557,7 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
-        let acc = agg.accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ));
+        let acc = agg.accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type));
 
         // Then
         assert_error!(
@@ -585,11 +573,7 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
-        let acc = agg.accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ));
+        let acc = agg.accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type));
 
         // Then
         assert_error!(
@@ -607,11 +591,7 @@ mod tests {
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
-        let mut acc = agg.accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ))?;
+        let mut acc = agg.accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type))?;
 
         // When
         // Create builder
@@ -641,11 +621,7 @@ mod tests {
         let map_type = make_map_datatype(DataType::Utf8, DataType::Int64);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
-        let mut acc = agg.accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ))?;
+        let mut acc = agg.accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type))?;
 
         // When
         // Create builder
@@ -675,11 +651,7 @@ mod tests {
         let map_type = make_map_datatype(DataType::Binary, DataType::Int64);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
-        let mut acc = agg.accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ))?;
+        let mut acc = agg.accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type))?;
 
         // When
         // Create builder
@@ -708,11 +680,8 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
-        let _acc = agg.create_groups_accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ))?;
+        let _acc =
+            agg.create_groups_accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type))?;
         Ok(())
     }
 
@@ -722,11 +691,8 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Int64, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
-        let acc = agg.create_groups_accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ));
+        let acc =
+            agg.create_groups_accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type));
 
         // Then
         assert_error!(
@@ -744,11 +710,8 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Utf8, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
-        let acc = agg.create_groups_accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ));
+        let acc =
+            agg.create_groups_accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type));
 
         // Then
         assert_error!(
@@ -766,11 +729,8 @@ mod tests {
         // Given
         let map_type = make_map_datatype(DataType::Binary, DataType::LargeBinary);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
-        let acc = agg.create_groups_accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ));
+        let acc =
+            agg.create_groups_accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type));
 
         // Then
         assert_error!(
@@ -788,11 +748,8 @@ mod tests {
         let map_type = make_map_datatype(DataType::Int64, DataType::Int64);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
-        let mut acc = agg.create_groups_accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ))?;
+        let mut acc =
+            agg.create_groups_accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type))?;
 
         // When
         // Create builder
@@ -822,11 +779,8 @@ mod tests {
         let map_type = make_map_datatype(DataType::Utf8, DataType::Int64);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
-        let mut acc = agg.create_groups_accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ))?;
+        let mut acc =
+            agg.create_groups_accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type))?;
 
         // When
         // Create builder
@@ -856,11 +810,8 @@ mod tests {
         let map_type = make_map_datatype(DataType::Binary, DataType::Int64);
         let agg = MapAggregator::try_new(&map_type, UdfMapAggregatorOp::Sum)?;
         // Make accumulator
-        let mut acc = agg.create_groups_accumulator(make_accumulator_args(
-            &Schema::empty(),
-            LexOrdering::empty(),
-            &map_type,
-        ))?;
+        let mut acc =
+            agg.create_groups_accumulator(make_accumulator_args(&Schema::empty(), &[], &map_type))?;
 
         // When
         // Create builder
