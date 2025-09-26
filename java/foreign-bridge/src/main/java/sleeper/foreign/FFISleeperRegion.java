@@ -65,6 +65,7 @@ public class FFISleeperRegion extends Struct {
         maxs.validate();
         mins_inclusive.validate();
         maxs_inclusive.validate();
+        dimension_indexes.validate();
 
         // Check lengths
         long rowKeys = mins.length();
@@ -76,6 +77,9 @@ public class FFISleeperRegion extends Struct {
         }
         if (rowKeys != maxs_inclusive.length()) {
             throw new IllegalStateException("region maxs inclusive has length " + maxs_inclusive.length() + " but there are " + rowKeys + " row key columns");
+        }
+        if (rowKeys != dimension_indexes.length()) {
+            throw new IllegalStateException("region dimension indexes has length " + dimension_indexes.length() + " but there are " + rowKeys + " row key columns in region");
         }
     }
 
