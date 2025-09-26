@@ -21,7 +21,6 @@ import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
-import sleeper.compaction.DataFusionFunctionsImpl;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIArray;
 import sleeper.foreign.bridge.FFIContext;

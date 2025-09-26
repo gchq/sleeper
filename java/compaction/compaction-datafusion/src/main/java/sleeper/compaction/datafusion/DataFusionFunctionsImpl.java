@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction;
+package sleeper.compaction.datafusion;
 
-import sleeper.compaction.datafusion.DataFusionFunctions;
 import sleeper.foreign.bridge.FFIBridge;
 
 import java.io.IOException;
