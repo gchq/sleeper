@@ -103,6 +103,13 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
     }
 
+    // TODO tests:
+    // - Filtering is pushed down to DataFusion
+    // - Aggregation is pushed down to DataFusion
+    // - Restrict required values and apply filtering on same or different field
+    // - Restrict required values and apply aggregation
+    // - Custom iterators combine with filtering/aggregation
+
     @Nested
     @DisplayName("No files")
     class NoFiles {
