@@ -17,7 +17,7 @@ package sleeper.example.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.WrappedIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -49,7 +49,7 @@ public class FixedAgeOffIteratorTest {
         ageOffIterator.init("timestamp,1500", schema);
 
         // When
-        Iterator<Row> filtered = ageOffIterator.apply(new WrappedIterator<>(rows.iterator()));
+        Iterator<Row> filtered = ageOffIterator.applyTransform(new WrappedIterator<>(rows.iterator()));
 
         // Then
         assertThat(filtered).toIterable()

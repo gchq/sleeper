@@ -125,4 +125,9 @@ public class CompactionJobRun implements JobRunReport {
         }
     }
 
+    @Override
+    public String toString() {
+        return run.toString();
+    }
+
 }

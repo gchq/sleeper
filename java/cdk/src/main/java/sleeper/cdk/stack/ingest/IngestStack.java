@@ -49,11 +49,13 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.util.AutoStopEcsClusterTasks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -108,6 +110,7 @@ public class IngestStack extends NestedStack {
         //  - A lambda that periodically checks the number of running ingest tasks
         //      and if there are not enough (i.e. there is a backlog on the queue
         //      then it creates more tasks).
+        //  - A lambda that stops task when a delete cluster event is triggered.
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
@@ -116,7 +119,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
@@ -180,7 +183,9 @@ public class IngestStack extends NestedStack {
     private Cluster ecsClusterForIngestTasks(
             IBucket jarsBucket,
             CoreStacks coreStacks,
-            Queue ingestJobQueue) {
+            Queue ingestJobQueue,
+            LambdaCode lambdaCode) {
+
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -210,7 +215,7 @@ public class IngestStack extends NestedStack {
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(Utils.createECSContainerLogDriver(coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .build();
         taskDefinition.addContainer("IngestContainer", containerDefinitionOptions);
 
@@ -235,6 +240,11 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
+        AutoStopEcsClusterTasks.autoStopTasksOnEcsCluster(this, instanceProperties, lambdaCode,
+                cluster, clusterName,
+                coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP),
+                coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS_AUTOSTOP_PROVIDER));
+
         return cluster;
     }
 
@@ -249,7 +259,7 @@ public class IngestStack extends NestedStack {
                 .description("If there are ingest jobs on queue create tasks to run them")
                 .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.INGEST_CREATE_TASKS)));
 

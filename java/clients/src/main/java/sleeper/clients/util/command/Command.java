@@ -16,6 +16,8 @@
 
 package sleeper.clients.util.command;
 
+import com.pty4j.PtyProcessBuilder;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -89,6 +91,12 @@ public class Command {
         if (index == pipelineSize - 1) {
             builder.redirectOutput(INHERIT);
         }
+        return builder;
+    }
+
+    public PtyProcessBuilder toPtyProcessBuilder() {
+        PtyProcessBuilder builder = new PtyProcessBuilder(command);
+        builder.setEnvironment(envVars);
         return builder;
     }
 }

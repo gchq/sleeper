@@ -17,14 +17,14 @@ package sleeper.clients.table.partition;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.ConcatenatingIterator;
-import sleeper.core.iterator.LimitingIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.ConcatenatingIterator;
+import sleeper.core.iterator.closeable.LimitingIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.BufferedWriter;
@@ -88,7 +88,7 @@ public class EstimateSplitPointsClient {
         return () -> {
             try {
                 return new LimitingIterator<>(maxRows,
-                        new ParquetReaderIterator(new ParquetRowReader.Builder(dataFile, schema)
+                        new ParquetReaderIterator(ParquetRowReaderFactory.parquetRowReaderBuilder(dataFile, schema)
                                 .withConf(conf)
                                 .build()));
             } catch (IOException e) {

@@ -15,18 +15,21 @@
  */
 package sleeper.compaction.datafusion;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionParams;
+import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCommonConfig;
 import sleeper.compaction.datafusion.DataFusionFunctions.DataFusionCompactionResult;
-import sleeper.core.partition.Partition;
-import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -34,7 +37,9 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
-import sleeper.foreign.bridge.FFIBridge;
+import sleeper.foreign.FFISleeperRegion;
+import sleeper.foreign.bridge.FFIContext;
+import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -49,41 +54,40 @@ import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
+@SuppressFBWarnings("UUF_UNUSED_FIELD")
 public class DataFusionCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionCompactionRunner.class);
 
     /** Maximum number of rows in a Parquet row group. */
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
-    private final AwsConfig awsConfig;
+    private final DataFusionAwsConfig awsConfig;
+    private final Configuration hadoopConf;
 
-    private static final DataFusionFunctions NATIVE_COMPACTION;
-
-    static {
-        // Obtain native library. This throws an exception if native library can't be
-        // loaded and linked
-        try {
-            NATIVE_COMPACTION = FFIBridge.createForeignInterface(DataFusionFunctions.class);
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+    public DataFusionCompactionRunner(Configuration hadoopConf) {
+        this(DataFusionAwsConfig.getDefault(), hadoopConf);
     }
 
-    public DataFusionCompactionRunner() {
-        this(null);
-    }
-
-    public DataFusionCompactionRunner(AwsConfig awsConfig) {
+    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
         this.awsConfig = awsConfig;
+        this.hadoopConf = hadoopConf;
     }
 
     @Override
-    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Partition partition) throws IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(NATIVE_COMPACTION);
+    public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionFunctions.INSTANCE);
 
-        DataFusionCompactionParams params = createCompactionParams(job, tableProperties, partition.getRegion(), awsConfig, runtime);
+        DataFusionCommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
+
+        if (result.getRowsWritten() < 1) {
+            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                    new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
+                // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
+                // See the test should_merge_empty_files in compaction_test.rs
+            }
+        }
 
         LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
                 LocalDateTime.now());
@@ -106,21 +110,23 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                 object to pass to FFI layer
      */
     @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
-    private static DataFusionCompactionParams createCompactionParams(CompactionJob job, TableProperties tableProperties,
-            Region region, AwsConfig awsConfig, jnr.ffi.Runtime runtime) {
+    private static DataFusionCommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
+            Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        DataFusionCompactionParams params = new DataFusionCompactionParams(runtime);
+        DataFusionCommonConfig params = new DataFusionCommonConfig(runtime);
         if (awsConfig != null) {
             params.override_aws_config.set(true);
-            params.aws_region.set(awsConfig.region);
-            params.aws_endpoint.set(awsConfig.endpoint);
-            params.aws_allow_http.set(awsConfig.allowHttp);
-            params.aws_access_key.set(awsConfig.accessKey);
-            params.aws_secret_key.set(awsConfig.secretKey);
+            params.aws_region.set(awsConfig.getRegion());
+            params.aws_endpoint.set(awsConfig.getEndpoint());
+            params.aws_allow_http.set(awsConfig.isAllowHttp());
+            params.aws_access_key.set(awsConfig.getAccessKey());
+            params.aws_secret_key.set(awsConfig.getSecretKey());
         } else {
             params.override_aws_config.set(false);
         }
         params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
+        // Files are always sorted for compactions
+        params.input_files_sorted.set(true);
         params.output_file.set(job.getOutputFile());
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
         params.row_key_schema.populate(getKeyTypes(schema.getRowKeyTypes()), false);
@@ -134,34 +140,35 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
-        // Is there an aggregation/filtering iterator set?
-        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName())) {
-            params.iterator_config.set(job.getIteratorConfig());
-        } else {
-            params.iterator_config.set("");
-        }
+        params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
+        params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
+
+        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
+        List<Range> orderedRanges = region.getRangesOrdered(schema);
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
-            Object[] regionMins = region.getRanges().stream().map(Range::getMin).toArray();
-            params.region_mins.populate(regionMins, false);
+            Object[] regionMins = orderedRanges.stream().map(Range::getMin).toArray();
+            partitionRegion.region_mins.populate(regionMins, false);
         }
         {
-            Boolean[] regionMinInclusives = region.getRanges().stream().map(Range::isMinInclusive)
+            Boolean[] regionMinInclusives = orderedRanges.stream().map(Range::isMinInclusive)
                     .toArray(Boolean[]::new);
-            params.region_mins_inclusive.populate(regionMinInclusives, false);
+            partitionRegion.region_mins_inclusive.populate(regionMinInclusives, false);
         }
         {
             // This array can contain nulls
-            Object[] regionMaxs = region.getRanges().stream().map(Range::getMax).toArray();
-            params.region_maxs.populate(regionMaxs, true);
+            Object[] regionMaxs = orderedRanges.stream().map(Range::getMax).toArray();
+            partitionRegion.region_maxs.populate(regionMaxs, true);
         }
         {
-            Boolean[] regionMaxInclusives = region.getRanges().stream().map(Range::isMaxInclusive)
+            Boolean[] regionMaxInclusives = orderedRanges.stream().map(Range::isMaxInclusive)
                     .toArray(Boolean[]::new);
-            params.region_maxs_inclusive.populate(regionMaxInclusives, false);
+            partitionRegion.region_maxs_inclusive.populate(regionMaxInclusives, false);
         }
+        params.setRegion(partitionRegion);
         params.validate();
+
         return params;
     }
 
@@ -200,17 +207,18 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                  rows read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    public static RowsProcessed invokeDataFusion(CompactionJob job,
-            DataFusionCompactionParams compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+    private static RowsProcessed invokeDataFusion(CompactionJob job,
+            DataFusionCommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         DataFusionCompactionResult compactionData = new DataFusionCompactionResult(runtime);
         // Perform compaction
-        int result = NATIVE_COMPACTION.merge_sorted_files(compactionParams, compactionData);
-
-        // Check result
-        if (result != 0) {
-            LOGGER.error("DataFusion compaction failed, return code: {}", result);
-            throw new IOException("DataFusion compaction failed with return code " + result);
+        try (FFIContext context = new FFIContext(DataFusionFunctions.INSTANCE)) {
+            int result = DataFusionFunctions.INSTANCE.compact(context, compactionParams, compactionData);
+            // Check result
+            if (result != 0) {
+                LOGGER.error("DataFusion compaction failed, return code: {}", result);
+                throw new IOException("DataFusion compaction failed with return code " + result);
+            }
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();
@@ -220,70 +228,5 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
-    }
-
-    @Override
-    public String implementationLanguage() {
-        return "Rust";
-    }
-
-    public static class AwsConfig {
-        private final String region;
-        private final String endpoint;
-        private final String accessKey;
-        private final String secretKey;
-        private final boolean allowHttp;
-
-        private AwsConfig(Builder builder) {
-            region = builder.region;
-            endpoint = builder.endpoint;
-            accessKey = builder.accessKey;
-            secretKey = builder.secretKey;
-            allowHttp = builder.allowHttp;
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder {
-            private String region;
-            private String endpoint;
-            private String accessKey;
-            private String secretKey;
-            private boolean allowHttp;
-
-            private Builder() {
-            }
-
-            public Builder region(String region) {
-                this.region = region;
-                return this;
-            }
-
-            public Builder endpoint(String endpoint) {
-                this.endpoint = endpoint;
-                return this;
-            }
-
-            public Builder accessKey(String accessKey) {
-                this.accessKey = accessKey;
-                return this;
-            }
-
-            public Builder secretKey(String secretKey) {
-                this.secretKey = secretKey;
-                return this;
-            }
-
-            public Builder allowHttp(boolean allowHttp) {
-                this.allowHttp = allowHttp;
-                return this;
-            }
-
-            public AwsConfig build() {
-                return new AwsConfig(this);
-            }
-        }
     }
 }

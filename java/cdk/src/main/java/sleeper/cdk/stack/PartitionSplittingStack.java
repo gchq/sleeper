@@ -41,6 +41,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -98,7 +99,7 @@ public class PartitionSplittingStack extends NestedStack {
 
         // Partition splitting code
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+        Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
         // Lambda to batch tables and put requests on the batch SQS queue, to be consumed by FindPartitionsToSplit
         createTriggerFunction(instanceProperties, lambdaCode, coreStacks, environmentVariables);

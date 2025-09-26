@@ -18,7 +18,7 @@ package sleeper.systemtest.drivers.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;

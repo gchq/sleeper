@@ -18,6 +18,7 @@ package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.CompressionCodec;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.model.IngestQueue;
@@ -362,6 +363,12 @@ public interface TableDefaultProperty {
                     "committer.")
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_DATA_ENGINE = Index.propertyBuilder("sleeper.default.table.data.engine")
+            .description("Select which data engine to use for the table. " +
+                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
+            .defaultValue(DataEngine.DATAFUSION.toString())
+            .validationPredicate(DataEngine::isValid)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {

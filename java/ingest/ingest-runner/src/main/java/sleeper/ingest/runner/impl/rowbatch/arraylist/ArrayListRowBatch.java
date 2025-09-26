@@ -23,8 +23,8 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.MergingIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.MergingIterator;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
@@ -32,7 +32,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.rowbatch.RowBatch;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -248,7 +248,7 @@ public class ArrayListRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDAT
      * @throws IOException Thrown when the reader cannot be created
      */
     private ParquetReader<Row> createParquetReader(String inputFile) throws IOException {
-        ParquetReader.Builder<Row> builder = new ParquetRowReader.Builder(new Path(inputFile), sleeperSchema)
+        ParquetReader.Builder<Row> builder = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(inputFile), sleeperSchema)
                 .withConf(hadoopConfiguration);
         return builder.build();
     }

@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.suite.investigate;
 
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -74,8 +75,8 @@ public class InvestigateDataFusionCompactionOOM {
         Path tempDir = Files.createTempDirectory("sleeper-test");
         Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
-        CompactionRunner runner = new DataFusionCompactionRunner();
-        runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()));
+        CompactionRunner runner = new DataFusionCompactionRunner(new Configuration());
+        runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()).getRegion());
     }
 
 }

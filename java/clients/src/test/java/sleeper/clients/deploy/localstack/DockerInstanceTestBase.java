@@ -18,7 +18,7 @@ package sleeper.clients.deploy.localstack;
 
 import software.amazon.awssdk.services.sqs.model.Message;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -30,7 +30,7 @@ import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
+import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
@@ -61,7 +61,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new LeafPartitionRowRetrieverImpl(Executors.newSingleThreadExecutor(), hadoopConf, tableProperties));
+                new QueryEngineSelector(Executors.newSingleThreadExecutor(), hadoopConf).getRowRetriever(tableProperties));
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRows(tree, tableProperties.get(TABLE_NAME)));
     }

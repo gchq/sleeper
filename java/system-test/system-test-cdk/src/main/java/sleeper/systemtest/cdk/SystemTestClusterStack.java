@@ -18,7 +18,6 @@ package sleeper.systemtest.cdk;
 
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
-import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -30,6 +29,7 @@ import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.ContainerInsights;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.iam.Effect;
@@ -37,8 +37,6 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
-import software.amazon.awscdk.services.sqs.DeadLetterQueue;
-import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.CoreStacks;
@@ -47,6 +45,7 @@ import sleeper.cdk.stack.ingest.IngestStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.EnvironmentUtils;
 import sleeper.systemtest.configuration.SystemTestConstants;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertySetter;
@@ -59,12 +58,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_DLQ_ARN;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_DLQ_URL;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_ARN;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JOBS_QUEUE_URL;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
@@ -90,13 +84,6 @@ public class SystemTestClusterStack extends NestedStack {
     private void create(
             SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
             InstanceProperties instanceProperties, SystemTestBucketStack bucketStack) {
-        Queue jobsQueue = createQueueForSystemTestJobs(properties, propertySetter, instanceProperties);
-        createSystemTestCluster(properties, propertySetter, instanceProperties, bucketStack, jobsQueue);
-    }
-
-    private void createSystemTestCluster(
-            SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
-            InstanceProperties instanceProperties, SystemTestBucketStack bucketStack, Queue jobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -108,7 +95,7 @@ public class SystemTestClusterStack extends NestedStack {
         Cluster cluster = Cluster.Builder
                 .create(this, "SystemTestCluster")
                 .clusterName(clusterName)
-                .containerInsights(Boolean.TRUE)
+                .containerInsightsV2(ContainerInsights.ENHANCED)
                 .vpc(vpc)
                 .build();
         propertySetter.set(SYSTEM_TEST_CLUSTER_NAME, cluster.getClusterName());
@@ -143,46 +130,16 @@ public class SystemTestClusterStack extends NestedStack {
                                 .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
                                 .build())
                         .build()))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .build();
         taskDefinition.addContainer(SystemTestConstants.SYSTEM_TEST_CONTAINER, containerDefinitionOptions);
 
         Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET)).grantRead(taskRole);
         bucketStack.getBucket().grantReadWrite(taskRole);
-        jobsQueue.grantConsumeMessages(taskRole);
         taskRole.addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(List.of("sts:AssumeRole"))
                 .resources(List.of("arn:aws:iam::*:role/sleeper-ingest-*"))
                 .build());
-    }
-
-    private Queue createQueueForSystemTestJobs(
-            SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter, InstanceProperties instanceProperties) {
-        // Create queue for system test job definitions
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
-        String dlQueueName = String.join("-", "sleeper", instanceId, "SystemTestJobDLQ");
-
-        Queue systemTestDLQ = Queue.Builder
-                .create(this, "SystemTestJobDeadLetterQueue")
-                .queueName(dlQueueName)
-                .build();
-        DeadLetterQueue systemTestJobDeadLetterQueue = DeadLetterQueue.builder()
-                .maxReceiveCount(1)
-                .queue(systemTestDLQ)
-                .build();
-        String queueName = String.join("-", "sleeper", instanceId, "SystemTestJobQ");
-        Queue systemTestJobQueue = Queue.Builder
-                .create(this, "SystemTestJobQueue")
-                .queueName(queueName)
-                .deadLetterQueue(systemTestJobDeadLetterQueue)
-                .visibilityTimeout(Duration.seconds(properties.getInt(SYSTEM_TEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
-                .build();
-        propertySetter.set(SYSTEM_TEST_JOBS_QUEUE_URL, systemTestJobQueue.getQueueUrl());
-        propertySetter.set(SYSTEM_TEST_JOBS_QUEUE_ARN, systemTestJobQueue.getQueueArn());
-        propertySetter.set(SYSTEM_TEST_JOBS_DLQ_URL, systemTestJobDeadLetterQueue.getQueue().getQueueUrl());
-        propertySetter.set(SYSTEM_TEST_JOBS_DLQ_ARN, systemTestJobDeadLetterQueue.getQueue().getQueueArn());
-
-        return systemTestJobQueue;
     }
 }

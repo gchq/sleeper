@@ -388,6 +388,10 @@ AspectJ (org.aspectj:aspectjrt:1.*, org.aspectj:aspectjtools:1.*)
 
 - Eclipse Public License (EPL) 2.0
 
+Pty4J (org.jetbrains.pty4j:pty4j:0.*)
+
+- Eclipse Public License (EPL) 1.0
+
 AspectJ Maven Plugin (dev.aspectj:aspectj-maven-plugin:1.*)
 
 - MIT License
@@ -408,7 +412,7 @@ FindBugs Annotations (com.google.code.findbugs:jsr305:3.*)
 
 - Apache License, Version 2.0
 
-Checkstyle (com.puppycrawl.tools:checkstyle:10.*)
+Checkstyle (com.puppycrawl.tools:checkstyle:11.*)
 
 - GNU Lesser General Public License, version 2.1
 
@@ -469,10 +473,6 @@ color-eyre (https://github.com/yaahc/color-eyre)
 - Apache License, Version 2.0
 
 Tokio (https://github.com/tokio-rs/tokio)
-
-- MIT License
-
-owo-colors (https://github.com/jam1garner/owo-colors)
 
 - MIT License
 

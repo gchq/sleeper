@@ -35,6 +35,7 @@ from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitReque
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
 from sleeper.properties.config_bucket import load_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.web_socket_query import WebSocketQuery, WebSocketQueryProcessor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -175,6 +176,67 @@ class SleeperClient:
         :param query: the bulk export query to send
         """
         BulkExportSender(self._sqs_resource, self._instance_properties).send(query)
+
+    async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False) -> list:
+        """
+        Asynchronously performs a web socket query on a Sleeper table for rows where the key matches a given list of query keys.
+        For each key in the provided keys dictionary, and for each value associated with that key,
+        constructs a WebSocketQuery. Executes each query asynchronously
+        using the WebSocketQueryProcessor and aggregates all results into a single list.
+
+        :param table_name: The name of the table to query.
+        :param keys: A dictionary where each key is a column name and each value is a list of values to query for.
+                     Example: {"key":["a", "z"]}
+        :param query_id: An optional query ID; defaults to a new UUID if not provided.
+        :param strings_base64_encoded: Boolean indicating if string values are base64 encoded.
+
+        :return: A list containing all retrieved rows matching the specified keys and values.
+        """
+        results = []
+        for key in keys.keys():
+            for value in keys.get(key):
+                query = WebSocketQuery(table_name=table_name, query_id=query_id, key=key, max_value=value, min_value=value, strings_base64_encoded=strings_base64_encoded)
+                logger.debug(f"Web Socket Query {query.to_json()}")
+                results.extend(await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query))
+        return results
+
+    async def web_socket_range_key_query(
+        self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
+    ) -> list:
+        """
+        Asynchronously performs web socket queries on a Sleeper table for rows where the key is within specified ranges.
+        This method iterates over a list of query dictionaries, each containing keys with associated 'min' and 'max' values.
+        For each key and range, it constructs a WebSocketQuery with the specified range bounds and executes the query asynchronously.
+        The results from all queries are aggregated into a single list.
+
+        :param table_name: The name of the table to query.
+        :param keys: A list of dictionaries, each mapping a key to a range dict with 'min' and 'max' keys.
+                     Example: [{'key1': {'min': 1, 'max': 10}}, {'key2': {'min': 5, 'max': 15}}]
+        :param query_id: An optional query ID; defaults to a new UUID if not provided.
+        :param min_inclusive: Boolean indicating if the minimum boundary is inclusive.
+        :param max_inclusive: Boolean indicating if the maximum boundary is inclusive.
+        :param strings_base64_encoded: Boolean indicating if string values are base64 encoded.
+
+        :return: A list containing all retrieved rows matching the specified key ranges.
+        """
+        results = []
+        for query in keys:
+            for key in query.keys():
+                min_value = query.get(key).get("min")
+                max_value = query.get(key).get("max")
+                query = WebSocketQuery(
+                    table_name=table_name,
+                    query_id=query_id,
+                    key=key,
+                    max_value=max_value,
+                    min_value=min_value,
+                    max_inclusive=max_inclusive,
+                    min_inclusive=min_inclusive,
+                    strings_base64_encoded=strings_base64_encoded,
+                )
+                logger.debug(f"Web Socket Query {query.to_json()}")
+                results.extend(await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query))
+        return results
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """

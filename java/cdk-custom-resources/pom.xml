@@ -14,14 +14,14 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>aws</artifactId>
-        <version>0.32.0</version>
+        <version>0.33.0</version>
     </parent>
 
     <artifactId>cdk-custom-resources</artifactId>
@@ -30,6 +30,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>configuration</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -48,6 +53,10 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>ec2</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>ecs</artifactId>
+        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
@@ -56,9 +65,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock</artifactId>
-            <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

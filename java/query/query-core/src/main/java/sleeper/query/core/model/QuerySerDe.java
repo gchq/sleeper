@@ -45,8 +45,7 @@ public class QuerySerDe {
     private final SchemaLoader schemaLoader;
 
     public QuerySerDe(SchemaLoader schemaLoader) {
-        GsonBuilder builder = new GsonBuilder()
-                .serializeNulls();
+        GsonBuilder builder = new GsonBuilder();
         gson = builder.create();
         gsonPrettyPrinting = builder.setPrettyPrinting().create();
         this.schemaLoader = schemaLoader;
@@ -86,37 +85,25 @@ public class QuerySerDe {
     }
 
     /**
-     * Converts a Sleeper Query object to a JSON string, with optional
-     * pretty-printing.
-     * If {@code prettyPrint} is {@code true}, the JSON output will be
-     * formatted for readability. Otherwise, it will be a compact string.
+     * Converts a Sleeper Query object to a JSON string, with pretty-printing.
+     * The JSON output will be formatted for readability.
      *
-     * @param  query       the Sleeper query
-     * @param  prettyPrint set to true if the JSON should be formatted
-     * @return             a formatted JSON string
+     * @param  query the Sleeper query
+     * @return       a formatted JSON string
      */
-    public String toJson(Query query, boolean prettyPrint) {
-        if (prettyPrint) {
-            return gsonPrettyPrinting.toJson(QueryJson.from(query, schemaLoader));
-        }
-        return toJson(query);
+    public String toJsonPrettyPrint(Query query) {
+        return gsonPrettyPrinting.toJson(QueryJson.from(query, schemaLoader));
     }
 
     /**
-     * Converts a Sleeper LeafPartitionQuery object to a JSON string,
-     * with optional pretty-printing.
-     * If {@code prettyPrint} is {@code true}, the JSON output will be
-     * formatted for readability. Otherwise, it will be a compact string.
+     * Converts a Sleeper LeafPartitionQuery object to a JSON string, with pretty-printing.
+     * The JSON output will be formatted for readability.
      *
-     * @param  leafQuery   the Sleeper leaf partition query
-     * @param  prettyPrint set to true if the JSON should be formatted
-     * @return             a formatted JSON string
+     * @param  leafQuery the Sleeper leaf partition query
+     * @return           a formatted JSON string
      */
-    public String toJson(LeafPartitionQuery leafQuery, boolean prettyPrint) {
-        if (prettyPrint) {
-            return gsonPrettyPrinting.toJson(QueryJson.from(leafQuery, schemaLoader));
-        }
-        return toJson(leafQuery);
+    public String toJsonPrettyPrint(LeafPartitionQuery leafQuery) {
+        return gsonPrettyPrinting.toJson(QueryJson.from(leafQuery, schemaLoader));
     }
 
     /**

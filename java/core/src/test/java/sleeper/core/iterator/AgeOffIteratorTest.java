@@ -17,6 +17,7 @@ package sleeper.core.iterator;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -40,11 +41,22 @@ public class AgeOffIteratorTest {
         ageOffIterator.init("timestamp,1000000", getSchema());
 
         // When
-        Iterator<Row> filtered = ageOffIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> filtered = ageOffIterator.applyTransform(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(filtered).toIterable()
                 .containsExactly(rows.get(1), rows.get(4));
+    }
+
+    @Test
+    void shouldRequireAgeOffField() {
+        // Given
+        AgeOffIterator ageOffIterator = new AgeOffIterator();
+        ageOffIterator.init("timestamp,1000000", getSchema());
+
+        // When / Then
+        assertThat(ageOffIterator.getRequiredValueFields())
+                .containsExactly("timestamp");
     }
 
     private static Schema getSchema() {

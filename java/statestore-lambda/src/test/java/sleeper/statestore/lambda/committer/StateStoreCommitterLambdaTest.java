@@ -117,7 +117,7 @@ public class StateStoreCommitterLambdaTest {
 
     private StateStore stateStore() {
         StateStore stateStore = StateStoreFactory.forCommitterProcess(true, tableProperties,
-                transactionLogs.stateStoreBuilder(tableProperties.getStatus(), schema))
+                transactionLogs.stateStoreBuilder(tableProperties))
                 .build();
         stateStore.fixFileUpdateTime(DEFAULT_FILE_UPDATE_TIME);
         return stateStore;

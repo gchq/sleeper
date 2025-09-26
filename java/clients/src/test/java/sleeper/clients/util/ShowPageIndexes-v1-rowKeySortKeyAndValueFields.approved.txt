@@ -1,0 +1,28 @@
+Row group 0
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  row-001                                   row-100                                                 <none>                <none>
+
+Page index for column test-key
+                          offset       compressed size       first row index       unencoded bytes
+page-0                         4                   142                     0                   700
+
+Column index for column test-sort
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  1                                         100                                                     <none>                <none>
+
+Page index for column test-sort
+                          offset       compressed size       first row index       unencoded bytes
+page-0                       146                   203                     0                     -
+
+Column index for column test-value
+Boundary order: ASCENDING
+                      null count  min                                       max                                        rep level histogram   def level histogram
+page-0                         0  10                                        1000                                                    <none>                <none>
+
+Page index for column test-value
+                          offset       compressed size       first row index       unencoded bytes
+page-0                       349                   214                     0                     -
+

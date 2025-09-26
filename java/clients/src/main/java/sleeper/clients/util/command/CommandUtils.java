@@ -15,6 +15,7 @@
  */
 package sleeper.clients.util.command;
 
+import com.pty4j.PtyProcess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,10 +56,30 @@ public class CommandUtils {
         return result;
     }
 
+    public static void runCommandLogOutputWithPty(Command command) throws IOException, InterruptedException {
+        LOGGER.info("Running command: {}", command);
+        PtyProcess process = command.toPtyProcessBuilder().start();
+        CompletableFuture<Void> logOutput = logOutput(command.toPtyProcessBuilder().start());
+        int exitCode = process.waitFor();
+        logOutput.join();
+        LOGGER.info("Exit code: {}", exitCode);
+        if (exitCode != 0) {
+            throw new CommandFailedException(pipeline(command), exitCode);
+        }
+    }
+
     private static CompletableFuture<Void> logOutput(Process process) {
+        return logOutput(process.getInputStream(), process.getErrorStream());
+    }
+
+    private static CompletableFuture<Void> logOutput(PtyProcess process) {
+        return logOutput(process.getInputStream(), process.getErrorStream());
+    }
+
+    private static CompletableFuture<Void> logOutput(InputStream inputStream, InputStream errorStream) {
         return CompletableFuture.allOf(
-                CompletableFuture.runAsync(() -> logTo(process.getInputStream(), LOGGER::info)),
-                CompletableFuture.runAsync(() -> logTo(process.getErrorStream(), LOGGER::error)));
+                CompletableFuture.runAsync(() -> logTo(inputStream, LOGGER::info)),
+                CompletableFuture.runAsync(() -> logTo(errorStream, LOGGER::error)));
     }
 
     private static void logTo(InputStream stream, Consumer<String> logLine) {

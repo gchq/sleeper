@@ -49,10 +49,8 @@ import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
@@ -60,16 +58,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
-import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 /**
@@ -86,37 +78,6 @@ public class Utils {
 
     private Utils() {
         // Prevents instantiation
-    }
-
-    public static Map<String, String> createDefaultEnvironment(InstanceProperties instanceProperties) {
-        Map<String, String> environmentVariables = createDefaultEnvironmentNoConfigBucket(instanceProperties);
-        environmentVariables.put(CONFIG_BUCKET.toEnvironmentVariable(),
-                instanceProperties.get(CONFIG_BUCKET));
-        return environmentVariables;
-    }
-
-    public static Map<String, String> createDefaultEnvironmentNoConfigBucket(InstanceProperties instanceProperties) {
-        Map<String, String> environmentVariables = new HashMap<>();
-        environmentVariables.put("JAVA_TOOL_OPTIONS", createToolOptions(instanceProperties));
-        return environmentVariables;
-    }
-
-    private static String createToolOptions(InstanceProperties instanceProperties) {
-        StringBuilder sb = new StringBuilder();
-        Stream.of(LOGGING_LEVEL,
-                ROOT_LOGGING_LEVEL,
-                APACHE_LOGGING_LEVEL,
-                PARQUET_LOGGING_LEVEL,
-                AWS_LOGGING_LEVEL)
-                .filter(instanceProperties::isSet)
-                .forEach(s -> sb.append("-D").append(s.getPropertyName())
-                        .append("=").append(instanceProperties.get(s)).append(" "));
-        Stream.of("java.base/java.nio=ALL-UNNAMED",
-                "java.base/sun.nio.ch=ALL-UNNAMED",
-                "java.base/java.util=ALL-UNNAMED",
-                "java.base/java.lang.invoke=ALL-UNNAMED")
-                .forEach(s -> sb.append("--add-opens=").append(s).append(" "));
-        return sb.toString();
     }
 
     /**

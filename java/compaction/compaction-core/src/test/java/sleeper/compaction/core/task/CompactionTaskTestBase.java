@@ -21,7 +21,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
-import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -69,6 +68,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
 
 public class CompactionTaskTestBase {
     protected static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -157,7 +157,7 @@ public class CompactionTaskTestBase {
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, recordWaits(sleeps))
                 .run();
     }
 
@@ -247,7 +247,7 @@ public class CompactionTaskTestBase {
         return () -> {
             CompactionJob job = jobsOnQueue.poll();
             if (job != null) {
-                return Optional.of(new FakeMessageHandle(job));
+                return Optional.of(messageHandle(job));
             } else {
                 return Optional.empty();
             }
@@ -270,8 +270,12 @@ public class CompactionTaskTestBase {
             if (jobsOnQueue.isEmpty()) {
                 throw new IllegalStateException("Expected job on queue");
             }
-            return Optional.of(new FakeMessageHandle(jobsOnQueue.poll()));
+            return Optional.of(messageHandle(jobsOnQueue.poll()));
         };
+    }
+
+    private FakeMessageHandle messageHandle(CompactionJob job) {
+        return FakeMessageHandle.tracked(job, consumedJobs, jobsReturnedToQueue);
     }
 
     protected MessageReceiver receiveNoJob() {
@@ -321,7 +325,7 @@ public class CompactionTaskTestBase {
 
     protected CompactionRunner processJobs(ProcessJob... actions) {
         Iterator<ProcessJob> getAction = List.of(actions).iterator();
-        return (job, table, partition) -> {
+        return (job, table, region) -> {
             if (getAction.hasNext()) {
                 return getAction.next().run(job);
             } else {
@@ -435,28 +439,5 @@ public class CompactionTaskTestBase {
 
     public interface ProcessJobAction {
         void run() throws Exception;
-    }
-
-    protected class FakeMessageHandle implements MessageHandle {
-        private final CompactionJob job;
-
-        FakeMessageHandle(CompactionJob job) {
-            this.job = job;
-        }
-
-        public CompactionJob getJob() {
-            return job;
-        }
-
-        public void close() {
-        }
-
-        public void deleteFromQueue() {
-            consumedJobs.add(job);
-        }
-
-        public void returnToQueue() {
-            jobsReturnedToQueue.add(job);
-        }
     }
 }

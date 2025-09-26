@@ -20,8 +20,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.SleeperPropertyIndex;
-import sleeper.core.properties.model.CompactionMethod;
 import sleeper.core.properties.model.CompressionCodec;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.model.IngestQueue;
@@ -35,7 +35,6 @@ import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPAC
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS;
-import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
@@ -61,6 +60,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMP
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
@@ -143,17 +143,44 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .editable(false)
             .includedInTemplate(false).build();
+    TableProperty DATA_ENGINE = Index.propertyBuilder("sleeper.table.data.engine")
+            .defaultProperty(DEFAULT_DATA_ENGINE)
+            .description("Select which data engine to use for the table. " +
+                    "Valid values are: " + describeEnumValuesInLowerCase(DataEngine.class))
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
     TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
-            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
-                    "Defaults to nothing. May also have special value \"" + CompactionMethod.AGGREGATION_ITERATOR_NAME + "\" indicating the use of experimental " +
-                    "iterators that are only usable with the DataFusion compactor. When this marker is present, attempting " +
-                    "to compact with the table with the default Java compactor will fail.")
+            .description("Fully qualified class of a custom iterator to apply to this table. Defaults to nothing. " +
+                    "This will be applied both during queries and during compaction, and will apply the results to " +
+                    "the underlying table data persistently. This forces use of the Java data engine for compaction. " +
+                    "This is not recommended, as the Java implementation is much slower and much more expensive. " +
+                    "Consider using the aggregation and filtering properties instead.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
-            .description("Iterator configuration. An iterator will be initialised with the following configuration. " +
-                    "If a DataFusion only iterator is specified, then the configuration should be as described in " +
-                    "https://github.com/gchq/sleeper/issues/4344 for DataFusion.")
+            .description("A configuration string to be passed to the iterator specified in " +
+                    "`sleeper.table.iterator.class.name`. This will be read by the custom iterator object.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
+    TableProperty FILTERING_CONFIG = Index.propertyBuilder("sleeper.table.filters")
+            .description("Sets how rows are filtered out and deleted from the table. This is applied every time the " +
+                    "data is read, e.g. during compactions or queries. Defaults to retaining all rows.\n" +
+                    "Currently this can only be `ageOff(field,age)`, to age off old data. The first parameter is the " +
+                    "name of the timestamp field to check against, which must be of type long, in milliseconds since " +
+                    "the epoch. The second parameter is the maximum age in milliseconds, e.g. 1209600000 for 2 weeks.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
+    TableProperty AGGREGATION_CONFIG = Index.propertyBuilder("sleeper.table.aggregations")
+            .description("Sets how to combine rows that have the same values for all row and sort keys. This is " +
+                    "applied every time the data is read, e.g. during compactions or queries. Defaults to leaving " +
+                    "them as separate rows.\n" +
+                    "This must be in the format `op(field),op(field)`. This must define an operation for every value " +
+                    "field, passing the field name as the parameter. All value fields must be of a numeric or map " +
+                    "type. The available operations are as follows:\n" +
+                    "sum: adds the values together for equal rows\n" +
+                    "max: takes the maximum value out of all equal rows\n" +
+                    "min: takes the minimum value out of all equal rows\n" +
+                    "map_sum, map_max, map_min: applies the given operation to every sub-field of a map")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
@@ -345,15 +372,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "concurrently per partition.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
-
-    TableProperty COMPACTION_METHOD = Index.propertyBuilder("sleeper.table.compaction.method")
-            .defaultProperty(DEFAULT_COMPACTION_METHOD)
-            .description("Select which compaction method to use for the table. DataFusion compaction support is " +
-                    "experimental.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(CompactionMethod.class))
-            .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
-
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
             .defaultValue("DynamoDBTransactionLogStateStore")
             .description("The name of the class used for the state store. " +

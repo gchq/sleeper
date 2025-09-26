@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.jars.S3UserJarsLoader;
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
@@ -43,7 +43,7 @@ import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
-import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
+import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
@@ -95,7 +95,8 @@ public class SqsLeafPartitionQueryProcessor {
             queryTrackers.queryInProgress(leafPartitionQuery);
             Configuration conf = getConfiguration(tableProperties);
             LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(
-                    objectFactory, tableProperties, new LeafPartitionRowRetrieverImpl(executorService, conf, tableProperties));
+                    objectFactory, tableProperties,
+                    new QueryEngineSelector(executorService, conf).getRowRetriever(tableProperties));
             CloseableIterator<Row> results = leafPartitionQueryExecutor.getRows(leafPartitionQuery);
             publishResults(results, query, tableProperties, queryTrackers);
         } catch (QueryException e) {

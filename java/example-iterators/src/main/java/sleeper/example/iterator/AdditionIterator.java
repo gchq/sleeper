@@ -15,8 +15,8 @@
  */
 package sleeper.example.iterator;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.iterator.ConfigStringIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.key.Key;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
@@ -27,12 +27,12 @@ import java.util.List;
 
 /**
  * Combines rows with identical row keys and sort keys by summing the values in each column. It assumes that all
- * value fields are longs. This is an example implementation of a {@link SortedRowIterator}. This implementation
+ * value fields are longs. This is an example implementation of a {@link ConfigStringIterator}. This implementation
  * is very generic and is provided as an example. More efficient implementations can be written for any specific
  * schema, e.g. by directly comparing the key and sort fields in the equalRowAndSort method, rather than explicitly
  * constructing a {@link Key} object.
  */
-public class AdditionIterator implements SortedRowIterator {
+public class AdditionIterator implements ConfigStringIterator {
     private List<String> rowKeyFieldNames;
     private List<String> sortKeyFieldNames;
     private List<String> valueFieldNames;
@@ -53,7 +53,7 @@ public class AdditionIterator implements SortedRowIterator {
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
         return new AdditionIteratorInternal(input, rowKeyFieldNames, sortKeyFieldNames, valueFieldNames);
     }
 

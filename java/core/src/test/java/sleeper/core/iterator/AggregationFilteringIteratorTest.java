@@ -15,533 +15,576 @@
  */
 package sleeper.core.iterator;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
-import sleeper.core.iterator.AggregationFilteringIterator.AggregationOp;
-import sleeper.core.iterator.AggregationFilteringIterator.FilterAggregationConfig;
+import sleeper.core.iterator.testutil.IteratorFactoryTestHelper;
+import sleeper.core.iterator.testutil.SortedRowIteratorTestHelper;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
-import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 public class AggregationFilteringIteratorTest {
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldApplySum() {
-        // Given
-        AggregationOp sum = AggregationOp.SUM;
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    TableProperties tableProperties = createTestTableProperties(instanceProperties,
+            Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
 
-        // When
-        Object intResult = sum.apply(1, 2);
-        Object longResult = sum.apply(1L, 2L);
-        Object stringResult = sum.apply("one string", "two string");
-        Object byteArrayResult = sum.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10});
-        Map<String, Integer> mapIntResult = (Map<String, Integer>) sum.apply(Map.of("key1", 1, "key2", 3), Map.of("key2", 4, "key3", 6));
-        Map<String, Long> mapLongResult = (Map<String, Long>) sum.apply(Map.of("key1", 1L, "key2", 3L), Map.of("key2", 4L, "key3", 6L));
-        Map<String, String> mapStringResult = (Map<String, String>) sum.apply(Map.of("key1", "test", "key2", "one string"), Map.of("key2", "two string", "key3", "other"));
-        Map<String, byte[]> mapByteArrayResult = (Map<String, byte[]>) sum.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
-                Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
+    @Nested
+    @DisplayName("Apply filters")
+    class ApplyFilters {
 
-        // Then
-        assertThat(intResult).isEqualTo(3);
-        assertThat(longResult).isEqualTo(3L);
-        assertThat(stringResult).isEqualTo("one stringtwo string");
-        assertThat(byteArrayResult).isEqualTo(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-        assertThat(mapIntResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 7, "key3", 6));
-        assertThat(mapLongResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 7L, "key3", 6L));
-        assertThat(mapStringResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "one stringtwo string", "key3", "other"));
-        assertThat(mapByteArrayResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4, 5, 6}, "key3", new byte[]{7, 8}));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldApplyMin() {
-        // Given
-        AggregationOp sum = AggregationOp.MIN;
-
-        // When
-        Object intResult = sum.apply(1, 2);
-        Object longResult = sum.apply(1L, 2L);
-        Object stringResult = sum.apply("one string", "two string");
-        Object byteArrayResult = sum.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10});
-        Map<String, Integer> mapIntResult = (Map<String, Integer>) sum.apply(Map.of("key1", 1, "key2", 3), Map.of("key2", 4, "key3", 6));
-        Map<String, Long> mapLongResult = (Map<String, Long>) sum.apply(Map.of("key1", 1L, "key2", 3L), Map.of("key2", 4L, "key3", 6L));
-        Map<String, String> mapStringResult = (Map<String, String>) sum.apply(Map.of("key1", "test", "key2", "one string"), Map.of("key2", "two string", "key3", "other"));
-        Map<String, byte[]> mapByteArrayResult = (Map<String, byte[]>) sum.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
-                Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
-
-        // Then
-        assertThat(intResult).isEqualTo(1);
-        assertThat(longResult).isEqualTo(1L);
-        assertThat(stringResult).isEqualTo("one string");
-        assertThat(byteArrayResult).isEqualTo(new byte[]{1, 2, 3, 4, 5});
-        assertThat(mapIntResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 3, "key3", 6));
-        assertThat(mapLongResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 3L, "key3", 6L));
-        assertThat(mapStringResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "one string", "key3", "other"));
-        assertThat(mapByteArrayResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}, "key3", new byte[]{7, 8}));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void shouldApplyMax() {
-        // Given
-        AggregationOp sum = AggregationOp.MAX;
-
-        // When
-        Object intResult = sum.apply(1, 2);
-        Object longResult = sum.apply(1L, 2L);
-        Object stringResult = sum.apply("one string", "two string");
-        Object byteArrayResult = sum.apply(new byte[]{1, 2, 3, 4, 5}, new byte[]{6, 7, 8, 9, 10});
-        Map<String, Integer> mapIntResult = (Map<String, Integer>) sum.apply(Map.of("key1", 1, "key2", 3), Map.of("key2", 4, "key3", 6));
-        Map<String, Long> mapLongResult = (Map<String, Long>) sum.apply(Map.of("key1", 1L, "key2", 3L), Map.of("key2", 4L, "key3", 6L));
-        Map<String, String> mapStringResult = (Map<String, String>) sum.apply(Map.of("key1", "test", "key2", "one string"), Map.of("key2", "two string", "key3", "other"));
-        Map<String, byte[]> mapByteArrayResult = (Map<String, byte[]>) sum.apply(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{3, 4}),
-                Map.of("key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
-
-        // Then
-        assertThat(intResult).isEqualTo(2);
-        assertThat(longResult).isEqualTo(2L);
-        assertThat(stringResult).isEqualTo("two string");
-        assertThat(byteArrayResult).isEqualTo(new byte[]{6, 7, 8, 9, 10});
-        assertThat(mapIntResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1, "key2", 4, "key3", 6));
-        assertThat(mapLongResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", 1L, "key2", 4L, "key3", 6L));
-        assertThat(mapStringResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", "test", "key2", "two string", "key3", "other"));
-        assertThat(mapByteArrayResult).containsExactlyInAnyOrderEntriesOf(Map.of("key1", new byte[]{1, 2}, "key2", new byte[]{5, 6}, "key3", new byte[]{7, 8}));
-    }
-
-    @Test
-    public void shouldThrowOnDifferentOperandTypes() {
-        // Given
-        AggregationOp sum = AggregationOp.MAX;
-
-        // Then
-        assertThatIllegalArgumentException().isThrownBy(() -> {
-            sum.apply(5, "not an integer");
-        }).withMessage("different operands, lhs type: class java.lang.Integer rhs type: class java.lang.String");
-    }
-
-    @Test
-    public void shouldThrowOnIllegalType() {
-        // Given
-        AggregationOp sum = AggregationOp.MAX;
-
-        // Then
-        assertThatIllegalArgumentException().isThrownBy(() -> {
-            sum.apply(new Object(), new Object());
-        }).withMessage("Value type not implemented class java.lang.Object");
-    }
-
-    @Test
-    public void shouldThrowOnIllegalMapType() {
-        // Given
-        AggregationOp sum = AggregationOp.MAX;
-
-        // Then
-        assertThatIllegalArgumentException().isThrownBy(() -> {
-            sum.apply(Map.of("key1", new Object()), Map.of("key2", new Object()));
-        }).withMessage("Value type not implemented class java.lang.Object");
-    }
-
-    @Test
-    public void shouldThrowOnEmptyGroupingColums() {
-        assertThatIllegalArgumentException().isThrownBy(() -> {
-            new FilterAggregationConfig(List.of(), Optional.empty(), 0, List.of());
-        }).withMessage("must have at least one grouping column");
-    }
-
-    @Test
-    public void shouldThrowOnNullGroupingColumns() {
-        assertThatNullPointerException().isThrownBy(() -> {
-            new FilterAggregationConfig(null, Optional.empty(), 0, List.of());
-        }).withMessage("groupingColumns");
-    }
-
-    @Test
-    public void shouldThrowOnNullFilter() {
-        assertThatNullPointerException().isThrownBy(() -> {
-            new FilterAggregationConfig(List.of("test"), null, 0, List.of());
-        }).withMessage("ageOffColumn");
-    }
-
-    @Test
-    public void shouldThrowOnNullAggregations() {
-        assertThatNullPointerException().isThrownBy(() -> {
-            new FilterAggregationConfig(List.of("test"), Optional.empty(), 0, null);
-        }).withMessage("aggregations");
-    }
-
-    @Test
-    public void shouldThrowOnUninitialised() {
-        assertThatIllegalStateException().isThrownBy(() -> {
+        @ParameterizedTest
+        @CsvSource({"ageoff", "AGEOFF", "ageOff"})
+        public void shouldApplyAgeOffFilterFromProperties(String ageOff) throws Exception {
             // Given
-            AggregationFilteringIterator afi = new AggregationFilteringIterator();
-            afi.apply(null);
-        }).withMessage("AggregatingIterator has not been initialised, call init()");
-    }
+            tableProperties.set(FILTERING_CONFIG, ageOff + "(value,1000)");
 
-    @Test
-    public void shouldCreateAgeOffFilter() throws Exception {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", "test", "value", 10L)),
+                    new Row(Map.of("key", "test2", "value", 9999999999999999L)));
 
-        CloseableIterator<Row> rowIter = new WrappedIterator<>(List.of(
-                new Row(Map.of("key", "a", "timestamp", 10L, "value", "test_value")),
-                new Row(Map.of("key", "b", "timestamp", 999999999999999L, "value", "test_value2")),
-                new Row(Map.of("key", "c", "timestamp", 10L, "value", "test_value3"))
+            // When
+            List<Row> filtered = applyIterator(rows);
 
-        ).iterator());
-
-        // When
-        iterator.init(";ageoff=timestamp,10,", schema);
-        CloseableIterator<Row> filtered = iterator.apply(rowIter);
-        List<Row> result = new ArrayList<>();
-        filtered.forEachRemaining(result::add);
-
-        // Then
-        assertThat(result).containsExactly(
-                new Row(Map.of("key", "b", "timestamp", 999999999999999L, "value", "test_value2")));
-    }
-
-    @Test
-    public void shouldReturnValueFields() {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-
-        // When
-        iterator.init("timestamp;,min(value)", schema);
-
-        // Then
-        assertThat(iterator.getRequiredValueFields()).containsExactly("key", "timestamp", "value");
-    }
-
-    @Test
-    public void shouldFailValidationWhenGroupingByRowKey() {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-
-        // Then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> {
-                    iterator.init("key;,sum(value)", schema);
-                })
-                .withMessage("Aggregation grouping column key is already a row key column or is duplicated");
-    }
-
-    @Test
-    public void shouldFailValidationWhenDuplicatingGroupBySortKey() {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-
-        // Then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> {
-                    iterator.init("timestamp,timestamp;,sum(value)", schema);
-                })
-                .withMessage("Aggregation grouping column timestamp is already a row key column or is duplicated");
-    }
-
-    @Test
-    public void shouldFailValidationWhenGroupingByNonExistentColumn() {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-
-        // Then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> {
-                    iterator.init("not_there;,sum(value)", schema);
-                })
-                .withMessage("Aggregation grouping column not_there doesn't exist");
-    }
-
-    @Test
-    public void shouldFailValidationWhenAggregatingRowKey() {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-
-        // Then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> {
-                    iterator.init(";,sum(value),sum(key),sum(timestamp)", schema);
-                })
-                .withMessage("Row key/extra grouping column key cannot have an aggregation");
-    }
-
-    @Test
-    public void shouldFailValidationWhenAggregatingNonExistentColumn() {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-
-        // Then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> {
-                    iterator.init(";,sum(value),sum(not_there),sum(timestamp)", schema);
-                })
-                .withMessage("Aggregation column not_there doesn't exist");
-    }
-
-    @Test
-    public void shouldFailValidationWhenAggregatingColumnTwice() {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-
-        // Then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> {
-                    iterator.init(";,sum(value),sum(value),sum(timestamp)", schema);
-                })
-                .withMessage("Aggregation column value duplicated");
-    }
-
-    @Test
-    public void shouldFailValidationWhenOneColumnIsNotAggregated() {
-        // Given
-        AggregationFilteringIterator iterator = new AggregationFilteringIterator();
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-
-        // Then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> {
-                    iterator.init(";,sum(value)", schema);
-                })
-                .withMessage("Column timestamp doesn't have a aggregation operator specified");
-    }
-
-    @Test
-    public void shouldAggregateZeroRows() throws Exception {
-        // Given
-        List<Row> rows = List.of();
-        List<Row> expected = List.of();
-
-        // Then
-        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
-    }
-
-    @Test
-    public void shouldAggregateOneRow() throws Exception {
-        // Given
-        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 5,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-
-        List<Row> rows = List.of(r1);
-        List<Row> expected = List.of(new Row(r1));
-
-        // Then
-        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
-    }
-
-    @Test
-    public void shouldAggregateTwoEqualKeyRows() throws Exception {
-        // Given
-        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 34));
-
-        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "testtest", "value2", 12));
-
-        List<Row> rows = List.of(r1, r2);
-        List<Row> expected = List.of(r3);
-
-        // Then
-        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
-    }
-
-    @Test
-    public void shouldAggregateTwoDifferentKeyRows() throws Exception {
-        // Given
-        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 99999, "value1", "test", "value2", 34));
-
-        List<Row> rows = List.of(r1, r2);
-        List<Row> expected = List.of(new Row(r1), new Row(r2));
-
-        // Then
-        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
-    }
-
-    @Test
-    public void shouldAggregateTwoEqualThenOneDifferentRow() throws Exception {
-        // Given
-        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 34));
-        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 9999999, "value1", "test", "value2", 34));
-
-        Row r4 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "testtest", "value2", 12));
-        Row r5 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 9999999, "value1", "test", "value2", 34));
-
-        List<Row> rows = List.of(r1, r2, r3);
-        List<Row> expected = List.of(r4, r5);
-
-        // Then
-        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
-    }
-
-    @Test
-    public void shouldAggregateOneDifferentThenTwoEqualRow() throws Exception {
-        // Given
-        Row r1 = new Row(Map.of("key1", 12, "key2", "other_value", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 34));
-        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 5));
-
-        Row r4 = new Row(Map.of("key1", 12, "key2", "other_value", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-        Row r5 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "testtest", "value2", 5));
-
-        List<Row> rows = List.of(r1, r2, r3);
-        List<Row> expected = List.of(r4, r5);
-
-        // Then
-        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
-    }
-
-    @Test
-    public void shouldAggregateTwoSameThenOneDifferentThenTwoEqualRow() throws Exception {
-        // Given
-        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 34));
-
-        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 9999, "value1", "test", "value2", 5));
-
-        Row r4 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "test", "value2", 56));
-        Row r5 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "test", "value2", 23));
-
-        Row r6 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "testtest", "value2", 12));
-        Row r7 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 9999, "value1", "test", "value2", 5));
-        Row r8 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "testtest", "value2", 23));
-        List<Row> rows = List.of(r1, r2, r3, r4, r5);
-
-        List<Row> expected = List.of(r6, r7, r8);
-
-        // Then
-        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
-    }
-
-    @Test
-    public void shouldAggregateOneDifferentThenTwoSameThenOneDifferent() throws Exception {
-        // Given
-        Row r1 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-
-        Row r2 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "test", "value2", 76));
-        Row r3 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "test", "value2", 56));
-
-        Row r4 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 99999, "value1", "test", "value2", 23));
-
-        Row r5 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 2, "value1", "test", "value2", 12));
-        Row r6 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 5, "value1", "testtest", "value2", 56));
-        Row r7 = new Row(Map.of("key1", 12, "key2", "test", "sort_key", 9,
-                "sort_key2", 99999, "value1", "test", "value2", 23));
-        List<Row> rows = List.of(r1, r2, r3, r4);
-
-        List<Row> expected = List.of(r5, r6, r7);
-
-        // Then
-        assertThat(aggregate(rows)).containsExactlyElementsOf(expected);
-    }
-
-    /**
-     * Aggregate the given list.
-     *
-     * @param  rows to aggregate
-     * @return      aggregated list
-     */
-    private static List<Row> aggregate(List<Row> rows) throws Exception {
-        CloseableIterator<Row> it = new WrappedIterator<>(rows.iterator());
-
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new StringType()))
-                .sortKeyFields(new Field("sort_key", new IntType()), new Field("sort_key2", new IntType()))
-                .valueFields(new Field("value1", new StringType()), new Field("value2", new IntType()))
-                .build();
-        AggregationFilteringIterator aggregationIterator = new AggregationFilteringIterator();
-        aggregationIterator.init("sort_key,sort_key2;,sum(value1),min(value2)", schema);
-
-        try (CloseableIterator<Row> aggregator = aggregationIterator.apply(it)) {
-            List<Row> list = new ArrayList<>();
-            aggregator.forEachRemaining(list::add);
-            return list;
+            // Then
+            assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
         }
+    }
+
+    @Nested
+    @DisplayName("Apply aggregations against single fields")
+    class ApplySingleFieldAggregations {
+
+        @ParameterizedTest
+        @CsvSource({"sum", "Sum", "SUM"})
+        public void shouldApplySumAggregationFromProperties(String aggregator) throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(value)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "test", "value", 2214L)),
+                    new Row(Map.of("key", "test", "value", 87L)),
+                    new Row(Map.of("key", "test", "value", 7841L))));
+
+            // Then
+            assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 10142L))));
+        }
+
+        @ParameterizedTest
+        @CsvSource({"min", "Min", "MIN"})
+        public void shouldApplyMinAggregationFromProperties(String aggregator) throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(value)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "test", "value", 619L)),
+                    new Row(Map.of("key", "test", "value", 321L)),
+                    new Row(Map.of("key", "test", "value", 97L))));
+
+            // Then
+            assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 97L))));
+        }
+
+        @ParameterizedTest
+        @CsvSource({"max", "Max", "MAX"})
+        public void shouldApplyMaxAggregationFromProperties(String aggregator) throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(value)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "test", "value", 458498L)),
+                    new Row(Map.of("key", "test", "value", 87L)),
+                    new Row(Map.of("key", "test", "value", 222474L))));
+
+            // Then
+            assertThat(resultList).containsExactlyElementsOf(List.of(new Row(Map.of("key", "test", "value", 458498L))));
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply aggregations against map fields")
+    class ApplyMapAggregations {
+
+        @BeforeEach
+        void setUp() {
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("map_value", new MapType(new StringType(), new LongType())))
+                    .build());
+        }
+
+        @ParameterizedTest
+        @CsvSource({"map_sum", "Map_Sum", "MAP_SUM"})
+        void shouldApplyMapSumAggregationFromProperties(String aggregator) throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(map_value)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 1L, "map_key2", 3L))),
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 3L, "map_key2", 4L)))));
+
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 4L, "map_key2", 7L))));
+        }
+
+        @ParameterizedTest
+        @CsvSource({"map_min", "Map_Min", "MAP_MIN"})
+        void shouldApplyMapMinAggregationFromProperties(String aggregator) throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(map_value)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 17L, "map_key2", 112L))),
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 9L, "map_key2", 2489L)))));
+
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 9L, "map_key2", 112L))));
+        }
+
+        @ParameterizedTest
+        @CsvSource({"map_max", "Map_Max", "MAP_MAX"})
+        void shouldApplyMapMaxAggregationFromProperties(String aggregator) throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, aggregator + "(map_value)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 666L, "map_key2", 11L))),
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 245L, "map_key2", 2L)))));
+
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "a",
+                            "map_value", Map.of("map_key1", 666L, "map_key2", 11L))));
+        }
+    }
+
+    @Nested
+    @DisplayName("Combine configuration together")
+    class CombineConfiguration {
+
+        @Test
+        void shouldApplyTwoAggregatorFromProperties() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(List.of(
+                            new Field("key1", new StringType()),
+                            new Field("key2", new StringType())))
+                    .valueFields(List.of(
+                            new Field("value1", new LongType()),
+                            new Field("value2", new LongType())))
+                    .build());
+
+            tableProperties.set(AGGREGATION_CONFIG, "SUM(value1),MAX(value2)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key1", "test", "value1", 4217L,
+                            "key2", "test", "value2", 367L)),
+                    new Row(Map.of("key1", "test", "value1", 214L,
+                            "key2", "test", "value2", 88818L))));
+
+            // Then
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key1", "test", "value1", 4431L,
+                            "key2", "test", "value2", 88818L)));
+        }
+
+        @Test
+        void shouldApplyAggregationAndFiltering() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(
+                            new Field("timestamp", new LongType()),
+                            new Field("count", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MAX(timestamp),SUM(count)");
+            tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,1000)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "timestamp", 9999999999999999L, "count", 10L)),
+                    new Row(Map.of("key", "A", "timestamp", 100L, "count", 20L)), // Filtered out due to age
+                    new Row(Map.of("key", "B", "timestamp", 100L, "count", 10L)), // Filtered out due to age
+                    new Row(Map.of("key", "C", "timestamp", 100L, "count", 10L)), // Filtered out due to age
+                    new Row(Map.of("key", "C", "timestamp", 100L, "count", 20L)), // Filtered out due to age
+                    new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 10L)),
+                    new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 20L))));
+
+            // Then
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "A", "timestamp", 9999999999999999L, "count", 10L)),
+                    new Row(Map.of("key", "D", "timestamp", 9999999999999999L, "count", 30L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Process rows from iterator")
+    class ProcessRows {
+
+        @BeforeEach
+        void setUp() {
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+        }
+
+        @Test
+        void shouldAggregateZeroRows() throws Exception {
+            // When / Then
+            assertThat(applyIterator(List.of())).isEmpty();
+        }
+
+        @Test
+        void shouldAggregateOneRow() throws Exception {
+            // Given
+            Row testRow = new Row(Map.of("key", "A", "value", 525L));
+
+            // When
+            List<Row> resultList = applyIterator(List.of(testRow));
+
+            // Then
+            assertThat(resultList).containsExactly(testRow);
+        }
+
+        @Test
+        void shouldAggregateTwoDifferentKeyRows() throws Exception {
+            // Given
+            List<Row> testRows = List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1000L)));
+
+            // When
+            List<Row> resultList = applyIterator(testRows);
+
+            // Then
+            assertThat(resultList).isEqualTo(testRows);
+        }
+
+        @Test
+        void shouldAggregateTwoEqualThenOneDifferentRow() throws Exception {
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "A", "value", 1000L)),
+                    new Row(Map.of("key", "B", "value", 500L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 1100L)),
+                    new Row(Map.of("key", "B", "value", 500L))));
+        }
+
+        @Test
+        void shouldAggregateOneDifferentThenTwoEqualRow() throws Exception {
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1000L)),
+                    new Row(Map.of("key", "B", "value", 500L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1500L))));
+        }
+
+        @Test
+        void shouldAggregateTwoSameThenOneDifferentThenTwoEqualRow() throws Exception {
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "A", "value", 1000L)),
+                    new Row(Map.of("key", "B", "value", 500L)),
+                    new Row(Map.of("key", "C", "value", 70L)),
+                    new Row(Map.of("key", "C", "value", 230L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 1100L)),
+                    new Row(Map.of("key", "B", "value", 500L)),
+                    new Row(Map.of("key", "C", "value", 300L))));
+        }
+
+        @Test
+        void shouldAggregateOneDifferentThenTwoSameThenOneDifferent() throws Exception {
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1000L)),
+                    new Row(Map.of("key", "B", "value", 500L)),
+                    new Row(Map.of("key", "C", "value", 70L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 100L)),
+                    new Row(Map.of("key", "B", "value", 1500L)),
+                    new Row(Map.of("key", "C", "value", 70L))));
+        }
+
+        @Test
+        void shouldAggregateRowsWhereRowAndSortKeyAreEqual() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new IntType()))
+                    .valueFields(new Field("value", new IntType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "sortKey", 1, "value", 100L)),
+                    new Row(Map.of("key", "A", "sortKey", 1, "value", 1000L)),
+                    new Row(Map.of("key", "A", "sortKey", 2, "value", 500L))));
+
+            // Then
+            assertThat(resultList).containsExactly(
+                    new Row(Map.of("key", "A", "sortKey", 1, "value", 1100L)),
+                    new Row(Map.of("key", "A", "sortKey", 2, "value", 500L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Report required value fields")
+    class RequiredValueFields {
+
+        @Test
+        public void shouldReturnValueFieldsWhenUsingFiltersProperty() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new IntType()))
+                    .valueFields(new Field("value", new LongType()),
+                            new Field("notRequiredField", new IntType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
+
+            // When / Then
+            assertThat(createIterator().getRequiredValueFields()).containsExactly("value");
+        }
+
+        @Test
+        void shouldSetRequiredValueFieldsWhenFilteringOnSortKey() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new LongType()))
+                    .valueFields(new Field("value", new IntType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(sortKey, 1000)");
+
+            // When / Then
+            assertThat(createIterator().getRequiredValueFields()).isEmpty();
+        }
+
+        @Test
+        void shouldSetRequiredValueFieldsWhenAggregating() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new LongType()))
+                    .valueFields(
+                            new Field("value1", new IntType()),
+                            new Field("value2", new IntType()),
+                            new Field("value3", new IntType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value1), min(value2), max(value3)");
+
+            // When / Then
+            assertThat(createIterator().getRequiredValueFields()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Validate filter configuration")
+    class ValidateFilterConfiguration {
+        @Test
+        public void shouldThrowExceptionWhenUnknownFilterApplied() {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new IntType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "someother(value,1000)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Sleeper table filter not set to match ageOff(column,age), was: someother");
+        }
+
+        @Test
+        public void shouldThrowExceptionWhenCantPassFilterValue() {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new IntType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value,oops)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(NumberFormatException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Validate aggregation configuration")
+    class ValidateAggregationConfiguration {
+
+        @Test
+        void shouldThrowExceptionForInvalidOperandDeclared() throws IteratorCreationException {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "bop(VALUE)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Unable to parse operand. Operand: bop");
+        }
+
+        @Test
+        void shouldThrowExceptionWhenAggregatingNonExistentField() throws IteratorCreationException {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "SUM(value),SUM(abc)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Not all aggregated fields are declared in the schema. Missing fields: abc");
+        }
+
+        @Test
+        void shouldThrowExceptionWithKeyFieldIncludeAsAggregators() throws IteratorCreationException {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("failKey", new StringType()))
+                    .sortKeyFields(new Field("sortKey", new StringType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MIN(failKey),MIN(sortKey),SUM(value)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Column for aggregation not allowed to be a Row Key or Sort Key. Column names: failKey, sortKey");
+        }
+
+        @Test
+        void shouldThrowExceptionWhenDuplicateAggregators() {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("doubleValue", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MIN(doubleValue),SUM(doubleValue)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(java.lang.IllegalArgumentException.class)
+                    .hasMessage("Not allowed duplicate columns for aggregation. Column name: doubleValue");
+        }
+
+        @Test
+        void shouldThrowExceptionWhenNotAllValueFieldsIncludedAsAggregator() {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("existsValue", new LongType()), new Field("ignoredValue", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "MIN(existsValue)");
+
+            // When / Then
+            assertThatThrownBy(() -> createIterator())
+                    .isInstanceOf(java.lang.IllegalArgumentException.class)
+                    .hasMessage("Not all value fields have aggregation declared. Missing columns: ignoredValue");
+        }
+    }
+
+    @Nested
+    @DisplayName("Config format flexibility")
+    class ConfigFormat {
+
+        @Test
+        void shouldRemoveWhitespaceFromFilterConfigurationAndApply() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, " ageOff ( value , 1000 ) ");
+
+            List<Row> rows = List.of(
+                    new Row(Map.of("key", "test", "value", 10L)),
+                    new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+
+            // When
+            List<Row> filtered = applyIterator(rows);
+
+            // Then
+            assertThat(filtered).containsExactly(new Row(Map.of("key", "test2", "value", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldRemoveWhitespaceFromAggregatorConfigurationAndApply() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .valueFields(new Field("value", new LongType()), new Field("value2", new LongType()))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, " min ( value ) , sum ( value2 )");
+
+            // When
+            List<Row> resultList = applyIterator(List.of(
+                    new Row(Map.of("key", "A", "value", 100L, "value2", 10L)),
+                    new Row(Map.of("key", "A", "value", 1000L, "value2", 20L))));
+
+            // Then
+            assertThat(resultList).isEqualTo(List.of(
+                    new Row(Map.of("key", "A", "value", 100L, "value2", 30L))));
+        }
+    }
+
+    private List<Row> applyIterator(List<Row> rows) throws Exception {
+        return SortedRowIteratorTestHelper.apply(createIterator(), rows);
+    }
+
+    private SortedRowIterator createIterator() throws Exception {
+        return IteratorFactoryTestHelper.createIterator(tableProperties);
     }
 }

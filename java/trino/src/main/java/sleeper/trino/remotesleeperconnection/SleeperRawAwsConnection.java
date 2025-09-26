@@ -32,7 +32,7 @@ import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -49,7 +49,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
+import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
@@ -278,9 +278,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 objectFactory,
                 tableProperties,
                 null,
-                new LeafPartitionRowRetrieverImpl(executorService,
-                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
-                        tableProperties));
+                new QueryEngineSelector(executorService, hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.splitIntoLeafPartitionQueries(query);
@@ -307,9 +305,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 this.objectFactory,
                 tableProperties,
                 stateStore,
-                new LeafPartitionRowRetrieverImpl(executorService,
-                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
-                        tableProperties));
+                new QueryEngineSelector(executorService,
+                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.execute(query);
     }
@@ -334,8 +331,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 tableProperties,
                 sleeperConfig,
                 hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties),
-                null,
-                null,
                 INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS,
                 s3AsyncClient,
                 rootBufferAllocator);

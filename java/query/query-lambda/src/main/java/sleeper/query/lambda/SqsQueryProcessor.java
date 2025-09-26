@@ -37,7 +37,7 @@ import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.tracker.QueryStatusReportListener;
-import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
+import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
 import java.time.Instant;
@@ -96,7 +96,7 @@ public class SqsQueryProcessor {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
             return new QueryExecutor(objectFactory, tableProperties, stateStore,
-                    new LeafPartitionRowRetrieverImpl(executorService, conf, tableProperties));
+                    new QueryEngineSelector(executorService, conf).getRowRetriever(tableProperties));
         });
 
         queryExecutor.initIfNeeded(Instant.now());

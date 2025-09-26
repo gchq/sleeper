@@ -15,12 +15,11 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>compaction</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.32.0</version>
+        <version>0.33.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -87,6 +86,13 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>compaction-core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
@@ -102,6 +108,11 @@
             <groupId>sleeper</groupId>
             <artifactId>localstack-test</artifactId>
             <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -32,7 +32,7 @@ public class FFIArray<T> {
     /** Length of array. Will be transferred across FFI boundary. */
     private final Struct.size_t len;
 
-    /** Pointer to base of dynamically allocated array. This pointer value will be transferred across FFI boundary.*/
+    /** Pointer to base of dynamically allocated array. This pointer value will be transferred across FFI boundary. */
     private final Struct.Pointer arrayBase;
     /**
      * Reference to dynamically allocated array to prevent GC until Array instance
@@ -121,7 +121,7 @@ public class FFIArray<T> {
     public <E> T[] readBack(Class<E> clazz, boolean nullsAllowed) {
         validate();
         final jnr.ffi.Runtime r = len.struct().getRuntime();
-        int len = items.length;
+        int len = this.len.intValue();
 
         @SuppressWarnings("unchecked")
         T[] values = (T[]) java.lang.reflect.Array.newInstance(clazz, len);

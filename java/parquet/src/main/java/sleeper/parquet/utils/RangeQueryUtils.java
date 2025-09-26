@@ -59,6 +59,10 @@ public class RangeQueryUtils {
         return getFilterPredicateNoCanonicalise(partition.getRegion());
     }
 
+    public static FilterPredicate getFilterPredicate(Region region) {
+        return getFilterPredicateNoCanonicalise(region);
+    }
+
     private static FilterPredicate getFilterPredicate(List<Region> regions) {
         List<FilterPredicate> filters = new ArrayList<>();
         for (Region region : regions) {
@@ -82,7 +86,7 @@ public class RangeQueryUtils {
 
     private static FilterPredicate getFilterPredicateNoCanonicalise(Region region) {
         FilterPredicate fieldsFilter = null;
-        for (Range range : region.getRanges()) {
+        for (Range range : region.getRangesUnordered()) {
             FilterPredicate predicateForThisDimension = getFilterPredicate(range);
             if (null == fieldsFilter) {
                 fieldsFilter = predicateForThisDimension;

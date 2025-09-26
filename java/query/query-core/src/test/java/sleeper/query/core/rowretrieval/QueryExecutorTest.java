@@ -20,59 +20,34 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
 import sleeper.core.row.Row;
-import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
-import sleeper.core.util.ObjectFactory;
 import sleeper.example.iterator.AdditionIterator;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.model.QueryProcessingConfig;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Spliterators;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import static java.util.Spliterator.IMMUTABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class QueryExecutorTest {
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final InMemoryRowStore rowStore = new InMemoryRowStore();
-    private final Schema schema = createSchemaWithKey("key");
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
+public class QueryExecutorTest extends QueryExecutorTestBase {
 
     @Nested
     @DisplayName("Query rows")
@@ -117,7 +92,7 @@ public class QueryExecutorTest {
         @Test
         void shouldNotFindRowOutsidePartitionRangeWhenFileContainsAnInactiveRow() throws Exception {
             // Given
-            update(stateStore).initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 5L)
                     .buildList());
@@ -151,18 +126,16 @@ public class QueryExecutorTest {
     @DisplayName("Request value fields")
     class RequestValueFields {
 
-        private final Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(
-                        new Field("A", new StringType()),
-                        new Field("B", new LongType()),
-                        new Field("C", new ByteArrayType()))
-                .build();
-
         @BeforeEach
         void setUp() throws Exception {
-            tableProperties.setSchema(schema);
-            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .valueFields(
+                            new Field("A", new StringType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new ByteArrayType()))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         }
 
         @Test
@@ -209,8 +182,183 @@ public class QueryExecutorTest {
     }
 
     @Nested
-    @DisplayName("Apply iterators")
-    class ApplyIterators {
+    @DisplayName("Request value fields with aggregation and filtering enabled")
+    class RequestValueFieldsWithAggregationAndFiltering {
+
+        @BeforeEach
+        void setUp() {
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new LongType()))
+                    .sortKeyFields(new Field("sort", new LongType()))
+                    .valueFields(
+                            new Field("A", new LongType()),
+                            new Field("B", new LongType()),
+                            new Field("C", new LongType()))
+                    .build());
+        }
+
+        Query queryOnlyFieldA = queryAllRowsBuilder()
+                .processingConfig(requestValueFields("A"))
+                .build();
+
+        @Test
+        void shouldNotReadAnyExtraFieldsWhenApplyingAggregation() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "sum(A),min(B),max(C)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", 1L, "sort", 10L, "A", 100L)));
+        }
+
+        @Test
+        void shouldFilterOnRequestedValueField() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(A, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 9999999999999999L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldReadExtraFieldWhenFilteringOnAFieldThatWasNotRequested() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(B, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 9999999999999999L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 10L,
+                            "A", 100L,
+                            "B", 9999999999999999L)));
+        }
+
+        @Test
+        void shouldNotAffectRequestedFieldsWhenApplyingFilterOnSortKey() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(sort, 1000)");
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 9999999999999999L,
+                            "A", 100L,
+                            "B", 1000L,
+                            "C", 10000L))));
+
+            // When
+            List<Row> rows = getRows(queryOnlyFieldA);
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of(
+                            "key", 1L,
+                            "sort", 9999999999999999L,
+                            "A", 100L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply filter iterators")
+    class ApplyFilterIterators {
+
+        private final Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new LongType()))
+                .build();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(schema);
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of("key", "A", "value", 2L)),
+                    new Row(Map.of("key", "B", "value", 9999999999999999L))));
+        }
+
+        @Test
+        void shouldApplyAgeOffIteratorFromTableProperty() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
+
+            // When
+            List<Row> rows = getRows(queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", "B", "value", 9999999999999999L)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply aggregation iterators")
+    class ApplyAggregationIterators {
+
+        private final Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(schema);
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            addRootFile("file.parquet", List.of(
+                    new Row(Map.of("key", "A", "value", 2)),
+                    new Row(Map.of("key", "A", "value", 4))));
+        }
+
+        @Test
+        void shouldApplyAggregationFromTableProperty() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+
+            // When
+            List<Row> rows = getRows(queryAllRows());
+
+            // Then
+            assertThat(rows).containsExactly(
+                    new Row(Map.of("key", "A", "value", 6)));
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply iterators by class name")
+    class ApplyIteratorsByClassName {
 
         private final Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
@@ -317,106 +465,5 @@ public class QueryExecutorTest {
             // Then the rows that were added are not found
             assertThat(getRows(queryExecutor, queryAllRows())).isEmpty();
         }
-    }
-
-    private void addRootFile(String filename, List<Row> rows) {
-        addFile(fileReferenceFactory().rootFile(filename, rows.size()), rows);
-    }
-
-    private void addPartitionFile(String partitionId, String filename, List<Row> rows) {
-        addFile(fileReferenceFactory().partitionFile(partitionId, filename, rows.size()), rows);
-    }
-
-    private void addFile(FileReference fileReference, List<Row> rows) {
-        addFileMetadata(fileReference);
-        rowStore.addFile(fileReference.getFilename(), rows);
-    }
-
-    private void addFileMetadata(FileReference fileReference) {
-        update(stateStore).addFile(fileReference);
-    }
-
-    private QueryExecutor executor() throws Exception {
-        return executorAtTime(Instant.now());
-    }
-
-    private QueryExecutor executorAtTime(Instant time) throws Exception {
-        QueryExecutor executor = uninitialisedExecutorAtTime(time);
-        executor.init(time);
-        return executor;
-    }
-
-    private QueryExecutor uninitialisedExecutorAtTime(Instant time) {
-        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRowRetriever(rowStore), time);
-    }
-
-    private List<Row> getRows(Query query) throws Exception {
-        return getRows(executor(), query);
-    }
-
-    private List<Row> getRows(QueryExecutor executor, Query query) {
-        try (var it = executor.execute(query)) {
-            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, IMMUTABLE), false)
-                    .collect(Collectors.toUnmodifiableList());
-        } catch (QueryException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private Query.Builder query() {
-        return Query.builder().queryId(UUID.randomUUID().toString())
-                .tableName(tableProperties.get(TABLE_NAME));
-    }
-
-    private Query queryAllRows() {
-        return queryAllRowsBuilder().build();
-    }
-
-    private Query.Builder queryAllRowsBuilder() {
-        return query()
-                .regions(List.of(partitionTree().getRootPartition().getRegion()));
-    }
-
-    private Query queryRange(Object min, Object max) {
-        return queryRegions(range(min, max));
-    }
-
-    private Query queryRegions(Region... regions) {
-        return query()
-                .regions(List.of(regions))
-                .build();
-    }
-
-    private Region range(Object min, Object max) {
-        RangeFactory factory = new RangeFactory(tableProperties.getSchema());
-        return new Region(factory.createRange("key", min, max));
-    }
-
-    private PartitionTree partitionTree() {
-        return new PartitionTree(stateStore.getAllPartitions());
-    }
-
-    private FileReferenceFactory fileReferenceFactory() {
-        return FileReferenceFactory.from(stateStore);
-    }
-
-    private static QueryProcessingConfig requestValueFields(String... fields) {
-        return QueryProcessingConfig.builder()
-                .requestedValueFields(List.of(fields))
-                .build();
-    }
-
-    private static QueryProcessingConfig applyIterator(Class<?> iteratorClass) {
-        return QueryProcessingConfig.builder()
-                .queryTimeIteratorClassName(iteratorClass.getName())
-                .build();
-    }
-
-    private static QueryProcessingConfig applyIterator(Class<?> iteratorClass, String config) {
-        return QueryProcessingConfig.builder()
-                .queryTimeIteratorClassName(iteratorClass.getName())
-                .queryTimeIteratorConfig(config)
-                .build();
     }
 }

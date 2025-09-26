@@ -73,7 +73,7 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.sketches.store.S3SketchesStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -116,6 +116,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
+import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
 public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
@@ -468,8 +469,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
                 waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
-                jobRunIdSupplier, timeSupplier, duration -> {
-                });
+                jobRunIdSupplier, timeSupplier, noWaits());
         return task;
     }
 
@@ -549,7 +549,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private List<Row> readRows(String filename, Schema schema) {
-        try (ParquetReader<Row> reader = new ParquetRowReader(new Path(filename), schema)) {
+        try (ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build()) {
             List<Row> rows = new ArrayList<>();
             for (Row row = reader.read(); row != null; row = reader.read()) {
                 rows.add(new Row(row));

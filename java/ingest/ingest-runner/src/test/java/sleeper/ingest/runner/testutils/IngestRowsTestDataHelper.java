@@ -31,7 +31,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -240,6 +240,21 @@ public class IngestRowsTestDataHelper {
         return rows;
     }
 
+    public static List<Row> getRowsForFilterIteratorTest() {
+        List<Row> rows = new ArrayList<>();
+        Row row1 = new Row();
+        row1.put("key", new byte[]{1, 1});
+        row1.put("sort", 2L);
+        row1.put("value", 1L);
+        Row row2 = new Row();
+        row2.put("key", new byte[]{11, 2});
+        row2.put("sort", 1L);
+        row2.put("value", 9999999999999999L);
+        rows.add(row1);
+        rows.add(row2);
+        return rows;
+    }
+
     public static List<Row> getRowsOscillatingBetween2Partitions() {
         List<Row> rows = new ArrayList<>();
         Row row1 = new Row();
@@ -285,7 +300,7 @@ public class IngestRowsTestDataHelper {
     }
 
     public static List<Row> readRowsFromParquetFile(String filename, Schema schema) throws IOException {
-        ParquetReader<Row> reader = new ParquetRowReader.Builder(new Path(filename), schema).build();
+        ParquetReader<Row> reader = ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(filename), schema).build();
         List<Row> readRows = new ArrayList<>();
         Row row = reader.read();
         while (null != row) {

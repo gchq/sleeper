@@ -16,11 +16,15 @@
 package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jnr.ffi.Pointer;
 import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
+import sleeper.compaction.DataFusionFunctionsImpl;
+import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIArray;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.bridge.ForeignFunctions;
 
 import java.util.Objects;
@@ -29,6 +33,9 @@ import java.util.Objects;
  * The interface for the native library we are calling.
  */
 public interface DataFusionFunctions extends ForeignFunctions {
+
+    DataFusionFunctions INSTANCE = DataFusionFunctionsImpl.create();
+
     /**
      * The compaction output data that the native code will populate.
      */
@@ -50,7 +57,7 @@ public interface DataFusionFunctions extends ForeignFunctions {
      */
     @SuppressWarnings(value = {"checkstyle:membername"})
     @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    class DataFusionCompactionParams extends Struct {
+    class DataFusionCommonConfig extends Struct {
         /** Optional AWS configuration. */
         public final Struct.Boolean override_aws_config = new Struct.Boolean();
         public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
@@ -60,6 +67,8 @@ public interface DataFusionFunctions extends ForeignFunctions {
         public final Struct.Boolean aws_allow_http = new Struct.Boolean();
         /** Array of input files to compact. */
         public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
+        /** States if the input files individually sorted based on row key and the sort key columns. */
+        public final Struct.Boolean input_files_sorted = new Struct.Boolean();
         /** Output file name. */
         public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
         /** Names of Sleeper row key columns from schema. */
@@ -86,19 +95,27 @@ public interface DataFusionFunctions extends ForeignFunctions {
         public final Struct.Boolean dict_enc_sort_keys = new Struct.Boolean();
         /** Should value columns use dictionary encoding in output Parquet. */
         public final Struct.Boolean dict_enc_values = new Struct.Boolean();
-        /** Compaction partition region minimums. MUST BE SAME LENGTH AS row_key_cols. */
-        public final FFIArray<Object> region_mins = new FFIArray<>(this);
-        /** Compaction partition region maximums. MUST BE SAME LENGTH AS row_key_cols. */
-        public final FFIArray<Object> region_maxs = new FFIArray<>(this);
-        /** Compaction partition region minimums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
-        public final FFIArray<java.lang.Boolean> region_mins_inclusive = new FFIArray<>(this);
-        /** Compaction partition region maximums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
-        public final FFIArray<java.lang.Boolean> region_maxs_inclusive = new FFIArray<>(this);
-        /** Compaction iterator configuration. This is optional. */
-        public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
+        /** The Sleeper compaction region. */
+        public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
+        /** Strong reference to prevent GC. */
+        public FFISleeperRegion regionRef;
+        /** Compaction aggregation configuration. This is optional. */
+        public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
+        /** Compaction filtering configuration. This is optional. */
+        public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
 
-        public DataFusionCompactionParams(jnr.ffi.Runtime runtime) {
+        public DataFusionCommonConfig(jnr.ffi.Runtime runtime) {
             super(runtime);
+        }
+
+        /**
+         * Set the Sleeper partition region.
+         *
+         * @param newRegion region to transfer across to foreign function
+         */
+        public void setRegion(FFISleeperRegion newRegion) {
+            this.regionRef = newRegion;
+            this.region.set(newRegion);
         }
 
         /**
@@ -111,37 +128,37 @@ public interface DataFusionFunctions extends ForeignFunctions {
             row_key_cols.validate();
             row_key_schema.validate();
             sort_key_cols.validate();
-            region_mins.validate();
-            region_maxs.validate();
-            region_mins_inclusive.validate();
-            region_maxs_inclusive.validate();
-
+            if (regionRef != null) {
+                regionRef.validate();
+            }
+            if (row_key_cols.length() != row_key_schema.length()) {
+                throw new IllegalStateException("row_key_schema has length " + row_key_schema.length() + " but there are " + row_key_cols.length() + " row key columns");
+            }
             // Check strings non null
             Objects.requireNonNull(output_file.get(), "Output file is null");
             Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
             Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
-            Objects.requireNonNull(iterator_config.get(), "Iterator configuration is null");
-
-            // Check lengths
-            long rowKeys = row_key_cols.length();
-            if (rowKeys != row_key_schema.length()) {
-                throw new IllegalStateException("row key schema array has length " + row_key_schema.length() + " but there are " + rowKeys + " row key columns");
-            }
-            if (rowKeys != region_mins.length()) {
-                throw new IllegalStateException("region mins has length " + region_mins.length() + " but there are " + rowKeys + " row key columns");
-            }
-            if (rowKeys != region_maxs.length()) {
-                throw new IllegalStateException("region maxs has length " + region_maxs.length() + " but there are " + rowKeys + " row key columns");
-            }
-            if (rowKeys != region_mins_inclusive.length()) {
-                throw new IllegalStateException("region mins inclusives has length " + region_mins_inclusive.length() + " but there are " + rowKeys + " row key columns");
-            }
-            if (rowKeys != region_maxs_inclusive.length()) {
-                throw new IllegalStateException("region maxs inclusives has length " + region_maxs_inclusive.length() + " but there are " + rowKeys + " row key columns");
-            }
+            Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
+            Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
         }
     }
 
+    /**
+     * Invokes a native compaction.
+     *
+     * The provided context object must be open.
+     * The return code will be 0 if successful.
+     *
+     * @param  context               Java context object
+     * @param  input                 compaction input configuration
+     * @param  result                compaction result if successful
+     * @return                       indication of success
+     * @throws IllegalStateException if the context has already been closed
+     */
+    default int compact(FFIContext context, DataFusionCommonConfig input, DataFusionCompactionResult result) {
+        return native_compact(context.getForeignContext(), input, result);
+    }
+
     @SuppressWarnings(value = "checkstyle:parametername")
-    int merge_sorted_files(@In DataFusionCompactionParams input, @Out DataFusionCompactionResult result);
+    int native_compact(Pointer context, @In DataFusionCommonConfig input, @Out DataFusionCompactionResult result);
 }

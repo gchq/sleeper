@@ -15,24 +15,32 @@
  */
 package sleeper.core.statestore.testutils;
 
+import org.junit.jupiter.api.BeforeEach;
+
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.table.TableStatus;
 
 import java.time.Duration;
 import java.util.List;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class InMemoryTransactionLogStateStoreTestBase {
 
-    protected final TableStatus sleeperTable = uniqueIdAndName("test-table-id", "test-table");
-    protected final String tableId = sleeperTable.getTableUniqueId();
+    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+    protected final String tableId = "test-table-id";
     protected final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     protected final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
     protected final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
@@ -41,6 +49,12 @@ public class InMemoryTransactionLogStateStoreTestBase {
     protected PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
     protected StateStore store;
+
+    @BeforeEach
+    void setUpBase() {
+        tableProperties.set(TABLE_ID, tableId);
+        tableProperties.set(TABLE_NAME, "test-table");
+    }
 
     protected void initialiseWithSchema(Schema schema) {
         createStore(new PartitionsBuilder(schema).singlePartition("root"));
@@ -66,11 +80,12 @@ public class InMemoryTransactionLogStateStoreTestBase {
     }
 
     protected TransactionLogStateStore.Builder stateStoreBuilder(Schema schema) {
-        return transactionLogs.stateStoreBuilder(sleeperTable, schema);
+        tableProperties.setSchema(schema);
+        return transactionLogs.stateStoreBuilder(tableProperties);
     }
 
     protected void createSnapshots() {
-        transactionLogs.createSnapshots(sleeperTable);
+        transactionLogs.createSnapshots(tableProperties);
     }
 
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {

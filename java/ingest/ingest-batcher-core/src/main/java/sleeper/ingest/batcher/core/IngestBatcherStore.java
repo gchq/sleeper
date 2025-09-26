@@ -28,4 +28,6 @@ public interface IngestBatcherStore {
     List<IngestBatcherTrackedFile> getPendingFilesOldestFirst();
 
     void deleteAllPending();
+
+    void deleteFiles(List<IngestBatcherTrackedFile> files);
 }

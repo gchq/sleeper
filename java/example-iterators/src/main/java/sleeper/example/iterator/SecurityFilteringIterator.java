@@ -15,8 +15,8 @@
  */
 package sleeper.example.iterator;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.iterator.ConfigStringIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
@@ -31,9 +31,9 @@ import java.util.Set;
  * Filters out rows that a user is not allowed to see. This is intended to be used in a query, adding the user's
  * authorisations to the query in the iterator configuration. If the visibility field equals one of these authorisations
  * then the user is allowed to see the row. If the visibility field is the empty or null string then the user is also
- * allowed to see the row. This is an example implementation of {@link SortedRowIterator}.
+ * allowed to see the row. This is an example implementation of {@link ConfigStringIterator}.
  */
-public class SecurityFilteringIterator implements SortedRowIterator {
+public class SecurityFilteringIterator implements ConfigStringIterator {
     private String fieldName;
     private Set<String> auths;
 
@@ -57,7 +57,7 @@ public class SecurityFilteringIterator implements SortedRowIterator {
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
         return new SecurityFilteringIteratorInternal(input, fieldName, auths);
     }
 

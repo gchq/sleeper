@@ -27,8 +27,8 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.MergingIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.MergingIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;

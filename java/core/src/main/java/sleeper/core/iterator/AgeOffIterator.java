@@ -15,21 +15,27 @@
  */
 package sleeper.core.iterator;
 
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.FilteringIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Filters out rows older than a specified age. If the specified timestamp field is more than a certain length of
- * time ago then the row is removed. This is an example implementation of {@link SortedRowIterator}.
+ * time ago then the row is removed. This is an example implementation of {@link ConfigStringIterator}.
  */
-public class AgeOffIterator implements SortedRowIterator {
-    private String fieldName;
-    private long ageOff;
+public class AgeOffIterator implements ConfigStringIterator {
+    private AgeOffFilter filter;
+    private List<String> requiredValueFields;
 
     public AgeOffIterator() {
+    }
+
+    public AgeOffIterator(Schema schema, AgeOffFilter filter) {
+        this.filter = filter;
+        this.requiredValueFields = filter.getRequiredValueFields(schema);
     }
 
     @Override
@@ -38,20 +44,17 @@ public class AgeOffIterator implements SortedRowIterator {
         if (2 != fields.length) {
             throw new IllegalArgumentException("Configuration string should have 2 fields: field name and age off time");
         }
-        fieldName = fields[0];
-        ageOff = Long.parseLong(fields[1]);
+        filter = new AgeOffFilter(fields[0], Long.parseLong(fields[1]));
+        requiredValueFields = filter.getRequiredValueFields(schema);
     }
 
     @Override
     public List<String> getRequiredValueFields() {
-        return Collections.singletonList(fieldName);
+        return requiredValueFields;
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
-        return new FilteringIterator<>(input, row -> {
-            Long value = (Long) row.get(fieldName);
-            return null != value && System.currentTimeMillis() - value < ageOff;
-        });
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
+        return new FilteringIterator<>(input, filter);
     }
 }

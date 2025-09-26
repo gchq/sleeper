@@ -54,13 +54,13 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RowsProcessed summary = compact(schema, compactionJob);
+        runTask(compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
-        assertThat(summary.getRowsRead()).isEqualTo(data.size());
-        assertThat(summary.getRowsWritten()).isEqualTo(data.size());
+        assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(100, 100));
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data);
+        assertThat(stateStore.getFileReferences()).containsExactly(outputFileReference(compactionJob, 100));
     }
 
     @Test
@@ -77,13 +77,13 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        RowsProcessed summary = compact(schema, compactionJob);
+        runTask(compactionJob);
 
         // Then
         //  - Read output file and check that it contains the right results
-        assertThat(summary.getRowsRead()).isZero();
-        assertThat(summary.getRowsWritten()).isZero();
+        assertThat(getRowsProcessed(compactionJob)).isEqualTo(new RowsProcessed(0, 0));
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEmpty();
+        assertThat(stateStore.getFileReferences()).containsExactly(outputFileReference(compactionJob, 0));
     }
 
     @Test
@@ -100,7 +100,7 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         assignJobIdToInputFiles(stateStore, compactionJob);
 
         // When
-        compact(schema, compactionJob);
+        runTask(compactionJob);
 
         // Then
         assertThat(SketchesDeciles.from(readSketches(schema, compactionJob.getOutputFile())))

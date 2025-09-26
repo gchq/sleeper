@@ -23,12 +23,12 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
-import sleeper.core.properties.model.CompactionMethod;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
 import sleeper.sketches.store.SketchesStore;
 
-import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
+import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 
 /**
  * Determines which compaction algorithm should be run based on the table and instance configuration properties and
@@ -49,24 +49,23 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
 
     @Override
     public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
-        CompactionMethod method = tableProperties.getEnumValue(COMPACTION_METHOD, CompactionMethod.class);
-        CompactionRunner runner = createRunnerForMethod(method);
-
-        // Has an experimental DataFusion only iterator been specified? If so, make sure
-        // we are using the DataFusion compactor
-        if (CompactionMethod.AGGREGATION_ITERATOR_NAME.equals(job.getIteratorClassName()) && !(runner instanceof DataFusionCompactionRunner)) {
-            throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
-                    + job.getId() + " table ID " + job.getTableId());
+        if (job.getIteratorClassName() != null) {
+            CompactionRunner runner = createJavaRunner();
+            LOGGER.info("Table has a Java iterator set, so selecting {} for job ID {}, table {}",
+                    runner.getClass().getSimpleName(), job.getId(), tableProperties.getStatus());
+            return runner;
         }
-
-        LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());
+        DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
+        CompactionRunner runner = createRunnerForEngine(engine);
+        LOGGER.info("Selecting {} for job ID {}, table {}",
+                runner.getClass().getSimpleName(), job.getId(), tableProperties.getStatus());
         return runner;
     }
 
-    private CompactionRunner createRunnerForMethod(CompactionMethod method) {
-        switch (method) {
+    private CompactionRunner createRunnerForEngine(DataEngine engine) {
+        switch (engine) {
             case DATAFUSION:
-                return new DataFusionCompactionRunner();
+                return new DataFusionCompactionRunner(configuration);
             case JAVA:
             default:
                 return createJavaRunner();

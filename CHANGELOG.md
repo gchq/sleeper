@@ -6,6 +6,41 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.33.0
+
+This contains configuration to apply aggregation and filtering in Java or DataFusion.
+
+Compaction:
+- DataFusion compactions are now no longer experimental
+- Aggregation and filtering can now be set in table properties
+  - This can be applied by Java or DataFusion
+  - This can be combined with custom iterators in Java
+  - Aggregation supports sum, min, max, and map operators, grouping by all row and sort keys
+  - Filtering supports age off
+- Removed experimental "AGGREGATORS" value for iterator class name
+- Replaced table property `sleeper.table.compaction.method` with `sleeper.table.data.engine`
+
+Query:
+- Added experimental DataFusion query command line client
+- Added queries via a web socket to the Python client API
+
+Ingest:
+- Files submitted for ingest or bulk export must now end with `.parquet`
+
+Build:
+- Removed cross-rs from the project, multiplatform Rust builds are now done in custom Docker-based builders
+- Experimental option to pre-build and publish fat jars to a Maven repository
+
+Documentation:
+- Documented which Docker images are uploaded in deployment guide
+
+Bugfixes:
+- A number of instance properties now trigger redeployment with the CDK when they did not before
+- A DataFusion compaction that results in no output data no longer corrupts the state store
+- If a table is deleted when files are held for it in the ingest batcher, this no longer prevents the batcher from creating jobs
+- It's no longer possible to split a partition and leave the parent partition marked as a leaf
+
+
 ## Version 0.32.0
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper

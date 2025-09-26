@@ -24,18 +24,17 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.MergingIterator;
-import sleeper.core.iterator.WrappedIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.MergingIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.utils.RangeQueryUtils;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
-import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
@@ -65,10 +64,6 @@ public class LeafPartitionRowRetrieverImpl implements LeafPartitionRowRetriever 
         this.executorService = executorService;
         this.filesConfig = conf;
         this.tableProperties = tableProperties;
-    }
-
-    public static LeafPartitionRowRetrieverProvider createProvider(ExecutorService executorService, Configuration conf) {
-        return tableProperties -> new LeafPartitionRowRetrieverImpl(executorService, conf, tableProperties);
     }
 
     public CloseableIterator<Row> getRows(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RowRetrievalException {
@@ -144,7 +139,7 @@ public class LeafPartitionRowRetrieverImpl implements LeafPartitionRowRetriever 
     private ParquetReader<Row> createParquetReader(Schema readSchema, String fileName, FilterPredicate filterPredicate) throws IOException {
         // NB Do not create a ParquetReaderIterator here as that forces the
         // opening of the file which needs to be done in parallel.
-        return new ParquetRowReader.Builder(new Path(fileName), readSchema)
+        return ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(fileName), readSchema)
                 .withConf(filesConfig)
                 .withFilter(FilterCompat.get(filterPredicate))
                 .useColumnIndexFilter(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED))

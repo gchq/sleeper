@@ -13,7 +13,7 @@
 # limitations under the License.
 [package]
 name = "sleeper_df"
-description = "This is the native library for Sleeper that implements all the core data compaction and sketches generation functionality."
+description = "This is the native library for Sleeper that implements all of the Foreign Function Interface logic."
 keywords = ["sleeper"]
 categories = ["science"]
 version = { workspace = true }
@@ -31,34 +31,13 @@ test = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-arrow = { workspace = true, features = ["prettyprint"] }
-async-trait = { workspace = true }
-aws-config = { workspace = true }
-aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
+arrow = { workspace = true, features = [ "ffi" ] }
 aws-types = { workspace = true }
-bytes = { workspace = true }
 chrono = { workspace = true }
 color-eyre = { workspace = true }
-cxx = { workspace = true }
-datafusion = { workspace = true }
 env_logger = { workspace = true }
-futures = { workspace = true }
-libc = { workspace = true }
 log = { workspace = true }
-nohash = { workspace = true }
-num-format = { workspace = true }
-num-traits = { workspace = true }
-object_store = { workspace = true, features = [ "aws" ] }
-regex = { workspace = true }
-rust_sketch = { path = "../rust_sketch" }
-thiserror = { workspace = true }
+libc = { workspace = true }
+sleeper_core = { path = "../sleeper_core" }
 tokio = { workspace = true, features = ["full"] }
-tokio-test = { workspace = true }
 url = { workspace = true }
-
-[dev-dependencies]
-object_store = { workspace = true, features = ["integration"] }
-tempfile = { workspace = true }
-test-log = { workspace = true }
-testing_logger = { workspace = true }
-mockall = { workspace = true }

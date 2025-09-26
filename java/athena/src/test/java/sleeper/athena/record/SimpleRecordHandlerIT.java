@@ -40,7 +40,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.parquet.row.ParquetReaderIterator;
-import sleeper.parquet.row.ParquetRowReader;
+import sleeper.parquet.row.ParquetRowReaderFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -262,7 +262,8 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 1_000_000L));
 
         // Then
-        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(new ParquetRowReader(new Path(file), SCHEMA));
+        ParquetReaderIterator parquetReaderIterator = new ParquetReaderIterator(
+                ParquetRowReaderFactory.parquetRowReaderBuilder(new Path(file), SCHEMA).build());
         while (parquetReaderIterator.hasNext()) {
             parquetReaderIterator.next();
         }

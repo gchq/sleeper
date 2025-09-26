@@ -30,6 +30,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.core.properties.table.TableProperty.MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
 import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -81,8 +82,8 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
     @Test
     void shouldNotLoadFilesSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
         // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2));
+        tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+        StateStore stateStore = stateStore();
         FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
         FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
         update(stateStore).addFile(logFile);
@@ -99,8 +100,8 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
     @Test
     void shouldLoadFilesSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
         // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2));
+        tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+        StateStore stateStore = stateStore();
         FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
         FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
         update(stateStore).addFile(logFile);
@@ -117,8 +118,8 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
     @Test
     void shouldNotLoadPartitionsSnapshotWhenOnlyOneTransactionAheadAfterLoadingLog() throws Exception {
         // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2));
+        tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+        StateStore stateStore = stateStore();
         List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
         List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
         update(stateStore).initialise(logPartitions);
@@ -135,8 +136,8 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
     @Test
     void shouldLoadPartitionsSnapshotWhenMoreThanConfiguredTransactionsAheadAfterLoadingLog() throws Exception {
         // Given
-        StateStore stateStore = stateStore(builder -> builder
-                .minTransactionsAheadToLoadSnapshot(2));
+        tableProperties.setNumber(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT, 2);
+        StateStore stateStore = stateStore();
         List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
         List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
         update(stateStore).initialise(logPartitions);
@@ -148,11 +149,6 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
 
         // Then
         assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(snapshotPartitions);
-    }
-
-    private StateStore stateStore() {
-        return stateStore(builder -> {
-        });
     }
 
     private FileReferenceFactory fileFactory() {

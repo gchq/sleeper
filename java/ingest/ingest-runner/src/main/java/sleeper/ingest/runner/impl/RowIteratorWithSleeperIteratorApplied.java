@@ -15,11 +15,12 @@
  */
 package sleeper.ingest.runner.impl;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.IteratorFactory;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 
 import java.io.IOException;
@@ -38,50 +39,20 @@ class RowIteratorWithSleeperIteratorApplied implements CloseableIterator<Row> {
      * Create an instance.
      *
      * @param  objectFactory             the {@link ObjectFactory} to use to create the Sleeper iterator
-     * @param  sleeperSchema             the Sleeper {@link Schema} of the {@link Row} objects
-     * @param  sleeperIteratorClassName  the Sleeper iterator to apply
-     * @param  sleeperIteratorConfig     the configuration for the Sleeper iterator
+     * @param  iteratorConfig            the {@link IteratorConfig} to use to create the Sleeper iterator
+     * @param  schema                    the Sleeper {@link Schema} of the {@link Row} objects
      * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Row} objects
      * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
      */
     RowIteratorWithSleeperIteratorApplied(
             ObjectFactory objectFactory,
-            Schema sleeperSchema,
-            String sleeperIteratorClassName,
-            String sleeperIteratorConfig,
+            IteratorConfig iteratorConfig,
+            Schema schema,
             CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
         this.inputIterator = requireNonNull(sourceIterator);
-        this.outputIterator = applyIterator(
-                objectFactory,
-                sleeperSchema,
-                sleeperIteratorClassName,
-                sleeperIteratorConfig,
-                this.inputIterator);
-    }
-
-    /**
-     * Apply the Sleeper iterator.
-     *
-     * @param  objectFactory             the {@link ObjectFactory} to use to create the Sleeper iterator
-     * @param  sleeperSchema             the Sleeper {@link Schema} of the {@link Row} objects
-     * @param  sleeperIteratorClassName  the Sleeper iterator to apply
-     * @param  sleeperIteratorConfig     the configuration for the Sleeper iterator
-     * @param  sourceIterator            the {@link CloseableIterator} to provide the source {@link Row} objects
-     * @return                           the row iterator, with the Sleeper iterator applied
-     * @throws IteratorCreationException if there was a failure creating the Sleeper iterator
-     */
-    private static CloseableIterator<Row> applyIterator(
-            ObjectFactory objectFactory,
-            Schema sleeperSchema,
-            String sleeperIteratorClassName,
-            String sleeperIteratorConfig,
-            CloseableIterator<Row> sourceIterator) throws IteratorCreationException {
-        if (null != sleeperIteratorClassName) {
-            return new IteratorFactory(objectFactory)
-                    .getIterator(sleeperIteratorClassName, sleeperIteratorConfig, sleeperSchema)
-                    .apply(sourceIterator);
-        }
-        return sourceIterator;
+        this.outputIterator = new IteratorFactory(objectFactory)
+                .getIterator(iteratorConfig, schema)
+                .applyTransform(sourceIterator);
     }
 
     @Override

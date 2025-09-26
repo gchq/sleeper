@@ -41,13 +41,13 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.ThreadSleep;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
@@ -66,16 +66,16 @@ public class CompactionTask {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
     private final StateStoreProvider stateStoreProvider;
-    private final Consumer<Duration> sleepForTime;
     private final MessageReceiver messageReceiver;
-    private final CompactionRunnerFactory selector;
+    private final StateStoreWaitForFiles waitForFiles;
+    private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final CompactionJobTracker jobTracker;
     private final CompactionTaskTracker taskTracker;
-    private final CompactionJobCommitterOrSendToLambda jobCommitter;
+    private final CompactionRunnerFactory selector;
     private final String taskId;
     private final Supplier<String> jobRunIdSupplier;
     private final Supplier<Instant> timeSupplier;
-    private final StateStoreWaitForFiles waitForFiles;
+    private final ThreadSleep threadSleep;
 
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
@@ -85,7 +85,7 @@ public class CompactionTask {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
                 jobStore, taskTracker, selector, taskId,
-                () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
+                () -> UUID.randomUUID().toString(), Instant::now, Thread::sleep);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
@@ -97,13 +97,13 @@ public class CompactionTask {
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
             CompactionJobTracker jobTracker, CompactionTaskTracker taskTracker, CompactionRunnerFactory selector,
-            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
+            String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, ThreadSleep threadSleep) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.propertiesReloader = propertiesReloader;
         this.stateStoreProvider = stateStoreProvider;
         this.timeSupplier = timeSupplier;
-        this.sleepForTime = sleepForTime;
+        this.threadSleep = threadSleep;
         this.messageReceiver = messageReceiver;
         this.selector = selector;
         this.jobTracker = jobTracker;
@@ -227,7 +227,7 @@ public class CompactionTask {
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Partition partition = stateStore.getPartition(job.getPartitionId());
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition);
+        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition.getRegion());
         Instant jobFinishTime = timeSupplier.get();
         JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
         return summary;
@@ -257,17 +257,6 @@ public class CompactionTask {
         void close();
     }
 
-    private static Consumer<Duration> threadSleep() {
-        return time -> {
-            try {
-                Thread.sleep(time.toMillis());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-        };
-    }
-
     private class IdleTimeTracker {
 
         private final Duration maxIdleTime;
@@ -291,7 +280,7 @@ public class CompactionTask {
                 if (!delayBeforeRetry.isZero()) {
                     LOGGER.info("Received no messages, waiting {} before trying again",
                             LoggedDuration.withFullOutput(delayBeforeRetry));
-                    sleepForTime.accept(delayBeforeRetry);
+                    threadSleep.waitForDurationWrappingInterrupt(delayBeforeRetry);
                 }
                 return true;
             }

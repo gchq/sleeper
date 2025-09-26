@@ -25,7 +25,7 @@ import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -42,7 +42,7 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
+import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -113,7 +113,7 @@ public class QueryClient extends QueryCommandLineClient {
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    new LeafPartitionRowRetrieverImpl(executorService, conf, tableProperties));
+                    new QueryEngineSelector(executorService, conf).getRowRetriever(tableProperties));
             queryExecutor.init(partitions, partitionToFileMapping);
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
