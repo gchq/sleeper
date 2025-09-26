@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
@@ -139,32 +138,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
         params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
-
-        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime);
-        List<Range> orderedRanges = region.getRangesOrdered(schema);
-        // Extra braces: Make sure wrong array isn't populated to wrong pointers
-        {
-            // This array can't contain nulls
-            Object[] regionMins = orderedRanges.stream().map(Range::getMin).toArray();
-            partitionRegion.mins.populate(regionMins, false);
-        }
-        {
-            Boolean[] regionMinInclusives = orderedRanges.stream().map(Range::isMinInclusive)
-                    .toArray(Boolean[]::new);
-            partitionRegion.mins_inclusive.populate(regionMinInclusives, false);
-        }
-        {
-            // This array can contain nulls
-            Object[] regionMaxs = orderedRanges.stream().map(Range::getMax).toArray();
-            partitionRegion.maxs.populate(regionMaxs, true);
-        }
-        {
-            Boolean[] regionMaxInclusives = orderedRanges.stream().map(Range::isMaxInclusive)
-                    .toArray(Boolean[]::new);
-            partitionRegion.maxs_inclusive.populate(regionMaxInclusives, false);
-        }
-        partitionRegion.validate();
-        params.region.set(partitionRegion);
+        params.region.set(FFISleeperRegion.from(region, schema, runtime));
         params.validate();
 
         return params;

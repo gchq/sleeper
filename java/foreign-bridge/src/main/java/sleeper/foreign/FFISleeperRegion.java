@@ -55,7 +55,7 @@ public class FFISleeperRegion extends Struct {
      *
      * @throws IllegalStateException when a invariant fails
      */
-    public void validate() {
+    void validate() {
         mins.validate();
         maxs.validate();
         mins_inclusive.validate();
@@ -104,6 +104,7 @@ public class FFISleeperRegion extends Struct {
      * @return        the region
      */
     public Region toSleeperRegion(Schema schema) {
+        validate();
         List<Field> rowKeys = schema.getRowKeyFields();
         RangeFactory rangeFactory = new RangeFactory(schema);
         java.lang.Boolean[] minsInclusive = mins_inclusive.readBack(java.lang.Boolean.class, false);
