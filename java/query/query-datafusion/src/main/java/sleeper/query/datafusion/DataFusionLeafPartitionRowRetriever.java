@@ -45,9 +45,9 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     private static final Cleaner CLEANER = Cleaner.create();
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
 
-    protected final DataFusionAwsConfig awsConfig;
-    protected final BufferAllocator allocator;
-    protected final FFIContext context;
+    private final DataFusionAwsConfig awsConfig;
+    private final BufferAllocator allocator;
+    private final FFIContext context;
 
     private DataFusionLeafPartitionRowRetriever(Builder builder) {
         this.awsConfig = builder.awsConfig;
@@ -62,12 +62,20 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     }
 
     private static FFIContext createContext(Object instance) {
-        FFIContext context = new FFIContext(DataFusionQueryFunctions.INSTANCE);
+        FFIContext context = createContext();
         CLEANER.register(instance, context::close);
         return context;
     }
 
-    // Public builder() method for external code to start building an instance
+    /**
+     * Creates an FFI context for reuse.
+     *
+     * @return the context
+     */
+    public static FFIContext createContext() {
+        return new FFIContext(DataFusionQueryFunctions.INSTANCE);
+    }
+
     public static Builder builder() {
         return new Builder();
     }
