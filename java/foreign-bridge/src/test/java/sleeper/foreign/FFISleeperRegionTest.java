@@ -18,14 +18,15 @@ package sleeper.foreign;
 import jnr.ffi.Runtime;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 public class FFISleeperRegionTest {
+    jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
 
     @Test
     void shouldThrowOnRegionValidateMaxsIncorrectLength() {
         // Given
-        jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
         FFISleeperRegion region = new FFISleeperRegion(runtime);
         Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
         Integer[] maxBounds = new Integer[]{1, 2, 3, 4};
@@ -36,7 +37,7 @@ public class FFISleeperRegionTest {
         region.region_mins_inclusive.populate(minbBoolBounds, false);
         region.region_maxs_inclusive.populate(maxBoolBounds, false);
 
-        // Then
+        // When / Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
                 .withMessage("region maxs has length 4 but there are 5 row key columns");
@@ -45,7 +46,6 @@ public class FFISleeperRegionTest {
     @Test
     void shouldThrowOnRegionValidateMinsInclusiveIncorrectLength() {
         // Given
-        jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
         FFISleeperRegion region = new FFISleeperRegion(runtime);
         Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
         Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
@@ -56,7 +56,7 @@ public class FFISleeperRegionTest {
         region.region_mins_inclusive.populate(minbBoolBounds, false);
         region.region_maxs_inclusive.populate(maxBoolBounds, false);
 
-        // Then
+        // When / Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
                 .withMessage("region mins inclusive has length 4 but there are 5 row key columns");
@@ -65,7 +65,6 @@ public class FFISleeperRegionTest {
     @Test
     void shouldThrowOnRegionValidateMaxsInclusiveIncorrectLength() {
         // Given
-        jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
         FFISleeperRegion region = new FFISleeperRegion(runtime);
         Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
         Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
@@ -76,16 +75,15 @@ public class FFISleeperRegionTest {
         region.region_mins_inclusive.populate(minbBoolBounds, false);
         region.region_maxs_inclusive.populate(maxBoolBounds, false);
 
-        // Then
+        // When / Then
         assertThatIllegalStateException()
                 .isThrownBy(() -> region.validate())
                 .withMessage("region maxs inclusive has length 4 but there are 5 row key columns");
     }
 
     @Test
-    void shouldRegionValidateCorrectly() {
+    void shouldValidate() {
         // Given
-        jnr.ffi.Runtime runtime = Runtime.getSystemRuntime();
         FFISleeperRegion region = new FFISleeperRegion(runtime);
         Integer[] minBounds = new Integer[]{1, 2, 3, 4, 5};
         Integer[] maxBounds = new Integer[]{1, 2, 3, 4, 5};
@@ -96,7 +94,8 @@ public class FFISleeperRegionTest {
         region.region_mins_inclusive.populate(minbBoolBounds, false);
         region.region_maxs_inclusive.populate(maxBoolBounds, false);
 
-        // Then
-        region.validate();
+        // When / Then
+        assertThatCode(() -> region.validate())
+                .doesNotThrowAnyException();
     }
 }
