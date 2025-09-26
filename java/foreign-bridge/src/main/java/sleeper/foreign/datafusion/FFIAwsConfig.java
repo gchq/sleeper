@@ -27,11 +27,11 @@ import jnr.ffi.Struct;
 @SuppressWarnings(value = "checkstyle:memberName")
 public class FFIAwsConfig extends Struct {
 
-    public final Struct.UTF8StringRef region = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef endpoint = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef access_key = new Struct.UTF8StringRef();
-    public final Struct.UTF8StringRef secret_key = new Struct.UTF8StringRef();
-    public final Struct.Boolean allow_http = new Struct.Boolean();
+    final Struct.UTF8StringRef region = new Struct.UTF8StringRef();
+    final Struct.UTF8StringRef endpoint = new Struct.UTF8StringRef();
+    final Struct.UTF8StringRef access_key = new Struct.UTF8StringRef();
+    final Struct.UTF8StringRef secret_key = new Struct.UTF8StringRef();
+    final Struct.Boolean allow_http = new Struct.Boolean();
 
     public FFIAwsConfig(jnr.ffi.Runtime runtime) {
         super(runtime);
