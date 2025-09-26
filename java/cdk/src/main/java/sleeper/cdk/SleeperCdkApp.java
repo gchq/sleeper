@@ -43,6 +43,8 @@ import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack;
@@ -102,6 +104,9 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
+    private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
+    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
+    private LoggingStack loggingStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -119,7 +124,7 @@ public class SleeperCdkApp extends Stack {
 
         List<IMetric> errorMetrics = new ArrayList<>();
 
-        LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
+        loggingStack = new LoggingStack(this, "Logging", instanceProperties);
 
         // Stack for Checking VPC configuration
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
@@ -129,12 +134,15 @@ public class SleeperCdkApp extends Stack {
                     + "in very significant NAT charges.");
         }
 
+        // Custom Stacks
+        this.generateCustomStacks();
+
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
-        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, jars);
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3ObjectsStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(transactionLogStateStoreStack, policiesStack);
@@ -142,7 +150,7 @@ public class SleeperCdkApp extends Stack {
                 this, "IngestTracker", instanceProperties, policiesStack);
         CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
                 this, "CompactionTracker", instanceProperties, policiesStack);
-        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3ObjectsStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
                 instanceProperties, jars,
@@ -163,11 +171,11 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Athena analytics
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
+            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks, autoDeleteS3ObjectsStack);
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, jars);
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, autoDeleteS3ObjectsStack, jars);
         }
         if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
@@ -226,7 +234,8 @@ public class SleeperCdkApp extends Stack {
                     "BulkExport",
                     instanceProperties,
                     jars,
-                    coreStacks);
+                    coreStacks,
+                    autoDeleteS3ObjectsStack);
         }
 
         // Stack to garbage collect old files
@@ -270,6 +279,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks, queryQueueStack,
+                    autoDeleteS3ObjectsStack,
                     errorMetrics);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
@@ -286,6 +296,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
+                    autoStopEcsClusterTasksStack,
                     errorMetrics);
         }
 
@@ -344,6 +355,10 @@ public class SleeperCdkApp extends Stack {
         return ingestBatcherStack;
     }
 
+    public AutoDeleteS3ObjectsStack getAutoDeleteS3ObjectsStack() {
+        return autoDeleteS3ObjectsStack;
+    }
+
     private void addTags(Construct construct) {
         instanceProperties.getTags()
                 .forEach((key, value) -> Tags.of(construct).add(key, value));
@@ -352,6 +367,12 @@ public class SleeperCdkApp extends Stack {
     protected void generateProperties() {
         // Stack for writing properties
         new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
+    }
+
+    protected void generateCustomStacks() {
+        autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
+                this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
+        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
     }
 
     public static void main(String[] args) {
