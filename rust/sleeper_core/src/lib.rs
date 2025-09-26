@@ -337,7 +337,7 @@ pub struct CompactionResult {
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_compaction, CommonConfig, CommonConfigBuilder, PartitionBound, ColRange,
-/// # OutputType, SleeperParquetOptions, SleeperPartitionRegion};
+/// # OutputType, SleeperParquetOptions, SleeperRegion};
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -351,7 +351,7 @@ pub struct CompactionResult {
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
 ///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
-///     .region(SleeperPartitionRegion::new(region))
+///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// # tokio_test::block_on(async {
 /// let result = run_compaction(&compaction_input).await;
@@ -381,7 +381,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_query, CommonConfigBuilder, PartitionBound, ColRange,
-/// # OutputType, SleeperParquetOptions, SleeperPartitionRegion};
+/// # OutputType, SleeperParquetOptions, SleeperRegion};
 /// # use sleeper_core::LeafPartitionQueryConfig;
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
@@ -396,7 +396,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
 ///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
-///     .region(SleeperPartitionRegion::new(region))
+///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// let mut leaf_config = LeafPartitionQueryConfig::default();
 /// leaf_config.common = common;
@@ -407,7 +407,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 ///     upper: PartitionBound::String("h"),
 ///     upper_inclusive: true,
 /// });
-/// leaf_config.ranges = vec![SleeperPartitionRegion::new(query_region)];
+/// leaf_config.ranges = vec![SleeperRegion::new(query_region)];
 ///
 /// # tokio_test::block_on(async {
 /// let result = run_query(&leaf_config).await;
