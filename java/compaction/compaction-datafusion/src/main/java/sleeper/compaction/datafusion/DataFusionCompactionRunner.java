@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.datafusion.DataFusionCompactionFunctions.DataFusionCommonConfig;
 import sleeper.compaction.datafusion.DataFusionCompactionFunctions.DataFusionCompactionResult;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;

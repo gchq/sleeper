@@ -21,12 +21,8 @@ import jnr.ffi.Struct;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 
-import sleeper.foreign.FFISleeperRegion;
-import sleeper.foreign.bridge.FFIArray;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.bridge.ForeignFunctions;
-
-import java.util.Objects;
 
 /**
  * The interface for the native library we are calling.
@@ -46,99 +42,6 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
 
         public DataFusionCompactionResult(jnr.ffi.Runtime runtime) {
             super(runtime);
-        }
-    }
-
-    /**
-     * The compaction input data that will be populated from the Java side. If you updated
-     * this struct (field ordering, types, etc.), you MUST update the corresponding Rust definition
-     * in rust/compaction/src/lib.rs. The order and types of the fields must match exactly.
-     */
-    @SuppressWarnings(value = {"checkstyle:membername"})
-    @SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    class DataFusionCommonConfig extends Struct {
-        /** Optional AWS configuration. */
-        public final Struct.Boolean override_aws_config = new Struct.Boolean();
-        public final Struct.UTF8StringRef aws_region = new Struct.UTF8StringRef();
-        public final Struct.UTF8StringRef aws_endpoint = new Struct.UTF8StringRef();
-        public final Struct.UTF8StringRef aws_access_key = new Struct.UTF8StringRef();
-        public final Struct.UTF8StringRef aws_secret_key = new Struct.UTF8StringRef();
-        public final Struct.Boolean aws_allow_http = new Struct.Boolean();
-        /** Array of input files to compact. */
-        public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
-        /** States if the input files individually sorted based on row key and the sort key columns. */
-        public final Struct.Boolean input_files_sorted = new Struct.Boolean();
-        /** Output file name. */
-        public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
-        /** Names of Sleeper row key columns from schema. */
-        public final FFIArray<java.lang.String> row_key_cols = new FFIArray<>(this);
-        /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte array. */
-        public final FFIArray<java.lang.Integer> row_key_schema = new FFIArray<>(this);
-        /** Names of Sleeper sort key columns from schema. */
-        public final FFIArray<java.lang.String> sort_key_cols = new FFIArray<>(this);
-        /** Maximum size of output Parquet row group in rows. */
-        public final Struct.size_t max_row_group_size = new Struct.size_t();
-        /** Maximum size of output Parquet page size in bytes. */
-        public final Struct.size_t max_page_size = new Struct.size_t();
-        /** Output Parquet compression codec. */
-        public final Struct.UTF8StringRef compression = new Struct.UTF8StringRef();
-        /** Output Parquet writer version. Must be 1.0 or 2.0 */
-        public final Struct.UTF8StringRef writer_version = new Struct.UTF8StringRef();
-        /** Column min/max values truncation length in output Parquet. */
-        public final Struct.size_t column_truncate_length = new Struct.size_t();
-        /** Max sizeof statistics block in output Parquet. */
-        public final Struct.size_t stats_truncate_length = new Struct.size_t();
-        /** Should row key columns use dictionary encoding in output Parquet. */
-        public final Struct.Boolean dict_enc_row_keys = new Struct.Boolean();
-        /** Should sort key columns use dictionary encoding in output Parquet. */
-        public final Struct.Boolean dict_enc_sort_keys = new Struct.Boolean();
-        /** Should value columns use dictionary encoding in output Parquet. */
-        public final Struct.Boolean dict_enc_values = new Struct.Boolean();
-        /** The Sleeper compaction region. */
-        public final Struct.StructRef<FFISleeperRegion> region = new StructRef<>(FFISleeperRegion.class);
-        /** Strong reference to prevent GC. */
-        public FFISleeperRegion regionRef;
-        /** Compaction aggregation configuration. This is optional. */
-        public final Struct.UTF8StringRef aggregation_config = new Struct.UTF8StringRef();
-        /** Compaction filtering configuration. This is optional. */
-        public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
-
-        public DataFusionCommonConfig(jnr.ffi.Runtime runtime) {
-            super(runtime);
-        }
-
-        /**
-         * Set the Sleeper partition region.
-         *
-         * @param newRegion region to transfer across to foreign function
-         */
-        public void setRegion(FFISleeperRegion newRegion) {
-            this.regionRef = newRegion;
-            this.region.set(newRegion);
-        }
-
-        /**
-         * Validate state of struct.
-         *
-         * @throws IllegalStateException when a invariant fails
-         */
-        public void validate() {
-            input_files.validate();
-            row_key_cols.validate();
-            row_key_schema.validate();
-            sort_key_cols.validate();
-            if (regionRef != null) {
-                regionRef.validate();
-            }
-            if (row_key_cols.length() != row_key_schema.length()) {
-                throw new IllegalStateException("row_key_schema has length " + row_key_schema.length() + " but there are " + row_key_cols.length() + " row key columns");
-            }
-            // Check strings non null
-            Objects.requireNonNull(output_file.get(), "Output file is null");
-            Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
-            Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
-            Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
-            Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
         }
     }
 
