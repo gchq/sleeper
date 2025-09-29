@@ -45,22 +45,22 @@ public class SystemTestBucketStack extends NestedStack {
 
     private final IBucket bucket;
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars, AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestStandaloneProperties properties, BuiltJars jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
         String bucketName = SystemTestStandaloneProperties.buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
-        bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars, systemTestAutoDeleteS3ObjectsStack);
+        bucket = createBucket("SystemTestBucket", bucketName, properties, properties.toInstancePropertiesForCdkUtils(), jars, autoDeleteS3ObjectsStack);
         Tags.of(this).add("DeploymentStack", id);
     }
 
-    public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, BuiltJars jars, AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack) {
+    public SystemTestBucketStack(Construct scope, String id, SystemTestProperties properties, BuiltJars jars, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         super(scope, id);
 
         String bucketName = String.join("-", "sleeper", properties.get(ID),
                 "system", "test", "ingest").toLowerCase(Locale.ROOT);
         properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         properties.addToListIfMissing(INGEST_SOURCE_BUCKET, List.of(bucketName));
-        bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars, systemTestAutoDeleteS3ObjectsStack);
+        bucket = createBucket("SystemTestIngestBucket", bucketName, properties.testPropertiesOnly(), properties, jars, autoDeleteS3ObjectsStack);
         Utils.addStackTagIfSet(this, properties);
     }
 

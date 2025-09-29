@@ -137,8 +137,8 @@ public class SleeperCdkApp extends Stack {
                     + "in very significant NAT charges.");
         }
 
-        // Auto delete Stack
-        generateAutoDeleteStack();
+        // Auto delete s3 objects Stack
+        generateAutoDeleteS3ObjectsStack();
 
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
@@ -361,10 +361,6 @@ public class SleeperCdkApp extends Stack {
         return ingestBatcherStack;
     }
 
-    public AutoDeleteS3ObjectsStack getAutoDeleteS3ObjectsStack() {
-        return autoDeleteS3ObjectsStack;
-    }
-
     private void addTags(Construct construct) {
         instanceProperties.getTags()
                 .forEach((key, value) -> Tags.of(construct).add(key, value));
@@ -375,7 +371,7 @@ public class SleeperCdkApp extends Stack {
         new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
     }
 
-    protected void generateAutoDeleteStack() {
+    protected void generateAutoDeleteS3ObjectsStack() {
         if (generateAutoDeleteStack) {
             autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
         }
