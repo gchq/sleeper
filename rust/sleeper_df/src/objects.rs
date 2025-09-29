@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 use crate::unpack::{
-    unpack_aws_config, unpack_str, unpack_string, unpack_string_array, unpack_typed_array,
-    unpack_typed_ref_array, unpack_variant_array,
+    unpack_str, unpack_string, unpack_string_array, unpack_typed_array, unpack_typed_ref_array,
+    unpack_variant_array,
 };
 use color_eyre::eyre::{bail, eyre};
 use sleeper_core::{
-    ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
-    SleeperParquetOptions, SleeperPartitionRegion,
+    AwsConfig, ColRange, CommonConfig, CommonConfigBuilder, LeafPartitionQueryConfig, OutputType,
+    SleeperParquetOptions, SleeperRegion,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
 use std::{
@@ -31,9 +31,13 @@ use std::{
 };
 use url::Url;
 
-/// Contains all output data from a compaction operation.
+/// Contains all output data from a file output operation.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIFileResult.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
-pub struct FFICompactionResult {
+pub struct FFIFileResult {
     /// The total number of rows read by a compaction.
     pub rows_read: usize,
     /// The total number of rows written by a compaction.
@@ -43,18 +47,25 @@ pub struct FFICompactionResult {
 /// Represents a Sleeper region in a C ABI struct.
 ///
 /// Java arrays are transferred with a length. They should all be the same length in this struct.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFISleeperRegion.java.
+/// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
     pub mins_len: usize,
+    // The mins array may NOT contain null pointers
     pub mins: *const *const c_void,
     pub maxs_len: usize,
-    // The region_maxs array may contain null pointers!!
+    // The maxs array may contain null pointers!!
     pub maxs: *const *const c_void,
     pub mins_inclusive_len: usize,
     pub mins_inclusive: *const *const bool,
     pub maxs_inclusive_len: usize,
     pub maxs_inclusive: *const *const bool,
+    pub dimension_indexes_len: usize,
+    pub dimension_indexes: *const *const i32,
 }
 
 /// Column type for row key columns in Sleeper schema.
@@ -86,7 +97,7 @@ impl<'a> FFISleeperRegion {
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
         schema_types: &[FFIRowKeySchemaType],
-    ) -> Result<SleeperPartitionRegion<'a>, color_eyre::Report> {
+    ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
         if region.mins_len != region.maxs_len
             || region.mins_len != region.mins_inclusive_len
             || region.mins_len != region.maxs_inclusive_len
@@ -114,8 +125,22 @@ impl<'a> FFISleeperRegion {
                 },
             );
         }
-        Ok(SleeperPartitionRegion::new(map))
+        Ok(SleeperRegion::new(map))
     }
+}
+
+/// Contains the FFI compatible configuration data for AWS.
+///
+/// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
+/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFIAwsConfig.java.
+/// The order and types of the fields must match exactly.
+#[repr(C)]
+pub struct FFIAwsConfig {
+    pub region: *const c_char,
+    pub endpoint: *const c_char,
+    pub access_key: *const c_char,
+    pub secret_key: *const c_char,
+    pub allow_http: bool,
 }
 
 /// Contains all the common input data for setting up a Sleeper `DataFusion` operation.
@@ -125,11 +150,7 @@ impl<'a> FFISleeperRegion {
 #[repr(C)]
 pub struct FFICommonConfig {
     pub override_aws_config: bool,
-    pub aws_region: *const c_char,
-    pub aws_endpoint: *const c_char,
-    pub aws_access_key: *const c_char,
-    pub aws_secret_key: *const c_char,
-    pub aws_allow_http: bool,
+    pub aws_config: *const FFIAwsConfig,
     pub input_files_len: usize,
     pub input_files: *const *const c_char,
     pub input_files_sorted: bool,
@@ -289,6 +310,43 @@ impl<'a> TryFrom<&'a FFILeafPartitionQueryConfig> for LeafPartitionQueryConfig<'
             ranges,
             explain_plans: config.explain_plans,
             write_quantile_sketch: config.write_quantile_sketch,
+        })
+    }
+}
+
+fn unpack_aws_config(params: &FFICommonConfig) -> Result<Option<AwsConfig>, color_eyre::Report> {
+    Ok(if params.override_aws_config {
+        let Some(ffi_aws) = (unsafe { params.aws_config.as_ref() }) else {
+            bail!("override_aws_config is true, but aws_config pointer is NULL");
+        };
+        AwsConfig::try_from(ffi_aws).ok()
+    } else {
+        None
+    })
+}
+
+impl TryFrom<&FFIAwsConfig> for AwsConfig {
+    type Error = color_eyre::Report;
+
+    fn try_from(value: &FFIAwsConfig) -> Result<Self, Self::Error> {
+        if value.region.is_null() {
+            bail!("FFIAwsConfig region pointer is NULL");
+        }
+        if value.endpoint.is_null() {
+            bail!("FFIAwsConfig endpoint pointer is NULL");
+        }
+        if value.access_key.is_null() {
+            bail!("FFIAwsConfig access_key pointer is NULL");
+        }
+        if value.secret_key.is_null() {
+            bail!("FFIAwsConfig secret_key pointer is NULL");
+        }
+        Ok(AwsConfig {
+            region: unpack_string(value.region)?,
+            endpoint: unpack_string(value.endpoint)?,
+            access_key: unpack_string(value.access_key)?,
+            secret_key: unpack_string(value.secret_key)?,
+            allow_http: value.allow_http,
         })
     }
 }

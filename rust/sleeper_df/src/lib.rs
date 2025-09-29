@@ -17,7 +17,7 @@
 use crate::{
     context::FFIContext,
     log::maybe_cfg_log,
-    objects::{FFICommonConfig, FFICompactionResult, FFILeafPartitionQueryConfig},
+    objects::{FFICommonConfig, FFIFileResult, FFILeafPartitionQueryConfig},
 };
 use ::log::{error, warn};
 use arrow::ffi_stream::FFI_ArrowArrayStream;
@@ -67,7 +67,7 @@ mod unpack;
 pub extern "C" fn native_compact(
     ctx_ptr: *const FFIContext,
     input_data: *mut FFICommonConfig,
-    output_data: *mut FFICompactionResult,
+    output_data: *mut FFIFileResult,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {

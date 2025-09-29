@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction;
+package sleeper.compaction.datafusion;
 
-import sleeper.compaction.datafusion.DataFusionFunctions;
 import sleeper.foreign.bridge.FFIBridge;
 
 import java.io.IOException;
@@ -24,9 +23,9 @@ import java.io.IOException;
  * Links to the DataFusion code for compactions in Rust. This is done in a separate class to delay static
  * initialization until it is needed.
  */
-public class DataFusionFunctionsImpl {
+public class DataFusionCompactionFunctionsImpl {
 
-    private DataFusionFunctionsImpl() {
+    private DataFusionCompactionFunctionsImpl() {
     }
 
     /**
@@ -34,9 +33,9 @@ public class DataFusionFunctionsImpl {
      *
      * @return the Rust DataFusion implementation
      */
-    public static DataFusionFunctions create() {
+    public static DataFusionCompactionFunctions create() {
         try {
-            return FFIBridge.createForeignInterface(DataFusionFunctions.class);
+            return FFIBridge.createForeignInterface(DataFusionCompactionFunctions.class);
         } catch (IOException e) {
             throw new IllegalStateException("Could not load foreign interface", e);
         }

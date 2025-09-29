@@ -18,6 +18,12 @@ package sleeper.foreign.bridge;
 import jnr.ffi.NativeType;
 import jnr.ffi.Struct;
 
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.type.StringType;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -203,6 +209,31 @@ public class FFIArray<T> {
             this.items[idx].putByte(0, e ? (byte) 1 : (byte) 0);
         } else {
             throw new ClassCastException("Can't cast " + item.getClass() + " to a valid Sleeper row key type");
+        }
+    }
+
+    /**
+     * Retrieves a value from the array of a Sleeper primitive type.
+     *
+     * @param  index                     the array index
+     * @param  type                      the type
+     * @param  nullsAllowed              if nulls may be present in this array
+     * @param  runtime                   the runtime this array was allocated with
+     * @return                           the value
+     * @throws IndexOutOfBoundsException if {@code idx} is out of range
+     * @throws IllegalStateException     if a pointer to 0 is found in a non-nullable array
+     */
+    public Object getFieldValue(int index, PrimitiveType type, boolean nullsAllowed, jnr.ffi.Runtime runtime) {
+        if (type instanceof LongType) {
+            return getValue(index, Long.class, nullsAllowed, runtime);
+        } else if (type instanceof IntType) {
+            return getValue(index, Integer.class, nullsAllowed, runtime);
+        } else if (type instanceof StringType) {
+            return getValue(index, String.class, nullsAllowed, runtime);
+        } else if (type instanceof ByteArrayType) {
+            return getValue(index, byte[].class, nullsAllowed, runtime);
+        } else {
+            throw new IllegalArgumentException("Unsupported primitive type: " + type);
         }
     }
 
