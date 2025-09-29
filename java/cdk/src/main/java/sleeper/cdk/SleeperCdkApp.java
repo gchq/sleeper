@@ -109,6 +109,7 @@ public class SleeperCdkApp extends Stack {
     private LoggingStack loggingStack;
     private Boolean generateAutoDeleteS3ObjectsStack = true;
     private Boolean generateLoggingStack = true;
+    private Boolean generateProperties = true;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -368,7 +369,9 @@ public class SleeperCdkApp extends Stack {
 
     protected void generateProperties() {
         // Stack for writing properties
-        new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
+        if (generateProperties) {
+            new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
+        }
     }
 
     protected void generateAutoDeleteS3ObjectsStack() {
@@ -381,6 +384,10 @@ public class SleeperCdkApp extends Stack {
         if (generateLoggingStack) {
             loggingStack = new LoggingStack(this, "Logging", instanceProperties);
         }
+    }
+
+    protected void setGenerateProperties(Boolean generateProperties) {
+        this.generateProperties = generateProperties;
     }
 
     protected void setGenerateLoggingStack(Boolean generateLoggingStack) {
