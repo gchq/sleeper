@@ -118,6 +118,8 @@ public class FFICommonConfig extends Struct {
         Objects.requireNonNull(output_file.get(), "Output file is null");
         Objects.requireNonNull(writer_version.get(), "Parquet writer is null");
         Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
+        Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
+        Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
     }
 
     /**
