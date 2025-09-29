@@ -101,46 +101,6 @@ public class Region {
     }
 
     /**
-     * Returns the ranges in this region ordered according to the given schema.
-     * If a given row key dimension is not present in this region, it is skipped.
-     *
-     * @param  schema the schema that dictates returned order
-     * @return        a List of Ranges in schema order.
-     * @see           getRangesOrdered
-     */
-    public List<Range> getPartialRangesOrdered(Schema schema) {
-        List<String> rowKeysOrdered = schema.getRowKeyFieldNames();
-        List<Range> ranges = new ArrayList<>(rowKeysOrdered.size());
-        for (String rowKey : rowKeysOrdered) {
-            Range range = getRange(rowKey);
-            if (range != null) {
-                ranges.add(range);
-            }
-        }
-        return ranges;
-    }
-
-    /**
-     * Returns the column indexes of row key columns from the schema that have a corresponding range in this region.
-     *
-     * For each row key column in schema order, its column index is included in the returned list if this region
-     * contains a range for that column.
-     *
-     * @param  schema the schema to use for ordering and field names
-     * @return        a list of indexes for row key fields present in this region
-     */
-    public List<Integer> getRowKeyColumnIndexesInRegion(Schema schema) {
-        List<Integer> indexes = new ArrayList<>();
-        List<String> rowKeysOrdered = schema.getRowKeyFieldNames();
-        for (int i = 0; i < rowKeysOrdered.size(); i++) {
-            if (getRange(rowKeysOrdered.get(i)) != null) {
-                indexes.add(i);
-            }
-        }
-        return indexes;
-    }
-
-    /**
      * Checks whether the provided key is contained within this region.
      *
      * @param  schema the Sleeper schema
