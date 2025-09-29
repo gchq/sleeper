@@ -36,8 +36,8 @@ import java.util.Objects;
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.
  */
-@SuppressWarnings(value = {"checkstyle:membername"})
-@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "PA_PUBLIC_MUTABLE_OBJECT_ATTRIBUTE", "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"})
+@SuppressWarnings("checkstyle:membername")
+@SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public class FFICommonConfig extends Struct {
     /** Specifies AWS default configuration been overriden. */
     public final Struct.Boolean override_aws_config = new Struct.Boolean();
