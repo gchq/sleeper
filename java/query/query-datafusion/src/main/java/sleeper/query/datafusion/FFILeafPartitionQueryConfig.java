@@ -56,9 +56,6 @@ public class FFILeafPartitionQueryConfig extends Struct {
      * @param regions query regions
      */
     public void setQueryRegions(FFISleeperRegion[] regions) {
-        for (int i = 0; i < regions.length; i++) {
-            regions[i].validate();
-        }
         query_region_len.set(regions.length);
         query_regions.set(regions);
     }
