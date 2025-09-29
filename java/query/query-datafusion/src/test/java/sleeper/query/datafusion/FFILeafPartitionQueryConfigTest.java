@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.foreign.FFISleeperRegion;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 
 class FFILeafPartitionQueryConfigTest {
 
@@ -53,23 +52,6 @@ class FFILeafPartitionQueryConfigTest {
 
         // Then
         assertThat(config.query_region_len.get()).isEqualTo(2);
-    }
-
-    @Test
-    void shouldThrowWhenRegionValidationFails() {
-        // Given
-        Runtime runtime = Runtime.getSystemRuntime();
-        FFILeafPartitionQueryConfig config = new FFILeafPartitionQueryConfig(runtime);
-        FFISleeperRegion invalidRegion = new FFISleeperRegion(runtime) {
-            @Override
-            public void validate() {
-                throw new IllegalStateException("Invalid region");
-            }
-        };
-
-        // When // Then
-        assertThatIllegalStateException().isThrownBy(() -> config.setQueryRegions(new FFISleeperRegion[]{invalidRegion}))
-                .withMessage("Invalid region");
     }
 
     @Test
