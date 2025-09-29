@@ -16,7 +16,7 @@
 package sleeper.foreign.datafusion;
 
 /**
- * The AWS configuration to be supplied to DataFusion.
+ * AWS configuration overrides to pass to Rust DataFusion code.
  */
 public class DataFusionAwsConfig {
 
@@ -45,7 +45,7 @@ public class DataFusionAwsConfig {
      * @return the configuration, if set
      */
     public static DataFusionAwsConfig getDefault() {
-        java.lang.String endpoint = System.getenv("AWS_ENDPOINT_URL");
+        String endpoint = System.getenv("AWS_ENDPOINT_URL");
         if (endpoint != null) {
             return overrideEndpoint(endpoint);
         } else {

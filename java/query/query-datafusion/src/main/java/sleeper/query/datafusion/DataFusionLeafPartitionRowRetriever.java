@@ -132,8 +132,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.row_key_cols.populate(dataReadSchema.getRowKeyFieldNames().toArray(String[]::new), false);
         common.row_key_schema.populate(FFICommonConfig.getKeyTypes(dataReadSchema.getRowKeyTypes()), false);
         common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
-        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, dataReadSchema, query.getPartitionRegion());
-        common.setRegion(partitionRegion);
+        common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.write_sketch_file.set(false);
         common.aggregation_config.set("");
         common.filtering_config.set("");
@@ -152,7 +151,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
             queryConfig.requested_value_fields_set.set(false);
         }
 
-        FFISleeperRegion[] ffiRegions = query.getRegions().stream().map(region -> new FFISleeperRegion(runtime, dataReadSchema, region)).toArray(FFISleeperRegion[]::new);
+        FFISleeperRegion[] ffiRegions = query.getRegions().stream().map(region -> FFISleeperRegion.from(region, dataReadSchema, runtime)).toArray(FFISleeperRegion[]::new);
         queryConfig.setQueryRegions(ffiRegions);
         queryConfig.explain_plans.set(true);
 
