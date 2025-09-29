@@ -125,9 +125,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
         params.aggregation_config.set(job.getAggregationConfig() == null ? "" : job.getAggregationConfig());
         params.filtering_config.set(job.getFilterConfig() == null ? "" : job.getFilterConfig());
-
-        FFISleeperRegion partitionRegion = new FFISleeperRegion(runtime, schema, region);
-        params.setRegion(partitionRegion);
+        params.region.set(FFISleeperRegion.from(region, schema, runtime));
         params.validate();
 
         return params;
@@ -143,7 +141,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @return                  rows read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    public static RowsProcessed invokeDataFusion(CompactionJob job,
+    private static RowsProcessed invokeDataFusion(CompactionJob job,
             FFICommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);

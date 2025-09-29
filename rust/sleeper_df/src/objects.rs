@@ -56,10 +56,10 @@ pub struct FFIFileResult {
 #[derive(Copy, Clone)]
 pub struct FFISleeperRegion {
     pub mins_len: usize,
-    // The region_mins array may NOT contain null pointers
+    // The mins array may NOT contain null pointers
     pub mins: *const *const c_void,
     pub maxs_len: usize,
-    // The region_maxs array may contain null pointers!!
+    // The maxs array may contain null pointers!!
     pub maxs: *const *const c_void,
     pub mins_inclusive_len: usize,
     pub mins_inclusive: *const *const bool,
@@ -133,7 +133,6 @@ impl<'a> FFISleeperRegion {
                 },
             );
         }
-
         Ok(SleeperRegion::new(map))
     }
 }
@@ -150,32 +149,6 @@ pub struct FFIAwsConfig {
     pub access_key: *const c_char,
     pub secret_key: *const c_char,
     pub allow_http: bool,
-}
-
-impl TryFrom<&FFIAwsConfig> for AwsConfig {
-    type Error = color_eyre::Report;
-
-    fn try_from(value: &FFIAwsConfig) -> Result<Self, Self::Error> {
-        if value.region.is_null() {
-            bail!("FFIAwsConfig region pointer is NULL");
-        }
-        if value.endpoint.is_null() {
-            bail!("FFIAwsConfig endpoint pointer is NULL");
-        }
-        if value.access_key.is_null() {
-            bail!("FFIAwsConfig access_key pointer is NULL");
-        }
-        if value.secret_key.is_null() {
-            bail!("FFIAwsConfig secret_key pointer is NULL");
-        }
-        Ok(AwsConfig {
-            region: unpack_string(value.region)?,
-            endpoint: unpack_string(value.endpoint)?,
-            access_key: unpack_string(value.access_key)?,
-            secret_key: unpack_string(value.secret_key)?,
-            allow_http: value.allow_http,
-        })
-    }
 }
 
 /// Contains all the common input data for setting up a Sleeper `DataFusion` operation.
@@ -291,17 +264,8 @@ impl FFICommonConfig {
             OutputType::ArrowRecordBatch
         };
 
-        let aws_config = if self.override_aws_config {
-            let Some(ffi_aws) = (unsafe { self.aws_config.as_ref() }) else {
-                bail!("override_aws_config is true, but aws_config pointer is NULL");
-            };
-            AwsConfig::try_from(ffi_aws).ok()
-        } else {
-            None
-        };
-
         CommonConfigBuilder::new()
-            .aws_config(aws_config)
+            .aws_config(unpack_aws_config(self)?)
             .input_files(
                 unpack_string_array(self.input_files, self.input_files_len)?
                     .into_iter()
@@ -426,5 +390,42 @@ impl Default for FFIQueryResults {
         Self {
             arrow_array_stream: std::ptr::null(),
         }
+    }
+}
+
+fn unpack_aws_config(params: &FFICommonConfig) -> Result<Option<AwsConfig>, color_eyre::Report> {
+    Ok(if params.override_aws_config {
+        let Some(ffi_aws) = (unsafe { params.aws_config.as_ref() }) else {
+            bail!("override_aws_config is true, but aws_config pointer is NULL");
+        };
+        AwsConfig::try_from(ffi_aws).ok()
+    } else {
+        None
+    })
+}
+
+impl TryFrom<&FFIAwsConfig> for AwsConfig {
+    type Error = color_eyre::Report;
+
+    fn try_from(value: &FFIAwsConfig) -> Result<Self, Self::Error> {
+        if value.region.is_null() {
+            bail!("FFIAwsConfig region pointer is NULL");
+        }
+        if value.endpoint.is_null() {
+            bail!("FFIAwsConfig endpoint pointer is NULL");
+        }
+        if value.access_key.is_null() {
+            bail!("FFIAwsConfig access_key pointer is NULL");
+        }
+        if value.secret_key.is_null() {
+            bail!("FFIAwsConfig secret_key pointer is NULL");
+        }
+        Ok(AwsConfig {
+            region: unpack_string(value.region)?,
+            endpoint: unpack_string(value.endpoint)?,
+            access_key: unpack_string(value.access_key)?,
+            secret_key: unpack_string(value.secret_key)?,
+            allow_http: value.allow_http,
+        })
     }
 }

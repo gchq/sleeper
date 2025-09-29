@@ -72,8 +72,8 @@ public class DataFusionAwsConfig {
     /**
      * Converts this configuration to an FFI struct to be passed to DataFusion.
      *
-     * @param runtime the FFI runtime
-     * @return the struct
+     * @param  runtime the FFI runtime
+     * @return         the struct
      */
     public FFIAwsConfig toFfi(jnr.ffi.Runtime runtime) {
         FFIAwsConfig config = new FFIAwsConfig(runtime);

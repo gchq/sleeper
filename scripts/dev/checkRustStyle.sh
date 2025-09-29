@@ -19,9 +19,9 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
-CHUNKS_YAML="$PROJECT_ROOT/.github/config/chunks.yaml"
-MAVEN_PROJECT="$PROJECT_ROOT/java"
-pushd "$MAVEN_PROJECT/build"
-mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.chunks.ValidateProjectChunks \
-    -Dexec.args="$CHUNKS_YAML $MAVEN_PROJECT"
+pushd "${PROJECT_ROOT}/rust"
+
+cargo fmt --all -- --check
+cargo clippy --no-deps --all-targets -- -W clippy::pedantic -D warnings
+
 popd

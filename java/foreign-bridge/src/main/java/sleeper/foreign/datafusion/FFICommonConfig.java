@@ -94,25 +94,11 @@ public class FFICommonConfig extends Struct {
         } else {
             this.override_aws_config.set(false);
         }
-        setDefaults();
-    }
-
-    /** Set to sensible defaults all members that don't have them. */
-    protected void setDefaults() {
+        // Set to sensible defaults all members that don't have them.
         // Primitives will all default to false/zero, FFIArrays also have safe defaults.
         output_file.set("");
         compression.set("");
         writer_version.set("");
-    }
-
-    /**
-     * Set the Sleeper partition region.
-     *
-     * @param newRegion region to transfer across to foreign function
-     */
-    public void setRegion(FFISleeperRegion newRegion) {
-        newRegion.validate();
-        this.region.set(newRegion);
     }
 
     /**

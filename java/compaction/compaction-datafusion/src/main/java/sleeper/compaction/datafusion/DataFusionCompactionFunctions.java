@@ -25,7 +25,7 @@ import sleeper.foreign.bridge.ForeignFunctions;
 import sleeper.foreign.datafusion.FFICommonConfig;
 
 /**
- * The interface for the native library we are calling with compaction functionality.
+ * The interface for the native library we are calling.
  */
 public interface DataFusionCompactionFunctions extends ForeignFunctions {
 
@@ -48,5 +48,5 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
     }
 
     @SuppressWarnings(value = "checkstyle:parametername")
-    int native_compact(@In Pointer context, @In FFICommonConfig input, @Out FFIFileResult result);
+    int native_compact(Pointer context, @In FFICommonConfig input, @Out FFIFileResult result);
 }
