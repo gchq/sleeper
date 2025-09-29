@@ -53,7 +53,7 @@ public class SystemTestApp extends SleeperCdkApp {
         generateLoggingStack = false;
 
         super.generateAutoDeleteS3ObjectsStack();
-        generateAutoDeleteStack = false;
+        generateAutoDeleteS3ObjectsStack = false;
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars, autoDeleteS3ObjectsStack);
 

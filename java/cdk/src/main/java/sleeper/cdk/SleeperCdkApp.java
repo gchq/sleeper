@@ -107,7 +107,7 @@ public class SleeperCdkApp extends Stack {
     private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
     protected AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     protected LoggingStack loggingStack;
-    protected Boolean generateAutoDeleteStack = true;
+    protected Boolean generateAutoDeleteS3ObjectsStack = true;
     protected Boolean generateLoggingStack = true;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
@@ -372,7 +372,7 @@ public class SleeperCdkApp extends Stack {
     }
 
     protected void generateAutoDeleteS3ObjectsStack() {
-        if (generateAutoDeleteStack) {
+        if (generateAutoDeleteS3ObjectsStack) {
             autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
         }
     }
