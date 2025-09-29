@@ -104,9 +104,11 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
-    private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
-    private LoggingStack loggingStack;
+    protected AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
+    protected LoggingStack loggingStack;
+    protected Boolean generateAutoDeleteStack = true;
+    protected Boolean generateLoggingStack = true;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -124,7 +126,8 @@ public class SleeperCdkApp extends Stack {
 
         List<IMetric> errorMetrics = new ArrayList<>();
 
-        loggingStack = new LoggingStack(this, "Logging", instanceProperties);
+        // Logging stack
+        generateLoggingStack();
 
         // Stack for Checking VPC configuration
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
@@ -134,11 +137,14 @@ public class SleeperCdkApp extends Stack {
                     + "in very significant NAT charges.");
         }
 
-        // Custom Stacks
-        this.generateCustomStacks();
+        // Auto delete Stack
+        generateAutoDeleteStack();
 
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
+
+        autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
+                this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
@@ -369,10 +375,16 @@ public class SleeperCdkApp extends Stack {
         new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
     }
 
-    protected void generateCustomStacks() {
-        autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
-                this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
-        autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
+    protected void generateAutoDeleteStack() {
+        if (generateAutoDeleteStack) {
+            autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
+        }
+    }
+
+    protected void generateLoggingStack() {
+        if (generateLoggingStack) {
+            loggingStack = new LoggingStack(this, "Logging", instanceProperties);
+        }
     }
 
     public static void main(String[] args) {

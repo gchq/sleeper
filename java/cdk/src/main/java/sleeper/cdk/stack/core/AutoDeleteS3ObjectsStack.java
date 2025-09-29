@@ -53,11 +53,11 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, Integer retentionDays) {
         super(scope, id);
         ILogGroup logGroup = LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
-                .logGroupName(id + "s3-bucket-autodelete")
+                .logGroupName("s3-bucket-autodelete")
                 .retention(Utils.getRetentionDays(retentionDays))
                 .build();
         ILogGroup providerLogGroup = LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
-                .logGroupName(id + "s3-bucket-autodelete-provider")
+                .logGroupName("s3-bucket-autodelete-provider")
                 .retention(Utils.getRetentionDays(retentionDays))
                 .build();
         createLambda(id, instanceProperties, jars, logGroup, providerLogGroup);
@@ -70,7 +70,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), id + "auto-delete-s3-objects");
+                Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
 
         lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
                 .functionName(functionName)
