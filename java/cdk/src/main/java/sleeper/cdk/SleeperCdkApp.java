@@ -105,10 +105,10 @@ public class SleeperCdkApp extends Stack {
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
     private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
-    protected AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
-    protected LoggingStack loggingStack;
-    protected Boolean generateAutoDeleteS3ObjectsStack = true;
-    protected Boolean generateLoggingStack = true;
+    private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
+    private LoggingStack loggingStack;
+    private Boolean generateAutoDeleteS3ObjectsStack = true;
+    private Boolean generateLoggingStack = true;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -381,6 +381,18 @@ public class SleeperCdkApp extends Stack {
         if (generateLoggingStack) {
             loggingStack = new LoggingStack(this, "Logging", instanceProperties);
         }
+    }
+
+    protected void setGenerateLoggingStack(Boolean generateLoggingStack) {
+        this.generateLoggingStack = generateLoggingStack;
+    }
+
+    protected void setGenerateAutoDeleteS3ObjectsStack(Boolean generateAutoDeleteS3ObjectsStack) {
+        this.generateAutoDeleteS3ObjectsStack = generateAutoDeleteS3ObjectsStack;
+    }
+
+    protected AutoDeleteS3ObjectsStack getAutoDeleteS3ObjectsStack() {
+        return autoDeleteS3ObjectsStack;
     }
 
     public static void main(String[] args) {
