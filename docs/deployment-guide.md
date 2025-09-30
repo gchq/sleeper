@@ -214,7 +214,7 @@ docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BA
 ```
 
 #### Publishing jars to Maven
-There is a script [here](/scripts/deploy/publishJars.sh) to publish the jars to a repository.
+There is a script [here](/scripts/dev/publishFatJars.sh) to publish the jars to a repository.
 It takes in two arguments.
     -   The repository url to publish.
     -   The ID of a server in a local m2 settings file which should contain authentication details.

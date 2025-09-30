@@ -20,5 +20,5 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
-mvn deploy -Pquick -T 1C
+mvn deploy -Pquick -T 1C "$@"
 popd
