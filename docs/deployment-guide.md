@@ -117,13 +117,18 @@ to an S3 bucket, and some Docker images need to be uploaded to an ECR repository
 Details of images to be uploaded can be found [here](/docs/deployment/images-to-upload.md).
 
 #### Publishing Docker images to a repository
-There is a script [here](/scripts/deploy/deployToDockerRepository.sh) to publish the Docker images to a repository.\
+
+There is a script [`scripts/dev/publishDocker.sh`](/scripts/dev/publishDocker.sh) to publish the Docker images to a
+repository.
+
 It takes in two arguments:
 *   The repository prefix path.
 *   An optional boolean to create the images that should be built for multiple platforms, this defaults to true.
         See [StackDockerImage.java](/java/clients/src/main/java/sleeper/clients/deploy/container/StackDockerImage.java) for more details.
 
-The development team are adding a way to retrieve and publish Docker images to AWS. Right now we only support uploading the images to AWS if they were built locally, but in the future you will be able to upload images from an external repository as well.
+The development team are adding a way to retrieve and publish Docker images to AWS. Right now we only support uploading
+the images to AWS if they were built locally, but in the future you will be able to upload images from an external
+repository as well.
 
 #### Upload the Docker images to ECR
 
