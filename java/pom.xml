@@ -1510,6 +1510,11 @@
         </dependency>
     </dependencies>
     <distributionManagement>
+        <repository>
+            <id>sleeper</id>
+            <name>Sleeper repository</name>
+            <url>file:///tmp/sleeper/m2</url>
+        </repository>
         <site>
             <id>sleeper</id>
             <name>Sleeper site</name>
