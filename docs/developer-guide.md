@@ -152,6 +152,31 @@ cd java
 mvn clean install -Pquick -DskipRust=true
 ```
 
+### Publishing Maven artifacts
+
+There is a script [`scripts/dev/publishMaven.sh`](/scripts/dev/publishMaven.sh) to publish the Maven artifacts,
+including all modules and the fat jars used to deploy from and run scripts.
+
+There is also a script [`scripts/dev/publishFatJars.sh`](/scripts/dev/publishFatJars.sh) to publish just the fat jars
+used for deployment and running scripts.
+
+At some point one of these two will likely be removed.
+
+The publishFatJars.sh version takes in two arguments:
+    -   The repository url to publish.
+    -   The ID of a server in a local m2 settings file which should contain authentication details.
+
+This can be tested locally by using a repository url similar to file:/path/to/output that will publish these files to the local file system.
+
+The publishMaven.sh version accepts options to pass through to Maven, including `-DaltDeploymentRepository`, documented
+against [the Maven plugin](https://maven.apache.org/plugins/maven-deploy-plugin/deploy-mojo.html). If you don't set a
+deployment repository it will publish the files to the local file system at `/tmp/sleeper/m2`.
+
+To setup the local m2 settings file this guide can be followed: [Link to Baeldung](https://www.baeldung.com/maven-settings-xml#5-servers)
+
+The development team are adding a way to retrieve and publish jars to AWS. Right now we only support deploying to AWS
+from jars that were built locally, but in the future you will be able to deploy jars from a Maven repository as well.
+
 ## Using the codebase
 
 The codebase is structured around the components explained in the [design document](design.md). The elements of the
