@@ -177,6 +177,20 @@ To setup the local m2 settings file this guide can be followed: [Link to Baeldun
 The development team are adding a way to retrieve and publish jars to AWS. Right now we only support deploying to AWS
 from jars that were built locally, but in the future you will be able to deploy jars from a Maven repository as well.
 
+### Publishing Docker images
+
+There is a script [`scripts/dev/publishDocker.sh`](/scripts/dev/publishDocker.sh) to publish the Docker images to a
+repository.
+
+It takes in two arguments:
+*   The repository prefix path.
+*   An optional boolean to create the images that should be built for multiple platforms, this defaults to true.
+        See [StackDockerImage.java](/java/clients/src/main/java/sleeper/clients/deploy/container/StackDockerImage.java) for more details.
+
+The development team are adding a way to retrieve and publish Docker images to AWS. Right now we only support uploading
+the images to AWS if they were built locally, but in the future you will be able to upload images from an external
+repository as well.
+
 ## Using the codebase
 
 The codebase is structured around the components explained in the [design document](design.md). The elements of the
