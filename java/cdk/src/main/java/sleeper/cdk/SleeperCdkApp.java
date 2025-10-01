@@ -110,6 +110,7 @@ public class SleeperCdkApp extends Stack {
 
     // These flags are used to control when the stacks are deployed in the SystemTest CDK app.
     private boolean generateAutoDeleteS3ObjectsStack = true;
+    private boolean generateAutoStopEcsClusterTasksStack = true;
     private boolean generateLoggingStack = true;
     private boolean generateProperties = true;
 
@@ -146,8 +147,8 @@ public class SleeperCdkApp extends Stack {
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
-        autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
-                this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
+        // Auto stop ECS cluster tasks stack
+        generateAutoStopEcsClusterTasksStack();
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
@@ -379,6 +380,12 @@ public class SleeperCdkApp extends Stack {
         }
     }
 
+    protected void generateAutoStopEcsClusterTasksStack() {
+        if (generateAutoStopEcsClusterTasksStack) {
+            autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(this, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
+        }
+    }
+
     protected void generateLoggingStack() {
         if (generateLoggingStack) {
             loggingStack = new LoggingStack(this, "Logging", instanceProperties);
@@ -397,8 +404,16 @@ public class SleeperCdkApp extends Stack {
         this.generateAutoDeleteS3ObjectsStack = generateAutoDeleteS3ObjectsStack;
     }
 
+    protected void setGenerateAutoStopEcsClusterTasksStack(Boolean generateAutoStopEcsClusterTasksStack) {
+        this.generateAutoStopEcsClusterTasksStack = generateAutoStopEcsClusterTasksStack;
+    }
+
     protected AutoDeleteS3ObjectsStack getAutoDeleteS3ObjectsStack() {
         return autoDeleteS3ObjectsStack;
+    }
+
+    protected AutoStopEcsClusterTasksStack getAutoStopEcsClusterTasksStack() {
+        return autoStopEcsClusterTasksStack;
     }
 
     public static void main(String[] args) {

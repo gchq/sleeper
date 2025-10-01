@@ -25,6 +25,8 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.logs.ILogGroup;
+import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -41,19 +43,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+
 /**
  * Stops ECS Cluster tasks for the CloudFormation stack.
  */
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AutoStopEcsClusterTasksStack extends NestedStack {
 
-    private final IFunction lambda;
-    private final Provider provider;
+    private IFunction lambda;
+    private Provider provider;
 
     public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
             LoggingStack loggingStack) {
-
         super(scope, id);
+        createLambda(instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS),
+                loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER));
+    }
+
+    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
+        super(scope, id);
+        ILogGroup logGroup = LogGroup.Builder.create(this, "AutoStopLambdaLogGroup")
+                .logGroupName("ecs-cluster-tasks-autostop")
+                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
+        ILogGroup providerLogGroup = LogGroup.Builder.create(this, "AutoStopProviderLogGroup")
+                .logGroupName("ecs-cluster-tasks-autostop-provider")
+                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .build();
+        createLambda(instanceProperties, jars, logGroup, providerLogGroup);
+    }
+
+    private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -67,7 +88,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-stopping ECS tasks")
-                .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS))
+                .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
 
         // Grant this function permission to list tasks and stop tasks
@@ -82,7 +103,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
 
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
-                .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER))
+                .logGroup(providerLogGroup)
                 .build();
 
         Utils.addStackTagIfSet(this, instanceProperties);
