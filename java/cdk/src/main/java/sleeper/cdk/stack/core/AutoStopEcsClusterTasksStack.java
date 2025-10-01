@@ -68,7 +68,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-stopping ECS tasks")
                 .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS))
-                .timeout(Duration.minutes(10)));
+                .timeout(Duration.minutes(15)));
 
         // Grant this function permission to list tasks and stop tasks
         PolicyStatement policyStatement = PolicyStatement.Builder
