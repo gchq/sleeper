@@ -14,16 +14,17 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::util::pretty::pretty_format_batches;
+use arrow::{datatypes::DataType, util::pretty::pretty_format_batches};
 use datafusion::{
     common::{
-        plan_err,
+        DFSchema, plan_err,
         tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     },
     config::ExecutionOptions,
     dataframe::DataFrame,
     error::DataFusionError,
     execution::{SessionStateBuilder, context::SessionContext},
+    logical_expr::{ScalarUDF, ident},
     physical_expr::LexOrdering,
     physical_plan::{
         ExecutionPlan, accept,
@@ -37,7 +38,7 @@ use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
 use url::Url;
 
-use crate::datafusion::metrics::RowCounts;
+use crate::datafusion::{cast_udf::CastUDF, metrics::RowCounts};
 
 /// Write explanation of logical query plan to log output.
 ///
@@ -199,4 +200,31 @@ pub fn collect_stats(
     let mut stats = RowCounts::new(input_paths);
     accept(physical_plan.as_ref(), &mut stats)?;
     Ok(stats)
+}
+
+/// Checks the frame for columns with differing numeric schemas.
+///
+/// If a column that has changed from 32 to 64 bit signed integers or vice versa,
+/// then a simple numeric cast is added. This is an infallible operation, but will
+/// truncate the high 32 bits on a 64 to 32 bit cast.
+pub fn add_numeric_casts(
+    agg_frame: DataFrame,
+    orig_schema: &DFSchema,
+    agg_schema: &DFSchema,
+) -> Result<DataFrame, DataFusionError> {
+    let column_proj = orig_schema
+        .fields()
+        .iter()
+        .zip(agg_schema.fields().iter())
+        .map(
+            |(orig_field, agg_field)| match (orig_field.data_type(), agg_field.data_type()) {
+                (DataType::Int64, DataType::Int32) | (DataType::Int32, DataType::Int64) => {
+                    ScalarUDF::from(CastUDF::new(agg_field.data_type(), orig_field.data_type()))
+                        .call(vec![ident(orig_field.name())])
+                        .alias(orig_field.name())
+                }
+                (_, _) => ident(orig_field.name()),
+            },
+        );
+    agg_frame.select(column_proj)
 }

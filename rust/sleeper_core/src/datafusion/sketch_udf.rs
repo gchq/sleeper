@@ -37,6 +37,7 @@ use datafusion::{
 use std::{
     any::Any,
     fmt::Debug,
+    hash::{Hash, Hasher},
     iter::zip,
     sync::{Arc, Mutex},
 };
@@ -60,6 +61,20 @@ impl Debug for SketchUDF {
             .field("invoke_count", &self.invoke_count)
             .field("sketch", &self.sketch)
             .finish()
+    }
+}
+
+impl Eq for SketchUDF {}
+
+impl PartialEq for SketchUDF {
+    fn eq(&self, other: &Self) -> bool {
+        self.signature == other.signature
+    }
+}
+
+impl Hash for SketchUDF {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.signature.hash(state);
     }
 }
 
