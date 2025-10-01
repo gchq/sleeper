@@ -57,7 +57,7 @@ public class AwsSleeperClientBuilder {
      * Creates a Sleeper client.
      *
      * @return                      the client
-     * @throws InterruptedException Error
+     * @throws InterruptedException if interrupted while submitting a query
      */
     public SleeperClient build() throws InterruptedException {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();

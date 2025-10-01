@@ -95,7 +95,7 @@ public class SleeperClient implements AutoCloseable {
      *
      * @param  instanceId           the instance ID
      * @return                      the client
-     * @throws InterruptedException Error
+     * @throws InterruptedException if interrupted creating the client
      */
     public static SleeperClient createForInstanceId(String instanceId) throws InterruptedException {
         return builder().instanceId(instanceId).build();
@@ -296,6 +296,17 @@ public class SleeperClient implements AutoCloseable {
         bulkImportJobSender.sendFilesToBulkImport(platform, job);
     }
 
+    /**
+     * Submits a query to be run using the WebSocket query API. This will return a future that completes when the
+     * results have all been received. The results are held in memory, so this is only suitable for queries that
+     * return a small amount of data.
+     * <p>
+     * The WebSocket API must have been deployed as part of your Sleeper instance for this to work. The URL of the
+     * API is read from the instance property {@link CdkDefinedInstanceProperty#QUERY_WEBSOCKET_API_URL}.
+     *
+     * @param  query the query to run
+     * @return       a future that completes with the results of the query
+     */
     public CompletableFuture<List<Row>> queryViaWebSocket(Query query) {
         return queryWebSocketSender.sendQuery(query);
     }
