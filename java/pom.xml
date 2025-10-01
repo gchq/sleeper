@@ -221,7 +221,7 @@
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
         <junit.version>5.13.4</junit.version>
-        <junit.platform.version>1.13.4</junit.platform.version>
+        <junit.platform.version>6.0.0</junit.platform.version>
         <mockito.version>5.20.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
         <wiremock.version>3.13.1</wiremock.version>
