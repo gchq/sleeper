@@ -62,7 +62,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");
 
-        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, id + "Lambda", builder -> builder
+        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_ECS_CLUSTER_TASKS, "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
@@ -80,7 +80,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         role.addToPrincipalPolicy(policyStatement);
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
-        provider = Provider.Builder.create(this, id + "Provider")
+        provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
                 .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER))
                 .build();

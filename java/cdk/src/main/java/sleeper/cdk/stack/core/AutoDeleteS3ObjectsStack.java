@@ -54,11 +54,11 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
         super(scope, id);
-        ILogGroup logGroup = LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
+        ILogGroup logGroup = LogGroup.Builder.create(this, "AutoDeleteLambdaLogGroup")
                 .logGroupName("s3-bucket-autodelete")
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
-        ILogGroup providerLogGroup = LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
+        ILogGroup providerLogGroup = LogGroup.Builder.create(this, "AutoDeleteProviderLogGroup")
                 .logGroupName("s3-bucket-autodelete-provider")
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
@@ -74,7 +74,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-delete-s3-objects");
 
-        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
+        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_DELETE_S3_OBJECTS, "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
@@ -82,7 +82,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
 
-        provider = Provider.Builder.create(this, id + "Provider")
+        provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
                 .logGroup(providerLogGroup)
                 .build();
