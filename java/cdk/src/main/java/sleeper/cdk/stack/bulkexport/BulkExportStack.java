@@ -130,7 +130,7 @@ public class BulkExportStack extends NestedStack {
                 .build();
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
 
-        IBucket exportResultsBucket = setupExportBucket(id, instanceProperties, coreStacks, lambdaCode);
+        IBucket exportResultsBucket = setupExportBucket(instanceProperties, coreStacks, lambdaCode);
         new BulkExportTaskResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ,
                 exportResultsBucket);
     }
@@ -169,13 +169,12 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create the export results bucket.
      *
-     * @param  id                 the stack id
      * @param  instanceProperties the instance properties
      * @param  coreStacks         the core stacks
      * @param  lambdaCode         the lambda code
      * @return                    the export results bucket
      */
-    private IBucket setupExportBucket(String id, InstanceProperties instanceProperties, CoreStacks coreStacks,
+    private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks,
             LambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         String bucketName = String.join("-", "sleeper",

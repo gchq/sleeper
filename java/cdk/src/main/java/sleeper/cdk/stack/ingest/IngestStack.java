@@ -118,7 +118,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(id, jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
@@ -180,7 +180,6 @@ public class IngestStack extends NestedStack {
     }
 
     private Cluster ecsClusterForIngestTasks(
-            String id,
             IBucket jarsBucket,
             CoreStacks coreStacks,
             Queue ingestJobQueue,

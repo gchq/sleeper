@@ -48,7 +48,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
 
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, LoggingStack loggingStack) {
         super(scope, id);
-        createLambda(id, instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS),
+        createLambda(instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS),
                 loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER));
     }
 
@@ -62,10 +62,10 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroupName("s3-bucket-autodelete-provider")
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
-        createLambda(id, instanceProperties, jars, logGroup, providerLogGroup);
+        createLambda(instanceProperties, jars, logGroup, providerLogGroup);
     }
 
-    private void createLambda(String id, InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
+    private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
