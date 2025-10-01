@@ -19,7 +19,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "aggregator_udfs"
-version = "0.33.0-SNAPSHOT"
+version = "0.34.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "datafusion",
@@ -133,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "apps"
-version = "0.33.0-SNAPSHOT"
+version = "0.34.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "assert_cmd",
@@ -1321,9 +1321,9 @@ dependencies = [
 
 [[package]]
 name = "cxx"
-version = "1.0.185"
+version = "1.0.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f81de88da10862f22b5b3a60f18f6f42bbe7cb8faa24845dd7b1e4e22190e77"
+checksum = "4e9c4fe7f2f5dc5c62871a1b43992d197da6fa1394656a94276ac2894a90a6fe"
 dependencies = [
  "cc",
  "cxx-build",
@@ -1336,9 +1336,9 @@ dependencies = [
 
 [[package]]
 name = "cxx-build"
-version = "1.0.185"
+version = "1.0.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5edd58bf75c3fdfc80d79806403af626570662f7b6cc782a7fabe156166bd6d6"
+checksum = "b5cf2909d37d80633ddd208676fc27c2608a7f035fff69c882421168038b26dd"
 dependencies = [
  "cc",
  "codespan-reporting",
@@ -1351,9 +1351,9 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-cmd"
-version = "1.0.185"
+version = "1.0.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd46bf2b541a4e0c2d5abba76607379ee05d68e714868e3cb406dc8d591ce2d2"
+checksum = "077f5ee3d3bfd8d27f83208fdaa96ddd50af7f096c77077cc4b94da10bfacefd"
 dependencies = [
  "clap",
  "codespan-reporting",
@@ -1365,15 +1365,15 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-flags"
-version = "1.0.185"
+version = "1.0.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c79b68f6a3a8f809d39b38ae8af61305a6113819b19b262643b9c21353b92d9"
+checksum = "b0108748615125b9f2e915dfafdffcbdabbca9b15102834f6d7e9a768f2f2864"
 
 [[package]]
 name = "cxxbridge-macro"
-version = "1.0.185"
+version = "1.0.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "862b7fdb048ff9ef0779a0d0a03affd09746c4c875543746b640756be9cff2af"
+checksum = "e6e896681ef9b8dc462cfa6961d61909704bde0984b30bcb4082fe102b478890"
 dependencies = [
  "indexmap",
  "proc-macro2",
@@ -2122,7 +2122,7 @@ checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
 name = "filter_udfs"
-version = "0.33.0-SNAPSHOT"
+version = "0.34.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "datafusion",
@@ -3305,7 +3305,7 @@ dependencies = [
 
 [[package]]
 name = "objectstore_ext"
-version = "0.33.0-SNAPSHOT"
+version = "0.34.0-SNAPSHOT"
 dependencies = [
  "async-trait",
  "aws-config",
@@ -3385,9 +3385,9 @@ checksum = "1a80800c0488c3a21695ea981a54918fbb37abf04f4d0720c453632255e2ff0e"
 
 [[package]]
 name = "owo-colors"
-version = "4.2.2"
+version = "4.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48dd4f4a2c8405440fd0462561f0e5806bd0f77e86f51c761481bdd4018b545e"
+checksum = "9c6901729fa79e91a0913333229e9ca5dc725089d1c363b2f4b4760709dc4a52"
 
 [[package]]
 name = "parking_lot"
@@ -3758,9 +3758,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.11.2"
+version = "1.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23d7fd106d8c02486a8d64e778353d1cffe08ce79ac2e82f540c86d0facf6912"
+checksum = "8b5288124840bee7b386bc413c487869b360b2b4ec421ea56425128692f2a82c"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -3770,9 +3770,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.10"
+version = "0.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b9458fa0bfeeac22b5ca447c63aaf45f28439a709ccd244698632f9aa6394d6"
+checksum = "833eb9ce86d40ef33cb1306d8accf7bc8ec2bfea4355cbdebb3df68b40925cad"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -3849,7 +3849,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.33.0-SNAPSHOT"
+version = "0.34.0-SNAPSHOT"
 dependencies = [
  "cargo_metadata",
  "cxx",
@@ -4190,7 +4190,7 @@ checksum = "7a2ae44ef20feb57a68b23d846850f861394c2e02dc425a50098ae8c90267589"
 
 [[package]]
 name = "sleeper_core"
-version = "0.33.0-SNAPSHOT"
+version = "0.34.0-SNAPSHOT"
 dependencies = [
  "aggregator_udfs",
  "arrow",
@@ -4222,7 +4222,7 @@ dependencies = [
 
 [[package]]
 name = "sleeper_df"
-version = "0.33.0-SNAPSHOT"
+version = "0.34.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "aws-types",
@@ -4400,7 +4400,7 @@ dependencies = [
 
 [[package]]
 name = "test_util"
-version = "0.33.0-SNAPSHOT"
+version = "0.34.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "color-eyre",
@@ -4422,18 +4422,18 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.16"
+version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3467d614147380f2e4e374161426ff399c91084acd2363eaf549172b3d5e60c0"
+checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.16"
+version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c5e1be1c48b9172ee610da68fd9cd2770e7a4056cb3fc98710ee6906f0c7960"
+checksum = "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913"
 dependencies = [
  "proc-macro2",
  "quote",

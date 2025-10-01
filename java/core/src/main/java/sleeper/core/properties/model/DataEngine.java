@@ -36,7 +36,4 @@ public enum DataEngine {
     public static boolean isValid(String value) {
         return EnumUtils.isValidEnumIgnoreCase(DataEngine.class, value);
     }
-
-    /** Special iterator marker name indicating the use of aggregation iterators. */
-    public static final String AGGREGATION_ITERATOR_NAME = "AGGREGATORS";
 }

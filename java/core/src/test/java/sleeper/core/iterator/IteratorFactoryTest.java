@@ -21,7 +21,6 @@ import sleeper.core.iterator.testutil.IteratorFactoryTestHelper;
 import sleeper.core.iterator.testutil.LimitingConfigStringIterator;
 import sleeper.core.iterator.testutil.SortedRowIteratorTestHelper;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
@@ -53,26 +52,6 @@ public class IteratorFactoryTest {
                 .build());
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "value,1000");
-
-        // When
-        List<Row> filtered = applyIterator(List.of(
-                new Row(Map.of("key", "test", "value", 10L)),
-                new Row(Map.of("key", "test2", "value", 9999999999999999L))));
-
-        // Then
-        assertThat(filtered).containsExactly(
-                new Row(Map.of("key", "test2", "value", 9999999999999999L)));
-    }
-
-    @Test
-    public void shouldCreateAggregatingIterator() throws Exception {
-        // Given
-        tableProperties.setSchema(Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new LongType()))
-                .build());
-        tableProperties.set(ITERATOR_CLASS_NAME, DataEngine.AGGREGATION_ITERATOR_NAME);
-        tableProperties.set(ITERATOR_CONFIG, ";ageoff=value,1000,");
 
         // When
         List<Row> filtered = applyIterator(List.of(

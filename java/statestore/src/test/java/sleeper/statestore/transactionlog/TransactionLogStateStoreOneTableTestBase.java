@@ -22,10 +22,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver;
-
-import java.util.function.Consumer;
 
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -68,16 +65,13 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
-    protected StateStore stateStore(Consumer<TransactionLogStateStore.Builder> config) {
-        TransactionLogStateStore.Builder builder = stateStoreBuilder(tableProperties);
-        config.accept(builder);
-        return stateStore(builder);
+    protected StateStore stateStore() {
+        return stateStore(stateStoreBuilder(tableProperties));
     }
 
     protected void createSnapshotWithFreshStateAtTransactionNumber(
             long transactionNumber, SetupStateStore setupState) throws Exception {
-        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(
-                tableProperties.getStatus(), tableProperties.getSchema(), setupState);
+        InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(tableProperties, setupState);
         DynamoDBTransactionLogSnapshotSaver snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(instanceProperties, tableProperties, dynamoClient, s3Client, s3TransferManager);
         snapshotSaver.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
         snapshotSaver.savePartitionsSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));

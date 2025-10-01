@@ -41,7 +41,7 @@ mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
-    LeafPartitionQueryConfig, OutputType, SleeperPartitionRegion,
+    LeafPartitionQueryConfig, OutputType, SleeperRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
     stream_to_ffi_arrow_stream,
 };
@@ -111,11 +111,9 @@ pub struct CommonConfig<'a> {
     /// Names of sort-key columns
     sort_key_cols: Vec<String>,
     /// Ranges for each column to filter input files
-    region: SleeperPartitionRegion<'a>,
+    region: SleeperRegion<'a>,
     /// How output from operation should be returned
     output: OutputType,
-    /// Iterator config. Filters, aggregators, etc.
-    iterator_config: Option<String>,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
 }
@@ -128,9 +126,8 @@ impl Default for CommonConfig<'_> {
             input_files_sorted: true,
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
-            region: SleeperPartitionRegion::default(),
+            region: SleeperRegion::default(),
             output: OutputType::default(),
-            iterator_config: Option::default(),
             aggregates: Vec::default(),
             filters: Vec::default(),
         }
@@ -198,9 +195,8 @@ pub struct CommonConfigBuilder<'a> {
     input_files_sorted: bool,
     row_key_cols: Vec<String>,
     sort_key_cols: Vec<String>,
-    region: SleeperPartitionRegion<'a>,
+    region: SleeperRegion<'a>,
     output: OutputType,
-    iterator_config: Option<String>,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
 }
@@ -242,7 +238,7 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 
     #[must_use]
-    pub fn region(mut self, region: SleeperPartitionRegion<'a>) -> Self {
+    pub fn region(mut self, region: SleeperRegion<'a>) -> Self {
         self.region = region;
         self
     }
@@ -250,12 +246,6 @@ impl<'a> CommonConfigBuilder<'a> {
     #[must_use]
     pub fn output(mut self, output: OutputType) -> Self {
         self.output = output;
-        self
-    }
-
-    #[must_use]
-    pub fn iterator_config(mut self, iterator_config: Option<String>) -> Self {
-        self.iterator_config = iterator_config;
         self
     }
 
@@ -291,7 +281,6 @@ impl<'a> CommonConfigBuilder<'a> {
             sort_key_cols: self.sort_key_cols,
             region: self.region,
             output,
-            iterator_config: self.iterator_config,
             aggregates: self.aggregates,
             filters: self.filters,
         })
@@ -348,7 +337,7 @@ pub struct CompactionResult {
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_compaction, CommonConfig, CommonConfigBuilder, PartitionBound, ColRange,
-/// # OutputType, SleeperParquetOptions, SleeperPartitionRegion};
+/// # OutputType, SleeperParquetOptions, SleeperRegion};
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -362,7 +351,7 @@ pub struct CompactionResult {
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
 ///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
-///     .region(SleeperPartitionRegion::new(region))
+///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// # tokio_test::block_on(async {
 /// let result = run_compaction(&compaction_input).await;
@@ -392,7 +381,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
 /// # use crate::sleeper_core::{run_query, CommonConfigBuilder, PartitionBound, ColRange,
-/// # OutputType, SleeperParquetOptions, SleeperPartitionRegion};
+/// # OutputType, SleeperParquetOptions, SleeperRegion};
 /// # use sleeper_core::LeafPartitionQueryConfig;
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
@@ -407,7 +396,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
 ///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
-///     .region(SleeperPartitionRegion::new(region))
+///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// let mut leaf_config = LeafPartitionQueryConfig::default();
 /// leaf_config.common = common;
@@ -418,7 +407,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 ///     upper: PartitionBound::String("h"),
 ///     upper_inclusive: true,
 /// });
-/// leaf_config.ranges = vec![SleeperPartitionRegion::new(query_region)];
+/// leaf_config.ranges = vec![SleeperRegion::new(query_region)];
 ///
 /// # tokio_test::block_on(async {
 /// let result = run_query(&leaf_config).await;
@@ -580,7 +569,7 @@ mod tests {
         // Given
         let input_files: Vec<Url> = vec![];
         let row_key_cols = vec!["key".to_string()];
-        let region = SleeperPartitionRegion::default();
+        let region = SleeperRegion::default();
         let builder = CommonConfigBuilder::new()
             .input_files(input_files)
             .row_key_cols(row_key_cols)
@@ -599,7 +588,7 @@ mod tests {
         // Given
         let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
         let row_key_cols = vec!["key1".to_string(), "key2".to_string()];
-        let region = SleeperPartitionRegion::new(HashMap::from([(
+        let region = SleeperRegion::new(HashMap::from([(
             "col".to_string(),
             ColRange {
                 lower: PartitionBound::String("a"),
@@ -634,7 +623,7 @@ mod tests {
         // Given
         let input_files = vec![Url::parse("file:///path/to/file.parquet").unwrap()];
         let row_key_cols = vec!["key".to_string()];
-        let region = SleeperPartitionRegion::new(HashMap::from([(
+        let region = SleeperRegion::new(HashMap::from([(
             "col".to_string(),
             ColRange {
                 lower: PartitionBound::String("a"),

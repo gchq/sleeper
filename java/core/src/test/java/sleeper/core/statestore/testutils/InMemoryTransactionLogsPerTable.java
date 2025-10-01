@@ -45,7 +45,7 @@ public class InMemoryTransactionLogsPerTable {
      */
     public TransactionLogStateStore.Builder stateStoreBuilder(TableProperties tableProperties) {
         return forTable(tableProperties)
-                .stateStoreBuilder(tableProperties.getStatus(), tableProperties.getSchema());
+                .stateStoreBuilder(tableProperties);
     }
 
     /**
