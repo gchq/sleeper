@@ -80,7 +80,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
                 .logGroup(logGroup)
-                .timeout(Duration.minutes(10)));
+                .timeout(Duration.minutes(15)));
 
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
