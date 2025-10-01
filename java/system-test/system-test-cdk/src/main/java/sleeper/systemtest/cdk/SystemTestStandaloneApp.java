@@ -32,7 +32,6 @@ import java.nio.file.Path;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
 
 public class SystemTestStandaloneApp extends Stack {
@@ -42,7 +41,7 @@ public class SystemTestStandaloneApp extends Stack {
         super(app, id, props);
 
         AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", properties.toInstancePropertiesForCdkUtils(),
-                jars, properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS));
+                jars);
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars, autoDeleteS3ObjectsStack);
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {

@@ -107,9 +107,11 @@ public class SleeperCdkApp extends Stack {
     private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
     private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     private LoggingStack loggingStack;
-    private Boolean generateAutoDeleteS3ObjectsStack = true;
-    private Boolean generateLoggingStack = true;
-    private Boolean generateProperties = true;
+
+    // These flags are used to control when the stacks are deployed in the SystemTest CDK app.
+    private boolean generateAutoDeleteS3ObjectsStack = true;
+    private boolean generateLoggingStack = true;
+    private boolean generateProperties = true;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -166,7 +168,7 @@ public class SleeperCdkApp extends Stack {
                 policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
                 loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
-                stateStoreCommitterStack, ingestTracker, compactionTracker);
+                stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3ObjectsStack, autoStopEcsClusterTasksStack);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
@@ -182,7 +184,7 @@ public class SleeperCdkApp extends Stack {
         }
 
         if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, autoDeleteS3ObjectsStack, jars);
+            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, jars);
         }
         if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
@@ -241,8 +243,7 @@ public class SleeperCdkApp extends Stack {
                     "BulkExport",
                     instanceProperties,
                     jars,
-                    coreStacks,
-                    autoDeleteS3ObjectsStack);
+                    coreStacks);
         }
 
         // Stack to garbage collect old files
@@ -286,7 +287,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks, queryQueueStack,
-                    autoDeleteS3ObjectsStack,
                     errorMetrics);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
@@ -303,7 +303,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
-                    autoStopEcsClusterTasksStack,
                     errorMetrics);
         }
 

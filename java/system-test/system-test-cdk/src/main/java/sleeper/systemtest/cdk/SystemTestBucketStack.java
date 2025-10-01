@@ -65,7 +65,7 @@ public class SystemTestBucketStack extends NestedStack {
     }
 
     private IBucket createBucket(String id, String bucketName, SystemTestPropertyValues properties, InstanceProperties instanceProperties, BuiltJars jars,
-            AutoDeleteS3ObjectsStack systemTestAutoDeleteS3ObjectsStack) {
+            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack) {
         IBucket bucket = Bucket.Builder.create(this, id)
                 .bucketName(bucketName)
                 .versioned(false)
@@ -74,7 +74,7 @@ public class SystemTestBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        systemTestAutoDeleteS3ObjectsStack.grantAccessToCustomResource(id, instanceProperties, bucket, bucketName);
+        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(instanceProperties, bucket, bucketName);
 
         return bucket;
     }

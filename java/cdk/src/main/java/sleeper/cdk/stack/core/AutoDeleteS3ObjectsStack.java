@@ -36,6 +36,8 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
 
+import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+
 /**
  * Delete's S3 objects for a CloudFormation stack.
  */
@@ -50,15 +52,15 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER));
     }
 
-    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, Integer retentionDays) {
+    public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
         super(scope, id);
         ILogGroup logGroup = LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
                 .logGroupName("s3-bucket-autodelete")
-                .retention(Utils.getRetentionDays(retentionDays))
+                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
         ILogGroup providerLogGroup = LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
                 .logGroupName("s3-bucket-autodelete-provider")
-                .retention(Utils.getRetentionDays(retentionDays))
+                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
         createLambda(id, instanceProperties, jars, logGroup, providerLogGroup);
     }
@@ -92,18 +94,19 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     /**
      * Allows the stack to delete the bucket and it's contents.
      *
-     * @param id                 the resource id
      * @param instanceProperties the instance properties
      * @param bucket             the bucket to delete
      * @param bucketName         the bucket name
      */
-    public void grantAccessToCustomResource(String id, InstanceProperties instanceProperties,
+    public void addAutoDeleteS3Objects(InstanceProperties instanceProperties,
             IBucket bucket, String bucketName) {
+
+        String id = bucket.getNode().getId() + "-AutoDelete";
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
-        CustomResource.Builder.create(this, id + "-AutoDelete")
+        CustomResource.Builder.create(this, id)
                 .resourceType("Custom::AutoDeleteS3Objects")
                 .properties(Map.of("bucket", bucketName))
                 .serviceToken(provider.getServiceToken())
