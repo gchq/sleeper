@@ -47,7 +47,7 @@ public class SleeperClientIT extends LocalStackTestBase {
     SleeperClient sleeperClient;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws InterruptedException {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
@@ -69,7 +69,7 @@ public class SleeperClientIT extends LocalStackTestBase {
         assertThat(sleeperClient.doesTableExist(tableName)).isTrue();
     }
 
-    private SleeperClient createClient() {
+    private SleeperClient createClient() throws InterruptedException {
         return SleeperClient.builder()
                 .instanceId(instanceProperties.get(ID))
                 .awsClients(clients -> clients

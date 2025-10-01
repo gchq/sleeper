@@ -87,9 +87,11 @@ public class QueryWebSocketListener {
             future.completeExceptionally(new WebSocketErrorException("Unrecognised message type: " + message.getMessage()));
             close();
         }
+        LOGGER.debug("Outstanding queries: {}", outstandingQueryIds.size());
 
         if (outstandingQueryIds.isEmpty()) {
             future.complete(getResults());
+            LOGGER.debug("All queries complete, closing connection");
             close();
         }
     }

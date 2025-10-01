@@ -25,6 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
@@ -36,6 +37,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
+import sleeper.query.core.model.Query;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
@@ -43,6 +45,7 @@ import sleeper.query.core.rowretrieval.QueryExecutor;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 /**
@@ -66,6 +69,7 @@ public class SleeperClient implements AutoCloseable {
     private final IngestJobSender ingestJobSender;
     private final BulkExportQuerySender bulkExportQuerySender;
     private final BulkImportJobSender bulkImportJobSender;
+    private final QueryWebSocketSender queryWebSocketSender;
     private final IngestBatcherSender ingestBatcherSender;
     private final Runnable shutdown;
 
@@ -80,6 +84,7 @@ public class SleeperClient implements AutoCloseable {
         ingestJobSender = Objects.requireNonNull(builder.ingestJobSender, "ingestJobSender must not be null");
         bulkExportQuerySender = Objects.requireNonNull(builder.bulkExportQuerySender, "bulkExportQuerySender must not be null");
         bulkImportJobSender = Objects.requireNonNull(builder.bulkImportJobSender, "bulkImportJobSender must not be null");
+        queryWebSocketSender = Objects.requireNonNull(builder.queryWebSocketSender, "queryWebSocketSender must not be null");
         ingestBatcherSender = Objects.requireNonNull(builder.ingestBatcherSender, "ingestBatcherSender must not be null");
         shutdown = Objects.requireNonNull(builder.shutdown, "shutdown must not be null");
     }
@@ -88,10 +93,11 @@ public class SleeperClient implements AutoCloseable {
      * Creates a client to interact with the instance of Sleeper with the given ID.
      * Will use the default AWS configuration.
      *
-     * @param  instanceId the instance ID
-     * @return            the client
+     * @param  instanceId           the instance ID
+     * @return                      the client
+     * @throws InterruptedException Error
      */
-    public static SleeperClient createForInstanceId(String instanceId) {
+    public static SleeperClient createForInstanceId(String instanceId) throws InterruptedException {
         return builder().instanceId(instanceId).build();
     }
 
@@ -290,6 +296,10 @@ public class SleeperClient implements AutoCloseable {
         bulkImportJobSender.sendFilesToBulkImport(platform, job);
     }
 
+    public CompletableFuture<List<Row>> queryViaWebSocket(Query query) {
+        return queryWebSocketSender.sendQuery(query);
+    }
+
     /**
      * Submits files to the ingest batcher, to be ingested to a Sleeper table. Once the files are in the ingest batcher,
      * they will be added to an ingest or bulk import job at some point in the future, depending on the configuration of
@@ -341,6 +351,10 @@ public class SleeperClient implements AutoCloseable {
         bulkExportQuerySender.sendQueryToBulkExport(query);
     }
 
+    public void queryWebSocketSender(Query query) {
+        queryWebSocketSender(query);
+    }
+
     @Override
     public void close() {
         shutdown.run();
@@ -357,6 +371,7 @@ public class SleeperClient implements AutoCloseable {
         private IngestJobSender ingestJobSender;
         private BulkExportQuerySender bulkExportQuerySender;
         private BulkImportJobSender bulkImportJobSender;
+        private QueryWebSocketSender queryWebSocketSender;
         private IngestBatcherSender ingestBatcherSender;
         private Runnable shutdown = () -> {
         };
@@ -479,6 +494,11 @@ public class SleeperClient implements AutoCloseable {
          */
         public Builder bulkExportQuerySender(BulkExportQuerySender bulkExportQuerySender) {
             this.bulkExportQuerySender = bulkExportQuerySender;
+            return this;
+        }
+
+        public Builder queryWebSocketSender(QueryWebSocketSender queryWebSocketSender) {
+            this.queryWebSocketSender = queryWebSocketSender;
             return this;
         }
 
