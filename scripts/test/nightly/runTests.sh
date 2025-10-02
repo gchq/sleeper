@@ -34,10 +34,10 @@ VPC=$2
 SUBNETS=$3
 RESULTS_BUCKET=$4
 MAIN_SUITE_NAME=$5
+
 shift 4
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
   shift
-  MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite "$@")
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
   shift
   MAIN_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
@@ -108,7 +108,24 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+    echo "Running performance tests in parallel. Start time: [$(time_str)]"
+    SUITE_PARAMS1=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite1 "$@")
+    SUITE_PARAMS2=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite2 "$@")
+    SUITE_PARAMS3=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite3 "$@")
+    SUITE_PARAMS4=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite4 "$@")
+    SUITE_PARAMS5=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite5 "$@")
+    SUITE_PARAMS6=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite6 "$@")
+    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive1" "${SUITE_PARAMS1[@]}"&
+    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive2" "${SUITE_PARAMS2[@]}"&
+    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive3" "${SUITE_PARAMS3[@]}"&
+    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
+    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
+    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive6" "${SUITE_PARAMS6[@]}"
+    wait
+else
+    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+fi
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
