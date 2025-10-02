@@ -26,7 +26,9 @@ get_jar() {
     local mvnPath="$JARS_DIR/$artifactId-$SLEEPER_VERSION-$classifier.jar"
     local outPath="$JARS_DIR/$filename"
     if [[ "$mvnPath" != "$outPath" ]]; then
+        set -x
         mv -f "$mvnPath" "$outPath"
+        set +x
     fi
 }
 
