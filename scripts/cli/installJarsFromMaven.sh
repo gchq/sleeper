@@ -10,9 +10,6 @@ SLEEPER_VERSION=$1
 JARS_DIR=$2
 shift 2
 
-mvn dependency:get -Dartifact="sleeper:clients:$SLEEPER_VERSION:jar:utility" -Dtransitive=false "$@"
-mvn dependency:copy -Dartifact="sleeper:clients:$SLEEPER_VERSION:jar:utility" -DoutputDirectory="$JARS_DIR" "$@"
-
 get_jar() {
     local parts=$1
     local artifactId=$(echo "$parts" | cut -d':' -f1)
@@ -32,10 +29,12 @@ get_jar() {
     fi
 }
 
+get_jar "clients:utility:clients-$SLEEPER_VERSION-utility.jar"
+
 set +x
 java -cp "$JARS_DIR/clients-$SLEEPER_VERSION-utility.jar" \
     --add-opens java.base/java.nio=ALL-UNNAMED \
-    sleeper.clients.deploy.jar.ListJars \
+    sleeper.clients.deploy.jar.ListJars --exclude-clients-jar \
     | while read -r line
 do
     get_jar $line "$@"

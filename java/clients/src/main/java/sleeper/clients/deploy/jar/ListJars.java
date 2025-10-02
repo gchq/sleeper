@@ -21,6 +21,7 @@ import sleeper.core.deploy.LambdaJar;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Lists fat jars used by scripts and deployment. For each jar, outputs the Maven artifact ID it is generated from,
@@ -33,7 +34,8 @@ public class ListJars {
     }
 
     public static void main(String[] args) {
-        print(LambdaJar.getAll(), ClientJar.getAll(), SleeperVersion.getVersion(), System.out);
+        boolean excludeClientsJar = Set.of(args).contains("--exclude-clients-jar");
+        print(LambdaJar.getAll(), excludeClientsJar(excludeClientsJar), SleeperVersion.getVersion(), System.out);
     }
 
     /**
@@ -50,6 +52,14 @@ public class ListJars {
         }
         for (ClientJar jar : clientJars) {
             out.println(jar.getArtifactId() + ":utility:" + jar.getFormattedFilename(version));
+        }
+    }
+
+    private static List<ClientJar> excludeClientsJar(boolean excludeClientsJar) {
+        if (excludeClientsJar) {
+            return ClientJar.getAll().stream().filter(jar -> jar != ClientJar.CLIENTS_UTILITY).toList();
+        } else {
+            return ClientJar.getAll();
         }
     }
 
