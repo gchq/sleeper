@@ -10,6 +10,15 @@ SLEEPER_VERSION=$1
 JARS_DIR=$2
 shift 2
 
+# Allow --clients-only flag before Maven options
+INSTALL_DEPLOYMENT_JARS=true
+if [ "$#" -gt 0 ]; then
+    if [[ "$1" == "--clients-only" ]]; then
+        INSTALL_DEPLOYMENT_JARS=false
+        shift
+    fi
+fi
+
 get_jar() {
     local parts=$1
     local artifactId=$(echo "$parts" | cut -d':' -f1)
@@ -32,10 +41,12 @@ get_jar() {
 set +x
 get_jar "clients:utility:clients-$SLEEPER_VERSION-utility.jar" "$@"
 
-JARS_LIST=$(java -cp "$JARS_DIR/clients-$SLEEPER_VERSION-utility.jar" \
-    --add-opens java.base/java.nio=ALL-UNNAMED \
-    sleeper.clients.deploy.jar.ListJars --exclude-clients-jar)
-echo "$JARS_LIST" | while read -r line
-do
-    get_jar $line "$@"
-done
+if [[ "$INSTALL_DEPLOYMENT_JARS" == "true" ]]; then
+    JARS_LIST=$(java -cp "$JARS_DIR/clients-$SLEEPER_VERSION-utility.jar" \
+        --add-opens java.base/java.nio=ALL-UNNAMED \
+        sleeper.clients.deploy.jar.ListJars --exclude-clients-jar)
+    echo "$JARS_LIST" | while read -r line
+    do
+        get_jar $line "$@"
+    done
+fi
