@@ -116,8 +116,8 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     SUITE_PARAMS4=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite4 "$@")
     SUITE_PARAMS5=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite5 "$@")
     SUITE_PARAMS6=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite6 "$@")
-    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"&
+    runMavenSystemTests "${DEPLOY_ID}-${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
+    runMavenSystemTests "${DEPLOY_ID}-${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive3" "${SUITE_PARAMS3[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
