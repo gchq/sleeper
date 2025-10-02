@@ -29,13 +29,13 @@ get_jar() {
     fi
 }
 
+set +x
 get_jar "clients:utility:clients-$SLEEPER_VERSION-utility.jar" "$@"
 
-set +x
-java -cp "$JARS_DIR/clients-$SLEEPER_VERSION-utility.jar" \
+JARS_LIST=$(java -cp "$JARS_DIR/clients-$SLEEPER_VERSION-utility.jar" \
     --add-opens java.base/java.nio=ALL-UNNAMED \
-    sleeper.clients.deploy.jar.ListJars --exclude-clients-jar \
-    | while read -r line
+    sleeper.clients.deploy.jar.ListJars --exclude-clients-jar)
+echo "$JARS_LIST" | while read -r line
 do
     get_jar $line "$@"
 done
