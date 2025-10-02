@@ -59,8 +59,6 @@ public class LoggingStack extends NestedStack {
         // Accessed directly by getter on this class
         VPC_CHECK("vpc-check"),
         VPC_CHECK_PROVIDER("vpc-check-provider"),
-        CONFIG_AUTODELETE("config-autodelete"),
-        CONFIG_AUTODELETE_PROVIDER("config-autodelete-provider"),
         STATESTORE_COMMITTER("statestore-committer"),
 
         // Accessed via CoreStacks getters
