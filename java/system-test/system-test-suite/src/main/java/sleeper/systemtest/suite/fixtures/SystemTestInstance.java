@@ -89,6 +89,7 @@ public class SystemTestInstance {
     }
 
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::createMainConfiguration);
+    public static final SystemTestInstanceConfiguration MAIN2 = usingSystemTestDefaults("main2", SystemTestInstance::createMainConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionPerformanceOnDataFusionConfiguration);
