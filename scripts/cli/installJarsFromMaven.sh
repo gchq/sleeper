@@ -29,7 +29,7 @@ get_jar() {
     fi
 }
 
-get_jar "clients:utility:clients-$SLEEPER_VERSION-utility.jar"
+get_jar "clients:utility:clients-$SLEEPER_VERSION-utility.jar" "$@"
 
 set +x
 java -cp "$JARS_DIR/clients-$SLEEPER_VERSION-utility.jar" \
