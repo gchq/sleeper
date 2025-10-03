@@ -66,7 +66,7 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
         String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
         String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                loginDockerCommand(),
+                dockerLoginToEcrCommand(),
                 buildImageCommandWithArgs("-t", expectedTag1, lambdaImageDir.toString()),
                 pushImageCommand(expectedTag1),
                 buildImageCommandWithArgs("-t", expectedTag2, lambdaImageDir.toString()),

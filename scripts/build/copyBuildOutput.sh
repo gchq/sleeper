@@ -22,6 +22,7 @@ SCRIPTS_DIR="$BASE_DIR/scripts"
 JARS_DIR="$SCRIPTS_DIR/jars"
 DOCKER_DIR="$SCRIPTS_DIR/docker"
 VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
+DEPLOY_CONFIG_FILE="$SCRIPTS_DIR/templates/deployConfig.json"
 
 pushd "$MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
@@ -35,3 +36,9 @@ cp  "$SCRIPTS_DISTRIBUTION_DIR/jars"/* "$JARS_DIR"
 cp -r "$SCRIPTS_DISTRIBUTION_DIR/docker"/* "$DOCKER_DIR"
 cp  "$SCRIPTS_DISTRIBUTION_DIR/templates/version.txt" "$VERSION_FILE"
 popd
+
+{
+    echo "{"
+    echo "  \"dockerImageLocation\": \"localBuild\""
+    echo "}"
+} > "$DEPLOY_CONFIG_FILE"

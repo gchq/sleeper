@@ -54,7 +54,7 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
 
     protected abstract UploadDockerImagesToEcr uploader();
 
-    protected CommandPipeline loginDockerCommand() {
+    protected CommandPipeline dockerLoginToEcrCommand() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",
                         "123.dkr.ecr.test-region.amazonaws.com"));
@@ -62,7 +62,7 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
 
     protected List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {
         List<CommandPipeline> commands = new ArrayList<>();
-        commands.add(loginDockerCommand());
+        commands.add(dockerLoginToEcrCommand());
         for (String image : images) {
             String tag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/" + image + ":1.0.0";
             commands.add(buildImageCommand(tag, "./docker/" + image));

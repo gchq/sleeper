@@ -110,6 +110,14 @@ public class DockerImagesTestBase {
         return pipeline(command(fullArgs.toArray(String[]::new)));
     }
 
+    protected CommandPipeline pullImageCommand(String tag) {
+        return pipeline(command("docker", "pull", tag));
+    }
+
+    protected CommandPipeline tagImageCommand(String sourceTag, String targetTag) {
+        return pipeline(command("docker", "tag", sourceTag, targetTag));
+    }
+
     protected CommandPipeline pushImageCommand(String tag) {
         return pipeline(command("docker", "push", tag));
     }
