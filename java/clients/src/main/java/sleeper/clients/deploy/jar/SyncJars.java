@@ -23,63 +23,50 @@ import software.amazon.awssdk.services.s3.model.BucketLocationConstraint;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
-import sleeper.core.properties.instance.InstanceProperties;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
-import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.clients.util.BucketUtils.doesBucketExist;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);
     private final S3Client s3;
     private final Path jarsDirectory;
-    private final String bucketName;
-    private final String region;
-    private final Predicate<Path> uploadFilter;
-    private final boolean deleteOldJars;
 
-    private SyncJars(Builder builder) {
-        s3 = requireNonNull(builder.s3, "s3 must not be null");
-        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
-        bucketName = requireNonEmpty(builder.bucketName, "bucketName must not be null");
-        region = requireNonEmpty(builder.region, "region must not be null");
-        uploadFilter = requireNonEmpty(builder.uploadFilter, "uploadFilter must not be null");
-        deleteOldJars = builder.deleteOldJars;
-    }
-
-    public static Builder builder() {
-        return new Builder();
+    public SyncJars(S3Client s3, Path jarsDirectory) {
+        this.s3 = requireNonNull(s3, "s3 must not be null");
+        this.jarsDirectory = requireNonNull(jarsDirectory, "jarsDirectory must not be null");
     }
 
     public static void main(String[] args) throws IOException {
         if (args.length < 3 || args.length > 4) {
             throw new IllegalArgumentException("Usage: <jars-dir> <bucket-name> <region> <optional-delete-old-jars>");
         }
+        Path jarsDirectory = Path.of(args[0]);
+        String bucketName = args[1];
+        String region = args[2];
+        boolean deleteOldJars = optionalArgument(args, 3)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
         try (S3Client s3 = S3Client.create()) {
-            builder().jarsDirectory(Path.of(args[0]))
-                    .bucketName(args[1])
-                    .region(args[2])
-                    .s3(s3)
-                    .deleteOldJars(optionalArgument(args, 3)
-                            .map(Boolean::parseBoolean)
-                            .orElse(false))
-                    .build().sync();
+            new SyncJars(s3, jarsDirectory)
+                    .sync(SyncJarsRequest.builder()
+                            .bucketName(bucketName)
+                            .region(region)
+                            .deleteOldJars(deleteOldJars)
+                            .build());
         }
     }
 
-    public boolean sync() throws IOException {
+    public boolean sync(SyncJarsRequest request) throws IOException {
+        String bucketName = request.getBucketName();
         // Note that LocalStack doesn't fail bucket creation if it already exists, but the AWS API does.
         boolean changed = false;
         if (!doesBucketExist(s3, bucketName)) {
@@ -90,7 +77,7 @@ public class SyncJars {
                     .bucket(bucketName)
                     .acl(BucketCannedACL.PRIVATE)
                     .createBucketConfiguration(configBuilder -> configBuilder
-                            .locationConstraint(bucketLocationConstraint())));
+                            .locationConstraint(bucketLocationConstraint(request.getRegion()))));
             s3.putPublicAccessBlock(builder -> builder
                     .bucket(bucketName)
                     .publicAccessBlockConfiguration(configBuilder -> configBuilder
@@ -115,11 +102,11 @@ public class SyncJars {
         JarsDiff diff = JarsDiff.from(jarsDirectory, jars,
                 s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)));
         Collection<Path> uploadJars = diff.getModifiedAndNew().stream()
-                .filter(uploadFilter)
+                .filter(request.getUploadFilter())
                 .collect(Collectors.toUnmodifiableList());
         Collection<String> deleteKeys = diff.getS3KeysToDelete();
 
-        if (deleteOldJars && !deleteKeys.isEmpty()) {
+        if (request.isDeleteOldJars() && !deleteKeys.isEmpty()) {
             LOGGER.info("Deleting {} jars from bucket", deleteKeys.size());
             s3.deleteObjects(builder -> builder
                     .bucket(bucketName)
@@ -151,64 +138,13 @@ public class SyncJars {
         }
     }
 
-    private BucketLocationConstraint bucketLocationConstraint() {
+    private static BucketLocationConstraint bucketLocationConstraint(String region) {
         // The us-east-1 region is returned as UNKNOWN_TO_SDK_VERSION, which incorrectly serialises as a string "null".
         BucketLocationConstraint constraint = BucketLocationConstraint.fromValue(region);
         if (constraint == BucketLocationConstraint.UNKNOWN_TO_SDK_VERSION) {
             return null;
         } else {
             return constraint;
-        }
-    }
-
-    public static final class Builder {
-        private S3Client s3;
-        private Path jarsDirectory;
-        private String bucketName;
-        private String region;
-        private Predicate<Path> uploadFilter = jar -> true;
-        private boolean deleteOldJars = false;
-
-        private Builder() {
-        }
-
-        public Builder s3(S3Client s3) {
-            this.s3 = s3;
-            return this;
-        }
-
-        public Builder jarsDirectory(Path jarsDirectory) {
-            this.jarsDirectory = jarsDirectory;
-            return this;
-        }
-
-        public Builder bucketName(String bucketName) {
-            this.bucketName = bucketName;
-            return this;
-        }
-
-        public Builder region(String region) {
-            this.region = region;
-            return this;
-        }
-
-        public Builder uploadFilter(Predicate<Path> uploadFilter) {
-            this.uploadFilter = uploadFilter;
-            return this;
-        }
-
-        public Builder deleteOldJars(boolean deleteOldJars) {
-            this.deleteOldJars = deleteOldJars;
-            return this;
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            return bucketName(instanceProperties.get(JARS_BUCKET))
-                    .region(instanceProperties.get(REGION));
-        }
-
-        public SyncJars build() {
-            return new SyncJars(this);
         }
     }
 }

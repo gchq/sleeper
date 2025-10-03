@@ -27,6 +27,7 @@ import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
+import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.CdkDeploy;
@@ -108,10 +109,7 @@ public class DeployExistingInstance {
         ClientUtils.clearDirectory(generatedDirectory);
         SaveLocalProperties.saveToDirectory(generatedDirectory, properties, tablePropertiesList.stream());
 
-        SyncJars.builder().s3(s3)
-                .jarsDirectory(jarsDirectory).instanceProperties(properties)
-                .deleteOldJars(false)
-                .build().sync();
+        new SyncJars(s3, jarsDirectory).sync(SyncJarsRequest.from(properties));
 
         UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()

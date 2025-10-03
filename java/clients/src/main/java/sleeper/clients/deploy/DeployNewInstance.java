@@ -30,6 +30,7 @@ import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
+import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.table.AddTable;
 import sleeper.clients.util.ClientUtils;
@@ -134,9 +135,7 @@ public class DeployNewInstance {
         LOGGER.info("deployPaused: {}", deployPaused);
         validate(instanceProperties, deployInstanceConfiguration.getTableProperties());
 
-        SyncJars.builder().s3(s3Client)
-                .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
-                .deleteOldJars(false).build().sync();
+        new SyncJars(s3Client, jarsDirectory).sync(SyncJarsRequest.from(instanceProperties));
         UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
                         .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
