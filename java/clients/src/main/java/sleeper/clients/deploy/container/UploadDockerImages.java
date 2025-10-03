@@ -72,7 +72,9 @@ public class UploadDockerImages {
             callbacks.beforeAll();
         }
 
-        if (createMultiplatformBuilder && imagesToUpload.stream().anyMatch(StackDockerImage::isMultiplatform)) {
+        if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
+                && createMultiplatformBuilder
+                && imagesToUpload.stream().anyMatch(StackDockerImage::isMultiplatform)) {
             commandRunner.run("docker", "buildx", "rm", "sleeper");
             commandRunner.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
         }

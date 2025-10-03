@@ -16,6 +16,7 @@
 
 package sleeper.clients.deploy.container;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -543,15 +544,15 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     @DisplayName("Pull images from repository")
     class PullImages {
 
-        // - Pull an image from repository
-        // - For multiplatform build, no builder is created
-        // - For a lambda image, no file is copied
+        @BeforeEach
+        void setUp() {
+            deployConfig = DeployConfiguration.fromDockerRepository("www.test-repo.com/prefix");
+        }
 
         @Test
         void shouldPullImageFromRepository() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            deployConfig = DeployConfiguration.fromDockerRepository("www.test-repo.com/prefix");
 
             // When
             uploadForDeployment(dockerDeploymentImageConfig());
@@ -566,6 +567,50 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     pushImageCommand(ecrTag));
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest");
+        }
+
+        @Test
+        void shouldNotCreateBuilderForMultiplatformImage() throws Exception {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+
+            // When
+            uploadForDeployment(dockerDeploymentImageConfig());
+
+            // Then
+            String sourceTag = "www.test-repo.com/prefix/compaction:1.0.0";
+            String ecrTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/compaction:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    pullImageCommand(sourceTag),
+                    tagImageCommand(sourceTag, ecrTag),
+                    pushImageCommand(ecrTag));
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/compaction");
+        }
+
+        @Test
+        void shouldNotCopyFileForLambdaImage() throws Exception {
+            // Given
+            properties.setList(OPTIONAL_STACKS, List.of());
+            properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
+            files.put(Path.of("./jars/statestore.jar"), "statestore-jar-content");
+
+            // When
+            uploadForDeployment(lambdaImageConfig());
+
+            // Then
+            String sourceTag = "www.test-repo.com/prefix/statestore-lambda:1.0.0";
+            String ecrTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    pullImageCommand(sourceTag),
+                    tagImageCommand(sourceTag, ecrTag),
+                    pushImageCommand(ecrTag));
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/statestore-lambda");
+            assertThat(files).isEqualTo(Map.of(
+                    Path.of("./jars/statestore.jar"), "statestore-jar-content"));
         }
     }
 
