@@ -90,7 +90,10 @@ public class UploadDockerImages {
                 } else {
                     throw new IllegalArgumentException("Unrecognised Docker image location: " + deployConfig.dockerImageLocation());
                 }
-            } catch (RuntimeException | IOException | InterruptedException e) {
+            } catch (RuntimeException e) {
+                callbacks.onFail(image, e);
+                throw e;
+            } catch (Exception e) {
                 callbacks.onFail(image, e);
                 throw e;
             }
