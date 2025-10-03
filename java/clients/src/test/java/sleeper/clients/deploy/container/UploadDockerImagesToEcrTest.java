@@ -457,7 +457,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         }
 
         @Test
-        void shouldDeleteRepositoryWhenDockerBuildFails() {
+        void shouldFailWhenDockerBuildFails() {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
             CommandPipeline buildImageCommand = buildImageCommand(
@@ -473,6 +473,96 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                         assertThat(e.getExitCode()).isEqualTo(42);
                     });
             assertThat(commandsThatRan).containsExactly(dockerLoginToEcrCommand(), buildImageCommand);
+            assertThat(ecrClient.getRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldFailWhenDockerPullFails() {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
+            deployConfig = DeployConfiguration.fromDockerRepository("www.test-repo.com/prefix");
+            CommandPipeline pullCommand = pullImageCommand("www.test-repo.com/prefix/ingest:1.0.0");
+            setReturnExitCodeForCommand(123, pullCommand);
+            DockerImageConfiguration imageConfig = dockerDeploymentImageConfig();
+
+            // When / Then
+            assertThatThrownBy(() -> uploadForDeployment(imageConfig))
+                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                        assertThat(e.getCommand()).isEqualTo(pullCommand);
+                        assertThat(e.getExitCode()).isEqualTo(123);
+                    });
+            assertThat(commandsThatRan).containsExactly(dockerLoginToEcrCommand(), pullCommand);
+            assertThat(ecrClient.getRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldFailWhenDockerTagFails() {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
+            deployConfig = DeployConfiguration.fromDockerRepository("www.test-repo.com/prefix");
+            String sourceTag = "www.test-repo.com/prefix/ingest:1.0.0";
+            String ecrTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            CommandPipeline tagCommand = tagImageCommand(sourceTag, ecrTag);
+            setReturnExitCodeForCommand(123, tagCommand);
+            DockerImageConfiguration imageConfig = dockerDeploymentImageConfig();
+
+            // When / Then
+            assertThatThrownBy(() -> uploadForDeployment(imageConfig))
+                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                        assertThat(e.getCommand()).isEqualTo(tagCommand);
+                        assertThat(e.getExitCode()).isEqualTo(123);
+                    });
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    pullImageCommand(sourceTag),
+                    tagCommand);
+            assertThat(ecrClient.getRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldFailWhenDockerPushFailsAfterPull() {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
+            deployConfig = DeployConfiguration.fromDockerRepository("www.test-repo.com/prefix");
+            String sourceTag = "www.test-repo.com/prefix/ingest:1.0.0";
+            String ecrTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            CommandPipeline pushCommand = pushImageCommand(ecrTag);
+            setReturnExitCodeForCommand(123, pushCommand);
+            DockerImageConfiguration imageConfig = dockerDeploymentImageConfig();
+
+            // When / Then
+            assertThatThrownBy(() -> uploadForDeployment(imageConfig))
+                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                        assertThat(e.getCommand()).isEqualTo(pushCommand);
+                        assertThat(e.getExitCode()).isEqualTo(123);
+                    });
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    pullImageCommand(sourceTag),
+                    tagImageCommand(sourceTag, ecrTag),
+                    pushCommand);
+            assertThat(ecrClient.getRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldFailWhenDockerPushFailsAfterBuild() {
+            // Given
+            properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
+            String ecrTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            CommandPipeline pushCommand = pushImageCommand(ecrTag);
+            setReturnExitCodeForCommand(123, pushCommand);
+            DockerImageConfiguration imageConfig = dockerDeploymentImageConfig();
+
+            // When / Then
+            assertThatThrownBy(() -> uploadForDeployment(imageConfig))
+                    .isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                        assertThat(e.getCommand()).isEqualTo(pushCommand);
+                        assertThat(e.getExitCode()).isEqualTo(123);
+                    });
+            assertThat(commandsThatRan).containsExactly(
+                    dockerLoginToEcrCommand(),
+                    buildImageCommand(ecrTag, "./docker/ingest"),
+                    pushCommand);
             assertThat(ecrClient.getRepositories()).isEmpty();
         }
     }
