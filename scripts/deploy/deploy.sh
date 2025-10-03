@@ -16,8 +16,8 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <instance-properties-path> <optional-paused-true-or-false>"
+if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
+  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <instance-properties-file> <optional-paused-true-or-false>"
   exit 1
 fi
 

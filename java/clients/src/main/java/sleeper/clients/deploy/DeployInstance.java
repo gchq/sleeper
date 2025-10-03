@@ -17,8 +17,11 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
@@ -26,6 +29,7 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
+import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -58,18 +62,32 @@ public class DeployInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-properties-path> <optional-paused-true-or-false>");
+        if (args.length < 5 || args.length > 6) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> <instance-properties-file> <optional-paused-true-or-false>");
         }
 
         Path scriptsDirectory = Path.of(args[0]);
+        String instanceId = args[1];
+        String vpcId = args[2];
+        String subnetIds = args[3];
         Path propertiesFile = Path.of(args[1]);
         boolean deployPaused = optionalArgument(args, 2)
                 .map(Boolean::parseBoolean)
                 .orElse(false);
 
+        AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         try (S3Client s3Client = S3Client.create();
-                EcrClient ecrClient = EcrClient.create()) {
+                EcrClient ecrClient = EcrClient.create();
+                StsClient stsClient = StsClient.create()) {
+
+            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+            PopulateInstancePropertiesAws.builder(stsClient, regionProvider)
+                    .instanceId(instanceId)
+                    .vpcId(vpcId)
+                    .subnetIds(subnetIds)
+                    .build().populate(instanceConfiguration.getInstanceProperties());
+            instanceConfiguration.validate();
+
             DeployInstance deployInstance = new DeployInstance(
                     SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                     new UploadDockerImagesToEcr(
