@@ -17,6 +17,7 @@ package sleeper.clients.util.cdk;
 
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
+import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
@@ -99,10 +100,15 @@ public class InvokeCdkForInstance {
     public static final class Builder {
         private Path propertiesFile;
         private Path jarsDirectory;
-        private String version;
+        private String version = SleeperVersion.getVersion();
         private CommandRunner runCommand = CommandUtils::runCommandInheritIO;
 
         private Builder() {
+        }
+
+        public Builder scriptsDirectory(Path scriptsDirectory) {
+            return propertiesFile(scriptsDirectory.resolve("generated").resolve("instance.properties"))
+                    .jarsDirectory(scriptsDirectory.resolve("jars"));
         }
 
         public Builder propertiesFile(Path propertiesFile) {

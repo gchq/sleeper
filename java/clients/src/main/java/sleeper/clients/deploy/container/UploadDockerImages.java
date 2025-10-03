@@ -34,20 +34,20 @@ import static java.util.Objects.requireNonNull;
 
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
+    private final Path baseDockerDirectory;
+    private final Path jarsDirectory;
     private final DeployConfiguration deployConfig;
     private final CommandPipelineRunner commandRunner;
     private final CopyFile copyFile;
-    private final Path baseDockerDirectory;
-    private final Path jarsDirectory;
     private final String version;
     private final boolean createMultiplatformBuilder;
 
     private UploadDockerImages(Builder builder) {
+        baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
+        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         deployConfig = requireNonNull(builder.deployConfig, "deployConfig must not be null");
         commandRunner = requireNonNull(builder.commandRunner, "commandRunner must not be null");
         copyFile = requireNonNull(builder.copyFile, "copyFile must not be null");
-        baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
-        jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         createMultiplatformBuilder = builder.createMultiplatformBuilder;
     }
@@ -136,15 +136,30 @@ public class UploadDockerImages {
     }
 
     public static final class Builder {
+        private Path baseDockerDirectory;
+        private Path jarsDirectory;
         private DeployConfiguration deployConfig = DeployConfiguration.fromLocalBuild();
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-        private Path baseDockerDirectory;
-        private Path jarsDirectory;
         private String version = SleeperVersion.getVersion();
         private boolean createMultiplatformBuilder = true;
 
         private Builder() {
+        }
+
+        public Builder scriptsDirectory(Path scriptsDirectory) {
+            return baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                    .jarsDirectory(scriptsDirectory.resolve("jars"));
+        }
+
+        public Builder baseDockerDirectory(Path baseDockerDirectory) {
+            this.baseDockerDirectory = baseDockerDirectory;
+            return this;
+        }
+
+        public Builder jarsDirectory(Path jarsDirectory) {
+            this.jarsDirectory = jarsDirectory;
+            return this;
         }
 
         public Builder deployConfig(DeployConfiguration deployConfig) {
@@ -159,16 +174,6 @@ public class UploadDockerImages {
 
         public Builder copyFile(CopyFile copyFile) {
             this.copyFile = copyFile;
-            return this;
-        }
-
-        public Builder baseDockerDirectory(Path baseDockerDirectory) {
-            this.baseDockerDirectory = baseDockerDirectory;
-            return this;
-        }
-
-        public Builder jarsDirectory(Path jarsDirectory) {
-            this.jarsDirectory = jarsDirectory;
             return this;
         }
 

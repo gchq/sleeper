@@ -45,6 +45,10 @@ public class SyncJars {
         this.jarsDirectory = requireNonNull(jarsDirectory, "jarsDirectory must not be null");
     }
 
+    public static SyncJars fromScriptsDirectory(S3Client s3, Path scriptsDirectory) {
+        return new SyncJars(s3, scriptsDirectory.resolve("jars"));
+    }
+
     public static void main(String[] args) throws IOException {
         if (args.length < 3 || args.length > 4) {
             throw new IllegalArgumentException("Usage: <jars-dir> <bucket-name> <region> <optional-delete-old-jars>");
