@@ -94,9 +94,9 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                     .propertiesFile(propertiesFile)
                     .jarsDirectory(parameters.getJarsDirectory())
                     .version(SleeperVersion.getVersion())
+                    .runCommand(CommandUtils::runCommandLogOutput)
                     .build().invoke(SYSTEM_TEST_STANDALONE,
-                            CdkCommand.deploySystemTestStandalone(),
-                            CommandUtils::runCommandLogOutput);
+                            CdkCommand.deploySystemTestStandalone());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

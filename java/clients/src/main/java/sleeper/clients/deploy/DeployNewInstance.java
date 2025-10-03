@@ -159,7 +159,8 @@ public class DeployNewInstance {
         InvokeCdkForInstance.builder()
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
-                .build().invoke(instanceType, cdkCommand, runCommand);
+                .runCommand(runCommand)
+                .build().invoke(instanceType, cdkCommand);
         instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());

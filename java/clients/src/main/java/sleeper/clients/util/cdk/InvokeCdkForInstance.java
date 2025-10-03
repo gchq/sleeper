@@ -63,10 +63,6 @@ public class InvokeCdkForInstance {
         invoke(inferType(instanceProperties), cdkCommand);
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand, CommandRunner runCommand) throws IOException, InterruptedException {
-        invoke(inferType(instanceProperties), cdkCommand, runCommand);
-    }
-
     private static Type inferType(InstanceProperties instanceProperties) {
         if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
             return Type.SYSTEM_TEST;
@@ -76,10 +72,6 @@ public class InvokeCdkForInstance {
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(instanceType, cdkCommand, runCommand);
-    }
-
-    public void invoke(Type instanceType, CdkCommand cdkCommand, CommandRunner runCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
