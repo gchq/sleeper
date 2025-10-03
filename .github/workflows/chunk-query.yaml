@@ -13,6 +13,7 @@ on:
       - 'java/query/query-runner/**'
       - 'java/query/query-lambda/**'
       - 'java/query/query-datafusion/**'
+      - 'java/foreign-bridge/**'
       - 'java/athena/**'
       - 'java/trino/**'
       - 'java/partitions/splitter/**'

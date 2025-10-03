@@ -43,8 +43,8 @@ async fn should_return_subset_results_with_query_subset_of_partition() -> Result
     let query_config = LeafPartitionQueryConfig {
         common: input,
         explain_plans: false,
-        write_quantile_sketch: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 2, 4))],
+        requested_value_fields: None,
     };
 
     // When
@@ -84,8 +84,8 @@ async fn should_return_subset_results_with_query_subset_of_partition_unsorted_in
     let query_config = LeafPartitionQueryConfig {
         common: input,
         explain_plans: false,
-        write_quantile_sketch: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 2, 6))],
+        requested_value_fields: None,
     };
 
     // When
@@ -125,8 +125,8 @@ async fn should_return_subset_results_with_overlapping_query_and_partition_range
     let query_config = LeafPartitionQueryConfig {
         common: input,
         explain_plans: false,
-        write_quantile_sketch: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 2, 9))],
+        requested_value_fields: None,
     };
 
     // When
@@ -166,8 +166,8 @@ async fn should_return_zero_results_with_non_overlapping_query_and_partition_ran
     let query_config = LeafPartitionQueryConfig {
         common: input,
         explain_plans: false,
-        write_quantile_sketch: false,
         ranges: vec![SleeperRegion::new(single_int_range("key", 6, 9))],
+        requested_value_fields: None,
     };
 
     // When
@@ -206,11 +206,11 @@ async fn should_return_results_from_two_overlapping_query_ranges() -> Result<(),
     let query_config = LeafPartitionQueryConfig {
         common: input,
         explain_plans: false,
-        write_quantile_sketch: false,
         ranges: vec![
             SleeperRegion::new(single_int_range("key", 2, 6)),
             SleeperRegion::new(single_int_range("key", 4, 9)),
         ],
+        requested_value_fields: None,
     };
 
     // When
@@ -249,11 +249,11 @@ async fn should_return_results_from_two_non_overlapping_query_ranges() -> Result
     let query_config = LeafPartitionQueryConfig {
         common: input,
         explain_plans: false,
-        write_quantile_sketch: false,
         ranges: vec![
             SleeperRegion::new(single_int_range("key", 2, 5)),
             SleeperRegion::new(single_int_range("key", 7, 9)),
         ],
+        requested_value_fields: None,
     };
 
     // When
@@ -292,8 +292,8 @@ async fn should_error_with_no_query_ranges() -> Result<(), Error> {
     let query_config = LeafPartitionQueryConfig {
         common: input,
         explain_plans: false,
-        write_quantile_sketch: false,
         ranges: vec![],
+        requested_value_fields: None,
     };
 
     // Then
@@ -304,41 +304,6 @@ async fn should_error_with_no_query_ranges() -> Result<(), Error> {
     assert_eq!(
         format!("{result}"),
         "Error during planning: No query regions specified"
-    );
-    Ok(())
-}
-
-#[tokio::test]
-async fn should_error_when_arrow_output_with_sketches() -> Result<(), Error> {
-    // Given
-    let dir = tempdir()?;
-    let file_1 = file(&dir, "file1.parquet");
-
-    write_file_of_ints(&file_1, "key", vec![1])?;
-
-    let input = CommonConfigBuilder::new()
-        .input_files(vec![file_1])
-        .input_files_sorted(true)
-        .row_key_cols(col_names(["key"]))
-        .region(SleeperRegion::new(single_int_range("key", 0, 3)))
-        .output(OutputType::ArrowRecordBatch)
-        .build()?;
-
-    let query_config = LeafPartitionQueryConfig {
-        common: input,
-        explain_plans: false,
-        write_quantile_sketch: true,
-        ranges: vec![SleeperRegion::new(single_int_range("key", 2, 5))],
-    };
-
-    // Then
-    let Err(result) = run_query(&query_config).await else {
-        bail!("Expected an error type here");
-    };
-
-    assert_eq!(
-        format!("{result}"),
-        "Error during planning: Quantile sketch output cannot be enabled if file output not selected"
     );
     Ok(())
 }
@@ -362,6 +327,7 @@ async fn should_return_results_as_file_with_sketch() -> Result<(), Error> {
         .region(SleeperRegion::new(single_int_range("key", 0, 6)))
         .output(OutputType::File {
             output_file: output.clone(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         })
         .build()?;
@@ -369,8 +335,8 @@ async fn should_return_results_as_file_with_sketch() -> Result<(), Error> {
     let query_config = LeafPartitionQueryConfig {
         common: input,
         explain_plans: false,
-        write_quantile_sketch: true,
         ranges: vec![SleeperRegion::new(single_int_range("key", 1, 5))],
+        requested_value_fields: None,
     };
 
     // When
@@ -385,5 +351,51 @@ async fn should_return_results_as_file_with_sketch() -> Result<(), Error> {
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
     assert_eq!([row_counts.rows_read, row_counts.rows_written], [4, 4]);
     assert_eq!(read_sketch_min_max_ints(&sketches).await?, [1, 4]);
+    Ok(())
+}
+
+#[tokio::test]
+async fn should_return_results_as_file_without_sketch() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let file_2 = file(&dir, "file2.parquet");
+    let output = file(&dir, "output.parquet");
+    let sketches = file(&dir, "output.sketches");
+
+    write_file_of_ints(&file_1, "key", vec![1, 3, 5, 7, 9])?;
+    write_file_of_ints(&file_2, "key", vec![2, 4, 6, 8, 10])?;
+
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1, file_2])
+        .input_files_sorted(true)
+        .row_key_cols(col_names(["key"]))
+        .region(SleeperRegion::new(single_int_range("key", 0, 6)))
+        .output(OutputType::File {
+            output_file: output.clone(),
+            write_sketch_file: false,
+            opts: SleeperParquetOptions::default(),
+        })
+        .build()?;
+
+    let query_config = LeafPartitionQueryConfig {
+        common: input,
+        explain_plans: false,
+        ranges: vec![SleeperRegion::new(single_int_range("key", 1, 5))],
+        requested_value_fields: None,
+    };
+
+    // When
+    let result = run_query(&query_config).await?;
+
+    // Then
+    let CompletedOutput::File(row_counts) = result else {
+        bail!("Expected file output");
+    };
+
+    // Then
+    assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
+    assert_eq!([row_counts.rows_read, row_counts.rows_written], [4, 4]);
+    assert!(!sketches.to_file_path().unwrap().exists());
     Ok(())
 }

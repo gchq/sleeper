@@ -27,10 +27,10 @@ import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.MergingIterator;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
+import sleeper.core.rowbatch.RowBatch;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
-import sleeper.ingest.runner.impl.rowbatch.RowBatch;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 

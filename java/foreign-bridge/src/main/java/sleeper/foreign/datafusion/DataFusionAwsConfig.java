@@ -19,6 +19,7 @@ package sleeper.foreign.datafusion;
  * AWS configuration overrides to pass to Rust DataFusion code.
  */
 public class DataFusionAwsConfig {
+
     private final String region;
     private final String endpoint;
     private final String accessKey;

@@ -28,11 +28,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
@@ -43,7 +38,6 @@ import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
@@ -57,7 +51,6 @@ import static sleeper.core.properties.table.TableProperty.STATISTICS_TRUNCATE_LE
 @SuppressFBWarnings("UUF_UNUSED_FIELD")
 public class DataFusionCompactionRunner implements CompactionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionCompactionRunner.class);
-
     /** Maximum number of rows in a Parquet row group. */
     public static final long DATAFUSION_MAX_ROW_GROUP_ROWS = 1_000_000;
 
@@ -109,24 +102,18 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @param  runtime         FFI runtime
      * @return                 object to pass to FFI layer
      */
-    @SuppressWarnings(value = "checkstyle:avoidNestedBlocks")
     private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
         Schema schema = tableProperties.getSchema();
-        FFICommonConfig params = new FFICommonConfig(runtime);
-        if (awsConfig != null) {
-            params.override_aws_config.set(true);
-            params.aws_config.set(awsConfig.toFfi(runtime));
-        } else {
-            params.override_aws_config.set(false);
-        }
-        params.input_files.populate(job.getInputFiles().toArray(new String[0]), false);
+        FFICommonConfig params = new FFICommonConfig(runtime, awsConfig);
+        params.input_files.populate(job.getInputFiles().toArray(String[]::new), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
         params.output_file.set(job.getOutputFile());
-        params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(new String[0]), false);
-        params.row_key_schema.populate(getKeyTypes(schema.getRowKeyTypes()), false);
-        params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(new String[0]), false);
+        params.write_sketch_file.set(true);
+        params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);
+        params.row_key_schema.populate(FFICommonConfig.getKeyTypes(schema.getRowKeyTypes()), false);
+        params.sort_key_cols.populate(schema.getSortKeyFieldNames().toArray(String[]::new), false);
         params.max_row_group_size.set(DATAFUSION_MAX_ROW_GROUP_ROWS);
         params.max_page_size.set(tableProperties.getInt(PAGE_SIZE));
         params.compression.set(tableProperties.get(COMPRESSION_CODEC));
@@ -142,31 +129,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.validate();
 
         return params;
-    }
-
-    /**
-     * Convert a list of Sleeper primitive types to a number indicating their type
-     * for FFI translation.
-     *
-     * @param  keyTypes              list of primitive types of columns
-     * @return                       array of type IDs
-     * @throws IllegalStateException if unsupported type found
-     */
-    public static Integer[] getKeyTypes(List<PrimitiveType> keyTypes) {
-        return keyTypes.stream().mapToInt(type -> {
-            if (type instanceof IntType) {
-                return 1;
-            } else if (type instanceof LongType) {
-                return 2;
-            } else if (type instanceof StringType) {
-                return 3;
-            } else if (type instanceof ByteArrayType) {
-                return 4;
-            } else {
-                throw new IllegalStateException("Unsupported column type found " + type.getClass());
-            }
-        }).boxed()
-                .toArray(Integer[]::new);
     }
 
     /**

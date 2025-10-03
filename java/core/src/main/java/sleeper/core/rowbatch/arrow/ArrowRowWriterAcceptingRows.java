@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.rowbatch.arrow;
+package sleeper.core.rowbatch.arrow;
 
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
@@ -42,8 +42,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatch.MAP_KEY_FIELD_NAME;
-import static sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatch.MAP_VALUE_FIELD_NAME;
+import static sleeper.core.rowbatch.arrow.ArrowRowBatch.MAP_KEY_FIELD_NAME;
+import static sleeper.core.rowbatch.arrow.ArrowRowBatch.MAP_VALUE_FIELD_NAME;
 
 /**
  * Accepts data for an Arrow row batch as Sleeper rows. Used by {@link ArrowRowBatch}.

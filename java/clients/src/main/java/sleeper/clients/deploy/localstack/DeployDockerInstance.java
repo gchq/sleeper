@@ -91,13 +91,12 @@ public class DeployDockerInstance {
             DeployDockerInstance.builder()
                     .s3Client(s3Client)
                     .dynamoClient(dynamoClient).sqsClient(sqsClient).build()
-                    .deploy(instanceId);
+                    .deploy(new InstanceProperties(), instanceId);
         }
     }
 
-    public void deploy(String instanceId) {
-        InstanceProperties instanceProperties = PopulateInstanceProperties.populateDefaultsFromInstanceId(
-                new InstanceProperties(), instanceId);
+    public void deploy(InstanceProperties instanceProperties, String instanceId) {
+        PopulateInstanceProperties.populateDefaultsFromInstanceId(instanceProperties, instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
         extraTableProperties.accept(tableProperties);
         deploy(instanceProperties, List.of(tableProperties));

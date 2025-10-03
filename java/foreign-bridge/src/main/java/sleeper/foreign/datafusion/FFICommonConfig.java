@@ -18,9 +18,15 @@ package sleeper.foreign.datafusion;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jnr.ffi.Struct;
 
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.schema.type.StringType;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIArray;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -30,10 +36,10 @@ import java.util.Objects;
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
  * the fields must match exactly.
  */
-@SuppressWarnings(value = {"checkstyle:membername"})
-@SuppressFBWarnings(value = {"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+@SuppressWarnings("checkstyle:membername")
+@SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public class FFICommonConfig extends Struct {
-    /** Optional AWS configuration. */
+    /** Specifies AWS default configuration been overriden. */
     public final Struct.Boolean override_aws_config = new Struct.Boolean();
     /** Optional AWS configuration. */
     public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
@@ -43,6 +49,8 @@ public class FFICommonConfig extends Struct {
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
     /** Output file name. */
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
+    /** Specifies if sketch output is enabled. Can only be used with file output. */
+    public final Struct.Boolean write_sketch_file = new Struct.Boolean();
     /** Names of Sleeper row key columns from schema. */
     public final FFIArray<java.lang.String> row_key_cols = new FFIArray<>(this);
     /** Types for region schema 1 = Int, 2 = Long, 3 = String, 4 = Byte array. */
@@ -75,7 +83,22 @@ public class FFICommonConfig extends Struct {
     public final Struct.UTF8StringRef filtering_config = new Struct.UTF8StringRef();
 
     public FFICommonConfig(jnr.ffi.Runtime runtime) {
+        this(runtime, null);
+    }
+
+    public FFICommonConfig(jnr.ffi.Runtime runtime, DataFusionAwsConfig awsConfig) {
         super(runtime);
+        if (awsConfig != null) {
+            this.override_aws_config.set(true);
+            this.aws_config.set(awsConfig.toFfi(runtime));
+        } else {
+            this.override_aws_config.set(false);
+        }
+        // Set to sensible defaults all members that don't have them.
+        // Primitives will all default to false/zero, FFIArrays also have safe defaults.
+        output_file.set("");
+        compression.set("");
+        writer_version.set("");
     }
 
     /**
@@ -97,5 +120,33 @@ public class FFICommonConfig extends Struct {
         Objects.requireNonNull(compression.get(), "Parquet compression codec is null");
         Objects.requireNonNull(aggregation_config.get(), "Aggregation configuration is null");
         Objects.requireNonNull(filtering_config.get(), "Filtering configuration is null");
+    }
+
+    /**
+     * Convert a list of Sleeper primitive types to an ordinal indicating their type
+     * for FFI translation.
+     *
+     * @param  keyTypes              list of primitive types of columns
+     * @return                       array of type IDs
+     * @throws IllegalStateException if unsupported type found
+     */
+    public static Integer[] getKeyTypes(List<PrimitiveType> keyTypes) {
+        /*
+         * IMPORTANT: These must match the ordinals defined in rust/sleeper_df/src/objects.rs
+         */
+        return keyTypes.stream().mapToInt(type -> {
+            if (type instanceof IntType) {
+                return 1;
+            } else if (type instanceof LongType) {
+                return 2;
+            } else if (type instanceof StringType) {
+                return 3;
+            } else if (type instanceof ByteArrayType) {
+                return 4;
+            } else {
+                throw new IllegalStateException("Unsupported column type found " + type.getClass());
+            }
+        }).boxed()
+                .toArray(Integer[]::new);
     }
 }

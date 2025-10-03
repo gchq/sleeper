@@ -48,5 +48,5 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
     }
 
     @SuppressWarnings(value = "checkstyle:parametername")
-    int native_compact(Pointer context, @In FFICommonConfig input, @Out FFIFileResult result);
+    int native_compact(@In Pointer context, @In FFICommonConfig input, @Out FFIFileResult result);
 }

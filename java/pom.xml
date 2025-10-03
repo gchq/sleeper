@@ -666,6 +666,11 @@
                 <artifactId>arrow-format</artifactId>
                 <version>${arrow.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-c-data</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
             <!-- Shared dependencies -->
             <dependency>
                 <groupId>org.scala-lang</groupId>
