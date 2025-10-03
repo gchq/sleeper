@@ -34,10 +34,10 @@ VPC=$2
 SUBNETS=$3
 RESULTS_BUCKET=$4
 MAIN_SUITE_NAME=$5
+
 shift 4
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
   shift
-  MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite "$@")
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
   shift
   MAIN_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
@@ -77,19 +77,19 @@ runMavenSystemTests() {
     EXTRA_MAVEN_PARAMS=("$@")
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
-    pushd "$MAVEN_DIR"
-    mvn clean
-    popd
+    echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     RUN_TESTS_EXIT_CODE=$?
+    echo "Exit code for $SHORT_ID is $RUN_TESTS_EXIT_CODE"
     if [ $RUN_TESTS_EXIT_CODE -ne 0 ]; then
       END_EXIT_CODE=$RUN_TESTS_EXIT_CODE
       TEST_EXIT_CODE=$RUN_TESTS_EXIT_CODE
     fi
     pushd "$MAVEN_DIR"
+    echo "Running maven batch mode command for $SHORT_ID"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
@@ -100,7 +100,8 @@ runMavenSystemTests() {
     rm -rf "$TEST_OUTPUT_DIR/site"
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
-    TEARDOWN_EXIT_CODE=$?
+    echo "Short instance names=$SHORT_INSTANCE_NAMES"
+    TEARDOWN_EXIT_CODE=$?s
     if [ $TEARDOWN_EXIT_CODE -ne 0 ]; then
       TEST_EXIT_CODE=$TEARDOWN_EXIT_CODE
       END_EXIT_CODE=$TEARDOWN_EXIT_CODE
@@ -108,7 +109,24 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+    echo "Running performance tests in parallel. Start time: [$(time_str)]"
+    SUITE_PARAMS1=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite1 "$@")
+    SUITE_PARAMS2=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite2 "$@")
+    SUITE_PARAMS3=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite3 "$@")
+    SUITE_PARAMS4=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite4 "$@")
+    SUITE_PARAMS5=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite5 "$@")
+    SUITE_PARAMS6=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite6 "$@")
+    runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
+    runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
+    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive3" "${SUITE_PARAMS3[@]}"&
+    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
+    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
+    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive6" "${SUITE_PARAMS6[@]}"
+    wait
+else
+    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+fi
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
