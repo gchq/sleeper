@@ -32,6 +32,7 @@ public class InvokeCdkForInstance {
     private final Path propertiesFile;
     private final Path jarsDirectory;
     private final String version;
+    private final CommandRunner runCommand;
 
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
@@ -51,6 +52,7 @@ public class InvokeCdkForInstance {
         propertiesFile = requireNonNull(builder.propertiesFile, "propertiesFile must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
+        runCommand = requireNonNull(builder.runCommand, "runCommand must not be null");
     }
 
     public static Builder builder() {
@@ -74,7 +76,7 @@ public class InvokeCdkForInstance {
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(instanceType, cdkCommand, CommandUtils::runCommandInheritIO);
+        invoke(instanceType, cdkCommand, runCommand);
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand, CommandRunner runCommand) throws IOException, InterruptedException {
@@ -106,6 +108,7 @@ public class InvokeCdkForInstance {
         private Path propertiesFile;
         private Path jarsDirectory;
         private String version;
+        private CommandRunner runCommand = CommandUtils::runCommandInheritIO;
 
         private Builder() {
         }
@@ -122,6 +125,11 @@ public class InvokeCdkForInstance {
 
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        public Builder runCommand(CommandRunner runCommand) {
+            this.runCommand = runCommand;
             return this;
         }
 

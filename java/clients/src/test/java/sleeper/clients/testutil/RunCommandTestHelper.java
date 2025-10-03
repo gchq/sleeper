@@ -71,11 +71,14 @@ public class RunCommandTestHelper {
     }
 
     public static String[] commandRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
-        List<Command> commands = commandsRunOn(invoker);
+        return singleCommand(pipelinesRunOn(invoker::run));
+    }
+
+    public static String[] singleCommand(List<CommandPipeline> commands) {
         if (commands.size() != 1) {
-            throw new IllegalStateException("Exactly one command expected, found: " + commands);
+            throw new IllegalStateException("Exactly one pipeline expected, found: " + commands);
         }
-        return commands.get(0).toArray();
+        return singleCommandInPipeline(commands.get(0)).toArray();
     }
 
     public interface CommandInvoker {
