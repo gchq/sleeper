@@ -57,10 +57,7 @@ public class UploadDockerImages {
     }
 
     public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory) {
-        return builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
-                .jarsDirectory(scriptsDirectory.resolve("jars"))
-                .build();
+        return builder().scriptsDirectory(scriptsDirectory).build();
     }
 
     public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload, UploadDockerImagesCallbacks callbacks) throws IOException, InterruptedException {

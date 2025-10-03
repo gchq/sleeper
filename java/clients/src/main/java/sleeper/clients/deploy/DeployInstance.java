@@ -17,12 +17,17 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ecr.EcrClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -32,6 +37,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -49,6 +55,38 @@ public class DeployInstance {
         this.dockerImageUploader = dockerImageUploader;
         this.writeLocalProperties = writeLocalProperties;
         this.invokeCdk = invokeCdk;
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        if (args.length < 2 || args.length > 3) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-properties-path> <optional-paused-true-or-false>");
+        }
+
+        Path scriptsDirectory = Path.of(args[0]);
+        Path propertiesFile = Path.of(args[1]);
+        boolean deployPaused = optionalArgument(args, 2)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+
+        try (S3Client s3Client = S3Client.create();
+                EcrClient ecrClient = EcrClient.create()) {
+            DeployInstance deployInstance = new DeployInstance(
+                    SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
+                    new UploadDockerImagesToEcr(
+                            UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
+                            EcrRepositoryCreator.withEcrClient(ecrClient)),
+                    DeployInstance.writeLocalPropertiesUnderScriptsDirectory(scriptsDirectory),
+                    InvokeCdkForInstance.fromScriptsDirectory(scriptsDirectory));
+
+            deployInstance.deploy(DeployInstanceRequest.builder()
+                    .instanceConfig(DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile))
+                    .cdkCommand(CdkDeploy.builder()
+                            .ensureNewInstance(false)
+                            .skipVersionCheck(false)
+                            .deployPaused(deployPaused)
+                            .build())
+                    .build());
+        }
     }
 
     public static WriteLocalProperties writeLocalPropertiesUnderScriptsDirectory(Path scriptsDirectory) {

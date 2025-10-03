@@ -60,6 +60,10 @@ public class InvokeCdkForInstance {
         return new Builder();
     }
 
+    public static InvokeCdkForInstance fromScriptsDirectory(Path scriptsDirectory) {
+        return builder().scriptsDirectory(scriptsDirectory).build();
+    }
+
     public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
         invoke(inferType(instanceProperties), cdkCommand);
     }
