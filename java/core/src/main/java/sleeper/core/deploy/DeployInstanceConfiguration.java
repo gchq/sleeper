@@ -16,6 +16,8 @@
 
 package sleeper.core.deploy;
 
+import sleeper.core.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -25,6 +27,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
  * The configuration to deploy a Sleeper instance and configure Sleeper tables.
@@ -112,6 +116,22 @@ public class DeployInstanceConfiguration {
         DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
         populateInstanceProperties.populate(configuration.getInstanceProperties());
         return configuration;
+    }
+
+    /**
+     * Checks that the configuration is valid and throws an exception otherwise.
+     *
+     * @throws SleeperPropertiesInvalidException if the configuration is invalid
+     */
+    public void validate() throws SleeperPropertiesInvalidException {
+        SleeperPropertiesValidationReporter validationReporter = new SleeperPropertiesValidationReporter();
+        instanceProperties.validate(validationReporter);
+        tableProperties.forEach(properties -> properties.validate(validationReporter));
+        validationReporter.throwIfFailed();
+    }
+
+    public String getInstanceId() {
+        return instanceProperties.get(ID);
     }
 
     public InstanceProperties getInstanceProperties() {

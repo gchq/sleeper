@@ -21,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.clients.deploy.jar.SyncJars;
+import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
@@ -45,13 +46,12 @@ public abstract class JarsBucketITBase extends LocalStackTestBase {
     }
 
     protected boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
-        return SyncJars.builder()
-                .s3(s3Client)
-                .jarsDirectory(tempDir)
-                .region(localStackContainer.getRegion())
-                .bucketName(bucketName)
-                .deleteOldJars(deleteOld)
-                .build().sync();
+        return new SyncJars(s3Client, tempDir)
+                .sync(SyncJarsRequest.builder()
+                        .bucketName(bucketName)
+                        .region(localStackContainer.getRegion())
+                        .deleteOldJars(deleteOld)
+                        .build());
     }
 
     protected Stream<String> listObjectKeys() {

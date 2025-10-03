@@ -19,30 +19,11 @@ import sleeper.clients.util.command.Command;
 import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandPipelineResult;
 import sleeper.clients.util.command.CommandPipelineRunner;
-import sleeper.clients.util.command.CommandRunner;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RunCommandTestHelper {
     private RunCommandTestHelper() {
-    }
-
-    public static List<CommandPipeline> pipelinesRunOn(PipelineInvoker invoker) throws IOException, InterruptedException {
-        return pipelinesRunOn(invoker, pipeline -> new CommandPipelineResult(0));
-    }
-
-    public static List<CommandPipeline> pipelinesRunOn(
-            PipelineInvoker invoker, CommandPipelineRunner runner) throws IOException, InterruptedException {
-        List<CommandPipeline> pipelines = new ArrayList<>();
-        CommandPipelineRunner runCommand = pipeline -> {
-            pipelines.add(pipeline);
-            return runner.run(pipeline);
-        };
-        invoker.run(runCommand);
-        return pipelines;
     }
 
     public static CommandPipelineRunner returnExitCode(int exitCode) {
@@ -64,26 +45,11 @@ public class RunCommandTestHelper {
         return recordCommandsRun(commandsRun, returnExitCode(0));
     }
 
-    public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
-        return pipelinesRunOn(invoker::run).stream()
-                .map(RunCommandTestHelper::singleCommandInPipeline)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    public static String[] commandRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
-        List<Command> commands = commandsRunOn(invoker);
+    public static String[] singleCommand(List<CommandPipeline> commands) {
         if (commands.size() != 1) {
-            throw new IllegalStateException("Exactly one command expected, found: " + commands);
+            throw new IllegalStateException("Exactly one pipeline expected, found: " + commands);
         }
-        return commands.get(0).toArray();
-    }
-
-    public interface CommandInvoker {
-        void run(CommandRunner runCommand) throws IOException, InterruptedException;
-    }
-
-    public interface PipelineInvoker {
-        void run(CommandPipelineRunner runCommand) throws IOException, InterruptedException;
+        return singleCommandInPipeline(commands.get(0)).toArray();
     }
 
     private static Command singleCommandInPipeline(CommandPipeline pipeline) {

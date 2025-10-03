@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin.properties;
 
+import sleeper.clients.util.command.CommandPipeline;
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
@@ -25,10 +26,13 @@ import sleeper.core.properties.table.TableProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static sleeper.clients.testutil.RunCommandTestHelper.commandRunOn;
+import static sleeper.clients.testutil.RunCommandTestHelper.recordCommandsRun;
+import static sleeper.clients.testutil.RunCommandTestHelper.singleCommand;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class UpdatePropertiesWithTextEditorTestHelper {
@@ -41,7 +45,9 @@ public class UpdatePropertiesWithTextEditorTestHelper {
     }
 
     public String[] openInstancePropertiesGetCommandRun(InstanceProperties properties) throws Exception {
-        return commandRunOn(runCommand -> updaterWithCommandHandler(runCommand).openPropertiesFile(properties));
+        List<CommandPipeline> commandsThatRan = new ArrayList<>();
+        updaterWithCommandHandler(recordCommandsRun(commandsThatRan)).openPropertiesFile(properties);
+        return singleCommand(commandsThatRan);
     }
 
     public InstanceProperties openInstancePropertiesGetPropertiesWritten(InstanceProperties properties) throws Exception {

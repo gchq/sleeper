@@ -17,6 +17,7 @@ package sleeper.clients.util.cdk;
 
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
+import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ public class InvokeCdkForInstance {
     private final Path propertiesFile;
     private final Path jarsDirectory;
     private final String version;
+    private final CommandRunner runCommand;
 
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
@@ -51,18 +53,19 @@ public class InvokeCdkForInstance {
         propertiesFile = requireNonNull(builder.propertiesFile, "propertiesFile must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
+        runCommand = requireNonNull(builder.runCommand, "runCommand must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(inferType(instanceProperties), cdkCommand);
+    public static InvokeCdkForInstance fromScriptsDirectory(Path scriptsDirectory) {
+        return builder().scriptsDirectory(scriptsDirectory).build();
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand, CommandRunner runCommand) throws IOException, InterruptedException {
-        invoke(inferType(instanceProperties), cdkCommand, runCommand);
+    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
+        invoke(inferType(instanceProperties), cdkCommand);
     }
 
     private static Type inferType(InstanceProperties instanceProperties) {
@@ -74,10 +77,6 @@ public class InvokeCdkForInstance {
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(instanceType, cdkCommand, CommandUtils::runCommandInheritIO);
-    }
-
-    public void invoke(Type instanceType, CdkCommand cdkCommand, CommandRunner runCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
@@ -105,9 +104,15 @@ public class InvokeCdkForInstance {
     public static final class Builder {
         private Path propertiesFile;
         private Path jarsDirectory;
-        private String version;
+        private String version = SleeperVersion.getVersion();
+        private CommandRunner runCommand = CommandUtils::runCommandInheritIO;
 
         private Builder() {
+        }
+
+        public Builder scriptsDirectory(Path scriptsDirectory) {
+            return propertiesFile(scriptsDirectory.resolve("generated").resolve("instance.properties"))
+                    .jarsDirectory(scriptsDirectory.resolve("jars"));
         }
 
         public Builder propertiesFile(Path propertiesFile) {
@@ -122,6 +127,11 @@ public class InvokeCdkForInstance {
 
         public Builder version(String version) {
             this.version = version;
+            return this;
+        }
+
+        public Builder runCommand(CommandRunner runCommand) {
+            this.runCommand = runCommand;
             return this;
         }
 

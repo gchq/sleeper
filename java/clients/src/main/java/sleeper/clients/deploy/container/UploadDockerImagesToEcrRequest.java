@@ -71,6 +71,9 @@ public class UploadDockerImagesToEcrRequest {
     }
 
     public UploadDockerImagesToEcrRequest withExtraImages(List<StackDockerImage> extraImages) {
+        if (extraImages.isEmpty()) {
+            return this;
+        }
         List<StackDockerImage> newImages = new ArrayList<>(images.size() + extraImages.size());
         newImages.addAll(images);
         newImages.addAll(extraImages);
