@@ -15,11 +15,10 @@
  */
 package sleeper.clients.deploy;
 
-import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class DeployConfigurationSerDeTest {
 
@@ -35,7 +34,10 @@ public class DeployConfigurationSerDeTest {
 
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(configuration);
-        Approvals.verify(json, new Options().forFile().withName("deployConfig.localBuild", ".json"));
+        assertThat(json).isEqualTo("""
+                {
+                  "dockerImageLocation": "localBuild"
+                }""");
     }
 
     @Test
@@ -48,7 +50,62 @@ public class DeployConfigurationSerDeTest {
 
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(configuration);
-        Approvals.verify(json, new Options().forFile().withName("deployConfig.repository", ".json"));
+        assertThat(json).isEqualTo("""
+                {
+                  "dockerImageLocation": "repository",
+                  "dockerRepositoryPrefix": "ghcr.io/gchq/"
+                }""");
+    }
 
+    @Test
+    void shouldNotDeserialiseWhenImageLocationIsNotRecognised() {
+        // Given
+        String json = """
+                {
+                  "dockerImageLocation": "abc"
+                }
+                """;
+
+        // When / Then
+        assertThatThrownBy(() -> serDe.fromJson(json))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldDeserialiseImageLocationCaseInsensitive() {
+        // Given
+        String json = """
+                {
+                  "dockerImageLocation": "loCalbuIld"
+                }
+                """;
+
+        // When / Then
+        assertThat(serDe.fromJson(json))
+                .isEqualTo(DeployConfiguration.fromLocalBuild());
+    }
+
+    @Test
+    void shouldFailWhenImageLocationIsMissing() {
+        // Given
+        String json = "{}";
+
+        // When / Then
+        assertThatThrownBy(() -> serDe.fromJson(json))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void shouldFailWhenRepositoryIsMissing() {
+        // Given
+        String json = """
+                {
+                  "dockerImageLocation": "repository"
+                }
+                """;
+
+        // When / Then
+        assertThatThrownBy(() -> serDe.fromJson(json))
+                .isInstanceOf(RuntimeException.class);
     }
 }

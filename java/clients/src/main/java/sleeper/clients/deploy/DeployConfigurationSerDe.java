@@ -16,7 +16,6 @@
 package sleeper.clients.deploy;
 
 import com.google.common.base.CaseFormat;
-import com.google.common.base.Converter;
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -50,20 +49,28 @@ public class DeployConfigurationSerDe {
 
     private static class DockerImageLocationSerDe implements JsonSerializer<DockerImageLocation>, JsonDeserializer<DockerImageLocation> {
 
-        private static final Converter<String, String> LOWER_CAMEL_TO_UPPER_UNDERSCORE = CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE);
-        private static final Converter<String, String> UPPER_UNDERSCORE_TO_LOWER_CAMEL = CaseFormat.UPPER_UNDERSCORE.converterTo(CaseFormat.LOWER_CAMEL);
-
         @Override
         public DockerImageLocation deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             String string = json.getAsString();
-            return DockerImageLocation.valueOf(LOWER_CAMEL_TO_UPPER_UNDERSCORE.convert(string));
+            for (DockerImageLocation location : DockerImageLocation.values()) {
+                if (getJsonName(location).equalsIgnoreCase(string)) {
+                    return location;
+                }
+            }
+            throw new IllegalArgumentException("Unrecognised Docker image location: " + string);
         }
 
         @Override
         public JsonElement serialize(DockerImageLocation src, Type typeOfSrc, JsonSerializationContext context) {
-            return new JsonPrimitive(UPPER_UNDERSCORE_TO_LOWER_CAMEL.convert(src.toString()));
+            return new JsonPrimitive(getJsonName(src));
         }
 
+    }
+
+    private static String getJsonName(DockerImageLocation location) {
+        return CaseFormat.UPPER_UNDERSCORE
+                .converterTo(CaseFormat.LOWER_CAMEL)
+                .convert(location.name());
     }
 
 }

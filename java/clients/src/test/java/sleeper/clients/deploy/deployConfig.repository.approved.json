@@ -1,4 +1,0 @@
-{
-  "dockerImageLocation": "repository",
-  "dockerRepositoryPrefix": "ghcr.io/gchq/"
-}

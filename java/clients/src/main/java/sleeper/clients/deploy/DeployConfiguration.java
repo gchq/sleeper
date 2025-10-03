@@ -17,7 +17,16 @@ package sleeper.clients.deploy;
 
 import sleeper.clients.deploy.container.DockerImageLocation;
 
+import java.util.Objects;
+
 public record DeployConfiguration(DockerImageLocation dockerImageLocation, String dockerRepositoryPrefix) {
+
+    public DeployConfiguration {
+        Objects.requireNonNull(dockerImageLocation, "dockerImageLocation must not be null");
+        if (dockerImageLocation == DockerImageLocation.REPOSITORY) {
+            Objects.requireNonNull(dockerRepositoryPrefix, "dockerRepositoryPrefix must not be null");
+        }
+    }
 
     public static DeployConfiguration fromLocalBuild() {
         return new DeployConfiguration(DockerImageLocation.LOCAL_BUILD, null);
