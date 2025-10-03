@@ -77,19 +77,19 @@ runMavenSystemTests() {
     EXTRA_MAVEN_PARAMS=("$@")
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
-    pushd "$MAVEN_DIR"
-    mvn clean
-    popd
+    echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     RUN_TESTS_EXIT_CODE=$?
+    echo "Exit code for $SHORT_ID is $RUN_TESTS_EXIT_CODE"
     if [ $RUN_TESTS_EXIT_CODE -ne 0 ]; then
       END_EXIT_CODE=$RUN_TESTS_EXIT_CODE
       TEST_EXIT_CODE=$RUN_TESTS_EXIT_CODE
     fi
     pushd "$MAVEN_DIR"
+    echo "Running maven batch mode command for $SHORT_ID"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
@@ -100,6 +100,7 @@ runMavenSystemTests() {
     rm -rf "$TEST_OUTPUT_DIR/site"
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    echo "Short instance names=$SHORT_INSTANCE_NAMES"
     TEARDOWN_EXIT_CODE=$?
     if [ $TEARDOWN_EXIT_CODE -ne 0 ]; then
       TEST_EXIT_CODE=$TEARDOWN_EXIT_CODE
@@ -107,6 +108,10 @@ runMavenSystemTests() {
     fi
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
+
+pushd "$MAVEN_DIR"
+    mvn clean
+popd
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     echo "Running performance tests in parallel. Start time: [$(time_str)]"
@@ -116,7 +121,7 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     SUITE_PARAMS4=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite4 "$@")
     SUITE_PARAMS5=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite5 "$@")
     SUITE_PARAMS6=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite6 "$@")
-    runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"
+    runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
     runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive3" "${SUITE_PARAMS3[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
