@@ -116,6 +116,7 @@ public class DeployNewInstance {
                         EcrRepositoryCreator.withEcrClient(ecrClient)),
                 DeployInstance.writeLocalPropertiesUnderScriptsDirectory(scriptsDirectory),
                 InvokeCdkForInstance.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
+
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(deployInstanceConfiguration)
                 .cdkCommand(deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew())
