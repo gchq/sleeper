@@ -93,7 +93,7 @@ public class DeployInstance {
                     new UploadDockerImagesToEcr(
                             UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
                             EcrRepositoryCreator.withEcrClient(ecrClient)),
-                    DeployInstance.writeLocalPropertiesUnderScriptsDirectory(scriptsDirectory),
+                    WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                     InvokeCdkForInstance.fromScriptsDirectory(scriptsDirectory));
 
             deployInstance.deploy(DeployInstanceRequest.builder()
@@ -105,21 +105,6 @@ public class DeployInstance {
                             .build())
                     .build());
         }
-    }
-
-    public static WriteLocalProperties writeLocalPropertiesUnderScriptsDirectory(Path scriptsDirectory) {
-        return writeLocalPropertiesToDirectory(scriptsDirectory.resolve("generated"));
-    }
-
-    public static WriteLocalProperties writeLocalPropertiesToDirectory(Path directory) {
-        return instanceConfig -> {
-            LOGGER.info("Writing instance configuration to local directory: {}", directory);
-            Files.createDirectories(directory);
-            ClientUtils.clearDirectory(directory);
-            SaveLocalProperties.saveToDirectory(directory,
-                    instanceConfig.getInstanceProperties(),
-                    instanceConfig.getTableProperties().stream());
-        };
     }
 
     public void deploy(DeployInstanceRequest request) throws IOException, InterruptedException {
@@ -145,5 +130,20 @@ public class DeployInstance {
 
     public interface WriteLocalProperties {
         void write(DeployInstanceConfiguration instanceConfig) throws IOException;
+
+        static WriteLocalProperties underScriptsDirectory(Path scriptsDirectory) {
+            return toDirectory(scriptsDirectory.resolve("generated"));
+        }
+
+        static WriteLocalProperties toDirectory(Path directory) {
+            return instanceConfig -> {
+                LOGGER.info("Writing instance configuration to local directory: {}", directory);
+                Files.createDirectories(directory);
+                ClientUtils.clearDirectory(directory);
+                SaveLocalProperties.saveToDirectory(directory,
+                        instanceConfig.getInstanceProperties(),
+                        instanceConfig.getTableProperties().stream());
+            };
+        }
     }
 }

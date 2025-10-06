@@ -114,7 +114,7 @@ public class DeployNewInstance {
                 new UploadDockerImagesToEcr(
                         UploadDockerImages.builder().scriptsDirectory(scriptsDirectory).commandRunner(runCommand).build(),
                         EcrRepositoryCreator.withEcrClient(ecrClient)),
-                DeployInstance.writeLocalPropertiesUnderScriptsDirectory(scriptsDirectory),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdkForInstance.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
         deployInstance.deploy(DeployInstanceRequest.builder()
