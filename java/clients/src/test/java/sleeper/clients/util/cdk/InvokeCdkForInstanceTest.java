@@ -137,7 +137,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldThrowIOExceptionWhenCommandFails() {
             // Given
-            InvokeCdkForInstance cdk = cdk(returnExitCode(1));
+            InvokeCdkForInstance cdk = cdk(returnExitCode(1)); // Anything but 0 is a failed exit code
             CdkCommand cdkCommand = CdkCommand.deployExisting();
 
             // When / Then
