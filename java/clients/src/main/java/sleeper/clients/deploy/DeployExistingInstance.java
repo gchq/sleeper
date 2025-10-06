@@ -96,7 +96,11 @@ public class DeployExistingInstance {
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3, scriptsDirectory),
                 new UploadDockerImagesToEcr(
-                        UploadDockerImages.builder().scriptsDirectory(scriptsDirectory).commandRunner(runCommand).build(),
+                        UploadDockerImages.builder()
+                                .scriptsDirectory(scriptsDirectory)
+                                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
+                                .commandRunner(runCommand)
+                                .build(),
                         EcrRepositoryCreator.withEcrClient(ecr)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdkForInstance.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());

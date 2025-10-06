@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.deploy.DeployConfiguration;
-import sleeper.clients.deploy.DeployConfigurationSerDe;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
@@ -58,7 +57,10 @@ public class UploadDockerImages {
     }
 
     public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory) throws IOException {
-        return builder().scriptsDirectory(scriptsDirectory).build();
+        return builder()
+                .scriptsDirectory(scriptsDirectory)
+                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
+                .build();
     }
 
     public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload, UploadDockerImagesCallbacks callbacks) throws IOException, InterruptedException {
@@ -136,7 +138,7 @@ public class UploadDockerImages {
     public static final class Builder {
         private Path baseDockerDirectory;
         private Path jarsDirectory;
-        private DeployConfiguration deployConfig = DeployConfiguration.fromLocalBuild();
+        private DeployConfiguration deployConfig;
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private String version = SleeperVersion.getVersion();
@@ -145,16 +147,9 @@ public class UploadDockerImages {
         private Builder() {
         }
 
-        public Builder scriptsDirectory(Path scriptsDirectory) throws IOException {
+        public Builder scriptsDirectory(Path scriptsDirectory) {
             return baseDockerDirectory(scriptsDirectory.resolve("docker"))
-                    .jarsDirectory(scriptsDirectory.resolve("jars"))
-                    .deployConfigFile(scriptsDirectory.resolve("templates").resolve("deployConfig.json"));
-        }
-
-        public Builder deployConfigFile(Path deployConfigFile) throws IOException {
-            String deployConfigJson = Files.readString(deployConfigFile);
-            DeployConfiguration deployConfig = new DeployConfigurationSerDe().fromJson(deployConfigJson);
-            return deployConfig(deployConfig);
+                    .jarsDirectory(scriptsDirectory.resolve("jars"));
         }
 
         public Builder baseDockerDirectory(Path baseDockerDirectory) {

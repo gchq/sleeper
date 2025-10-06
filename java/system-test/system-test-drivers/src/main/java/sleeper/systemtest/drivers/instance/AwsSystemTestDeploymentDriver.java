@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -118,8 +119,8 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         }
         UploadDockerImagesToEcr dockerUploader = new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
-                        .baseDockerDirectory(parameters.getDockerDirectory())
-                        .jarsDirectory(parameters.getJarsDirectory())
+                        .scriptsDirectory(parameters.getScriptsDirectory())
+                        .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
                         .commandRunner(CommandUtils::runCommandLogOutput)
                         .build(),
                 EcrRepositoryCreator.withEcrClient(ecr));
