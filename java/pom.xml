@@ -1751,6 +1751,23 @@
                                     most fat jars.
                                     -->
                                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                                    <!--
+                                    Without setting the Multi-Release entry we see an error like this when trying to use
+                                    the clients jar with Java 21:
+
+                                    Exception in thread "main" java.util.ServiceConfigurationError: java.net.spi.InetAddressResolverProvider: Provider org.xbill.DNS.spi.DnsjavaInetAddressResolverProvider not found
+
+                                    Also see:
+                                    https://github.com/dnsjava/dnsjava/issues/338
+                                    https://github.com/dnsjava/dnsjava/issues/329#issuecomment-2346138242
+
+                                    This seemst to be to do with dnsjava, which is a dependency of Hadoop.
+                                    -->
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                        <manifestEntries>
+                                            <Multi-Release>true</Multi-Release>
+                                        </manifestEntries>
+                                    </transformer>
                                 </transformers>
                                 <filters>
                                     <filter>
