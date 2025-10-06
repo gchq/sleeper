@@ -71,7 +71,8 @@ public class InMemorySleeperInstance {
                 .ingestJobSender(ingestQueue::add)
                 .bulkImportJobSender(bulkImportSender())
                 .ingestBatcherSender(ingestBatcherQueue::add)
-                .bulkExportQuerySender(bulkExportQueue::add);
+                .bulkExportQuerySender(bulkExportQueue::add)
+                .queryWebSocketSender(queryWebSocketSender());
     }
 
     public InMemoryIngest ingestByTableName(String tableName) {
@@ -135,6 +136,15 @@ public class InMemorySleeperInstance {
 
     private BulkImportJobSender bulkImportSender() {
         return (platform, job) -> bulkImportQueue(platform).add(job);
+    }
+
+    private QueryWebSocketSender queryWebSocketSender() {
+        try {
+            return QueryWebSocketSender.query(properties, tablePropertiesProvider, null);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public Queue<BulkExportQuery> bulkExportQueue() {
