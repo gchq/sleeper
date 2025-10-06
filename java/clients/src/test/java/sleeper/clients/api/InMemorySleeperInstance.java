@@ -31,13 +31,16 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
+import sleeper.query.core.model.Query;
 import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 
 public class InMemorySleeperInstance {
 
@@ -53,6 +56,7 @@ public class InMemorySleeperInstance {
     private final Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
     private final Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
     private final Queue<BulkExportQuery> bulkExportQueue = new LinkedList<>();
+    private final Queue<Query> webSocketQueriesQueue = new LinkedList<>();
 
     public InMemorySleeperInstance(InstanceProperties properties) {
         this.properties = properties;
@@ -139,12 +143,10 @@ public class InMemorySleeperInstance {
     }
 
     private QueryWebSocketSender queryWebSocketSender() {
-        try {
-            return QueryWebSocketSender.query(properties, tablePropertiesProvider, null);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return query -> {
+            webSocketQueriesQueue.add(query);
+            return CompletableFuture.completedFuture(new ArrayList<>());
+        };
     }
 
     public Queue<BulkExportQuery> bulkExportQueue() {

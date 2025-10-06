@@ -82,6 +82,8 @@ class SleeperClientTest {
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("ingestBatcherSender");
         assertThatThrownBy(() -> instance.sleeperClientBuilder().bulkExportQuerySender(null).build())
                 .isInstanceOf(NullPointerException.class).hasMessageContaining("bulkExportQuerySender");
+        assertThatThrownBy(() -> instance.sleeperClientBuilder().queryWebSocketSender(null).build())
+                .isInstanceOf(NullPointerException.class).hasMessageContaining("queryWebSocketSender");
     }
 
     @Test

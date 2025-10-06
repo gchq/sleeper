@@ -362,8 +362,11 @@ public class SleeperClient implements AutoCloseable {
         bulkExportQuerySender.sendQueryToBulkExport(query);
     }
 
+    /*
+     * QueryWebSocketSender
+     */
     public void queryWebSocketSender(Query query) {
-        queryWebSocketSender(query);
+        queryWebSocketSender.sendQuery(query);
     }
 
     @Override
