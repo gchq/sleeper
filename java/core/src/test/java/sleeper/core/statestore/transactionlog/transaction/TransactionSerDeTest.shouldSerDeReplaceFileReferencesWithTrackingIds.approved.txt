@@ -5,11 +5,11 @@
       "taskId": "task",
       "jobRunId": "run",
       "inputFiles": [
-        "file1.parquet",
-        "file2.parquet"
+        "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file1.parquet",
+        "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file2.parquet"
       ],
       "newReference": {
-        "filename": "file3.parquet",
+        "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file3.parquet",
         "partitionId": "root",
         "numberOfRows": 100,
         "countApproximate": false,

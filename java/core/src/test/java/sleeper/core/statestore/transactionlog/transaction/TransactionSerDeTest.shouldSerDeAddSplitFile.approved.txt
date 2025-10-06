@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "filename": "file.parquet",
+      "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file.parquet",
       "references": [
         {
           "partitionId": "L",

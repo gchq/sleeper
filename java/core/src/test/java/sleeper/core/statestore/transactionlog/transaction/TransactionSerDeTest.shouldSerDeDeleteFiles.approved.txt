@@ -1,6 +1,6 @@
 {
   "filenames": [
-    "file1.parquet",
-    "file2.parquet"
+    "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file1.parquet",
+    "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file2.parquet"
   ]
 }
