@@ -65,7 +65,7 @@ public class ArrowToRowConversionUtils {
      * @param  value       value to convert
      * @return             plain Java value
      */
-    public static Object convertValueFromArrow(FieldVector fieldVector, Object value) {
+    private static Object convertValueFromArrow(FieldVector fieldVector, Object value) {
         if (value == null) {
             return null;
         }
