@@ -1,5 +1,5 @@
 {
-  "tableId": "test-table",
+  "tableId": "933cd595",
   "transactionType": "INITIALISE_PARTITIONS",
   "transaction": {
     "partitions": [

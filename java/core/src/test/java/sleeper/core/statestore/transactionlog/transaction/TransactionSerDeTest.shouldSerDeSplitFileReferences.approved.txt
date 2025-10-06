@@ -2,7 +2,7 @@
   "requests": [
     {
       "oldReference": {
-        "filename": "file1.parquet",
+        "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file1.parquet",
         "partitionId": "root",
         "numberOfRows": 100,
         "countApproximate": false,
@@ -10,14 +10,14 @@
       },
       "newReferences": [
         {
-          "filename": "file1.parquet",
+          "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file1.parquet",
           "partitionId": "L",
           "numberOfRows": 50,
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         },
         {
-          "filename": "file1.parquet",
+          "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file1.parquet",
           "partitionId": "R",
           "numberOfRows": 50,
           "countApproximate": true,
@@ -27,7 +27,7 @@
     },
     {
       "oldReference": {
-        "filename": "file2.parquet",
+        "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_L/file2.parquet",
         "partitionId": "L",
         "numberOfRows": 200,
         "countApproximate": false,
@@ -35,14 +35,14 @@
       },
       "newReferences": [
         {
-          "filename": "file2.parquet",
+          "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_L/file2.parquet",
           "partitionId": "LL",
           "numberOfRows": 100,
           "countApproximate": true,
           "onlyContainsDataForThisPartition": false
         },
         {
-          "filename": "file2.parquet",
+          "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_L/file2.parquet",
           "partitionId": "LR",
           "numberOfRows": 100,
           "countApproximate": true,

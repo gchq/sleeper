@@ -1,0 +1,30 @@
+{
+  "tableId": "933cd595",
+  "transactionType": "ADD_FILES",
+  "transaction": {
+    "files": [
+      {
+        "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file1.parquet",
+        "references": [
+          {
+            "partitionId": "root",
+            "numberOfRows": 100,
+            "countApproximate": false,
+            "onlyContainsDataForThisPartition": true
+          }
+        ]
+      },
+      {
+        "filename": "s3a://sleeper-instanceid-table-data/933cd595/data/partition_root/file2.parquet",
+        "references": [
+          {
+            "partitionId": "root",
+            "numberOfRows": 200,
+            "countApproximate": false,
+            "onlyContainsDataForThisPartition": true
+          }
+        ]
+      }
+    ]
+  }
+}
