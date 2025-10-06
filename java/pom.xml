@@ -1761,7 +1761,7 @@
                                     https://github.com/dnsjava/dnsjava/issues/338
                                     https://github.com/dnsjava/dnsjava/issues/329#issuecomment-2346138242
 
-                                    This seemst to be to do with dnsjava, which is a dependency of Hadoop.
+                                    This seems to be to do with dnsjava, which is a dependency of Hadoop.
                                     -->
                                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                         <manifestEntries>
