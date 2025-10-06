@@ -101,7 +101,7 @@ runMavenSystemTests() {
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     echo "Short instance names=$SHORT_INSTANCE_NAMES"
-    TEARDOWN_EXIT_CODE=$?s
+    TEARDOWN_EXIT_CODE=$?
     if [ $TEARDOWN_EXIT_CODE -ne 0 ]; then
       TEST_EXIT_CODE=$TEARDOWN_EXIT_CODE
       END_EXIT_CODE=$TEARDOWN_EXIT_CODE

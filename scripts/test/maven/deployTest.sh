@@ -32,16 +32,19 @@ shift 3
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
-
+echo "$SHORT_ID start time $START_TIME"
 PROPERTIES_FILE="$THIS_DIR/system-test-instance.properties"
 if [ ! -f "$PROPERTIES_FILE" ]; then
    cp "$PROPERTIES_FILE.template" "$PROPERTIES_FILE"
+   echo "$SHORT_ID copied properties file"
 fi
 
 "$SCRIPTS_DIR/build/buildPython.sh"
+echo "$SHORT_ID built python"
 
 pushd "$MAVEN_DIR"
 
+echo "$SHORT_ID running maven command"
 mvn verify -PsystemTest -DskipRust=true \
   -Dsleeper.system.test.short.id="$SHORT_ID" \
   -Dsleeper.system.test.vpc.id="$VPC" \
