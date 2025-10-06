@@ -19,12 +19,12 @@ package sleeper.ingest.runner.testutils;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import sleeper.arrow.ArrowRowBatchFactory;
+import sleeper.arrow.ArrowRowWriter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
-import sleeper.core.rowbatch.arrow.ArrowRowBatchFactory;
-import sleeper.core.rowbatch.arrow.ArrowRowWriter;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;

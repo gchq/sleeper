@@ -38,8 +38,6 @@
     <suppress files="[\\/]sleeper[\\/]bulkimport[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]cdk[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]cdk[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]core[\\/]rowbatch[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]core[\\/]rowbatch[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]environment[\\/]cdk[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]environment[\\/]cdk[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]systemtest[\\/].*" id="missingJavadocMethod"/>

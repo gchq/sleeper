@@ -24,7 +24,7 @@ import org.apache.arrow.vector.IntVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
-import sleeper.core.rowbatch.arrow.ArrowRowWriter;
+import sleeper.arrow.ArrowRowWriter;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;

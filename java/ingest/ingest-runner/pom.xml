@@ -56,6 +56,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>arrow</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

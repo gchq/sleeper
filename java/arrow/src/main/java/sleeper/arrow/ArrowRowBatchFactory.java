@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.core.rowbatch.arrow;
+package sleeper.arrow;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -34,6 +34,11 @@ import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_ROWS;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 
+/**
+ * Factory for managing writing of Sleeper rows into Arrow record batches.
+ *
+ * @param <INCOMINGDATATYPE> the data type being written to Arrow record batches
+ */
 public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRowBatchFactory.class);
 
@@ -90,10 +95,21 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
                 this.maxNoOfRowsToWriteToArrowFileAtOnce, rowWriter.getClass().getSimpleName());
     }
 
+    /**
+     * Create a builder object for an ArrowRowBatchFactory.
+     *
+     * @return builder object
+     */
     public static Builder<?> builder() {
         return new Builder<>();
     }
 
+    /**
+     * Creates a build object with specific Sleeper instance properties set.
+     *
+     * @param  instanceProperties Sleeper properties
+     * @return                    builder object
+     */
     public static Builder<?> builderWith(InstanceProperties instanceProperties) {
         return builder().instanceProperties(instanceProperties);
     }
@@ -119,6 +135,11 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
     }
 
+    /**
+     * Builder for ArrowRowBatchFactory.
+     *
+     * @param <T> source type of data to write
+     */
     public static final class Builder<T> {
         private Schema schema;
         private String localWorkingDirectory;
@@ -133,51 +154,111 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         private Builder() {
         }
 
+        /**
+         * Set the schema for this row batch factory.
+         *
+         * @param  schema Sleeper table schema
+         * @return        this builder
+         */
         public Builder<T> schema(Schema schema) {
             this.schema = schema;
             return this;
         }
 
+        /**
+         * Set the local working directory.
+         *
+         * @param  localWorkingDirectory directory to use
+         * @return                       this builder
+         */
         public Builder<T> localWorkingDirectory(String localWorkingDirectory) {
             this.localWorkingDirectory = localWorkingDirectory;
             return this;
         }
 
+        /**
+         * Set the number of bytes for the internal Arrow working buffer.
+         *
+         * @param  workingBufferAllocatorBytes buffer size
+         * @return                             this builder
+         */
         public Builder<T> workingBufferAllocatorBytes(long workingBufferAllocatorBytes) {
             this.workingBufferAllocatorBytes = workingBufferAllocatorBytes;
             return this;
         }
 
+        /**
+         * Set the minimum number of bytes for the internal batch buffer.
+         *
+         * @param  minBatchBufferAllocatorBytes buffer size
+         * @return                              this builder
+         */
         public Builder<T> minBatchBufferAllocatorBytes(long minBatchBufferAllocatorBytes) {
             this.minBatchBufferAllocatorBytes = minBatchBufferAllocatorBytes;
             return this;
         }
 
+        /**
+         * Set the maximum number of bytes for the internal batch buffer.
+         *
+         * @param  maxBatchBufferAllocatorBytes buffer size
+         * @return                              this builder
+         */
         public Builder<T> maxBatchBufferAllocatorBytes(long maxBatchBufferAllocatorBytes) {
             this.maxBatchBufferAllocatorBytes = maxBatchBufferAllocatorBytes;
             return this;
         }
 
+        /**
+         * Set minimum and maximum batch buffer size limits to same value.
+         *
+         * @param  batchBufferAllocatorBytes buffer size
+         * @return                           this builder
+         */
         public Builder<T> batchBufferAllocatorBytes(long batchBufferAllocatorBytes) {
             return minBatchBufferAllocatorBytes(batchBufferAllocatorBytes)
                     .maxBatchBufferAllocatorBytes(batchBufferAllocatorBytes);
         }
 
+        /**
+         * Set maximum size of data written locally in bytes.
+         *
+         * @param  maxNoOfBytesToWriteLocally byte limit
+         * @return                            this builder
+         */
         public Builder<T> maxNoOfBytesToWriteLocally(long maxNoOfBytesToWriteLocally) {
             this.maxNoOfBytesToWriteLocally = maxNoOfBytesToWriteLocally;
             return this;
         }
 
+        /**
+         * Set the maximum number of rows to write at once.
+         *
+         * @param  maxNoOfRowsToWriteToArrowFileAtOnce max row count
+         * @return                                     this builder
+         */
         public Builder<T> maxNoOfRowsToWriteToArrowFileAtOnce(int maxNoOfRowsToWriteToArrowFileAtOnce) {
             this.maxNoOfRowsToWriteToArrowFileAtOnce = maxNoOfRowsToWriteToArrowFileAtOnce;
             return this;
         }
 
+        /**
+         * Set Arrow buffer allocator.
+         *
+         * @param  bufferAllocator new allocator
+         * @return                 this builder
+         */
         public Builder<T> bufferAllocator(BufferAllocator bufferAllocator) {
             this.bufferAllocator = bufferAllocator;
             return this;
         }
 
+        /**
+         * Set Sleeper instance properties for this row batch factory.
+         *
+         * @param  instanceProperties new properties
+         * @return                    this builder
+         */
         public Builder<T> instanceProperties(InstanceProperties instanceProperties) {
             return maxNoOfRowsToWriteToArrowFileAtOnce(instanceProperties.getInt(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_ROWS))
                     .workingBufferAllocatorBytes(instanceProperties.getLong(ARROW_INGEST_WORKING_BUFFER_BYTES))
@@ -186,15 +267,33 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
                     .maxNoOfBytesToWriteLocally(instanceProperties.getLong(ARROW_INGEST_MAX_LOCAL_STORE_BYTES));
         }
 
+        /**
+         * Set row writer for factory.
+         *
+         * @param  <INCOMINGDATATYPE> set the source data type for data to write
+         * @param  rowWriter          row writer
+         * @return                    this builder
+         */
+        @SuppressWarnings("unchecked")
         public <INCOMINGDATATYPE> Builder<INCOMINGDATATYPE> rowWriter(ArrowRowWriter<INCOMINGDATATYPE> rowWriter) {
             this.rowWriter = (ArrowRowWriter<T>) rowWriter;
             return (Builder<INCOMINGDATATYPE>) this;
         }
 
+        /**
+         * Create factory that accepts Sleeper rows.
+         *
+         * @return factory
+         */
         public ArrowRowBatchFactory<Row> buildAcceptingRows() {
             return rowWriter(new ArrowRowWriterAcceptingRows()).build();
         }
 
+        /**
+         * Create factory.
+         *
+         * @return factory
+         */
         public ArrowRowBatchFactory<T> build() {
             return new ArrowRowBatchFactory<>(this);
         }

@@ -20,11 +20,11 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import sleeper.arrow.ArrowRowBatchFactory;
 import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.rowbatch.RowBatchFactory;
-import sleeper.core.rowbatch.arrow.ArrowRowBatchFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;

@@ -22,9 +22,9 @@ import org.apache.arrow.memory.RootAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.arrow.RowIteratorFromArrowReader;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
-import sleeper.core.rowbatch.arrow.RowIteratorFromArrowReader;
 import sleeper.core.schema.Schema;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;

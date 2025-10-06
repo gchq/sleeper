@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.rowbatch.arrow;
+package sleeper.arrow;
 
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
@@ -42,8 +42,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.core.rowbatch.arrow.ArrowRowBatch.MAP_KEY_FIELD_NAME;
-import static sleeper.core.rowbatch.arrow.ArrowRowBatch.MAP_VALUE_FIELD_NAME;
+import static sleeper.arrow.ArrowRowBatch.MAP_KEY_FIELD_NAME;
+import static sleeper.arrow.ArrowRowBatch.MAP_VALUE_FIELD_NAME;
 
 /**
  * Accepts data for an Arrow row batch as Sleeper rows. Used by {@link ArrowRowBatch}.
@@ -75,6 +75,15 @@ public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
         return finalRowCount;
     }
 
+    /**
+     * Writes the given row into the Arrow record batch.
+     *
+     * @param  allFields                     list of fields to write from row to record batch
+     * @param  vectorSchemaRoot              Arrow record batch to write to
+     * @param  row                           Sleeper row to write
+     * @param  insertAtRowNo                 position to insert row in record batch
+     * @throws UnsupportedOperationException if the Sleeper column type is not recognised
+     */
     public static void writeRow(
             List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, Row row, int insertAtRowNo) {
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear

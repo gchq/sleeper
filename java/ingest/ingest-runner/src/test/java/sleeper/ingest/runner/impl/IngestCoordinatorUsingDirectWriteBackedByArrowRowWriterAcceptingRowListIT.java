@@ -19,11 +19,11 @@ import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.junit.jupiter.api.Test;
 
+import sleeper.arrow.ArrowRowWriter;
+import sleeper.arrow.ArrowRowWriterAcceptingRows;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.row.Row;
-import sleeper.core.rowbatch.arrow.ArrowRowWriter;
-import sleeper.core.rowbatch.arrow.ArrowRowWriterAcceptingRows;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;

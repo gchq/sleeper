@@ -17,18 +17,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>query</artifactId>
+        <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
         <version>0.34.0-SNAPSHOT</version>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>query-datafusion</artifactId>
+    <artifactId>arrow</artifactId>
 
     <dependencies>
+            <!-- Arrow dependencies -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
-            <artifactId>arrow-c-data</artifactId>
+            <artifactId>arrow-memory-unsafe</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-vector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-algorithm</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
@@ -37,38 +48,8 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>arrow</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>query-core</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>foreign-bridge</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>core</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>ingest-runner</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>example-iterators</artifactId>
-            <version>${project.parent.version}</version>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
