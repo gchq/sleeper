@@ -17,6 +17,9 @@ package sleeper.clients.deploy;
 
 import sleeper.clients.deploy.container.DockerImageLocation;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 public record DeployConfiguration(DockerImageLocation dockerImageLocation, String dockerRepositoryPrefix) {
@@ -26,6 +29,12 @@ public record DeployConfiguration(DockerImageLocation dockerImageLocation, Strin
         if (dockerImageLocation == DockerImageLocation.REPOSITORY) {
             Objects.requireNonNull(dockerRepositoryPrefix, "dockerRepositoryPrefix must not be null");
         }
+    }
+
+    public static DeployConfiguration fromScriptsDirectory(Path scriptsDirectory) throws IOException {
+        Path deployConfigFile = scriptsDirectory.resolve("templates").resolve("deployConfig.json");
+        String deployConfigJson = Files.readString(deployConfigFile);
+        return new DeployConfigurationSerDe().fromJson(deployConfigJson);
     }
 
     public static DeployConfiguration fromLocalBuild() {

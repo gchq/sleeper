@@ -56,10 +56,10 @@ public class UploadDockerImages {
         return new Builder();
     }
 
-    public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory) {
+    public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory) throws IOException {
         return builder()
-                .baseDockerDirectory(scriptsDirectory.resolve("docker"))
-                .jarsDirectory(scriptsDirectory.resolve("jars"))
+                .scriptsDirectory(scriptsDirectory)
+                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                 .build();
     }
 
@@ -136,7 +136,7 @@ public class UploadDockerImages {
     }
 
     public static final class Builder {
-        private DeployConfiguration deployConfig = DeployConfiguration.fromLocalBuild();
+        private DeployConfiguration deployConfig;
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private CopyFile copyFile = (source, target) -> Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
         private Path baseDockerDirectory;
@@ -145,6 +145,11 @@ public class UploadDockerImages {
         private boolean createMultiplatformBuilder = true;
 
         private Builder() {
+        }
+
+        public Builder scriptsDirectory(Path scriptsDirectory) {
+            return baseDockerDirectory(scriptsDirectory.resolve("docker"))
+                    .jarsDirectory(scriptsDirectory.resolve("jars"));
         }
 
         public Builder deployConfig(DeployConfiguration deployConfig) {
