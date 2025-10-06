@@ -100,7 +100,7 @@ public class DeployInstance {
                     .instanceConfig(DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile))
                     .cdkCommand(CdkDeploy.builder()
                             .ensureNewInstance(false)
-                            .skipVersionCheck(false)
+                            .skipVersionCheck(true)
                             .deployPaused(deployPaused)
                             .build())
                     .build());
