@@ -40,8 +40,10 @@ import sleeper.core.properties.local.SaveLocalProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
+import java.util.stream.Stream;
 
-import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -62,8 +64,8 @@ public class DeployInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 5 || args.length > 6) {
-            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> <instance-properties-file> <optional-paused-true-or-false>");
+        if (args.length < 5) {
+            throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> <instance-properties-file>[ options]");
         }
 
         Path scriptsDirectory = Path.of(args[0]);
@@ -71,9 +73,8 @@ public class DeployInstance {
         String vpcId = args[2];
         String subnetIds = args[3];
         Path propertiesFile = Path.of(args[4]);
-        boolean deployPaused = optionalArgument(args, 5)
-                .map(Boolean::parseBoolean)
-                .orElse(false);
+        Set<String> options = Stream.of(args).skip(5).map(String::toLowerCase).collect(toUnmodifiableSet());
+        boolean deployPaused = options.contains("--deploy-paused");
 
         AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         try (S3Client s3Client = S3Client.create();

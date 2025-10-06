@@ -16,8 +16,12 @@
 set -e
 unset CDPATH
 
-if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
-  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <instance-properties-file> <optional-paused-true-or-false>"
+if [ "$#" -lt 4 ]; then
+  echo "Usage: $0 <instance-id> <vpc> <csv-list-of-subnets> <instance-properties-file>[ options]"
+  echo "Available options:"
+  echo "--deploy-paused"
+  echo "Deploy the instance with all scheduled rules disabled, so that background processes will not run."
+  echo "The instance can be unpaused with 'scripts/utility/restartSystem.sh'."
   exit 1
 fi
 
