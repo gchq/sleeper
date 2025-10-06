@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.deploy.DeployConfigurationSerDe;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
@@ -56,7 +57,7 @@ public class UploadDockerImages {
         return new Builder();
     }
 
-    public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory) {
+    public static UploadDockerImages fromScriptsDirectory(Path scriptsDirectory) throws IOException {
         return builder().scriptsDirectory(scriptsDirectory).build();
     }
 
@@ -144,9 +145,16 @@ public class UploadDockerImages {
         private Builder() {
         }
 
-        public Builder scriptsDirectory(Path scriptsDirectory) {
+        public Builder scriptsDirectory(Path scriptsDirectory) throws IOException {
             return baseDockerDirectory(scriptsDirectory.resolve("docker"))
-                    .jarsDirectory(scriptsDirectory.resolve("jars"));
+                    .jarsDirectory(scriptsDirectory.resolve("jars"))
+                    .deployConfigFile(scriptsDirectory.resolve("templates").resolve("deployConfig.json"));
+        }
+
+        public Builder deployConfigFile(Path deployConfigFile) throws IOException {
+            String deployConfigJson = Files.readString(deployConfigFile);
+            DeployConfiguration deployConfig = new DeployConfigurationSerDe().fromJson(deployConfigJson);
+            return deployConfig(deployConfig);
         }
 
         public Builder baseDockerDirectory(Path baseDockerDirectory) {
