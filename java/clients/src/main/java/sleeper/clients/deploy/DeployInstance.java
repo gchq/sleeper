@@ -70,8 +70,8 @@ public class DeployInstance {
         String instanceId = args[1];
         String vpcId = args[2];
         String subnetIds = args[3];
-        Path propertiesFile = Path.of(args[1]);
-        boolean deployPaused = optionalArgument(args, 2)
+        Path propertiesFile = Path.of(args[4]);
+        boolean deployPaused = optionalArgument(args, 5)
                 .map(Boolean::parseBoolean)
                 .orElse(false);
 
