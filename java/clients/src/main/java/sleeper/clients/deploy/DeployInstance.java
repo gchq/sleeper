@@ -97,7 +97,7 @@ public class DeployInstance {
                     InvokeCdkForInstance.fromScriptsDirectory(scriptsDirectory));
 
             deployInstance.deploy(DeployInstanceRequest.builder()
-                    .instanceConfig(DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile))
+                    .instanceConfig(instanceConfiguration)
                     .cdkCommand(CdkDeploy.builder()
                             .ensureNewInstance(false)
                             .skipVersionCheck(true)
