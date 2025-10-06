@@ -18,6 +18,7 @@ package sleeper.clients.deploy.container;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
 
@@ -157,6 +158,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     protected UploadDockerImages.Builder uploaderBuilder() {
         return UploadDockerImages.builder()
                 .commandRunner(commandRunner)
+                .deployConfig(DeployConfiguration.fromLocalBuild())
                 .copyFile((source, target) -> files.put(target, files.get(source)))
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                 .version("1.0.0");
