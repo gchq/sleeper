@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
 
@@ -87,6 +88,7 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
         return new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
                         .commandRunner(commandRunner)
+                        .deployConfig(DeployConfiguration.fromLocalBuild())
                         .baseDockerDirectory(dockerDir).jarsDirectory(jarsDir)
                         .version("1.0.0")
                         .build(),
