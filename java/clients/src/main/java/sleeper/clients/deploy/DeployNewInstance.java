@@ -139,7 +139,8 @@ public class DeployNewInstance {
                 .deleteOldJars(false).build().sync();
         UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
                 UploadDockerImages.builder()
-                        .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
+                        .scriptsDirectory(scriptsDirectory)
+                        .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                         .commandRunner(runCommand)
                         .build(),
                 EcrRepositoryCreator.withEcrClient(ecrClient));
