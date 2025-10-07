@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.Objects;
@@ -80,6 +81,20 @@ public class PopulateInstanceProperties {
         properties.set(SUBNETS, subnetIds);
         extraInstanceProperties.accept(properties);
         return properties;
+    }
+
+    /**
+     * Sets the values of properties that have been set in environment variables.
+     *
+     * @param instanceProperties the instance properties
+     */
+    public static void setFromEnvironmentVariables(InstanceProperties instanceProperties) {
+        for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.getAll()) {
+            String value = System.getenv(property.toEnvironmentVariable());
+            if (value != null) {
+                instanceProperties.set(property, value);
+            }
+        }
     }
 
     /**

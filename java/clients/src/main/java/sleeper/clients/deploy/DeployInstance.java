@@ -34,6 +34,7 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 
@@ -87,6 +88,7 @@ public class DeployInstance {
                     .vpcId(vpcId)
                     .subnetIds(subnetIds)
                     .build().populate(instanceConfiguration.getInstanceProperties());
+            PopulateInstanceProperties.setFromEnvironmentVariables(instanceConfiguration.getInstanceProperties());
             instanceConfiguration.validate();
 
             DeployInstance deployInstance = new DeployInstance(
