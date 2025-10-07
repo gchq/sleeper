@@ -79,8 +79,8 @@ impl MapAggregateOp {
 
 /// Validates the filtering and aggregation configuration.
 ///
-/// Row key columns are implicitly "group by" columns. Extra columns may be added. Typically,
-/// we expect this to include sort key columns.
+/// Row key fields are implicitly "group by" columns. Extra columns may be added. Typically,
+/// we expect this to include sort key fields.
 ///
 /// In particular, validates that:
 ///  1. All columns that are NOT "group by" columns have an aggregation operation specified for them,
@@ -102,11 +102,11 @@ pub fn validate_aggregations(
         // Check for duplicate aggregation columns
         let mut dup_check = HashSet::new();
         for col in group_by_cols {
-            // Has this "group by" column been specified multiple times? Or is it a row key column?
-            // Row key columns are implicitly "group by" columns.
+            // Has this "group by" column been specified multiple times? Or is it a row key field?
+            // Row key fields are implicitly "group by" columns.
             if !dup_check.insert(*col) {
                 return plan_err!(
-                    "Grouping column \"{col}\" is already a row key column or has been specified multiple times"
+                    "Grouping column \"{col}\" is already a row key field or has been specified multiple times"
                 );
             }
             // Is this column valid?
@@ -137,7 +137,7 @@ pub fn validate_aggregations(
                 return plan_err!("Aggregation column \"{col}\" doesn't exist");
             }
         }
-        // Check all non row key columns exist in aggregation column list
+        // Check all non row key fields exist in aggregation column list
         for col in non_row_key_cols {
             if !agg_cols.contains(&col) {
                 return plan_err!(

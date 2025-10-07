@@ -357,9 +357,9 @@ impl<'a> Sketcher<'a> {
         // Iterate through column names, mapping each into an `Expr`
         let mut col_names_expr = Vec::new();
         for col_name in col_names {
-            // Have we found the first row key column?
+            // Have we found the first row key field?
             let expr = if self.row_keys[0] == *col_name {
-                // Sketch function needs to be called with each row key column
+                // Sketch function needs to be called with each row key field
                 self.sketch.call(row_key_exprs.clone()).alias(col_name)
             } else {
                 ident(col_name)

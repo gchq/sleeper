@@ -57,7 +57,7 @@ pub enum PartitionBound<'a> {
     Unbounded,
 }
 
-/// Defines a partition range of a single column.
+/// Defines a partition range of a single field.
 #[derive(Debug, Copy, Clone)]
 pub struct ColRange<'a> {
     pub lower: PartitionBound<'a>,
@@ -106,11 +106,11 @@ pub struct CommonConfig<'a> {
     input_files: Vec<Url>,
     /// Are input files individually sorted?
     input_files_sorted: bool,
-    /// Names of row-key columns
+    /// Names of row-key fields
     row_key_cols: Vec<String>,
-    /// Names of sort-key columns
+    /// Names of sort-key fields
     sort_key_cols: Vec<String>,
-    /// Ranges for each column to filter input files
+    /// Ranges for each field to filter input files
     region: SleeperRegion<'a>,
     /// How output from operation should be returned
     output: OutputType,
@@ -155,7 +155,7 @@ fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec
 }
 
 impl CommonConfig<'_> {
-    /// Get iterator for row and sort key columns in order
+    /// Get iterator for row and sort key fields in order
     pub fn sorting_columns_iter(&self) -> impl Iterator<Item = &str> {
         self.row_key_cols
             .iter()
@@ -163,7 +163,7 @@ impl CommonConfig<'_> {
             .map(String::as_str)
     }
 
-    /// List all roy and sort key columns in order
+    /// List all roy and sort key fields in order
     #[must_use]
     pub fn sorting_columns(&self) -> Vec<&str> {
         self.sorting_columns_iter().collect::<Vec<_>>()
@@ -270,7 +270,7 @@ impl<'a> CommonConfigBuilder<'a> {
     ///
     /// # Errors
     /// The configuration must validate. Input files mustn't be empty
-    /// and the number of row key columns must match the number of region
+    /// and the number of row key fields must match the number of region
     /// dimensions.
     pub fn build(self) -> Result<CommonConfig<'a>> {
         self.validate()?;

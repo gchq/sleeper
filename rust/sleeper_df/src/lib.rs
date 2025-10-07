@@ -58,7 +58,7 @@ mod unpack;
 /// | -1 | Arrow error (see log) |
 /// | EFAULT | if pointers are NULL
 /// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
-/// | EINVAL | if row key column numbers or sort column numbers are empty |
+/// | EINVAL | if row key field numbers or sort field numbers are empty |
 ///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
@@ -162,7 +162,7 @@ pub extern "C" fn native_compact(
 /// | -1 | Arrow/DataFusion error (see log) |
 /// | EFAULT | if pointers are NULL
 /// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
-/// | EINVAL | if row key column numbers or sort column numbers are empty |
+/// | EINVAL | if row key field numbers or sort field numbers are empty |
 #[allow(clippy::not_unsafe_ptr_arg_deref, unused_assignments, unused_variables)]
 #[unsafe(no_mangle)]
 pub extern "C" fn native_query_stream(
@@ -263,7 +263,7 @@ pub extern "C" fn native_query_stream(
 /// | -1 | Arrow/DataFusion error (see log) |
 /// | EFAULT | if pointers are NULL
 /// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
-/// | EINVAL | if row key column numbers or sort column numbers are empty |
+/// | EINVAL | if row key field numbers or sort field numbers are empty |
 #[allow(clippy::not_unsafe_ptr_arg_deref, unused_assignments, unused_variables)]
 #[unsafe(no_mangle)]
 pub extern "C" fn native_query_file(

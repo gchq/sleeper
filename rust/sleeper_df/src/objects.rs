@@ -69,7 +69,7 @@ pub struct FFISleeperRegion {
     pub dimension_indexes: *const *const i32,
 }
 
-/// Column type for row key columns in Sleeper schema.
+/// Data type for row key fields in Sleeper schema.
 /// Encoded as integer type for FFI compatibility.
 #[derive(Copy, Clone)]
 pub enum FFIRowKeySchemaType {
@@ -186,7 +186,7 @@ pub struct FFICommonConfig {
 }
 
 impl FFICommonConfig {
-    /// The schema types for the row key columns in this Sleeper schema.
+    /// The schema types for the row key fields in this Sleeper schema.
     ///
     /// # Errors
     /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`FFIRowKeySchemaType`].
@@ -197,7 +197,7 @@ impl FFICommonConfig {
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// Get row key column names.
+    /// Get row key field names.
     pub fn row_key_cols(&self) -> Result<Vec<String>, color_eyre::Report> {
         Ok(
             unpack_string_array(self.row_key_cols, self.row_key_cols_len)?
@@ -305,9 +305,9 @@ pub struct FFILeafPartitionQueryConfig {
     pub query_regions: *const FFISleeperRegion,
     /// Are there any requested value fields? This is different to there being zero.
     pub requested_value_fields_set: bool,
-    /// Length of requested value columns
+    /// Length of requested value fields
     pub requested_value_fields_len: usize,
-    /// Requested value columns.
+    /// Requested value fields.
     pub requested_value_fields: *const *const c_char,
     /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,

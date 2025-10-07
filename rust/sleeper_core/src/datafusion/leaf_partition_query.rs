@@ -47,7 +47,7 @@ pub struct LeafPartitionQueryConfig<'a> {
     pub common: CommonConfig<'a>,
     /// Query ranges
     pub ranges: Vec<SleeperRegion<'a>>,
-    /// Requested value columns for Sleeper query
+    /// Requested value fields for Sleeper query
     pub requested_value_fields: Option<Vec<String>>,
     /// Should logical/physical plan explanation be logged?
     pub explain_plans: bool,
@@ -162,9 +162,9 @@ impl<'a> LeafPartitionQuery<'a> {
         }
     }
 
-    /// If only certain value columns have been requested, then project them.
+    /// If only certain value fields have been requested, then project them.
     ///
-    /// Row key and sort key columns are always projected.
+    /// Row key and sort key fields are always projected.
     fn maybe_project_columns(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         if let Some(value_fields) = &self.config.requested_value_fields {
             let project_columns = self
