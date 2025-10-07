@@ -29,6 +29,7 @@ import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
+import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandUtils;
@@ -95,9 +96,9 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                     .propertiesFile(propertiesFile)
                     .jarsDirectory(parameters.getJarsDirectory())
                     .version(SleeperVersion.getVersion())
+                    .runCommand(CommandUtils::runCommandLogOutput)
                     .build().invoke(SYSTEM_TEST_STANDALONE,
-                            CdkCommand.deploySystemTestStandalone(),
-                            CommandUtils::runCommandLogOutput);
+                            CdkCommand.deploySystemTestStandalone());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -107,12 +108,12 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     }
 
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
-        SyncJars.builder().s3(s3)
-                .jarsDirectory(parameters.getJarsDirectory())
-                .bucketName(parameters.buildJarsBucketName())
-                .region(parameters.getRegion())
-                .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
-                .deleteOldJars(false).build().sync();
+        new SyncJars(s3, parameters.getJarsDirectory())
+                .sync(SyncJarsRequest.builder()
+                        .bucketName(parameters.buildJarsBucketName())
+                        .region(parameters.getRegion())
+                        .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
+                        .build());
         if (!parameters.isSystemTestClusterEnabled()) {
             return;
         }
