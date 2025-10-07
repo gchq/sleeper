@@ -207,7 +207,7 @@ public class StateStorePartitionsArrowFormat {
     private static void writeRegion(Region region, int rowNumber, BufferAllocator allocator, UnionListWriter writer) {
         writer.setPosition(rowNumber);
         writer.startList();
-        for (Range range : region.getRanges()) {
+        for (Range range : region.getRangesUnordered()) {
             StructWriter struct = writer.struct();
             struct.start();
             writeVarChar(struct, allocator, FIELD_NAME, range.getFieldName());

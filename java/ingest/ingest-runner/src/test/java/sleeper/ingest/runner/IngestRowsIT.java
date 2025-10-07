@@ -45,7 +45,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_ROWS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.model.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
-import static sleeper.core.properties.table.TableProperty.FILTERS_CONFIG;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.ingest.runner.testutils.IngestRowsTestDataHelper.getLotsOfRows;
@@ -599,7 +600,7 @@ class IngestRowsIT extends IngestRowsTestBase {
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build());
-        tableProperties.set(FILTERS_CONFIG, "ageOff(value,1000)");
+        tableProperties.set(FILTERING_CONFIG, "ageOff(value,1000)");
         StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
@@ -631,6 +632,54 @@ class IngestRowsIT extends IngestRowsTestBase {
                                 .minBytes(11, 2).maxBytes(11, 2)
                                 .rankBytes(0.1, 11, 2).rankBytes(0.2, 11, 2).rankBytes(0.3, 11, 2)
                                 .rankBytes(0.4, 11, 2).rankBytes(0.5, 11, 2).rankBytes(0.6, 11, 2)
+                                .rankBytes(0.7, 11, 2).rankBytes(0.8, 11, 2).rankBytes(0.9, 11, 2))
+                        .build());
+    }
+
+    @Test
+    void shouldApplyAggregationIterator() throws Exception {
+        // Given
+        setSchema(Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .sortKeyFields(new Field("sort", new LongType()))
+                .valueFields(new Field("value", new LongType()))
+                .build());
+        tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
+
+        // When
+        long numWritten = ingestRows(stateStore, getRowsForAggregationIteratorTest()).getRowsWritten();
+
+        // Then:
+        //  - Check the correct number of rows were written
+        assertThat(numWritten).isEqualTo(2L);
+        //  - Check StateStore has correct information
+        FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
+        List<FileReference> fileReferences = stateStore.getFileReferences().stream()
+                .sorted(Comparator.comparing(FileReference::getPartitionId))
+                .collect(Collectors.toList());
+        assertThat(fileReferences)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactly(fileReferenceFactory.rootFile(2L));
+        //  - Read file and check it has correct rows
+        assertThat(readRows(fileReferences.get(0), schema))
+                .containsExactly(
+                        new Row(Map.of(
+                                "key", new byte[]{1, 1},
+                                "sort", 2L,
+                                "value", 7L)),
+                        new Row(Map.of(
+                                "key", new byte[]{11, 2},
+                                "sort", 1L,
+                                "value", 4L)));
+
+        //  - Check quantiles sketches have been written and are correct
+        assertThat(SketchesDeciles.fromFile(schema, fileReferences.get(0), sketchesStore))
+                .isEqualTo(SketchesDeciles.builder()
+                        .field("key", deciles -> deciles
+                                .minBytes(1, 1).maxBytes(11, 2)
+                                .rankBytes(0.1, 1, 1).rankBytes(0.2, 1, 1).rankBytes(0.3, 1, 1)
+                                .rankBytes(0.4, 1, 1).rankBytes(0.5, 11, 2).rankBytes(0.6, 11, 2)
                                 .rankBytes(0.7, 11, 2).rankBytes(0.8, 11, 2).rankBytes(0.9, 11, 2))
                         .build());
     }

@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.row.testutils.InMemoryRowStore;

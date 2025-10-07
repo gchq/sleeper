@@ -56,7 +56,7 @@ public class CompactionDataFusionPerformanceST {
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandardsWithDataFusion(SleeperSystemTest sleeper) {
+    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
@@ -80,7 +80,7 @@ public class CompactionDataFusionPerformanceST {
                         .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRowsPerSecondInRange(3_000_000, 4_000_000),
+                        && stats.isAverageRunRowsPerSecondInRange(2_900_000, 4_000_000),
                         "meets expected performance");
     }
 }

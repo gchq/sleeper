@@ -192,9 +192,10 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
      */
     public Stream<List<Object>> streamPartitionStatusRows(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
-        List<Partition> allPartitions = this.sleeperRawAwsConnection.getSleeperTablePartitionStructure(
+        List<Partition> allPartitions = sleeperRawAwsConnection.getSleeperTablePartitionStructure(
                 schemaTableName.getTableName(),
                 Instant.now()).getAllPartitions();
+        Schema schema = sleeperRawAwsConnection.getSleeperSchema(schemaTableName.getTableName());
         // Some of the partition methods can return null and so an ImmutableList cannot be used here
         return allPartitions.stream()
                 .map(partition -> Arrays.asList(
@@ -203,8 +204,8 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                         partition.getId(),
                         partition.getParentPartitionId(),
                         partition.getChildPartitionIds(),
-                        partition.getRegion().getRanges().stream().map(sleeper.core.range.Range::getMin).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
-                        partition.getRegion().getRanges().stream().map(sleeper.core.range.Range::getMax).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
+                        partition.getRegion().getRangesOrdered(schema).stream().map(sleeper.core.range.Range::getMin).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
+                        partition.getRegion().getRangesOrdered(schema).stream().map(sleeper.core.range.Range::getMax).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
                         partition.getDimension(),
                         partition.isLeafPartition()));
     }
@@ -220,6 +221,16 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
         return sleeperRawAwsConnection.getSleeperTablePartitionStructure(
                 schemaTableName.getTableName(),
                 Instant.now()).getAllPartitions().stream();
+    }
+
+    /**
+     * Fetch the Sleeper schema for a given table name.
+     *
+     * @param  schemaTableName the table to get the schema for
+     * @return                 the Sleeper table schema
+     */
+    public Schema getSchema(SchemaTableName schemaTableName) {
+        return sleeperRawAwsConnection.getSleeperSchema(schemaTableName.getTableName());
     }
 
     /**

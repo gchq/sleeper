@@ -17,7 +17,6 @@ package sleeper.cdk.stack.core;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
-import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.ecs.ICluster;
@@ -37,11 +36,8 @@ import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.util.EnvironmentUtils;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 

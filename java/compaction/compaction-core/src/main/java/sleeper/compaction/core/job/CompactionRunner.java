@@ -22,8 +22,22 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 
 import java.io.IOException;
 
+/**
+ * An implementation of compaction, to take a number of sorted input files and merge them into one fully sorted file.
+ */
 @FunctionalInterface
-public interface CompactionRunner extends CompactionRunnerDetails {
+public interface CompactionRunner {
 
+    /**
+     * Compacts the input files of a compaction job into one output file.
+     *
+     * @param  job                       the job
+     * @param  tableProperties           the configuration of the Sleeper table this takes place in
+     * @param  region                    the region to be read for the compaction (usually the region of the partition
+     *                                   it takes place in)
+     * @return                           a report of the number of rows processed
+     * @throws IOException               a failure reading or writing files
+     * @throws IteratorCreationException a problem creating any configured iterators
+     */
     RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException;
 }

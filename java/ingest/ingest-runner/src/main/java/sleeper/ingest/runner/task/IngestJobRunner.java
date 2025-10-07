@@ -25,9 +25,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.utils.S3ExpandDirectories;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.ConcatenatingIterator;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

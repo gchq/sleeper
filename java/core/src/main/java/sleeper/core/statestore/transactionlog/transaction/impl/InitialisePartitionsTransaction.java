@@ -79,7 +79,7 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     }
 
     @Override
-    public void validate(StateStorePartitions stateStorePartitions) {
+    public void validate(StateStorePartitions stateStorePartitions, TableProperties tableProperties) {
     }
 
     @Override

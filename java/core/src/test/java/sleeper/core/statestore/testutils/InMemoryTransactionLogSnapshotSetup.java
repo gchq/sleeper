@@ -15,7 +15,7 @@
  */
 package sleeper.core.statestore.testutils;
 
-import sleeper.core.schema.Schema;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -27,7 +27,6 @@ import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
-import sleeper.core.table.TableStatus;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
@@ -36,7 +35,7 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
  */
 public class InMemoryTransactionLogSnapshotSetup {
 
-    private final TableStatus sleeperTable;
+    private final TableProperties tableProperties;
     private final TransactionLogStore filesLog;
     private final TransactionLogStore partitionsLog;
     private final TransactionBodyStore transactionBodyStore;
@@ -45,19 +44,18 @@ public class InMemoryTransactionLogSnapshotSetup {
      * Sets up in-memory transaction logs with the given state. Sets up state by performing the requested interactions
      * with the state store. The constructed logs can then be used to derive snapshots.
      *
-     * @param  sleeperTable        the Sleeper table the state is for (used in logging)
-     * @param  schema              the schema of the Sleeper table
+     * @param  tableProperties     the configuration of the Sleeper table the state is for
      * @param  setupState          a function to set up the required state
      * @return                     a wrapper around the transation logs, with the ability to create snapshots
      * @throws StateStoreException if the setup function throws a StateStoreException
      */
     public static InMemoryTransactionLogSnapshotSetup setupSnapshotWithFreshState(
-            TableStatus sleeperTable, Schema schema, SetupStateStore setupState) throws StateStoreException {
+            TableProperties tableProperties, SetupStateStore setupState) throws StateStoreException {
         InMemoryTransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
         InMemoryTransactionLogStore partitionTransactions = new InMemoryTransactionLogStore();
         InMemoryTransactionBodyStore transactionBodyStore = new InMemoryTransactionBodyStore();
         StateStore stateStore = TransactionLogStateStore.builder()
-                .sleeperTable(sleeperTable)
+                .tableProperties(tableProperties)
                 .filesLogStore(fileTransactions)
                 .partitionsLogStore(partitionTransactions)
                 .transactionBodyStore(transactionBodyStore)
@@ -65,7 +63,7 @@ public class InMemoryTransactionLogSnapshotSetup {
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         setupState.run(stateStore);
-        return new InMemoryTransactionLogSnapshotSetup(sleeperTable, fileTransactions, partitionTransactions, transactionBodyStore);
+        return new InMemoryTransactionLogSnapshotSetup(tableProperties, fileTransactions, partitionTransactions, transactionBodyStore);
     }
 
     /**
@@ -84,9 +82,9 @@ public class InMemoryTransactionLogSnapshotSetup {
     }
 
     InMemoryTransactionLogSnapshotSetup(
-            TableStatus sleeperTable, TransactionLogStore filesLog, TransactionLogStore partitionsLog,
+            TableProperties tableProperties, TransactionLogStore filesLog, TransactionLogStore partitionsLog,
             TransactionBodyStore transactionBodyStore) {
-        this.sleeperTable = sleeperTable;
+        this.tableProperties = tableProperties;
         this.filesLog = filesLog;
         this.partitionsLog = partitionsLog;
         this.transactionBodyStore = transactionBodyStore;
@@ -103,7 +101,7 @@ public class InMemoryTransactionLogSnapshotSetup {
     public TransactionLogSnapshot createFilesSnapshot(long transactionNumber) throws StateStoreException {
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.filesInitialState();
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                snapshot, filesLog, transactionBodyStore, FileReferenceTransaction.class, sleeperTable)
+                snapshot, filesLog, transactionBodyStore, FileReferenceTransaction.class, tableProperties)
                 .orElse(snapshot);
         return new TransactionLogSnapshot((StateStoreFiles) snapshot.getState(), transactionNumber);
     }
@@ -119,7 +117,7 @@ public class InMemoryTransactionLogSnapshotSetup {
     public TransactionLogSnapshot createPartitionsSnapshot(long transactionNumber) throws StateStoreException {
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.partitionsInitialState();
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                snapshot, partitionsLog, transactionBodyStore, PartitionTransaction.class, sleeperTable)
+                snapshot, partitionsLog, transactionBodyStore, PartitionTransaction.class, tableProperties)
                 .orElse(snapshot);
         return new TransactionLogSnapshot((StateStorePartitions) snapshot.getState(), transactionNumber);
     }

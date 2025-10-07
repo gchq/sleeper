@@ -25,8 +25,9 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
-arrow = { workspace = true, features = ["prettyprint"] }
+arrow = { workspace = true, features = ["prettyprint", "ffi" ] }
 aggregator_udfs = { path = "../aggregator_udfs" }
+async-trait = { workspace = true }
 aws-config = { workspace = true }
 aws-credential-types = { workspace = true, features = ["hardcoded-credentials"] }
 aws-types = { workspace = true }
@@ -45,8 +46,10 @@ regex = { workspace = true }
 rust_sketch = { path = "../rust_sketch" }
 tokio = { workspace = true, features = ["full"] }
 url = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
 test-log = { workspace = true }
 tokio-test = { workspace = true }
+test_util = { path = "test_util" }

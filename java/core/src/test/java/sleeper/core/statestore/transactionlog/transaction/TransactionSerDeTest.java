@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.transaction;
 
 import org.apache.commons.lang3.StringUtils;
 import org.approvaltests.Approvals;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
@@ -38,6 +41,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartiti
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
+import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.NumberFormatUtils;
 
 import java.time.Instant;
@@ -49,6 +53,9 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
@@ -56,6 +63,14 @@ import static sleeper.core.statestore.SplitFileReference.referenceForChildPartit
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
 
 public class TransactionSerDeTest {
+
+    InstanceProperties instanceProperties = createTestInstancePropertiesWithId("instanceid");
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
+
+    @BeforeEach
+    void setUp() {
+        tableProperties.set(TABLE_ID, "933cd595");
+    }
 
     private static void whenSerDeThenMatchAndVerify(Schema schema, StateStoreTransaction<?> transaction) {
         // When
@@ -74,12 +89,13 @@ public class TransactionSerDeTest {
         // Given
         Schema schema = createSchemaWithKey("key");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+        // Set an update time to test it doesn't show up in JSON
         Instant updateTime = Instant.parse("2024-03-26T09:43:01Z");
-        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+        FileReferenceFactory fileFactory = fileFactory(partitions, updateTime);
         FileReferenceTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
-                        fileFactory.rootFile("file1.parquet", 100),
-                        fileFactory.rootFile("file2.parquet", 200)))
+                        fileFactory.rootFile("file1", 100),
+                        fileFactory.rootFile("file2", 200)))
                         .map(file -> file.withCreatedUpdateTime(updateTime))
                         .collect(toUnmodifiableList()));
 
@@ -95,9 +111,9 @@ public class TransactionSerDeTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "p")
                 .buildTree();
+        // Set an update time to test it doesn't show up in JSON
         Instant updateTime = Instant.parse("2024-03-26T09:43:01Z");
-        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
-        FileReference file = fileFactory.rootFile("file.parquet", 200);
+        FileReference file = fileFactory(partitions, updateTime).rootFile("file", 200);
         referenceForChildPartition(file, "L");
         FileReferenceTransaction transaction = new AddFilesTransaction(
                 AllReferencesToAFile.newFilesWithReferences(Stream.of(
@@ -115,9 +131,9 @@ public class TransactionSerDeTest {
         // Given
         FileReferenceTransaction transaction = new AssignJobIdsTransaction(List.of(
                 assignJobOnPartitionToFiles("job1", "root",
-                        List.of("file1.parquet", "file2.parquet")),
+                        List.of(rootFilePath("file1"), rootFilePath("file2"))),
                 assignJobOnPartitionToFiles("job2", "L",
-                        List.of("file3.parquet", "file4.parquet"))));
+                        List.of(partitionFilePath("L", "file3"), partitionFilePath("L", "file4")))));
 
         // When / Then
         whenSerDeThenMatchAndVerify(createSchemaWithKey("key"), transaction);
@@ -135,7 +151,8 @@ public class TransactionSerDeTest {
     @Test
     void shouldSerDeDeleteFiles() {
         // Given
-        FileReferenceTransaction transaction = new DeleteFilesTransaction(List.of("file1.parquet", "file2.parquet"));
+        FileReferenceTransaction transaction = new DeleteFilesTransaction(List.of(
+                rootFilePath("file1"), rootFilePath("file2")));
 
         // When / Then
         whenSerDeThenMatchAndVerify(createSchemaWithKey("key"), transaction);
@@ -211,11 +228,10 @@ public class TransactionSerDeTest {
         // Given
         Schema schema = createSchemaWithKey("key");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
-        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
         FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
                 replaceJobFileReferences(
-                        "job", List.of("file1.parquet", "file2.parquet"), fileFactory.rootFile("file3.parquet", 100))));
+                        "job", List.of(rootFilePath("file1"), rootFilePath("file2")),
+                        fileFactory(partitions).rootFile("file3", 100))));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
@@ -226,15 +242,13 @@ public class TransactionSerDeTest {
         // Given
         Schema schema = createSchemaWithKey("key");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
-        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
         FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
                 ReplaceFileReferencesRequest.builder()
                         .jobId("job")
                         .taskId("task")
                         .jobRunId("run")
-                        .inputFiles(List.of("file1.parquet", "file2.parquet"))
-                        .newReference(fileFactory.rootFile("file3.parquet", 100))
+                        .inputFiles(List.of(rootFilePath("file1"), rootFilePath("file2")))
+                        .newReference(fileFactory(partitions).rootFile("file3", 100))
                         .build()));
 
         // When / Then
@@ -251,13 +265,12 @@ public class TransactionSerDeTest {
                 .splitToNewChildren("L", "LL", "LR", "g")
                 .splitToNewChildren("R", "RL", "RR", "u")
                 .buildTree();
-        Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
-        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+        FileReferenceFactory fileFactory = fileFactory(partitions);
         FileReferenceTransaction transaction = new SplitFileReferencesTransaction(List.of(
                 splitFileToChildPartitions(
-                        fileFactory.rootFile("file1.parquet", 100), "L", "R"),
+                        fileFactory.rootFile("file1", 100), "L", "R"),
                 splitFileToChildPartitions(
-                        fileFactory.partitionFile("L", "file2.parquet", 200), "LL", "LR")));
+                        fileFactory.partitionFile("L", "file2", 200), "LL", "LR")));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
@@ -291,7 +304,7 @@ public class TransactionSerDeTest {
             // Given
             PartitionTree partitions = new PartitionsBuilder(createSchemaWithKey("key")).singlePartition("root").buildTree();
             FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(
-                    FileReferenceFactory.from(partitions).rootFile("file.parquet", 100)));
+                    fileFactory(partitions).rootFile("file", 100)));
 
             // When
             String json = serDe.toJson(transaction);
@@ -316,5 +329,24 @@ public class TransactionSerDeTest {
                     .isInstanceOf(UnsupportedOperationException.class)
                     .hasMessage("Attempted deserialisation of unsupported class sleeper.core.partition.Partition");
         }
+    }
+
+    private FileReferenceFactory fileFactory(PartitionTree partitions) {
+        // Set an update time to test it doesn't show up in JSON
+        Instant updateTimeToIgnore = Instant.parse("2023-03-26T10:05:01Z");
+        return fileFactory(partitions, updateTimeToIgnore);
+    }
+
+    private FileReferenceFactory fileFactory(PartitionTree partitions, Instant updateTime) {
+        return FileReferenceFactory.fromUpdatedAt(instanceProperties, tableProperties, partitions, updateTime);
+    }
+
+    private String rootFilePath(String filename) {
+        return partitionFilePath("root", filename);
+    }
+
+    private String partitionFilePath(String partitionId, String filename) {
+        return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+                .constructPartitionParquetFilePath(partitionId, filename);
     }
 }
