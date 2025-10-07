@@ -28,11 +28,9 @@ import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.table.AddTable;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
@@ -41,21 +39,15 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
-import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -115,53 +107,28 @@ public class DeployNewInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
+        deployInstanceConfiguration.validate();
 
-        Path templatesDirectory = scriptsDirectory.resolve("templates");
-        Path generatedDirectory = scriptsDirectory.resolve("generated");
-        Path jarsDirectory = scriptsDirectory.resolve("jars");
-        String sleeperVersion = Files.readString(templatesDirectory.resolve("version.txt"));
+        DeployInstance deployInstance = new DeployInstance(
+                SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
+                new UploadDockerImagesToEcr(
+                        UploadDockerImages.builder()
+                                .scriptsDirectory(scriptsDirectory)
+                                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
+                                .commandRunner(runCommand)
+                                .build(),
+                        EcrRepositoryCreator.withEcrClient(ecrClient)),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
+                InvokeCdkForInstance.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
-        InstanceProperties instanceProperties = deployInstanceConfiguration.getInstanceProperties();
-        String instanceId = instanceProperties.get(ID);
-        LOGGER.info("instanceId: {}", instanceId);
-        LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
-        LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
-        LOGGER.info("templatesDirectory: {}", templatesDirectory);
-        LOGGER.info("generatedDirectory: {}", generatedDirectory);
-        LOGGER.info("scriptsDirectory: {}", scriptsDirectory);
-        LOGGER.info("jarsDirectory: {}", jarsDirectory);
-        LOGGER.info("sleeperVersion: {}", sleeperVersion);
-        LOGGER.info("deployPaused: {}", deployPaused);
-        validate(instanceProperties, deployInstanceConfiguration.getTableProperties());
+        deployInstance.deploy(DeployInstanceRequest.builder()
+                .instanceConfig(deployInstanceConfiguration)
+                .cdkCommand(deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew())
+                .extraDockerImages(extraDockerImages)
+                .instanceType(instanceType)
+                .build());
 
-        SyncJars.builder().s3(s3Client)
-                .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
-                .deleteOldJars(false).build().sync();
-        UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
-                UploadDockerImages.builder()
-                        .scriptsDirectory(scriptsDirectory)
-                        .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
-                        .commandRunner(runCommand)
-                        .build(),
-                EcrRepositoryCreator.withEcrClient(ecrClient));
-        dockerImageUploader.upload(
-                UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
-                        .withExtraImages(extraDockerImages));
-
-        Files.createDirectories(generatedDirectory);
-        ClientUtils.clearDirectory(generatedDirectory);
-        SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
-                deployInstanceConfiguration.getTableProperties().stream());
-
-        LOGGER.info("-------------------------------------------------------");
-        LOGGER.info("Deploying Stacks");
-        LOGGER.info("-------------------------------------------------------");
-        CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
-        InvokeCdkForInstance.builder()
-                .propertiesFile(generatedDirectory.resolve("instance.properties"))
-                .jarsDirectory(jarsDirectory).version(sleeperVersion)
-                .build().invoke(instanceType, cdkCommand, runCommand);
-        instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, deployInstanceConfiguration.getInstanceId());
         for (TableProperties tableProperties : deployInstanceConfiguration.getTableProperties()) {
             LOGGER.info("Adding table " + tableProperties.getStatus());
             new AddTable(instanceProperties, tableProperties,
@@ -170,13 +137,6 @@ public class DeployNewInstance {
                     .run();
         }
         LOGGER.info("Finished deployment of new instance");
-    }
-
-    private void validate(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
-        SleeperPropertiesValidationReporter validationReporter = new SleeperPropertiesValidationReporter();
-        instanceProperties.validate(validationReporter);
-        tableProperties.forEach(properties -> properties.validate(validationReporter));
-        validationReporter.throwIfFailed();
     }
 
     public static final class Builder {
