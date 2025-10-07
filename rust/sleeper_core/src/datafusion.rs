@@ -23,9 +23,10 @@ use crate::{
         filter_aggregation_config::validate_aggregations,
         output::Completer,
         sketch::Sketcher,
+        unalias::unalias_view_projection_columns,
         util::{
             calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
-            remove_coalesce_physical_stage, retrieve_input_size, unalias_view_projection_columns,
+            remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
 };
@@ -57,6 +58,7 @@ pub mod output;
 mod region;
 pub mod sketch;
 mod sketch_udf;
+mod unalias;
 mod util;
 
 pub use arrow_stream::stream_to_ffi_arrow_stream;

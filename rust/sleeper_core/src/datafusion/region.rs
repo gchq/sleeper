@@ -16,7 +16,6 @@
 */
 use crate::{ColRange, PartitionBound};
 use datafusion::logical_expr::{Expr, ident, lit};
-use log::error;
 use std::collections::HashMap;
 
 /// Represents a Sleeper partition region.
@@ -127,8 +126,7 @@ fn bound_to_lit_expr(bound: &PartitionBound) -> Expr {
         PartitionBound::String(val) => lit(val.to_owned()),
         PartitionBound::ByteArray(val) => lit(val.to_owned()),
         PartitionBound::Unbounded => {
-            error!("Can't create filter expression for unbounded partition range!");
-            std::process::abort();
+            panic!("Can't create filter expression for unbounded partition range!");
         }
     }
 }
