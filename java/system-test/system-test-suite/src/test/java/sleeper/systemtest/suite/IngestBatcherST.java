@@ -102,4 +102,27 @@ public class IngestBatcherST {
                 .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
+
+    @Test
+    void shouldIngestFileFromTableDataBucket(SleeperSystemTest sleeper) {
+        // Given
+        sleeper.updateTableProperties(Map.of(
+                INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
+                INGEST_BATCHER_MIN_JOB_FILES, "1",
+                INGEST_BATCHER_MIN_JOB_SIZE, "1K",
+                INGEST_BATCHER_MAX_JOB_FILES, "3"));
+        sleeper.sourceFiles()
+                .inDataBucket()
+                .createWithNumberedRows("test-file.parquet", LongStream.range(0, 100));
+
+        // When
+        sleeper.ingest().batcher()
+                .sendSourceFilesExpectingJobs(1, "test-file.parquet")
+                .waitForStandardIngestTask().waitForIngestJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
+        assertThat(sleeper.tableFiles().references()).hasSize(1);
+    }
 }
