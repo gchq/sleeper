@@ -38,11 +38,15 @@ public class ArrowToRowConversionUtils {
     /**
      * Construct a Sleeper row from a single Arrow row.
      *
-     * @param  vectorSchemaRoot the container for all of the vectors which hold the values to use
-     * @param  rowNo            the index to read from each vector
-     * @return                  a new row object holding those values
+     * @param  vectorSchemaRoot          the container for all of the vectors which hold the values to use
+     * @param  rowNo                     the index to read from each vector
+     * @return                           a new row object holding those values
+     * @throws IndexOutOfBoundsException if rowNo is out of bounds of the given vector
      */
     public static Row convertVectorSchemaRootToRow(VectorSchemaRoot vectorSchemaRoot, int rowNo) {
+        if (rowNo < 0 || rowNo >= vectorSchemaRoot.getRowCount()) {
+            throw new IndexOutOfBoundsException("Row number greater than number of rows " + rowNo + ">=" + vectorSchemaRoot.getRowCount());
+        }
         int noOfFields = vectorSchemaRoot.getSchema().getFields().size();
         Row row = new Row();
         for (int fieldNo = 0; fieldNo < noOfFields; fieldNo++) {

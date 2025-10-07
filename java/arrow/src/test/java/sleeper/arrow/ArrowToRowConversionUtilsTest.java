@@ -24,10 +24,10 @@ import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.MapVector;
-import org.apache.arrow.vector.complex.StructVector;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.complex.impl.UnionMapWriter;
+import org.apache.arrow.vector.complex.writer.BaseWriter.ListWriter;
+import org.apache.arrow.vector.complex.writer.BaseWriter.MapWriter;
 import org.apache.arrow.vector.util.Text;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatIndexOutOfBoundsException;
 
 class ArrowToRowConversionUtilsTest {
 
@@ -156,70 +156,215 @@ class ArrowToRowConversionUtilsTest {
                 MapVector mapVector = MapVector.empty("mapField", allocator, false)) {
             mapVector.allocateNew();
             mapVector.setValueCount(1);
-
-            // Arrow map as list of structs (key, value)
-            StructVector entries = mapVector.getDataVector();
-            entries.setValueCount(1);
-            VarCharVector keys = (VarCharVector) entries.getChild(MapVector.KEY_NAME);
-            IntVector values = (IntVector) entries.getChild(MapVector.VALUE_NAME);
-
-            keys.setSafe(0, new Text("k1").getBytes());
-            values.setSafe(0, 42);
-
-            // Simulate 1 {k1: 42} at row 0
-            entries.setIndexDefined(0);
+            UnionMapWriter mapWriter = mapVector.getWriter();
+            mapWriter.setPosition(0);
+            mapWriter.setValueCount(2);
+            mapWriter.startMap();
+            mapWriter.startEntry();
+            mapWriter.key().integer().writeInt(1);
+            mapWriter.value().integer().writeInt(2);
+            mapWriter.endEntry();
+            mapWriter.startEntry();
+            mapWriter.key().integer().writeInt(3);
+            mapWriter.value().integer().writeInt(4);
+            mapWriter.endEntry();
+            mapWriter.endMap();
 
             VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(mapVector));
+
+            Map<Integer, Integer> expected = Map.of(1, 2, 3, 4);
+
             // When
             Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
 
             // Then
-            assertThat(row.get("mapField"))
-                    .isInstanceOf(Map.class)
-                    .asInstanceOf(map(String.class, Integer.class))
-                    .containsEntry("k1", 42);
+            assertThat(row.get("mapField")).asInstanceOf(InstanceOfAssertFactories.MAP)
+                    .containsExactlyInAnyOrderEntriesOf(expected);
         }
     }
 
     @Test
-    void givenNestedMapAndList_whenConvert_thenRecursivelyConverts() {
+    void shouldConvertNestedListInMap() {
         // Given
         try (
-                ListVector outerList = ListVector.empty("outerList", allocator)) {
-            outerList.allocateNew();
+                MapVector mapVector = MapVector.empty("mapField", allocator, false)) {
+            mapVector.allocateNew();
+            ListWriter valueWriter;
+            UnionMapWriter mapWriter = mapVector.getWriter();
+            mapWriter.setPosition(0);
+            mapWriter.startMap();
+            mapWriter.startEntry();
+            mapWriter.key().integer().writeInt(1);
+            valueWriter = mapWriter.value().list();
+            valueWriter.startList();
+            valueWriter.integer().writeInt(2);
+            valueWriter.integer().writeInt(3);
+            valueWriter.endList();
+            mapWriter.endEntry();
 
-            StructVector innerStruct = outerList.addOrGetStructVector();
-            MapVector mapVector = innerStruct.addOrGetMap("mapField", FieldType.nullable(new ArrowType.Map(false)), null);
-            VarCharVector keys = (VarCharVector) mapVector.getDataVector().getChild(MapVector.KEY_NAME);
-            IntVector vals = (IntVector) mapVector.getDataVector().getChild(MapVector.VALUE_NAME);
+            mapWriter.startEntry();
+            mapWriter.key().integer().writeInt(4);
+            valueWriter = mapWriter.value().list();
+            valueWriter.startList();
+            valueWriter.integer().writeInt(5);
+            valueWriter.integer().writeInt(6);
+            valueWriter.endList();
+            mapWriter.endEntry();
+            mapWriter.endMap();
+            mapWriter.setValueCount(1);
 
-            // Set value: one element in list, containing map { foo: 1 }
-            outerList.startNewValue(0);
-            innerStruct.setValueCount(1);
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(mapVector));
 
-            // Map with {foo: 1}
-            mapVector.setValueCount(1);
-            keys.setSafe(0, new Text("foo").getBytes());
-            vals.setSafe(0, 1);
+            Map<Integer, List<Integer>> expected = Map.of(1, List.of(2, 3), 4, List.of(5, 6));
 
-            outerList.endValue(0, 1);
-            outerList.setValueCount(1);
-
-            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(outerList));
             // When
             Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
 
             // Then
-            assertThat(row.get("outerList"))
-                    .isInstanceOf(List.class)
-                    .asList().hasSize(1)
-                    .element(0).isInstanceOf(Map.class)
-                    .asInstanceOf(map(String.class, Integer.class)).containsEntry("foo", 1);
+            assertThat(row.get("mapField")).asInstanceOf(InstanceOfAssertFactories.MAP)
+                    .containsExactlyInAnyOrderEntriesOf(expected);
         }
     }
 
     @Test
-    void whenRowNoIsOutOfBounds_thenThrowsException() {
+    void shouldConvertNestedListInList() {
+        // Given
+        try (
+                ListVector listVector = ListVector.empty("listField", allocator)) {
+            listVector.allocateNew();
+            UnionListWriter listWriter = listVector.getWriter();
+            listWriter.setPosition(0);
+            listWriter.startList();
+            listWriter.list().startList();
+            listWriter.list().integer().writeInt(1);
+            listWriter.list().integer().writeInt(2);
+            listWriter.list().integer().writeInt(3);
+            listWriter.list().endList();
+            listWriter.list().startList();
+            listWriter.list().integer().writeInt(4);
+            listWriter.list().integer().writeInt(5);
+            listWriter.list().integer().writeInt(6);
+            listWriter.list().endList();
+            listWriter.endList();
+            listWriter.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(listVector));
+
+            List<List<Integer>> expected = List.of(List.of(1, 2, 3), List.of(4, 5, 6));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("listField")).asInstanceOf(InstanceOfAssertFactories.LIST).containsExactly(expected.toArray());
+        }
+    }
+
+    @Test
+    void shouldConvertNestedMapInMap() {
+        // Given
+        try (
+                MapVector mapVector = MapVector.empty("mapField", allocator, false)) {
+            mapVector.allocateNew();
+            MapWriter valueWriter;
+            UnionMapWriter mapWriter = mapVector.getWriter();
+            mapWriter.setPosition(0);
+            mapWriter.startMap();
+            mapWriter.startEntry();
+            mapWriter.key().integer().writeInt(1);
+            valueWriter = mapWriter.value().map(false);
+            valueWriter.startMap();
+            valueWriter.startEntry();
+            valueWriter.key().integer().writeInt(2);
+            valueWriter.value().integer().writeInt(3);
+            valueWriter.endEntry();
+            valueWriter.startEntry();
+            valueWriter.key().integer().writeInt(4);
+            valueWriter.value().integer().writeInt(5);
+            valueWriter.endEntry();
+            valueWriter.endMap();
+            mapWriter.endEntry();
+            mapWriter.startEntry();
+            mapWriter.key().integer().writeInt(6);
+            valueWriter = mapWriter.value().map(false);
+            valueWriter.startMap();
+            valueWriter.startEntry();
+            valueWriter.key().integer().writeInt(7);
+            valueWriter.value().integer().writeInt(8);
+            valueWriter.endEntry();
+            valueWriter.startEntry();
+            valueWriter.key().integer().writeInt(9);
+            valueWriter.value().integer().writeInt(10);
+            valueWriter.endEntry();
+            valueWriter.endMap();
+            mapWriter.endEntry();
+
+            mapWriter.endMap();
+            mapWriter.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(mapVector));
+
+            Map<Integer, Map<Integer, Integer>> expected = Map.of(1, Map.of(2, 3, 4, 5), 6, Map.of(7, 8, 9, 10));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("mapField")).asInstanceOf(InstanceOfAssertFactories.MAP)
+                    .containsExactlyInAnyOrderEntriesOf(expected);
+        }
+    }
+
+    @Test
+    void shouldConvertNestedMapInList() {
+        // Given
+        try (
+                ListVector listVector = ListVector.empty("listField", allocator)) {
+            listVector.allocateNew();
+            MapWriter valueWriter;
+            UnionListWriter listWriter = listVector.getWriter();
+            listWriter.setPosition(0);
+            listWriter.startList();
+            valueWriter = listWriter.map(false);
+            valueWriter.startMap();
+            valueWriter.startEntry();
+            valueWriter.key().integer().writeInt(1);
+            valueWriter.value().integer().writeInt(2);
+            valueWriter.endEntry();
+            valueWriter.startEntry();
+            valueWriter.key().integer().writeInt(3);
+            valueWriter.value().integer().writeInt(4);
+            valueWriter.endEntry();
+            valueWriter.endMap();
+            valueWriter = listWriter.map(false);
+            valueWriter.startMap();
+            valueWriter.startEntry();
+            valueWriter.key().integer().writeInt(5);
+            valueWriter.value().integer().writeInt(6);
+            valueWriter.endEntry();
+            valueWriter.startEntry();
+            valueWriter.key().integer().writeInt(7);
+            valueWriter.value().integer().writeInt(8);
+            valueWriter.endEntry();
+            valueWriter.endMap();
+
+            listWriter.endList();
+            listWriter.setValueCount(1);
+
+            VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(listVector));
+
+            List<Map<Integer, Integer>> expected = List.of(Map.of(1, 2, 3, 4), Map.of(5, 6, 7, 8));
+
+            // When
+            Row row = ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 0);
+
+            // Then
+            assertThat(row.get("listField")).asInstanceOf(InstanceOfAssertFactories.LIST).containsExactly(expected.toArray());
+        }
+    }
+
+    @Test
+    void shouldThrowExceptionOnOutOfBounds() {
         // Given
         try (
                 IntVector intVec = new IntVector("intField", allocator)) {
@@ -230,8 +375,7 @@ class ArrowToRowConversionUtilsTest {
             VectorSchemaRoot root = new VectorSchemaRoot(Collections.singletonList(intVec));
 
             // Expect
-            assertThatThrownBy(() -> ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 1))
-                    .isInstanceOf(IndexOutOfBoundsException.class);
+            assertThatIndexOutOfBoundsException().isThrownBy(() -> ArrowToRowConversionUtils.convertVectorSchemaRootToRow(root, 1));
         }
     }
 }
