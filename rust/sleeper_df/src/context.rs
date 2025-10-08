@@ -16,7 +16,6 @@
  */
 #[cfg(doc)]
 use crate::native_query_stream;
-use log::error;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
