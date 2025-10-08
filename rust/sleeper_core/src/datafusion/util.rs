@@ -217,10 +217,6 @@ pub fn add_numeric_casts(
         match (types.0.data_type(), types.1.data_type()) {
             (orig_type @ DataType::Int32, agg_type @ DataType::Int64)
             | (orig_type @ DataType::Int64, agg_type @ DataType::Int32) => {
-                eprintln!(
-                    "Add cast to handle a {} that has become a {}",
-                    orig_type, agg_type
-                );
                 column_proj.push(
                     ScalarUDF::from(CastUDF::new(agg_type, orig_type, types.0.is_nullable()))
                         .call(vec![ident(types.0.name())])
