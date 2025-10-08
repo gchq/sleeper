@@ -130,10 +130,10 @@ pub unsafe extern "C" fn destroy_context(ctx: *mut FFIContext) {
         // safely de-allocates it
         let _ = unsafe { Box::from_raw(ctx_ref) };
     } else {
-        // Can't panic! in an extern "C" function. Stack unwinding is not supported
-        // and is undefined behaviour across FFI boundary.
-        error!("Null pointer passed to destroy_context!");
-        std::process::abort();
+        // Unwinding panics are caught at the FFI boundary due to using
+        // extern "C", so avoid undefined behaviour of allowing unwind to
+        // cross FFI boundary
+        panic!("Null pointer passed to destroy_context!");
     }
 }
 
