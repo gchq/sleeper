@@ -30,9 +30,7 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionTaskTestHelper;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
@@ -53,6 +51,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.parquet.row.RowReadSupport;
@@ -276,74 +275,6 @@ public class DataFusionCompactionRunnerIT {
     }
 
     @Nested
-    @DisplayName("Handle old aggregation configuration")
-    class HandleOldAggregationConfig {
-        @Test
-        void shouldMergeAndAggregate() throws Exception {
-            // Given
-            Schema schema = Schema.builder()
-                    .rowKeyFields(new Field("key", new StringType()))
-                    .sortKeyFields(new Field("sort", new StringType()))
-                    .valueFields(new Field("value", new LongType()), new Field("map_value2", new MapType(new StringType(), new LongType())))
-                    .build();
-            tableProperties.setSchema(schema);
-            tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, DataEngine.AGGREGATION_ITERATOR_NAME);
-            tableProperties.set(TableProperty.ITERATOR_CONFIG, "sort;,sum(value),map_sum(map_value2)");
-            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Row row1 = new Row(Map.of("key", "a", "sort", "b", "value", 1L, "map_value2", Map.of("map_key1", 1L, "map_key2", 3L)));
-            Row row2 = new Row(Map.of("key", "a", "sort", "b", "value", 2L, "map_value2", Map.of("map_key1", 3L, "map_key2", 4L)));
-            String file1 = writeFileForPartition("root", List.of(row1));
-            String file2 = writeFileForPartition("root", List.of(row2));
-            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
-
-            Row output1 = new Row(Map.of("key", "a", "sort", "b", "value", 3L, "map_value2", Map.of("map_key1", 4L, "map_key2", 7L)));
-
-            // When
-            runTask(job);
-
-            // Then
-            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 1));
-            assertThat(readDataFile(schema, job.getOutputFile()))
-                    .containsExactly(output1);
-            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(output1)));
-        }
-
-        @Test
-        void shouldMergeAndFilterAgeOff() throws Exception {
-            // Given
-            Schema schema = Schema.builder()
-                    .rowKeyFields(new Field("key", new StringType()))
-                    .sortKeyFields(new Field("timestamp", new LongType()))
-                    .valueFields(new Field("value", new LongType()))
-                    .build();
-            tableProperties.setSchema(schema);
-            tableProperties.set(TableProperty.ITERATOR_CLASS_NAME, DataEngine.AGGREGATION_ITERATOR_NAME);
-            tableProperties.set(TableProperty.ITERATOR_CONFIG, "timestamp;ageoff=timestamp,10,sum(value)");
-            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
-            Row row1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 1L));
-            Row row2 = new Row(Map.of("key", "a", "timestamp", 1L, "value", 2L));
-            Row row3 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 3L));
-
-            String file1 = writeFileForPartition("root", List.of(row1));
-            String file2 = writeFileForPartition("root", List.of(row2, row3));
-            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
-
-            Row output1 = new Row(Map.of("key", "a", "timestamp", 999999999999999L, "value", 4L));
-
-            // When
-            runTask(job);
-
-            // Then
-            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 1));
-            assertThat(readDataFile(schema, job.getOutputFile()))
-                    .containsExactly(output1);
-            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
-                    .isEqualTo(SketchesDeciles.from(schema, List.of(output1)));
-        }
-    }
-
-    @Nested
     @DisplayName("Handle aggregation and filtering")
     class HandleAggregationAndFiltering {
         @Test
@@ -459,7 +390,10 @@ public class DataFusionCompactionRunnerIT {
     }
 
     private void runTask(CompactionJob job) throws Exception {
-        CompactionRunner runner = new DataFusionCompactionRunner(new Configuration());
+        CompactionRunner runner = new DataFusionCompactionRunner(
+                // DataFusion spends time trying to auth with AWS unless you override it
+                DataFusionAwsConfig.overrideEndpoint("dummy"),
+                new Configuration());
         compactionTaskTestHelper().runTask(runner, List.of(job));
     }
 

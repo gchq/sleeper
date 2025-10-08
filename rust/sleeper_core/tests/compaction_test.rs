@@ -16,7 +16,7 @@
 use arrow::datatypes::{DataType, Field, Schema};
 use color_eyre::eyre::Error;
 use sleeper_core::{
-    CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperPartitionRegion,
+    CommonConfigBuilder, OutputType, SleeperParquetOptions, SleeperRegion,
     filter_aggregation_config::aggregate::Aggregate, run_compaction,
 };
 use std::{collections::HashMap, path::Path, sync::Arc};
@@ -39,7 +39,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
         .row_key_cols(col_names(["key"]))
-        .region(SleeperPartitionRegion::new(single_int_range("key", 0, 5)))
+        .region(SleeperRegion::new(single_int_range("key", 0, 5)))
         .output(OutputType::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
@@ -71,7 +71,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
         .row_key_cols(col_names(["key"]))
-        .region(SleeperPartitionRegion::new(single_int_range("key", 0, 5)))
+        .region(SleeperRegion::new(single_int_range("key", 0, 5)))
         .output(OutputType::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
@@ -103,7 +103,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
         .row_key_cols(col_names(["key"]))
-        .region(SleeperPartitionRegion::new(single_int_range("key", 2, 4)))
+        .region(SleeperRegion::new(single_int_range("key", 2, 4)))
         .output(OutputType::File {
             output_file: output.clone(),
             opts: SleeperParquetOptions::default(),
@@ -141,7 +141,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
         .row_key_cols(col_names(["key1", "key2"]))
-        .region(SleeperPartitionRegion::new(HashMap::from([
+        .region(SleeperRegion::new(HashMap::from([
             region_entry("key1", int_range(2, 4)),
             region_entry("key2", int_range(13, 23)),
         ])))
@@ -185,7 +185,7 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
         .row_key_cols(col_names(["key2"]))
-        .region(SleeperPartitionRegion::new(HashMap::from([region_entry(
+        .region(SleeperRegion::new(HashMap::from([region_entry(
             "key2",
             int_range(11, 25),
         )])))
@@ -237,7 +237,7 @@ async fn should_aggregate_ints() -> Result<(), Error> {
         .input_files_sorted(true)
         .row_key_cols(col_names(["row_key"]))
         .sort_key_cols(col_names(["sort_key"]))
-        .region(SleeperPartitionRegion::new(HashMap::from([region_entry(
+        .region(SleeperRegion::new(HashMap::from([region_entry(
             "row_key",
             int_range(0, 100),
         )])))
@@ -325,7 +325,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
         .input_files(vec![file_1, file_2])
         .input_files_sorted(true)
         .row_key_cols(col_names(["key"]))
-        .region(SleeperPartitionRegion::new(HashMap::from([region_entry(
+        .region(SleeperRegion::new(HashMap::from([region_entry(
             "key",
             int_range(0, 5),
         )])))

@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
@@ -24,12 +25,13 @@ import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoa
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
+import sleeper.core.util.ThreadSleep;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -49,14 +51,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
 
     private TransactionLogStateStore(Builder builder) {
         this(builder, TransactionLogHead.builder()
-                .sleeperTable(builder.sleeperTable)
+                .tableProperties(builder.tableProperties)
                 .transactionBodyStore(builder.transactionBodyStore)
                 .updateLogBeforeAddTransaction(builder.updateLogBeforeAddTransaction)
-                .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
-                .timeBetweenSnapshotChecks(builder.timeBetweenSnapshotChecks)
-                .timeBetweenTransactionChecks(builder.timeBetweenTransactionChecks)
-                .minTransactionsAheadToLoadSnapshot(builder.minTransactionsAheadToLoadSnapshot)
-                .retryBackoff(builder.retryBackoff));
+                .randomJitterFraction(builder.randomJitterFraction)
+                .retryWaiter(builder.retryWaiter));
     }
 
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
@@ -123,32 +122,29 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      * Builder to create a state store backed by a transaction log.
      */
     public static class Builder {
-        private TableStatus sleeperTable;
+        private TableProperties tableProperties;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
         private TransactionBodyStore transactionBodyStore;
-        private long minTransactionsAheadToLoadSnapshot = DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
         private boolean updateLogBeforeAddTransaction = true;
-        private int maxAddTransactionAttempts = DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS;
-        private ExponentialBackoffWithJitter retryBackoff = new ExponentialBackoffWithJitter(DEFAULT_RETRY_WAIT_RANGE);
         private TransactionLogSnapshotLoader filesSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
         private TransactionLogSnapshotLoader partitionsSnapshotLoader = TransactionLogSnapshotLoader.neverLoad();
-        private Duration timeBetweenSnapshotChecks = DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS;
-        private Duration timeBetweenTransactionChecks = DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS;
         private Supplier<Instant> filesStateUpdateClock = Instant::now;
         private Supplier<Instant> partitionsStateUpdateClock = Instant::now;
+        private DoubleSupplier randomJitterFraction = Math::random;
+        private ThreadSleep retryWaiter = Thread::sleep;
 
         private Builder() {
         }
 
         /**
-         * Sets the Sleeper table the state store is for. Used in logging.
+         * Sets the Sleeper table the state store is for, and configures the state store from the table properties.
          *
-         * @param  sleeperTable the table status
-         * @return              the builder
+         * @param  tableProperties the table properties
+         * @return                 the builder
          */
-        public Builder sleeperTable(TableStatus sleeperTable) {
-            this.sleeperTable = sleeperTable;
+        public Builder tableProperties(TableProperties tableProperties) {
+            this.tableProperties = tableProperties;
             return this;
         }
 
@@ -186,19 +182,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         }
 
         /**
-         * The minimum number of transactions ahead that a snapshot must be before we should load it. If a snapshot
-         * exists that is fewer than this many transactions ahead of the local state, we will read the transactions from
-         * the log instead of loading the snapshot.
-         *
-         * @param  minTransactionsAheadToLoadSnapshot the minimum number of transactions ahead to load a snapshot
-         * @return                                    the builder
-         */
-        public Builder minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
-            this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
-            return this;
-        }
-
-        /**
          * Whether to update from the transaction log before adding a transaction. If more than one process is likely to
          * update the state store at the same time, this may be beneficial. If all or most transactions are added by a
          * single process, it may be better to avoid updating before every transaction to achieve higher throughput in
@@ -219,24 +202,12 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         }
 
         /**
-         * Sets the maximum number of attempts when retrying adding a transaction due to a conflict.
-         *
-         * @param  maxAddTransactionAttempts the number of attempts
-         * @return                           the builder
-         */
-        public Builder maxAddTransactionAttempts(int maxAddTransactionAttempts) {
-            this.maxAddTransactionAttempts = maxAddTransactionAttempts;
-            return this;
-        }
-
-        /**
          * Sets the configuration for exponential backoff during retries adding a transaction.
          *
          * @param  retryBackoff the backoff configuration
          * @return              the builder
          */
         public Builder retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
-            this.retryBackoff = retryBackoff;
             return this;
         }
 
@@ -263,31 +234,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         }
 
         /**
-         * Sets the amount of time to wait after checking for a new snapshot before checking again. This can avoid
-         * repeatedly querying an index of snapshots.
-         *
-         * @param  timeBetweenSnapshotChecks the wait time between checks for a snapshot
-         * @return                           the builder
-         */
-        public Builder timeBetweenSnapshotChecks(Duration timeBetweenSnapshotChecks) {
-            this.timeBetweenSnapshotChecks = timeBetweenSnapshotChecks;
-            return this;
-        }
-
-        /**
-         * Sets the amount of time to wait after checking for new transactions before checking again. This is only
-         * applied when querying the state store, not during an update. This should not be used if you have multiple
-         * instances of the state store that you expect to be up to date with one another immediately.
-         *
-         * @param  timeBetweenTransactionChecks the wait time between checks for new transactions
-         * @return                              the builder
-         */
-        public Builder timeBetweenTransactionChecks(Duration timeBetweenTransactionChecks) {
-            this.timeBetweenTransactionChecks = timeBetweenTransactionChecks;
-            return this;
-        }
-
-        /**
          * Sets the clock to use to determine when to check for new transactions or snapshots for file references. This
          * is used in tests to control the time that the state store sees.
          *
@@ -308,6 +254,30 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          */
         public Builder partitionsStateUpdateClock(Supplier<Instant> partitionsStateUpdateClock) {
             this.partitionsStateUpdateClock = partitionsStateUpdateClock;
+            return this;
+        }
+
+        /**
+         * Sets the supplier to produce a random amount of jitter as a fraction, when waiting to retry transactions.
+         * Usually only overridden in tests.
+         *
+         * @param  randomJitterFraction the random jitter fraction supplier
+         * @return                      the builder
+         */
+        public Builder randomJitterFraction(DoubleSupplier randomJitterFraction) {
+            this.randomJitterFraction = randomJitterFraction;
+            return this;
+        }
+
+        /**
+         * Sets the method to sleep the current thread when waiting to retry transactions.
+         * Implemented by <code>Thread.sleep</code>. Usually only overridden in tests.
+         *
+         * @param  retryWaiter the method to sleep the current thread
+         * @return             the builder
+         */
+        public Builder retryWaiter(ThreadSleep retryWaiter) {
+            this.retryWaiter = retryWaiter;
             return this;
         }
 

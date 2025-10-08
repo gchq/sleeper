@@ -150,7 +150,7 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
 
         // Job tracker updates are done in a separate process that reads from the log and updates its local state
         TransactionLogEntry entry = filesLogStore.getLastEntry();
-        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.updateTrackers(sleeperTable, tracker, CompactionJobTracker.NONE));
+        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.updateTrackers(tableProperties.getStatus(), tracker, CompactionJobTracker.NONE));
     }
 
 }

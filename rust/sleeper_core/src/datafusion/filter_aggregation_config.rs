@@ -22,42 +22,13 @@ use aggregator_udfs::{
     nonnull::{NonNullable, non_null_max, non_null_min, non_null_sum},
 };
 use datafusion::{
-    common::{Column, DFSchema, HashSet, plan_datafusion_err, plan_err},
+    common::{Column, DFSchema, HashSet, plan_err},
     dataframe::DataFrame,
-    error::{DataFusionError, Result},
+    error::Result,
     logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
 };
 use filter_udfs::ageoff::AgeOff;
-use regex::Regex;
 use std::sync::Arc;
-
-pub const AGGREGATE_REGEX: &str = r"(\w+)\((\w+)\)";
-
-/// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.
-///
-/// Aggregation must be performed on all value columns, or none at all. This condition will be validated by the
-/// [`validate_aggregations`] function.
-#[derive(Debug, Default)]
-pub struct FilterAggregationConfig {
-    /// Single filtering option
-    filter: Option<Filter>,
-    /// Aggregation columns. These must not include any row key columns or columns mentioned in `agg_cols`.
-    aggregation: Option<Vec<Aggregate>>,
-}
-
-impl FilterAggregationConfig {
-    /// Get the filter configuration if present.
-    #[must_use]
-    pub fn filter(&self) -> Option<&Filter> {
-        self.filter.as_ref()
-    }
-
-    /// Aggregation configuration if present.
-    #[must_use]
-    pub fn aggregation(&self) -> Option<&Vec<Aggregate>> {
-        self.aggregation.as_ref()
-    }
-}
 
 impl Filter {
     /// Creates a filtering expression for this filter instance. The returned
@@ -102,60 +73,6 @@ impl MapAggregateOp {
             MapAggregateOp::Min => UdfMapAggregatorOp::Min,
             MapAggregateOp::Max => UdfMapAggregatorOp::Max,
         }
-    }
-}
-
-impl TryFrom<&str> for FilterAggregationConfig {
-    type Error = DataFusionError;
-
-    /// This is a minimum viable parser for the configuration for filters/aggregators.
-    /// It is a really good example of how NOT to do it. This routine has some odd behaviour.
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        // split aggregation columns out
-        let (_, filter_agg) = value
-            .split_once(';')
-            .ok_or(plan_datafusion_err!("No ; in aggregation configuration"))?;
-
-        // Create list of strings delimited by comma as iterator
-        let values = filter_agg.split(',').map(str::trim).collect::<Vec<_>>();
-        let filter = if values[0].starts_with("ageoff=") {
-            let column = values[0].split('=').collect::<Vec<_>>()[1].replace('\'', "");
-            let max_age = values[1]
-                .replace('\'', "")
-                .parse::<i64>()
-                .map_err(|_| DataFusionError::Internal(format!("Invalid number {}", values[1])))?;
-            Some(Filter::Ageoff { column, max_age })
-        } else {
-            None
-        };
-        // Look for aggregators, skip first part if no we didn't have ageoff filter, otherwise skip 2
-        // This is a really hacky implementation
-        let iter = if filter.is_some() {
-            values.iter().skip(2)
-        } else {
-            values.iter().skip(1)
-        };
-        let mut aggregation = Vec::new();
-        let matcher =
-            Regex::new(AGGREGATE_REGEX).map_err(|e| DataFusionError::External(Box::new(e)))?;
-        for agg in iter {
-            if let Some(captures) = matcher.captures(agg) {
-                aggregation.push(Aggregate {
-                    column: captures[2].to_owned(),
-                    operation: AggOp::try_from(&captures[1])
-                        .map_err(|e| DataFusionError::Configuration(e.to_string()))?,
-                });
-            }
-        }
-        let aggregation = if aggregation.is_empty() {
-            None
-        } else {
-            Some(aggregation)
-        };
-        Ok(Self {
-            filter,
-            aggregation,
-        })
     }
 }
 

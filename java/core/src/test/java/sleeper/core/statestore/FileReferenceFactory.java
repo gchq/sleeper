@@ -130,6 +130,20 @@ public class FileReferenceFactory {
      * Creates a factory to create files in the given partition tree. Sets a fixed last updated date for any references
      * created by the factory.
      *
+     * @param  instanceProperties   the instance properties
+     * @param  tableProperties      the table properties
+     * @param  tree                 the tree
+     * @param  lastStateStoreUpdate the time created references should be marked as having last been updated
+     * @return                      the factory
+     */
+    public static FileReferenceFactory fromUpdatedAt(InstanceProperties instanceProperties, TableProperties tableProperties, PartitionTree tree, Instant lastStateStoreUpdate) {
+        return new FileReferenceFactory(tree, lastStateStoreUpdate, FilePathGenerator.fromProperties(instanceProperties, tableProperties));
+    }
+
+    /**
+     * Creates a factory to create files in the given partition tree. Sets a fixed last updated date for any references
+     * created by the factory.
+     *
      * @param  partitions           the partitions in the tree
      * @param  lastStateStoreUpdate the time created references should be marked as having last been updated
      * @return                      the factory

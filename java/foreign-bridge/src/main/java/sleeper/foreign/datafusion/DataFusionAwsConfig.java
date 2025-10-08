@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.datafusion;
+package sleeper.foreign.datafusion;
 
 /**
  * AWS configuration overrides to pass to Rust DataFusion code.
@@ -68,24 +68,20 @@ public class DataFusionAwsConfig {
                 .build();
     }
 
-    public String getRegion() {
-        return region;
-    }
-
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public String getAccessKey() {
-        return accessKey;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public boolean isAllowHttp() {
-        return allowHttp;
+    /**
+     * Converts this configuration to an FFI struct to be passed to DataFusion.
+     *
+     * @param  runtime the FFI runtime
+     * @return         the struct
+     */
+    public FFIAwsConfig toFfi(jnr.ffi.Runtime runtime) {
+        FFIAwsConfig config = new FFIAwsConfig(runtime);
+        config.region.set(region);
+        config.endpoint.set(endpoint);
+        config.access_key.set(accessKey);
+        config.secret_key.set(secretKey);
+        config.allow_http.set(allowHttp);
+        return config;
     }
 
     /**

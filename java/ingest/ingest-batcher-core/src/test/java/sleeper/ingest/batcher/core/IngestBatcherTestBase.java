@@ -91,6 +91,12 @@ public class IngestBatcherTestBase {
         return request;
     }
 
+    protected void addFilesToStore(IngestBatcherTrackedFile... requests) {
+        for (IngestBatcherTrackedFile request : requests) {
+            addFileToStore(request);
+        }
+    }
+
     protected IngestBatcherTrackedFile addFileToStore(Consumer<IngestBatcherTrackedFile.Builder> config) {
         IngestBatcherTrackedFile.Builder builder = ingestRequest();
         config.accept(builder);

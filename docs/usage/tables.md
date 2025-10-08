@@ -16,6 +16,12 @@ information.
 The implementation of this can be chosen in the table property `sleeper.table.statestore.classname`, but usually this
 should be left as the default value.
 
+## Design data processing
+
+Sleeper can apply processing to table data such that all data in the table is seen to have that processing pre-applied.
+For example, this can be used to combine rows with the same values for row keys and sort keys, or to age off old data.
+See more information on this in the [data processing document](data-processing.md).
+
 ## Add/edit a table
 
 Scripts can be used to add, rename and delete tables in a Sleeper instance. If using the scripts, creating a new table
@@ -35,7 +41,7 @@ with `adminClient.sh`.
 Here's an example of how you might use these together to create and add data to a table:
 
 ```bash
-cat schema.json
+cat ./scripts/templates/schema.template
 {
   "rowKeyFields": [
     {
@@ -51,7 +57,7 @@ cat schema.json
   ]
 }
 ID=my-instance-id
-./scripts/utility/estimateSplitPoints.sh schema.json 128 100000 32768 splits.file s3a://my-bucket/file.parquet
+./scripts/utility/estimateSplitPoints.sh ./scripts/templates/schema.template 128 100000 32768 splits.file s3a://my-bucket/file.parquet
 ./scripts/utility/addTable.sh $ID table1
 ./scripts/utility/reinitialiseTable.sh $ID table1 true splits.file
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet

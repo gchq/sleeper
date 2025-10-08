@@ -121,7 +121,7 @@ public class ClientJar {
          *
          * @return client jar built using current variables
          */
-        public ClientJar add() {
+        private ClientJar add() {
             ClientJar clientJar = build();
             ALL.add(clientJar);
             return clientJar;

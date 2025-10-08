@@ -18,6 +18,7 @@ package sleeper.core.statestore.transactionlog.transaction.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -86,7 +87,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
     }
 
     @Override
-    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles, TableProperties tableProperties) throws StateStoreException {
         // Compactions are committed in big batches, so we want to avoid the whole batch failing.
         // We ensure file references are assigned to a job before it is run, which should prevent the files getting into
         // an invalid or unexpected state.

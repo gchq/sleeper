@@ -230,32 +230,34 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on. Valid values are X86_64 and ARM64.\n" +
-                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html")
-            .defaultValue("X86_64")
+                    "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html\n" +
+                    "When `sleeper.compaction.ecs.launch.type` is set to EC2, this must match the architecture of the " +
+                    "EC2 type set in `sleeper.compaction.ec2.type`.")
+            .defaultValue("ARM64")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_CPU = Index.propertyBuilder("sleeper.compaction.task.arm.cpu")
             .description("The CPU for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
-            .defaultValue("1024")
+            .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = Index.propertyBuilder("sleeper.compaction.task.arm.memory.mb")
             .description("The amount of memory in MB for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
-            .defaultValue("4096")
+            .defaultValue("8192")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_CPU = Index.propertyBuilder("sleeper.compaction.task.x86.cpu")
             .description("The CPU for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
-            .defaultValue("1024")
+            .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = Index.propertyBuilder("sleeper.compaction.task.x86.memory.mb")
             .description("The amount of memory in MB for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
-            .defaultValue("4096")
+            .defaultValue("8192")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_FIXED_OVERHEAD = Index.propertyBuilder("sleeper.compaction.task.scaling.overhead.fixed")
@@ -284,8 +286,9 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     UserDefinedInstanceProperty COMPACTION_EC2_TYPE = Index.propertyBuilder("sleeper.compaction.ec2.type")
-            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions).")
-            .defaultValue("t3.xlarge")
+            .description("The EC2 instance type to use for compaction tasks (when using EC2-based compactions). " +
+                    "Note that the architecture configured in `sleeper.compaction.task.cpu.architecture` must match.")
+            .defaultValue("t4g.xlarge")
             .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();

@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog.transaction;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -31,9 +32,11 @@ public interface StateStoreTransaction<T> {
      * Validates whether this transaction may be applied to the given state.
      *
      * @param  state               the state before the transaction
+     * @param  tableProperties     the table properties
      * @throws StateStoreException thrown if the transaction may not be applied
      */
-    void validate(T state) throws StateStoreException;
+    default void validate(T state, TableProperties tableProperties) throws StateStoreException {
+    }
 
     /**
      * Applies this transaction to the given state.
