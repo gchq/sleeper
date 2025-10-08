@@ -46,8 +46,8 @@ public class LoggingStack extends NestedStack {
     }
 
     /**
-     * Creates a log group for a standalone deployment where the whole logging stack is not deployed. This should not
-     * be used when deploying a Sleeper instance.
+     * Creates a log group for a standalone deployment where the logging stack is not deployed.
+     * When deploying a Sleeper instance, call {@link #getLogGroup} instead.
      *
      * @param  scope              the scope to add the log group to
      * @param  ref                the log group to deploy
