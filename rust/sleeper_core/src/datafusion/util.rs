@@ -218,7 +218,7 @@ pub fn add_numeric_casts(
         .zip(agg_schema.fields().iter())
         .map(
             |(orig_field, agg_field)| match (orig_field.data_type(), agg_field.data_type()) {
-                (DataType::Int64, DataType::Int32) | (DataType::Int32, DataType::Int64) => {
+                (DataType::Int32, DataType::Int64) | (DataType::Int64, DataType::Int32) => {
                     ScalarUDF::from(CastUDF::new(agg_field.data_type(), orig_field.data_type()))
                         .call(vec![ident(orig_field.name())])
                         .alias(orig_field.name())
