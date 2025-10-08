@@ -86,6 +86,10 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
+    public void grantReadTableDataBucket(IGrantable grantee) {
+        dataStack.grantRead(grantee);
+    }
+
     public void grantReadTablesAndData(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
