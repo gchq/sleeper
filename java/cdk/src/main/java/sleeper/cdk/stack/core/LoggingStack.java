@@ -32,14 +32,12 @@ import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_D
 public class LoggingStack extends NestedStack {
 
     private final Map<LogGroupRef, ILogGroup> logGroupByRef = new HashMap<>();
-    private final InstanceProperties instanceProperties;
 
     public LoggingStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
-        this.instanceProperties = instanceProperties;
 
         for (LogGroupRef ref : LogGroupRef.values()) {
-            createLogGroup(ref);
+            logGroupByRef.put(ref, createLogGroup(this, ref, instanceProperties));
         }
     }
 
@@ -47,11 +45,20 @@ public class LoggingStack extends NestedStack {
         return Objects.requireNonNull(logGroupByRef.get(ref), "No log group found: " + ref);
     }
 
-    private void createLogGroup(LogGroupRef ref) {
-        logGroupByRef.put(ref, LogGroup.Builder.create(this, ref.shortName)
+    /**
+     * Creates a log group for a standalone deployment where the whole logging stack is not deployed. This should not
+     * be used when deploying a Sleeper instance.
+     *
+     * @param  scope              the scope to add the log group to
+     * @param  ref                the log group to deploy
+     * @param  instanceProperties the fake instance properties, usually adapted from system test properties
+     * @return                    the log group
+     */
+    public static ILogGroup createLogGroup(Construct scope, LogGroupRef ref, InstanceProperties instanceProperties) {
+        return LogGroup.Builder.create(scope, ref.shortName)
                 .logGroupName(ref.prefix + String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), ref.shortName))
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build());
+                .build();
     }
 
     public enum LogGroupRef {
