@@ -287,7 +287,7 @@ async fn should_not_alter_aggregate_schema() -> Result<(), Error> {
         .input_files_sorted(true)
         .row_key_cols(col_names(["row_key"]))
         .sort_key_cols(col_names(["sort_key"]))
-        .region(SleeperPartitionRegion::new(HashMap::from([region_entry(
+        .region(SleeperRegion::new(HashMap::from([region_entry(
             "row_key",
             int_range(0, 100),
         )])))

@@ -212,19 +212,83 @@ pub fn add_numeric_casts(
     orig_schema: &DFSchema,
     agg_schema: &DFSchema,
 ) -> Result<DataFrame, DataFusionError> {
-    let column_proj = orig_schema
-        .fields()
-        .iter()
-        .zip(agg_schema.fields().iter())
-        .map(
-            |(orig_field, agg_field)| match (orig_field.data_type(), agg_field.data_type()) {
-                (DataType::Int32, DataType::Int64) | (DataType::Int64, DataType::Int32) => {
-                    ScalarUDF::from(CastUDF::new(agg_field.data_type(), orig_field.data_type()))
-                        .call(vec![ident(orig_field.name())])
-                        .alias(orig_field.name())
-                }
-                (_, _) => ident(orig_field.name()),
-            },
-        );
+    let mut column_proj = vec![];
+    for types in orig_schema.fields().iter().zip(agg_schema.fields().iter()) {
+        match (types.0.data_type(), types.1.data_type()) {
+            (orig_type @ DataType::Int32, agg_type @ DataType::Int64)
+            | (orig_type @ DataType::Int64, agg_type @ DataType::Int32) => {
+                eprintln!(
+                    "Add cast to handle a {} that has become a {}",
+                    orig_type, agg_type
+                );
+                column_proj.push(
+                    ScalarUDF::from(CastUDF::new(agg_type, orig_type, types.0.is_nullable()))
+                        .call(vec![ident(types.0.name())])
+                        .alias(types.0.name()),
+                );
+            }
+            (left, right) if left == right => column_proj.push(ident(types.0.name())),
+            (left, right) => return plan_err!("Type {left} cannot be cast to type {right}"),
+        }
+    }
     agg_frame.select(column_proj)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use arrow::datatypes::{DataType, Field};
+    use color_eyre::eyre::Error;
+    use datafusion::{common::DFSchema, dataframe};
+
+    use crate::datafusion::util::add_numeric_casts;
+
+    #[test]
+    fn should_cast_numeric_columns() -> Result<(), Error> {
+        // Given
+        let df = dataframe!(
+            "int8" => [ 0i8, 1i8, 2i8 ],
+            "int16" => [ 0i16, 1i16, 2i16],
+            "int32_to_keep" => [ 0i32, 1i32, 2i32],
+            "int32_to_change" => [ 0i32, 1i32, 2i32],
+            "int64_to_keep" => [ 0i64, 1i64, 2i64],
+            // "int64_to_change" => [ 0i64, 1i64, 2i64],
+            "some_string" => [ "a".to_owned(), "b".to_owned(), "c".to_owned() ],
+        )?;
+
+        let original_schema = df.schema().clone();
+
+        // Assume some aggregations have changed the *_to_change columns to different types.
+        let new_schema = DFSchema::from_unqualified_fields(
+            vec![
+                Field::new("int8", DataType::Int8, true),
+                Field::new("int16", DataType::Int16, true),
+                Field::new("int32_to_keep", DataType::Int32, true),
+                // Changed to 64 bit
+                Field::new("int32_to_change", DataType::Int64, true),
+                Field::new("int64_to_keep", DataType::Int64, true),
+                // Changed to 32 bit
+                // Field::new("int64_to_change", DataType::Int32, true),
+                Field::new("some_string", DataType::Utf8, true),
+            ]
+            .into(),
+            HashMap::new(),
+        )?;
+
+        // When
+        let cast_df = add_numeric_casts(df, &original_schema, &new_schema)?;
+        let orig_data_types = original_schema.iter().map(|e| e.1.data_type());
+        let new_data_types = cast_df.schema().iter().map(|e| e.1.data_type());
+
+        // Then
+        assert!(
+            orig_data_types.eq(new_data_types),
+            "Datatypes in original and modified schema should match!"
+        );
+
+        Ok(())
+    }
+
+    //test invalid types
 }

@@ -41,15 +41,18 @@ pub struct CastUDF {
     signature: Signature,
     // Function output type
     output_type: DataType,
+    // If nulls may be present
+    nullable: bool,
 }
 
 impl CastUDF {
     /// Constructs a new `CastUDF` for casting values from the specified input column type to the target output type
     /// without error on narrowing conversions.
-    pub fn new(column_type: &DataType, output_type: &DataType) -> Self {
+    pub fn new(column_type: &DataType, output_type: &DataType, nullable: bool) -> Self {
         Self {
             signature: Signature::exact(vec![column_type.clone()], Volatility::Immutable),
             output_type: output_type.clone(),
+            nullable,
         }
     }
 
@@ -152,7 +155,11 @@ impl ScalarUDFImpl for CastUDF {
     }
 
     fn return_field_from_args(&self, _args: ReturnFieldArgs) -> Result<FieldRef> {
-        Ok(Arc::new(Field::new("", self.output_type().clone(), false)))
+        Ok(Arc::new(Field::new(
+            "",
+            self.output_type().clone(),
+            self.nullable,
+        )))
     }
 
     fn evaluate_bounds(&self, input: &[&Interval]) -> Result<Interval> {
@@ -237,7 +244,7 @@ mod tests {
     #[test]
     fn should_widen_bounds_from_int32_to_int64() {
         // Given
-        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64);
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
         let intervals = vec![
             make_interval(&ScalarValue::Int32(Some(1)), &ScalarValue::Int32(Some(10))),
             make_interval(
@@ -258,7 +265,7 @@ mod tests {
     #[test]
     fn should_narrow_bounds_from_int64_to_int32_and_truncate() {
         // Given
-        let udf = CastUDF::new(&DataType::Int64, &DataType::Int32);
+        let udf = CastUDF::new(&DataType::Int64, &DataType::Int32, false);
         let intervals = vec![
             make_interval(
                 &ScalarValue::Int64(Some(i64::from(i32::MIN) - 1)), // -2147483649
@@ -282,7 +289,7 @@ mod tests {
     #[test]
     fn should_return_same_bounds_when_types_match() {
         // Given
-        let udf = CastUDF::new(&DataType::Int32, &DataType::Int32);
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int32, false);
         let intervals = vec![
             make_interval(
                 &ScalarValue::Int32(Some(50)),
@@ -306,7 +313,7 @@ mod tests {
     #[test]
     fn should_error_on_non_numeric_bounds_type() {
         // Given
-        let udf = CastUDF::new(&DataType::Utf8, &DataType::Utf8);
+        let udf = CastUDF::new(&DataType::Utf8, &DataType::Utf8, false);
         let intervals = [make_interval(
             &ScalarValue::Utf8(Some("a".to_string())),
             &ScalarValue::Utf8(Some("z".to_string())),
@@ -325,7 +332,7 @@ mod tests {
     #[test]
     fn should_return_max_interval_for_empty_input() {
         // Given
-        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64);
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
         let inputs: Vec<&Interval> = vec![];
 
         // When
@@ -339,7 +346,7 @@ mod tests {
     #[test]
     fn should_error_on_mixed_input_interval_types() {
         // Given
-        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64);
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
         // One input interval is Int32, another is Int64.
         let intervals = vec![
             make_interval(&ScalarValue::Int32(Some(1)), &ScalarValue::Int32(Some(10))),
