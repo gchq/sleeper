@@ -95,41 +95,36 @@ impl ScalarUDFImpl for CastUDF {
         } else {
             // Cast to output type
             match &args.args[0] {
-                ColumnarValue::Array(array) => {
-                    // dynamic dispatch. Match the datatype to the type of sketch to update.
-                    match array.data_type() {
-                        DataType::Int32 => match self.output_type() {
-                            DataType::Int32 => unreachable!("Shouldn't need to cast!"),
-                            DataType::Int64 => Ok(ColumnarValue::Array(Arc::new(
-                                array
-                                    .as_primitive::<Int32Type>()
-                                    .unary::<_, Int64Type>(i64::from),
-                            ))),
-                            _ => exec_err!("Can't cast to {}", self.output_type()),
-                        },
-                        DataType::Int64 => match self.output_type() {
-                            DataType::Int32 => Ok(ColumnarValue::Array(Arc::new(
-                                array
-                                    .as_primitive::<Int64Type>()
-                                    .unary::<_, Int32Type>(|v| v as i32),
-                            ))),
-                            DataType::Int64 => unreachable!("Shouldn't need to cast!"),
-                            _ => exec_err!("Can't cast to {}", self.output_type()),
-                        },
-                        _ => {
-                            exec_err!(
-                                "Column type {} not supported for {}",
-                                array.data_type(),
-                                self.name()
-                            )
-                        }
+                ColumnarValue::Array(array) => match array.data_type() {
+                    DataType::Int32 => match self.output_type() {
+                        DataType::Int32 => unreachable!("Shouldn't need to cast!"),
+                        DataType::Int64 => Ok(ColumnarValue::Array(Arc::new(
+                            array
+                                .as_primitive::<Int32Type>()
+                                .unary::<_, Int64Type>(i64::from),
+                        ))),
+                        _ => exec_err!("Can't cast to {}", self.output_type()),
+                    },
+                    DataType::Int64 => match self.output_type() {
+                        DataType::Int32 => Ok(ColumnarValue::Array(Arc::new(
+                            array
+                                .as_primitive::<Int64Type>()
+                                .unary::<_, Int32Type>(|v| v as i32),
+                        ))),
+                        DataType::Int64 => unreachable!("Shouldn't need to cast!"),
+                        _ => exec_err!("Can't cast to {}", self.output_type()),
+                    },
+                    _ => {
+                        exec_err!(
+                            "Column type {} not supported for {}",
+                            array.data_type(),
+                            self.name()
+                        )
                     }
-                }
+                },
                 ColumnarValue::Scalar(ScalarValue::Int32(Some(value))) => {
                     match self.output_type() {
-                        DataType::Int32 => {
-                            Ok(ColumnarValue::Scalar(ScalarValue::Int32(Some(*value))))
-                        }
+                        DataType::Int32 => unreachable!("Shouldn't need to cast!"),
                         DataType::Int64 => Ok(ColumnarValue::Scalar(ScalarValue::Int64(Some(
                             i64::from(*value),
                         )))),
@@ -141,9 +136,7 @@ impl ScalarUDFImpl for CastUDF {
                         DataType::Int32 => Ok(ColumnarValue::Scalar(ScalarValue::Int32(Some(
                             *value as i32,
                         )))),
-                        DataType::Int64 => {
-                            Ok(ColumnarValue::Scalar(ScalarValue::Int64(Some(*value))))
-                        }
+                        DataType::Int64 => unreachable!("Shouldn't need to cast!"),
                         _ => exec_err!("Can't cast to {}", self.output_type()),
                     }
                 }
