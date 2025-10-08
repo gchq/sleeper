@@ -98,11 +98,13 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
-        CustomResource.Builder.create(this, id)
+        CustomResource customResource = CustomResource.Builder.create(this, id)
                 .resourceType("Custom::AutoDeleteS3Objects")
                 .properties(Map.of("bucket", bucketName))
                 .serviceToken(provider.getServiceToken())
                 .build();
+
+        customResource.getNode().addDependency(bucket);
     }
 
 }
