@@ -21,7 +21,6 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -35,8 +34,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
 import java.util.Map;
-
-import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 
 /**
  * Delete's S3 objects for a CloudFormation stack.
@@ -52,16 +49,11 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 loggingStack.getLogGroup(LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER));
     }
 
+    // This is for a standalone system test deployment, where there is no Sleeper instance and the LoggingStack is not used.
     public AutoDeleteS3ObjectsStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
         super(scope, id);
-        ILogGroup logGroup = LogGroup.Builder.create(this, "AutoDeleteLambdaLogGroup")
-                .logGroupName("s3-bucket-autodelete")
-                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        ILogGroup providerLogGroup = LogGroup.Builder.create(this, "AutoDeleteProviderLogGroup")
-                .logGroupName("s3-bucket-autodelete-provider")
-                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
+        ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_DELETE_S3_OBJECTS, instanceProperties);
+        ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_DELETE_S3_OBJECTS_PROVIDER, instanceProperties);
         createLambda(instanceProperties, jars, logGroup, providerLogGroup);
     }
 
@@ -106,11 +98,13 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
-        CustomResource.Builder.create(this, id)
+        CustomResource customResource = CustomResource.Builder.create(this, id)
                 .resourceType("Custom::AutoDeleteS3Objects")
                 .properties(Map.of("bucket", bucketName))
                 .serviceToken(provider.getServiceToken())
                 .build();
+
+        customResource.getNode().addDependency(bucket);
     }
 
 }
