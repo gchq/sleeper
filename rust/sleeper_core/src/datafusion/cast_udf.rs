@@ -219,11 +219,11 @@ fn create_output_interval(interval: &Interval, output_type: &DataType) -> Result
 fn create_full_range(output_type: &DataType) -> Result<Interval> {
     let full_range_output = Interval::try_new(
         ScalarValue::min(output_type).ok_or(plan_datafusion_err!(
-            "Bounds type is not a numeric type {:?}",
+            "Bounds type is not a numeric type: {:?}",
             output_type
         ))?,
         ScalarValue::max(output_type).ok_or(plan_datafusion_err!(
-            "Bounds type is not a numeric type {:?}",
+            "Bounds type is not a numeric type: {:?}",
             output_type
         ))?,
     )?;
@@ -239,6 +239,17 @@ mod tests {
 
     fn make_interval(lower: &ScalarValue, upper: &ScalarValue) -> Interval {
         Interval::try_new(lower.clone(), upper.clone()).unwrap()
+    }
+
+    #[test]
+    fn should_error_on_create_full_range_non_numeric_type() {
+        // When
+        let result = create_full_range(&DataType::LargeUtf8);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Bounds type is not a numeric type: LargeUtf8"));
     }
 
     #[test]
@@ -326,7 +337,7 @@ mod tests {
         // Then
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
-        assert!(err_msg.contains("Bounds type is not a numeric type"));
+        assert!(err_msg.contains("output type is not numeric: Utf8"));
     }
 
     #[test]

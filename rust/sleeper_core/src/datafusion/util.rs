@@ -290,5 +290,32 @@ mod tests {
         Ok(())
     }
 
-    //test invalid types
+    #[test]
+    fn should_error_on_invalid_cast() -> Result<(), Error> {
+        // Given
+        let df = dataframe!(
+            "int8" => [ 0i8, 1i8, 2i8 ],
+        )?;
+
+        let original_schema = df.schema().clone();
+
+        // Pretend we somehow managed to aggregate an int into a string...
+        let new_schema = DFSchema::from_unqualified_fields(
+            vec![Field::new("int8", DataType::Utf8, true)].into(),
+            HashMap::new(),
+        )?;
+
+        // When
+        let cast_df = add_numeric_casts(df, &original_schema, &new_schema);
+
+        // Then
+        assert!(cast_df.is_err());
+        let err_msg = format!("{}", cast_df.unwrap_err());
+        assert_eq!(
+            err_msg,
+            "Error during planning: Type Int8 cannot be cast to type Utf8"
+        );
+
+        Ok(())
+    }
 }
