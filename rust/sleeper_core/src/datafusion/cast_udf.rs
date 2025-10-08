@@ -371,11 +371,10 @@ mod tests {
     fn should_handle_half_unbounded_interval_left() {
         // Given
         let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
-        let intervals = vec![make_interval(
+        let inputs = [&make_interval(
             &ScalarValue::Int32(Some(60)),
             &ScalarValue::Int32(None),
         )];
-        let inputs = intervals.iter().collect::<Vec<_>>();
 
         // When
         let result = udf.evaluate_bounds(&inputs).unwrap();
@@ -389,11 +388,10 @@ mod tests {
     fn should_handle_half_unbounded_interval_right() {
         // Given
         let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
-        let intervals = vec![make_interval(
+        let inputs = [&make_interval(
             &ScalarValue::Int32(None),
             &ScalarValue::Int32(Some(60)),
         )];
-        let inputs = intervals.iter().collect::<Vec<_>>();
 
         // When
         let result = udf.evaluate_bounds(&inputs).unwrap();
@@ -407,11 +405,10 @@ mod tests {
     fn should_handle_unbounded_interval() {
         // Given
         let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
-        let intervals = vec![make_interval(
+        let inputs = [&make_interval(
             &ScalarValue::Int32(None),
             &ScalarValue::Int32(None),
         )];
-        let inputs = intervals.iter().collect::<Vec<_>>();
 
         // When
         let result = udf.evaluate_bounds(&inputs).unwrap();
@@ -419,5 +416,60 @@ mod tests {
         // Then
         assert_eq!(*result.lower(), ScalarValue::Int64(None));
         assert_eq!(*result.upper(), ScalarValue::Int64(None));
+    }
+
+    #[test]
+    fn should_have_correct_return_nullability() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let nullable_udf = CastUDF::new(&DataType::Int32, &DataType::Int64, true);
+
+        // Then
+        assert!(
+            !udf.return_field_from_args(ReturnFieldArgs {
+                arg_fields: &[],
+                scalar_arguments: &[]
+            })
+            .unwrap()
+            .is_nullable()
+        );
+        assert!(
+            nullable_udf
+                .return_field_from_args(ReturnFieldArgs {
+                    arg_fields: &[],
+                    scalar_arguments: &[]
+                })
+                .unwrap()
+                .is_nullable()
+        );
+    }
+
+    #[test]
+    fn should_have_correct_return_output_type() {
+        // Given
+        let i32_udf = CastUDF::new(&DataType::Int32, &DataType::Int32, false);
+        let i64_udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+
+        // Then
+        assert_eq!(
+            i32_udf
+                .return_field_from_args(ReturnFieldArgs {
+                    arg_fields: &[],
+                    scalar_arguments: &[]
+                })
+                .unwrap()
+                .data_type(),
+            &DataType::Int32
+        );
+        assert_eq!(
+            i64_udf
+                .return_field_from_args(ReturnFieldArgs {
+                    arg_fields: &[],
+                    scalar_arguments: &[]
+                })
+                .unwrap()
+                .data_type(),
+            &DataType::Int64
+        );
     }
 }
