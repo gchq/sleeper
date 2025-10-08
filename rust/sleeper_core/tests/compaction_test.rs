@@ -23,6 +23,15 @@ use std::{collections::HashMap, path::Path, sync::Arc};
 use tempfile::tempdir;
 use test_log::test;
 use test_util::*;
+use url::Url;
+
+fn create_output_for_compaction(output_path: &Url) -> OutputType {
+    OutputType::File {
+        output_file: output_path.clone(),
+        write_sketch_file: true,
+        opts: SleeperParquetOptions::default(),
+    }
+}
 
 #[test(tokio::test)]
 async fn should_merge_two_files() -> Result<(), Error> {
@@ -40,11 +49,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
         .input_files_sorted(true)
         .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 0, 5)))
-        .output(OutputType::File {
-            output_file: output.clone(),
-            write_sketch_file: true,
-            opts: SleeperParquetOptions::default(),
-        })
+        .output(create_output_for_compaction(&output))
         .build()?;
 
     // When
@@ -73,11 +78,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
         .input_files_sorted(true)
         .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 0, 5)))
-        .output(OutputType::File {
-            output_file: output.clone(),
-            write_sketch_file: true,
-            opts: SleeperParquetOptions::default(),
-        })
+        .output(create_output_for_compaction(&output))
         .build()?;
 
     // When
@@ -106,11 +107,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
         .input_files_sorted(true)
         .row_key_cols(col_names(["key"]))
         .region(SleeperRegion::new(single_int_range("key", 2, 4)))
-        .output(OutputType::File {
-            output_file: output.clone(),
-            write_sketch_file: true,
-            opts: SleeperParquetOptions::default(),
-        })
+        .output(create_output_for_compaction(&output))
         .build()?;
 
     // When
@@ -148,11 +145,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
             region_entry("key1", int_range(2, 4)),
             region_entry("key2", int_range(13, 23)),
         ])))
-        .output(OutputType::File {
-            output_file: output.clone(),
-            write_sketch_file: true,
-            opts: SleeperParquetOptions::default(),
-        })
+        .output(create_output_for_compaction(&output))
         .build()?;
 
     // When
@@ -193,11 +186,7 @@ async fn should_compact_with_second_column_row_key() -> Result<(), Error> {
             "key2",
             int_range(11, 25),
         )])))
-        .output(OutputType::File {
-            output_file: output.clone(),
-            write_sketch_file: true,
-            opts: SleeperParquetOptions::default(),
-        })
+        .output(create_output_for_compaction(&output))
         .build()?;
 
     // When
@@ -246,11 +235,7 @@ async fn should_aggregate_ints() -> Result<(), Error> {
             "row_key",
             int_range(0, 100),
         )])))
-        .output(OutputType::File {
-            output_file: output.clone(),
-            write_sketch_file: true,
-            opts: SleeperParquetOptions::default(),
-        })
+        .output(create_output_for_compaction(&output))
         .aggregates(Aggregate::parse_config("max(time)")?)
         .build()?;
 
@@ -286,11 +271,7 @@ async fn should_merge_empty_files() -> Result<(), Error> {
             "key",
             int_range(0, 5),
         )])))
-        .output(OutputType::File {
-            output_file: output.clone(),
-            write_sketch_file: true,
-            opts: SleeperParquetOptions::default(),
-        })
+        .output(create_output_for_compaction(&output))
         .build()?;
 
     // When
