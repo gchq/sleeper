@@ -34,7 +34,7 @@ import java.util.List;
  * All arrays MUST be same length.
  *
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
- * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/sleeper_region.rs. The order and types of
  * the fields must match exactly.
  */
 @SuppressWarnings(value = {"checkstyle:membername"})

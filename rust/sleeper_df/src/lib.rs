@@ -17,7 +17,11 @@
 use crate::{
     context::FFIContext,
     log::maybe_cfg_log,
-    objects::{FFICommonConfig, FFIFileResult, FFILeafPartitionQueryConfig, FFIQueryResults},
+    objects::{
+        FFIFileResult,
+        common_config::FFICommonConfig,
+        query::{FFILeafPartitionQueryConfig, FFIQueryResults},
+    },
 };
 use ::log::{error, warn};
 #[cfg(doc)]

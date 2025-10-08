@@ -24,7 +24,7 @@ import jnr.ffi.Struct;
  * that C layout and alignment rules are followed.
  *
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
- * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/query.rs. The order and types of
  * the fields must match exactly. *
  */
 public class FFIQueryResults extends Struct {
