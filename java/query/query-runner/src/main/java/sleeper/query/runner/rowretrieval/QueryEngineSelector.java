@@ -57,12 +57,12 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
-            case DATAFUSION:
+            case DATAFUSION_EXPERIMENTAL:
                 return DataFusionLeafPartitionRowRetriever.builder()
                         .allocator(arrowAllocator)
                         .context(ffiContext)
                         .build();
-            case DATAFUSION_COMPACTION_ONLY:
+            case DATAFUSION:
             case JAVA:
             default:
                 return new LeafPartitionRowRetrieverImpl(executorService, configuration, tableProperties);

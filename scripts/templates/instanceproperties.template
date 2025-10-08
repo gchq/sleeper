@@ -1656,6 +1656,6 @@ sleeper.default.statestore.committer.update.every.commit=false
 # before adding a batch of transactions in the asynchronous state store committer.
 sleeper.default.statestore.committer.update.every.batch=true
 
-# Select which data engine to use for the table. Valid values are: [java, datafusion_compaction_only,
-# datafusion]
+# Select which data engine to use for the table. Valid values are: [java, datafusion,
+# datafusion_experimental]
 sleeper.default.table.data.engine=DATAFUSION

@@ -25,12 +25,12 @@ public enum DataEngine {
     /** Pure Java implementations. */
     JAVA,
     /** Uses a native library written in Rust to perform compactions with Apache DataFusion. */
-    DATAFUSION_COMPACTION_ONLY,
+    DATAFUSION,
     /**
      * Uses a native library written in Rust to perform data operations with Apache DataFusion.
      * Performing queries with DataFusion is experimental.
      */
-    DATAFUSION;
+    DATAFUSION_EXPERIMENTAL;
 
     /**
      * Checks if the value is a valid choice.

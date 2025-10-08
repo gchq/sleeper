@@ -43,7 +43,7 @@ public class QueryEngineSelectorTest {
     @Test
     void shouldSetDataFusionEngine() {
         // Given
-        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
+        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
 
         // When / Then
         assertThat(createRowRetriever()).isInstanceOf(DataFusionLeafPartitionRowRetriever.class);
@@ -61,7 +61,7 @@ public class QueryEngineSelectorTest {
     @Test
     void shouldSetDataFusionForCompactionOnly() {
         // Given
-        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION_COMPACTION_ONLY);
+        tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
 
         // When / Then
         assertThat(createRowRetriever()).isInstanceOf(LeafPartitionRowRetrieverImpl.class);
