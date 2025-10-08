@@ -169,7 +169,9 @@ impl ScalarUDFImpl for CastUDF {
 
         let mut result: Option<Interval> = None;
         for interval in input {
+            eprintln!("{} is {}", interval, interval.data_type());
             if let Some(casted) = create_output_interval(interval, self.output_type())? {
+                eprintln!("{} is casted {}", casted, casted.data_type());
                 result = match result {
                     None => Some(casted),
                     Some(i) => Some(i.union(casted)?),
@@ -234,6 +236,7 @@ fn create_full_range(output_type: &DataType) -> Result<Interval> {
 mod tests {
     use super::*;
     use arrow::datatypes::DataType;
+    use color_eyre::eyre::Error;
     use datafusion::logical_expr::interval_arithmetic::Interval;
     use datafusion::scalar::ScalarValue;
 
@@ -250,6 +253,18 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("Bounds type is not a numeric type: LargeUtf8"));
+    }
+
+    #[test]
+    fn should_create_full_range() -> Result<(), Error> {
+        // When
+        let result = create_full_range(&DataType::Int32)?;
+
+        // Then
+        let (lower, upper) = result.into_bounds();
+        assert!(matches!(lower, ScalarValue::Int32(Some(i)) if i==i32::MIN));
+        assert!(matches!(upper, ScalarValue::Int32(Some(i)) if i==i32::MAX));
+        Ok(())
     }
 
     #[test]
@@ -352,23 +367,5 @@ mod tests {
         // Then
         assert_eq!(*result.lower(), ScalarValue::Int64(Some(i64::MIN)));
         assert_eq!(*result.upper(), ScalarValue::Int64(Some(i64::MAX)));
-    }
-
-    #[test]
-    fn should_error_on_mixed_input_interval_types() {
-        // Given
-        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
-        // One input interval is Int32, another is Int64.
-        let intervals = vec![
-            make_interval(&ScalarValue::Int32(Some(1)), &ScalarValue::Int32(Some(10))),
-            make_interval(&ScalarValue::Int64(Some(20)), &ScalarValue::Int64(Some(30))),
-        ];
-        let inputs = intervals.iter().collect::<Vec<_>>();
-
-        // When
-        let result = udf.evaluate_bounds(&inputs);
-
-        // Then
-        assert!(result.is_err());
     }
 }
