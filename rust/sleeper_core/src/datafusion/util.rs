@@ -259,25 +259,21 @@ mod tests {
 
         let original_schema = df.schema().clone();
 
-        // Assume some aggregations have changed the *_to_change columns to different types.
-        let new_schema = DFSchema::from_unqualified_fields(
-            vec![
-                Field::new("int8", DataType::Int8, true),
-                Field::new("int16", DataType::Int16, true),
-                Field::new("int32_to_keep", DataType::Int32, true),
-                // Changed to 64 bit
-                Field::new("int32_to_change", DataType::Int64, true),
-                Field::new("int64_to_keep", DataType::Int64, true),
-                // Changed to 32 bit
-                Field::new("int64_to_change", DataType::Int32, true),
-                Field::new("some_string", DataType::Utf8, true),
-            ]
-            .into(),
-            HashMap::new(),
+        // Assume some aggregations have changed the *_to_change columns from 32 bit and vice versa
+        let new_df = dataframe!(
+            "int8" => [ 0i8, 1i8, 2i8 ],
+            "int16" => [ 0i16, 1i16, 2i16],
+            "int32_to_keep" => [ 0i32, 1i32, 2i32],
+            "int32_to_change" => [ 0i64, 1i64, 2i64],
+            "int64_to_keep" => [ 0i64, 1i64, 2i64],
+            "int64_to_change" => [ 0i32, 1i32, 2i32],
+            "some_string" => [ "a".to_owned(), "b".to_owned(), "c".to_owned() ],
         )?;
 
+        let new_schema = new_df.schema().clone();
+
         // When
-        let cast_df = add_numeric_casts(df, &original_schema, &new_schema)?;
+        let cast_df = add_numeric_casts(new_df, &original_schema, &new_schema)?;
         let orig_data_types = original_schema.iter().map(|e| e.1.data_type());
         let new_data_types = cast_df.schema().iter().map(|e| e.1.data_type());
 
