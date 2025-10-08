@@ -169,9 +169,7 @@ impl ScalarUDFImpl for CastUDF {
 
         let mut result: Option<Interval> = None;
         for interval in input {
-            eprintln!("{} is {}", interval, interval.data_type());
             if let Some(casted) = create_output_interval(interval, self.output_type())? {
-                eprintln!("{} is casted {}", casted, casted.data_type());
                 result = match result {
                     None => Some(casted),
                     Some(i) => Some(i.union(casted)?),
@@ -367,5 +365,59 @@ mod tests {
         // Then
         assert_eq!(*result.lower(), ScalarValue::Int64(Some(i64::MIN)));
         assert_eq!(*result.upper(), ScalarValue::Int64(Some(i64::MAX)));
+    }
+
+    #[test]
+    fn should_handle_half_unbounded_interval_left() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let intervals = vec![make_interval(
+            &ScalarValue::Int32(Some(60)),
+            &ScalarValue::Int32(None),
+        )];
+        let inputs = intervals.iter().collect::<Vec<_>>();
+
+        // When
+        let result = udf.evaluate_bounds(&inputs).unwrap();
+
+        // Then
+        assert_eq!(*result.lower(), ScalarValue::Int64(Some(60)));
+        assert_eq!(*result.upper(), ScalarValue::Int64(None));
+    }
+
+    #[test]
+    fn should_handle_half_unbounded_interval_right() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let intervals = vec![make_interval(
+            &ScalarValue::Int32(None),
+            &ScalarValue::Int32(Some(60)),
+        )];
+        let inputs = intervals.iter().collect::<Vec<_>>();
+
+        // When
+        let result = udf.evaluate_bounds(&inputs).unwrap();
+
+        // Then
+        assert_eq!(*result.lower(), ScalarValue::Int64(None));
+        assert_eq!(*result.upper(), ScalarValue::Int64(Some(60)));
+    }
+
+    #[test]
+    fn should_handle_unbounded_interval() {
+        // Given
+        let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let intervals = vec![make_interval(
+            &ScalarValue::Int32(None),
+            &ScalarValue::Int32(None),
+        )];
+        let inputs = intervals.iter().collect::<Vec<_>>();
+
+        // When
+        let result = udf.evaluate_bounds(&inputs).unwrap();
+
+        // Then
+        assert_eq!(*result.lower(), ScalarValue::Int64(None));
+        assert_eq!(*result.upper(), ScalarValue::Int64(None));
     }
 }

@@ -253,7 +253,7 @@ mod tests {
             "int32_to_keep" => [ 0i32, 1i32, 2i32],
             "int32_to_change" => [ 0i32, 1i32, 2i32],
             "int64_to_keep" => [ 0i64, 1i64, 2i64],
-            // "int64_to_change" => [ 0i64, 1i64, 2i64],
+            "int64_to_change" => [ 0i64, 1i64, 2i64],
             "some_string" => [ "a".to_owned(), "b".to_owned(), "c".to_owned() ],
         )?;
 
@@ -269,7 +269,7 @@ mod tests {
                 Field::new("int32_to_change", DataType::Int64, true),
                 Field::new("int64_to_keep", DataType::Int64, true),
                 // Changed to 32 bit
-                // Field::new("int64_to_change", DataType::Int32, true),
+                Field::new("int64_to_change", DataType::Int32, true),
                 Field::new("some_string", DataType::Utf8, true),
             ]
             .into(),
