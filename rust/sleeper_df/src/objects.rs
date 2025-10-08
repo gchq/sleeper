@@ -72,22 +72,22 @@ pub struct FFISleeperRegion {
 /// Data type for row key fields in Sleeper schema.
 /// Encoded as integer type for FFI compatibility.
 #[derive(Copy, Clone)]
-pub enum FFIRowKeySchemaType {
+pub enum RowKeySchemaType {
     Int32 = 1,
     Int64 = 2,
     String = 3,
     ByteArray = 4,
 }
 
-impl TryFrom<&usize> for FFIRowKeySchemaType {
+impl TryFrom<&usize> for RowKeySchemaType {
     type Error = color_eyre::Report;
 
     fn try_from(ordinal: &usize) -> Result<Self, Self::Error> {
         match ordinal {
-            1 => Ok(FFIRowKeySchemaType::Int32),
-            2 => Ok(FFIRowKeySchemaType::Int64),
-            3 => Ok(FFIRowKeySchemaType::String),
-            4 => Ok(FFIRowKeySchemaType::ByteArray),
+            1 => Ok(RowKeySchemaType::Int32),
+            2 => Ok(RowKeySchemaType::Int64),
+            3 => Ok(RowKeySchemaType::String),
+            4 => Ok(RowKeySchemaType::ByteArray),
             _ => Err(eyre!("Invalid FFIRowKeySchemaType ordinal value")),
         }
     }
@@ -97,7 +97,7 @@ impl<'a> FFISleeperRegion {
     fn to_sleeper_region<T: Borrow<str>>(
         region: &'a FFISleeperRegion,
         row_key_cols: &[T],
-        schema_types: &[FFIRowKeySchemaType],
+        schema_types: &[RowKeySchemaType],
     ) -> Result<SleeperRegion<'a>, color_eyre::Report> {
         if region.mins_len != region.maxs_len
             || region.mins_len != region.mins_inclusive_len
@@ -190,10 +190,10 @@ impl FFICommonConfig {
     ///
     /// # Errors
     /// If an invalid row key type is found, e.g. type ordinal number is outside range. See [`FFIRowKeySchemaType`].
-    pub fn schema_types(&self) -> Result<Vec<FFIRowKeySchemaType>, color_eyre::Report> {
+    pub fn schema_types(&self) -> Result<Vec<RowKeySchemaType>, color_eyre::Report> {
         unpack_typed_array(self.row_key_schema, self.row_key_schema_len)?
             .iter()
-            .map(FFIRowKeySchemaType::try_from)
+            .map(RowKeySchemaType::try_from)
             .collect::<Result<Vec<_>, _>>()
     }
 

@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::objects::FFIRowKeySchemaType;
+use crate::objects::RowKeySchemaType;
 use color_eyre::{
     Report,
     eyre::{Result, bail, eyre},
@@ -111,7 +111,7 @@ pub fn unpack_typed_array<T: Copy>(array_base: *const *const T, len: usize) -> R
 pub fn unpack_variant_array<'a>(
     array_base: *const *const c_void,
     len: usize,
-    schema_types: &[FFIRowKeySchemaType],
+    schema_types: &[RowKeySchemaType],
     nulls_present: bool,
 ) -> Result<Vec<PartitionBound<'a>>> {
     assert!(
@@ -129,19 +129,15 @@ pub fn unpack_variant_array<'a>(
                 Err(eyre!("Found NULL pointer in variant array"))
             } else {
                 match type_id {
-                    FFIRowKeySchemaType::Int32 => {
-                        Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
-                            Some(v) => PartitionBound::Int32(*v),
-                            None => PartitionBound::Unbounded,
-                        })
-                    }
-                    FFIRowKeySchemaType::Int64 => {
-                        Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
-                            Some(v) => PartitionBound::Int64(*v),
-                            None => PartitionBound::Unbounded,
-                        })
-                    }
-                    FFIRowKeySchemaType::String => {
+                    RowKeySchemaType::Int32 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
+                        Some(v) => PartitionBound::Int32(*v),
+                        None => PartitionBound::Unbounded,
+                    }),
+                    RowKeySchemaType::Int64 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
+                        Some(v) => PartitionBound::Int64(*v),
+                        None => PartitionBound::Unbounded,
+                    }),
+                    RowKeySchemaType::String => {
                         match unsafe { bptr.cast::<i32>().as_ref() } {
                             //unpack length (signed because it's from Java)
                             Some(str_len) => {
@@ -161,7 +157,7 @@ pub fn unpack_variant_array<'a>(
                             None => Ok(PartitionBound::Unbounded),
                         }
                     }
-                    FFIRowKeySchemaType::ByteArray => {
+                    RowKeySchemaType::ByteArray => {
                         match unsafe { bptr.cast::<i32>().as_ref() } {
                             //unpack length (signed because it's from Java)
                             Some(byte_len) => {
