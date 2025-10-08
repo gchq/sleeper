@@ -472,4 +472,17 @@ mod tests {
             &DataType::Int64
         );
     }
+
+    //TODO: tests needed
+    // check argument length produces error
+    // check same datatype comes back unchanged
+    // check scalar illegal input argument datatype produces error
+    // check array illegal input argument datatype produces error
+    // check scalar unreachables for pointless casts
+    // check array unreachables for pointless casts
+    // check scalar 64 bit input cant cast to other numeric types
+    // check scalar 32 bit input cant cast to other numeric types
+    // check array 64 bit input cant cast to other numeric types
+    // check array 32 bit input cant cast to other numeric types
+    // ...
 }
