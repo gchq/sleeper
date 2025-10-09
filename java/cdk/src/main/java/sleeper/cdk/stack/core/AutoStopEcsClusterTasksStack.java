@@ -26,7 +26,6 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
-import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -42,8 +41,6 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 
 /**
  * Stops ECS Cluster tasks for the CloudFormation stack.
@@ -61,17 +58,10 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER));
     }
 
-    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            String logGroupName, String logGroupProviderName) {
+    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
         super(scope, id);
-        ILogGroup logGroup = LogGroup.Builder.create(this, "AutoStopLambdaLogGroup")
-                .logGroupName(logGroupName)
-                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
-        ILogGroup providerLogGroup = LogGroup.Builder.create(this, "AutoStopProviderLogGroup")
-                .logGroupName(logGroupProviderName)
-                .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build();
+        ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS, instanceProperties);
+        ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER, instanceProperties);
         createLambda(instanceProperties, jars, logGroup, providerLogGroup);
     }
 
