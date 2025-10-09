@@ -24,11 +24,14 @@ use crate::{
     datafusion::{CompactionResult, LeafPartitionQuery},
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
+use ::datafusion::error::DataFusionError;
+use arrow::error::ArrowError;
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail};
+use log::error;
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
 use std::fmt::{Display, Formatter};
@@ -362,7 +365,22 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
     let store_factory = create_object_store_factory(config.aws_config.as_ref()).await;
     crate::datafusion::compact(&store_factory, config)
         .await
-        .map_err(Into::into)
+        .map_err(|e| {
+            error!("DataFusion error: {e}");
+            error!("DataFusion error debug output: {e:?}");
+            match &e {
+                DataFusionError::ArrowError(arrow_error, backtrace) => match arrow_error {
+                    ArrowError::ExternalError(external_error) => {
+                        error!("Found Arrow external error");
+                        error!("Backtrace: {backtrace:?}");
+                        error!("External error: {external_error:?}")
+                    }
+                    _ => {}
+                },
+                _ => {}
+            }
+            e.into()
+        })
 }
 
 /// Runs the given Sleeper leaf partition query on the given Parquet files and reads the schema from the first.
