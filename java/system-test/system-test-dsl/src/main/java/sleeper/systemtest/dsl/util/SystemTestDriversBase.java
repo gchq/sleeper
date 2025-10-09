@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.util;
 
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
@@ -69,6 +70,11 @@ public abstract class SystemTestDriversBase implements SystemTestDrivers {
 
     @Override
     public IngestByQueue ingestByQueue(SystemTestContext context) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public BulkExportDriver bulkExport(SystemTestContext context) {
         throw new UnsupportedOperationException();
     }
 
