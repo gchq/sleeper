@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl;
 
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
@@ -84,6 +85,8 @@ public interface SystemTestDrivers {
     IngestByQueue ingestByQueue(SystemTestContext context);
 
     DirectBulkImportDriver directEmrServerless(SystemTestContext context);
+
+    BulkExportDriver bulkExport(SystemTestContext context);
 
     IngestBatcherDriver ingestBatcher(SystemTestContext context);
 

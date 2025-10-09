@@ -55,6 +55,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>bulk-export-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>bulk-import-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
