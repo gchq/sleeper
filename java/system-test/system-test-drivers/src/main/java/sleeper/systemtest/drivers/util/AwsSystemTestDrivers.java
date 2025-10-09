@@ -52,6 +52,7 @@ import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
@@ -136,6 +137,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     @Override
     public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
         return new AwsIngestSourceFilesDriver(clients);
+    }
+
+    @Override
+    public BulkExportDriver bulkExport(SystemTestContext context) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
