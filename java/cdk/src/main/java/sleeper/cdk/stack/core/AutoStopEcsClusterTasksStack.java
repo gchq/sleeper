@@ -61,14 +61,15 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER));
     }
 
-    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
+    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
+            String logGroupName, String logGroupProviderName) {
         super(scope, id);
         ILogGroup logGroup = LogGroup.Builder.create(this, "AutoStopLambdaLogGroup")
-                .logGroupName("ecs-cluster-tasks-autostop")
+                .logGroupName(logGroupName)
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
         ILogGroup providerLogGroup = LogGroup.Builder.create(this, "AutoStopProviderLogGroup")
-                .logGroupName("ecs-cluster-tasks-autostop-provider")
+                .logGroupName(logGroupProviderName)
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
         createLambda(instanceProperties, jars, logGroup, providerLogGroup);
@@ -89,7 +90,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-stopping ECS tasks")
                 .logGroup(logGroup)
-                .timeout(Duration.minutes(10)));
+                .timeout(Duration.minutes(15)));
 
         // Grant this function permission to list tasks and stop tasks
         PolicyStatement policyStatement = PolicyStatement.Builder

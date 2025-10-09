@@ -40,9 +40,6 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
-import sleeper.cdk.stack.core.CoreStacks;
-import sleeper.cdk.stack.ingest.IngestBatcherStack;
-import sleeper.cdk.stack.ingest.IngestStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -76,7 +73,7 @@ public class SystemTestClusterStack extends NestedStack {
 
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestProperties properties, SystemTestBucketStack bucketStack,
-            CoreStacks coreStacks, IngestStacks ingestStacks, IngestBatcherStack ingestBatcherStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
         create(properties.testPropertiesOnly(), properties::set, properties, bucketStack, autoStopEcsClusterTasksStack);
         Utils.addStackTagIfSet(this, properties);

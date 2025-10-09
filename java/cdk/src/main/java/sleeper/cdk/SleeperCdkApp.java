@@ -104,13 +104,12 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
-    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
     private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
+    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
     private LoggingStack loggingStack;
 
     // These flags are used to control when the stacks are deployed in the SystemTest CDK app.
     private boolean generateAutoDeleteS3ObjectsStack = true;
-    private boolean generateAutoStopEcsClusterTasksStack = true;
     private boolean generateLoggingStack = true;
     private boolean generateProperties = true;
 
@@ -148,7 +147,7 @@ public class SleeperCdkApp extends Stack {
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Auto stop ECS cluster tasks stack
-        generateAutoStopEcsClusterTasksStack();
+        autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(this, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
@@ -380,12 +379,6 @@ public class SleeperCdkApp extends Stack {
         }
     }
 
-    protected void generateAutoStopEcsClusterTasksStack() {
-        if (generateAutoStopEcsClusterTasksStack) {
-            autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(this, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
-        }
-    }
-
     protected void generateLoggingStack() {
         if (generateLoggingStack) {
             loggingStack = new LoggingStack(this, "Logging", instanceProperties);
@@ -402,10 +395,6 @@ public class SleeperCdkApp extends Stack {
 
     protected void setGenerateAutoDeleteS3ObjectsStack(Boolean generateAutoDeleteS3ObjectsStack) {
         this.generateAutoDeleteS3ObjectsStack = generateAutoDeleteS3ObjectsStack;
-    }
-
-    protected void setGenerateAutoStopEcsClusterTasksStack(Boolean generateAutoStopEcsClusterTasksStack) {
-        this.generateAutoStopEcsClusterTasksStack = generateAutoStopEcsClusterTasksStack;
     }
 
     protected AutoDeleteS3ObjectsStack getAutoDeleteS3ObjectsStack() {
