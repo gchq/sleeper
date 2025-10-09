@@ -78,6 +78,7 @@ runMavenSystemTests() {
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
     echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
+    cd $SCRIPTS_DIR
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
@@ -147,8 +148,8 @@ else
 fi
 
 echo "[$(time_str)] Uploading test output"
-#java -cp "${SYSTEM_TEST_JAR}" \
- #sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+java -cp "${SYSTEM_TEST_JAR}" \
+ sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
 popd
 
