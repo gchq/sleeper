@@ -17,7 +17,6 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.DataEngine;
@@ -60,7 +59,7 @@ public class CompactionVeryLargeST {
 
     // We've disabled this temporarily until the following bug is resolved:
     // https://github.com/gchq/sleeper/issues/5777
-    @Disabled
+    // @Disabled
     @Test
     // This test takes about 2 hours to run, or an hour and a half if the Sleeper instance is already deployed.
     // We want to know compactions can deal with a very large amount of data.
