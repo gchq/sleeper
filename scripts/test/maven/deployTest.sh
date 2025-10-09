@@ -41,7 +41,6 @@ fi
 
 "$SCRIPTS_DIR/build/buildPython.sh"
 echo "$SHORT_ID built python"
-..
 pushd "$MAVEN_DIR"
 
 echo "$SHORT_ID running maven command"
