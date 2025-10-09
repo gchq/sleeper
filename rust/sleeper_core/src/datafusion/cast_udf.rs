@@ -476,7 +476,7 @@ mod tests {
     }
 
     #[test]
-    fn should_error_on_multiple_input_columns() -> Result<(), Error> {
+    fn should_error_on_multiple_input_columns() {
         // Given
         let cast = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
         let func_args = ScalarFunctionArgs {
@@ -500,8 +500,6 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("cast_simple only supports single column input, received 2"));
-
-        Ok(())
     }
 
     #[test]
@@ -526,12 +524,11 @@ mod tests {
             result,
             ColumnarValue::Scalar(ScalarValue::Utf8(Some(x))) if x == "test"
         ));
-
         Ok(())
     }
 
     #[test]
-    fn should_error_on_unexpected_scalar_input_type() -> Result<(), Error> {
+    fn should_error_on_unexpected_scalar_input_type() {
         // Given
         let cast = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
         let func_args = ScalarFunctionArgs {
@@ -551,12 +548,10 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("Column type Utf8 not supported for cast_simple"));
-
-        Ok(())
     }
 
     #[test]
-    fn should_error_on_unexpected_array_input_type() -> Result<(), Error> {
+    fn should_error_on_unexpected_array_input_type() {
         // Given
         let cast = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
         let func_args = ScalarFunctionArgs {
@@ -576,8 +571,6 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("Column type Utf8 not supported for cast_simple"));
-
-        Ok(())
     }
 
     #[test]
@@ -661,7 +654,7 @@ mod tests {
     }
 
     #[test]
-    fn should_error_on_scalar_int64_cast_to_other_type() -> Result<(), Error> {
+    fn should_error_on_scalar_int64_cast_to_other_type() {
         // Given
         let cast = CastUDF::new(&DataType::Int64, &DataType::Int8, false);
         let func_args = ScalarFunctionArgs {
@@ -679,12 +672,10 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("Can't cast to Int8"));
-
-        Ok(())
     }
 
     #[test]
-    fn should_error_on_scalar_int32_cast_to_other_type() -> Result<(), Error> {
+    fn should_error_on_scalar_int32_cast_to_other_type() {
         // Given
         let cast = CastUDF::new(&DataType::Int32, &DataType::Int8, false);
         let func_args = ScalarFunctionArgs {
@@ -702,12 +693,10 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("Can't cast to Int8"));
-
-        Ok(())
     }
 
     #[test]
-    fn should_error_on_array_int64_cast_to_other_type() -> Result<(), Error> {
+    fn should_error_on_array_int64_cast_to_other_type() {
         // Given
         let cast = CastUDF::new(&DataType::Int64, &DataType::Int8, false);
         let func_args = ScalarFunctionArgs {
@@ -725,12 +714,10 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("Can't cast to Int8"));
-
-        Ok(())
     }
 
     #[test]
-    fn should_error_on_array_int32_cast_to_other_type() -> Result<(), Error> {
+    fn should_error_on_array_int32_cast_to_other_type() {
         // Given
         let cast = CastUDF::new(&DataType::Int32, &DataType::Int8, false);
         let func_args = ScalarFunctionArgs {
@@ -748,8 +735,6 @@ mod tests {
         assert!(result.is_err());
         let err_msg = format!("{}", result.unwrap_err());
         assert!(err_msg.contains("Can't cast to Int8"));
-
-        Ok(())
     }
 
     #[test]
@@ -778,10 +763,16 @@ mod tests {
             let int_array = arr.as_primitive::<Int64Type>();
             assert_eq!(
                 int_array,
-                &Int64Array::from(vec![i32::MIN as i64, -1i64, 0i64, 1i64, i32::MAX as i64])
-            )
+                &Int64Array::from(vec![
+                    i64::from(i32::MIN),
+                    -1i64,
+                    0i64,
+                    1i64,
+                    i64::from(i32::MIN)
+                ])
+            );
         } else {
-            panic!("Expected array result")
+            panic!("Expected array result");
         }
         Ok(())
     }
@@ -792,13 +783,13 @@ mod tests {
         let cast = CastUDF::new(&DataType::Int64, &DataType::Int32, false);
         let func_args = ScalarFunctionArgs {
             args: vec![ColumnarValue::Array(Arc::new(Int64Array::from(vec![
-                (i32::MIN as i64) - 5,
-                (i32::MIN as i64) - 1,
+                i64::from(i32::MIN) - 5,
+                i64::from(i32::MIN) - 1,
                 -1,
                 0,
                 1,
-                (i32::MAX as i64) + 1,
-                (i32::MAX as i64) + 5,
+                i64::from(i32::MAX) + 1,
+                i64::from(i32::MAX) + 5,
             ])))],
             arg_fields: vec![Arc::new(Field::new("a", DataType::Int64, false))],
             number_rows: 7,
@@ -823,9 +814,9 @@ mod tests {
                     i32::MIN,
                     i32::MIN + 4
                 ])
-            )
+            );
         } else {
-            panic!("Expected array result")
+            panic!("Expected array result");
         }
         Ok(())
     }
@@ -847,7 +838,7 @@ mod tests {
 
         // Then
         if let ColumnarValue::Scalar(ScalarValue::Int64(Some(value))) = result {
-            assert_eq!(value, i32::MIN as i64);
+            assert_eq!(value, i64::from(i32::MIN));
         } else {
             panic!("Expected scalar result with 64 bit value")
         }
@@ -860,7 +851,7 @@ mod tests {
         let cast = CastUDF::new(&DataType::Int64, &DataType::Int32, false);
         let func_args = ScalarFunctionArgs {
             args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(
-                (i32::MIN as i64) - 1,
+                i64::from(i32::MIN) - 1,
             )))],
             arg_fields: vec![Arc::new(Field::new("a", DataType::Int64, false))],
             number_rows: 7,
