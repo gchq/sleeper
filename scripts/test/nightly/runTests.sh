@@ -19,7 +19,7 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
-REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
+REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
@@ -110,7 +110,8 @@ runMavenSystemTests() {
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
-    cd $REPO_PARENT_DIR
+    SLEEPER_DIR=$REPO_PARENT_DIR/sleeper
+    cd $SLEEPER_DIR
     #Make copies of the java folder to run independent maven builds in parallel
     mkdir test
     cp -r java test/java
@@ -134,13 +135,13 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive6" "${SUITE_PARAMS6[@]}"
-    cd $REPO_PARENT_DIR/test/scripts/test/nightly; pwd& #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    sleep 60; cd $REPO_PARENT_DIR/test2/scripts/test/nightly; pwd #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
+    cd $SLEEPER_DIR/test/scripts/test/nightly; pwd& #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
+    sleep 60; cd $SLEEPER_DIR/test2/scripts/test/nightly; pwd #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
     wait
 
     #Remove the temporary folders
-    rm -rf $REPO_PARENT_DIR/test
-    rm -rf $REPO_PARENT_DIR/test2
+    rm -rf $SLEEPER_DIR/test
+    rm -rf $SLEEPER_DIR/test2
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
 fi
