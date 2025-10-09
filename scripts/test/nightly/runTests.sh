@@ -70,6 +70,7 @@ set +e
 END_EXIT_CODE=0
 
 runMavenSystemTests() {
+    NEW_MAVEN_DIR=$(cd ../../java && pwd)
     SHORT_ID=$1
     TEST_NAME=$2
     shift 2
@@ -78,7 +79,6 @@ runMavenSystemTests() {
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
     echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
-    cd $SCRIPTS_DIR/test
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
@@ -89,7 +89,7 @@ runMavenSystemTests() {
       END_EXIT_CODE=$RUN_TESTS_EXIT_CODE
       TEST_EXIT_CODE=$RUN_TESTS_EXIT_CODE
     fi
-    pushd "$MAVEN_DIR"
+    pushd "$NEW_MAVEN_DIR"
     echo "Running maven batch mode command for $SHORT_ID"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
@@ -136,8 +136,8 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive6" "${SUITE_PARAMS6[@]}"
-    cd $SLEEPER_DIR/test/scripts/test/nightly; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    sleep 60; cd $SLEEPER_DIR/test2/scripts/test/nightly; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
+    pushd "$SLEEPER_DIR/test/scripts/test"; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
+    sleep 60; pushd "$SLEEPER_DIR/test2/scripts/test"; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
     wait
 
     #Remove the temporary folders
