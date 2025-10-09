@@ -768,7 +768,7 @@ mod tests {
                     -1i64,
                     0i64,
                     1i64,
-                    i64::from(i32::MIN)
+                    i64::from(i32::MAX)
                 ])
             );
         } else {
