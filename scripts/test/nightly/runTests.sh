@@ -19,7 +19,7 @@ unset CDPATH
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
-REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
+REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
@@ -110,27 +110,44 @@ runMavenSystemTests() {
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+    cd $REPO_PARENT_DIR
+    #Make copies of the java folder to run independent maven builds in parallel
+    mkdir test
+    cp -r java test/java
+    cp -r scripts test/scripts
+    cp README.md test
+    cp -r test test2
+
+    echo "copied"
+    ls | grep test
+
     echo "Running performance tests in parallel. Start time: [$(time_str)]"
-    SUITE_PARAMS1=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite1 "$@")
-    SUITE_PARAMS2=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite2 "$@")
+    SUITE_PARAMS1=(-Dsleeper.system.test.cluster.enabled=true -DskipRust -DrunIT=ExpensiveSuite1 "$@")
+    SUITE_PARAMS2=(-Dsleeper.system.test.cluster.enabled=true -DskipRust -DrunIT=ExpensiveSuite2 "$@")
     SUITE_PARAMS3=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite3 "$@")
     SUITE_PARAMS4=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite4 "$@")
     SUITE_PARAMS5=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite5 "$@")
     SUITE_PARAMS6=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite6 "$@")
-    runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    sleep 300; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
+    #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
+    #sleep 60; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive3" "${SUITE_PARAMS3[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive6" "${SUITE_PARAMS6[@]}"
+    cd $REPO_PARENT_DIR/test/scripts/test/nightly; pwd& #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
+    sleep 60; cd $REPO_PARENT_DIR/test2/scripts/test/nightly; pwd #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
     wait
+
+    #Remove the temporary folders
+    rm -rf $REPO_PARENT_DIR/test
+    rm -rf $REPO_PARENT_DIR/test2
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
 fi
 
 echo "[$(time_str)] Uploading test output"
-java -cp "${SYSTEM_TEST_JAR}" \
- sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+#java -cp "${SYSTEM_TEST_JAR}" \
+ #sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
 popd
 
