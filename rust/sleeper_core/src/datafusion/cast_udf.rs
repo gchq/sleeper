@@ -85,7 +85,7 @@ impl ScalarUDFImpl for CastUDF {
     // Allow this warning as we explicitly want narrowing conversions to truncate
     #[allow(clippy::cast_possible_truncation)]
     fn invoke_with_args(&self, mut args: ScalarFunctionArgs) -> Result<ColumnarValue> {
-        if args.args.len() > 1 {
+        if args.args.len() != 1 {
             return exec_err!(
                 "{} only supports single column input, received {}",
                 self.name(),
@@ -233,8 +233,10 @@ fn create_full_range(output_type: &DataType) -> Result<Interval> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrow::array::{Int32Array, Int64Array, StringArray};
     use arrow::datatypes::DataType;
     use color_eyre::eyre::Error;
+    use datafusion::config::ConfigOptions;
     use datafusion::logical_expr::interval_arithmetic::Interval;
     use datafusion::scalar::ScalarValue;
 
@@ -473,16 +475,408 @@ mod tests {
         );
     }
 
-    //TODO: tests needed
-    // check argument length produces error
-    // check same datatype comes back unchanged
-    // check scalar illegal input argument datatype produces error
-    // check array illegal input argument datatype produces error
-    // check scalar unreachables for pointless casts
-    // check array unreachables for pointless casts
-    // check scalar 64 bit input cant cast to other numeric types
-    // check scalar 32 bit input cant cast to other numeric types
-    // check array 64 bit input cant cast to other numeric types
-    // check array 32 bit input cant cast to other numeric types
-    // ...
+    #[test]
+    fn should_error_on_multiple_input_columns() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![
+                ColumnarValue::Scalar(ScalarValue::Null),
+                ColumnarValue::Scalar(ScalarValue::Null),
+            ],
+            arg_fields: vec![
+                Arc::new(Field::new("a", DataType::Null, true)),
+                Arc::new(Field::new("a", DataType::Null, true)),
+            ],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Null, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("cast_simple only supports single column input, received 2"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_non_numeric_data_type_unchanged() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Utf8, &DataType::Utf8, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Scalar(ScalarValue::Utf8(Some(
+                "test".into(),
+            )))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Utf8, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Utf8, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args)?;
+
+        // Then
+        assert!(matches!(
+            result,
+            ColumnarValue::Scalar(ScalarValue::Utf8(Some(x))) if x == "test"
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_unexpected_scalar_input_type() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Scalar(ScalarValue::Utf8(Some(
+                "test".into(),
+            )))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Utf8, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int64, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Column type Utf8 not supported for cast_simple"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_unexpected_array_input_type() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Array(Arc::new(StringArray::from(vec![
+                Some("test"),
+            ])))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Utf8, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int64, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Column type Utf8 not supported for cast_simple"));
+
+        Ok(())
+    }
+
+    #[test]
+    #[should_panic(expected = "Shouldn't need to cast!")]
+    fn should_error_on_scalar_int32_to_int32_cast() {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int32, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Scalar(ScalarValue::Int32(Some(12)))],
+            // Deliberately set the arg_field to wrong type
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int64, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int32, false)),
+        };
+
+        // When
+        let _ = cast.invoke_with_args(func_args);
+
+        // Then - panic
+    }
+
+    #[test]
+    #[should_panic(expected = "Shouldn't need to cast!")]
+    fn should_error_on_scalar_int64_to_int64_cast() {
+        // Given
+        let cast = CastUDF::new(&DataType::Int64, &DataType::Int64, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(12)))],
+            // Deliberately set the arg_field to wrong type
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int32, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int64, false)),
+        };
+
+        // When
+        let _ = cast.invoke_with_args(func_args);
+
+        // Then - panic
+    }
+
+    #[test]
+    #[should_panic(expected = "Shouldn't need to cast!")]
+    fn should_error_on_array_int32_to_int32_cast() {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int32, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Array(Arc::new(Int32Array::from(vec![1])))],
+            // Deliberately set the arg_field to wrong type
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int64, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int32, false)),
+        };
+
+        // When
+        let _ = cast.invoke_with_args(func_args);
+
+        // Then - panic
+    }
+
+    #[test]
+    #[should_panic(expected = "Shouldn't need to cast!")]
+    fn should_error_on_array_int64_to_int64_cast() {
+        // Given
+        let cast = CastUDF::new(&DataType::Int64, &DataType::Int64, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Array(Arc::new(Int64Array::from(vec![1])))],
+            // Deliberately set the arg_field to wrong type
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int32, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int64, false)),
+        };
+
+        // When
+        let _ = cast.invoke_with_args(func_args);
+
+        // Then - panic
+    }
+
+    #[test]
+    fn should_error_on_scalar_int64_cast_to_other_type() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int64, &DataType::Int8, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(1)))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int64, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int64, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Can't cast to Int8"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_scalar_int32_cast_to_other_type() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int8, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Scalar(ScalarValue::Int32(Some(1)))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int32, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int32, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Can't cast to Int8"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_array_int64_cast_to_other_type() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int64, &DataType::Int8, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Array(Arc::new(Int64Array::from(vec![1i64])))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int64, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int64, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Can't cast to Int8"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_error_on_array_int32_cast_to_other_type() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int8, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Array(Arc::new(Int32Array::from(vec![1i32])))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int32, true))],
+            number_rows: 1,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int32, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args);
+
+        // Then
+        assert!(result.is_err());
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(err_msg.contains("Can't cast to Int8"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn should_convert_array_int32_to_int64() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Array(Arc::new(Int32Array::from(vec![
+                i32::MIN,
+                -1,
+                0,
+                1,
+                i32::MAX,
+            ])))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int32, false))],
+            number_rows: 5,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int64, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args)?;
+
+        // Then
+        if let ColumnarValue::Array(arr) = result {
+            let int_array = arr.as_primitive::<Int64Type>();
+            assert_eq!(
+                int_array,
+                &Int64Array::from(vec![i32::MIN as i64, -1i64, 0i64, 1i64, i32::MAX as i64])
+            )
+        } else {
+            panic!("Expected array result")
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn should_convert_array_int64_to_int32() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int64, &DataType::Int32, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Array(Arc::new(Int64Array::from(vec![
+                (i32::MIN as i64) - 5,
+                (i32::MIN as i64) - 1,
+                -1,
+                0,
+                1,
+                (i32::MAX as i64) + 1,
+                (i32::MAX as i64) + 5,
+            ])))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int64, false))],
+            number_rows: 7,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int32, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args)?;
+
+        // Then
+        if let ColumnarValue::Array(arr) = result {
+            let int_array = arr.as_primitive::<Int32Type>();
+            assert_eq!(
+                int_array,
+                &Int32Array::from(vec![
+                    i32::MAX - 4,
+                    i32::MAX,
+                    -1i32,
+                    0i32,
+                    1i32,
+                    i32::MIN,
+                    i32::MIN + 4
+                ])
+            )
+        } else {
+            panic!("Expected array result")
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn should_convert_scalar_int32_to_int64() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Scalar(ScalarValue::Int32(Some(i32::MIN)))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int32, false))],
+            number_rows: 5,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int64, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args)?;
+
+        // Then
+        if let ColumnarValue::Scalar(ScalarValue::Int64(Some(value))) = result {
+            assert_eq!(value, i32::MIN as i64);
+        } else {
+            panic!("Expected scalar result with 64 bit value")
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn should_convert_scalar_int64_to_int32() -> Result<(), Error> {
+        // Given
+        let cast = CastUDF::new(&DataType::Int64, &DataType::Int32, false);
+        let func_args = ScalarFunctionArgs {
+            args: vec![ColumnarValue::Scalar(ScalarValue::Int64(Some(
+                (i32::MIN as i64) - 1,
+            )))],
+            arg_fields: vec![Arc::new(Field::new("a", DataType::Int64, false))],
+            number_rows: 7,
+            config_options: Arc::new(ConfigOptions::default()),
+            return_field: Arc::new(Field::new("r", DataType::Int32, false)),
+        };
+
+        // When
+        let result = cast.invoke_with_args(func_args)?;
+
+        // Then
+        if let ColumnarValue::Scalar(ScalarValue::Int32(Some(value))) = result {
+            assert_eq!(value, i32::MAX);
+        } else {
+            panic!("Expected scalar result with 32 bit value")
+        }
+        Ok(())
+    }
 }
