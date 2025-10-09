@@ -73,11 +73,9 @@ public class CompactionVeryLargeST {
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString(),
                 COMPACTION_FILES_BATCH_SIZE, "40"));
-        sleeper.systemTestCluster().runDataGenerationJobs(10,
-                builder -> builder.ingestMode(DIRECT).rowsPerIngest(200_000_000),
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)))
-                // 200 million rows don't fit in the local file system store of a data generation task,
-                // so we end up with 4 files from each task.
+        sleeper.systemTestCluster().runDataGenerationJobs(40,
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(50_000_000),
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
                 .waitForTotalFileReferences(40);
 
         // When
