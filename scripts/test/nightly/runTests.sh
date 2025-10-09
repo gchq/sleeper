@@ -135,8 +135,8 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive6" "${SUITE_PARAMS6[@]}"
-    cd $SLEEPER_DIR/test/scripts/test/nightly; pwd& #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    sleep 60; cd $SLEEPER_DIR/test2/scripts/test/nightly; pwd #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
+    cd $SLEEPER_DIR/test/scripts/test/nightly; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
+    sleep 60; cd $SLEEPER_DIR/test2/scripts/test/nightly; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
     wait
 
     #Remove the temporary folders
