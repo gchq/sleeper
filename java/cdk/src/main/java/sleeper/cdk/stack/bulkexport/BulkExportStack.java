@@ -38,7 +38,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -194,10 +193,7 @@ public class BulkExportStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_S3_BUCKET, exportBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode,
-                    exportBucket, bucketName,
-                    coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE),
-                    coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_AUTODELETE_PROVIDER));
+            coreStacks.addAutoDeleteS3Objects(instanceProperties, exportBucket, bucketName);
         }
 
         return exportBucket;

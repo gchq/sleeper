@@ -25,9 +25,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -35,13 +33,11 @@ import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -97,42 +93,23 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
-        LOGGER.info("-------------------------------------------------------");
-        LOGGER.info("Running Deployment");
-        LOGGER.info("-------------------------------------------------------");
+        DeployInstance deployInstance = new DeployInstance(
+                SyncJars.fromScriptsDirectory(s3, scriptsDirectory),
+                new UploadDockerImagesToEcr(
+                        UploadDockerImages.builder()
+                                .scriptsDirectory(scriptsDirectory)
+                                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
+                                .commandRunner(runCommand)
+                                .build(),
+                        EcrRepositoryCreator.withEcrClient(ecr)),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
+                InvokeCdkForInstance.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
-        // Write properties files for CDK
-        Path generatedDirectory = scriptsDirectory.resolve("generated");
-        Path jarsDirectory = scriptsDirectory.resolve("jars");
-        Files.createDirectories(generatedDirectory);
-        ClientUtils.clearDirectory(generatedDirectory);
-        SaveLocalProperties.saveToDirectory(generatedDirectory, properties, tablePropertiesList.stream());
-
-        SyncJars.builder().s3(s3)
-                .jarsDirectory(jarsDirectory).instanceProperties(properties)
-                .deleteOldJars(false)
-                .build().sync();
-
-        UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
-                UploadDockerImages.builder()
-                        .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
-                        .commandRunner(runCommand)
-                        .build(),
-                EcrRepositoryCreator.withEcrClient(ecr));
-        dockerImageUploader.upload(UploadDockerImagesToEcrRequest.forDeployment(properties));
-
-        LOGGER.info("-------------------------------------------------------");
-        LOGGER.info("Deploying Stacks");
-        LOGGER.info("-------------------------------------------------------");
-        InvokeCdkForInstance.builder()
-                .propertiesFile(generatedDirectory.resolve("instance.properties"))
-                .version(SleeperVersion.getVersion())
-                .jarsDirectory(jarsDirectory)
-                .build().invokeInferringType(properties, deployCommand, runCommand);
-
-        // We can use RestartTasks here to terminate indefinitely running ECS tasks, in order to get them onto the new
-        // version of the jars. That will be part of issues #639 and #640 once graceful termination is implemented.
-        // Note we'll need to reload instance properties as the cluster/lambda names may have been updated by the CDK.
+        deployInstance.deploy(DeployInstanceRequest.builder()
+                .instanceConfig(DeployInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
+                .cdkCommand(deployCommand)
+                .inferInstanceType()
+                .build());
 
         LOGGER.info("Finished deployment of existing instance");
     }
