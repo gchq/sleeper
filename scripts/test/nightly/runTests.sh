@@ -117,7 +117,7 @@ runExpensive1(){
 }
 
 runExpensive2(){
-    sleep 60
+    sleep 600
     pushd "$REPO_PARENT_DIR/sleeper/test2/scripts/test"
     runMavenSystemTests "$@"
     popd
