@@ -34,10 +34,7 @@ use color_eyre::eyre::{Result, bail};
 use log::error;
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
-use std::{
-    any::Any,
-    fmt::{Display, Formatter},
-};
+use std::fmt::{Display, Formatter};
 use url::Url;
 
 mod datafusion;
