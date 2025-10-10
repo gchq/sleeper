@@ -34,7 +34,10 @@ use color_eyre::eyre::{Result, bail};
 use log::error;
 use object_store::aws::AmazonS3Builder;
 use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
-use std::fmt::{Display, Formatter};
+use std::{
+    any::Any,
+    fmt::{Display, Formatter},
+};
 use url::Url;
 
 mod datafusion;
@@ -371,8 +374,12 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
             if let DataFusionError::ArrowError(arrow_error, backtrace) = &e {
                 if let ArrowError::ExternalError(external_error) = arrow_error {
                     error!("Found Arrow external error");
-                    error!("Backtrace: {backtrace:?}");
-                    error!("External error: {external_error:?}");
+                    if let Some(backtrace_str) = backtrace {
+                        error!("Backtrace: {backtrace_str}");
+                    }
+                    error!("Backtrace debug output: {backtrace:?}");
+                    error!("External error: {external_error}");
+                    error!("External error debug output: {external_error:?}");
                 }
             }
             e.into()
