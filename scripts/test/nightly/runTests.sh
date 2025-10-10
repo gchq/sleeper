@@ -130,6 +130,7 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     mkdir test
     cp -r java test/java
     cp -r scripts test/scripts
+    cp -r python test/python
     cp README.md test
     cp -r test test2
     popd
