@@ -282,10 +282,7 @@ async fn should_not_alter_aggregate_schema() -> Result<(), Error> {
             "row_key",
             int_range(0, 100),
         )])))
-        .output(OutputType::File {
-            output_file: output.clone(),
-            opts: SleeperParquetOptions::default(),
-        })
+        .output(create_output_for_compaction(&output))
         .aggregates(Aggregate::parse_config("sum(time)")?)
         .build()?;
 

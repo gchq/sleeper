@@ -248,7 +248,6 @@ pub fn add_numeric_casts(
 #[cfg(test)]
 mod tests {
     use crate::datafusion::util::{add_numeric_casts, remove_coalesce_physical_stage};
-    use arrow::datatypes::{DataType, Field};
     use arrow::{
         array::RecordBatch,
         compute::SortOptions,
@@ -339,11 +338,11 @@ mod tests {
     }
 
     fn build_ordering(schema: &Arc<Schema>) -> LexOrdering {
-        vec![PhysicalSortExpr {
+        LexOrdering::new(vec![PhysicalSortExpr {
             expr: Arc::new(Column::new(schema.field(0).name(), 0)),
             options: SortOptions::default(),
-        }]
-        .into()
+        }])
+        .unwrap()
     }
 
     fn build_coalesce_exec_with_memory(schema: &Arc<Schema>) -> Arc<CoalescePartitionsExec> {

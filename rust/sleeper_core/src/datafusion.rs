@@ -26,7 +26,7 @@ use crate::{
         unalias::unalias_view_projection_columns,
         util::{
             add_numeric_casts, calculate_upload_size, check_for_sort_exec, output_partition_count,
-            register_store, register_store, remove_coalesce_physical_stage, retrieve_input_size,
+            register_store, remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
 };
@@ -299,14 +299,12 @@ impl<'a> SleeperOperations<'a> {
         frame: DataFrame,
         sort_ordering: Option<&LexOrdering>,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
-        // Create sort ordering from schema and row key and sort key fields
-        let ordering = self.create_sort_expr_ordering(&frame)?;
         // Consume frame and generate initial physical plan
-        let physical_plan = frame.create_physical_plan().await?;
-        // Unalias field names if this is going to be Arrow output
-        let physical_plan = self.remove_aliased_columns(physical_plan, &ordering)?;
-        // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
+        let mut physical_plan = frame.create_physical_plan().await?;
         if let Some(order) = sort_ordering {
+            // Unalias field names if this is going to be Arrow output
+            physical_plan = self.remove_aliased_columns(physical_plan, order)?;
+            // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
             physical_plan = remove_coalesce_physical_stage(order, physical_plan)?;
         }
         // Check physical plan is free of `SortExec` stages.
