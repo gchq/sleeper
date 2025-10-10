@@ -24,7 +24,7 @@ use datafusion::{
     common::DFSchema,
     dataframe::DataFrame,
     error::DataFusionError,
-    logical_expr::{ScalarUDF, col},
+    logical_expr::{ScalarUDF, ident},
     parquet::data_type::AsBytes,
 };
 use log::info;
@@ -352,17 +352,17 @@ impl<'a> Sketcher<'a> {
             .map(datafusion::common::Column::name)
             .collect::<Vec<_>>();
 
-        let row_key_exprs = self.row_keys.iter().map(col).collect::<Vec<_>>();
+        let row_key_exprs = self.row_keys.iter().map(ident).collect::<Vec<_>>();
 
         // Iterate through column names, mapping each into an `Expr`
         let mut col_names_expr = Vec::new();
         for col_name in col_names {
-            // Have we found the first row key column?
+            // Have we found the first row key field?
             let expr = if self.row_keys[0] == *col_name {
-                // Sketch function needs to be called with each row key column
+                // Sketch function needs to be called with each row key field
                 self.sketch.call(row_key_exprs.clone()).alias(col_name)
             } else {
-                col(col_name)
+                ident(col_name)
             };
             col_names_expr.push(expr);
         }

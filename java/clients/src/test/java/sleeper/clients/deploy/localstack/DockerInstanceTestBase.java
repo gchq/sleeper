@@ -16,11 +16,13 @@
 
 package sleeper.clients.deploy.localstack;
 
+import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
@@ -38,9 +40,17 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class DockerInstanceTestBase extends LocalStackTestBase {
+
+    InstanceProperties instanceProperties = new InstanceProperties();
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
+    }
 
     public void deployInstance(String instanceId) {
         deployInstance(instanceId, tableProperties -> {
@@ -52,7 +62,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
                 .s3Client(s3Client)
                 .dynamoClient(dynamoClient).sqsClient(sqsClient)
                 .extraTableProperties(extraProperties)
-                .build().deploy(instanceId);
+                .build().deploy(instanceProperties, instanceId);
     }
 
     public CloseableIterator<Row> queryAllRows(

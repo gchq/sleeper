@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.rowbatch.arrow;
+package sleeper.arrow;
 
 import org.apache.arrow.algorithm.sort.CompositeVectorComparator;
 import org.apache.arrow.algorithm.sort.DefaultVectorComparators;
@@ -38,6 +38,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Utility support for ingesting Arrow batches.
+ */
 class ArrowIngestSupport {
 
     private ArrowIngestSupport() {

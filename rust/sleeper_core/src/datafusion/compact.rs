@@ -16,7 +16,7 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, CompactionResult,
+    CommonConfig,
     datafusion::{
         OutputType, SleeperOperations,
         metrics::RowCounts,
@@ -37,6 +37,18 @@ use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::sync::Arc;
 
+/// Contains compaction results.
+///
+/// This provides the details of compaction results that Sleeper
+/// will use to update its record keeping.
+///
+pub struct CompactionResult {
+    /// The total number of rows read by a compaction.
+    pub rows_read: usize,
+    /// The total number of rows written by a compaction.
+    pub rows_written: usize,
+}
+
 /// Starts a Sleeper compaction.
 ///
 /// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
@@ -52,6 +64,7 @@ pub async fn compact(
     // Retrieve Parquet output options
     let OutputType::File {
         output_file,
+        write_sketch_file: _,
         opts: _,
     } = &config.output
     else {

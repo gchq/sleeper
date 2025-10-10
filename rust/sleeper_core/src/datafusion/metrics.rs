@@ -17,13 +17,12 @@
 use crate::CompactionResult;
 use datafusion::{
     common::HashMap,
-    datasource::source::DataSourceExec,
+    datasource::{sink::DataSinkExec, source::DataSourceExec},
     error::DataFusionError,
     physical_plan::{
         ExecutionPlan, ExecutionPlanVisitor,
         filter::FilterExec,
         metrics::{MetricValue, MetricsSet},
-        projection::ProjectionExec,
     },
 };
 use log::info;
@@ -94,10 +93,11 @@ impl ExecutionPlanVisitor for RowCounts {
 
     fn pre_visit(&mut self, plan: &dyn ExecutionPlan) -> Result<bool, Self::Error> {
         // read output records from final projection stage
-        let maybe_projection = plan
+        let maybe_sink_stats = plan
             .as_any()
-            .downcast_ref::<ProjectionExec>()
-            .and_then(ExecutionPlan::metrics);
+            .downcast_ref::<DataSinkExec>()
+            // Grab metrics from the stage preceeding DataSinkExec as the Parquet sink doesn't record metrics
+            .and_then(|sink_exec| sink_exec.input().metrics());
         // read input records from filter stage, not parquet read stage, since parquet
         // read stage may not filter precisely to range needed and therefore over-reports
         // number of rows read
@@ -105,7 +105,7 @@ impl ExecutionPlanVisitor for RowCounts {
             .as_any()
             .downcast_ref::<FilterExec>()
             .and_then(ExecutionPlan::metrics);
-        if let Some(m) = maybe_projection {
+        if let Some(m) = maybe_sink_stats {
             self.rows_written = m.output_rows().unwrap_or_default();
         }
         if let Some(m) = maybe_parq_read {

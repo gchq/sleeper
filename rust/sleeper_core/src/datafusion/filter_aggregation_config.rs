@@ -25,7 +25,7 @@ use datafusion::{
     common::{Column, DFSchema, HashSet, plan_err},
     dataframe::DataFrame,
     error::Result,
-    logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, col},
+    logical_expr::{AggregateUDF, Expr, ExprSchemable, ScalarUDF, ident},
 };
 use filter_udfs::ageoff::AgeOff;
 use std::sync::Arc;
@@ -40,7 +40,7 @@ impl Filter {
     pub fn create_filter_expr(&self) -> Result<Expr> {
         match self {
             Self::Ageoff { column, max_age } => {
-                Ok(ScalarUDF::from(AgeOff::try_from(*max_age)?).call(vec![col(column)]))
+                Ok(ScalarUDF::from(AgeOff::try_from(*max_age)?).call(vec![ident(column)]))
             }
         }
     }
@@ -52,13 +52,14 @@ impl Aggregate {
     /// If the type of the column could not be computed, or a map aggregation is set for a non-map column.
     pub fn to_expr(&self, frame: &DataFrame) -> Result<Expr> {
         Ok(match &self.operation {
-            AggOp::Sum => non_null_sum(col(&self.column)),
-            AggOp::Min => non_null_min(col(&self.column)),
-            AggOp::Max => non_null_max(col(&self.column)),
+            AggOp::Sum => non_null_sum(ident(&self.column)),
+            AggOp::Min => non_null_min(ident(&self.column)),
+            AggOp::Max => non_null_max(ident(&self.column)),
             AggOp::MapAggregate(op) => {
-                let col_dt = col(&self.column).get_type(frame.schema())?;
+                let col_dt = ident(&self.column).get_type(frame.schema())?;
                 let map_sum = Arc::new(MapAggregator::try_new(&col_dt, op.to_udf_op())?);
-                AggregateUDF::new_from_impl(NonNullable::new(map_sum)).call(vec![col(&self.column)])
+                AggregateUDF::new_from_impl(NonNullable::new(map_sum))
+                    .call(vec![ident(&self.column)])
             }
         }
         // Rename column to original name
@@ -78,8 +79,8 @@ impl MapAggregateOp {
 
 /// Validates the filtering and aggregation configuration.
 ///
-/// Row key columns are implicitly "group by" columns. Extra columns may be added. Typically,
-/// we expect this to include sort key columns.
+/// Row key fields are implicitly "group by" columns. Extra columns may be added. Typically,
+/// we expect this to include sort key fields.
 ///
 /// In particular, validates that:
 ///  1. All columns that are NOT "group by" columns have an aggregation operation specified for them,
@@ -101,11 +102,11 @@ pub fn validate_aggregations(
         // Check for duplicate aggregation columns
         let mut dup_check = HashSet::new();
         for col in group_by_cols {
-            // Has this "group by" column been specified multiple times? Or is it a row key column?
-            // Row key columns are implicitly "group by" columns.
+            // Has this "group by" column been specified multiple times? Or is it a row key field?
+            // Row key fields are implicitly "group by" columns.
             if !dup_check.insert(*col) {
                 return plan_err!(
-                    "Grouping column \"{col}\" is already a row key column or has been specified multiple times"
+                    "Grouping column \"{col}\" is already a row key field or has been specified multiple times"
                 );
             }
             // Is this column valid?
@@ -136,7 +137,7 @@ pub fn validate_aggregations(
                 return plan_err!("Aggregation column \"{col}\" doesn't exist");
             }
         }
-        // Check all non row key columns exist in aggregation column list
+        // Check all non row key fields exist in aggregation column list
         for col in non_row_key_cols {
             if !agg_cols.contains(&col) {
                 return plan_err!(

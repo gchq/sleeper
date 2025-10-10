@@ -69,8 +69,7 @@ public class FFIContext implements AutoCloseable {
      *
      * Once this function has been called, no further FFI calls can be made using it
      * and will throw exceptions. It is safe to close this context whilst query
-     * streams
-     * are active; however, no further queries can be executed.
+     * streams are active; however, no further queries can be executed.
      *
      * This is an idempotent operation, calling it multiple times will have no
      * effect.

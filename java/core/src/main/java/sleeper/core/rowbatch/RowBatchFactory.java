@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.runner.impl.rowbatch;
+package sleeper.core.rowbatch;
 
+/**
+ * Interface for creating factories that can accept data in a given input type
+ * and return it in sorted order in Sleeper Row objects.
+ *
+ * @param <INCOMINGDATATYPE> the incoming source data type
+ */
 @FunctionalInterface
 public interface RowBatchFactory<INCOMINGDATATYPE> extends AutoCloseable {
 
+    /**
+     * Create object for iterating through rows.
+     *
+     * @return row batch processor
+     */
     RowBatch<INCOMINGDATATYPE> createRowBatch();
 
     @Override
