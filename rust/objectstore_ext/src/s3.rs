@@ -180,19 +180,9 @@ impl ObjectStoreFactory {
         match src.scheme() {
             "s3" => {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
-                Ok(self.connect_s3(src).map(|e| {
-                    Arc::new(LoggingObjectStore::new(
-                        ReadaheadStore::new(e, bucket.clone())
-                            .with_max_live_streams(
-                                std::thread::available_parallelism()
-                                    .unwrap_or(NonZero::new(2usize).unwrap())
-                                    .get(),
-                            )
-                            .with_max_stream_age(Duration::from_secs(60)),
-                        "DataFusion",
-                        bucket,
-                    ))
-                })?)
+                Ok(self
+                    .connect_s3(src)
+                    .map(|e| Arc::new(LoggingObjectStore::new(e, "DataFusion", bucket)))?)
             }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
@@ -214,6 +204,17 @@ impl ObjectStoreFactory {
             )),
         }
     }
+}
+
+#[allow(dead_code)] // TODO re-enable this after checking if this caused error
+fn apply_readahead_store<T: ObjectStore>(store: T, bucket: &str) -> impl ObjectStore + use<T> {
+    ReadaheadStore::new(store, bucket)
+        .with_max_live_streams(
+            std::thread::available_parallelism()
+                .unwrap_or(NonZero::new(2usize).unwrap())
+                .get(),
+        )
+        .with_max_stream_age(Duration::from_secs(60))
 }
 
 #[cfg(test)]
