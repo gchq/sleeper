@@ -24,8 +24,6 @@ use crate::{
     datafusion::{CompactionResult, LeafPartitionQuery},
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
-use ::datafusion::error::DataFusionError;
-use arrow::error::ArrowError;
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
 use aws_config::Region;
