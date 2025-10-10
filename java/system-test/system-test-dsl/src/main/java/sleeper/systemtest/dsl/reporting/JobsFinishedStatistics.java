@@ -59,6 +59,13 @@ public class JobsFinishedStatistics {
                 && numFinishedJobRuns == expectedJobs;
     }
 
+    public boolean isAllFinishedOneRunEachWithMinimum(int minimumJobs) {
+        if (numJobs < minimumJobs) {
+            return false;
+        }
+        return isAllFinishedOneRunEach(numJobs);
+    }
+
     public boolean isAverageRunRowsPerSecondInRange(double minRate, double maxRate) {
         return averageRowRate.getAverageRunRowsReadPerSecond() > minRate
                 && averageRowRate.getAverageRunRowsWrittenPerSecond() > minRate

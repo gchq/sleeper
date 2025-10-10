@@ -17,6 +17,7 @@ generated/
 scripts/jars/
 scripts/docker/
 scripts/**/version.txt
+scripts/**/deployConfig.json
 scripts/trino/etc
 scripts/trino/jars
 __pycache__

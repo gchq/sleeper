@@ -18,6 +18,7 @@ package sleeper.core.statestore.transactionlog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
@@ -34,12 +35,22 @@ import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
+import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.ThreadSleep;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.table.TableProperty.MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
+import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
+import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 
 /**
  * Tracks some state derived from a transaction log, at a position in the log. This can perform an update to the state
@@ -53,36 +64,32 @@ import java.util.function.Supplier;
 public class TransactionLogHead<T> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogHead.class);
 
+    private final TableProperties tableProperties;
     private final TableStatus sleeperTable;
     private final TransactionLogStore logStore;
     private final TransactionBodyStore transactionBodyStore;
     private final boolean updateLogBeforeAddTransaction;
-    private final int maxAddTransactionAttempts;
-    private final ExponentialBackoffWithJitter retryBackoff;
+    private final DoubleSupplier randomJitterFraction;
+    private final ThreadSleep retryWaiter;
     private final Class<? extends StateStoreTransaction<T>> transactionType;
     private final TransactionLogSnapshotLoader snapshotLoader;
-    private final Duration timeBetweenSnapshotChecks;
-    private final Duration timeBetweenTransactionChecks;
     private final Supplier<Instant> stateUpdateClock;
-    private final long minTransactionsAheadToLoadSnapshot;
     private T state;
     private long lastTransactionNumber;
     private Instant nextSnapshotCheckTime;
     private Instant nextTransactionCheckTime;
 
     private TransactionLogHead(Builder<T> builder) {
-        sleeperTable = builder.sleeperTable;
+        tableProperties = builder.tableProperties;
+        sleeperTable = tableProperties.getStatus();
         logStore = builder.logStore;
         transactionBodyStore = builder.transactionBodyStore;
         updateLogBeforeAddTransaction = builder.updateLogBeforeAddTransaction;
-        maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
-        retryBackoff = builder.retryBackoff;
+        randomJitterFraction = builder.randomJitterFraction;
+        retryWaiter = builder.retryWaiter;
         transactionType = builder.transactionType;
         snapshotLoader = builder.snapshotLoader;
-        timeBetweenSnapshotChecks = builder.timeBetweenSnapshotChecks;
-        timeBetweenTransactionChecks = builder.timeBetweenTransactionChecks;
         stateUpdateClock = builder.stateUpdateClock;
-        minTransactionsAheadToLoadSnapshot = builder.minTransactionsAheadToLoadSnapshot;
         state = builder.state;
         lastTransactionNumber = builder.lastTransactionNumber;
     }
@@ -109,8 +116,10 @@ public class TransactionLogHead<T> {
                 request.getTransactionType(), sleeperTable);
         request = request.storeTransactionBodyIfTooBig(sleeperTable, transactionBodyStore);
         Exception failure = new IllegalArgumentException("No attempts made");
+        int maxAddTransactionAttempts = tableProperties.getInt(ADD_TRANSACTION_MAX_ATTEMPTS);
+        ExponentialBackoffWithJitter retryBackoff = readRetryBackoff();
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
-            prepareAddTransactionAttempt(attempt, request.getTransaction());
+            prepareAddTransactionAttempt(attempt, retryBackoff, request.getTransaction());
             try {
                 attemptAddTransaction(updateTime, request);
                 LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
@@ -128,13 +137,18 @@ public class TransactionLogHead<T> {
         throw new StateStoreException("Failed adding transaction", failure);
     }
 
-    private void prepareAddTransactionAttempt(int attempt, StateStoreTransaction<T> transaction) throws StateStoreException {
+    private void prepareAddTransactionAttempt(int attempt, ExponentialBackoffWithJitter retryBackoff, StateStoreTransaction<T> transaction) throws StateStoreException {
+        // Wait before the attempt if necessary (usually because it failed previously due to a conflict)
+        // Update the local state from the log if:
+        // - There was a conflict with another process, and we need to get the update it applied
+        // - We've configured to always update the local state first (because we expect this to be worth the work)
+        // Validate the transaction we want to add against the local state
         if (updateLogBeforeAddTransaction) {
-            waitBeforeAttempt(attempt);
+            waitBeforeAttempt(attempt, retryBackoff);
             forceUpdate();
             validate(transaction);
         } else if (attempt > 1) {
-            waitBeforeAttempt(attempt - 1);
+            waitBeforeAttempt(attempt - 1, retryBackoff);
             forceUpdate();
             validate(transaction);
         } else {
@@ -150,11 +164,11 @@ public class TransactionLogHead<T> {
 
     private void validate(StateStoreTransaction<T> transaction) throws StateStoreException {
         Instant startTime = Instant.now();
-        transaction.validate(state);
+        transaction.validate(state, tableProperties);
         LOGGER.debug("Validated transaction in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
 
-    private void waitBeforeAttempt(int attempt) throws StateStoreException {
+    private static void waitBeforeAttempt(int attempt, ExponentialBackoffWithJitter retryBackoff) throws StateStoreException {
         try {
             retryBackoff.waitBeforeAttempt(attempt);
         } catch (InterruptedException e) {
@@ -223,7 +237,7 @@ public class TransactionLogHead<T> {
         Optional<TransactionLogSnapshot> snapshotOpt = range.withMinTransactionNumber(minTransactionNumberToLoadSnapshot)
                 .flatMap(snapshotRange -> snapshotLoader.loadLatestSnapshotInRange(snapshotRange));
         Instant finishTime = stateUpdateClock.get();
-        nextSnapshotCheckTime = finishTime.plus(timeBetweenSnapshotChecks);
+        nextSnapshotCheckTime = finishTime.plus(Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)));
         snapshotOpt.ifPresentOrElse(snapshot -> {
             state = snapshot.getState();
             lastTransactionNumber = snapshot.getTransactionNumber();
@@ -242,7 +256,7 @@ public class TransactionLogHead<T> {
         if (lastTransactionNumber < 1) { // Always load snapshot when no transactions have been read yet
             return 1;
         } else {
-            return lastTransactionNumber + minTransactionsAheadToLoadSnapshot;
+            return lastTransactionNumber + tableProperties.getLong(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT);
         }
     }
 
@@ -254,7 +268,7 @@ public class TransactionLogHead<T> {
                 .ifPresent(readRange -> logStore.readTransactions(readRange).forEach(this::applyTransaction));
         long readTransactions = lastTransactionNumber - transactionNumberBeforeLogLoad;
         Instant finishTime = stateUpdateClock.get();
-        nextTransactionCheckTime = finishTime.plus(timeBetweenTransactionChecks);
+        nextTransactionCheckTime = finishTime.plus(Duration.ofMillis(tableProperties.getLong(TIME_BETWEEN_TRANSACTION_CHECKS_MS)));
         if (readTransactions > 0) {
             LOGGER.info("Updated {} for table {}, read {} transactions from log in {}, last transaction number is {}",
                     state.getClass().getSimpleName(), sleeperTable,
@@ -314,38 +328,43 @@ public class TransactionLogHead<T> {
         lastTransactionNumber = 0;
     }
 
+    private ExponentialBackoffWithJitter readRetryBackoff() {
+        WaitRange waitRange = WaitRange.firstAndMaxWaitCeilingSecs(
+                tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
+                tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0);
+        return new ExponentialBackoffWithJitter(
+                waitRange, randomJitterFraction, retryWaiter);
+    }
+
     /**
      * Builder to initialise the head to read from a transaction log and snapshots.
      *
      * @param <T> the type of the state derived from the log
      */
     public static class Builder<T> {
-        private TableStatus sleeperTable;
+        private TableProperties tableProperties;
         private TransactionLogStore logStore;
         private TransactionBodyStore transactionBodyStore;
         private boolean updateLogBeforeAddTransaction = true;
-        private int maxAddTransactionAttempts;
-        private ExponentialBackoffWithJitter retryBackoff;
         private Class<? extends StateStoreTransaction<T>> transactionType;
         private TransactionLogSnapshotLoader snapshotLoader = TransactionLogSnapshotLoader.neverLoad();
-        private Duration timeBetweenSnapshotChecks = Duration.ZERO;
-        private Duration timeBetweenTransactionChecks = Duration.ZERO;
         private Supplier<Instant> stateUpdateClock = Instant::now;
+        private DoubleSupplier randomJitterFraction = Math::random;
+        private ThreadSleep retryWaiter = Thread::sleep;
         private T state;
         private long lastTransactionNumber = 0;
-        private long minTransactionsAheadToLoadSnapshot = 1;
 
         private Builder() {
         }
 
         /**
-         * Sets the Sleeper table whose state this interacts with.
+         * Sets the Sleeper table the state store is for, and configures the state store from the table properties.
          *
-         * @param  sleeperTable the Sleeper table status
-         * @return              this builder
+         * @param  tableProperties the table properties
+         * @return                 the builder
          */
-        public Builder<T> sleeperTable(TableStatus sleeperTable) {
-            this.sleeperTable = sleeperTable;
+        public Builder<T> tableProperties(TableProperties tableProperties) {
+            this.tableProperties = tableProperties;
             return this;
         }
 
@@ -387,30 +406,6 @@ public class TransactionLogHead<T> {
         }
 
         /**
-         * Sets the number of times to attempt to add a new transaction to the log. If another process is adding
-         * transactions to the same log at the same time, only one will be successful for a given transaction number.
-         * This is the number of times a process may fail due to a conflict before it stops retrying.
-         *
-         * @param  maxAddTransactionAttempts the number of attempts to add a new transaction
-         * @return                           this builder
-         */
-        public Builder<T> maxAddTransactionAttempts(int maxAddTransactionAttempts) {
-            this.maxAddTransactionAttempts = maxAddTransactionAttempts;
-            return this;
-        }
-
-        /**
-         * Sets the behaviour for how long to wait during retries to add a new transaction to the log.
-         *
-         * @param  retryBackoff the settings for retry backoff with jitter
-         * @return              this builder
-         */
-        public Builder<T> retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
-            this.retryBackoff = retryBackoff;
-            return this;
-        }
-
-        /**
          * Sets the type of transaction that may be used with this log. This should be either a partition transaction or
          * a file transaction.
          *
@@ -437,28 +432,6 @@ public class TransactionLogHead<T> {
         }
 
         /**
-         * Sets the amount of time to wait in between checks for a new snapshot. Defaults to zero.
-         *
-         * @param  timeBetweenSnapshotChecks the amount of time to wait
-         * @return                           this builder
-         */
-        public Builder<T> timeBetweenSnapshotChecks(Duration timeBetweenSnapshotChecks) {
-            this.timeBetweenSnapshotChecks = timeBetweenSnapshotChecks;
-            return this;
-        }
-
-        /**
-         * Sets the amount of time to wait in between checks for new transactions. Defaults to zero.
-         *
-         * @param  timeBetweenTransactionChecks the amount of time to wait
-         * @return                              this builder
-         */
-        public Builder<T> timeBetweenTransactionChecks(Duration timeBetweenTransactionChecks) {
-            this.timeBetweenTransactionChecks = timeBetweenTransactionChecks;
-            return this;
-        }
-
-        /**
          * Sets the clock to provide the time of a new transaction. Defaults to Instant.now().
          *
          * @param  stateUpdateClock the clock
@@ -466,6 +439,30 @@ public class TransactionLogHead<T> {
          */
         public Builder<T> stateUpdateClock(Supplier<Instant> stateUpdateClock) {
             this.stateUpdateClock = stateUpdateClock;
+            return this;
+        }
+
+        /**
+         * Sets the supplier to produce a random amount of jitter as a fraction, when waiting to retry transactions.
+         * Usually only overridden in tests.
+         *
+         * @param  randomJitterFraction the random jitter fraction supplier
+         * @return                      the builder
+         */
+        public Builder<T> randomJitterFraction(DoubleSupplier randomJitterFraction) {
+            this.randomJitterFraction = randomJitterFraction;
+            return this;
+        }
+
+        /**
+         * Sets the method to sleep the current thread when waiting to retry transactions.
+         * Implemented by <code>Thread.sleep</code>. Usually only overridden in tests.
+         *
+         * @param  retryWaiter the method to sleep the current thread
+         * @return             the builder
+         */
+        public Builder<T> retryWaiter(ThreadSleep retryWaiter) {
+            this.retryWaiter = retryWaiter;
             return this;
         }
 
@@ -493,19 +490,6 @@ public class TransactionLogHead<T> {
          */
         public Builder<T> lastTransactionNumber(long lastTransactionNumber) {
             this.lastTransactionNumber = lastTransactionNumber;
-            return this;
-        }
-
-        /**
-         * The minimum number of transactions that the local state should be behind a snapshot in order to load the
-         * state from the snapshot instead of from the transaction log. This is to avoid loading a large snapshot when
-         * it is more efficient to get up to date from the log.
-         *
-         * @param  minTransactionsAheadToLoadSnapshot the minimum number of transactions ahead to load a snapshot
-         * @return                                    this builder
-         */
-        public Builder<T> minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
-            this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
             return this;
         }
 

@@ -23,6 +23,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestQueue;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.ingest.core.job.IngestJob;
 
@@ -83,8 +84,17 @@ public class IngestBatcher {
     }
 
     private void batchTableFiles(String tableId, List<IngestBatcherTrackedFile> inputFiles, Instant time) {
+        try {
+            TableProperties properties = tablePropertiesProvider.getById(tableId);
+            batchTableFiles(properties, inputFiles, time);
+        } catch (TableNotFoundException e) {
+            LOGGER.warn("Deleting {} pending files for non-existing table with ID \"{}\"", inputFiles.size(), tableId);
+            store.deleteFiles(inputFiles);
+        }
+    }
+
+    private void batchTableFiles(TableProperties properties, List<IngestBatcherTrackedFile> inputFiles, Instant time) {
         long totalBytes = totalBytes(inputFiles);
-        TableProperties properties = tablePropertiesProvider.getById(tableId);
         TableStatus table = properties.getStatus();
         LOGGER.info("Attempting to batch {} files of total size {} for table {}",
                 inputFiles.size(), formatBytes(totalBytes), table);

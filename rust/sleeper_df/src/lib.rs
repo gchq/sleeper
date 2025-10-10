@@ -14,259 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use chrono::Local;
-use color_eyre::eyre::{bail, eyre};
-use libc::{EFAULT, EINVAL, EIO, size_t};
-use log::{LevelFilter, error, warn};
+use crate::{
+    context::FFIContext,
+    log::maybe_cfg_log,
+    objects::{FFICommonConfig, FFIFileResult, FFILeafPartitionQueryConfig},
+};
+use ::log::{error, warn};
+use arrow::ffi_stream::FFI_ArrowArrayStream;
+use libc::{EFAULT, EINVAL};
 use sleeper_core::{
-    AwsConfig, ColRange, CommonConfig, OperationOutput, PartitionBound, SleeperParquetOptions,
-    SleeperPartitionRegion, run_compaction,
+    CommonConfig, CompletedOutput, LeafPartitionQueryConfig, run_compaction, run_query,
+    stream_to_ffi_arrow_stream,
 };
-use std::{
-    borrow::Borrow,
-    collections::HashMap,
-    ffi::{CStr, c_char, c_int, c_void},
-    io::Write,
-    slice,
-    sync::Once,
-};
-use url::Url;
+use std::ffi::c_int;
 
-/// An object guaranteed to only initialise once. Thread safe.
-static LOG_CFG: Once = Once::new();
+mod context;
+mod log;
+mod objects;
+mod unpack;
 
-/// A one time initialisation of the logging library.
+/// Provides the C FFI interface to calling the [`run_compaction`] function.
 ///
-/// This function uses a [`Once`] object to ensure
-/// initialisation only happens once. This is safe even
-/// if called from multiple threads.
-fn maybe_cfg_log() {
-    LOG_CFG.call_once(|| {
-        // Install and configure environment logger
-        env_logger::builder()
-            .format(|buf, record| {
-                writeln!(
-                    buf,
-                    "{} [{}] {}:{} - {}",
-                    Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                    record.level(),
-                    record.file().unwrap_or("??"),
-                    record.line().unwrap_or(0),
-                    record.args()
-                )
-            })
-            .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
-            .format_target(false)
-            .filter_level(LevelFilter::Info)
-            .init();
-    });
-}
-
-/// Contains all the input data for setting up a compaction.
+/// This function takes an [`FFICommonConfig`] struct which contains all the information needed for a compaction.
+/// This function validates the pointers are valid strings (or at least attempts to), but undefined behaviour will
+/// result if bad pointers are passed.
 ///
-/// See java/compaction/compaction-rust/src/main/java/sleeper/compaction/jobexecution/RustBridge.java
-/// for details. Field ordering and types MUST match between the two definitions!
-#[repr(C)]
-pub struct FFICompactionParams {
-    override_aws_config: bool,
-    aws_region: *const c_char,
-    aws_endpoint: *const c_char,
-    aws_access_key: *const c_char,
-    aws_secret_key: *const c_char,
-    aws_allow_http: bool,
-    input_files_len: usize,
-    input_files: *const *const c_char,
-    output_file: *const c_char,
-    row_key_cols_len: usize,
-    row_key_cols: *const *const c_char,
-    row_key_schema_len: usize,
-    row_key_schema: *const *const c_int,
-    sort_key_cols_len: usize,
-    sort_key_cols: *const *const c_char,
-    max_row_group_size: usize,
-    max_page_size: usize,
-    compression: *const c_char,
-    writer_version: *const c_char,
-    column_truncate_length: usize,
-    stats_truncate_length: usize,
-    dict_enc_row_keys: bool,
-    dict_enc_sort_keys: bool,
-    dict_enc_values: bool,
-    region_mins_len: usize,
-    region_mins: *const *const c_void,
-    region_maxs_len: usize,
-    // The region_maxs array may contain null pointers!!
-    region_maxs: *const *const c_void,
-    region_mins_inclusive_len: usize,
-    region_mins_inclusive: *const *const bool,
-    region_maxs_inclusive_len: usize,
-    region_maxs_inclusive: *const *const bool,
-    iterator_config: *const c_char,
-}
-
-impl<'a> TryFrom<&'a FFICompactionParams> for CommonConfig<'a> {
-    type Error = color_eyre::eyre::Report;
-
-    fn try_from(
-        params: &'a FFICompactionParams,
-    ) -> color_eyre::Result<CommonConfig<'a>, Self::Error> {
-        if params.iterator_config.is_null() {
-            bail!("FFICompactionsParams iterator_config is NULL");
-        }
-        if params.output_file.is_null() {
-            bail!("FFICompactionParams output_file is NULL");
-        }
-        if params.compression.is_null() {
-            bail!("FFICompactionParams compression is NULL");
-        }
-        if params.writer_version.is_null() {
-            bail!("FFICompactionParams writer_version is NULL");
-        }
-        // We do this separately since we need the values for computing the region
-        let row_key_cols = unpack_string_array(params.row_key_cols, params.row_key_cols_len)?
-            .into_iter()
-            .map(String::from)
-            .collect::<Vec<_>>();
-        let region = compute_region(params, &row_key_cols)?;
-        // Extract iterator config
-        let iterator_config = Some(
-            unsafe { CStr::from_ptr(params.iterator_config) }
-                .to_str()?
-                .to_owned(),
-        )
-        // Set option to None if config is empty
-        .and_then(|v| if v.trim().is_empty() { None } else { Some(v) });
-
-        let opts = SleeperParquetOptions {
-            max_row_group_size: params.max_row_group_size,
-            max_page_size: params.max_page_size,
-            compression: unsafe { CStr::from_ptr(params.compression) }
-                .to_str()?
-                .to_owned(),
-            writer_version: unsafe { CStr::from_ptr(params.writer_version) }
-                .to_str()?
-                .to_owned(),
-            column_truncate_length: params.column_truncate_length,
-            stats_truncate_length: params.stats_truncate_length,
-            dict_enc_row_keys: params.dict_enc_row_keys,
-            dict_enc_sort_keys: params.dict_enc_sort_keys,
-            dict_enc_values: params.dict_enc_values,
-        };
-
-        Ok(Self {
-            aws_config: unpack_aws_config(params)?,
-            input_files: unpack_string_array(params.input_files, params.input_files_len)?
-                .into_iter()
-                .map(Url::parse)
-                .collect::<Result<Vec<_>, _>>()?,
-            input_files_sorted: true,
-            row_key_cols,
-            sort_key_cols: unpack_string_array(params.sort_key_cols, params.sort_key_cols_len)?
-                .into_iter()
-                .map(String::from)
-                .collect(),
-            region,
-            output: OperationOutput::File {
-                output_file: unsafe { CStr::from_ptr(params.output_file) }
-                    .to_str()
-                    .map(Url::parse)??,
-                opts,
-            },
-            iterator_config,
-        })
-    }
-}
-
-fn unpack_aws_config(params: &FFICompactionParams) -> color_eyre::Result<Option<AwsConfig>> {
-    Ok(if params.override_aws_config {
-        if params.aws_region.is_null() {
-            bail!("FFICompactionsParams aws_region pointer is NULL");
-        }
-        if params.aws_endpoint.is_null() {
-            bail!("FFICompactionsParams aws_endpoint pointer is NULL");
-        }
-        if params.aws_access_key.is_null() {
-            bail!("FFICompactionsParams aws_access_key pointer is NULL");
-        }
-        if params.aws_secret_key.is_null() {
-            bail!("FFICompactionsParams aws_secret_key pointer is NULL");
-        }
-        Some(AwsConfig {
-            region: unsafe { CStr::from_ptr(params.aws_region) }
-                .to_str()?
-                .to_owned(),
-            endpoint: unsafe { CStr::from_ptr(params.aws_endpoint) }
-                .to_str()?
-                .to_owned(),
-            access_key: unsafe { CStr::from_ptr(params.aws_access_key) }
-                .to_str()?
-                .to_owned(),
-            secret_key: unsafe { CStr::from_ptr(params.aws_secret_key) }
-                .to_str()?
-                .to_owned(),
-            allow_http: params.aws_allow_http,
-        })
-    } else {
-        None
-    })
-}
-
-fn compute_region<'a, T: Borrow<str>>(
-    params: &'a FFICompactionParams,
-    row_key_cols: &[T],
-) -> color_eyre::Result<SleeperPartitionRegion<'a>> {
-    let region_mins_inclusive = unpack_primitive_array(
-        params.region_mins_inclusive,
-        params.region_mins_inclusive_len,
-    )?;
-    let region_maxs_inclusive = unpack_primitive_array(
-        params.region_maxs_inclusive,
-        params.region_maxs_inclusive_len,
-    )?;
-    let schema_types = unpack_primitive_array(params.row_key_schema, params.row_key_schema_len)?;
-    let region_mins = unpack_variant_array(
-        params.region_mins,
-        params.region_mins_len,
-        &schema_types,
-        false,
-    )?;
-    let region_maxs = unpack_variant_array(
-        params.region_maxs,
-        params.region_maxs_len,
-        &schema_types,
-        true,
-    )?;
-
-    let mut map = HashMap::with_capacity(row_key_cols.len());
-    for (idx, row_key) in row_key_cols.iter().enumerate() {
-        map.insert(
-            String::from(row_key.borrow()),
-            ColRange {
-                lower: region_mins[idx],
-                lower_inclusive: region_mins_inclusive[idx],
-                upper: region_maxs[idx],
-                upper_inclusive: region_maxs_inclusive[idx],
-            },
-        );
-    }
-    Ok(SleeperPartitionRegion::new(map))
-}
-
-/// Contains all output data from a compaction operation.
-#[repr(C)]
-pub struct FFICompactionResult {
-    /// The total number of rows read by a compaction.
-    rows_read: size_t,
-    /// The total number of rows written by a compaction.
-    rows_written: size_t,
-}
-
-/// Provides the C FFI interface to calling the [`merge_sorted_files`] function.
-///
-/// This function takes an `FFICompactionParams` struct which contains all the  This function validates the pointers are valid strings (or
-/// at least attempts to), but undefined behaviour will result if bad pointers are passed.
-///
-/// It is also undefined behaviour to specify and incorrect array length for any array.
+/// It is also undefined behaviour to specify an incorrect array length for any array.
 ///
 /// The `output_data` field is an out parameter. It is assumed the caller has allocated valid
 /// memory at the address pointed to!
@@ -285,39 +58,34 @@ pub struct FFICompactionResult {
 /// |-|-|
 /// | 0 | Success |
 /// | -1 | Arrow error (see log) |
-/// | EFAULT | if pointers are null
+/// | EFAULT | if pointers are NULL
 /// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
 /// | EINVAL | if row key column numbers or sort column numbers are empty |
-/// | EIO    | if Rust tokio runtime couldn't be created |
 ///
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 #[unsafe(no_mangle)]
-pub extern "C" fn merge_sorted_files(
-    input_data: *mut FFICompactionParams,
-    output_data: *mut FFICompactionResult,
+pub extern "C" fn native_compact(
+    ctx_ptr: *const FFIContext,
+    input_data: *mut FFICommonConfig,
+    output_data: *mut FFIFileResult,
 ) -> c_int {
     maybe_cfg_log();
     if let Err(e) = color_eyre::install() {
         warn!("Couldn't install color_eyre error handler {e}");
     }
-    let Some(params) = (unsafe { input_data.as_ref() }) else {
-        error!("input data pointer is null");
+
+    // Null check the context pointer
+    let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
+        error!("NULL context pointer");
         return EFAULT;
     };
 
-    // Start async runtime
-    let rt = match tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()
-    {
-        Ok(v) => v,
-        Err(e) => {
-            error!("Couldn't create Rust tokio runtime {e}");
-            return EIO;
-        }
+    let Some(params) = (unsafe { input_data.as_ref() }) else {
+        error!("input data pointer is NULL");
+        return EFAULT;
     };
 
-    let mut details = match TryInto::<CommonConfig>::try_into(params) {
+    let details = match TryInto::<CommonConfig>::try_into(params) {
         Ok(d) => d,
         Err(e) => {
             error!("Couldn't convert compaction input data {e}");
@@ -326,15 +94,14 @@ pub extern "C" fn merge_sorted_files(
     };
 
     // Run compaction
-    details.sanitise_java_s3_urls();
-    let result = rt.block_on(run_compaction(&details));
+    let result = context.rt.block_on(run_compaction(&details));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_data.as_mut() } {
                 data.rows_read = res.rows_read;
                 data.rows_written = res.rows_written;
             } else {
-                error!("output data pointer is null");
+                error!("output data pointer is NULL");
                 return EFAULT;
             }
             0
@@ -346,151 +113,108 @@ pub extern "C" fn merge_sorted_files(
     }
 }
 
-/// Create a vector from a C pointer to an array of strings.
+/// Provides the C FFI interface to calling the [`run_query`] function.
 ///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-fn unpack_string_array(
-    array_base: *const *const c_char,
-    len: usize,
-) -> color_eyre::Result<Vec<&'static str>> {
-    if len == 0 {
-        return Ok(Vec::new());
-    }
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in string array");
-    }
-    unsafe {
-        // create a slice from the pointer
-        slice::from_raw_parts(array_base, len)
-    }
-    .iter()
-    // transform pointer to a non-owned string
-    .map(|s| {
-        if s.is_null() {
-            Err(eyre!("Found NULL pointer in string array"))
-        } else {
-            //unpack length (signed because it's from Java)
-            // This will have been allocated in Java so alignment will be ok
-            #[allow(clippy::cast_ptr_alignment)]
-            let str_len = unsafe { *(*s).cast::<i32>() };
-            if str_len < 0 {
-                bail!("Illegal string length in FFI array: {str_len}");
-            }
-            // convert to string and check it's valid
-            std::str::from_utf8(unsafe {
-                #[allow(clippy::cast_sign_loss)]
-                slice::from_raw_parts(s.byte_add(4).cast::<u8>(), str_len as usize)
-            })
-            .map_err(Into::into)
-        }
-    })
-    // now convert to a vector if all strings OK, else Err
-    .collect()
-}
-
-/// Create a vector of a primitive array type.
+/// This function takes an [`FFILeafPartitionQueryConfig`] struct which contains all the information needed for a Sleeper
+/// leaf partition query.
 ///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-fn unpack_primitive_array<T: Copy>(
-    array_base: *const *const T,
-    len: usize,
-) -> color_eyre::Result<Vec<T>> {
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in primitive array");
-    }
-    unsafe { slice::from_raw_parts(array_base, len) }
-        .iter()
-        .map(|p| {
-            if p.is_null() {
-                Err(eyre!("Found NULL pointer in primitive array"))
-            } else {
-                Ok(unsafe { **p })
-            }
-        })
-        .collect()
-}
-
-/// Create a vector of a variant array type. Each element may be a
-/// i32, i64, String or byte array. The schema types define what decoding is attempted.
+/// The resulting stream of Arrow [`RecordBatch`]es is wrapped into an FFI
+/// compatible Arrow stream and the output pointer is set to it.
 ///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-/// If the schema types are incorrect, then behaviour is undefined.
+/// The `output_results` is an "out" parameter.
+/// No assumptions about the value of the pointer object is assumed upon entry to
+/// this function and the contents are overwritten on successful query.
+/// This function is intended to be callable by an external language via FFI,
+/// therefore it is marked as `#[unsafe(no_mangle)]` to ensure the function
+/// name is not changed and as `extern "C"` to ensure C linkage rules are followed.
+///
+/// # Memory management
+///
+/// The stream of results is owned by the [`FFI_ArrowArrayStream`].
+/// It is the responsibility of the caller to release the memory by calling the
+/// `release()` function inside the Array stream when the stream is no longer required.
+/// Even if done so in another language, this will cause Rust to release all internal
+/// resources needed by this stream.
+///
+/// # Safety
+///
+/// It is the callers responsibility to ensure all pointers are valid and point
+/// to valid data before calling this function. While null pointers are detected,
+/// invalid pointers cannot be.
+///
+/// It is undefined behaviour to specify an incorrect array length for any array.
+///
+/// The `ctx_ptr` value must point to a valid [`FFI_Context`] which contains
+/// an active runtime.
+///
+/// It is safe to release the [`FFI_Context`] object (see [`destroy_context`](crate::destroy_context)) even
+/// if this stream is still being read from. The underlying Tokio runtime will not be released
+/// until all remaining [`FFI_ArrowArrayStream`]s created by this function are
+/// released.
 ///
 /// # Panics
-/// If the length of the `schema_types` array doesn't match the length specified.
-/// If `nulls_present` is false and a null pointer is found.
+/// If we are unable to transfer vector ownership to foreign code properly.
 ///
-/// Also panics if a negative array length is found in decoding byte arrays or strings.
-fn unpack_variant_array<'a>(
-    array_base: *const *const c_void,
-    len: usize,
-    schema_types: &[i32],
-    nulls_present: bool,
-) -> color_eyre::Result<Vec<PartitionBound<'a>>> {
-    assert_eq!(len, schema_types.len());
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in variant array");
+/// # Errors
+/// The following result codes are returned.
+///
+/// | Code | Meaning |
+/// |-|-|
+/// | 0 | Success |
+/// | -1 | Arrow error (see log) |
+/// | EFAULT | if pointers are NULL
+/// | EINVAL | if can't convert string to Rust string (invalid UTF-8?) |
+/// | EINVAL | if row key column numbers or sort column numbers are empty |
+///
+#[allow(clippy::not_unsafe_ptr_arg_deref, unused_assignments, unused_variables)]
+#[unsafe(no_mangle)]
+pub extern "C" fn native_query_stream(
+    ctx_ptr: *const FFIContext,
+    input_data: *const FFILeafPartitionQueryConfig,
+    mut output_results: *mut FFI_ArrowArrayStream,
+) -> c_int {
+    maybe_cfg_log();
+    if let Err(e) = color_eyre::install() {
+        warn!("Couldn't install color_eyre error handler {e}");
     }
-    unsafe { slice::from_raw_parts(array_base, len) }
-        .iter()
-        .zip(schema_types.iter())
-        .map(|(&bptr, type_id)| {
-            if !nulls_present && bptr.is_null() {
-                Err(eyre!("Found NULL pointer in variant array"))
-            } else {
-                match type_id {
-                    1 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
-                        Some(v) => PartitionBound::Int32(*v),
-                        None => PartitionBound::Unbounded,
-                    }),
-                    2 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
-                        Some(v) => PartitionBound::Int64(*v),
-                        None => PartitionBound::Unbounded,
-                    }),
-                    3 => {
-                        match unsafe { bptr.cast::<i32>().as_ref() } {
-                            //unpack length (signed because it's from Java)
-                            Some(str_len) => {
-                                if *str_len < 0 {
-                                    bail!("Illegal variant length in FFI array: {str_len}");
-                                }
-                                std::str::from_utf8(unsafe {
-                                    #[allow(clippy::cast_sign_loss)]
-                                    slice::from_raw_parts(
-                                        bptr.byte_add(4).cast::<u8>(),
-                                        *str_len as usize,
-                                    )
-                                })
-                                .map_err(color_eyre::eyre::Report::from)
-                                .map(PartitionBound::String)
-                            }
-                            None => Ok(PartitionBound::Unbounded),
-                        }
-                    }
-                    4 => {
-                        match unsafe { bptr.cast::<i32>().as_ref() } {
-                            //unpack length (signed because it's from Java)
-                            Some(byte_len) => {
-                                if *byte_len < 0 {
-                                    bail!("Illegal byte array length in FFI array: {byte_len}");
-                                }
-                                Ok(PartitionBound::ByteArray(unsafe {
-                                    #[allow(clippy::cast_sign_loss)]
-                                    slice::from_raw_parts(
-                                        bptr.byte_add(4).cast::<u8>(),
-                                        *byte_len as usize,
-                                    )
-                                }))
-                            }
-                            None => Ok(PartitionBound::Unbounded),
-                        }
-                    }
-                    x => Err(eyre!("Unexpected type id {x}")),
-                }
-            }
-        })
-        .collect()
+
+    // Null check the context pointer
+    let Some(context) = (unsafe { ctx_ptr.as_ref() }) else {
+        error!("NULL context pointer");
+        return EFAULT;
+    };
+
+    let Some(params) = (unsafe { input_data.as_ref() }) else {
+        error!("input data pointer is NULL");
+        return EFAULT;
+    };
+
+    let details = match TryInto::<LeafPartitionQueryConfig>::try_into(params) {
+        Ok(d) => d,
+        Err(e) => {
+            error!("Couldn't convert compaction input data {e}");
+            return EINVAL;
+        }
+    };
+
+    // Run compaction
+    let result = context.rt.block_on(run_query(&details));
+    match result {
+        Ok(res) => {
+            let CompletedOutput::ArrowRecordBatch(batch_stream) = res else {
+                panic!("Expected ArrowRecordBatch results from query");
+            };
+            // Convert the DataFusion stream of data to an FFI compatible Arrow stream
+            let ffi_arrow_stream =
+                Box::new(stream_to_ffi_arrow_stream(batch_stream, context.rt.clone()));
+            // Leak pointer from Box. At this point Rust gives up ownership management of that object
+            let leaked_ptr = Box::into_raw(ffi_arrow_stream);
+            output_results = leaked_ptr;
+            0
+        }
+        Err(e) => {
+            error!("merging error {e}");
+            -1
+        }
+    }
 }

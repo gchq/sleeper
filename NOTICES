@@ -251,7 +251,7 @@ Java Websocket (org.java-websocket:Java-WebSocket:1.*)
 
 - MIT License
 
-JUnit (org.junit.jupiter:junit-jupiter-*:5.*, org.junit.platform:junit-platform-suite:1.*, org.junit.vintage:junit-vintage-engine:5.* - Trino needs the vintage engine)
+JUnit (org.junit.jupiter:junit-jupiter-*:6.*, org.junit.platform:junit-platform-suite:6.*, org.junit.vintage:junit-vintage-engine:6.* - Trino needs the vintage engine)
 
 - Eclipse Public License 1.0
 
@@ -412,7 +412,7 @@ FindBugs Annotations (com.google.code.findbugs:jsr305:3.*)
 
 - Apache License, Version 2.0
 
-Checkstyle (com.puppycrawl.tools:checkstyle:11.*)
+Checkstyle (com.puppycrawl.tools:checkstyle:12.*)
 
 - GNU Lesser General Public License, version 2.1
 

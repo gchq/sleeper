@@ -15,9 +15,9 @@
  */
 package sleeper.example.iterator;
 
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConfigStringIterator;
-import sleeper.core.iterator.FilteringIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.closeable.FilteringIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
@@ -32,7 +32,7 @@ public class FixedAgeOffIterator implements ConfigStringIterator {
     private long minValue;
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
         return new FilteringIterator<>(input, row -> {
             Long value = (Long) row.get(fieldName);
             return null != value && value >= minValue;

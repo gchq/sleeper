@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -61,7 +62,7 @@ public class DeleteFilesTransaction implements FileReferenceTransaction {
     }
 
     @Override
-    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    public void validate(StateStoreFiles stateStoreFiles, TableProperties tableProperties) throws StateStoreException {
         for (String filename : filenames) {
             StateStoreFile file = stateStoreFiles.file(filename)
                     .orElseThrow(() -> new FileNotFoundException(filename));

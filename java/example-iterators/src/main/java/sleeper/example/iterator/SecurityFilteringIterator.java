@@ -15,8 +15,8 @@
  */
 package sleeper.example.iterator;
 
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConfigStringIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
@@ -57,7 +57,7 @@ public class SecurityFilteringIterator implements ConfigStringIterator {
     }
 
     @Override
-    public CloseableIterator<Row> apply(CloseableIterator<Row> input) {
+    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> input) {
         return new SecurityFilteringIteratorInternal(input, fieldName, auths);
     }
 

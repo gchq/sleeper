@@ -15,11 +15,12 @@
  */
 package sleeper.core.iterator;
 
-import sleeper.core.key.Key;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
+import sleeper.core.row.RowComparator;
+import sleeper.core.schema.Field;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -30,9 +31,11 @@ import java.util.Objects;
 public class AggregatorIteratorImpl implements CloseableIterator<Row> {
 
     /** Which columns to group and aggregate. */
-    private final FilterAggregationConfig config;
+    private final RowComparator rowComparator;
+    private final List<Aggregation> aggregations;
     /** Source iterator. */
     private final CloseableIterator<Row> input;
+
     /**
      * The row retrieved from the row source that is the start of the next aggregation group. If this is null,
      * then either we are at the start of the iteration (no input rows retrieved yet), or the input iterator
@@ -40,14 +43,9 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
      */
     private Row startOfNextAggregationGroup = null;
 
-    /**
-     * Sets up a aggregating iterator.
-     *
-     * @param input  the source iterator
-     * @param config the configuration
-     */
-    public AggregatorIteratorImpl(FilterAggregationConfig config, CloseableIterator<Row> input) {
-        this.config = Objects.requireNonNull(config, "config");
+    AggregatorIteratorImpl(List<Field> groupingFields, List<Aggregation> aggregations, CloseableIterator<Row> input) {
+        this.rowComparator = RowComparator.compareByFields(groupingFields);
+        this.aggregations = Objects.requireNonNull(aggregations, "aggregations");
         this.input = Objects.requireNonNull(input, "input");
     }
 
@@ -75,8 +73,8 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
         // Now aggregate more rows on to this one until we find an unequal one or run out of data
         while (startOfNextAggregationGroup == null && input.hasNext()) {
             Row next = input.next();
-            if (rowsEqual(aggregated, next)) {
-                aggregateOnTo(aggregated, next, config);
+            if (rowComparator.compare(aggregated, next) == 0) {
+                aggregateOnTo(aggregated, next);
             } else {
                 startOfNextAggregationGroup = next;
             }
@@ -84,37 +82,12 @@ public class AggregatorIteratorImpl implements CloseableIterator<Row> {
         return aggregated;
     }
 
-    /**
-     * Aggregates all the aggregation fields from one row on to another.
-     *
-     * @param aggregated     the row to be modified
-     * @param toBeAggregated the row containing new values
-     * @param config         the aggregation configuration
-     */
-    public static void aggregateOnTo(Row aggregated, Row toBeAggregated, FilterAggregationConfig config) {
-        for (Aggregation agg : config.aggregations()) {
+    private void aggregateOnTo(Row aggregated, Row toBeAggregated) {
+        for (Aggregation agg : aggregations) {
             // Extract current and new value
-            Object currentValue = aggregated.get(agg.column());
-            Object newValue = toBeAggregated.get(agg.column());
-            aggregated.put(agg.column(), agg.op().apply(currentValue, newValue));
+            Object currentValue = aggregated.get(agg.fieldName());
+            Object newValue = toBeAggregated.get(agg.fieldName());
+            aggregated.put(agg.fieldName(), agg.op().apply(currentValue, newValue));
         }
-    }
-
-    /**
-     * Determines if two rows are equal.
-     *
-     * @param  lhs a row
-     * @param  rhs another row
-     * @return     true if they are considered equal
-     */
-    public boolean rowsEqual(Row lhs, Row rhs) {
-        List<Object> keys1 = new ArrayList<>();
-        List<Object> keys2 = new ArrayList<>();
-        for (String key : config.groupingColumns()) {
-            keys1.add(lhs.get(key));
-            keys2.add(rhs.get(key));
-        }
-        return Key.create(keys1).equals(Key.create(keys2));
-
     }
 }

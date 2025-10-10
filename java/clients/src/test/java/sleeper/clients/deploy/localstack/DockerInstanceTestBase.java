@@ -18,7 +18,7 @@ package sleeper.clients.deploy.localstack;
 
 import software.amazon.awssdk.services.sqs.model.Message;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

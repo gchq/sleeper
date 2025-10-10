@@ -27,11 +27,16 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.WaitForJobsStatus.JobStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class WaitForJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobs.class);
@@ -112,7 +117,7 @@ public class WaitForJobs {
                     return false;
                 } else {
                     LOGGER.info("Found no running tasks while waiting for {} jobs, will wait for async commits", typeDescription);
-                    waitForJobsToCommit(jobIds, jobTracker, pollUntilJobsCommit);
+                    waitForJobsToCommit(() -> jobTracker.getStatus(jobIds), pollUntilJobsCommit);
                     return true;
                 }
             });
@@ -127,14 +132,20 @@ public class WaitForJobs {
         InstanceProperties properties = instance.getInstanceProperties();
         JobTracker jobTracker = getJobTracker.apply(properties);
         LOGGER.info("Waiting for {} jobs to commit: {}", typeDescription, jobIds.size());
-        waitForJobsToCommit(jobIds, jobTracker, pollUntilJobsCommit);
+        waitForJobsToCommit(() -> jobTracker.getStatus(jobIds), pollUntilJobsCommit);
     }
 
-    private void waitForJobsToCommit(
-            Collection<String> jobIds, JobTracker tracker, PollWithRetries pollUntilJobsCommit) {
+    public void waitForAllJobsToCommit(PollWithRetries pollUntilJobsCommit) {
+        InstanceProperties properties = instance.getInstanceProperties();
+        JobTracker jobTracker = getJobTracker.apply(properties);
+        LOGGER.info("Waiting for all {} jobs to commit", typeDescription);
+        waitForJobsToCommit(() -> jobTracker.getAllJobsStatus(), pollUntilJobsCommit);
+    }
+
+    private void waitForJobsToCommit(Supplier<WaitForJobsStatus> getStatus, PollWithRetries pollUntilJobsCommit) {
         try {
             pollUntilJobsCommit.pollUntil("jobs are committed", () -> {
-                WaitForJobsStatus status = tracker.getStatus(jobIds);
+                WaitForJobsStatus status = getStatus.get();
                 LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
                 return status.areAllJobsFinished();
             });
@@ -145,15 +156,34 @@ public class WaitForJobs {
     }
 
     @FunctionalInterface
-    private interface JobTracker {
-        WaitForJobsStatus getStatus(Collection<String> jobIds);
+    public interface JobTracker {
+        Stream<WaitForJobsStatus.JobStatus<?>> streamAllJobsInTest();
+
+        default WaitForJobsStatus getAllJobsStatus() {
+            return getAllJobsStatus(Instant.now());
+        }
+
+        default WaitForJobsStatus getAllJobsStatus(Instant now) {
+            return WaitForJobsStatus.fromJobs(streamAllJobsInTest(), now);
+        }
+
+        default WaitForJobsStatus getStatus(Collection<String> jobIds) {
+            return getStatus(jobIds, Instant.now());
+        }
+
+        default WaitForJobsStatus getStatus(Collection<String> jobIds, Instant now) {
+            Set<String> jobIdsSet = new HashSet<>(jobIds);
+            Stream<JobStatus<?>> statuses = streamAllJobsInTest()
+                    .filter(job -> jobIdsSet.contains(job.getJobId()));
+            return WaitForJobsStatus.fromJobs(statuses, jobIds.size(), now);
+        }
 
         static JobTracker forIngest(Collection<TableProperties> tables, IngestJobTracker tracker) {
-            return jobId -> WaitForJobsStatus.forIngest(tracker, tables, jobId, Instant.now());
+            return () -> WaitForJobsStatus.streamIngestJobs(tracker, tables);
         }
 
         static JobTracker forCompaction(Collection<TableProperties> tables, CompactionJobTracker tracker) {
-            return jobId -> WaitForJobsStatus.forCompaction(tracker, tables, jobId, Instant.now());
+            return () -> WaitForJobsStatus.streamCompactionJobs(tracker, tables);
         }
     }
 

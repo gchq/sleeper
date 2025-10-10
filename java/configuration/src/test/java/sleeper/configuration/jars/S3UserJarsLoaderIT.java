@@ -53,7 +53,7 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
     private static final String SOURCE_CODE = "" +
             "import sleeper.core.row.Row;\n" +
             "import sleeper.core.schema.Schema;\n" +
-            "import sleeper.core.iterator.CloseableIterator;\n" +
+            "import sleeper.core.iterator.closeable.CloseableIterator;\n" +
             "import sleeper.core.iterator.ConfigStringIterator;\n" +
             "import java.util.List;\n" +
             "\n" +
@@ -64,7 +64,7 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
             "    public void init(String configString, Schema schema) {}\n" +
             "\n" +
             "    @Override\n" +
-            "    public CloseableIterator<Row> apply(CloseableIterator<Row> it) {return it;}\n" +
+            "    public CloseableIterator<Row> applyTransform(CloseableIterator<Row> it) {return it;}\n" +
             "\n" +
             "    @Override\n" +
             "    public String toString() {return \"MyIterator\";}\n" +

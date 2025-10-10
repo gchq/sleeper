@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
-import sleeper.core.properties.SleeperProperties;
-import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
@@ -34,6 +32,7 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.TAGS;
 
 public final class DeployedSleeperInstance {
@@ -55,7 +54,7 @@ public final class DeployedSleeperInstance {
             String instanceId, SystemTestInstanceConfiguration configuration,
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
             SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver, ScheduleRulesDriver schedulesDriver) {
-        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
+        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest.getProperties());
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, deployConfig);
 
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -64,7 +63,7 @@ public final class DeployedSleeperInstance {
         DeployedSleeperInstance instance = new DeployedSleeperInstance(
                 deployConfig, instanceProperties,
                 assumeRoleDriver.assumeAdminRole(instanceProperties));
-        if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
+        if (!newInstance && instance.isRedeployNeeded(parameters)) {
             instance.redeploy(driver, parameters);
         }
         driver.resetOnFirstConnect(instanceProperties);
@@ -103,7 +102,7 @@ public final class DeployedSleeperInstance {
         return configuration.getTableProperties();
     }
 
-    private boolean isRedeployNeeded(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
+    private boolean isRedeployNeeded(SystemTestParameters parameters) {
         boolean redeployNeeded = false;
 
         if (!SleeperVersion.getVersion().equals(instanceProperties.get(VERSION))) {
@@ -111,8 +110,7 @@ public final class DeployedSleeperInstance {
             LOGGER.info("Redeploy required as version number does not match");
         }
 
-        if (isRedeployDueToPropertyChange(UserDefinedInstanceProperty.getAll(),
-                configuration.getInstanceProperties(), instanceProperties)) {
+        if (isRedeployDueToPropertyChange(configuration, instanceProperties)) {
             redeployNeeded = true;
         }
 
@@ -123,21 +121,27 @@ public final class DeployedSleeperInstance {
         return redeployNeeded;
     }
 
-    private static <P extends SleeperProperty, T extends SleeperProperties<P>> boolean isRedeployDueToPropertyChange(
-            List<? extends P> userDefinedProperties, T deployProperties, T foundProperties) {
+    public static boolean isRedeployDueToPropertyChange(DeployInstanceConfiguration deployConfig, InstanceProperties existingProperties) {
+        InstanceProperties deployProperties = deployConfig.getInstanceProperties();
         boolean redeployNeeded = false;
-        for (P property : userDefinedProperties) {
+        for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.getAll()) {
             if (!property.isEditable() || !property.isRunCdkDeployWhenChanged()) {
                 // Non-CDK properties get reset before every test in SleeperInstanceContext.resetProperties
                 continue;
             }
-            if (!deployProperties.isSet(property) || property == TAGS) {
+            if (property == TAGS || property == JARS_BUCKET) {
+                // Tags are an unordered map, so we can't compare values in the same way as other properties.
+                // Jars bucket is set separately during first deployment, and won't be set in the deploy config.
                 continue;
             }
             String deployValue = deployProperties.get(property);
-            String foundValue = foundProperties.get(property);
-            if (!foundProperties.isSet(property) || !Objects.equals(deployValue, foundValue)) {
-                foundProperties.set(property, deployValue);
+            String foundValue = existingProperties.get(property);
+            if (!Objects.equals(deployValue, foundValue)) {
+                if (deployProperties.isSet(property)) {
+                    existingProperties.set(property, deployValue);
+                } else {
+                    existingProperties.unset(property);
+                }
                 LOGGER.info("Redeploy required as property changed: {}", property);
                 LOGGER.info("Required value: {}", deployValue);
                 LOGGER.info("Found value: {}", foundValue);

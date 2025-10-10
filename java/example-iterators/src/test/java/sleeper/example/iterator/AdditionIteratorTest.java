@@ -17,7 +17,7 @@ package sleeper.example.iterator;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.WrappedIterator;
+import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -42,7 +42,7 @@ public class AdditionIteratorTest {
         additionIterator.init("", getSchema1());
 
         // When
-        Iterator<Row> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> aggregated = additionIterator.applyTransform(new WrappedIterator<>(iterator));
 
         // Then
         Row expectedRow1 = new Row();
@@ -70,7 +70,7 @@ public class AdditionIteratorTest {
         additionIterator.init("", getSchema2());
 
         // When
-        Iterator<Row> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> aggregated = additionIterator.applyTransform(new WrappedIterator<>(iterator));
 
         // Then
         Row expectedRow1 = new Row();
@@ -97,7 +97,7 @@ public class AdditionIteratorTest {
         additionIterator.init("", getSchema2());
 
         // When
-        Iterator<Row> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Row> aggregated = additionIterator.applyTransform(new WrappedIterator<>(iterator));
 
         // Then
         assertThat(aggregated).toIterable().isEmpty();

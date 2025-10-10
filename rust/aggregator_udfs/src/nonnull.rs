@@ -28,14 +28,13 @@ use datafusion::{
         sum::sum_udaf,
     },
     logical_expr::{
-        Accumulator, AggregateUDF, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator,
-        ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs,
+        Accumulator, AggregateUDF, AggregateUDFImpl, Documentation, EmitTo, Expr,
+        GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs,
         expr::{AggregateFunction, AggregateFunctionParams},
         function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
         simplify::SimplifyInfo,
         utils::AggregateOrderSensitivity,
     },
-    prelude::Expr,
     scalar::ScalarValue,
 };
 use std::{
@@ -455,8 +454,8 @@ mod tests {
             sum::{sum, sum_udaf},
         },
         logical_expr::{
-            Accumulator, AggregateUDFImpl, Documentation, EmitTo, GroupsAccumulator, ReversedUDAF,
-            SetMonotonicity, Signature, StatisticsArgs, Volatility,
+            Accumulator, AggregateUDFImpl, Documentation, EmitTo, Expr, GroupsAccumulator,
+            ReversedUDAF, SetMonotonicity, Signature, StatisticsArgs, Volatility,
             expr::{AggregateFunction, AggregateFunctionParams, WindowFunctionParams},
             function::{AccumulatorArgs, AggregateFunctionSimplification, StateFieldsArgs},
             lit,
@@ -464,7 +463,6 @@ mod tests {
             utils::AggregateOrderSensitivity,
         },
         physical_expr::LexOrdering,
-        prelude::Expr,
         scalar::ScalarValue,
     };
     use mockall::predicate::*;

@@ -126,19 +126,17 @@ public class QueryProcessingConfig {
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (object == null || getClass() != object.getClass()) {
+        if (!(obj instanceof QueryProcessingConfig)) {
             return false;
         }
-        QueryProcessingConfig that = (QueryProcessingConfig) object;
-        return Objects.equals(queryTimeIteratorClassName, that.queryTimeIteratorClassName)
-                && Objects.equals(queryTimeIteratorConfig, that.queryTimeIteratorConfig)
-                && Objects.equals(resultsPublisherConfig, that.resultsPublisherConfig)
-                && Objects.equals(statusReportDestinations, that.statusReportDestinations)
-                && Objects.equals(requestedValueFields, that.requestedValueFields);
+        QueryProcessingConfig other = (QueryProcessingConfig) obj;
+        return Objects.equals(queryTimeIteratorClassName, other.queryTimeIteratorClassName) && Objects.equals(queryTimeIteratorConfig, other.queryTimeIteratorConfig)
+                && Objects.equals(resultsPublisherConfig, other.resultsPublisherConfig) && Objects.equals(statusReportDestinations, other.statusReportDestinations)
+                && Objects.equals(requestedValueFields, other.requestedValueFields);
     }
 
     @Override
@@ -148,13 +146,8 @@ public class QueryProcessingConfig {
 
     @Override
     public String toString() {
-        return "QueryProcessingConfig{" +
-                "queryTimeIteratorClassName='" + queryTimeIteratorClassName + '\'' +
-                ", queryTimeIteratorConfig='" + queryTimeIteratorConfig + '\'' +
-                ", resultsPublisherConfig=" + resultsPublisherConfig +
-                ", statusReportDestinations=" + statusReportDestinations +
-                ", requestedValueFields=" + requestedValueFields +
-                '}';
+        return "QueryProcessingConfig{queryTimeIteratorClassName=" + queryTimeIteratorClassName + ", queryTimeIteratorConfig=" + queryTimeIteratorConfig + ", resultsPublisherConfig="
+                + resultsPublisherConfig + ", statusReportDestinations=" + statusReportDestinations + ", requestedValueFields=" + requestedValueFields + "}";
     }
 
     /**

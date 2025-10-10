@@ -18,16 +18,15 @@ package sleeper.query.core.rowretrieval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.iterator.IteratorCreationException;
+import sleeper.core.iterator.IteratorFactory;
 import sleeper.core.iterator.SortedRowIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.util.IteratorConfig;
-import sleeper.core.util.IteratorFactory;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
@@ -74,15 +73,15 @@ public class LeafPartitionQueryExecutor {
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving rows for LeafPartitionQuery {}", leafPartitionQuery);
         Schema tableSchema = tableProperties.getSchema();
-        String compactionIteratorClassName = tableProperties.get(TableProperty.ITERATOR_CLASS_NAME);
-        String compactionIteratorConfig = tableProperties.get(TableProperty.ITERATOR_CONFIG);
-        String compactionFilters = tableProperties.get(TableProperty.FILTERS_CONFIG);
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
 
         try {
-            compactionIterator = createIterator(tableSchema, objectFactory, compactionIteratorClassName, compactionIteratorConfig, compactionFilters);
-            queryIterator = createIterator(tableSchema, objectFactory, leafPartitionQuery.getQueryTimeIteratorClassName(), leafPartitionQuery.getQueryTimeIteratorConfig(), null);
+            compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.from(tableProperties));
+            queryIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
+                    .iteratorClassName(leafPartitionQuery.getQueryTimeIteratorClassName())
+                    .iteratorConfigString(leafPartitionQuery.getQueryTimeIteratorConfig())
+                    .build());
         } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);
         }
@@ -92,13 +91,9 @@ public class LeafPartitionQueryExecutor {
         try {
             CloseableIterator<Row> iterator = retriever.getRows(leafPartitionQuery, dataReadSchema);
             // Apply compaction time iterator
-            if (null != compactionIterator) {
-                iterator = compactionIterator.apply(iterator);
-            }
+            iterator = compactionIterator.applyTransform(iterator);
             // Apply query time iterator
-            if (null != queryIterator) {
-                iterator = queryIterator.apply(iterator);
-            }
+            iterator = queryIterator.applyTransform(iterator);
 
             return iterator;
         } catch (RowRetrievalException e) {
@@ -137,18 +132,8 @@ public class LeafPartitionQueryExecutor {
     private SortedRowIterator createIterator(
             Schema schema,
             ObjectFactory objectFactory,
-            String iteratorClassName,
-            String iteratorConfig,
-            String filtersConfig) throws IteratorCreationException {
-        if (iteratorClassName == null && filtersConfig == null) {
-            return null;
-        } else {
-            return new IteratorFactory(objectFactory)
-                    .getIterator(IteratorConfig.builder()
-                            .iteratorClassName(iteratorClassName)
-                            .iteratorConfigString(iteratorConfig)
-                            .filters(filtersConfig)
-                            .build(), schema);
-        }
+            IteratorConfig iteratorConfig) throws IteratorCreationException {
+        return new IteratorFactory(objectFactory)
+                .getIterator(iteratorConfig, schema);
     }
 }

@@ -32,7 +32,7 @@ import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -331,9 +331,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 tableProperties,
                 sleeperConfig,
                 hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties),
-                null,
-                null,
-                null,
                 INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS,
                 s3AsyncClient,
                 rootBufferAllocator);

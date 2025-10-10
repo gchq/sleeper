@@ -247,7 +247,7 @@ public class LambdaJar {
          *
          * @return the lambda jar
          */
-        public LambdaJar add() {
+        private LambdaJar add() {
             LambdaJar lambdaJar = build();
             ALL.add(lambdaJar);
             return lambdaJar;

@@ -19,7 +19,7 @@
     <parent>
         <artifactId>query</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.33.0-SNAPSHOT</version>
+        <version>0.34.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -49,6 +49,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.approvaltests</groupId>
+            <artifactId>approvaltests</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

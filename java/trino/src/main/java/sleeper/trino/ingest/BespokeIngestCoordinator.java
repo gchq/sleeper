@@ -20,10 +20,10 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.util.IteratorConfig;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
@@ -46,9 +46,6 @@ public class BespokeIngestCoordinator {
             TableProperties tableProperties,
             SleeperConfig sleeperConfig,
             Configuration hadoopConfiguration,
-            String sleeperIteratorClassName,
-            String sleeperIteratorConfig,
-            String sleeperFiltersConfig,
             int ingestPartitionRefreshFrequencyInSeconds,
             S3AsyncClient s3AsyncClient,
             BufferAllocator arrowBufferAllocator) {
@@ -81,11 +78,7 @@ public class BespokeIngestCoordinator {
                 .objectFactory(objectFactory)
                 .stateStore(sleeperStateStore)
                 .schema(tableProperties.getSchema())
-                .iteratorConfig(IteratorConfig.builder()
-                        .iteratorClassName(sleeperIteratorClassName)
-                        .iteratorConfigString(sleeperIteratorConfig)
-                        .filters(sleeperFiltersConfig)
-                        .build())
+                .iteratorConfig(IteratorConfig.from(tableProperties))
                 .ingestPartitionRefreshFrequencyInSeconds(ingestPartitionRefreshFrequencyInSeconds)
                 .rowBatchFactory(rowBatchFactory)
                 .partitionFileWriterFactory(partitionFileWriterFactory)

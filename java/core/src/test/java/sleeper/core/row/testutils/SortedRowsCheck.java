@@ -15,7 +15,7 @@
  */
 package sleeper.core.row.testutils;
 
-import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
@@ -65,11 +65,11 @@ public record SortedRowsCheck(long rowsRead, List<Row> outOfOrder) {
     /**
      * Creates the results of a check reporting that rows were sorted.
      *
-     * @param  count the number of row
-     * @return       the check result
+     * @param  rowsRead the number of rows that were read
+     * @return          the check result
      */
-    public static SortedRowsCheck sorted(long count) {
-        return new SortedRowsCheck(count, List.of());
+    public static SortedRowsCheck sorted(long rowsRead) {
+        return new SortedRowsCheck(rowsRead, List.of());
     }
 
     /**
