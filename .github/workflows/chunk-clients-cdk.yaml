@@ -51,6 +51,7 @@ on:
       - 'java/common/localstack-test/**'
       - 'java/bulk-export/bulk-export-core/**'
       - 'java/foreign-bridge/**'
+      - 'java/arrow/**'
 
 jobs:
   chunk-workflow:

@@ -31,6 +31,7 @@ on:
       - 'java/sketches/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
+      - 'java/arrow/**'
 
 jobs:
   chunk-workflow:

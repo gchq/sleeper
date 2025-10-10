@@ -28,6 +28,7 @@ on:
       - 'java/sketches/**'
       - 'java/common/localstack-test/**'
       - 'java/core/**'
+      - 'java/arrow/**'
 
 jobs:
   chunk-workflow:

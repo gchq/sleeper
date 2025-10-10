@@ -29,6 +29,7 @@ on:
       - 'java/example-iterators/**'
       - 'java/core/**'
       - 'java/common/localstack-test/**'
+      - 'java/arrow/**'
 
 jobs:
   chunk-workflow:
