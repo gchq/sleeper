@@ -66,7 +66,7 @@ public class SystemTestApp extends SleeperCdkApp {
         // Stack for writing random data
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
             new SystemTestClusterStack(this, "SystemTest", properties, bucketStack,
-                    getCoreStacks(), getIngestStacks(), getIngestBatcherStack());
+                    getAutoStopEcsClusterTasksStack());
         }
 
         setGenerateProperties(true);
