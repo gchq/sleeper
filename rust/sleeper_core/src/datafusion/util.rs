@@ -189,6 +189,46 @@ pub fn remove_coalesce_physical_stage(
         .map(|v| v.data)
 }
 
+/// Applies a complete sort ordering to all [`SortPreservingMergeExec`] nodes in a physical plan.
+///
+/// This function traverses the given physical plan and, for every `SortPreservingMergeExec` node found,
+/// updates it with the provided full sort ordering. All other nodes are left unchanged. This can be used
+/// to ensure that sort-preserving merge operations throughout the plan are executed with a consistent and
+/// comprehensive ordering, which is sometimes necessary when downstream consumers depend on a global ordering.
+///
+/// # Returns
+/// A new physical plan with updated sort ordering on all `SortPreservingMergeExec` nodes, or an error if
+/// the transformation fails.
+///
+/// # Errors
+/// Returns a [`DataFusionError`] if there is an issue traversing or transforming the plan tree.
+pub fn apply_full_sort_ordering(
+    ordering: &LexOrdering,
+    physical_plan: Arc<dyn ExecutionPlan>,
+) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
+    physical_plan
+        // Recurse down plan looking for specific node
+        .transform_down(|plan_node| {
+            Ok(
+                if let Some(sort_preserve) =
+                    plan_node.as_any().downcast_ref::<SortPreservingMergeExec>()
+                {
+                    // Swap for a sort merging stage with complete sort order
+                    let replacement = SortPreservingMergeExec::new(
+                        ordering.clone(),
+                        sort_preserve.input().clone(),
+                    )
+                    .with_fetch(sort_preserve.fetch());
+                    // Keep searching down the query plan after making one replacement
+                    Transformed::new(Arc::new(replacement), true, TreeNodeRecursion::Continue)
+                } else {
+                    Transformed::no(plan_node)
+                },
+            )
+        })
+        .map(|v| v.data)
+}
+
 /// Returns the number of output partitions for a given physical execution plan.
 ///
 /// This inspects the output partitioning property of the plan and returns the partition count.
@@ -247,7 +287,9 @@ pub fn add_numeric_casts(
 
 #[cfg(test)]
 mod tests {
-    use crate::datafusion::util::{add_numeric_casts, remove_coalesce_physical_stage};
+    use crate::datafusion::util::{
+        add_numeric_casts, apply_full_sort_ordering, remove_coalesce_physical_stage,
+    };
     use arrow::{
         array::RecordBatch,
         compute::SortOptions,
@@ -337,12 +379,15 @@ mod tests {
         Ok(())
     }
 
-    fn build_ordering(schema: &Arc<Schema>) -> LexOrdering {
-        LexOrdering::new(vec![PhysicalSortExpr {
-            expr: Arc::new(Column::new(schema.field(0).name(), 0)),
-            options: SortOptions::default(),
-        }])
-        .unwrap()
+    fn build_ordering(schema: &Arc<Schema>, field_count: usize) -> LexOrdering {
+        let mut exprs = vec![];
+        for _ in 0..field_count {
+            exprs.push(PhysicalSortExpr {
+                expr: Arc::new(Column::new(schema.field(0).name(), 0)),
+                options: SortOptions::default(),
+            });
+        }
+        LexOrdering::new(exprs).unwrap()
     }
 
     fn build_coalesce_exec_with_memory(schema: &Arc<Schema>) -> Arc<CoalescePartitionsExec> {
@@ -353,21 +398,17 @@ mod tests {
     }
 
     #[test]
-    fn should_replace_top_most_coalesce_with_sort_preserving_merge() {
+    fn should_replace_top_most_coalesce_with_sort_preserving_merge() -> Result<(), Error> {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
         let coalesce = build_coalesce_exec_with_memory(&schema);
-        let ordering = build_ordering(&schema);
+        let ordering = build_ordering(&schema, 1);
 
         // When
-        let result = remove_coalesce_physical_stage(&ordering, coalesce.clone());
+        let result = remove_coalesce_physical_stage(&ordering, coalesce.clone())?;
 
         // Then
-        let Ok(new_plan) = result else {
-            panic!("Expected removal to succeed");
-        };
-
-        let contains_sort_preserving_merge = new_plan
+        let contains_sort_preserving_merge = result
             .exists(|node| {
                 Ok(node
                     .as_any()
@@ -379,32 +420,30 @@ mod tests {
             contains_sort_preserving_merge,
             "Should contain SortPreservingMergeExec"
         );
+        Ok(())
     }
 
     #[test]
-    fn should_return_same_plan_if_no_coalesce_found() {
+    fn should_return_same_plan_if_no_coalesce_found() -> Result<(), Error> {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
         let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
         let memory_exec =
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
-        let ordering = build_ordering(&schema);
+        let ordering = build_ordering(&schema, 1);
 
         // When
-        let result = remove_coalesce_physical_stage(&ordering, memory_exec.clone());
+        let result = remove_coalesce_physical_stage(&ordering, memory_exec.clone())?;
 
         // Then
-        let Ok(new_plan) = result else {
-            panic!("Expected removal to succeed");
-        };
-
         let original_display = displayable(memory_exec.as_ref()).one_line();
-        let new_display = displayable(new_plan.as_ref()).one_line();
+        let new_display = displayable(result.as_ref()).one_line();
         assert_eq!(format!("{original_display}"), format!("{new_display}"));
+        Ok(())
     }
 
     #[test]
-    fn should_stop_replacement_after_first_coalesce() {
+    fn should_stop_replacement_after_first_coalesce() -> Result<(), Error> {
         // Given
         let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
         let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
@@ -412,17 +451,13 @@ mod tests {
             MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
         let coalesce_inner = Arc::new(CoalescePartitionsExec::new(memory_exec));
         let coalesce_outer = Arc::new(CoalescePartitionsExec::new(coalesce_inner));
-        let ordering = build_ordering(&schema);
+        let ordering = build_ordering(&schema, 1);
 
         // When
-        let result = remove_coalesce_physical_stage(&ordering, coalesce_outer.clone());
+        let result = remove_coalesce_physical_stage(&ordering, coalesce_outer.clone())?;
 
         // Then
-        let Ok(new_plan) = result else {
-            panic!("Expected removal to succeed");
-        };
-
-        let contains_coalesce_inner = new_plan
+        let contains_coalesce_inner = result
             .exists(|node| {
                 Ok(node
                     .as_any()
@@ -432,10 +467,77 @@ mod tests {
             .unwrap();
         assert!(contains_coalesce_inner, "Inner coalesce should remain");
 
-        let root_is_coalesce = new_plan
+        let root_is_coalesce = result
             .as_any()
             .downcast_ref::<CoalescePartitionsExec>()
             .is_some();
         assert!(!root_is_coalesce, "Outer root should not be coalesce");
+        Ok(())
+    }
+
+    #[test]
+    fn should_return_same_plan_if_no_sort_preserve_merge_exec_found() -> Result<(), Error> {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Int32, false),
+            Field::new("c", DataType::Int32, false),
+        ]));
+        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        let ordering = build_ordering(&schema, 3);
+
+        // When
+        let result = apply_full_sort_ordering(&ordering, memory_exec.clone())?;
+
+        // Then
+        let original_display = displayable(memory_exec.as_ref()).one_line();
+        let new_display = displayable(result.as_ref()).one_line();
+        assert_eq!(format!("{original_display}"), format!("{new_display}"));
+        Ok(())
+    }
+
+    #[test]
+    fn should_replacement_all_sort_stages() -> Result<(), Error> {
+        // Given
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Int32, false),
+            Field::new("c", DataType::Int32, false),
+        ]));
+
+        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        // Create two sort stages that only apply ordering to first column
+        let ordering = build_ordering(&schema, 1);
+        let sort_inner = Arc::new(SortPreservingMergeExec::new(ordering.clone(), memory_exec));
+        let sort_outer = Arc::new(SortPreservingMergeExec::new(ordering.clone(), sort_inner));
+
+        // When
+        // Create ordering over 3 columns
+        let full_ordering = build_ordering(&schema, 3);
+        let result = apply_full_sort_ordering(&full_ordering, sort_outer.clone())?;
+
+        // Then
+        // Look down tree for sort stage without full sort ordering
+        let contains_partial_sort = result
+            .exists(|node| {
+                Ok(
+                    if let Some(stage) = node.as_any().downcast_ref::<SortPreservingMergeExec>() {
+                        // Does this stage only contain the original partial ordering?
+                        *stage.expr() != full_ordering
+                    } else {
+                        false
+                    },
+                )
+            })
+            .unwrap();
+        assert!(
+            !contains_partial_sort,
+            "Not all SortPreservingMergeExecs modified"
+        );
+        Ok(())
     }
 }

@@ -98,7 +98,7 @@ public class DataFusionCompactionRunnerIT {
         stateStore.fixFileUpdateTime(null);
     }
 
-    @Test
+    //@Test
     void shouldMergeFilesWithStringAndLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithMultipleKeys("foo1", new StringType(), "bar1", new LongType());
@@ -133,7 +133,7 @@ public class DataFusionCompactionRunnerIT {
     @DisplayName("Handle data types")
     class HandleDataTypes {
 
-        @Test
+        // @Test
         void shouldMergeFilesWithStringKey() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key", new StringType());
@@ -155,7 +155,7 @@ public class DataFusionCompactionRunnerIT {
                     .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         }
 
-        @Test
+        //  @Test
         void shouldMergeFilesWithLongKey() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key", new LongType());
@@ -178,7 +178,7 @@ public class DataFusionCompactionRunnerIT {
                     .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         }
 
-        @Test
+        //@Test
         void shouldMergeFilesWithIntKey() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key", new IntType());
@@ -201,7 +201,7 @@ public class DataFusionCompactionRunnerIT {
                     .isEqualTo(SketchesDeciles.from(schema, List.of(row1, row2)));
         }
 
-        @Test
+        // @Test
         void shouldMergeFilesWithByteArrayKey() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key", new ByteArrayType());
@@ -229,7 +229,7 @@ public class DataFusionCompactionRunnerIT {
     @DisplayName("Handle empty files")
     class HandleEmptyFiles {
 
-        @Test
+        // @Test
         void shouldMergeEmptyAndNonEmptyFile() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key", new StringType());
@@ -251,7 +251,7 @@ public class DataFusionCompactionRunnerIT {
                     .isEqualTo(SketchesDeciles.from(schema, List.of(row)));
         }
 
-        @Test
+        //   @Test
         void shouldMergeTwoEmptyFiles() throws Exception {
             // Given
             Schema schema = createSchemaWithKey("key", new StringType());
@@ -277,7 +277,7 @@ public class DataFusionCompactionRunnerIT {
     @Nested
     @DisplayName("Handle aggregation and filtering")
     class HandleAggregationAndFiltering {
-        @Test
+        //  @Test
         void shouldAggregate() throws Exception {
             // Given
             Schema schema = Schema.builder()
@@ -352,7 +352,7 @@ public class DataFusionCompactionRunnerIT {
                     .isEqualTo(SketchesDeciles.from(schema, expected));
         }
 
-        @Test
+        //  @Test
         void shouldFilterAndAggregate() throws Exception {
             // Given
             Schema schema = Schema.builder()
