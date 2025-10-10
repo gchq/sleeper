@@ -19,9 +19,9 @@ package sleeper.systemtest.suite.suites.parallel;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
-import sleeper.systemtest.suite.IngestST;
+import sleeper.systemtest.suite.QueryST;
 
 @Suite
-@SelectClasses({/* CompactionPerformanceST.class */IngestST.class})
+@SelectClasses({/* CompactionPerformanceST.class */QueryST.class})
 public class ExpensiveSuite2 {
 }
