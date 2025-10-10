@@ -371,16 +371,18 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
         .map_err(|e| {
             error!("DataFusion error: {e}");
             error!("DataFusion error debug output: {e:?}");
-            if let DataFusionError::ArrowError(arrow_error, backtrace) = &e {
-                if let ArrowError::ExternalError(external_error) = arrow_error {
-                    error!("Found Arrow external error");
-                    if let Some(backtrace_str) = backtrace {
-                        error!("Backtrace: {backtrace_str}");
-                    }
-                    error!("Backtrace debug output: {backtrace:?}");
-                    error!("External error: {external_error}");
-                    error!("External error debug output: {external_error:?}");
+            if let DataFusionError::ArrowError(
+                ArrowError::ExternalError(external_error),
+                backtrace,
+            ) = &e
+            {
+                error!("Found Arrow external error");
+                if let Some(backtrace_str) = backtrace {
+                    error!("Backtrace: {backtrace_str}");
                 }
+                error!("Backtrace debug output: {backtrace:?}");
+                error!("External error: {external_error}");
+                error!("External error debug output: {external_error:?}");
             }
             e.into()
         })
