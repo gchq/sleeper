@@ -1,3 +1,4 @@
+: '
 cd ../../..
 #Make copies of the java folder to run independent maven builds in parallel
 mkdir test
@@ -19,3 +20,25 @@ rm -rf test2
 
 echo "removed"
 ls | grep test
+'
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
+REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
+
+run1() {
+    pushd "$SCRIPTS_DIR"
+    sleep 2
+    echo "1"
+    ls
+}
+
+run2() {
+    pushd "$MAVEN_DIR"
+    echo "2"
+    ls
+}
+
+run1&
+run2
+wait

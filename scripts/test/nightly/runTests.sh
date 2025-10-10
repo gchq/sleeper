@@ -110,15 +110,29 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
+runExpensive1(){
+    pushd "$REPO_PARENT_DIR/test/scripts/test"
+    runMavenSystemTests "$@"
+    popd
+}
+
+runExpensive2(){
+    sleep 60
+    pushd "$REPO_PARENT_DIR/test2/scripts/test"
+    runMavenSystemTests "$@"
+    popd
+}
+
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     SLEEPER_DIR=$REPO_PARENT_DIR/sleeper
-    cd $SLEEPER_DIR
+    pushd $SLEEPER_DIR
     #Make copies of the java folder to run independent maven builds in parallel
     mkdir test
     cp -r java test/java
     cp -r scripts test/scripts
     cp README.md test
     cp -r test test2
+    popd
 
     echo "copied"
     ls | grep test
@@ -136,8 +150,8 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
     # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive6" "${SUITE_PARAMS6[@]}"
-    pushd "$SLEEPER_DIR/test/scripts/test"; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    sleep 60; pushd "$SLEEPER_DIR/test2/scripts/test"; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
+    runExpensive1 "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
+    runExpensive2 "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
     wait
 
     #Remove the temporary folders
