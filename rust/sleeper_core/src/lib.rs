@@ -368,16 +368,12 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
         .map_err(|e| {
             error!("DataFusion error: {e}");
             error!("DataFusion error debug output: {e:?}");
-            match &e {
-                DataFusionError::ArrowError(arrow_error, backtrace) => match arrow_error {
-                    ArrowError::ExternalError(external_error) => {
-                        error!("Found Arrow external error");
-                        error!("Backtrace: {backtrace:?}");
-                        error!("External error: {external_error:?}")
-                    }
-                    _ => {}
-                },
-                _ => {}
+            if let DataFusionError::ArrowError(arrow_error, backtrace) = &e {
+                if let ArrowError::ExternalError(external_error) = arrow_error {
+                    error!("Found Arrow external error");
+                    error!("Backtrace: {backtrace:?}");
+                    error!("External error: {external_error:?}");
+                }
             }
             e.into()
         })
