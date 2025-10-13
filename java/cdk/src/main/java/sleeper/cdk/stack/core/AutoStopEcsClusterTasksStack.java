@@ -98,7 +98,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
     }
 
     /**
-     * Allow the stack to stop cluster tasks.
+     * Adds a custom resource to stop tasks in an ECS cluster.
      *
      * @param scope   the stack to add the custom resource to
      * @param cluster the ECS cluster
