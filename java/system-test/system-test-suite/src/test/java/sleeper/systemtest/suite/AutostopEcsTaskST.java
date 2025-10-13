@@ -20,27 +20,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.time.Duration;
+import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTIONAL_STACKS;
 
 @SystemTest
-// Slow because it needs to do many CDK deployments
+// Slow because it needs to do multiple CDK deployments
 @Slow
-public class RedeployOptionalStacksST {
-
-    private static final Set<OptionalStack> REDEPLOYABLE_STACKS = new LinkedHashSet<>(OptionalStack.all());
-    static {
-        // We're currently unable to configure some of the log groups related to an EKS cluster, so it fails to redeploy
-        // because those log groups are retained and already exist. Here's the issue for this problem:
-        // https://github.com/gchq/sleeper/issues/3480 (Can't redeploy EKS bulk import optional stack)
-        REDEPLOYABLE_STACKS.remove(OptionalStack.EksBulkImportStack);
-    }
+public class AutostopEcsTaskST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
@@ -53,9 +49,21 @@ public class RedeployOptionalStacksST {
     }
 
     @Test
-    void shouldDisableAndReenableAllOptionalStacks(SleeperSystemTest sleeper) {
-        sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
-        sleeper.disableOptionalStacks(OptionalStack.all());
-        sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
+    void shouldRemoveIngestStackWhileTaskIsRunning(SleeperSystemTest sleeper) {
+        // Given an ingest task is running
+        sleeper.enableOptionalStacks(List.of(OptionalStack.IngestStack));
+        sleeper.systemTestCluster()
+                .runDataGenerationJobs(10,
+                        builder -> builder.ingestMode(GENERATE_ONLY).rowsPerIngest(40_000_000),
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                .sendAllGeneratedFilesAsOneJob(INGEST_QUEUE)
+                .waitForStandardIngestTasks(1,
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)));
+
+        // When I remove the ingest stack
+        sleeper.disableOptionalStacks(List.of(OptionalStack.IngestStack));
+
+        // Then the ingest does not complete
+        assertThat(sleeper.tableFiles().references()).isEmpty();
     }
 }
