@@ -70,7 +70,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
                         .willReturn(aResponse().withStatus(200)));
 
         // When
-        lambda.handleEvent(eventHandlerForApplication(applicationId, "Stop"), null);
+        lambda.handleEvent(eventHandlerForApplication(applicationId, "Delete"), null);
 
         // Then
         verify(2, anyRequestedForEmrServerless());
