@@ -239,7 +239,7 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
-        coreStacks.addAutoStopEcsClusterTasks(instanceProperties, cluster, clusterName);
+        coreStacks.addAutoStopEcsClusterTasks(this, cluster);
 
         return cluster;
     }

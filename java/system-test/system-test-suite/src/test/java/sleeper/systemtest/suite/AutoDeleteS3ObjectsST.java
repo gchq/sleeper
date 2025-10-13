@@ -18,29 +18,31 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.row.Row;
+import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.LongStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTIONAL_STACKS;
 
 @SystemTest
-// Slow because it needs to do many CDK deployments
+// Slow because it needs to do multiple CDK deployments
 @Slow
-public class RedeployOptionalStacksST {
+public class AutoDeleteS3ObjectsST {
 
-    private static final Set<OptionalStack> REDEPLOYABLE_STACKS = new LinkedHashSet<>(OptionalStack.all());
-    static {
-        // We're currently unable to configure some of the log groups related to an EKS cluster, so it fails to redeploy
-        // because those log groups are retained and already exist. Here's the issue for this problem:
-        // https://github.com/gchq/sleeper/issues/3480 (Can't redeploy EKS bulk import optional stack)
-        REDEPLOYABLE_STACKS.remove(OptionalStack.EksBulkImportStack);
-    }
+    @TempDir
+    Path tempDir;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
@@ -53,9 +55,16 @@ public class RedeployOptionalStacksST {
     }
 
     @Test
-    void shouldDisableAndReenableAllOptionalStacks(SleeperSystemTest sleeper) {
-        sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
-        sleeper.disableOptionalStacks(OptionalStack.all());
-        sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
+    void shouldRemoveQueryStackWithDataInQueryBucket(SleeperSystemTest sleeper) {
+        // When there is data in the query results bucket
+        sleeper.enableOptionalStacks(List.of(OptionalStack.QueryStack));
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
+        List<Row> queryResults = sleeper.query().byQueue().allRowsWithProcessingConfig(config -> config
+                .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, S3ResultsOutput.S3)));
+
+        // Then I can remove the query stack
+        sleeper.disableOptionalStacks(List.of(OptionalStack.QueryStack));
+        assertThat(queryResults).containsExactlyElementsOf(
+                sleeper.generateNumberedRows(LongStream.range(0, 100)));
     }
 }
