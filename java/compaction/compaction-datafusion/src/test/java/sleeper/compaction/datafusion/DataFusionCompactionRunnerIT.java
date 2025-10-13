@@ -384,8 +384,8 @@ public class DataFusionCompactionRunnerIT {
     }
 
     @Nested
-    @DisplayName("Handle unusual key field names")
-    class UnusualKeyFieldNames {
+    @DisplayName("Handle unusual field names")
+    class UnusualFieldNames {
 
         @Test
         void shouldCompactFileWithUnusualKeyNames() throws Exception {
