@@ -22,7 +22,6 @@ import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.clients.query.FakeWebSocketConnection;
 import sleeper.clients.query.FakeWebSocketConnection.WebSocketResponse;
-import sleeper.clients.query.QueryWebSocketClient;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.PartitionsBuilder;
@@ -171,6 +170,15 @@ class SleeperClientTest {
     void shouldTestWebSocketExactQuery() throws Exception {
         FakeWebSocketConnection connection = new FakeWebSocketConnection();
         String tableName = "table-name";
+
+        Row expectedRow = new Row(Map.of("key", "123"));
+        connection.setFakeResponses(
+                message(queryResult("test-query-id", expectedRow)),
+                message(completedQuery("test-query-id", 1L)));
+
+        instance = new InMemorySleeperInstance(instanceProperties, connection);
+        sleeperClient = instance.sleeperClientBuilder().build();
+
         addTable(tableName);
         ingest(tableName, List.of(
                 new Row(Map.of("key", "123")),
@@ -178,33 +186,23 @@ class SleeperClientTest {
                 new Row(Map.of("key", "789"))));
 
         Query query = exactQuery("test-query-id", "123", tableName);
-        Row expectedRow = new Row(Map.of("key", "123"));
-        connection.setFakeResponses(
-                message(queryResult("test-query-id", expectedRow)),
-                message(completedQuery("test-query-id", 1L)));
-        QueryWebSocketClient realClient = new QueryWebSocketClient(
-                instanceProperties, instance.tablePropertiesProvider(), connection.createAdapter(), 0);
 
         // When / Then
-        assertThat(runQueryFuture(query, realClient))
+        assertThat(runQueryFuture(query,
+                sleeperClient))
                 .isCompletedWithValue(List.of(expectedRow));
-        assertThat(connection.isConnected()).isFalse();
-        assertThat(connection.isClosed()).isTrue();
         assertThat(connection.getSentMessages())
                 .containsExactly(querySerDe.toJson(query));
+
+        assertThat(connection.isConnected()).isFalse();
+        assertThat(connection.isClosed()).isTrue();
     }
 
     @Test
     void shouldTestWebSocketRangeQuery() throws Exception {
         FakeWebSocketConnection connection = new FakeWebSocketConnection();
         String tableName = "table-name";
-        addTable(tableName);
-        ingest(tableName, List.of(
-                new Row(Map.of("key", "aaa")),
-                new Row(Map.of("key", "bbb")),
-                new Row(Map.of("key", "ccc"))));
 
-        Query query = rangeQuery("test-query-id", "aaa", "bbb", tableName);
         Row expectedRow1 = new Row(Map.of("key", "aaa"));
         Row expectedRow2 = new Row(Map.of("key", "bbb"));
 
@@ -215,11 +213,20 @@ class SleeperClientTest {
                 message(queryResult("subquery-2", expectedRow2)),
                 message(completedQuery("subquery-2", 1L)));
 
-        QueryWebSocketClient realClient = new QueryWebSocketClient(
-                instanceProperties, instance.tablePropertiesProvider(), connection.createAdapter(), 0);
+        instance = new InMemorySleeperInstance(instanceProperties, connection);
+        sleeperClient = instance.sleeperClientBuilder().build();
+
+        addTable(tableName);
+        ingest(tableName, List.of(
+                new Row(Map.of("key", "aaa")),
+                new Row(Map.of("key", "bbb")),
+                new Row(Map.of("key", "ccc"))));
+
+        Query query = rangeQuery("test-query-id", "aaa", "bbb", tableName);
 
         // When / Then
-        assertThat(runQueryFuture(query, realClient))
+        assertThat(runQueryFuture(query,
+                sleeperClient))
                 .isCompletedWithValue(List.of(expectedRow1, expectedRow2));
         assertThat(connection.isConnected()).isFalse();
         assertThat(connection.isClosed()).isTrue();
@@ -324,8 +331,8 @@ class SleeperClientTest {
         return client -> client.onMessage(message);
     }
 
-    private CompletableFuture<List<Row>> runQueryFuture(Query query, QueryWebSocketClient client) throws Exception {
-        return client.submitQuery(query);
+    private CompletableFuture<List<Row>> runQueryFuture(Query query, SleeperClient client) throws Exception {
+        return client.queryViaWebSocket(query);
     }
 
     private Query exactQuery(String queryId, String value, String tableName) {
