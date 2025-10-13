@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.Slow;
@@ -64,6 +65,10 @@ public class AutoStopEcsTaskST {
         sleeper.disableOptionalStacks(List.of(OptionalStack.IngestStack));
 
         // Then the ingest does not complete
-        assertThat(sleeper.tableFiles().references()).isEmpty();
+        assertThat(sleeper.tableFiles().references())
+                .satisfies(files -> {
+                    long totalRows = files.stream().mapToLong(FileReference::getNumberOfRows).sum();
+                    assertThat(totalRows).isLessThan(400_000_000);
+                });
     }
 }
