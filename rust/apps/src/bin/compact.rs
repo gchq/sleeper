@@ -56,10 +56,10 @@ struct CmdLineArgs {
     #[arg(short = 's', long)]
     sort_keys: Vec<String>,
     /// Partition region minimum keys (inclusive). Must be one per row key specified.
-    #[arg(short='m',long,required=true,num_args=1..)]
+    #[arg(short='m',long,required=false,num_args=1..)]
     region_mins: Vec<String>,
     /// Partition region maximum keys (exclusive). Must be one per row key specified.
-    #[arg(short='n',long,required=true,num_args=1..)]
+    #[arg(short='n',long,required=false,num_args=1..)]
     region_maxs: Vec<String>,
     /// Sleeper aggregation configuration
     #[arg(short = 'a', long, required = false, num_args = 1)]
@@ -110,24 +110,28 @@ async fn main() -> color_eyre::Result<()> {
     let output_file = Url::parse(&args.output)
         .or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(&args.output))))?;
 
-    if args.row_keys.len() != args.region_maxs.len() {
+    if !args.region_maxs.is_empty() && args.row_keys.len() != args.region_maxs.len() {
         bail!("quantity of region maximums != quantity of row key fields");
     }
-    if args.row_keys.len() != args.region_mins.len() {
+    if !args.region_mins.is_empty() && args.row_keys.len() != args.region_mins.len() {
         bail!("quantity of region minimums != quantity of row key fields");
     }
     let mut map = HashMap::new();
-    for (key, bounds) in args
-        .row_keys
-        .iter()
-        .zip(args.region_mins.iter().zip(args.region_maxs.iter()))
-    {
+    for (index, key) in args.row_keys.iter().enumerate() {
         map.insert(
             key.into(),
             ColRange {
-                lower: PartitionBound::String(bounds.0),
+                lower: if args.region_mins.is_empty() {
+                    PartitionBound::String("")
+                } else {
+                    PartitionBound::String(&args.region_mins[index])
+                },
                 lower_inclusive: true,
-                upper: PartitionBound::String(bounds.1),
+                upper: if args.region_maxs.is_empty() {
+                    PartitionBound::Unbounded
+                } else {
+                    PartitionBound::String(&args.region_maxs[index])
+                },
                 upper_inclusive: false,
             },
         );
