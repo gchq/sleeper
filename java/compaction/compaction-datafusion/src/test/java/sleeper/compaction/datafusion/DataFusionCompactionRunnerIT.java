@@ -131,28 +131,6 @@ public class DataFusionCompactionRunnerIT {
         assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
     }
 
-    @Test
-    void shouldHandleUnusualKeyNames() throws Exception {
-        // Given
-        tableProperties.setSchema(createSchemaWithMultipleKeys("SoMeKeY", new StringType(), "Other@Key", new LongType()));
-        update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
-        Row row1 = new Row(Map.of("SoMeKeY", "row-1", "Other@Key", 123L));
-        Row row2 = new Row(Map.of("SoMeKeY", "row-2", "Other@Key", 456L));
-        String file1 = writeFileForPartition("root", List.of(row1));
-        String file2 = writeFileForPartition("root", List.of(row2));
-        CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
-
-        // When
-        runTask(job);
-
-        // Then
-        assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
-        assertThat(readDataFile(job.getOutputFile()))
-                .containsExactly(row1, row2);
-        assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
-                .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1, row2)));
-    }
-
     @Nested
     @DisplayName("Handle data types")
     class HandleDataTypes {
@@ -397,6 +375,106 @@ public class DataFusionCompactionRunnerIT {
                             "key", "a",
                             "timestamp", 999999999999999L,
                             "value", 4L)));
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 1));
+            assertThat(readDataFile(job.getOutputFile()))
+                    .isEqualTo(expected);
+            assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(tableProperties, expected));
+        }
+    }
+
+    @Nested
+    @DisplayName("Handle unusual key field names")
+    class UnusualKeyFieldNames {
+
+        @Test
+        void shouldCompactFileWithUnusualKeyNames() throws Exception {
+            // Given
+            tableProperties.setSchema(createSchemaWithMultipleKeys("SoMeKeY", new StringType(), "Other@Key", new LongType()));
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            Row row1 = new Row(Map.of("SoMeKeY", "row-1", "Other@Key", 123L));
+            Row row2 = new Row(Map.of("SoMeKeY", "row-2", "Other@Key", 456L));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
+            assertThat(readDataFile(job.getOutputFile()))
+                    .containsExactly(row1, row2);
+            assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(tableProperties, List.of(row1, row2)));
+        }
+
+        @Test
+        void shouldApplyFilterOnUnusualFieldName() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("TimeStamp", new LongType()))
+                    .valueFields(new Field("value", new LongType()))
+                    .build());
+            tableProperties.set(FILTERING_CONFIG, "ageOff(TimeStamp,10)");
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            Row row1 = new Row(Map.of("key", "a", "TimeStamp", 999999999999998L, "value", 1L));
+            Row row2 = new Row(Map.of("key", "a", "TimeStamp", 1L, "value", 2L));
+            Row row3 = new Row(Map.of("key", "a", "TimeStamp", 999999999999999L, "value", 3L));
+
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2, row3));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of(
+                            "key", "a",
+                            "TimeStamp", 999999999999998L,
+                            "value", 1L)),
+                    new Row(Map.of(
+                            "key", "a",
+                            "TimeStamp", 999999999999999L,
+                            "value", 3L)));
+            assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 2));
+            assertThat(readDataFile(job.getOutputFile()))
+                    .isEqualTo(expected);
+            assertThat(SketchesDeciles.from(readSketches(job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(tableProperties, expected));
+        }
+
+        @Test
+        void shouldAggregateWithUnusualValueFieldName() throws Exception {
+            // Given
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("key", new StringType()))
+                    .sortKeyFields(new Field("sort", new StringType()))
+                    .valueFields(new Field("LongValue", new LongType()), new Field("MapValue", new MapType(new StringType(), new LongType())))
+                    .build());
+            tableProperties.set(AGGREGATION_CONFIG, "sum(LongValue), map_sum(MapValue)");
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            Row row1 = new Row(Map.of("key", "a", "sort", "b", "LongValue", 1L, "MapValue", Map.of("map_key1", 1L, "map_key2", 3L)));
+            Row row2 = new Row(Map.of("key", "a", "sort", "b", "LongValue", 2L, "MapValue", Map.of("map_key1", 3L, "map_key2", 4L)));
+            String file1 = writeFileForPartition("root", List.of(row1));
+            String file2 = writeFileForPartition("root", List.of(row2));
+            CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
+
+            // When
+            runTask(job);
+
+            // Then
+            List<Row> expected = List.of(
+                    new Row(Map.of(
+                            "key", "a",
+                            "sort", "b",
+                            "LongValue", 3L,
+                            "MapValue", Map.of(
+                                    "map_key1", 4L,
+                                    "map_key2", 7L))));
             assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(2, 1));
             assertThat(readDataFile(job.getOutputFile()))
                     .isEqualTo(expected);
