@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.row.Row;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTIONAL_STACKS;
 
 @SystemTest
@@ -56,11 +58,13 @@ public class AutoDeleteS3ObjectsST {
     void shouldRemoveQueryStackWithDataInQueryBucket(SleeperSystemTest sleeper) {
         // When there is data in the query results bucket
         sleeper.enableOptionalStacks(List.of(OptionalStack.QueryStack));
-        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 10));
-        sleeper.query().byQueue().allRowsWithProcessingConfig(config -> config
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
+        List<Row> queryResults = sleeper.query().byQueue().allRowsWithProcessingConfig(config -> config
                 .resultsPublisherConfig(Map.of(ResultsOutput.DESTINATION, S3ResultsOutput.S3)));
 
         // Then I can remove the query stack
         sleeper.disableOptionalStacks(List.of(OptionalStack.QueryStack));
+        assertThat(queryResults).containsExactlyElementsOf(
+                sleeper.generateNumberedRows(LongStream.range(0, 100)));
     }
 }
