@@ -19,9 +19,10 @@ package sleeper.systemtest.suite.suites.parallel;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
-import sleeper.systemtest.suite.ParallelCompactionsST;
+import sleeper.systemtest.suite.EmrServerlessBulkImportST;
+import sleeper.systemtest.suite.PartitionSplittingST;
 
 @Suite
-@SelectClasses({ParallelCompactionsST.class})
+@SelectClasses({/* ParallelCompactionsST.class */EmrServerlessBulkImportST.class, PartitionSplittingST.class})
 public class ExpensiveSuite3 {
 }

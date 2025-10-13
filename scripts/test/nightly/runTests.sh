@@ -123,6 +123,13 @@ runExpensive2(){
     popd
 }
 
+runExpensive3(){
+    sleep 1200
+    pushd "$REPO_PARENT_DIR/sleeper/test3/scripts/test"
+    runMavenSystemTests "$@"
+    popd
+}
+
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     SLEEPER_DIR=$REPO_PARENT_DIR/sleeper
     pushd $SLEEPER_DIR
@@ -133,6 +140,7 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     cp -r python test/python
     cp README.md test
     cp -r test test2
+    cp -r test test3
     popd
 
     echo "copied"
@@ -141,23 +149,16 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     echo "Running performance tests in parallel. Start time: [$(time_str)]"
     SUITE_PARAMS1=(-Dsleeper.system.test.cluster.enabled=true -DskipRust -DrunIT=ExpensiveSuite1 "$@")
     SUITE_PARAMS2=(-Dsleeper.system.test.cluster.enabled=true -DskipRust -DrunIT=ExpensiveSuite2 "$@")
-    SUITE_PARAMS3=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite3 "$@")
-    SUITE_PARAMS4=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite4 "$@")
-    SUITE_PARAMS5=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite5 "$@")
-    SUITE_PARAMS6=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=ExpensiveSuite6 "$@")
-    #runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    #sleep 60; runMavenSystemTests "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
-    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive3" "${SUITE_PARAMS3[@]}"&
-    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive4" "${SUITE_PARAMS4[@]}"&
-    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive5" "${SUITE_PARAMS5[@]}"&
-    # runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" "expensive6" "${SUITE_PARAMS6[@]}"
+    SUITE_PARAMS3=(-Dsleeper.system.test.cluster.enabled=true -DskipRust -DrunIT=ExpensiveSuite3 "$@")
     runExpensive1 "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    runExpensive2 "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"
+    runExpensive2 "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"&
+    runExpensive3 "${DEPLOY_ID}${START_TIME_SHORT}3" "expensive3" "${SUITE_PARAMS3[@]}"
     wait
 
     #Remove the temporary folders
     rm -rf $SLEEPER_DIR/test
     rm -rf $SLEEPER_DIR/test2
+    rm -rf $SLEEPER_DIR/test3
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
 fi
@@ -165,7 +166,5 @@ fi
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
  sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
-
-popd
 
 exit $END_EXIT_CODE

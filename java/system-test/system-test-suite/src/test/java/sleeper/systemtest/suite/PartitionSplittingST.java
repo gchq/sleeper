@@ -43,7 +43,7 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN3;
 
 @SystemTest
 public class PartitionSplittingST {
@@ -52,7 +52,7 @@ public class PartitionSplittingST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstanceNoTables(MAIN);
+        sleeper.connectToInstanceNoTables(MAIN3);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::partitionStatus);
     }
 

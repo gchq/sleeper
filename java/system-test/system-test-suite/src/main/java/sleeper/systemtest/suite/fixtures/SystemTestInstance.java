@@ -90,6 +90,7 @@ public class SystemTestInstance {
 
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::createMainConfiguration);
     public static final SystemTestInstanceConfiguration MAIN2 = usingSystemTestDefaults("main2", SystemTestInstance::createMainConfiguration2);
+    public static final SystemTestInstanceConfiguration MAIN3 = usingSystemTestDefaults("main3", SystemTestInstance::createMainConfiguration3);
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionPerformanceOnDataFusionConfiguration);
@@ -163,6 +164,13 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
         setSystemTestTags(properties, "main2", "Sleeper Maven system test main instance");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static DeployInstanceConfiguration createMainConfiguration3() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
+        setSystemTestTags(properties, "main3", "Sleeper Maven system test main instance");
         return createInstanceConfiguration(properties);
     }
 

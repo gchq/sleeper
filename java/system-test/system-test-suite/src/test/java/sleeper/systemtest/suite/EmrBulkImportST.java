@@ -30,14 +30,14 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN2;
 
 @SystemTest
 public class EmrBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstanceAddOnlineTable(MAIN);
+        sleeper.connectToInstanceAddOnlineTable(MAIN2);
     }
 
     @Test
