@@ -153,7 +153,7 @@ public class CompactionTaskResources {
                 .build();
         new CfnOutput(stack, COMPACTION_CLUSTER_NAME, compactionClusterProps);
 
-        coreStacks.addAutoStopEcsClusterTasks(instanceProperties, cluster, clusterName);
+        coreStacks.addAutoStopEcsClusterTasks(stack, cluster);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
