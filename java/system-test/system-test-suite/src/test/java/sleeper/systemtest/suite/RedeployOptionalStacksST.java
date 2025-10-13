@@ -20,13 +20,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.time.Duration;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
+import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTIONAL_STACKS;
 
 @SystemTest
@@ -59,4 +65,23 @@ public class RedeployOptionalStacksST {
         sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
     }
 
+    @Test
+    void shouldRemoveIngestStackWhileTaskIsRunning(SleeperSystemTest sleeper) {
+        // Given an ingest task is running
+        sleeper.enableOptionalStacks(List.of(OptionalStack.IngestStack));
+        sleeper.systemTestCluster()
+                .runDataGenerationJobs(1,
+                        builder -> builder.ingestMode(QUEUE)
+                                .ingestQueue(STANDARD_INGEST)
+                                .rowsPerIngest(40_000_000),
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                .waitForStandardIngestTasks(1,
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)));
+
+        // When I remove the ingest stack
+        sleeper.disableOptionalStacks(List.of(OptionalStack.IngestStack));
+
+        // Then the ingest does not complete
+        assertThat(sleeper.tableFiles().references()).isEmpty();
+    }
 }
