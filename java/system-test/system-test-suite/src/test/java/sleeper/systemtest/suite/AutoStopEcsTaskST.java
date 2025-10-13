@@ -29,8 +29,8 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONLY;
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_QUEUE;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTIONAL_STACKS;
 
 @SystemTest
@@ -56,7 +56,7 @@ public class AutoStopEcsTaskST {
                 .runDataGenerationJobs(10,
                         builder -> builder.ingestMode(GENERATE_ONLY).rowsPerIngest(40_000_000),
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
-                .sendAllGeneratedFilesAsOneJob(INGEST_QUEUE)
+                .sendAllGeneratedFilesAsOneJob(INGEST_JOB_QUEUE_URL)
                 .waitForStandardIngestTasks(1,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)));
 
