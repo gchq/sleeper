@@ -16,8 +16,6 @@
 package sleeper.clients.api.aws;
 
 import org.apache.hadoop.conf.Configuration;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.api.BulkExportQuerySender;
@@ -65,7 +63,6 @@ public class AwsSleeperClientBuilder {
         Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
         ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoopConf);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
-        AwsCredentialsProvider awsCredentialsProvider = DefaultCredentialsProvider.builder().build();
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
 
         return new SleeperClient.Builder()
@@ -81,7 +78,7 @@ public class AwsSleeperClientBuilder {
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkExportQuerySender(BulkExportQuerySender.toSqs(instanceProperties, awsClients.sqs()))
                 .queryWebSocketSender(QueryWebSocketSender.query(instanceProperties, tablePropertiesProvider,
-                        awsCredentialsProvider))
+                        awsClients.awsCredentialsProvider()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
     }
