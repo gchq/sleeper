@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
@@ -58,7 +59,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
         // Given
         String applicationId = UUID.randomUUID().toString();
         stubFor(
-                post("/")
+                get("/")
                         .withHeader(OPERATION_HEADER, MATCHING_LIST_APPLICATIONS_OPERATION)
                         .willReturn(
                                 aResponse()
