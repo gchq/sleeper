@@ -21,7 +21,6 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.ecs.ICluster;
-import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
@@ -39,12 +38,10 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Stops ECS Cluster tasks for the CloudFormation stack.
  */
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AutoStopEcsClusterTasksStack extends NestedStack {
 
     private IFunction lambda;
@@ -64,6 +61,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         createLambda(instanceProperties, jars, logGroup, providerLogGroup);
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
     private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
@@ -81,8 +79,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(15)));
 
-        IRole role = Objects.requireNonNull(lambda.getRole());
-        role.addToPrincipalPolicy(PolicyStatement.Builder
+        lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
                 .resources(List.of("*"))
                 .actions(List.of("ecs:ListTasks", "ecs:StopTask"))
