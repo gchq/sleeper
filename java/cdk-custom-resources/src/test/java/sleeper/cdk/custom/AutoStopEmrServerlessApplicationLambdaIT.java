@@ -17,6 +17,7 @@ package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.stopApplication
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.updateApplicationRequestedFor;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.wiremockEmrServerlessClient;
 
+@WireMockTest
 public class AutoStopEmrServerlessApplicationLambdaIT {
 
     private AutoStopEmrServerlessApplicationLambda lambda;
