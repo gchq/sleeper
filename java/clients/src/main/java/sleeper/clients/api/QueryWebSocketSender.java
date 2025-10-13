@@ -23,23 +23,18 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.query.core.model.Query;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @FunctionalInterface
 public interface QueryWebSocketSender {
-    CompletableFuture<List<Row>> sendQuery(Query query);
+    CompletableFuture<List<Row>> sendQuery(Query query) throws InterruptedException;
 
     static QueryWebSocketSender query(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            AwsCredentialsProvider awsCredentialsProvider) throws InterruptedException {
+            AwsCredentialsProvider awsCredentialsProvider) {
         QueryWebSocketClient client = new QueryWebSocketClient(instanceProperties, tablePropertiesProvider, awsCredentialsProvider);
         return query -> {
-            try {
-                return client.submitQuery(query);
-            } catch (InterruptedException e) {
-                return CompletableFuture.completedFuture(Collections.emptyList());
-            }
+            return client.submitQuery(query);
         };
     }
 }

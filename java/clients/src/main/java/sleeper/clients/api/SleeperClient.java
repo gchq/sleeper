@@ -304,10 +304,11 @@ public class SleeperClient implements AutoCloseable {
      * The WebSocket API must have been deployed as part of your Sleeper instance for this to work. The URL of the
      * API is read from the instance property {@link CdkDefinedInstanceProperty#QUERY_WEBSOCKET_API_URL}.
      *
-     * @param  query the query to run
-     * @return       a future that completes with the results of the query
+     * @param  query                the query to run
+     * @return                      a future that completes with the results of the query
+     * @throws InterruptedException if the web socket is interrupted
      */
-    public CompletableFuture<List<Row>> queryViaWebSocket(Query query) {
+    public CompletableFuture<List<Row>> queryViaWebSocket(Query query) throws InterruptedException {
         return queryWebSocketSender.sendQuery(query);
     }
 
@@ -360,13 +361,6 @@ public class SleeperClient implements AutoCloseable {
      */
     public void bulkExport(BulkExportQuery query) {
         bulkExportQuerySender.sendQueryToBulkExport(query);
-    }
-
-    /*
-     * QueryWebSocketSender
-     */
-    public void queryWebSocketSender(Query query) {
-        queryWebSocketSender.sendQuery(query);
     }
 
     @Override
