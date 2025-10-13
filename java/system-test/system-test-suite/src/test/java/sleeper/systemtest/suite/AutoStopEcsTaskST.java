@@ -36,7 +36,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTI
 @SystemTest
 // Slow because it needs to do multiple CDK deployments
 @Slow
-public class AutostopEcsTaskST {
+public class AutoStopEcsTaskST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
