@@ -84,23 +84,21 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     }
 
     /**
-     * Allows the stack to delete the bucket and it's contents.
+     * Adds a custom resource to delete a bucket's contents.
      *
-     * @param instanceProperties the instance properties
-     * @param bucket             the bucket to delete
-     * @param bucketName         the bucket name
+     * @param scope  the stack to add the custom resource to
+     * @param bucket the bucket to delete from
      */
-    public void addAutoDeleteS3Objects(InstanceProperties instanceProperties,
-            IBucket bucket, String bucketName) {
+    public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
 
         String id = bucket.getNode().getId() + "-AutoDelete";
 
         bucket.grantRead(lambda);
         bucket.grantDelete(lambda);
 
-        CustomResource customResource = CustomResource.Builder.create(this, id)
+        CustomResource customResource = CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::AutoDeleteS3Objects")
-                .properties(Map.of("bucket", bucketName))
+                .properties(Map.of("bucket", bucket.getBucketName()))
                 .serviceToken(provider.getServiceToken())
                 .build();
 

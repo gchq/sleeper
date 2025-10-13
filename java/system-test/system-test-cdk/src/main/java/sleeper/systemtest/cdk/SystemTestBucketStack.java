@@ -74,7 +74,7 @@ public class SystemTestBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(instanceProperties, bucket, bucketName);
+        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(this, bucket);
 
         return bucket;
     }
