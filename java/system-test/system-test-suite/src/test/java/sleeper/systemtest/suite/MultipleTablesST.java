@@ -42,7 +42,7 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN2;
 
 @SystemTest
 @Slow // Slow because compactions run for 200 tables in one task
@@ -52,7 +52,7 @@ public class MultipleTablesST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstanceNoTables(MAIN);
+        sleeper.connectToInstanceNoTables(MAIN2);
     }
 
     @Test
