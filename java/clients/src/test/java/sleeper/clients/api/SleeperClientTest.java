@@ -49,7 +49,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,7 +62,7 @@ class SleeperClientTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     Schema schema = createSchemaWithKey("key", new StringType());
-    InMemorySleeperInstance instance = new InMemorySleeperInstance(instanceProperties);
+    InMemorySleeperInstance instance = new InMemorySleeperInstance(instanceProperties, new FakeWebSocketConnection());
     SleeperClient sleeperClient = instance.sleeperClientBuilder().build();
     QuerySerDe querySerDe = new QuerySerDe(schema);
     QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);
@@ -168,7 +167,7 @@ class SleeperClientTest {
 
     @Test
     void shouldTestWebSocketExactQuery() throws Exception {
-        FakeWebSocketConnection connection = new FakeWebSocketConnection();
+        FakeWebSocketConnection connection = instance.getFakeWebSocketConnection();
         String tableName = "table-name";
 
         Row expectedRow = new Row(Map.of("key", "123"));
@@ -176,8 +175,7 @@ class SleeperClientTest {
                 message(queryResult("test-query-id", expectedRow)),
                 message(completedQuery("test-query-id", 1L)));
 
-        instance = new InMemorySleeperInstance(instanceProperties, connection);
-        sleeperClient = instance.sleeperClientBuilder().build();
+        // sleeperClient = instance.sleeperClientBuilder().build();
 
         addTable(tableName);
         ingest(tableName, List.of(
@@ -188,8 +186,7 @@ class SleeperClientTest {
         Query query = exactQuery("test-query-id", "123", tableName);
 
         // When / Then
-        assertThat(runQueryFuture(query,
-                sleeperClient))
+        assertThat(sleeperClient.queryViaWebSocket(query))
                 .isCompletedWithValue(List.of(expectedRow));
         assertThat(connection.getSentMessages())
                 .containsExactly(querySerDe.toJson(query));
@@ -200,7 +197,7 @@ class SleeperClientTest {
 
     @Test
     void shouldTestWebSocketRangeQuery() throws Exception {
-        FakeWebSocketConnection connection = new FakeWebSocketConnection();
+        FakeWebSocketConnection connection = instance.getFakeWebSocketConnection();
         String tableName = "table-name";
 
         Row expectedRow1 = new Row(Map.of("key", "aaa"));
@@ -213,8 +210,7 @@ class SleeperClientTest {
                 message(queryResult("subquery-2", expectedRow2)),
                 message(completedQuery("subquery-2", 1L)));
 
-        instance = new InMemorySleeperInstance(instanceProperties, connection);
-        sleeperClient = instance.sleeperClientBuilder().build();
+        // sleeperClient = instance.sleeperClientBuilder().build();
 
         addTable(tableName);
         ingest(tableName, List.of(
@@ -225,8 +221,7 @@ class SleeperClientTest {
         Query query = rangeQuery("test-query-id", "aaa", "bbb", tableName);
 
         // When / Then
-        assertThat(runQueryFuture(query,
-                sleeperClient))
+        assertThat(sleeperClient.queryViaWebSocket(query))
                 .isCompletedWithValue(List.of(expectedRow1, expectedRow2));
         assertThat(connection.isConnected()).isFalse();
         assertThat(connection.isClosed()).isTrue();
@@ -329,10 +324,6 @@ class SleeperClientTest {
 
     private WebSocketResponse message(String message) {
         return client -> client.onMessage(message);
-    }
-
-    private CompletableFuture<List<Row>> runQueryFuture(Query query, SleeperClient client) throws Exception {
-        return client.queryViaWebSocket(query);
     }
 
     private Query exactQuery(String queryId, String value, String tableName) {

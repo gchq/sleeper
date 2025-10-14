@@ -55,17 +55,21 @@ public class InMemorySleeperInstance {
     private final Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
     private final Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
     private final Queue<BulkExportQuery> bulkExportQueue = new LinkedList<>();
-    private FakeWebSocketConnection webSocketConnection;
+    private final FakeWebSocketConnection webSocketConnection;
 
     public InMemorySleeperInstance(InstanceProperties properties) {
-        this.properties = properties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(properties, tablePropertiesStore);
-        this.stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(properties, transactionLogsPerTable);
+        this(properties, new FakeWebSocketConnection());
     }
 
     public InMemorySleeperInstance(InstanceProperties properties, FakeWebSocketConnection webSocketConnection) {
-        this(properties);
+        this.properties = properties;
+        this.tablePropertiesProvider = new TablePropertiesProvider(properties, tablePropertiesStore);
+        this.stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(properties, transactionLogsPerTable);
         this.webSocketConnection = webSocketConnection;
+    }
+
+    public FakeWebSocketConnection getFakeWebSocketConnection() {
+        return webSocketConnection;
     }
 
     public SleeperClient.Builder sleeperClientBuilder() {
