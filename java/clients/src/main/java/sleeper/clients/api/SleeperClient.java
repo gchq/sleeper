@@ -36,9 +36,11 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryExecutorNew;
 
 import java.util.List;
 import java.util.Objects;
@@ -189,12 +191,13 @@ public class SleeperClient implements AutoCloseable {
      * @throws TableNotFoundException if the table with the given name is not found
      * @throws StateStoreException    if the state store can't be accessed
      */
-    public QueryExecutor getQueryExecutor(String tableName) {
+    public QueryExecutorNew getQueryExecutor(String tableName) {
         TableProperties tableProperties = getTableProperties(tableName);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        QueryExecutor executor = new QueryExecutor(objectFactory, tableProperties, stateStore, rowRetriever);
-        executor.init();
+        QueryExecutor splitter = new QueryExecutor(objectFactory, tableProperties, stateStore, rowRetriever);
+        splitter.init();
+        QueryExecutorNew executor = new QueryExecutorNew(splitter, new LeafPartitionQueryExecutor(objectFactory, tableProperties, rowRetriever));
         return executor;
     }
 
