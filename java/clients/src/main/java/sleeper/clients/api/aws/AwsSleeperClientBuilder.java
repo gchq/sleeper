@@ -15,6 +15,7 @@
  */
 package sleeper.clients.api.aws;
 
+import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -31,6 +32,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 
@@ -49,6 +51,8 @@ public class AwsSleeperClientBuilder {
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.createDefaultForEachClient();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
     private SleeperClientExecutorServiceProvider executorServiceProvider = SleeperClientExecutorServiceProvider.createDefaultForEachClient();
+    private SleeperClientBufferAllocatorProvider allocatorProvider = SleeperClientBufferAllocatorProvider.createDefaultForEachClient();
+    private SleeperClientQueryFFIContextProvider queryFfiContextProvider = SleeperClientQueryFFIContextProvider.createDefaultForEachClient();
 
     /**
      * Creates a Sleeper client.
@@ -60,6 +64,8 @@ public class AwsSleeperClientBuilder {
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
         Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
         ShutdownWrapper<ExecutorService> executorService = executorServiceProvider.getExecutorService();
+        ShutdownWrapper<BufferAllocator> allocator = allocatorProvider.getBufferAllocator();
+        ShutdownWrapper<FFIContext> queryFfiContext = queryFfiContextProvider.getFfiContext();
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
 
         return new SleeperClient.Builder()
@@ -69,7 +75,7 @@ public class AwsSleeperClientBuilder {
                 .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .objectFactory(ObjectFactory.noUserJars())
-                .rowRetrieverProvider(new QueryEngineSelector(executorService.get(), hadoopConf))
+                .rowRetrieverProvider(new QueryEngineSelector(executorService.get(), hadoopConf, allocator.get(), queryFfiContext.get()))
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkImportJobSender(BulkImportJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, awsClients.sqs()))
@@ -127,6 +133,29 @@ public class AwsSleeperClientBuilder {
      */
     public AwsSleeperClientBuilder executorServiceProvider(SleeperClientExecutorServiceProvider executorServiceProvider) {
         this.executorServiceProvider = executorServiceProvider;
+        return this;
+    }
+
+    /**
+     * Sets the provider for an Arrow buffer allocator. This will be used during queries with the DataFusion data
+     * engine.
+     *
+     * @param  allocatorProvider the provider
+     * @return                   this builder
+     */
+    public AwsSleeperClientBuilder allocatorProvider(SleeperClientBufferAllocatorProvider allocatorProvider) {
+        this.allocatorProvider = allocatorProvider;
+        return this;
+    }
+
+    /**
+     * Sets the provider for an FFI context to run Sleeper queries in DataFusion.
+     *
+     * @param  queryFfiContextProvider the provider
+     * @return                         this builder
+     */
+    public AwsSleeperClientBuilder queryFfiContextProvider(SleeperClientQueryFFIContextProvider queryFfiContextProvider) {
+        this.queryFfiContextProvider = queryFfiContextProvider;
         return this;
     }
 
