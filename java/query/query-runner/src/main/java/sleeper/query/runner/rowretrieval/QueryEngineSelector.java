@@ -21,11 +21,11 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
@@ -38,16 +38,18 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     private final ExecutorService executorService;
     /** Hadoop configuration needed to Java based query code. */
     private final Configuration configuration;
+    private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator arrowAllocator;
     private final FFIContext ffiContext;
 
     public QueryEngineSelector(ExecutorService executorService, Configuration configuration) {
-        this(executorService, configuration, null, null);
+        this(executorService, configuration, null, null, null);
     }
 
-    public QueryEngineSelector(ExecutorService executorService, Configuration configuration, BufferAllocator arrowAllocator, FFIContext ffiContext) {
-        this.executorService = Objects.requireNonNull(executorService, "executorService");
-        this.configuration = Objects.requireNonNull(configuration, "configuration");
+    public QueryEngineSelector(ExecutorService executorService, Configuration configuration, DataFusionAwsConfig awsConfig, BufferAllocator arrowAllocator, FFIContext ffiContext) {
+        this.executorService = executorService;
+        this.configuration = configuration;
+        this.awsConfig = awsConfig;
         this.arrowAllocator = arrowAllocator;
         this.ffiContext = ffiContext;
     }
@@ -57,10 +59,7 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
             case DATAFUSION_EXPERIMENTAL:
-                return DataFusionLeafPartitionRowRetriever.builder()
-                        .allocator(arrowAllocator)
-                        .context(ffiContext)
-                        .build();
+                return new DataFusionLeafPartitionRowRetriever(awsConfig, arrowAllocator, ffiContext);
             case DATAFUSION:
             case JAVA:
             default:

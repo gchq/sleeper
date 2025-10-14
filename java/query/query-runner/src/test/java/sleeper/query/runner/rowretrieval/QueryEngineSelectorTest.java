@@ -22,14 +22,12 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.type.LongType;
-import sleeper.foreign.bridge.FFIContext;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 
 import java.util.concurrent.ForkJoinPool;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -68,7 +66,7 @@ public class QueryEngineSelectorTest {
     }
 
     private LeafPartitionRowRetriever createRowRetriever() {
-        return new QueryEngineSelector(ForkJoinPool.commonPool(), new Configuration(), null, mock(FFIContext.class))
+        return new QueryEngineSelector(ForkJoinPool.commonPool(), new Configuration(), null, null, null)
                 .getRowRetriever(tableProperties);
     }
 

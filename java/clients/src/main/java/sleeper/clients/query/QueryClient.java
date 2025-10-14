@@ -41,6 +41,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
@@ -72,6 +73,7 @@ public class QueryClient extends QueryCommandLineClient implements AutoCloseable
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final ExecutorService executorService = Executors.newFixedThreadPool(30);
+    private final DataFusionAwsConfig awsConfig = DataFusionAwsConfig.getDefault();
     private final BufferAllocator allocator = new RootAllocator();
     private final FFIContext ffiContext = DataFusionLeafPartitionRowRetriever.createContext();
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
@@ -118,7 +120,7 @@ public class QueryClient extends QueryCommandLineClient implements AutoCloseable
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    new QueryEngineSelector(executorService, conf, allocator, ffiContext).getRowRetriever(tableProperties));
+                    new QueryEngineSelector(executorService, conf, awsConfig, allocator, ffiContext).getRowRetriever(tableProperties));
             queryExecutor.init(partitions, partitionToFileMapping);
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
