@@ -95,20 +95,15 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
                 this.maxNoOfRowsToWriteToArrowFileAtOnce, rowWriter.getClass().getSimpleName());
     }
 
-    /**
-     * Create a builder object for an ArrowRowBatchFactory.
-     *
-     * @return builder object
-     */
     public static Builder<?> builder() {
         return new Builder<>();
     }
 
     /**
-     * Creates a build object with specific Sleeper instance properties set.
+     * Creates a builder with specific Sleeper instance properties set.
      *
-     * @param  instanceProperties Sleeper properties
-     * @return                    builder object
+     * @param  instanceProperties the instance properties
+     * @return                    the builder
      */
     public static Builder<?> builderWith(InstanceProperties instanceProperties) {
         return builder().instanceProperties(instanceProperties);
@@ -155,9 +150,9 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set the schema for this row batch factory.
+         * Sets the Sleeper table schema.
          *
-         * @param  schema Sleeper table schema
+         * @param  schema the Sleeper table schema
          * @return        this builder
          */
         public Builder<T> schema(Schema schema) {
@@ -166,7 +161,7 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set the local working directory.
+         * Sets the local directory to store the spilled Arrow files in the local store.
          *
          * @param  localWorkingDirectory directory to use
          * @return                       this builder
@@ -177,7 +172,8 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set the number of bytes for the internal Arrow working buffer.
+         * Sets the number of bytes for the internal Arrow working buffer. This is used for sorting and small batch
+         * operations.
          *
          * @param  workingBufferAllocatorBytes buffer size
          * @return                             this builder
@@ -188,7 +184,8 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set the minimum number of bytes for the internal batch buffer.
+         * Sets the minimum size in bytes of the buffer to hold the main batch of data. If this amount of space is
+         * unavailable then a row batch cannot be constructed.
          *
          * @param  minBatchBufferAllocatorBytes buffer size
          * @return                              this builder
@@ -199,7 +196,8 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set the maximum number of bytes for the internal batch buffer.
+         * Sets he maximum size in bytes of the buffer to hold the main batch of data. This may be shared with other
+         * processes and so the data may be flushed to local disk before the row batch has entirely filled it.
          *
          * @param  maxBatchBufferAllocatorBytes buffer size
          * @return                              this builder
@@ -210,7 +208,7 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set minimum and maximum batch buffer size limits to same value.
+         * Sets the minimum and maximum batch buffer size limits to same value.
          *
          * @param  batchBufferAllocatorBytes buffer size
          * @return                           this builder
@@ -221,7 +219,8 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set maximum size of data written locally in bytes.
+         * Sets the maximum number of bytes to write to a local disk before a batch is considered full (approximate
+         * only).
          *
          * @param  maxNoOfBytesToWriteLocally byte limit
          * @return                            this builder
@@ -232,7 +231,8 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set the maximum number of rows to write at once.
+         * Sets the maximum number of rows to write to the local disk at once. The Arrow file writing process writes
+         * multiple small batches of data of this size into a single file, to reduce the memory footprint.
          *
          * @param  maxNoOfRowsToWriteToArrowFileAtOnce max row count
          * @return                                     this builder
@@ -243,9 +243,9 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set Arrow buffer allocator.
+         * Sets the Arrow buffer allocator.
          *
-         * @param  bufferAllocator new allocator
+         * @param  bufferAllocator the allocator
          * @return                 this builder
          */
         public Builder<T> bufferAllocator(BufferAllocator bufferAllocator) {
@@ -254,9 +254,9 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set Sleeper instance properties for this row batch factory.
+         * Configures the row batch factory based on Sleeper instance properties.
          *
-         * @param  instanceProperties new properties
+         * @param  instanceProperties the instance properties
          * @return                    this builder
          */
         public Builder<T> instanceProperties(InstanceProperties instanceProperties) {
@@ -268,10 +268,11 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Set row writer for factory.
+         * Sets a writer to add data to an Arrow record batch. This also determines the type of data that can be written
+         * to a row batch created by the factory.
          *
-         * @param  <INCOMINGDATATYPE> set the source data type for data to write
-         * @param  rowWriter          row writer
+         * @param  <INCOMINGDATATYPE> the source type of data to write
+         * @param  rowWriter          the row writer
          * @return                    this builder
          */
         @SuppressWarnings("unchecked")
@@ -281,19 +282,15 @@ public class ArrowRowBatchFactory<INCOMINGDATATYPE> implements RowBatchFactory<I
         }
 
         /**
-         * Create factory that accepts Sleeper rows.
+         * Creates a row batch factory that accepts Sleeper rows. This overrides any row writer that was set, but
+         * applies all other configuration from the builder.
          *
-         * @return factory
+         * @return the row batch factory
          */
         public ArrowRowBatchFactory<Row> buildAcceptingRows() {
             return rowWriter(new ArrowRowWriterAcceptingRows()).build();
         }
 
-        /**
-         * Create factory.
-         *
-         * @return factory
-         */
         public ArrowRowBatchFactory<T> build() {
             return new ArrowRowBatchFactory<>(this);
         }

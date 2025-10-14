@@ -33,7 +33,8 @@ import java.util.Objects;
  * The common DataFusion input data that will be populated from the Java side.
  *
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
- * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/common_config.rs. The order and types of
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/common_config.rs. The order and
+ * types of
  * the fields must match exactly.
  */
 @SuppressWarnings("checkstyle:membername")
@@ -102,7 +103,7 @@ public class FFICommonConfig extends Struct {
     }
 
     /**
-     * Validate state of struct.
+     * Validates the state of this struct.
      *
      * @throws IllegalStateException when a invariant fails
      */
@@ -123,7 +124,7 @@ public class FFICommonConfig extends Struct {
     }
 
     /**
-     * Convert a list of Sleeper primitive types to an ordinal indicating their type
+     * Converts a list of Sleeper primitive types to an ordinal indicating their type
      * for FFI translation.
      *
      * @param  keyTypes              list of primitive types of fields

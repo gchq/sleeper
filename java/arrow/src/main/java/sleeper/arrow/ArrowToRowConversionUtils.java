@@ -36,7 +36,7 @@ public class ArrowToRowConversionUtils {
     }
 
     /**
-     * Construct a Sleeper row from a single Arrow row.
+     * Constructs a Sleeper row from a single Arrow row.
      *
      * @param  vectorSchemaRoot          the container for all of the vectors which hold the values to use
      * @param  rowNo                     the index to read from each vector
@@ -58,11 +58,11 @@ public class ArrowToRowConversionUtils {
     }
 
     /**
-     * Convert a given Arrow value to a Java value.
-     *
+     * Converts a given Arrow value to a Java value.
+     * <p>
      * If the value is a primitive, it will remain unchanged. Instances of {@link Text} will be converted
      * to {@link String}. Maps and lists will be converted to Java {@link Map} and {@link List} instances.
-     *
+     * <p>
      * This function will recurse into deeper nested structures.
      *
      * @param  fieldVector the column being converted

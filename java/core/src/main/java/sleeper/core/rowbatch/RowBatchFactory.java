@@ -16,18 +16,19 @@
 package sleeper.core.rowbatch;
 
 /**
- * Interface for creating factories that can accept data in a given input type
- * and return it in sorted order in Sleeper Row objects.
+ * Creates row batches that accept data, sort it and convert it to Sleeper Row objects. Each row batch is single-use,
+ * and all associated resources will be released when it has been read.
  *
  * @param <INCOMINGDATATYPE> the incoming source data type
+ * @see                      RowBatch
  */
 @FunctionalInterface
 public interface RowBatchFactory<INCOMINGDATATYPE> extends AutoCloseable {
 
     /**
-     * Create object for iterating through rows.
+     * Creates a new row batch.
      *
-     * @return row batch processor
+     * @return a row batch
      */
     RowBatch<INCOMINGDATATYPE> createRowBatch();
 
