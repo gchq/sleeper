@@ -73,19 +73,6 @@ public class QueryExecutor {
         return new ConcatenatingIterator(iteratorSuppliers);
     }
 
-    /**
-     * Executes the sub query and returns rows. The rows are not returned in any
-     * particular order.
-     * This is used internally by Sleeper.
-     *
-     * @param  query          the sub query
-     * @return                an iterator containing the relevant rows
-     * @throws QueryException if an error occurs during query execution
-     */
-    public CloseableIterator<Row> execute(LeafPartitionQuery query) throws QueryException {
-        return new ConcatenatingIterator(createRowIteratorSuppliers(List.of(query)));
-    }
-
     private List<Supplier<CloseableIterator<Row>>> createRowIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
         List<Supplier<CloseableIterator<Row>>> iterators = new ArrayList<>();
 
