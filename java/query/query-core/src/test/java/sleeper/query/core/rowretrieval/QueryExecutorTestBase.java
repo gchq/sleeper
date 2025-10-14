@@ -71,19 +71,19 @@ public class QueryExecutorTestBase {
         update(stateStore).addFile(fileReference);
     }
 
-    protected QueryExecutor planner() throws Exception {
+    protected QueryPlanner planner() throws Exception {
         return plannerAtTime(Instant.now());
     }
 
-    protected QueryExecutorNew executorAtTime(Instant time) throws Exception {
-        return new QueryExecutorNew(plannerAtTime(time), leafQueryExecutor());
+    protected QueryExecutor executorAtTime(Instant time) throws Exception {
+        return new QueryExecutor(plannerAtTime(time), leafQueryExecutor());
     }
 
     protected List<Row> getRows(Query query) throws Exception {
-        return getRows(new QueryExecutorNew(planner(), leafQueryExecutor()), query);
+        return getRows(new QueryExecutor(planner(), leafQueryExecutor()), query);
     }
 
-    protected List<Row> getRows(QueryExecutorNew executor, Query query) {
+    protected List<Row> getRows(QueryExecutor executor, Query query) {
         try (var it = executor.execute(query)) {
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, IMMUTABLE), false)
                     .collect(Collectors.toUnmodifiableList());
@@ -92,8 +92,8 @@ public class QueryExecutorTestBase {
         }
     }
 
-    private QueryExecutor plannerAtTime(Instant time) throws Exception {
-        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore, time);
+    private QueryPlanner plannerAtTime(Instant time) throws Exception {
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore, time);
         planner.init(time);
         return planner;
     }

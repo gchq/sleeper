@@ -48,7 +48,7 @@ import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.core.rowretrieval.QueryExecutorNew;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
@@ -76,7 +76,7 @@ public class QueryClient extends QueryCommandLineClient {
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
-    private final Map<String, QueryExecutorNew> cachedQueryExecutors = new HashMap<>();
+    private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
     public QueryClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
@@ -97,9 +97,9 @@ public class QueryClient extends QueryCommandLineClient {
         out.println("Retrieved " + partitions.size() + " partitions from StateStore");
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
-            QueryExecutor planner = new QueryExecutor(tableProperties, stateStoreProvider.getStateStore(tableProperties));
+            QueryPlanner planner = new QueryPlanner(tableProperties, stateStoreProvider.getStateStore(tableProperties));
             planner.init(partitions, partitionToFileMapping);
-            QueryExecutorNew executor = new QueryExecutorNew(planner,
+            QueryExecutor executor = new QueryExecutor(planner,
                     new LeafPartitionQueryExecutor(objectFactory, tableProperties,
                             rowRetrieverProvider.getRowRetriever(tableProperties)));
             cachedQueryExecutors.put(tableName, executor);

@@ -30,7 +30,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.statestore.StateStoreFactory;
 
@@ -42,7 +42,7 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LA
 
 /**
  * A lambda that is triggered when a serialised query arrives on an SQS queue. A processor executes the request using a
- * {@link QueryExecutor} and publishes the results to either SQS or S3 based on the configuration of the query.
+ * {@link QueryPlanner} and publishes the results to either SQS or S3 based on the configuration of the query.
  * The processor contains a cache that includes mappings from partitions to files in those partitions. This is reused by
  * subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
  */

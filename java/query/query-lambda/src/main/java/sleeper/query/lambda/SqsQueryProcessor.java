@@ -32,7 +32,7 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
-import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
@@ -53,7 +53,7 @@ public class SqsQueryProcessor {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final QueryStatusReportListener queryListener;
-    private final Map<String, QueryExecutor> queryPlannerCache = new HashMap<>();
+    private final Map<String, QueryPlanner> queryPlannerCache = new HashMap<>();
 
     private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
         sqsClient = builder.sqsClient;
@@ -83,9 +83,9 @@ public class SqsQueryProcessor {
     }
 
     private void processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws QueryException {
-        QueryExecutor queryPlanner = queryPlannerCache.computeIfAbsent(tableProperties.get(TABLE_ID), tableID -> {
+        QueryPlanner queryPlanner = queryPlannerCache.computeIfAbsent(tableProperties.get(TABLE_ID), tableID -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            return new QueryExecutor(tableProperties, stateStore);
+            return new QueryPlanner(tableProperties, stateStore);
         });
 
         queryPlanner.initIfNeeded(Instant.now());

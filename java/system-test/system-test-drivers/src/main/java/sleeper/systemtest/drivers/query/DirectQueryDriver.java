@@ -27,7 +27,7 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.core.rowretrieval.QueryExecutorNew;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -79,11 +79,11 @@ public class DirectQueryDriver implements QueryDriver {
         return new PartitionTree(stateStore.getAllPartitions());
     }
 
-    private QueryExecutorNew executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
+    private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(EXECUTOR_SERVICE, clients.createHadoopConf()).getRowRetriever(tableProperties);
-        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore);
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
         planner.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
-        return new QueryExecutorNew(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
+        return new QueryExecutor(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }
 
     private static <T> Stream<T> stream(Iterator<T> iterator) {

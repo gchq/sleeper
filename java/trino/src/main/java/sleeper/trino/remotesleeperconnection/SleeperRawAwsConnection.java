@@ -50,7 +50,7 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
-import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
@@ -260,7 +260,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     /**
      * Split a query into one or more sub-queries. Each will represent a scan of a leaf partition, which combine to
      * cover the entire original query. The leaf partition queries are generated using the core Sleeper method
-     * {@link QueryExecutor#splitIntoLeafPartitionQueries}.
+     * {@link QueryPlanner#splitIntoLeafPartitionQueries}.
      *
      * @param  asOfInstant        The instant to use when obtaining the list of files to query from the underlying state
      *                            store.
@@ -275,7 +275,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
         SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(tableProperties.get(TABLE_ID), asOfInstant));
 
-        QueryExecutor planner = new QueryExecutor(tableProperties, null);
+        QueryPlanner planner = new QueryPlanner(tableProperties, null);
         planner.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
         return planner.splitIntoLeafPartitionQueries(query);

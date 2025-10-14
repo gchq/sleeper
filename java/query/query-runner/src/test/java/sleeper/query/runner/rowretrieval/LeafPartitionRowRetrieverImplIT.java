@@ -51,7 +51,7 @@ import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.core.rowretrieval.QueryExecutorNew;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -1068,11 +1068,11 @@ public class LeafPartitionRowRetrieverImplIT {
         return rows;
     }
 
-    private QueryExecutorNew initQueryExecutor() {
+    private QueryExecutor initQueryExecutor() {
         LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(executorService, new Configuration()).getRowRetriever(tableProperties);
-        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore);
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
         planner.init();
-        QueryExecutorNew executor = new QueryExecutorNew(planner,
+        QueryExecutor executor = new QueryExecutor(planner,
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
         return executor;
     }
