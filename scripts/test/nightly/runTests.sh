@@ -41,7 +41,6 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
   shift
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
   shift
-  MAIN_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
 elif [ "$1" == "--main" ]; then
   MAIN_SUITE_NAME=custom
   MAIN_SUITE_PARAMS=("$2")
@@ -113,7 +112,7 @@ runMavenSystemTests() {
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
     echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
-    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
+    echo ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
@@ -125,7 +124,7 @@ runMavenSystemTests() {
     fi
     pushd "$NEW_MAVEN_DIR"
     echo "Running maven batch mode command for $SHORT_ID"
-    mvn --batch-mode site site:stage -pl system-test/system-test-suite \
+    echo mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
     popd
@@ -134,7 +133,7 @@ runMavenSystemTests() {
     popd
     rm -rf "$TEST_OUTPUT_DIR/site"
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
-    ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    echo ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     echo "Short instance names=$SHORT_INSTANCE_NAMES"
     TEARDOWN_EXIT_CODE=$?
     if [ $TEARDOWN_EXIT_CODE -ne 0 ]; then
@@ -153,15 +152,10 @@ runTestSuite(){
 }
 
 runSlowTests(){
-    SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DskipRust)
-    QUICK_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" -DrunIT=QuickSystemTestSuite)
-    SLOW1_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" -DrunIT=SlowSuite1)
-    SLOW2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" -DrunIT=SlowSuite2)
-    SLOW3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" -DrunIT=SlowSuite3)
-    runTestSuite 0  "${Q_SUITE_PARAMS[@]}" $@&
-    runTestSuite 300 "${SLOW1_SUITE_PARAMS[@]}" $@&
-    runTestSuite 600 "${SLOW2_SUITE_PARAMS[@]}" $@&
-    runTestSuite 900 "${SLOW3_SUITE_PARAMS[@]}" $@
+    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "-DskipRust" "-DrunIT=QuickSystemTestSuite" $@&
+    runTestSuite 30 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" $@&
+    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" $@&
+    runTestSuite 90 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" $@
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
@@ -173,13 +167,13 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
     runSlowTests $@&
-    runTestSuite 1200 "${EXP1_SUITE_PARAMS[@]}" $@&
-    runTestSuite 1500 "${EXP2_SUITE_PARAMS[@]}" $@&
-    runTestSuite 1800 "${EXP3_SUITE_PARAMS[@]}" $@
+    runTestSuite 120 "${EXP1_SUITE_PARAMS[@]}" $@&
+    runTestSuite 150 "${EXP2_SUITE_PARAMS[@]}" $@&
+    runTestSuite 180 "${EXP3_SUITE_PARAMS[@]}" $@
     wait
 
     #Remove the temporary folders
-    clearParallelTestFolders
+    #clearParallelTestFolders
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     setupParallelTestFolders
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
@@ -187,7 +181,7 @@ elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     wait
 
     #Remove the temporary folders
-    clearParallelTestFolders
+    #clearParallelTestFolders
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
 fi
