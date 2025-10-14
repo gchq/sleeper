@@ -16,13 +16,10 @@
 
 package sleeper.systemtest.suite.suites.parallel;
 
-import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.IncludeTags;
 import org.junit.platform.suite.api.Suite;
 
-import sleeper.systemtest.suite.EmrBulkImportST;
-import sleeper.systemtest.suite.QueryST;
-
 @Suite
-@SelectClasses({/* CompactionPerformanceST.class */QueryST.class, EmrBulkImportST.class})
+@IncludeTags("expensive2")
 public class ExpensiveSuite2 {
 }

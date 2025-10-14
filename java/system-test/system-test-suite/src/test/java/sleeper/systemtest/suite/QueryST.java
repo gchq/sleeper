@@ -35,7 +35,7 @@ import static sleeper.systemtest.dsl.query.QueryRange.range;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN2;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
 public class QueryST {
@@ -44,7 +44,7 @@ public class QueryST {
 
     @BeforeEach
     void setup(SleeperSystemTest sleeper) {
-        sleeper.connectToInstanceAddOnlineTable(MAIN2);
+        sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Nested

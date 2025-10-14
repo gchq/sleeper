@@ -25,7 +25,7 @@ import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
-import sleeper.systemtest.suite.testutil.Slow;
+import sleeper.systemtest.suite.testutil.Slow1;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -41,7 +41,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_ON
 import static sleeper.systemtest.suite.testutil.TestResources.exampleString;
 
 @SystemTest
-@Slow
+@Slow1
 public class CompactionOnEC2ST {
     @TempDir
     private Path tempDir;

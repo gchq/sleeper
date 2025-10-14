@@ -20,6 +20,7 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
+SLEEPER_DIR=$REPO_PARENT_DIR/sleeper
 
 pushd "$SCRIPTS_DIR/test"
 
@@ -69,6 +70,39 @@ set +e
 
 END_EXIT_CODE=0
 
+setupParallelTestFolders() {
+    pushd $SLEEPER_DIR
+    #Make copies of the java folder to run independent maven builds in parallel
+    mkdir quick
+    cp -r java quick/java
+    cp -r scripts quick/scripts
+    cp -r python quick/python
+    cp README.md quick
+    cp -r quick slow1
+    cp -r quick slow2
+    cp -r quick slow3
+    if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+        cp -r quick expensive1
+        cp -r quick expensive2
+        cp -r quick expensive3
+    fi
+    popd
+}
+
+clearParallelTestFolders(){
+    pudhd $SLEEPER_DIR
+    rm -rf quick
+    rm -rf slow1
+    rm -rf slow2
+    rm -rf slow3
+    if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+        rm -rf expensive1
+        rm -rf expensive2
+        rm -rf expensive3
+    fi
+    popd
+}
+
 runMavenSystemTests() {
     NEW_MAVEN_DIR=$(cd ../../java && pwd)
     SHORT_ID=$1
@@ -110,55 +144,50 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runExpensive1(){
-    pushd "$REPO_PARENT_DIR/sleeper/test/scripts/test"
+runTestSuite(){
+    sleep $1 #Delay so that initial deployment doesn't clash with each other
+    pushd "$REPO_PARENT_DIR/sleeper/$3/scripts/test" #Move into isolated repo copy
+    shift 1
     runMavenSystemTests "$@"
     popd
 }
 
-runExpensive2(){
-    sleep 600
-    pushd "$REPO_PARENT_DIR/sleeper/test2/scripts/test"
-    runMavenSystemTests "$@"
-    popd
-}
-
-runExpensive3(){
-    sleep 1200
-    pushd "$REPO_PARENT_DIR/sleeper/test3/scripts/test"
-    runMavenSystemTests "$@"
-    popd
+runSlowTests(){
+    SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DskipRust)
+    QUICK_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" -DrunIT=QuickSystemTestSuite)
+    SLOW1_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" -DrunIT=SlowSuite1)
+    SLOW2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" -DrunIT=SlowSuite2)
+    SLOW3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" -DrunIT=SlowSuite3)
+    runTestSuite 0  "${Q_SUITE_PARAMS[@]}" $@&
+    runTestSuite 300 "${SLOW1_SUITE_PARAMS[@]}" $@&
+    runTestSuite 600 "${SLOW2_SUITE_PARAMS[@]}" $@&
+    runTestSuite 900 "${SLOW3_SUITE_PARAMS[@]}" $@
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
-    SLEEPER_DIR=$REPO_PARENT_DIR/sleeper
-    pushd $SLEEPER_DIR
-    #Make copies of the java folder to run independent maven builds in parallel
-    mkdir test
-    cp -r java test/java
-    cp -r scripts test/scripts
-    cp -r python test/python
-    cp README.md test
-    cp -r test test2
-    cp -r test test3
-    popd
-
-    echo "copied"
-    ls | grep test
-
+    setupParallelTestFolders
     echo "Running performance tests in parallel. Start time: [$(time_str)]"
-    SUITE_PARAMS1=(-Dsleeper.system.test.cluster.enabled=true -DskipRust -DrunIT=ExpensiveSuite1 "$@")
-    SUITE_PARAMS2=(-Dsleeper.system.test.cluster.enabled=true -DskipRust -DrunIT=ExpensiveSuite2 "$@")
-    SUITE_PARAMS3=(-Dsleeper.system.test.cluster.enabled=true -DskipRust -DrunIT=ExpensiveSuite3 "$@")
-    runExpensive1 "${DEPLOY_ID}${START_TIME_SHORT}1" "expensive1" "${SUITE_PARAMS1[@]}"&
-    runExpensive2 "${DEPLOY_ID}${START_TIME_SHORT}2" "expensive2" "${SUITE_PARAMS2[@]}"&
-    runExpensive3 "${DEPLOY_ID}${START_TIME_SHORT}3" "expensive3" "${SUITE_PARAMS3[@]}"
+    SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DskipRust)
+    EXP1_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e1" "expensive1" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite1)
+    EXP2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite2)
+    EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
+
+    runSlowTests $@&
+    runTestSuite 1200 "${EXP1_SUITE_PARAMS[@]}" $@&
+    runTestSuite 1500 "${EXP2_SUITE_PARAMS[@]}" $@&
+    runTestSuite 1800 "${EXP3_SUITE_PARAMS[@]}" $@
     wait
 
     #Remove the temporary folders
-    rm -rf $SLEEPER_DIR/test
-    rm -rf $SLEEPER_DIR/test2
-    rm -rf $SLEEPER_DIR/test3
+    clearParallelTestFolders
+elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
+    setupParallelTestFolders
+    echo "Running slow tests in parallel. Start time: [$(time_str)]"
+    runSlowTests $@
+    wait
+
+    #Remove the temporary folders
+    clearParallelTestFolders
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
 fi

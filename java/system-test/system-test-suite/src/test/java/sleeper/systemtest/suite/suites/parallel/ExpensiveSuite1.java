@@ -16,13 +16,10 @@
 
 package sleeper.systemtest.suite.suites.parallel;
 
-import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.IncludeTags;
 import org.junit.platform.suite.api.Suite;
 
-import sleeper.systemtest.suite.GarbageCollectionST;
-import sleeper.systemtest.suite.IngestST;
-
 @Suite
-@SelectClasses({/* CompactionDataFusionPerformanceST.class */IngestST.class, GarbageCollectionST.class})
+@IncludeTags("expensive1")
 public class ExpensiveSuite1 {
 }

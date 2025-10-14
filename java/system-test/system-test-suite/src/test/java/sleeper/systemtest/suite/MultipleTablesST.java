@@ -24,7 +24,7 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.Slow;
+import sleeper.systemtest.suite.testutil.Slow2;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.Map;
@@ -42,17 +42,17 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MULTI_TABLES;
 
 @SystemTest
-@Slow // Slow because compactions run for 200 tables in one task
+@Slow2 // Slow because compactions run for 200 tables in one task
 public class MultipleTablesST {
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
     private static final int NUMBER_OF_TABLES = 200;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstanceNoTables(MAIN);
+        sleeper.connectToInstanceNoTables(MULTI_TABLES);
     }
 
     @Test

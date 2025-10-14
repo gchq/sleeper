@@ -21,6 +21,6 @@ import org.junit.platform.suite.api.ExcludeTags;
 import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
 @SystemTestSuite
-@ExcludeTags({"slow", "expensive"})
+@ExcludeTags({"slow1", "slow2", "slow3", "expensive1", "expensive2", "expensive3"})
 public class QuickSystemTestSuite {
 }
