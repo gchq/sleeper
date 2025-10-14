@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Accepts data for an Arrow row batch as Sleeper rows.
+ * Accepts data for an Arrow row batch as Sleeper rows. Used by {@link ArrowRowBatchFactory}.
  */
 public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
 
