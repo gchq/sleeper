@@ -441,7 +441,7 @@ public class QueryExecutorTest extends QueryExecutorTestBase {
         public void shouldReloadFileReferencesFromStateStoreWhenTimedOut() throws Exception {
             // Given files are added after the executor is first initialised
             tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
-            QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
+            QueryExecutorNew queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
             addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
             // When the first initialisation has expired
@@ -456,7 +456,7 @@ public class QueryExecutorTest extends QueryExecutorTestBase {
         public void shouldNotReloadFileReferencesBeforeTimeOut() throws Exception {
             // Given files are added after the executor is first initialised
             tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "300");
-            QueryExecutor queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
+            QueryExecutorNew queryExecutor = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
             addRootFile("file.parquet", List.of(new Row(Map.of("key", 123L))));
 
             // When the first initialisation has not yet expired

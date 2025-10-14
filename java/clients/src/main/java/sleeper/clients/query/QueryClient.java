@@ -44,9 +44,11 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryExecutorNew;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
@@ -74,7 +76,7 @@ public class QueryClient extends QueryCommandLineClient {
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
-    private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
+    private final Map<String, QueryExecutorNew> cachedQueryExecutors = new HashMap<>();
 
     public QueryClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
@@ -95,9 +97,12 @@ public class QueryClient extends QueryCommandLineClient {
         out.println("Retrieved " + partitions.size() + " partitions from StateStore");
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
-            QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
+            QueryExecutor querySplitter = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
                     rowRetrieverProvider.getRowRetriever(tableProperties));
-            queryExecutor.init(partitions, partitionToFileMapping);
+            querySplitter.init(partitions, partitionToFileMapping);
+            QueryExecutorNew queryExecutor = new QueryExecutorNew(querySplitter,
+                    new LeafPartitionQueryExecutor(objectFactory, tableProperties,
+                            rowRetrieverProvider.getRowRetriever(tableProperties)));
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
     }
@@ -126,8 +131,7 @@ public class QueryClient extends QueryCommandLineClient {
     }
 
     private CloseableIterator<Row> runQuery(Query query) throws QueryException {
-        QueryExecutor queryExecutor = cachedQueryExecutors.get(query.getTableName());
-        return queryExecutor.execute(query);
+        return cachedQueryExecutors.get(query.getTableName()).execute(query);
     }
 
     public static void main(String[] args) throws ObjectFactoryException, InterruptedException {

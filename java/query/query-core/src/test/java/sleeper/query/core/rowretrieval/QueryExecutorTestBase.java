@@ -71,32 +71,37 @@ public class QueryExecutorTestBase {
         update(stateStore).addFile(fileReference);
     }
 
-    protected QueryExecutor executor() throws Exception {
-        return executorAtTime(Instant.now());
+    protected QueryExecutor splitter() throws Exception {
+        return splitterAtTime(Instant.now());
     }
 
-    protected QueryExecutor executorAtTime(Instant time) throws Exception {
-        QueryExecutor executor = uninitialisedExecutorAtTime(time);
-        executor.init(time);
-        return executor;
-    }
-
-    protected QueryExecutor uninitialisedExecutorAtTime(Instant time) {
-        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRowRetriever(rowStore), time);
+    protected QueryExecutorNew executorAtTime(Instant time) throws Exception {
+        return new QueryExecutorNew(splitterAtTime(time), leafQueryExecutor());
     }
 
     protected List<Row> getRows(Query query) throws Exception {
-        return getRows(executor(), query);
+        return getRows(new QueryExecutorNew(splitter(), leafQueryExecutor()), query);
     }
 
-    protected List<Row> getRows(QueryExecutor executor, Query query) {
+    protected List<Row> getRows(QueryExecutorNew executor, Query query) {
         try (var it = executor.execute(query)) {
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, IMMUTABLE), false)
                     .collect(Collectors.toUnmodifiableList());
         } catch (QueryException | IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private QueryExecutor splitterAtTime(Instant time) throws Exception {
+        QueryExecutor executor = new QueryExecutor(
+                ObjectFactory.noUserJars(), stateStore, tableProperties,
+                new InMemoryLeafPartitionRowRetriever(rowStore), time);
+        executor.init(time);
+        return executor;
+    }
+
+    private LeafPartitionQueryExecutor leafQueryExecutor() {
+        return new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, new InMemoryLeafPartitionRowRetriever(rowStore));
     }
 
     protected Query.Builder query() {

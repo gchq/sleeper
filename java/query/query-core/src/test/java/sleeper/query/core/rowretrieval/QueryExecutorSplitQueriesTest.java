@@ -45,7 +45,7 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         Query query = queryRange(1L, 10L);
 
         // When / Then
-        assertThat(executor().splitIntoLeafPartitionQueries(query))
+        assertThat(splitter().splitIntoLeafPartitionQueries(query))
                 .isEmpty();
     }
 
@@ -57,7 +57,7 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         Query query = queryRegions(region);
 
         // When / Then
-        assertThat(executor().splitIntoLeafPartitionQueries(query))
+        assertThat(splitter().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
                 .containsExactly(subQueryOf(query)
                         .regions(List.of(region))
@@ -77,7 +77,7 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         Query query = queryRegions(region);
 
         // When / Then
-        assertThat(executor().splitIntoLeafPartitionQueries(query))
+        assertThat(splitter().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
                 .containsExactly(subQueryOf(query)
                         .regions(List.of(region))
@@ -103,7 +103,7 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         Query query = queryRegions(region);
 
         // When / Then
-        assertThat(executor().splitIntoLeafPartitionQueries(query))
+        assertThat(splitter().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
                 .containsExactlyInAnyOrder(
                         subQueryOf(query)
@@ -141,7 +141,7 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         Query query = queryRegions(region);
 
         // When / Then
-        assertThat(executor().splitIntoLeafPartitionQueries(query))
+        assertThat(splitter().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("subQueryId")
                 .containsExactlyInAnyOrder(
                         subQueryOf(query)
@@ -201,7 +201,7 @@ public class QueryExecutorSplitQueriesTest extends QueryExecutorTestBase {
         Query query = queryRegions(region);
 
         // When / Then
-        assertThat(executor().splitIntoLeafPartitionQueries(query))
+        assertThat(splitter().splitIntoLeafPartitionQueries(query))
                 .usingRecursiveFieldByFieldElementComparator(RecursiveComparisonConfiguration.builder()
                         .withIgnoredFields("subQueryId")
                         .withIgnoredCollectionOrderInFields("files")
