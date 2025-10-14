@@ -112,7 +112,7 @@ runMavenSystemTests() {
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
     echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
-    echo "./maven/deployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" \
+    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
@@ -124,16 +124,16 @@ runMavenSystemTests() {
     fi
     pushd "$NEW_MAVEN_DIR"
     echo "Running maven batch mode command for $SHORT_ID"
-    echo mvn --batch-mode site site:stage -pl system-test/system-test-suite \
+    mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
     popd
-    #pushd "$TEST_OUTPUT_DIR/site"
-    #zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
+    pushd "$TEST_OUTPUT_DIR/site"
+    zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
     #popd
     rm -rf "$TEST_OUTPUT_DIR/site"
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
-    echo "./maven/tearDown.sh" "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     echo "Short instance names=$SHORT_INSTANCE_NAMES"
     TEARDOWN_EXIT_CODE=$?
     if [ $TEARDOWN_EXIT_CODE -ne 0 ]; then
@@ -153,9 +153,9 @@ runTestSuite(){
 
 runSlowTests(){
     runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "-DskipRust" "-DrunIT=QuickSystemTestSuite" $@&
-    runTestSuite 30 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" $@&
-    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" $@&
-    runTestSuite 90 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" $@
+    runTestSuite 300 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" $@&
+    runTestSuite 600 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" $@&
+    runTestSuite 900 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" $@
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
@@ -167,9 +167,9 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
     runSlowTests $@&
-    runTestSuite 120 "${EXP1_SUITE_PARAMS[@]}" $@&
-    runTestSuite 150 "${EXP2_SUITE_PARAMS[@]}" $@&
-    runTestSuite 180 "${EXP3_SUITE_PARAMS[@]}" $@
+    runTestSuite 1200 "${EXP1_SUITE_PARAMS[@]}" $@&
+    runTestSuite 1500 "${EXP2_SUITE_PARAMS[@]}" $@&
+    runTestSuite 1800 "${EXP3_SUITE_PARAMS[@]}" $@
     wait
 
     #Remove the temporary folders
