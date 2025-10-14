@@ -18,7 +18,6 @@ package sleeper.ingest.runner;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.arrow.ArrowRowBatchFactory;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -35,6 +34,7 @@ import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriter
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.rowbatch.arraylist.ArrayListRowBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatchFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;

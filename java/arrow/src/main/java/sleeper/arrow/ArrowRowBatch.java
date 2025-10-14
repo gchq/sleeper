@@ -112,7 +112,7 @@ public class ArrowRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDATATYP
     protected boolean isWriteable;
 
     /**
-     * Construct an instance. Should be called by an {@link ArrowRowBatchFactory}.
+     * Construct an instance. Should be called by a row batch factory.
      *
      * @param arrowBufferAllocator                the allocator to use to allocate memory for this buffer
      * @param sleeperSchema                       the schema of the rows to be stored

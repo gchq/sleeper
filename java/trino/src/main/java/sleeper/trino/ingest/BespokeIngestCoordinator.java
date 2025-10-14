@@ -20,7 +20,6 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.arrow.ArrowRowBatchFactory;
 import sleeper.core.iterator.IteratorConfig;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -31,6 +30,7 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatchFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.SleeperRawAwsConnection;
 
