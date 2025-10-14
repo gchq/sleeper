@@ -112,7 +112,7 @@ runMavenSystemTests() {
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
     echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
-    echo ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
+    echo "./maven/deployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
@@ -128,12 +128,12 @@ runMavenSystemTests() {
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
     popd
-    pushd "$TEST_OUTPUT_DIR/site"
-    zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
-    popd
+    #pushd "$TEST_OUTPUT_DIR/site"
+    #zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
+    #popd
     rm -rf "$TEST_OUTPUT_DIR/site"
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
-    echo ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    echo "./maven/tearDown.sh" "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     echo "Short instance names=$SHORT_INSTANCE_NAMES"
     TEARDOWN_EXIT_CODE=$?
     if [ $TEARDOWN_EXIT_CODE -ne 0 ]; then
