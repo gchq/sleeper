@@ -48,6 +48,8 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
@@ -274,14 +276,14 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(tableProperties.get(TABLE_ID), asOfInstant));
 
         // This seems like a lot of effort to go to in order to identify partitions
-        QueryExecutor queryExecutor = new QueryExecutor(
+        QueryExecutor planner = new QueryExecutor(
                 objectFactory,
                 tableProperties,
                 null,
                 new QueryEngineSelector(executorService, hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
-        queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
+        planner.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
-        return queryExecutor.splitIntoLeafPartitionQueries(query);
+        return planner.splitIntoLeafPartitionQueries(query);
     }
 
     /**
@@ -297,18 +299,13 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      */
     private CloseableIterator<Row> createResultRecordIterator(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException, UncheckedExecutionException {
         TableProperties tableProperties = tablePropertiesProvider.getById(query.getTableId());
-        StateStore stateStore = this.stateStoreFactory.getStateStore(tableProperties);
-        SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(query.getTableId(), asOfInstant));
 
         LOGGER.debug("Creating result record iterator for query %s", query);
-        QueryExecutor queryExecutor = new QueryExecutor(
-                this.objectFactory,
-                tableProperties,
-                stateStore,
-                new QueryEngineSelector(executorService,
-                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
-        queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
-        return queryExecutor.execute(query);
+        LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(
+                executorService, hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties))
+                .getRowRetriever(tableProperties);
+        LeafPartitionQueryExecutor executor = new LeafPartitionQueryExecutor(objectFactory, tableProperties, rowRetriever);
+        return executor.getRows(query);
     }
 
     /**

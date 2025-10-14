@@ -25,7 +25,10 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryExecutorNew;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -54,9 +57,10 @@ public class InMemoryDirectQueryDriver implements QueryDriver {
     public List<Row> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
-        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRowRetriever(dataStore), Instant.now());
-        executor.init();
+        LeafPartitionRowRetriever rowRetriever = new InMemoryLeafPartitionRowRetriever(dataStore);
+        QueryExecutor planner = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, rowRetriever, Instant.now());
+        planner.init();
+        QueryExecutorNew executor = new QueryExecutorNew(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
         try (CloseableIterator<Row> iterator = executor.execute(query)) {
             List<Row> rows = new ArrayList<>();
             iterator.forEachRemaining(rows::add);
