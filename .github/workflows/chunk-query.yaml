@@ -13,6 +13,7 @@ on:
       - 'java/query/query-runner/**'
       - 'java/query/query-lambda/**'
       - 'java/query/query-datafusion/**'
+      - 'java/foreign-bridge/**'
       - 'java/athena/**'
       - 'java/trino/**'
       - 'java/partitions/splitter/**'
@@ -28,6 +29,7 @@ on:
       - 'java/example-iterators/**'
       - 'java/core/**'
       - 'java/common/localstack-test/**'
+      - 'java/arrow/**'
 
 jobs:
   chunk-workflow:

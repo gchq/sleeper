@@ -26,7 +26,7 @@ use datafusion::{
     execution::{SessionStateBuilder, context::SessionContext},
     physical_expr::LexOrdering,
     physical_plan::{
-        ExecutionPlan, accept,
+        ExecutionPlan, Partitioning, accept,
         coalesce_partitions::CoalescePartitionsExec,
         sorts::{sort::SortExec, sort_preserving_merge::SortPreservingMergeExec},
     },
@@ -38,6 +38,10 @@ use std::sync::Arc;
 use url::Url;
 
 use crate::datafusion::metrics::RowCounts;
+
+/// Maximum number of file upload parts to generate. Implementation will
+/// try to match this, but may not get there exactly.
+pub const MAX_PART_COUNT: u64 = 5000;
 
 /// Write explanation of logical query plan to log output.
 ///
@@ -65,7 +69,7 @@ pub async fn explain_plan(frame: &DataFrame) -> Result<(), DataFusionError> {
 pub fn calculate_upload_size(total_input_size: u64) -> Result<usize, DataFusionError> {
     let upload_size = std::cmp::max(
         ExecutionOptions::default().objectstore_writer_buffer_size,
-        usize::try_from(total_input_size / 5000)
+        usize::try_from(total_input_size / MAX_PART_COUNT)
             .map_err(|e| DataFusionError::External(Box::new(e)))?,
     );
     info!(
@@ -96,9 +100,6 @@ pub fn check_for_sort_exec(plan: &Arc<dyn ExecutionPlan>) -> Result<(), DataFusi
 
 /// Takes the urls in `input_paths` list and `output_path`
 /// and registers the appropriate [`object_store::ObjectStore`] for it.
-///
-/// `DataFusion` doesn't seem to like loading a single file set from different object stores
-/// so we only register the first one.
 ///
 /// # Errors
 /// If we can't create an [`object_store::ObjectStore`] for a known URL then this will fail.
@@ -154,6 +155,8 @@ pub async fn retrieve_input_size(
 /// streams. This forgets the ordering of chunks of data, leading to them be re-merged out of order,
 /// thus breaking the overall order.
 ///
+/// After the first [`CoalescePartitionsExec`] has been found, this function will not recurse further down the tree.
+///
 /// For example, if we had chunks `[A-F], [G-H], [I-M], ...` they might be parallelised into 2 streams for some
 /// other unrelated plan stage. Afterwards, they might be re-merged to `[A-F], [I-M], [G-H], ...` due to
 /// the coalescing stage not knowing the correct order. By using a secong sort preserving merge instead, we
@@ -185,6 +188,18 @@ pub fn remove_coalesce_physical_stage(
         .map(|v| v.data)
 }
 
+/// Returns the number of output partitions for a given physical execution plan.
+///
+/// This inspects the output partitioning property of the plan and returns the partition count.
+pub fn output_partition_count(plan: &Arc<dyn ExecutionPlan>) -> usize {
+    let partitions = plan.properties().output_partitioning();
+    match partitions {
+        Partitioning::Hash(_, count)
+        | Partitioning::RoundRobinBatch(count)
+        | Partitioning::UnknownPartitioning(count) => *count,
+    }
+}
+
 /// Collect statistics from an executed physical plan.
 ///
 /// The rows read and written are returned in the [`RowCounts`] object.
@@ -199,4 +214,126 @@ pub fn collect_stats(
     let mut stats = RowCounts::new(input_paths);
     accept(physical_plan.as_ref(), &mut stats)?;
     Ok(stats)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::datafusion::util::remove_coalesce_physical_stage;
+    use arrow::{
+        array::RecordBatch,
+        compute::SortOptions,
+        datatypes::{DataType, Field, Schema},
+    };
+    use datafusion::{
+        catalog::memory::MemorySourceConfig,
+        common::tree_node::TreeNode,
+        physical_expr::{LexOrdering, PhysicalSortExpr, expressions::Column},
+        physical_plan::{
+            coalesce_partitions::CoalescePartitionsExec, displayable,
+            sorts::sort_preserving_merge::SortPreservingMergeExec,
+        },
+    };
+    use std::sync::Arc;
+
+    fn build_ordering(schema: &Arc<Schema>) -> LexOrdering {
+        vec![PhysicalSortExpr {
+            expr: Arc::new(Column::new(schema.field(0).name(), 0)),
+            options: SortOptions::default(),
+        }]
+        .into()
+    }
+
+    fn build_coalesce_exec_with_memory(schema: &Arc<Schema>) -> Arc<CoalescePartitionsExec> {
+        let input_batch = RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        Arc::new(CoalescePartitionsExec::new(memory_exec))
+    }
+
+    #[test]
+    fn should_replace_top_most_coalesce_with_sort_preserving_merge() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let coalesce = build_coalesce_exec_with_memory(&schema);
+        let ordering = build_ordering(&schema);
+
+        // When
+        let result = remove_coalesce_physical_stage(&ordering, coalesce.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        let contains_sort_preserving_merge = new_plan
+            .exists(|node| {
+                Ok(node
+                    .as_any()
+                    .downcast_ref::<SortPreservingMergeExec>()
+                    .is_some())
+            })
+            .unwrap();
+        assert!(
+            contains_sort_preserving_merge,
+            "Should contain SortPreservingMergeExec"
+        );
+    }
+
+    #[test]
+    fn should_return_same_plan_if_no_coalesce_found() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        let ordering = build_ordering(&schema);
+
+        // When
+        let result = remove_coalesce_physical_stage(&ordering, memory_exec.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        let original_display = displayable(memory_exec.as_ref()).one_line();
+        let new_display = displayable(new_plan.as_ref()).one_line();
+        assert_eq!(format!("{original_display}"), format!("{new_display}"));
+    }
+
+    #[test]
+    fn should_stop_replacement_after_first_coalesce() {
+        // Given
+        let schema = Arc::new(Schema::new(vec![Field::new("a", DataType::Int32, false)]));
+        let input_batch = arrow::record_batch::RecordBatch::new_empty(schema.clone());
+        let memory_exec =
+            MemorySourceConfig::try_new_exec(&[vec![input_batch]], schema.clone(), None).unwrap();
+        let coalesce_inner = Arc::new(CoalescePartitionsExec::new(memory_exec));
+        let coalesce_outer = Arc::new(CoalescePartitionsExec::new(coalesce_inner));
+        let ordering = build_ordering(&schema);
+
+        // When
+        let result = remove_coalesce_physical_stage(&ordering, coalesce_outer.clone());
+
+        // Then
+        let Ok(new_plan) = result else {
+            panic!("Expected removal to succeed");
+        };
+
+        let contains_coalesce_inner = new_plan
+            .exists(|node| {
+                Ok(node
+                    .as_any()
+                    .downcast_ref::<CoalescePartitionsExec>()
+                    .is_some())
+            })
+            .unwrap();
+        assert!(contains_coalesce_inner, "Inner coalesce should remain");
+
+        let root_is_coalesce = new_plan
+            .as_any()
+            .downcast_ref::<CoalescePartitionsExec>()
+            .is_some();
+        assert!(!root_is_coalesce, "Outer root should not be coalesce");
+    }
 }

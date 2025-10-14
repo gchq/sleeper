@@ -22,6 +22,7 @@ chunks:
       - configuration
       - sketches
       - parquet
+      - arrow
       - common/common-job
       - common/common-task
       - common/common-invoke-tables
@@ -54,6 +55,7 @@ chunks:
     name: Rust
     workflow: chunk-rust.yaml
     modules:
+      - query/query-datafusion
       - compaction/compaction-datafusion
       - foreign-bridge
   ingest:
@@ -78,6 +80,5 @@ chunks:
       - query/query-core
       - query/query-runner
       - query/query-lambda
-      - query/query-datafusion
       - athena
       - trino

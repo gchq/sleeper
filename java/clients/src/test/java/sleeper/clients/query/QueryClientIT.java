@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -332,7 +333,8 @@ public class QueryClientIT {
     private void runQueryClient() throws Exception {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tablePropertiesList),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
-                InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs))
+                InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
+                ForkJoinPool.commonPool(), null, null, null)
                 .run();
     }
 

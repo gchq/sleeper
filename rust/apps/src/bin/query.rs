@@ -32,7 +32,7 @@ use url::Url;
 /// Implements a Sleeper query algorithm.
 ///
 /// A sequence of Parquet files is read and merge sorted. The input
-/// files must be individually sorted according to the row key columns and then the sort columns. A selection
+/// files must be individually sorted according to the row key fields and then the sort fields. A selection
 /// of query results are written to standard output.
 ///
 #[derive(Parser, Debug)]
@@ -41,10 +41,10 @@ struct CmdLineArgs {
     /// List of input Parquet files (must be sorted) as URLs
     #[arg(num_args=1.., required=true)]
     input: Vec<String>,
-    /// Column names for a row key columns
+    /// Column names for a row key fields
     #[arg(short = 'k', long, num_args=1.., required=true)]
     row_keys: Vec<String>,
-    /// Column names for sort key columns
+    /// Column names for sort key fields
     #[arg(short = 's', long)]
     sort_keys: Vec<String>,
     /// Partition region minimum keys (inclusive). Must be one per row key specified.
@@ -109,16 +109,16 @@ async fn main() -> color_eyre::Result<()> {
         .collect::<Result<Vec<_>, _>>()?;
 
     if args.row_keys.len() != args.region_maxs.len() {
-        bail!("quantity of region maximums != quantity of row key columns");
+        bail!("quantity of region maximums != quantity of row key fields");
     }
     if args.row_keys.len() != args.region_mins.len() {
-        bail!("quantity of region minimums != quantity of row key columns");
+        bail!("quantity of region minimums != quantity of row key fields");
     }
     if args.row_keys.len() != args.query_maxs.len() {
-        bail!("quantity of query region maximums != quantity of row key columns");
+        bail!("quantity of query region maximums != quantity of row key fields");
     }
     if args.row_keys.len() != args.query_mins.len() {
-        bail!("quantity of query region minimums != quantity of row key columns");
+        bail!("quantity of query region minimums != quantity of row key fields");
     }
     let mut map = HashMap::new();
     for (key, bounds) in args
@@ -173,8 +173,8 @@ async fn main() -> color_eyre::Result<()> {
     let query_config = LeafPartitionQueryConfig {
         common,
         ranges: vec![SleeperRegion::new(query_map)],
+        requested_value_fields: None,
         explain_plans: true,
-        write_quantile_sketch: false,
     };
 
     let result = run_query(&query_config).await?;

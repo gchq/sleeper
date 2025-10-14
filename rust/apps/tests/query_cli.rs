@@ -44,7 +44,7 @@ fn invalid_region_maxs() -> Result<()> {
         "g",
     ]);
     cmd.assert().failure().stderr(predicate::str::contains(
-        "quantity of region maximums != quantity of row key columns",
+        "quantity of region maximums != quantity of row key fields",
     ));
     Ok(())
 }
@@ -75,7 +75,7 @@ fn invalid_region_mins() -> Result<()> {
         "g",
     ]);
     cmd.assert().failure().stderr(predicate::str::contains(
-        "quantity of region minimums != quantity of row key columns",
+        "quantity of region minimums != quantity of row key fields",
     ));
     Ok(())
 }
@@ -106,7 +106,7 @@ fn invalid_query_mins() -> Result<()> {
         "g",
     ]);
     cmd.assert().failure().stderr(predicate::str::contains(
-        "quantity of query region minimums != quantity of row key columns",
+        "quantity of query region minimums != quantity of row key fields",
     ));
     Ok(())
 }
@@ -137,7 +137,7 @@ fn invalid_query_maxs() -> Result<()> {
         "g",
     ]);
     cmd.assert().failure().stderr(predicate::str::contains(
-        "quantity of query region maximums != quantity of row key columns",
+        "quantity of query region maximums != quantity of row key fields",
     ));
     Ok(())
 }

@@ -16,14 +16,13 @@
 */
 use crate::{ColRange, PartitionBound};
 use datafusion::logical_expr::{Expr, ident, lit};
-use log::error;
 use std::collections::HashMap;
 
 /// Represents a Sleeper partition region.
 ///
-/// A [`SleeperPartitionRegion`] is multi-dimension key range over row-key columns in Sleeper.
-/// If a table has only on row-key column then a region is a single row range. A region in a
-/// table with two row-key columns would be a rectangle, etc.
+/// A [`SleeperPartitionRegion`] is multi-dimension key range over row-key fields in Sleeper.
+/// If a table has only on row-key field then a region is a single row range. A region in a
+/// table with two row-key fields would be a rectangle, etc.
 #[derive(Debug, Default)]
 pub struct SleeperRegion<'a> {
     pub region: HashMap<String, ColRange<'a>>,
@@ -51,8 +50,8 @@ impl<'a> SleeperRegion<'a> {
 
 /// Create the `DataFusion` filtering expression from a Sleeper region.
 ///
-/// For each column in the row keys, we look up the partition range for that
-/// column and create a expression tree that combines all the various filtering conditions.
+/// For each field in the row keys, we look up the partition range for that
+/// field and create a expression tree that combines all the various filtering conditions.
 impl From<&SleeperRegion<'_>> for Option<Expr> {
     fn from(value: &SleeperRegion<'_>) -> Self {
         let mut col_expr: Option<Expr> = None;
@@ -127,7 +126,6 @@ fn bound_to_lit_expr(bound: &PartitionBound) -> Expr {
         PartitionBound::String(val) => lit(val.to_owned()),
         PartitionBound::ByteArray(val) => lit(val.to_owned()),
         PartitionBound::Unbounded => {
-            error!("Can't create filter expression for unbounded partition range!");
             panic!("Can't create filter expression for unbounded partition range!");
         }
     }
