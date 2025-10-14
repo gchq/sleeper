@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.arrow;
+package sleeper.ingest.runner.impl.rowbatch.arrow;
 
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
@@ -27,6 +27,8 @@ import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter;
 
+import sleeper.arrow.ArrowRowWriter;
+import sleeper.arrow.ArrowToRowConversionUtils;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -43,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Accepts data for an Arrow row batch as Sleeper rows. Used by {@link ArrowRowBatch}.
+ * Accepts data for an Arrow row batch as Sleeper rows.
  */
 public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
 
