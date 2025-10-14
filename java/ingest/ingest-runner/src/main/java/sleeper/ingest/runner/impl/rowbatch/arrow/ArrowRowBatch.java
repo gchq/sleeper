@@ -32,7 +32,6 @@ import sleeper.arrow.RowIteratorFromArrowReader;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.MergingIterator;
 import sleeper.core.row.Row;
-import sleeper.core.rowbatch.RowBatch;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -43,6 +42,7 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.util.LoggedDuration;
+import sleeper.ingest.runner.impl.rowbatch.RowBatch;
 
 import java.io.File;
 import java.io.IOException;

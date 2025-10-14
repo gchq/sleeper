@@ -27,8 +27,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
-import sleeper.core.rowbatch.RowBatch;
-import sleeper.core.rowbatch.RowBatchFactory;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -38,6 +36,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
+import sleeper.ingest.runner.impl.rowbatch.RowBatch;
+import sleeper.ingest.runner.impl.rowbatch.RowBatchFactory;
 
 import java.io.IOException;
 import java.text.DecimalFormat;

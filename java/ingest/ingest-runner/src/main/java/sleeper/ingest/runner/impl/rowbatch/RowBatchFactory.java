@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.rowbatch;
+package sleeper.ingest.runner.impl.rowbatch;
 
 /**
  * Creates row batches that accept data, sort it and convert it to Sleeper Row objects. Each row batch is single-use,

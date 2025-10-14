@@ -23,9 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.row.Row;
-import sleeper.core.rowbatch.RowBatch;
-import sleeper.core.rowbatch.RowBatchFactory;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.runner.impl.rowbatch.RowBatch;
+import sleeper.ingest.runner.impl.rowbatch.RowBatchFactory;
 
 import java.util.Objects;
 
