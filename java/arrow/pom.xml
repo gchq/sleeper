@@ -27,7 +27,7 @@
     <artifactId>arrow</artifactId>
 
     <dependencies>
-            <!-- Arrow dependencies -->
+        <!-- Arrow dependencies -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-memory-unsafe</artifactId>
@@ -36,10 +36,6 @@
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-vector</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.arrow</groupId>
-            <artifactId>arrow-algorithm</artifactId>
         </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
