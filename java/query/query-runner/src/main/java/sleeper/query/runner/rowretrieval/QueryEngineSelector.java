@@ -53,7 +53,6 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     }
 
     @Override
-    @SuppressWarnings(value = "checkstyle:fallThrough")
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
