@@ -182,7 +182,8 @@ impl ObjectStoreFactory {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
                 Ok(self
                     .connect_s3(src)
-                    .map(|e| Arc::new(LoggingObjectStore::new(e, "DataFusion", bucket)))?)
+                    .map(|store| apply_readahead_store(store, &bucket))
+                    .map(|store| Arc::new(LoggingObjectStore::new(store, "DataFusion", bucket)))?)
             }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
@@ -206,7 +207,6 @@ impl ObjectStoreFactory {
     }
 }
 
-#[allow(dead_code)] // TODO re-enable this after checking if this caused error
 fn apply_readahead_store<T: ObjectStore>(store: T, bucket: &str) -> impl ObjectStore + use<T> {
     ReadaheadStore::new(store, bucket)
         .with_max_live_streams(
