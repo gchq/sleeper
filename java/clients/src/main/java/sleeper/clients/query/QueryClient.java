@@ -15,6 +15,8 @@
  */
 package sleeper.clients.query;
 
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -38,10 +40,13 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 
@@ -68,38 +73,22 @@ public class QueryClient extends QueryCommandLineClient {
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
     private final ExecutorService executorService;
+    private final DataFusionAwsConfig awsConfig;
+    private final BufferAllocator allocator;
+    private final FFIContext ffiContext;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
-    public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
-            ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
-        this(instanceProperties, s3Client, dynamoClient, in, out,
-                new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
-                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient));
-    }
-
-    public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
-            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
-        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoClient),
-                S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
-                in, out, objectFactory, stateStoreProvider);
-    }
-
-    public QueryClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
+    public QueryClient(
+            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider,
+            ExecutorService executorService, DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext ffiContext) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
-        this.executorService = Executors.newFixedThreadPool(30);
-    }
-
-    public static Path makeTemporaryDirectory() {
-        try {
-            Path tempDir = Files.createTempDirectory(null);
-            tempDir.toFile().deleteOnExit();
-            return tempDir;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        this.executorService = executorService;
+        this.awsConfig = awsConfig;
+        this.allocator = allocator;
+        this.ffiContext = ffiContext;
     }
 
     @Override
@@ -113,7 +102,7 @@ public class QueryClient extends QueryCommandLineClient {
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    new QueryEngineSelector(executorService, conf).getRowRetriever(tableProperties));
+                    new QueryEngineSelector(executorService, conf, awsConfig, allocator, ffiContext).getRowRetriever(tableProperties));
             queryExecutor.init(partitions, partitionToFileMapping);
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
@@ -151,14 +140,35 @@ public class QueryClient extends QueryCommandLineClient {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
+        String instanceId = args[0];
 
+        ExecutorService executorService = Executors.newFixedThreadPool(30);
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
-                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            QueryClient queryClient = new QueryClient(
-                    instanceProperties, s3Client, dynamoClient,
-                    new ConsoleInput(System.console()), new ConsoleOutput(System.out));
-            queryClient.run();
+                DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+                BufferAllocator allocator = new RootAllocator();
+                FFIContext ffiContext = DataFusionLeafPartitionRowRetriever.createContext()) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            new QueryClient(
+                    instanceProperties,
+                    new DynamoDBTableIndex(instanceProperties, dynamoClient),
+                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
+                    new ConsoleInput(System.console()), new ConsoleOutput(System.out),
+                    new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
+                    StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
+                    executorService, DataFusionAwsConfig.getDefault(), allocator, ffiContext)
+                    .run();
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+    private static Path makeTemporaryDirectory() {
+        try {
+            Path tempDir = Files.createTempDirectory(null);
+            tempDir.toFile().deleteOnExit();
+            return tempDir;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }

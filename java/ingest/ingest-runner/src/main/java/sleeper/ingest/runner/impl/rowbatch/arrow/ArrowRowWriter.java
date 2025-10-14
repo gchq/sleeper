@@ -21,17 +21,22 @@ import sleeper.core.schema.Field;
 
 import java.util.List;
 
+/**
+ * A writer to add data to an Arrow record batch. Allows the source data to come in different formats, including those
+ * where each insert generates multiple Arrow rows.
+ *
+ * @param <T> source type of data to write
+ */
 public interface ArrowRowWriter<T> {
 
     /**
-     * An interface which supports writing Arrow rows. The interface allows the source data to come in different
-     * formats, including those where each insert generates multiple Arrow rows.
+     * Adds data at a specific position in an Arrow record batch.
      *
-     * @param  allFields        A List of all of the fields to store
-     * @param  vectorSchemaRoot The Arrow in-memory store to store the rows in
-     * @param  data             The data to write
-     * @param  insertAtRowNo    The location in the VectorSchemaRoot to use to insert the data
-     * @return                  The index to use when this method is next called
+     * @param  allFields        a list of all of the fields to store
+     * @param  vectorSchemaRoot the Arrow in-memory store to store the rows in
+     * @param  data             the data to write
+     * @param  insertAtRowNo    the row number to write to in the vector
+     * @return                  the next row number after the last row that was written
      */
     int insert(List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, T data, int insertAtRowNo);
 }

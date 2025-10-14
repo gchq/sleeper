@@ -65,6 +65,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private CompactionRunner createRunnerForEngine(DataEngine engine) {
         switch (engine) {
             case DATAFUSION:
+            case DATAFUSION_EXPERIMENTAL:
                 return new DataFusionCompactionRunner(configuration);
             case JAVA:
             default:
