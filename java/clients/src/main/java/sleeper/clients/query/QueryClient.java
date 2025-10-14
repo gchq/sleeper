@@ -68,45 +68,27 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  * Allows a user to run a query from the command line. An instance of this class cannot be used concurrently in multiple
  * threads, due to how query executors and state store objects are cached. This may be changed in a future version.
  */
-public class QueryClient extends QueryCommandLineClient implements AutoCloseable {
+public class QueryClient extends QueryCommandLineClient {
 
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(30);
-    private final DataFusionAwsConfig awsConfig = DataFusionAwsConfig.getDefault();
-    private final BufferAllocator allocator = new RootAllocator();
-    private final FFIContext ffiContext = DataFusionLeafPartitionRowRetriever.createContext();
+    private final ExecutorService executorService;
+    private final DataFusionAwsConfig awsConfig;
+    private final BufferAllocator allocator;
+    private final FFIContext ffiContext;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
-    public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
-            ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
-        this(instanceProperties, s3Client, dynamoClient, in, out,
-                new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
-                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient));
-    }
-
-    public QueryClient(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient,
-            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
-        this(instanceProperties, new DynamoDBTableIndex(instanceProperties, dynamoClient),
-                S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
-                in, out, objectFactory, stateStoreProvider);
-    }
-
-    public QueryClient(InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider) {
+    public QueryClient(
+            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
+            ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider,
+            ExecutorService executorService, DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext ffiContext) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
-    }
-
-    public static Path makeTemporaryDirectory() {
-        try {
-            Path tempDir = Files.createTempDirectory(null);
-            tempDir.toFile().deleteOnExit();
-            return tempDir;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        this.executorService = executorService;
+        this.awsConfig = awsConfig;
+        this.allocator = allocator;
+        this.ffiContext = ffiContext;
     }
 
     @Override
@@ -149,14 +131,6 @@ public class QueryClient extends QueryCommandLineClient implements AutoCloseable
         out.println("Query took " + LoggedDuration.withFullOutput(startTime, Instant.now()) + " to return " + count + " rows");
     }
 
-    @Override
-    public void close() {
-        try (allocator; ffiContext) {
-        } finally {
-            executorService.shutdown();
-        }
-    }
-
     private CloseableIterator<Row> runQuery(Query query) throws QueryException {
         QueryExecutor queryExecutor = cachedQueryExecutors.get(query.getTableName());
         return queryExecutor.execute(query);
@@ -168,13 +142,33 @@ public class QueryClient extends QueryCommandLineClient implements AutoCloseable
         }
         String instanceId = args[0];
 
+        ExecutorService executorService = Executors.newFixedThreadPool(30);
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                QueryClient queryClient = new QueryClient(
-                        S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId),
-                        s3Client, dynamoClient,
-                        new ConsoleInput(System.console()), new ConsoleOutput(System.out))) {
-            queryClient.run();
+                BufferAllocator allocator = new RootAllocator();
+                FFIContext ffiContext = DataFusionLeafPartitionRowRetriever.createContext()) {
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            new QueryClient(
+                    instanceProperties,
+                    new DynamoDBTableIndex(instanceProperties, dynamoClient),
+                    S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
+                    new ConsoleInput(System.console()), new ConsoleOutput(System.out),
+                    new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
+                    StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
+                    executorService, DataFusionAwsConfig.getDefault(), allocator, ffiContext)
+                    .run();
+        } finally {
+            executorService.shutdown();
+        }
+    }
+
+    private static Path makeTemporaryDirectory() {
+        try {
+            Path tempDir = Files.createTempDirectory(null);
+            tempDir.toFile().deleteOnExit();
+            return tempDir;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }
