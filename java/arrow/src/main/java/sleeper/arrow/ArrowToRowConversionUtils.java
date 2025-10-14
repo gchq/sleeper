@@ -113,8 +113,8 @@ public class ArrowToRowConversionUtils {
         return value.stream()
                 .map(obj -> (Map<?, ?>) obj)
                 .map(map -> new AbstractMap.SimpleEntry<>(
-                        map.get(ArrowToRowConversionUtils.MAP_KEY_FIELD_NAME),
-                        map.get(ArrowToRowConversionUtils.MAP_VALUE_FIELD_NAME)))
+                        map.get(MAP_KEY_FIELD_NAME),
+                        map.get(MAP_VALUE_FIELD_NAME)))
                 .collect(Collectors.toMap(
                         entry -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0), entry.getKey()),
                         entry -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1), entry.getValue())));
