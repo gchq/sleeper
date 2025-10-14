@@ -37,7 +37,7 @@ use datafusion::{
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
-    logical_expr::{Expr, LogicalPlanBuilder, SortExpr, col},
+    logical_expr::{Expr, LogicalPlanBuilder, SortExpr, ident},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{ExecutionPlan, expressions::Column},
 };
@@ -179,7 +179,7 @@ impl<'a> SleeperOperations<'a> {
     pub fn create_sort_order(&self) -> Vec<SortExpr> {
         self.config
             .sorting_columns_iter()
-            .map(|s| col(s).sort(true, false))
+            .map(|s| ident(s).sort(true, false))
             .collect::<Vec<_>>()
     }
 
@@ -226,7 +226,7 @@ impl<'a> SleeperOperations<'a> {
             .map(|agg| agg.to_expr(&frame))
             .collect::<Result<Vec<_>, _>>()?;
         frame.aggregate(
-            group_by_cols.iter().map(|e| col(*e)).collect(),
+            group_by_cols.iter().map(|e| ident(*e)).collect(),
             aggregation_expressions,
         )
     }

@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 use crate::{ColRange, PartitionBound};
-use datafusion::logical_expr::{Expr, col, lit};
+use datafusion::logical_expr::{Expr, ident, lit};
 use log::error;
 use std::collections::HashMap;
 
@@ -87,9 +87,9 @@ fn upper_bound_expr(range: &ColRange, name: &String) -> Option<Expr> {
     } else {
         let max_bound = bound_to_lit_expr(&range.upper);
         if range.upper_inclusive {
-            Some(col(name).lt_eq(max_bound))
+            Some(ident(name).lt_eq(max_bound))
         } else {
-            Some(col(name).lt(max_bound))
+            Some(ident(name).lt(max_bound))
         }
     }
 }
@@ -106,9 +106,9 @@ fn lower_bound_expr(range: &ColRange, name: &String) -> Option<Expr> {
     } else {
         let min_bound = bound_to_lit_expr(&range.lower);
         if range.lower_inclusive {
-            Some(col(name).gt_eq(min_bound))
+            Some(ident(name).gt_eq(min_bound))
         } else {
-            Some(col(name).gt(min_bound))
+            Some(ident(name).gt(min_bound))
         }
     }
 }
