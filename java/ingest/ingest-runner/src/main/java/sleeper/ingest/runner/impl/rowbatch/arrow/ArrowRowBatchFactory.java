@@ -21,8 +21,6 @@ import org.apache.arrow.memory.RootAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.arrow.ArrowRowBatch;
-import sleeper.arrow.ArrowRowWriter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.row.Row;
 import sleeper.core.rowbatch.RowBatch;

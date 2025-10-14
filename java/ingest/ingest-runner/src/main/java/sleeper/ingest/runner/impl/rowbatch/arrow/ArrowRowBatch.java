@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.arrow;
+package sleeper.ingest.runner.impl.rowbatch.arrow;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.arrow.memory.BufferAllocator;
@@ -27,6 +27,8 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.arrow.ArrowToRowConversionUtils;
+import sleeper.arrow.RowIteratorFromArrowReader;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.MergingIterator;
 import sleeper.core.row.Row;
@@ -112,7 +114,7 @@ public class ArrowRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDATATYP
     protected boolean isWriteable;
 
     /**
-     * Construct an instance. Should be called by a row batch factory.
+     * Construct an instance. Should be called by an {@link ArrowRowBatchFactory}.
      *
      * @param arrowBufferAllocator                the allocator to use to allocate memory for this buffer
      * @param sleeperSchema                       the schema of the rows to be stored

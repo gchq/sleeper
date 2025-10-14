@@ -27,7 +27,6 @@ import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter;
 
-import sleeper.arrow.ArrowRowWriter;
 import sleeper.arrow.ArrowToRowConversionUtils;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;

@@ -19,7 +19,6 @@ package sleeper.ingest.runner.testutils;
 import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.arrow.ArrowRowWriter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperties;
@@ -31,6 +30,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatchFactory;
+import sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowWriter;
 
 import java.util.List;
 import java.util.Objects;
