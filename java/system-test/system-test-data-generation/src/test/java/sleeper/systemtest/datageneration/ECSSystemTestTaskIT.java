@@ -65,7 +65,7 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
     Path tempDir;
 
     @BeforeEach
-    void setUp() throws InterruptedException {
+    void setUp() {
         instanceProperties.set(ENDPOINT_URL, localStackContainer.getEndpoint().toString());
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, "ingest-direct");
         instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, "ingest-by-queue");
@@ -140,7 +140,7 @@ public class ECSSystemTestTaskIT extends LocalStackTestBase {
         });
     }
 
-    SleeperClient createSleeperClient() throws InterruptedException {
+    SleeperClient createSleeperClient() {
         return SleeperClient.builder()
                 .instanceProperties(instanceProperties)
                 .awsClients(clients -> clients

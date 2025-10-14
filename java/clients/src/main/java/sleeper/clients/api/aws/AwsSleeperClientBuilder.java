@@ -54,10 +54,9 @@ public class AwsSleeperClientBuilder {
     /**
      * Creates a Sleeper client.
      *
-     * @return                      the client
-     * @throws InterruptedException if interrupted while submitting a query
+     * @return the client
      */
-    public SleeperClient build() throws InterruptedException {
+    public SleeperClient build() {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
         Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
