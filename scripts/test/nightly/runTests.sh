@@ -173,7 +173,7 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     wait
 
     #Remove the temporary folders
-    #clearParallelTestFolders
+    clearParallelTestFolders
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     setupParallelTestFolders
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
@@ -181,7 +181,7 @@ elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     wait
 
     #Remove the temporary folders
-    #clearParallelTestFolders
+    clearParallelTestFolders
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
 fi
