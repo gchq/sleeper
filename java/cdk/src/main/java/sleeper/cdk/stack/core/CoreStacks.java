@@ -25,11 +25,11 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.IQueue;
+import software.constructs.Construct;
 
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
-import sleeper.core.properties.instance.InstanceProperties;
 
 import javax.annotation.Nullable;
 
@@ -108,12 +108,12 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
-    public void addAutoDeleteS3Objects(InstanceProperties instanceProperties, IBucket bucket, String bucketName) {
-        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(instanceProperties, bucket, bucketName);
+    public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
+        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(scope, bucket);
     }
 
-    public void addAutoStopEcsClusterTasks(InstanceProperties instanceProperties, ICluster cluster, String clusterName) {
-        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(instanceProperties, cluster, clusterName);
+    public void addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
+        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(scope, cluster);
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.

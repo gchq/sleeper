@@ -21,8 +21,6 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.ecs.ICluster;
-import software.amazon.awscdk.services.iam.IRole;
-import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
@@ -40,12 +38,10 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Stops ECS Cluster tasks for the CloudFormation stack.
  */
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AutoStopEcsClusterTasksStack extends NestedStack {
 
     private IFunction lambda;
@@ -65,6 +61,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
         createLambda(instanceProperties, jars, logGroup, providerLogGroup);
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
     private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
@@ -82,15 +79,11 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(15)));
 
-        // Grant this function permission to list tasks and stop tasks
-        PolicyStatement policyStatement = PolicyStatement.Builder
+        lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
                 .resources(List.of("*"))
-                .actions(List.of("ecs:ListTasks", "ecs:StopTask", "iam:PassRole"))
-                .build();
-        IRole role = Objects.requireNonNull(lambda.getRole());
-        role.addToPrincipalPolicy(policyStatement);
-        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+                .actions(List.of("ecs:ListTasks", "ecs:StopTask"))
+                .build());
 
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
@@ -102,20 +95,18 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
     }
 
     /**
-     * Allow the stack to stop cluster tasks.
+     * Adds a custom resource to stop tasks in an ECS cluster.
      *
-     * @param instanceProperties the instance properties
-     * @param cluster            the ECS cluster
-     * @param clusterName        the ECS cluster name
+     * @param scope   the stack to add the custom resource to
+     * @param cluster the ECS cluster
      */
-    public void addAutoStopEcsClusterTasks(InstanceProperties instanceProperties,
-            ICluster cluster, String clusterName) {
+    public void addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
 
-        String id = cluster.getNode().getId() + "-Autostop";
+        String id = cluster.getNode().getId() + "-AutoStop";
 
-        CustomResource customResource = CustomResource.Builder.create(this, id)
+        CustomResource customResource = CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::AutoStopEcsClusterTasks")
-                .properties(Map.of("cluster", clusterName))
+                .properties(Map.of("cluster", cluster.getClusterName()))
                 .serviceToken(provider.getServiceToken())
                 .build();
 
