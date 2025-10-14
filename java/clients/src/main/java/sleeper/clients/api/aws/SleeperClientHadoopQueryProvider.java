@@ -15,15 +15,29 @@
  */
 package sleeper.clients.api.aws;
 
+import org.apache.hadoop.conf.Configuration;
+
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public interface SleeperClientExecutorServiceProvider {
+/**
+ * Provides row retrievers for running Sleeper queries with Hadoop.
+ */
+@FunctionalInterface
+public interface SleeperClientHadoopQueryProvider {
 
-    ShutdownWrapper<ExecutorService> getExecutorService();
+    /**
+     * Creates or retrieves a row retriever provider.
+     *
+     * @param  hadoopConf the Hadoop configuration
+     * @return            the row retriever
+     */
+    ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(Configuration hadoopConf);
 
     /**
      * Creates a provider that will create a thread pool of the default size. A new thread pool will be created for each
@@ -31,7 +45,7 @@ public interface SleeperClientExecutorServiceProvider {
      *
      * @return the provider
      */
-    static SleeperClientExecutorServiceProvider createDefaultForEachClient() {
+    static SleeperClientHadoopQueryProvider createDefaultForEachClient() {
         return withThreadPoolForEachClient(10);
     }
 
@@ -42,10 +56,11 @@ public interface SleeperClientExecutorServiceProvider {
      * @param  threadPoolSize the number of threads in the thread pool for each client
      * @return                the provider
      */
-    static SleeperClientExecutorServiceProvider withThreadPoolForEachClient(int threadPoolSize) {
-        return () -> {
+    static SleeperClientHadoopQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
+        return hadoopConf -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
-            return ShutdownWrapper.shutdown(executorService, executorService::shutdown);
+            QueryEngineSelector engineSelector = new QueryEngineSelector(executorService, hadoopConf);
+            return ShutdownWrapper.shutdown(engineSelector, executorService::shutdown);
         };
     }
 
@@ -59,7 +74,7 @@ public interface SleeperClientExecutorServiceProvider {
         return new PersistentThreadPool(Executors.newFixedThreadPool(threadPoolSize));
     }
 
-    class PersistentThreadPool implements SleeperClientExecutorServiceProvider, UncheckedAutoCloseable {
+    class PersistentThreadPool implements SleeperClientHadoopQueryProvider, UncheckedAutoCloseable {
         private final ExecutorService executorService;
 
         private PersistentThreadPool(ExecutorService executorService) {
@@ -67,8 +82,9 @@ public interface SleeperClientExecutorServiceProvider {
         }
 
         @Override
-        public ShutdownWrapper<ExecutorService> getExecutorService() {
-            return ShutdownWrapper.noShutdown(executorService);
+        public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(Configuration hadoopConf) {
+            return ShutdownWrapper.noShutdown(
+                    new QueryEngineSelector(executorService, hadoopConf));
         }
 
         @Override

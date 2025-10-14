@@ -31,12 +31,11 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
-import sleeper.query.runner.rowretrieval.QueryEngineSelector;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 /**
@@ -48,7 +47,7 @@ public class AwsSleeperClientBuilder {
     private InstanceProperties instanceProperties;
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.createDefaultForEachClient();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
-    private SleeperClientExecutorServiceProvider executorServiceProvider = SleeperClientExecutorServiceProvider.createDefaultForEachClient();
+    private SleeperClientHadoopQueryProvider queryProvider = SleeperClientHadoopQueryProvider.createDefaultForEachClient();
 
     /**
      * Creates a Sleeper client.
@@ -59,7 +58,7 @@ public class AwsSleeperClientBuilder {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
         Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
-        ShutdownWrapper<ExecutorService> executorService = executorServiceProvider.getExecutorService();
+        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoopConf);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
 
         return new SleeperClient.Builder()
@@ -69,12 +68,12 @@ public class AwsSleeperClientBuilder {
                 .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .objectFactory(ObjectFactory.noUserJars())
-                .rowRetrieverProvider(new QueryEngineSelector(executorService.get(), hadoopConf))
+                .rowRetrieverProvider(rowRetrieverProvider.get())
                 .ingestJobSender(IngestJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkImportJobSender(BulkImportJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkExportQuerySender(BulkExportQuerySender.toSqs(instanceProperties, awsClients.sqs()))
-                .shutdown(new UncheckedAutoCloseables(List.of(awsClients, executorService)))
+                .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
     }
 
@@ -116,17 +115,17 @@ public class AwsSleeperClientBuilder {
      * @return                     this builder
      */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
-        return executorServiceProvider(SleeperClientExecutorServiceProvider.withThreadPoolForEachClient(queryThreadPoolSize));
+        return queryProvider(SleeperClientHadoopQueryProvider.withThreadPoolForEachClient(queryThreadPoolSize));
     }
 
     /**
-     * Sets the provider for an executor service used for queries. This can be used to control the thread pool used.
+     * Sets the provider for running queries. This can be used to control the thread pool used.
      *
-     * @param  executorServiceProvider the provider
-     * @return                         this builder
+     * @param  queryProvider the provider
+     * @return               this builder
      */
-    public AwsSleeperClientBuilder executorServiceProvider(SleeperClientExecutorServiceProvider executorServiceProvider) {
-        this.executorServiceProvider = executorServiceProvider;
+    public AwsSleeperClientBuilder queryProvider(SleeperClientHadoopQueryProvider queryProvider) {
+        this.queryProvider = queryProvider;
         return this;
     }
 
