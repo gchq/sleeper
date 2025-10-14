@@ -275,12 +275,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
         SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(tableProperties.get(TABLE_ID), asOfInstant));
 
-        // This seems like a lot of effort to go to in order to identify partitions
-        QueryExecutor planner = new QueryExecutor(
-                objectFactory,
-                tableProperties,
-                null,
-                new QueryEngineSelector(executorService, hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
+        QueryExecutor planner = new QueryExecutor(tableProperties, null);
         planner.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
         return planner.splitIntoLeafPartitionQueries(query);

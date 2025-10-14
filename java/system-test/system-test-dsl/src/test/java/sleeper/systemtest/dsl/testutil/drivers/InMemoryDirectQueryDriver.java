@@ -58,7 +58,7 @@ public class InMemoryDirectQueryDriver implements QueryDriver {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         LeafPartitionRowRetriever rowRetriever = new InMemoryLeafPartitionRowRetriever(dataStore);
-        QueryExecutor planner = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, rowRetriever, Instant.now());
+        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore, Instant.now());
         planner.init();
         QueryExecutorNew executor = new QueryExecutorNew(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
         try (CloseableIterator<Row> iterator = executor.execute(query)) {

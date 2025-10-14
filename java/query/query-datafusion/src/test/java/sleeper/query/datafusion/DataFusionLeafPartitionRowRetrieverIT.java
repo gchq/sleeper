@@ -1077,7 +1077,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     private QueryExecutorNew initQueryExecutor() {
-        QueryExecutor planner = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore, ROW_RETRIEVER);
+        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore);
         planner.init();
         QueryExecutorNew executor = new QueryExecutorNew(planner,
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, ROW_RETRIEVER));

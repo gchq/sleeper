@@ -71,16 +71,16 @@ public class QueryExecutorTestBase {
         update(stateStore).addFile(fileReference);
     }
 
-    protected QueryExecutor splitter() throws Exception {
-        return splitterAtTime(Instant.now());
+    protected QueryExecutor planner() throws Exception {
+        return plannerAtTime(Instant.now());
     }
 
     protected QueryExecutorNew executorAtTime(Instant time) throws Exception {
-        return new QueryExecutorNew(splitterAtTime(time), leafQueryExecutor());
+        return new QueryExecutorNew(plannerAtTime(time), leafQueryExecutor());
     }
 
     protected List<Row> getRows(Query query) throws Exception {
-        return getRows(new QueryExecutorNew(splitter(), leafQueryExecutor()), query);
+        return getRows(new QueryExecutorNew(planner(), leafQueryExecutor()), query);
     }
 
     protected List<Row> getRows(QueryExecutorNew executor, Query query) {
@@ -92,12 +92,10 @@ public class QueryExecutorTestBase {
         }
     }
 
-    private QueryExecutor splitterAtTime(Instant time) throws Exception {
-        QueryExecutor executor = new QueryExecutor(
-                ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRowRetriever(rowStore), time);
-        executor.init(time);
-        return executor;
+    private QueryExecutor plannerAtTime(Instant time) throws Exception {
+        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore, time);
+        planner.init(time);
+        return planner;
     }
 
     private LeafPartitionQueryExecutor leafQueryExecutor() {

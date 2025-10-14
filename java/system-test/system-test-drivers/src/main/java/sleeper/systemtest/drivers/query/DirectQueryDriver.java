@@ -81,7 +81,7 @@ public class DirectQueryDriver implements QueryDriver {
 
     private QueryExecutorNew executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(EXECUTOR_SERVICE, clients.createHadoopConf()).getRowRetriever(tableProperties);
-        QueryExecutor planner = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore, rowRetriever);
+        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore);
         planner.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return new QueryExecutorNew(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }

@@ -74,7 +74,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(Executors.newSingleThreadExecutor(), hadoopConf).getRowRetriever(tableProperties);
-        QueryExecutor planner = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore, rowRetriever);
+        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore);
         planner.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         QueryExecutorNew executor = new QueryExecutorNew(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
         return executor.execute(createQueryAllRows(tree, tableProperties.get(TABLE_NAME)));

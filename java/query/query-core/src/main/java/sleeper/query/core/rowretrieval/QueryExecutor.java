@@ -24,7 +24,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 
@@ -47,24 +46,20 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class QueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryExecutor.class);
 
-    private final StateStore stateStore;
     private final TableProperties tableProperties;
+    private final StateStore stateStore;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
     private Instant nextInitialiseTime;
 
-    public QueryExecutor(
-            ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore,
-            LeafPartitionRowRetriever rowRetriever) {
-        this(objectFactory, stateStore, tableProperties, rowRetriever, Instant.now());
+    public QueryExecutor(TableProperties tableProperties, StateStore stateStore) {
+        this(tableProperties, stateStore, Instant.now());
     }
 
-    public QueryExecutor(
-            ObjectFactory objectFactory, StateStore stateStore, TableProperties tableProperties,
-            LeafPartitionRowRetriever rowRetriever, Instant timeNow) {
-        this.stateStore = stateStore;
+    public QueryExecutor(TableProperties tableProperties, StateStore stateStore, Instant timeNow) {
         this.tableProperties = tableProperties;
+        this.stateStore = stateStore;
         this.nextInitialiseTime = timeNow;
     }
 

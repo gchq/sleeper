@@ -97,13 +97,12 @@ public class QueryClient extends QueryCommandLineClient {
         out.println("Retrieved " + partitions.size() + " partitions from StateStore");
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
-            QueryExecutor querySplitter = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    rowRetrieverProvider.getRowRetriever(tableProperties));
-            querySplitter.init(partitions, partitionToFileMapping);
-            QueryExecutorNew queryExecutor = new QueryExecutorNew(querySplitter,
+            QueryExecutor planner = new QueryExecutor(tableProperties, stateStoreProvider.getStateStore(tableProperties));
+            planner.init(partitions, partitionToFileMapping);
+            QueryExecutorNew executor = new QueryExecutorNew(planner,
                     new LeafPartitionQueryExecutor(objectFactory, tableProperties,
                             rowRetrieverProvider.getRowRetriever(tableProperties)));
-            cachedQueryExecutors.put(tableName, queryExecutor);
+            cachedQueryExecutors.put(tableName, executor);
         }
     }
 

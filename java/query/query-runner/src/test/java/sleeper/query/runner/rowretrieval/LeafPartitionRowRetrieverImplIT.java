@@ -1070,7 +1070,7 @@ public class LeafPartitionRowRetrieverImplIT {
 
     private QueryExecutorNew initQueryExecutor() {
         LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(executorService, new Configuration()).getRowRetriever(tableProperties);
-        QueryExecutor planner = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore, rowRetriever);
+        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore);
         planner.init();
         QueryExecutorNew executor = new QueryExecutorNew(planner,
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));

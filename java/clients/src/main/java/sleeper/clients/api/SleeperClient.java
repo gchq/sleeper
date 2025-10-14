@@ -195,9 +195,9 @@ public class SleeperClient implements AutoCloseable {
         TableProperties tableProperties = getTableProperties(tableName);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        QueryExecutor splitter = new QueryExecutor(objectFactory, tableProperties, stateStore, rowRetriever);
-        splitter.init();
-        QueryExecutorNew executor = new QueryExecutorNew(splitter, new LeafPartitionQueryExecutor(objectFactory, tableProperties, rowRetriever));
+        QueryExecutor planner = new QueryExecutor(tableProperties, stateStore);
+        planner.init();
+        QueryExecutorNew executor = new QueryExecutorNew(planner, new LeafPartitionQueryExecutor(objectFactory, tableProperties, rowRetriever));
         return executor;
     }
 
