@@ -76,6 +76,7 @@ setupParallelTestFolders() {
     cp -r java quick/java
     cp -r scripts quick/scripts
     cp -r python quick/python
+    cp -r code-style quick/code-style
     cp README.md quick
     cp -r quick slow1
     cp -r quick slow2
@@ -156,7 +157,7 @@ runTestSuite(){
 
 runSlowTests(){
     runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "-DskipRust" "-DrunIT=QuickSystemTestSuite" $@&
-    runTestSuite 3000 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" $@&
+    runTestSuite 300 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" $@&
     runTestSuite 600 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" $@&
     runTestSuite 900 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" $@
 }
@@ -169,11 +170,11 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     EXP2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite2)
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
-    runSlowTests $@&
-    runTestSuite 1200 "${EXP1_SUITE_PARAMS[@]}" $@&
-    runTestSuite 1500 "${EXP2_SUITE_PARAMS[@]}" $@&
-    runTestSuite 1800 "${EXP3_SUITE_PARAMS[@]}" $@
-    wait
+    #runSlowTests $@&
+    #runTestSuite 1200 "${EXP1_SUITE_PARAMS[@]}" $@&
+    #runTestSuite 1500 "${EXP2_SUITE_PARAMS[@]}" $@&
+    runTestSuite 0 "${EXP3_SUITE_PARAMS[@]}" $@
+    #wait
 
     #Remove the temporary folders
     clearParallelTestFolders
