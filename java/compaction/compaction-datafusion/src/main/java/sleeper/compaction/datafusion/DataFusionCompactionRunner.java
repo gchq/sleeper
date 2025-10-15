@@ -146,8 +146,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
-        try (FFIContext context = new FFIContext(DataFusionCompactionFunctions.INSTANCE)) {
-            int result = DataFusionCompactionFunctions.INSTANCE.compact(context, compactionParams, compactionData);
+        try (FFIContext<DataFusionCompactionFunctions> context = new FFIContext<>(DataFusionCompactionFunctions.INSTANCE)) {
+            int result = context.getFunctions().compact(context, compactionParams, compactionData);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion compaction failed, return code: {}", result);

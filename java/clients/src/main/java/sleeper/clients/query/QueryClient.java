@@ -50,6 +50,7 @@ import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
@@ -143,7 +144,7 @@ public class QueryClient extends QueryCommandLineClient {
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 BufferAllocator allocator = new RootAllocator();
-                FFIContext ffiContext = DataFusionLeafPartitionRowRetriever.createContext()) {
+                FFIContext<DataFusionQueryFunctions> ffiContext = DataFusionLeafPartitionRowRetriever.createContext()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new QueryClient(
                     instanceProperties,

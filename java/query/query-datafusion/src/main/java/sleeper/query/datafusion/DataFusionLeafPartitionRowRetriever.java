@@ -45,9 +45,9 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
     private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator allocator;
-    private final FFIContext context;
+    private final FFIContext<DataFusionQueryFunctions> context;
 
-    public DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext context) {
+    public DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext<DataFusionQueryFunctions> context) {
         this.awsConfig = awsConfig;
         this.allocator = allocator;
         this.context = context;
@@ -58,20 +58,21 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      *
      * @return the context
      */
-    public static FFIContext createContext() {
-        return new FFIContext(DataFusionQueryFunctions.INSTANCE);
+    public static FFIContext<DataFusionQueryFunctions> createContext() {
+        return new FFIContext<>(DataFusionQueryFunctionsImpl.create());
     }
 
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionQueryFunctions.INSTANCE);
+        DataFusionQueryFunctions functions = context.getFunctions();
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
         FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, awsConfig, runtime);
 
         FFIQueryResults results = new FFIQueryResults(runtime);
         // Perform native query
         try {
             // Create NULL pointer which will be set by the FFI call upon return
-            int result = DataFusionQueryFunctions.INSTANCE.query_stream(context, params, results);
+            int result = functions.query_stream(context, params, results);
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion query failed, return code: {}", result);
@@ -147,9 +148,9 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     public static class Provider implements LeafPartitionRowRetrieverProvider {
         private final DataFusionAwsConfig awsConfig;
         private final BufferAllocator allocator;
-        private final FFIContext context;
+        private final FFIContext<DataFusionQueryFunctions> context;
 
-        public Provider(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext context) {
+        public Provider(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext<DataFusionQueryFunctions> context) {
             this.awsConfig = awsConfig;
             this.allocator = allocator;
             this.context = context;

@@ -28,8 +28,6 @@ import sleeper.foreign.bridge.ForeignFunctions;
  */
 public interface DataFusionQueryFunctions extends ForeignFunctions {
 
-    DataFusionQueryFunctions INSTANCE = DataFusionQueryFunctionsImpl.create();
-
     /**
      * Invokes a native query. Returns a stream of Arrow record batches.
      *
@@ -42,7 +40,7 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * @return                       indication of success
      * @throws IllegalStateException if the context has already been closed
      */
-    default int query_stream(FFIContext context, FFILeafPartitionQueryConfig input, FFIQueryResults outputStream) {
+    default int query_stream(FFIContext<DataFusionQueryFunctions> context, FFILeafPartitionQueryConfig input, FFIQueryResults outputStream) {
         return native_query_stream(context.getForeignContext(), input, outputStream);
     }
 
@@ -75,7 +73,7 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * @return                       indication of success
      * @throws IllegalStateException if the context has already been closed
      */
-    default int query_file(FFIContext context, FFILeafPartitionQueryConfig input, FFIFileResult outputResult) {
+    default int query_file(FFIContext<DataFusionQueryFunctions> context, FFILeafPartitionQueryConfig input, FFIFileResult outputResult) {
         return native_query_file(context.getForeignContext(), input, outputResult);
     }
 

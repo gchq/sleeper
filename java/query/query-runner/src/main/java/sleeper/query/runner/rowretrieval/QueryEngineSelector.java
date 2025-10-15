@@ -25,6 +25,7 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 
 import java.util.concurrent.ExecutorService;
 
@@ -40,13 +41,14 @@ public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
     private final Configuration configuration;
     private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator arrowAllocator;
-    private final FFIContext ffiContext;
+    private final FFIContext<DataFusionQueryFunctions> ffiContext;
 
     public QueryEngineSelector(ExecutorService executorService, Configuration configuration) {
         this(executorService, configuration, null, null, null);
     }
 
-    public QueryEngineSelector(ExecutorService executorService, Configuration configuration, DataFusionAwsConfig awsConfig, BufferAllocator arrowAllocator, FFIContext ffiContext) {
+    public QueryEngineSelector(ExecutorService executorService, Configuration configuration, DataFusionAwsConfig awsConfig, BufferAllocator arrowAllocator,
+            FFIContext<DataFusionQueryFunctions> ffiContext) {
         this.executorService = executorService;
         this.configuration = configuration;
         this.awsConfig = awsConfig;

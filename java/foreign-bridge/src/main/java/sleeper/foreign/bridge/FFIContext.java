@@ -36,12 +36,12 @@ import java.util.Optional;
  * }
  * </pre>
  */
-public class FFIContext implements AutoCloseable {
+public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
      * FFI call interface. Calling any function on this object will
      * result in an FFI call.
      */
-    private final ForeignFunctions functions;
+    private final T functions;
 
     /**
      * Pointer to the Rust side of the FFI layer. If this is empty, it means the
@@ -58,7 +58,7 @@ public class FFIContext implements AutoCloseable {
      *
      * @param functions the native function interface
      */
-    public FFIContext(ForeignFunctions functions) {
+    public FFIContext(T functions) {
         this.functions = Objects.requireNonNull(functions, "functions");
         // Create Java interface to FFI lib
         // Make FFI call to establish foreign context
@@ -103,6 +103,10 @@ public class FFIContext implements AutoCloseable {
         if (isClosed()) {
             throw new IllegalStateException("FFIContext already closed");
         }
+    }
+
+    public T getFunctions() {
+        return functions;
     }
 
     /**
