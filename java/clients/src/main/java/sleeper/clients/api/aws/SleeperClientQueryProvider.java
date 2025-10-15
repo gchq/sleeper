@@ -27,6 +27,7 @@ import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryContext;
 import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
@@ -68,14 +69,12 @@ public interface SleeperClientQueryProvider {
     static SleeperClientQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
         return hadoopProvider -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
-            BufferAllocator allocator = new RootAllocator();
-            FFIContext<DataFusionQueryFunctions> ffiContext = DataFusionLeafPartitionRowRetriever.createContext();
+            DataFusionQueryContext dataFusionContext = DataFusionQueryContext.createIfPresent(RootAllocator::new);
             LeafPartitionRowRetrieverProvider engineSelector = QueryEngineSelector.javaAndDataFusion(
                     new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider),
-                    new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, ffiContext));
+                    dataFusionContext.createRowRetrieverProvider(DataFusionAwsConfig::getDefault));
             UncheckedAutoCloseables shutdown = new UncheckedAutoCloseables(List.of(
-                    allocator::close,
-                    ffiContext::close,
+                    dataFusionContext::close,
                     executorService::shutdown));
             return ShutdownWrapper.shutdown(engineSelector, shutdown::close);
         };

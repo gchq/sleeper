@@ -25,6 +25,10 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 
 import java.util.function.Supplier;
 
+/**
+ * A wrapper for the DataFusion FFI context. Allows for an unimplemented row retriever if DataFusion could not be
+ * loaded.
+ */
 public class DataFusionQueryContext implements AutoCloseable {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(DataFusionQueryContext.class);
@@ -39,6 +43,13 @@ public class DataFusionQueryContext implements AutoCloseable {
         this.allocator = allocator;
     }
 
+    /**
+     * Creates the DataFusion FFI context and Arrow allocator if the DataFusion functions were loaded. The FFI context
+     * and Arrow allocator will be closed when the query context is closed.
+     *
+     * @param  allocator a constructor for the Arrow allocator
+     * @return           the context
+     */
     public static DataFusionQueryContext createIfPresent(Supplier<BufferAllocator> allocator) {
         if (FUNCTIONS != null) {
             return new DataFusionQueryContext(new FFIContext<>(FUNCTIONS), allocator.get());
@@ -47,14 +58,13 @@ public class DataFusionQueryContext implements AutoCloseable {
         }
     }
 
-    @Override
-    public void close() throws Exception {
-        if (context != null) {
-            try (context; allocator) {
-            }
-        }
-    }
-
+    /**
+     * Creates a row retriever provider for use in queries. If the DataFusion functions could not be loaded, attempting
+     * to create a row retriever from this will throw a NotImplementedException.
+     *
+     * @param  awsConfig a constructor for the AWS configuration
+     * @return           the row retriever provider
+     */
     public LeafPartitionRowRetrieverProvider createRowRetrieverProvider(Supplier<DataFusionAwsConfig> awsConfig) {
         if (context == null) {
             return LeafPartitionRowRetrieverProvider.notImplemented("DataFusion not loaded");
@@ -63,11 +73,19 @@ public class DataFusionQueryContext implements AutoCloseable {
         }
     }
 
+    @Override
+    public void close() {
+        if (context != null) {
+            try (context; allocator) {
+            }
+        }
+    }
+
     private static DataFusionQueryFunctions createQueryFunctionsOrNull() {
         try {
             return DataFusionQueryFunctionsImpl.create();
         } catch (RuntimeException e) {
-            LOGGER.error("Failed to load query functions implementation", e);
+            LOGGER.error("Failed to load DataFusion implementation", e);
             return null;
         }
     }
