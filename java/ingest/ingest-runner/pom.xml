@@ -48,6 +48,11 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sqs</artifactId>
         </dependency>
+        <!-- Arrow dependencies -->
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-algorithm</artifactId>
+        </dependency>
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>

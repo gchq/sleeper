@@ -16,12 +16,19 @@
 set -e
 unset CDPATH
 
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <modules to check>"
+    exit 1
+fi
+
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
+MODULES=$1
+shift
+
 pushd "${PROJECT_ROOT}/java"
 
-# SpotBugs is skipped because it's slow to run
-mvn verify -Pstyle,skipShade,skipSpotBugs -DskipRust "$@"
+mvn verify -Pstyle,skipShade -DskipRust -pl "$MODULES" "$@"
 
 popd

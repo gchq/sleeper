@@ -24,14 +24,14 @@ import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.bridge.ForeignFunctions;
 
 /**
- * The interface for the native library we are calling with query functionality.
+ * Calls the native library with query functionality.
  */
 public interface DataFusionQueryFunctions extends ForeignFunctions {
 
     DataFusionQueryFunctions INSTANCE = DataFusionQueryFunctionsImpl.create();
 
     /**
-     * Invokes a native query. This function returns a stream of Arrow record batches.
+     * Invokes a native query. Returns a stream of Arrow record batches.
      *
      * The provided context object must be open.
      * The return code will be 0 if successful.

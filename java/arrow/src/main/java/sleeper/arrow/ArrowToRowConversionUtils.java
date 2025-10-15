@@ -31,12 +31,15 @@ import java.util.stream.Collectors;
  * Utility functions to convert an Arrow batch of records into Sleeper rows.
  */
 public class ArrowToRowConversionUtils {
+    public static final String MAP_KEY_FIELD_NAME = "key";
+    public static final String MAP_VALUE_FIELD_NAME = "value";
+
     private ArrowToRowConversionUtils() {
         throw new AssertionError();
     }
 
     /**
-     * Construct a Sleeper row from a single Arrow row.
+     * Constructs a Sleeper row from a single Arrow row.
      *
      * @param  vectorSchemaRoot          the container for all of the vectors which hold the values to use
      * @param  rowNo                     the index to read from each vector
@@ -58,11 +61,11 @@ public class ArrowToRowConversionUtils {
     }
 
     /**
-     * Convert a given Arrow value to a Java value.
-     *
+     * Converts a given Arrow value to a Java value.
+     * <p>
      * If the value is a primitive, it will remain unchanged. Instances of {@link Text} will be converted
      * to {@link String}. Maps and lists will be converted to Java {@link Map} and {@link List} instances.
-     *
+     * <p>
      * This function will recurse into deeper nested structures.
      *
      * @param  fieldVector the column being converted
@@ -81,8 +84,8 @@ public class ArrowToRowConversionUtils {
             boolean isActuallyMap = fieldVector.getChildrenFromFields().size() == 1 &&
                     fieldVector.getChildrenFromFields().get(0).getMinorType() == Types.MinorType.STRUCT &&
                     fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().size() == 2 &&
-                    fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowRowBatch.MAP_KEY_FIELD_NAME) &&
-                    fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowRowBatch.MAP_VALUE_FIELD_NAME);
+                    fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0).getField().getName().equals(ArrowToRowConversionUtils.MAP_KEY_FIELD_NAME) &&
+                    fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1).getField().getName().equals(ArrowToRowConversionUtils.MAP_VALUE_FIELD_NAME);
             if (isActuallyMap) {
                 return arrowToMap(fieldVector, (List<?>) value);
             } else {
@@ -110,8 +113,8 @@ public class ArrowToRowConversionUtils {
         return value.stream()
                 .map(obj -> (Map<?, ?>) obj)
                 .map(map -> new AbstractMap.SimpleEntry<>(
-                        map.get(ArrowRowBatch.MAP_KEY_FIELD_NAME),
-                        map.get(ArrowRowBatch.MAP_VALUE_FIELD_NAME)))
+                        map.get(MAP_KEY_FIELD_NAME),
+                        map.get(MAP_VALUE_FIELD_NAME)))
                 .collect(Collectors.toMap(
                         entry -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(0), entry.getKey()),
                         entry -> convertValueFromArrow(fieldVector.getChildrenFromFields().get(0).getChildrenFromFields().get(1), entry.getValue())));

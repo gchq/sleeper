@@ -36,7 +36,7 @@ public class FFIQueryResults extends Struct {
     public final Struct.Pointer arrowArrayStream = new Struct.Pointer();
 
     /**
-     * Create a holder for results data from the FFI side of the boundary.
+     * Creates a holder for results data from the FFI side of the boundary.
      *
      * @param rt the JNR runtime
      */

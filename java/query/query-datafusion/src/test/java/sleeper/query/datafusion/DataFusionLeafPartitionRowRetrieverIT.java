@@ -69,14 +69,11 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class DataFusionLeafPartitionRowRetrieverIT {
-    private static final FFIContext FFI_CONTEXT = DataFusionLeafPartitionRowRetriever.createContext();
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
-    private static final LeafPartitionRowRetriever ROW_RETRIEVER = DataFusionLeafPartitionRowRetriever.builder()
-            .context(FFI_CONTEXT)
-            .allocator(ALLOCATOR)
+    private static final FFIContext FFI_CONTEXT = DataFusionLeafPartitionRowRetriever.createContext();
+    private static final LeafPartitionRowRetriever ROW_RETRIEVER = new DataFusionLeafPartitionRowRetriever(
             // DataFusion spends time trying to auth with AWS unless you override it
-            .awsConfig(DataFusionAwsConfig.overrideEndpoint("dummy"))
-            .build();
+            DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, FFI_CONTEXT);
 
     @TempDir
     public Path tempDir;

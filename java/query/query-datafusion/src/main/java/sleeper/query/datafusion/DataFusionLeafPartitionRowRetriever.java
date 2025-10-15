@@ -18,7 +18,6 @@ package sleeper.query.datafusion;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,36 +34,21 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
-import java.lang.ref.Cleaner;
-import java.util.Optional;
 
 /**
  * Implements a Sleeper row retriever based on Apache DataFusion using native code.
  */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
-    private static final Cleaner CLEANER = Cleaner.create();
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
 
     private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator allocator;
     private final FFIContext context;
 
-    private DataFusionLeafPartitionRowRetriever(Builder builder) {
-        this.awsConfig = builder.awsConfig;
-        this.allocator = Optional.ofNullable(builder.allocator).orElseGet(() -> createAllocator(this));
-        this.context = Optional.ofNullable(builder.context).orElseGet(() -> createContext(this));
-    }
-
-    private static BufferAllocator createAllocator(Object instance) {
-        RootAllocator allocator = new RootAllocator();
-        CLEANER.register(instance, allocator::close);
-        return allocator;
-    }
-
-    private static FFIContext createContext(Object instance) {
-        FFIContext context = createContext();
-        CLEANER.register(instance, context::close);
-        return context;
+    public DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext context) {
+        this.awsConfig = awsConfig;
+        this.allocator = allocator;
+        this.context = context;
     }
 
     /**
@@ -74,10 +58,6 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      */
     public static FFIContext createContext() {
         return new FFIContext(DataFusionQueryFunctions.INSTANCE);
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     @Override
@@ -157,78 +137,5 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         queryConfig.validate();
         return queryConfig;
-    }
-
-    /**
-     * Builder for creating instances of outer class.
-     *
-     * This builder allows configuration of:
-     * <ul>
-     * <li>An optional object for AWS integration</li>
-     * <li>An optional object for Apache Arrow memory management</li>
-     * </ul>
-     *
-     * If no allocator is explicitly provided via {@link #allocator(BufferAllocator)},
-     * a new {@link RootAllocator} will be created when {@link #build()} is called.
-     *
-     * Example usage:
-     *
-     * <pre>
-     * DataFusionLeafPartitionRowRetriever retriever = DataFusionLeafPartitionRowRetriever.builder()
-     *         .awsConfig(myAwsConfig)
-     *         // .allocator(customAllocator) // Optional — defaults to new RootAllocator()
-     *         .build();
-     * </pre>
-     */
-    public static class Builder {
-        private DataFusionAwsConfig awsConfig = DataFusionAwsConfig.getDefault();
-        private BufferAllocator allocator;
-        private FFIContext context;
-
-        /**
-         * Sets the AWS configuration for the retriever.
-         *
-         * @param  awsConfig the {@link DataFusionAwsConfig} to use
-         * @return           this builder for method chaining
-         */
-        public Builder awsConfig(DataFusionAwsConfig awsConfig) {
-            this.awsConfig = awsConfig;
-            return this;
-        }
-
-        /**
-         * Sets the Apache Arrow allocator for the retriever.
-         *
-         * If not set, a {@link RootAllocator} will be created automatically during build.
-         *
-         * @param  allocator the allocator to use
-         * @return           this builder for method chaining
-         */
-        public Builder allocator(BufferAllocator allocator) {
-            this.allocator = allocator;
-            return this;
-        }
-
-        /**
-         * Sets the FFI context.
-         *
-         * If not set, it will be created automatically during build.
-         *
-         * @param  context the context to use; may be {@code null} to accept the default
-         * @return         this builder for method chaining
-         */
-        public Builder context(FFIContext context) {
-            this.context = context;
-            return this;
-        }
-
-        /**
-         * Builds a new instance using the configuration provided to this builder.
-         *
-         * @return a fully constructed {@link DataFusionLeafPartitionRowRetriever}
-         */
-        public DataFusionLeafPartitionRowRetriever build() {
-            return new DataFusionLeafPartitionRowRetriever(this);
-        }
     }
 }

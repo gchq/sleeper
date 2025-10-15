@@ -22,8 +22,7 @@ import jnr.ffi.Struct;
  *
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
  * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/aws_config.rs. The order and types
- * of
- * the fields must match exactly.
+ * of the fields must match exactly.
  */
 @SuppressWarnings(value = "checkstyle:memberName")
 public class FFIAwsConfig extends Struct {

@@ -15,10 +15,12 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
+import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -33,6 +35,7 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.EnvironmentUtils;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -57,6 +60,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
         createLambda(instanceProperties, jars, logGroup, providerLogGroup);
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
     private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
@@ -74,6 +78,12 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(15)));
 
+        lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
+                .create()
+                .resources(List.of("*"))
+                .actions(List.of("s3:ListBucketVersions", "s3:DeleteObject", "s3:DeleteObjectVersion"))
+                .build());
+
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
                 .logGroup(providerLogGroup)
@@ -84,23 +94,18 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
     }
 
     /**
-     * Allows the stack to delete the bucket and it's contents.
+     * Adds a custom resource to delete a bucket's contents.
      *
-     * @param instanceProperties the instance properties
-     * @param bucket             the bucket to delete
-     * @param bucketName         the bucket name
+     * @param scope  the stack to add the custom resource to
+     * @param bucket the bucket to delete from
      */
-    public void addAutoDeleteS3Objects(InstanceProperties instanceProperties,
-            IBucket bucket, String bucketName) {
+    public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
 
         String id = bucket.getNode().getId() + "-AutoDelete";
 
-        bucket.grantRead(lambda);
-        bucket.grantDelete(lambda);
-
-        CustomResource customResource = CustomResource.Builder.create(this, id)
+        CustomResource customResource = CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::AutoDeleteS3Objects")
-                .properties(Map.of("bucket", bucketName))
+                .properties(Map.of("bucket", bucket.getBucketName()))
                 .serviceToken(provider.getServiceToken())
                 .build();
 

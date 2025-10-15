@@ -164,7 +164,7 @@ public class BulkExportTaskResources {
                 .build();
         new CfnOutput(stack, BULK_EXPORT_CLUSTER_NAME, bulkExportClusterProps);
 
-        coreStacks.addAutoStopEcsClusterTasks(instanceProperties, cluster, clusterName);
+        coreStacks.addAutoStopEcsClusterTasks(stack, cluster);
 
     }
 

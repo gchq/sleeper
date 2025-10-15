@@ -21,19 +21,20 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Provides a high level interface to using the foreign function code.
+ * Provides a high level interface to foreign function code.
  *
  * If this class is shared between threads, external synchronisation must be used.
  *
  * Clients should create an instance of this class in a <a
- * href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">The
- * try-with-resources Statement</a>
+ * href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">
+ * try-with-resources</a>
  * construct:
- * {@snippet id='header':
+ *
+ * <pre>
  * try (FFIContext context = new FFIContext(functions)) {
- * ...
+ *   ...
  * }
- * }
+ * </pre>
  */
 public class FFIContext implements AutoCloseable {
     /**
@@ -65,7 +66,7 @@ public class FFIContext implements AutoCloseable {
     }
 
     /**
-     * Close this FFI context.
+     * Closes this FFI context.
      *
      * Once this function has been called, no further FFI calls can be made using it
      * and will throw exceptions. It is safe to close this context whilst query
@@ -85,7 +86,7 @@ public class FFIContext implements AutoCloseable {
     }
 
     /**
-     * Check if this context has been closed.
+     * Checks if this context has been closed.
      *
      * @return true if context is closed
      */

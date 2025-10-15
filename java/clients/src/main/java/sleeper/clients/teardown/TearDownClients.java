@@ -19,7 +19,6 @@ package sleeper.clients.teardown;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
-import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -31,7 +30,6 @@ public class TearDownClients {
 
     private final S3Client s3;
     private final CloudWatchEventsClient cloudWatch;
-    private final EcsClient ecs;
     private final EcrClient ecr;
     private final EmrClient emr;
     private final EmrServerlessClient emrServerless;
@@ -40,7 +38,6 @@ public class TearDownClients {
     private TearDownClients(Builder builder) {
         s3 = Objects.requireNonNull(builder.s3, "s3v2 must not be null");
         cloudWatch = Objects.requireNonNull(builder.cloudWatch, "cloudWatch must not be null");
-        ecs = Objects.requireNonNull(builder.ecs, "ecs must not be null");
         ecr = Objects.requireNonNull(builder.ecr, "ecr must not be null");
         emr = Objects.requireNonNull(builder.emr, "emr must not be null");
         emrServerless = Objects.requireNonNull(builder.emrServerless, "emrServerless must not be null");
@@ -51,14 +48,12 @@ public class TearDownClients {
         try (S3Client s3Client = S3Client.create();
                 CloudWatchEventsClient cloudWatchClient = CloudWatchEventsClient.create();
                 EcrClient ecrClient = EcrClient.create();
-                EcsClient ecsClient = EcsClient.create();
                 EmrClient emrClient = EmrClient.create();
                 EmrServerlessClient emrServerless = EmrServerlessClient.create();
                 CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
             TearDownClients clients = builder()
                     .s3(s3Client)
                     .cloudWatch(cloudWatchClient)
-                    .ecs(ecsClient)
                     .ecr(ecrClient)
                     .emr(emrClient)
                     .emrServerless(emrServerless)
@@ -80,10 +75,6 @@ public class TearDownClients {
         return cloudWatch;
     }
 
-    public EcsClient getEcs() {
-        return ecs;
-    }
-
     public EcrClient getEcr() {
         return ecr;
     }
@@ -103,7 +94,6 @@ public class TearDownClients {
     public static final class Builder {
         private S3Client s3;
         private CloudWatchEventsClient cloudWatch;
-        private EcsClient ecs;
         private EcrClient ecr;
         private EmrClient emr;
         private EmrServerlessClient emrServerless;
@@ -119,11 +109,6 @@ public class TearDownClients {
 
         public Builder cloudWatch(CloudWatchEventsClient cloudWatch) {
             this.cloudWatch = cloudWatch;
-            return this;
-        }
-
-        public Builder ecs(EcsClient ecs) {
-            this.ecs = ecs;
             return this;
         }
 

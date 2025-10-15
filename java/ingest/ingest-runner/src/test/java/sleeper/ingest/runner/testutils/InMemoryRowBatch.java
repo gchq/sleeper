@@ -23,8 +23,8 @@ import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.WrappedIterator;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
-import sleeper.core.rowbatch.RowBatch;
 import sleeper.core.schema.Schema;
+import sleeper.ingest.runner.impl.rowbatch.RowBatch;
 
 import java.util.ArrayList;
 import java.util.List;
