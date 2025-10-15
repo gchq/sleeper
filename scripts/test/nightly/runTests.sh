@@ -145,8 +145,8 @@ runMavenSystemTests() {
 
 runTestSuite(){
     SUITE=$3
-    echo "[$(time_str)] Starting test suite: $SUITE"
     sleep $1 #Delay so that initial deployment doesn't clash with each other
+    echo "[$(time_str)] Starting test suite: $SUITE"
     pushd "$REPO_PARENT_DIR/sleeper/$SUITE/scripts/test" #Move into isolated repo copy
     shift 1
     runMavenSystemTests "$@"
