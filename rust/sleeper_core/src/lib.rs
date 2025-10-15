@@ -442,9 +442,11 @@ async fn create_object_store_factory(
 pub fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
     let creds = Credentials::from_keys(&aws_config.access_key, &aws_config.secret_key, None);
     let region = Region::new(String::from(&aws_config.region));
-    config_for_s3_module(&creds, &region)
-        .with_endpoint(&aws_config.endpoint)
-        .with_allow_http(aws_config.allow_http)
+    let mut builder = config_for_s3_module(&creds, &region);
+    if !aws_config.endpoint.is_empty() {
+        builder = builder.with_endpoint(&aws_config.endpoint);
+    }
+    builder.with_allow_http(aws_config.allow_http)
 }
 
 #[cfg(test)]
