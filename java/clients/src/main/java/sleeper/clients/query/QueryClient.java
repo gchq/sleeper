@@ -17,7 +17,6 @@ package sleeper.clients.query;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -42,12 +41,14 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
-import sleeper.query.runner.rowretrieval.QueryEngineSelector;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -72,29 +73,22 @@ public class QueryClient extends QueryCommandLineClient {
 
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
-    private final ExecutorService executorService;
-    private final DataFusionAwsConfig awsConfig;
-    private final BufferAllocator allocator;
-    private final FFIContext ffiContext;
+    private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
     public QueryClient(
             InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
             ConsoleInput in, ConsoleOutput out, ObjectFactory objectFactory, StateStoreProvider stateStoreProvider,
-            ExecutorService executorService, DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext ffiContext) {
+            LeafPartitionRowRetrieverProvider rowRetrieverProvider) {
         super(instanceProperties, tableIndex, tablePropertiesProvider, in, out);
         this.objectFactory = objectFactory;
         this.stateStoreProvider = stateStoreProvider;
-        this.executorService = executorService;
-        this.awsConfig = awsConfig;
-        this.allocator = allocator;
-        this.ffiContext = ffiContext;
+        this.rowRetrieverProvider = rowRetrieverProvider;
     }
 
     @Override
     protected void init(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(getInstanceProperties(), tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
@@ -102,7 +96,7 @@ public class QueryClient extends QueryCommandLineClient {
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    new QueryEngineSelector(executorService, conf, awsConfig, allocator, ffiContext).getRowRetriever(tableProperties));
+                    rowRetrieverProvider.getRowRetriever(tableProperties));
             queryExecutor.init(partitions, partitionToFileMapping);
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
@@ -155,7 +149,9 @@ public class QueryClient extends QueryCommandLineClient {
                     new ConsoleInput(System.console()), new ConsoleOutput(System.out),
                     new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
-                    executorService, DataFusionAwsConfig.getDefault(), allocator, ffiContext)
+                    QueryEngineSelector.javaAndDataFusion(
+                            new LeafPartitionRowRetrieverImpl.Provider(executorService, TableHadoopConfigurationProvider.forClient(instanceProperties)),
+                            new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, ffiContext)))
                     .run();
         } finally {
             executorService.shutdown();
