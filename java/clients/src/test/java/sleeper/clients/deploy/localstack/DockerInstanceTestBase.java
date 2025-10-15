@@ -31,7 +31,10 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 
@@ -70,9 +73,10 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
-        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new QueryEngineSelector(Executors.newSingleThreadExecutor(), hadoopConf).getRowRetriever(tableProperties));
-        executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
+        LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(Executors.newSingleThreadExecutor(), hadoopConf).getRowRetriever(tableProperties);
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
+        planner.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
+        QueryExecutor executor = new QueryExecutor(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
         return executor.execute(createQueryAllRows(tree, tableProperties.get(TABLE_NAME)));
     }
 

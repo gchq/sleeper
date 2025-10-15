@@ -15,7 +15,6 @@
  */
 package sleeper.query.lambda;
 
-import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -26,18 +25,15 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
-import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.core.tracker.QueryStatusReportListener;
-import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
 import java.time.Instant;
@@ -45,7 +41,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -53,22 +48,18 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class SqsQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessor.class);
 
-    private final ExecutorService executorService;
     private final InstanceProperties instanceProperties;
     private final SqsClient sqsClient;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final ObjectFactory objectFactory;
     private final QueryStatusReportListener queryListener;
-    private final Map<String, QueryExecutor> queryExecutorCache = new HashMap<>();
+    private final Map<String, QueryPlanner> queryPlannerCache = new HashMap<>();
 
     private SqsQueryProcessor(Builder builder) throws ObjectFactoryException {
         sqsClient = builder.sqsClient;
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         stateStoreProvider = builder.stateStoreProvider;
-        executorService = builder.executorService;
-        objectFactory = builder.objectFactory;
         queryListener = builder.queryListener;
     }
 
@@ -92,15 +83,13 @@ public class SqsQueryProcessor {
     }
 
     private void processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws QueryException {
-        QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(tableProperties.get(TABLE_ID), tableID -> {
+        QueryPlanner queryPlanner = queryPlannerCache.computeIfAbsent(tableProperties.get(TABLE_ID), tableID -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            Configuration conf = HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
-            return new QueryExecutor(objectFactory, tableProperties, stateStore,
-                    new QueryEngineSelector(executorService, conf).getRowRetriever(tableProperties));
+            return new QueryPlanner(tableProperties, stateStore);
         });
 
-        queryExecutor.initIfNeeded(Instant.now());
-        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        queryPlanner.initIfNeeded(Instant.now());
+        List<LeafPartitionQuery> subQueries = queryPlanner.splitIntoLeafPartitionQueries(query);
 
         if (subQueries.isEmpty()) {
             LOGGER.error("Query led to no sub queries");
@@ -129,8 +118,6 @@ public class SqsQueryProcessor {
         private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
-        private ObjectFactory objectFactory;
-        private ExecutorService executorService;
         private QueryStatusReportListener queryListener;
 
         private Builder() {
@@ -153,16 +140,6 @@ public class SqsQueryProcessor {
 
         public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
             this.stateStoreProvider = stateStoreProvider;
-            return this;
-        }
-
-        public Builder objectFactory(ObjectFactory objectFactory) {
-            this.objectFactory = objectFactory;
-            return this;
-        }
-
-        public Builder executorService(ExecutorService executorService) {
-            this.executorService = executorService;
             return this;
         }
 
