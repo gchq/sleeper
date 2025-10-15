@@ -78,12 +78,12 @@ setupParallelTestFolders() {
     cp -r python quick/python
     cp -r code-style quick/code-style
     cp README.md quick
-    cp -r quick slow1
-    cp -r quick slow2
-    cp -r quick slow3
+    #cp -r quick slow1
+    #cp -r quick slow2
+    #cp -r quick slow3
     if [ "$MAIN_SUITE_NAME" == "performance" ]; then
-        cp -r quick expensive1
-        cp -r quick expensive2
+        #cp -r quick expensive1
+        #cp -r quick expensive2
         cp -r quick expensive3
     fi
     popd
