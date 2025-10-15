@@ -64,7 +64,21 @@ public class QueryPlanner {
     }
 
     /**
-     * Initialises a query executor with partitions and the mapping from partitions to file references.
+     * Creates and initialises a query planner. Will read and cache the state of partitions and file references from the
+     * state store.
+     *
+     * @param  tableProperties the table properties
+     * @param  stateStore      the state store
+     * @return                 the initialised planner
+     */
+    public static QueryPlanner initialiseNow(TableProperties tableProperties, StateStore stateStore) {
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
+        planner.init();
+        return planner;
+    }
+
+    /**
+     * Initialises a query planner with partitions and the mapping from partitions to file references.
      * Should be called periodically so that this class is aware of
      * new data arriving in the table. How often this method should be called is
      * a balance between having an up-to-date view of the data and the cost of
@@ -78,7 +92,7 @@ public class QueryPlanner {
     }
 
     /**
-     * Initialises a query executor with the partitions and partition to file mapping,
+     * Initialises a query planner with the partitions and partition to file mapping,
      * rather than loading them from the state store.
      *
      * @param partitions             the partitions to initialise
@@ -89,7 +103,7 @@ public class QueryPlanner {
     }
 
     /**
-     * Initialises a query executor if the next initialise time has passed.
+     * Initialises a query planner if the next initialise time has passed.
      *
      * @param  now                 the time now
      * @throws StateStoreException if the state store can't be accessed
@@ -103,7 +117,7 @@ public class QueryPlanner {
     }
 
     /**
-     * Initialises a query executor with given time.
+     * Initialises a query planner with given time.
      * The partitions and partition to file mapping are loaded from the state store.
      *
      * @param  now                 the time now
@@ -117,7 +131,7 @@ public class QueryPlanner {
     }
 
     /**
-     * Initialises a query executor with the partitions, partition to file map and the next initialise time.
+     * Initialises a query planner with the partitions, partition to file map and the next initialise time.
      *
      * @param partitions             the partitions to initialise
      * @param partitionToFileMapping the partition to file mapping information
