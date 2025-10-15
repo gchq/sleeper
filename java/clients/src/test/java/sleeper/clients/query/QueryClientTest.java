@@ -16,43 +16,43 @@
 
 package sleeper.clients.query;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.row.Row;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.testutils.StateStoreUpdatesWrapper;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.util.ObjectFactory;
-import sleeper.ingest.runner.IngestFactory;
-import sleeper.ingest.runner.testutils.IngestRowsTestDataHelper;
+import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ForkJoinPool;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.query.QueryClientTestConstants.EXACT_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.EXIT_OPTION;
@@ -65,30 +65,21 @@ import static sleeper.clients.query.QueryClientTestConstants.PROMPT_MIN_ROW_KEY_
 import static sleeper.clients.query.QueryClientTestConstants.PROMPT_QUERY_TYPE;
 import static sleeper.clients.query.QueryClientTestConstants.RANGE_QUERY_OPTION;
 import static sleeper.clients.query.QueryClientTestConstants.YES_OPTION;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class QueryClientIT {
-    @TempDir
-    private Path tempDir;
-    private InstanceProperties instanceProperties;
+public class QueryClientTest {
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final ToStringConsoleOutput out = new ToStringConsoleOutput();
     private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
+    private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs);
     private final List<TableProperties> tablePropertiesList = new ArrayList<>();
-
-    @BeforeEach
-    void setUp() throws Exception {
-        instanceProperties = createInstanceProperties(tempDir);
-    }
+    private final InMemoryRowStore rowStore = new InMemoryRowStore();
 
     @Nested
     @DisplayName("Exact query")
@@ -123,7 +114,7 @@ public class QueryClientIT {
             Row row = new Row();
             row.put("key", 123L);
             row.put("value", "abc");
-            ingestData(tableProperties, List.of(row).iterator());
+            ingestData(tableProperties, List.of(row));
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
@@ -151,7 +142,7 @@ public class QueryClientIT {
             List<Row> rows = LongStream.rangeClosed(0, 10)
                     .mapToObj(num -> new Row(Map.of("key", num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, rows.iterator());
+            ingestData(tableProperties, rows);
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -183,7 +174,7 @@ public class QueryClientIT {
             List<Row> rows = LongStream.rangeClosed(0, 3)
                     .mapToObj(num -> new Row(Map.of("key", num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, rows.iterator());
+            ingestData(tableProperties, rows);
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -222,7 +213,7 @@ public class QueryClientIT {
                             "key2", num + 100L,
                             "value", "test-" + num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, rows.iterator());
+            ingestData(tableProperties, rows);
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -309,15 +300,6 @@ public class QueryClientIT {
         }
     }
 
-    private static InstanceProperties createInstanceProperties(Path tempDir) throws Exception {
-        String dataDir = createTempDirectory(tempDir, null).toString();
-        InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, dataDir);
-        instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return instanceProperties;
-    }
-
     private TableProperties createTable(String tableName, Schema schema) {
         TableStatus tableStatus = TableStatusTestHelper.uniqueIdAndName(
                 TableIdGenerator.fromRandomSeed(0).generateString(), tableName);
@@ -325,7 +307,7 @@ public class QueryClientIT {
         tableProperties.set(TABLE_ID, tableStatus.getTableUniqueId());
         tableProperties.set(TABLE_NAME, tableStatus.getTableName());
         tableIndex.create(tableStatus);
-        transactionLogs.initialiseTable(tableProperties);
+        updateStateStore(tableProperties).initialise(tableProperties);
         tablePropertiesList.add(tableProperties);
         return tableProperties;
     }
@@ -334,15 +316,21 @@ public class QueryClientIT {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tablePropertiesList),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
                 InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
-                ForkJoinPool.commonPool(), null, null, null)
+                new InMemoryLeafPartitionRowRetriever(rowStore))
                 .run();
     }
 
-    private void ingestData(TableProperties tableProperties, Iterator<Row> rowIterator) throws Exception {
-        tableProperties.set(COMPRESSION_CODEC, "snappy");
-        IngestFactory factory = IngestRowsTestDataHelper.createIngestFactory(tempDir.toString(),
-                InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
-                instanceProperties);
-        factory.ingestFromRowIterator(tableProperties, rowIterator);
+    private void ingestData(TableProperties tableProperties, List<Row> rows) throws Exception {
+        FileReference file = fileFactory(tableProperties).rootFile(UUID.randomUUID().toString(), rows.size());
+        rowStore.addFile(file.getFilename(), rows);
+        updateStateStore(tableProperties).addFile(file);
+    }
+
+    private StateStoreUpdatesWrapper updateStateStore(TableProperties tableProperties) {
+        return StateStoreUpdatesWrapper.update(stateStoreProvider.getStateStore(tableProperties));
+    }
+
+    private FileReferenceFactory fileFactory(TableProperties tableProperties) {
+        return FileReferenceFactory.from(instanceProperties, tableProperties, new PartitionsBuilder(tableProperties).singlePartition("root").buildTree());
     }
 }

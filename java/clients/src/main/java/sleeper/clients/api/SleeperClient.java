@@ -38,9 +38,10 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.batcher.core.IngestBatcherSubmitRequest;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.query.core.model.Query;
-import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 
 import java.util.List;
 import java.util.Objects;
@@ -196,11 +197,9 @@ public class SleeperClient implements AutoCloseable {
      */
     public QueryExecutor getQueryExecutor(String tableName) {
         TableProperties tableProperties = getTableProperties(tableName);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-        QueryExecutor executor = new QueryExecutor(objectFactory, tableProperties, stateStore, rowRetriever);
-        executor.init();
-        return executor;
+        return new QueryExecutor(
+                QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)),
+                new LeafPartitionQueryExecutor(objectFactory, tableProperties, rowRetrieverProvider.getRowRetriever(tableProperties)));
     }
 
     /**

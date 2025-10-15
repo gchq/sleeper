@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.arrow.RowIteratorFromArrowReader;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.foreign.FFISleeperRegion;
@@ -31,6 +32,7 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
@@ -137,5 +139,25 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
         queryConfig.validate();
         return queryConfig;
+    }
+
+    /**
+     * A provider to create instances of this class.
+     */
+    public static class Provider implements LeafPartitionRowRetrieverProvider {
+        private final DataFusionAwsConfig awsConfig;
+        private final BufferAllocator allocator;
+        private final FFIContext context;
+
+        public Provider(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext context) {
+            this.awsConfig = awsConfig;
+            this.allocator = allocator;
+            this.context = context;
+        }
+
+        @Override
+        public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
+            return new DataFusionLeafPartitionRowRetriever(awsConfig, allocator, context);
+        }
     }
 }

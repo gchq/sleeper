@@ -20,19 +20,20 @@ import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.row.testutils.InMemoryRowStore;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.InMemoryLeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,10 +54,10 @@ public class InMemoryDirectQueryDriver implements QueryDriver {
     @Override
     public List<Row> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
-        StateStore stateStore = instance.getStateStore(tableProperties);
-        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRowRetriever(dataStore), Instant.now());
-        executor.init();
+        LeafPartitionRowRetriever rowRetriever = new InMemoryLeafPartitionRowRetriever(dataStore);
+        QueryExecutor executor = new QueryExecutor(
+                QueryPlanner.initialiseNow(tableProperties, instance.getStateStore(tableProperties)),
+                new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
         try (CloseableIterator<Row> iterator = executor.execute(query)) {
             List<Row> rows = new ArrayList<>();
             iterator.forEachRemaining(rows::add);

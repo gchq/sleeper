@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.rowretrieval;
+package sleeper.query.core.rowretrieval;
 
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.type.LongType;
-import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
-import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
-
-import java.util.concurrent.ForkJoinPool;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
@@ -37,6 +33,9 @@ public class QueryEngineSelectorTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new LongType()));
+    InMemoryRowStore rowStore = new InMemoryRowStore();
+    InMemoryLeafPartitionRowRetriever javaRowRetriever = new InMemoryLeafPartitionRowRetriever(rowStore);
+    InMemoryLeafPartitionRowRetriever dataFusionRowRetriever = new InMemoryLeafPartitionRowRetriever(rowStore);
 
     @Test
     void shouldSetDataFusionEngine() {
@@ -44,7 +43,7 @@ public class QueryEngineSelectorTest {
         tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
 
         // When / Then
-        assertThat(createRowRetriever()).isInstanceOf(DataFusionLeafPartitionRowRetriever.class);
+        assertThat(createRowRetriever()).isSameAs(dataFusionRowRetriever);
     }
 
     @Test
@@ -53,7 +52,7 @@ public class QueryEngineSelectorTest {
         tableProperties.setEnum(DATA_ENGINE, DataEngine.JAVA);
 
         // When / Then
-        assertThat(createRowRetriever()).isInstanceOf(LeafPartitionRowRetrieverImpl.class);
+        assertThat(createRowRetriever()).isSameAs(javaRowRetriever);
     }
 
     @Test
@@ -62,11 +61,11 @@ public class QueryEngineSelectorTest {
         tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
 
         // When / Then
-        assertThat(createRowRetriever()).isInstanceOf(LeafPartitionRowRetrieverImpl.class);
+        assertThat(createRowRetriever()).isSameAs(javaRowRetriever);
     }
 
     private LeafPartitionRowRetriever createRowRetriever() {
-        return new QueryEngineSelector(ForkJoinPool.commonPool(), new Configuration(), null, null, null)
+        return QueryEngineSelector.javaAndDataFusion(javaRowRetriever, dataFusionRowRetriever)
                 .getRowRetriever(tableProperties);
     }
 
