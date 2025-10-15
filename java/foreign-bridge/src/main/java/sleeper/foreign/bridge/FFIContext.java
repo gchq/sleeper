@@ -18,7 +18,6 @@ package sleeper.foreign.bridge;
 import jnr.ffi.Pointer;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Provides a high level interface to foreign function code.
@@ -46,10 +45,10 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     private final T functions;
 
     /**
-     * Pointer to the Rust side of the FFI layer. If this is empty, it means the
+     * Pointer to the Rust side of the FFI layer. If this is null, it means the
      * context has been closed.
      */
-    private Optional<Pointer> context;
+    private Pointer context;
 
     /**
      * Initialises the FFI library and context for calling functions.
@@ -61,10 +60,10 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * @param functions the native function interface
      */
     public FFIContext(T functions) {
-        this.functions = Objects.requireNonNull(functions, "functions");
+        this.functions = Objects.requireNonNull(functions, "functions must not be null");
         // Create Java interface to FFI lib
         // Make FFI call to establish foreign context
-        this.context = Optional.of(functions.create_context());
+        this.context = Objects.requireNonNull(functions.create_context(), "context must not be null");
     }
 
     /**
@@ -80,11 +79,10 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     @Override
     public void close() {
         // if we have a pointer, then make FFI call to destroy resources
-        context = context.map(val -> {
-            functions.destroy_context(val);
-            // set pointer to null to prevent double closing
-            return null;
-        });
+        if (context != null) {
+            functions.destroy_context(context);
+            context = null;
+        }
     }
 
     /**
@@ -93,7 +91,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * @return true if context is closed
      */
     public boolean isClosed() {
-        return context.isEmpty();
+        return context == null;
     }
 
     /**
@@ -119,6 +117,6 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      */
     public Pointer getForeignContext() {
         checkClosed();
-        return context.get();
+        return context;
     }
 }
