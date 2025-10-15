@@ -15,31 +15,28 @@
  */
 package sleeper.cdk.custom;
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import com.github.tomakehurst.wiremock.matching.StringValuePattern;
+import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
+import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
+import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.matching;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 public class WiremockEmrServerlessTestHelper {
-
-    public static final String OPERATION_HEADER = "X-Amz-Target";
-    public static final StringValuePattern MATCHING_LIST_CONTAINERS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListContainerInstances");
-    public static final StringValuePattern MATCHING_LIST_APPLICATIONS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListApplications");
-    public static final StringValuePattern MATCHING_STOP_APPLICATION_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopApplication");
-    public static final StringValuePattern MATCHING_CREATE_APPLICATION_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.CreateApplication");
-    public static final StringValuePattern MATCHING_UPDATE_APPLICATION_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.UpdateApplication");
-    public static final StringValuePattern MATCHING_DEREGISTER_CONTAINER_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.DeregisterContainerInstance");
-    public static final StringValuePattern MATCHING_DELETE_CLUSTER_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.DeleteCluster");
-    public static final StringValuePattern MATCHING_TAG_RESOURCE_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.TagResource");
 
     private WiremockEmrServerlessTestHelper() {
     }
@@ -54,50 +51,101 @@ public class WiremockEmrServerlessTestHelper {
         return wiremockAwsV2Client(runtimeInfo, EmrServerlessClient.builder());
     }
 
-    /**
-     * Checks for an EMR Serverless stop application request.
-     *
-     * @param  applicationId the EMR serverless application id
-     * @return               matching HTTP requests
-     */
-    public static RequestPatternBuilder stopApplicationRequestedFor(String applicationId) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_STOP_APPLICATION_OPERATION)
-                .withRequestBody(matchingJsonPath("$.applicationId", equalTo(applicationId)));
+    public static MappingBuilder listActiveEmrApplicationsRequest() {
+        return get(listRunningApplicationsUrl());
     }
 
-    /**
-     * Checks for an EMR Serverless application create request.
-     *
-     * @param  applicationName the EMR application name
-     * @return                 matching HTTP requests
-     */
-    public static RequestPatternBuilder createApplicationRequestedFor(String applicationName) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_CREATE_APPLICATION_OPERATION)
-                .withRequestBody(matchingJsonPath("$.name", equalTo(applicationName)));
+    public static MappingBuilder listRunningJobsForApplicationRequest() {
+        return get(listRunningJobsUrl());
     }
 
-    /**
-     * Checks for an EMR Servelss application update request.
-     *
-     * @param  applicationId the EMR Serverless application id
-     * @return               matching HTTP requests
-     */
-    public static RequestPatternBuilder updateApplicationRequestedFor(String applicationId) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_UPDATE_APPLICATION_OPERATION)
-                .withRequestBody(matchingJsonPath("$.applicationId", equalTo(applicationId)));
+    public static MappingBuilder listRunningOrCancellingJobsForApplicationRequest() {
+        return get(listRunningOrCancellingJobsUrl());
     }
 
-    /**
-     * Checks for any request that matches the pattern.
-     *
-     * @return matching HTTP requests
-     */
+    public static MappingBuilder cancelJobRunRequest(String jobRunId) {
+        return delete(cancelJobRunUrl(jobRunId));
+    }
+
+    public static MappingBuilder stopApplicationRequest() {
+        return post(stopApplicationUrl());
+    }
+
     public static RequestPatternBuilder anyRequestedForEmrServerless() {
-        return anyRequestedFor(anyUrl())
-                .withHeader(OPERATION_HEADER, matching("^AmazonEC2ContainerServiceV\\d+\\..*"));
+        return anyRequestedFor(urlMatching("/applications.*"));
+    }
+
+    public static RequestPatternBuilder listActiveApplicationsRequested() {
+        return getRequestedFor(listRunningApplicationsUrl());
+    }
+
+    public static RequestPatternBuilder listRunningJobsForApplicationRequested() {
+        return getRequestedFor(listRunningJobsUrl());
+    }
+
+    public static RequestPatternBuilder listRunningOrCancellingJobsForApplicationRequested() {
+        return getRequestedFor(listRunningOrCancellingJobsUrl());
+    }
+
+    public static RequestPatternBuilder stopApplicationRequested() {
+        return postRequestedFor(stopApplicationUrl());
+    }
+
+    public static RequestPatternBuilder cancelJobRunRequested(String jobRunId) {
+        return deleteRequestedFor(cancelJobRunUrl(jobRunId));
+    }
+
+    public static ResponseDefinitionBuilder aResponseWithNoApplications() {
+        return aResponse().withStatus(200)
+                .withBody("{\"applications\": []}");
+    }
+
+    public static ResponseDefinitionBuilder aResponseWithApplicationWithState(ApplicationState state) {
+        return aResponseWithApplicationWithNameAndState("sleeper-test", state);
+    }
+
+    public static ResponseDefinitionBuilder aResponseWithApplicationWithNameAndState(String name, ApplicationState state) {
+        return aResponse().withStatus(200)
+                .withBody("{\"applications\": [{" +
+                        "\"name\": \"" + name + "\"," +
+                        "\"id\": \"test-app-id\"," +
+                        "\"state\": \"" + state + "\"" +
+                        "}]}");
+    }
+
+    public static ResponseDefinitionBuilder aResponseWithJobRunWithState(String jobRunId, JobRunState state) {
+        return aResponse().withStatus(200).withBody("{\"jobRuns\":[{" +
+                "\"applicationId\":\"test-app-id\"," +
+                "\"id\":\"" + jobRunId + "\"," +
+                "\"state\":\"" + state + "\"" +
+                "}]}");
+    }
+
+    public static ResponseDefinitionBuilder aResponseWithNoJobRuns() {
+        return aResponse().withStatus(200).withBody("{\"jobRuns\":[]}");
+    }
+
+    private static UrlPattern listRunningApplicationsUrl() {
+        return urlEqualTo("/applications"
+                + "?states=STARTING&states=STARTED&states=STOPPING");
+    }
+
+    private static UrlPattern listRunningJobsUrl() {
+        return urlEqualTo("/applications/test-app-id/jobruns" +
+                "?states=RUNNING&states=SCHEDULED&states=PENDING&states=SUBMITTED");
+    }
+
+    private static UrlPattern listRunningOrCancellingJobsUrl() {
+        return urlEqualTo("/applications/test-app-id/jobruns" +
+                "?states=RUNNING&states=SCHEDULED&states=PENDING&states=SUBMITTED&states=CANCELLING");
+    }
+
+    private static UrlPattern cancelJobRunUrl(String jobRunId) {
+        return urlEqualTo("/applications/test-app-id/jobruns/" + jobRunId);
+    }
+
+    private static UrlPattern stopApplicationUrl() {
+        return urlEqualTo("/applications/test-app-id/stop");
     }
 
 }
