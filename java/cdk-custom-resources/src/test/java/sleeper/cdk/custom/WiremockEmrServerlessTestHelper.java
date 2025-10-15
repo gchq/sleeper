@@ -36,6 +36,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
+/**
+ * Helper methods to mock an EMR Serverless application.
+ */
 public class WiremockEmrServerlessTestHelper {
 
     private WiremockEmrServerlessTestHelper() {
@@ -51,59 +54,134 @@ public class WiremockEmrServerlessTestHelper {
         return wiremockAwsV2Client(runtimeInfo, EmrServerlessClient.builder());
     }
 
+    /**
+     * List active EMR applications.
+     *
+     * @return matching HTTP requests
+     */
     public static MappingBuilder listActiveEmrApplicationsRequest() {
         return get(listRunningApplicationsUrl());
     }
 
+    /**
+     * List running jobs on an EMR application.
+     *
+     * @return matching HTTP requests
+     */
     public static MappingBuilder listRunningJobsForApplicationRequest() {
         return get(listRunningJobsUrl());
     }
 
+    /**
+     * List running or cnacelled jobs on EMR application.
+     *
+     * @return matching HTTP requests
+     */
     public static MappingBuilder listRunningOrCancellingJobsForApplicationRequest() {
         return get(listRunningOrCancellingJobsUrl());
     }
 
+    /**
+     * Cancel a job run.
+     *
+     * @param  jobRunId the job id
+     * @return          a HTTP response
+     */
     public static MappingBuilder cancelJobRunRequest(String jobRunId) {
         return delete(cancelJobRunUrl(jobRunId));
     }
 
+    /**
+     * Stop an EMR application.
+     *
+     * @return a HTTP response
+     */
     public static MappingBuilder stopApplicationRequest() {
         return post(stopApplicationUrl());
     }
 
+    /**
+     * Check for any requests to the EMR Serverless client.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder anyRequestedForEmrServerless() {
         return anyRequestedFor(urlMatching("/applications.*"));
     }
 
+    /**
+     * Checks for a list active applications request.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder listActiveApplicationsRequested() {
         return getRequestedFor(listRunningApplicationsUrl());
     }
 
+    /**
+     * Check for a list running jobs request.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder listRunningJobsForApplicationRequested() {
         return getRequestedFor(listRunningJobsUrl());
     }
 
+    /**
+     * Check for a list running or cancelled jobs request.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder listRunningOrCancellingJobsForApplicationRequested() {
         return getRequestedFor(listRunningOrCancellingJobsUrl());
     }
 
+    /**
+     * Check for a stop application request.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder stopApplicationRequested() {
         return postRequestedFor(stopApplicationUrl());
     }
 
+    /**
+     * Check for a job cancellation request.
+     *
+     * @param  jobRunId the job id
+     * @return          matching HTTP requests
+     */
     public static RequestPatternBuilder cancelJobRunRequested(String jobRunId) {
         return deleteRequestedFor(cancelJobRunUrl(jobRunId));
     }
 
+    /**
+     * Build a response with no EMR applications.
+     *
+     * @return a HTTP response
+     */
     public static ResponseDefinitionBuilder aResponseWithNoApplications() {
         return aResponse().withStatus(200)
                 .withBody("{\"applications\": []}");
     }
 
+    /**
+     * Build an EMR application response with a name and given state.
+     *
+     * @param  state the application state
+     * @return       a HTTP response
+     */
     public static ResponseDefinitionBuilder aResponseWithApplicationWithState(ApplicationState state) {
         return aResponseWithApplicationWithNameAndState("sleeper-test", state);
     }
 
+    /**
+     * Build an EMR application response with a given name and state.
+     *
+     * @param  name  the application name
+     * @param  state the application state
+     * @return       a HTTP response
+     */
     public static ResponseDefinitionBuilder aResponseWithApplicationWithNameAndState(String name, ApplicationState state) {
         return aResponse().withStatus(200)
                 .withBody("{\"applications\": [{" +
@@ -113,6 +191,13 @@ public class WiremockEmrServerlessTestHelper {
                         "}]}");
     }
 
+    /**
+     * Build an EMR application response with a give job id and state.
+     *
+     * @param  jobRunId the job id
+     * @param  state    the application state
+     * @return          a HTTP response
+     */
     public static ResponseDefinitionBuilder aResponseWithJobRunWithState(String jobRunId, JobRunState state) {
         return aResponse().withStatus(200).withBody("{\"jobRuns\":[{" +
                 "\"applicationId\":\"test-app-id\"," +
@@ -121,6 +206,11 @@ public class WiremockEmrServerlessTestHelper {
                 "}]}");
     }
 
+    /**
+     * Build an EMR application response with an empty list of job runs.
+     *
+     * @return a HTTP response
+     */
     public static ResponseDefinitionBuilder aResponseWithNoJobRuns() {
         return aResponse().withStatus(200).withBody("{\"jobRuns\":[]}");
     }

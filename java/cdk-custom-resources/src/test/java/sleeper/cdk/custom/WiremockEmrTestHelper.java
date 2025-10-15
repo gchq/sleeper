@@ -24,6 +24,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 
+/**
+ * Helper methods to mock an EMR cluster.
+ */
 public class WiremockEmrTestHelper {
 
     public static final String OPERATION_HEADER = "X-Amz-Target";
@@ -32,6 +35,11 @@ public class WiremockEmrTestHelper {
     private WiremockEmrTestHelper() {
     }
 
+    /**
+     * List active EMR clusters.
+     *
+     * @return Matching HTTP requests
+     */
     public static MappingBuilder listActiveEmrClustersRequest() {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
@@ -39,6 +47,11 @@ public class WiremockEmrTestHelper {
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
     }
 
+    /**
+     * Build an empty response.
+     *
+     * @return Matching HTTP requests
+     */
     public static ResponseDefinitionBuilder aResponseWithNoClusters() {
         return aResponse().withStatus(200).withBody("{\"Clusters\": []}");
     }

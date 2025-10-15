@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Delete an EMR Serverless application.
+ */
 public class AutoStopEmrServerlessApplicationLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(AutoStopEmrServerlessApplicationLambda.class);
 
