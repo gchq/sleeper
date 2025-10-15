@@ -90,7 +90,7 @@ setupParallelTestFolders() {
 }
 
 clearParallelTestFolders(){
-    pudhd $SLEEPER_DIR
+    pushd $SLEEPER_DIR
     rm -rf quick
     rm -rf slow1
     rm -rf slow2
