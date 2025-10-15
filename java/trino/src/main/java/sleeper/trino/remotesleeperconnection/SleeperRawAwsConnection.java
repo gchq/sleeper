@@ -51,7 +51,7 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryPlanner;
-import sleeper.query.runner.rowretrieval.QueryEngineSelector;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
@@ -296,9 +296,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         TableProperties tableProperties = tablePropertiesProvider.getById(query.getTableId());
 
         LOGGER.debug("Creating result record iterator for query %s", query);
-        LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(
-                executorService, hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties))
-                .getRowRetriever(tableProperties);
+        LeafPartitionRowRetriever rowRetriever = new LeafPartitionRowRetrieverImpl(
+                executorService, hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties), tableProperties);
         LeafPartitionQueryExecutor executor = new LeafPartitionQueryExecutor(objectFactory, tableProperties, rowRetriever);
         return executor.getRows(query);
     }
