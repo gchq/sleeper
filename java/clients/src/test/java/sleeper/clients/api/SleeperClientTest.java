@@ -62,7 +62,7 @@ class SleeperClientTest {
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     Schema schema = createSchemaWithKey("key", new StringType());
-    InMemorySleeperInstance instance = new InMemorySleeperInstance(instanceProperties, new FakeWebSocketConnection());
+    InMemorySleeperInstance instance = new InMemorySleeperInstance(instanceProperties);
     SleeperClient sleeperClient = instance.sleeperClientBuilder().build();
     QuerySerDe querySerDe = new QuerySerDe(schema);
     QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.withNoBatchSize(schema);

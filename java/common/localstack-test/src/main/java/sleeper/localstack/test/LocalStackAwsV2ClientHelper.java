@@ -17,6 +17,7 @@ package sleeper.localstack.test;
 
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.Region;
@@ -44,6 +45,11 @@ public class LocalStackAwsV2ClientHelper {
                         localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .region(Region.of(localStackContainer.getRegion()))
                 .build();
+    }
+
+    public static AwsCredentialsProvider buildAwsCredentialsProvider() {
+        return StaticCredentialsProvider.create(
+                AwsBasicCredentials.create("test", "test"));
     }
 
 }

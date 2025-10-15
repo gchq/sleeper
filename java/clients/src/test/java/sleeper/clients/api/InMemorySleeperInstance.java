@@ -58,14 +58,10 @@ public class InMemorySleeperInstance {
     private final FakeWebSocketConnection webSocketConnection;
 
     public InMemorySleeperInstance(InstanceProperties properties) {
-        this(properties, new FakeWebSocketConnection());
-    }
-
-    public InMemorySleeperInstance(InstanceProperties properties, FakeWebSocketConnection webSocketConnection) {
         this.properties = properties;
         this.tablePropertiesProvider = new TablePropertiesProvider(properties, tablePropertiesStore);
         this.stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(properties, transactionLogsPerTable);
-        this.webSocketConnection = webSocketConnection;
+        this.webSocketConnection = new FakeWebSocketConnection();
     }
 
     public FakeWebSocketConnection getFakeWebSocketConnection() {

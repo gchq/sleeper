@@ -19,7 +19,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -62,7 +61,7 @@ public abstract class LocalStackTestBase {
     protected final StsClient stsClient = SleeperLocalStackClients.STS_CLIENT;
     protected final Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
     protected final CloudWatchClient cloudWatchClient = SleeperLocalStackClients.CLOUDWATCH_CLIENT;
-    protected final AwsCredentialsProvider credentialsProvider = DefaultCredentialsProvider.builder().build();
+    protected final AwsCredentialsProvider credentialsProvider = SleeperLocalStackClients.CREDENTIALS_PROVIDER;
 
     public static void createBucket(String bucketName) {
         S3_CLIENT.createBucket(builder -> builder.bucket(bucketName));
