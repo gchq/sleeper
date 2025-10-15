@@ -35,6 +35,8 @@ import java.util.Optional;
  *   ...
  * }
  * </pre>
+ *
+ * @param <T> the interface type of the functions to be called in this context
  */
 public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
