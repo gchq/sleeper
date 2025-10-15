@@ -72,7 +72,7 @@
         <parquet.version>1.16.0</parquet.version>
         <joom.spark.platform.version>0.4.10</joom.spark.platform.version>
         <!-- The version of Arrow should match the version used by Spark, under spark-sql-api. -->
-        <arrow.version>12.0.1</arrow.version>
+        <arrow.version>18.3.0</arrow.version>
         <!--
         Spark Catalyst uses an old version of DataSketches. This must match the version declared there, as
         it is provided in EMR.
