@@ -130,7 +130,7 @@ runMavenSystemTests() {
     popd
     pushd "$TEST_OUTPUT_DIR/site"
     zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
-    #popd
+    popd
     rm -rf "$TEST_OUTPUT_DIR/site"
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
@@ -144,11 +144,14 @@ runMavenSystemTests() {
 }
 
 runTestSuite(){
+    SUITE=$3
+    echo "[$(time_str)] Starting test suite: $SUITE"
     sleep $1 #Delay so that initial deployment doesn't clash with each other
-    pushd "$REPO_PARENT_DIR/sleeper/$3/scripts/test" #Move into isolated repo copy
+    pushd "$REPO_PARENT_DIR/sleeper/$SUITE/scripts/test" #Move into isolated repo copy
     shift 1
     runMavenSystemTests "$@"
     popd
+    echo "[$(time_str)] Finished test suite: $SUITE"
 }
 
 runSlowTests(){
