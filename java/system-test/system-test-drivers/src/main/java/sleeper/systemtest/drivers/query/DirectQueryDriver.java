@@ -34,8 +34,8 @@ import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
+import sleeper.systemtest.drivers.util.DataFusionQueryContext;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.drivers.util.SystemTestDataFusion;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -63,7 +63,7 @@ public class DirectQueryDriver implements QueryDriver {
         this.instance = instance;
         this.rowRetrieverProvider = QueryEngineSelector.javaAndDataFusion(
                 new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE, clients.tableHadoopProvider(instance.getInstanceProperties())),
-                SystemTestDataFusion.createRowRetrieverProvider(clients::createDataFusionAwsConfig));
+                DataFusionQueryContext.createRowRetrieverProvider(clients::createDataFusionAwsConfig));
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {

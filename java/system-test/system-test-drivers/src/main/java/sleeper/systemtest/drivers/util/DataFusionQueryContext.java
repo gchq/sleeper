@@ -29,9 +29,9 @@ import sleeper.query.datafusion.DataFusionQueryFunctionsImpl;
 
 import java.util.function.Supplier;
 
-public class SystemTestDataFusion {
+public class DataFusionQueryContext {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDataFusion.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(DataFusionQueryContext.class);
     private static final DataFusionQueryFunctions QUERY_FUNCTIONS = createQueryFunctionsOrNull();
     private static final FFIContext<DataFusionQueryFunctions> QUERY_CONTEXT = QUERY_FUNCTIONS == null ? null : new FFIContext<>(QUERY_FUNCTIONS);
     private static final BufferAllocator ALLOCATOR = QUERY_CONTEXT == null ? null : new RootAllocator();
