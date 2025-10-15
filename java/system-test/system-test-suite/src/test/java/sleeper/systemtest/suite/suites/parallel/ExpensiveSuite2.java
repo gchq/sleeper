@@ -17,11 +17,10 @@
 package sleeper.systemtest.suite.suites.parallel;
 
 import org.junit.platform.suite.api.IncludeTags;
-import org.junit.platform.suite.api.SelectPackages;
-import org.junit.platform.suite.api.Suite;
 
-@Suite
-@SelectPackages("sleeper.systemtest.suite")
+import sleeper.systemtest.suite.testutil.SystemTestSuite;
+
+@SystemTestSuite
 @IncludeTags("expensive2")
 public class ExpensiveSuite2 {
 }
