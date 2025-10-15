@@ -46,10 +46,12 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.ingest.runner.IngestFactory;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 
@@ -1069,12 +1071,12 @@ public class LeafPartitionRowRetrieverImplIT {
     }
 
     private QueryExecutor initQueryExecutor() {
-        LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(executorService, new Configuration()).getRowRetriever(tableProperties);
-        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
-        planner.init();
-        QueryExecutor executor = new QueryExecutor(planner,
+        LeafPartitionRowRetrieverProvider rowRetrieverProvider = new LeafPartitionRowRetrieverImpl.Provider(
+                executorService, TableHadoopConfigurationProvider.fixed(new Configuration()));
+        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+        return new QueryExecutor(
+                QueryPlanner.initialiseNow(tableProperties, stateStore),
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
-        return executor;
     }
 
     private Query queryWithRegion(Region region) {
