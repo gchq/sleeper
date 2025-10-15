@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.drivers.query;
 
-import org.apache.arrow.memory.BufferAllocator;
-import org.apache.arrow.memory.RootAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +25,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
-import sleeper.foreign.bridge.FFIContext;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
@@ -36,10 +33,9 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
-import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
-import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.drivers.util.SystemTestDataFusion;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -59,8 +55,6 @@ import java.util.stream.StreamSupport;
 public class DirectQueryDriver implements QueryDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(DirectQueryDriver.class);
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
-    private static final FFIContext<DataFusionQueryFunctions> FFI_CONTEXT = createDataFusionFfiContextOrNull();
-    private static final BufferAllocator ALLOCATOR = FFI_CONTEXT == null ? null : new RootAllocator();
 
     private final SystemTestInstanceContext instance;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
@@ -69,7 +63,7 @@ public class DirectQueryDriver implements QueryDriver {
         this.instance = instance;
         this.rowRetrieverProvider = QueryEngineSelector.javaAndDataFusion(
                 new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE, clients.tableHadoopProvider(instance.getInstanceProperties())),
-                createDataFusionProvider(clients));
+                SystemTestDataFusion.createRowRetrieverProvider(clients::createDataFusionAwsConfig));
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
@@ -103,22 +97,5 @@ public class DirectQueryDriver implements QueryDriver {
 
     private static <T> Stream<T> stream(Iterator<T> iterator) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
-    }
-
-    private static FFIContext<DataFusionQueryFunctions> createDataFusionFfiContextOrNull() {
-        try {
-            return DataFusionLeafPartitionRowRetriever.createContext();
-        } catch (RuntimeException e) {
-            LOGGER.error("Failed to create FFI context", e);
-            return null;
-        }
-    }
-
-    private static LeafPartitionRowRetrieverProvider createDataFusionProvider(SystemTestClients clients) {
-        if (FFI_CONTEXT == null) {
-            return LeafPartitionRowRetrieverProvider.notImplemented("DataFusion not loaded");
-        } else {
-            return new DataFusionLeafPartitionRowRetriever.Provider(clients.createDataFusionAwsConfig(), ALLOCATOR, FFI_CONTEXT);
-        }
     }
 }

@@ -17,6 +17,7 @@ package sleeper.systemtest.drivers.testutil;
 
 import software.amazon.awssdk.regions.Region;
 
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
@@ -49,6 +50,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
                 .s3Async(SleeperLocalStackClients.S3_ASYNC_CLIENT)
                 .dynamo(SleeperLocalStackClients.DYNAMO_CLIENT)
                 .sqs(SleeperLocalStackClients.SQS_CLIENT)
+                .dataFusionAwsConfig(() -> DataFusionAwsConfig.overrideEndpoint(SleeperLocalStackContainer.INSTANCE.getEndpoint().toString()))
                 .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalStackContainer.INSTANCE))
                 .skipAssumeRole(true)
                 .build());
