@@ -15,20 +15,16 @@
  */
 package sleeper.clients.api.aws;
 
-import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
 import sleeper.clients.util.UncheckedAutoCloseables;
-import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
-import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.datafusion.DataFusionQueryContext;
-import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
 import java.util.List;
@@ -92,8 +88,7 @@ public interface SleeperClientQueryProvider {
 
     class PersistentThreadPool implements SleeperClientQueryProvider, UncheckedAutoCloseable {
         private final ExecutorService executorService;
-        private final BufferAllocator allocator = new RootAllocator();
-        private final FFIContext<DataFusionQueryFunctions> ffiContext = DataFusionLeafPartitionRowRetriever.createContext();
+        private final DataFusionQueryContext dataFusionContext = DataFusionQueryContext.createIfPresent(RootAllocator::new);
 
         private PersistentThreadPool(ExecutorService executorService) {
             this.executorService = executorService;
@@ -103,13 +98,13 @@ public interface SleeperClientQueryProvider {
         public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(TableHadoopConfigurationProvider hadoopProvider) {
             LeafPartitionRowRetrieverProvider engineSelector = QueryEngineSelector.javaAndDataFusion(
                     new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider),
-                    new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, ffiContext));
+                    dataFusionContext.createRowRetrieverProvider(DataFusionAwsConfig::getDefault));
             return ShutdownWrapper.noShutdown(engineSelector);
         }
 
         @Override
         public void close() {
-            try (allocator; ffiContext) {
+            try (dataFusionContext) {
             } finally {
                 executorService.shutdown();
             }
