@@ -31,7 +31,6 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
-import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.datafusion.DataFusionQueryContext;
@@ -56,16 +55,15 @@ import java.util.stream.StreamSupport;
 public class DirectQueryDriver implements QueryDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(DirectQueryDriver.class);
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
-    private static final DataFusionQueryContext DATAFUSION_CONTEXT = DataFusionQueryContext.createIfPresent(RootAllocator::new);
+    private static final DataFusionQueryContext DATAFUSION_CONTEXT = DataFusionQueryContext.createIfLoaded(RootAllocator::new);
 
     private final SystemTestInstanceContext instance;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
 
     public DirectQueryDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.rowRetrieverProvider = QueryEngineSelector.javaAndDataFusion(
-                new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE, clients.tableHadoopProvider(instance.getInstanceProperties())),
-                DATAFUSION_CONTEXT.createRowRetrieverProvider(clients::createDataFusionAwsConfig));
+        this.rowRetrieverProvider = DATAFUSION_CONTEXT.createQueryEngineSelector(clients::createDataFusionAwsConfig,
+                new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE, clients.tableHadoopProvider(instance.getInstanceProperties())));
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {

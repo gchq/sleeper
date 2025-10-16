@@ -22,13 +22,13 @@ import org.slf4j.LoggerFactory;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
-import sleeper.query.datafusion.DataFusionQueryFunctionsImpl.LoadFailureTracker;
+import sleeper.query.core.rowretrieval.QueryEngineSelector;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * A wrapper for the DataFusion FFI context. Allows for an unimplemented row retriever if DataFusion could not be
- * loaded.
+ * A wrapper for the DataFusion FFI context. Allows for fallback if DataFusion could not be loaded.
  */
 public class DataFusionQueryContext implements AutoCloseable {
 
@@ -44,32 +44,36 @@ public class DataFusionQueryContext implements AutoCloseable {
 
     /**
      * Creates the DataFusion FFI context and Arrow allocator if the DataFusion functions were loaded. The FFI context
-     * and Arrow allocator will be closed when the query context is closed.
+     * and Arrow allocator will be closed when the query context is closed. If the DataFusion functions were not loaded,
+     * this allows falling back to the Java implementation.
      *
      * @param  allocator a constructor for the Arrow allocator
      * @return           the context
      */
-    public static DataFusionQueryContext createIfPresent(Supplier<BufferAllocator> allocator) {
-        LoadFailureTracker tracker = DataFusionQueryFunctionsImpl.getLoadFailureTracker();
-        if (tracker.isFailed()) {
-            return new DataFusionQueryContext(null, null);
+    public static DataFusionQueryContext createIfLoaded(Supplier<BufferAllocator> allocator) {
+        Optional<DataFusionQueryFunctions> functions = DataFusionQueryFunctionsImpl.getInstanceIfLoaded();
+        if (functions.isPresent()) {
+            return new DataFusionQueryContext(new FFIContext<>(functions.get()), allocator.get());
         } else {
-            return new DataFusionQueryContext(new FFIContext<>(tracker.getFunctionsOrThrow()), allocator.get());
+            return new DataFusionQueryContext(null, null);
         }
     }
 
     /**
-     * Creates a row retriever provider for use in queries. If the DataFusion functions could not be loaded, attempting
-     * to create a row retriever from this will throw a NotImplementedException.
+     * Creates a row retriever provider for use in queries, using the Java or DataFusion implementation depending on
+     * configuration. If the DataFusion functions could not be loaded, the Java implementation will always be used.
      *
-     * @param  awsConfig a constructor for the AWS configuration
-     * @return           the row retriever provider
+     * @param  awsConfig    a constructor for the AWS configuration
+     * @param  javaProvider the Java implementation
+     * @return              the row retriever provider
      */
-    public LeafPartitionRowRetrieverProvider createRowRetrieverProvider(Supplier<DataFusionAwsConfig> awsConfig) {
+    public LeafPartitionRowRetrieverProvider createQueryEngineSelector(Supplier<DataFusionAwsConfig> awsConfig, LeafPartitionRowRetrieverProvider javaProvider) {
         if (context == null) {
-            return LeafPartitionRowRetrieverProvider.notImplemented("DataFusion not loaded");
+            LOGGER.warn("Falling back to Java row retriever as DataFusion was not loaded");
+            return javaProvider;
         } else {
-            return new DataFusionLeafPartitionRowRetriever.Provider(awsConfig.get(), allocator, context);
+            return QueryEngineSelector.javaAndDataFusion(javaProvider,
+                    new DataFusionLeafPartitionRowRetriever.Provider(awsConfig.get(), allocator, context));
         }
     }
 

@@ -30,7 +30,7 @@ import java.util.Optional;
 public class DataFusionQueryFunctionsImpl {
     public static final Logger LOGGER = LoggerFactory.getLogger(DataFusionQueryFunctionsImpl.class);
 
-    private static final LoadFailureTracker INSTANCE = LoadFailureTracker.create();
+    private static final LoadFailureTracker INSTANCE = LoadFailureTracker.createForeignInterface();
 
     private DataFusionQueryFunctionsImpl() {
     }
@@ -46,28 +46,28 @@ public class DataFusionQueryFunctionsImpl {
     }
 
     /**
-     * Retrives the link to the DataFusion code in Rust, with a tracker for whether the link failed to load.
+     * Retrives the link to the DataFusion code in Rust, unless the link failed to load.
      *
      * @return the Rust DataFusion implementation, if it loaded
      */
-    public static LoadFailureTracker getLoadFailureTracker() {
-        return INSTANCE;
+    public static Optional<DataFusionQueryFunctions> getInstanceIfLoaded() {
+        return INSTANCE.getFunctionsIfLoaded();
     }
 
     /**
      * A tracker for whether the DataFusion code failed to link.
      */
-    public static class LoadFailureTracker {
+    private static class LoadFailureTracker {
 
         private final DataFusionQueryFunctions functions;
         private final Exception failure;
 
-        private LoadFailureTracker(DataFusionQueryFunctions functions, Exception failure) {
+        LoadFailureTracker(DataFusionQueryFunctions functions, Exception failure) {
             this.functions = functions;
             this.failure = failure;
         }
 
-        private static LoadFailureTracker create() {
+        static LoadFailureTracker createForeignInterface() {
             try {
                 DataFusionQueryFunctions functions = FFIBridge.createForeignInterface(DataFusionQueryFunctions.class);
                 return new LoadFailureTracker(functions, null);
@@ -77,7 +77,7 @@ public class DataFusionQueryFunctionsImpl {
             }
         }
 
-        public DataFusionQueryFunctions getFunctionsOrThrow() {
+        DataFusionQueryFunctions getFunctionsOrThrow() {
             if (failure != null) {
                 throw new IllegalStateException("Could not load foreign interface", failure);
             } else {
@@ -85,16 +85,8 @@ public class DataFusionQueryFunctionsImpl {
             }
         }
 
-        public Optional<DataFusionQueryFunctions> getFunctionsIfLoaded() {
+        Optional<DataFusionQueryFunctions> getFunctionsIfLoaded() {
             return Optional.ofNullable(functions);
-        }
-
-        public boolean isFailed() {
-            return failure != null;
-        }
-
-        public Exception getFailure() {
-            return failure;
         }
     }
 
