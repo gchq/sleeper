@@ -18,6 +18,7 @@ package sleeper.localstack.test;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -26,6 +27,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
+import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsCredentialsProvider;
 import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.getHadoopConfiguration;
 
@@ -46,5 +48,6 @@ public class SleeperLocalStackClients {
     public static final StsClient STS_CLIENT = buildAwsV2Client(CONTAINER, Service.STS, StsClient.builder());
     public static final CloudWatchClient CLOUDWATCH_CLIENT = buildAwsV2Client(CONTAINER, Service.CLOUDWATCH, CloudWatchClient.builder());
     public static final Configuration HADOOP_CONF = getHadoopConfiguration(CONTAINER);
+    public static final AwsCredentialsProvider CREDENTIALS_PROVIDER = buildAwsCredentialsProvider();
 
 }
