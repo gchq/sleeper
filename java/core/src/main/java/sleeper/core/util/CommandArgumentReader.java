@@ -27,7 +27,7 @@ public class CommandArgumentReader {
     private final List<String> arguments;
     private int index;
 
-    public CommandArgumentReader(List<String> arguments) {
+    private CommandArgumentReader(List<String> arguments) {
         this.arguments = arguments;
     }
 
@@ -36,10 +36,9 @@ public class CommandArgumentReader {
         CommandArgumentReader reader = new CommandArgumentReader(List.of(args));
         List<String> positionalValues = new ArrayList<>();
         while (reader.isArg()) {
-            if (reader.readOption(usage, builder)) {
-                continue;
+            if (!reader.readOption(usage, builder)) {
+                positionalValues.add(reader.readPositionalArg());
             }
-            positionalValues.add(reader.readPositionalArg());
         }
         if (positionalValues.size() != usage.getNumPositionalArgs()) {
             throw usage.usageException();
