@@ -15,29 +15,86 @@
  */
 package sleeper.query.datafusion;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.foreign.bridge.FFIBridge;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Links to the DataFusion code for queries in Rust. This is done in a separate class to delay static
  * initialization until it is needed.
  */
 public class DataFusionQueryFunctionsImpl {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DataFusionQueryFunctionsImpl.class);
+
+    private static final LoadFailureTracker INSTANCE = LoadFailureTracker.create();
 
     private DataFusionQueryFunctionsImpl() {
     }
 
     /**
-     * Creates the link to the DataFusion code in Rust.
+     * Retrives the link to the DataFusion code in Rust.
      *
-     * @return the Rust DataFusion implementation
+     * @return                       the Rust DataFusion implementation
+     * @throws IllegalStateException if the DataFusion implementation failed to link
      */
-    public static DataFusionQueryFunctions create() {
-        try {
-            return FFIBridge.createForeignInterface(DataFusionQueryFunctions.class);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not load foreign interface", e);
+    public static DataFusionQueryFunctions getInstance() {
+        return INSTANCE.getFunctionsOrThrow();
+    }
+
+    /**
+     * Retrives the link to the DataFusion code in Rust, with a tracker for whether the link failed to load.
+     *
+     * @return the Rust DataFusion implementation, if it loaded
+     */
+    public static LoadFailureTracker getLoadFailureTracker() {
+        return INSTANCE;
+    }
+
+    /**
+     * A tracker for whether the DataFusion code failed to link.
+     */
+    public static class LoadFailureTracker {
+
+        private final DataFusionQueryFunctions functions;
+        private final Exception failure;
+
+        private LoadFailureTracker(DataFusionQueryFunctions functions, Exception failure) {
+            this.functions = functions;
+            this.failure = failure;
+        }
+
+        private static LoadFailureTracker create() {
+            try {
+                DataFusionQueryFunctions functions = FFIBridge.createForeignInterface(DataFusionQueryFunctions.class);
+                return new LoadFailureTracker(functions, null);
+            } catch (RuntimeException | IOException e) {
+                LOGGER.warn("Could not load foreign interface", e);
+                return new LoadFailureTracker(null, e);
+            }
+        }
+
+        public DataFusionQueryFunctions getFunctionsOrThrow() {
+            if (failure != null) {
+                throw new IllegalStateException("Could not load foreign interface", failure);
+            } else {
+                return functions;
+            }
+        }
+
+        public Optional<DataFusionQueryFunctions> getFunctionsIfLoaded() {
+            return Optional.ofNullable(functions);
+        }
+
+        public boolean isFailed() {
+            return failure != null;
+        }
+
+        public Exception getFailure() {
+            return failure;
         }
     }
 

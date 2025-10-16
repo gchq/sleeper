@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.datafusion.DataFusionQueryFunctionsImpl.LoadFailureTracker;
 
 import java.util.function.Supplier;
 
@@ -32,8 +33,6 @@ import java.util.function.Supplier;
 public class DataFusionQueryContext implements AutoCloseable {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(DataFusionQueryContext.class);
-
-    private static final DataFusionQueryFunctions FUNCTIONS = createQueryFunctionsOrNull();
 
     private final FFIContext<DataFusionQueryFunctions> context;
     private final BufferAllocator allocator;
@@ -51,10 +50,11 @@ public class DataFusionQueryContext implements AutoCloseable {
      * @return           the context
      */
     public static DataFusionQueryContext createIfPresent(Supplier<BufferAllocator> allocator) {
-        if (FUNCTIONS != null) {
-            return new DataFusionQueryContext(new FFIContext<>(FUNCTIONS), allocator.get());
-        } else {
+        LoadFailureTracker tracker = DataFusionQueryFunctionsImpl.getLoadFailureTracker();
+        if (tracker.isFailed()) {
             return new DataFusionQueryContext(null, null);
+        } else {
+            return new DataFusionQueryContext(new FFIContext<>(tracker.getFunctionsOrThrow()), allocator.get());
         }
     }
 
@@ -78,15 +78,6 @@ public class DataFusionQueryContext implements AutoCloseable {
         if (context != null) {
             try (context; allocator) {
             }
-        }
-    }
-
-    private static DataFusionQueryFunctions createQueryFunctionsOrNull() {
-        try {
-            return DataFusionQueryFunctionsImpl.create();
-        } catch (RuntimeException e) {
-            LOGGER.error("Failed to load DataFusion implementation", e);
-            return null;
         }
     }
 }
