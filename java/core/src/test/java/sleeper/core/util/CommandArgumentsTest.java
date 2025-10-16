@@ -15,6 +15,8 @@
  */
 package sleeper.core.util;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,41 +24,166 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CommandArgumentsTest {
 
-    @Test
-    void shouldReadPositionalArguments() {
-        // Given
-        CommandArguments arguments = CommandArguments.builder()
-                .positionalArguments("first", "second", "third")
-                .parse("a", "b", "c");
+    @Nested
+    @DisplayName("Positional arguments")
+    class PositionalArguments {
 
-        // When / Then
-        assertThat(arguments.getString("first")).isEqualTo("a");
-        assertThat(arguments.getString("second")).isEqualTo("b");
-        assertThat(arguments.getString("third")).isEqualTo("c");
+        @Test
+        void shouldReadPositionalArguments() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .positionalArguments("first", "second", "third")
+                    .parse("a", "b", "c");
+
+            // When / Then
+            assertThat(arguments.getString("first")).isEqualTo("a");
+            assertThat(arguments.getString("second")).isEqualTo("b");
+            assertThat(arguments.getString("third")).isEqualTo("c");
+        }
+
+        @Test
+        void shouldFailWithTooFewArguments() {
+            // Given
+            CommandArguments.Builder builder = CommandArguments.builder()
+                    .positionalArguments("first", "second", "third");
+
+            // When / Then
+            assertThatThrownBy(() -> builder.parse("a", "b"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Usage: <first> <second> <third>");
+        }
+
+        @Test
+        void shouldFailWithTooManyArguments() {
+            // Given
+            CommandArguments.Builder builder = CommandArguments.builder()
+                    .positionalArguments("one", "two");
+
+            // When / Then
+            assertThatThrownBy(() -> builder.parse("a", "b", "c"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Usage: <one> <two>");
+        }
     }
 
-    @Test
-    void shouldFailWithTooFewArguments() {
-        // Given
-        CommandArguments.Builder builder = CommandArguments.builder()
-                .positionalArguments("first", "second", "third");
+    @Nested
+    @DisplayName("Long flags")
+    class LongFlags {
 
-        // When / Then
-        assertThatThrownBy(() -> builder.parse("a", "b"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Usage: <first> <second> <third>");
+        @Test
+        void shouldReadFlagIsSet() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .options(CommandOption.longFlag("flag"))
+                    .parse("--flag");
+
+            // When / Then
+            assertThat(arguments.isOptionSet("flag")).isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsNotSet() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .options(CommandOption.longFlag("flag"))
+                    .parse();
+
+            // When / Then
+            assertThat(arguments.isOptionSet("flag")).isFalse();
+        }
+
+        @Test
+        void shouldReadBeforePositionalArg() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .positionalArguments("positional")
+                    .options(CommandOption.longFlag("flag"))
+                    .parse("--flag", "value");
+
+            // When / Then
+            assertThat(arguments.getString("positional")).isEqualTo("value");
+            assertThat(arguments.isOptionSet("flag")).isTrue();
+        }
+
+        @Test
+        void shouldReadAfterPositionalArg() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .positionalArguments("positional")
+                    .options(CommandOption.longFlag("flag"))
+                    .parse("value", "--flag");
+
+            // When / Then
+            assertThat(arguments.getString("positional")).isEqualTo("value");
+            assertThat(arguments.isOptionSet("flag")).isTrue();
+        }
     }
 
-    @Test
-    void shouldFailWithTooManyArguments() {
-        // Given
-        CommandArguments.Builder builder = CommandArguments.builder()
-                .positionalArguments("one", "two");
+    @Nested
+    @DisplayName("Short flags")
+    class ShortFlags {
 
-        // When / Then
-        assertThatThrownBy(() -> builder.parse("a", "b", "c"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Usage: <one> <two>");
+        @Test
+        void shouldReadFlagIsSetShort() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .options(CommandOption.shortFlag('s', "short"))
+                    .parse("-s");
+
+            // When / Then
+            assertThat(arguments.isOptionSet("s")).isTrue();
+            assertThat(arguments.isOptionSet("short")).isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsSetLong() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .options(CommandOption.shortFlag('s', "short"))
+                    .parse("--short");
+
+            // When / Then
+            assertThat(arguments.isOptionSet("s")).isTrue();
+            assertThat(arguments.isOptionSet("short")).isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsNotSet() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .options(CommandOption.shortFlag('s', "short"))
+                    .parse();
+
+            // When / Then
+            assertThat(arguments.isOptionSet("s")).isFalse();
+            assertThat(arguments.isOptionSet("short")).isFalse();
+        }
+
+        @Test
+        void shouldReadFlagBeforePositionalArg() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .positionalArguments("positional")
+                    .options(CommandOption.shortFlag('s', "short"))
+                    .parse("-s", "value");
+
+            // When / Then
+            assertThat(arguments.getString("positional")).isEqualTo("value");
+            assertThat(arguments.isOptionSet("short")).isTrue();
+        }
+
+        @Test
+        void shouldReadFlagAfterPositionalArg() {
+            // Given
+            CommandArguments arguments = CommandArguments.builder()
+                    .positionalArguments("positional")
+                    .options(CommandOption.shortFlag('s', "short"))
+                    .parse("value", "-s");
+
+            // When / Then
+            assertThat(arguments.getString("positional")).isEqualTo("value");
+            assertThat(arguments.isOptionSet("short")).isTrue();
+        }
     }
 
 }
