@@ -150,7 +150,7 @@ public class QueryClient extends QueryCommandLineClient {
                     new DynamoDBTableIndex(instanceProperties, dynamoClient),
                     S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
                     new ConsoleInput(System.console()), new ConsoleOutput(System.out),
-                    new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
+                    new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory(),
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
                     QueryEngineSelector.javaAndDataFusion(
                             new LeafPartitionRowRetrieverImpl.Provider(executorService, TableHadoopConfigurationProvider.forClient(instanceProperties)),
@@ -158,16 +158,6 @@ public class QueryClient extends QueryCommandLineClient {
                     .run();
         } finally {
             executorService.shutdown();
-        }
-    }
-
-    private static Path makeTemporaryDirectory() {
-        try {
-            Path tempDir = Files.createTempDirectory(null);
-            tempDir.toFile().deleteOnExit();
-            return tempDir;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 }
