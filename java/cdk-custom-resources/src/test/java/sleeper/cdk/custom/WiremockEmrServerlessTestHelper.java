@@ -21,7 +21,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
-import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -52,15 +51,6 @@ public class WiremockEmrServerlessTestHelper {
      */
     public static EmrServerlessClient wiremockEmrServerlessClient(WireMockRuntimeInfo runtimeInfo) {
         return wiremockAwsV2Client(runtimeInfo, EmrServerlessClient.builder());
-    }
-
-    /**
-     * List active EMR applications.
-     *
-     * @return matching HTTP requests
-     */
-    public static MappingBuilder listActiveEmrApplicationsRequest() {
-        return get(listRunningApplicationsUrl());
     }
 
     /**
@@ -110,15 +100,6 @@ public class WiremockEmrServerlessTestHelper {
     }
 
     /**
-     * Checks for a list active applications request.
-     *
-     * @return matching HTTP requests
-     */
-    public static RequestPatternBuilder listActiveApplicationsRequested() {
-        return getRequestedFor(listRunningApplicationsUrl());
-    }
-
-    /**
      * Check for a list running jobs request.
      *
      * @return matching HTTP requests
@@ -156,42 +137,6 @@ public class WiremockEmrServerlessTestHelper {
     }
 
     /**
-     * Build a response with no EMR applications.
-     *
-     * @return a HTTP response
-     */
-    public static ResponseDefinitionBuilder aResponseWithNoApplications() {
-        return aResponse().withStatus(200)
-                .withBody("{\"applications\": []}");
-    }
-
-    /**
-     * Build an EMR application response with a name and given state.
-     *
-     * @param  state the application state
-     * @return       a HTTP response
-     */
-    public static ResponseDefinitionBuilder aResponseWithApplicationWithState(ApplicationState state) {
-        return aResponseWithApplicationWithNameAndState("sleeper-test", state);
-    }
-
-    /**
-     * Build an EMR application response with a given name and state.
-     *
-     * @param  name  the application name
-     * @param  state the application state
-     * @return       a HTTP response
-     */
-    public static ResponseDefinitionBuilder aResponseWithApplicationWithNameAndState(String name, ApplicationState state) {
-        return aResponse().withStatus(200)
-                .withBody("{\"applications\": [{" +
-                        "\"name\": \"" + name + "\"," +
-                        "\"id\": \"test-app-id\"," +
-                        "\"state\": \"" + state + "\"" +
-                        "}]}");
-    }
-
-    /**
      * Build an EMR application response with a give job id and state.
      *
      * @param  jobRunId the job id
@@ -213,11 +158,6 @@ public class WiremockEmrServerlessTestHelper {
      */
     public static ResponseDefinitionBuilder aResponseWithNoJobRuns() {
         return aResponse().withStatus(200).withBody("{\"jobRuns\":[]}");
-    }
-
-    private static UrlPattern listRunningApplicationsUrl() {
-        return urlEqualTo("/applications"
-                + "?states=STARTING&states=STARTED&states=STOPPING");
     }
 
     private static UrlPattern listRunningJobsUrl() {

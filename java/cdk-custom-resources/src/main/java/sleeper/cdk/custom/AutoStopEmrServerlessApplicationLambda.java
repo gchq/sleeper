@@ -20,8 +20,6 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
-import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
-import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
 
@@ -30,7 +28,6 @@ import sleeper.core.util.PollWithRetries;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Delete an EMR Serverless application.
@@ -41,7 +38,7 @@ public class AutoStopEmrServerlessApplicationLambda {
     private final PollWithRetries poll = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
     private final EmrServerlessClient emrServerlessClient;
-    private String applicationPrefix;
+    private String applicationId;
 
     public AutoStopEmrServerlessApplicationLambda() {
         this(EmrServerlessClient.create());
@@ -61,7 +58,7 @@ public class AutoStopEmrServerlessApplicationLambda {
             CloudFormationCustomResourceEvent event, Context context) throws InterruptedException {
 
         Map<String, Object> resourceProperties = event.getResourceProperties();
-        this.applicationPrefix = "sleeper-" + (String) resourceProperties.get("instanceId");
+        this.applicationId = (String) resourceProperties.get("applicationId");
 
         switch (event.getRequestType()) {
             case "Create":
@@ -69,50 +66,29 @@ public class AutoStopEmrServerlessApplicationLambda {
             case "Update":
                 break;
             case "Delete":
-                stopEmrServerlessApplication(emrServerlessClient);
+                stopApplication(applicationId);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
         }
     }
 
-    private void stopEmrServerlessApplication(EmrServerlessClient emrServerless) throws InterruptedException {
-        this.run();
-    }
+    private void stopApplication(String applicationId) throws InterruptedException {
+        LOGGER.info("Terminating {} running application: ", applicationId);
 
-    private void run() throws InterruptedException {
-        List<ApplicationSummary> applications = listActiveApplications();
-        if (applications.isEmpty()) {
-            LOGGER.info("No running applications to terminate");
-        } else {
-            LOGGER.info("Terminating {} running applications", applications.size());
-            stopApplications(applications);
-            LOGGER.info("Waiting for applications to terminate");
-            poll.pollUntil("all EMR Serverless applications terminated", this::allApplicationsTerminated);
+        List<JobRunSummary> jobRuns = emrServerlessClient.listJobRuns(request -> request.applicationId(applicationId)
+                .states(JobRunState.RUNNING, JobRunState.SCHEDULED, JobRunState.PENDING, JobRunState.SUBMITTED))
+                .jobRuns();
+
+        LOGGER.info("Waiting for application jobs to terminate");
+        jobRuns.forEach(jobRun -> emrServerlessClient.cancelJobRun(request -> request
+                .applicationId(applicationId).jobRunId(jobRun.id())));
+
+        if (!jobRuns.isEmpty()) {
+            poll.pollUntil("all EMR Serverless jobs finished", () -> allJobsFinished(applicationId));
         }
-    }
 
-    private void stopApplications(List<ApplicationSummary> applications) throws InterruptedException {
-        for (ApplicationSummary application : applications) {
-            List<JobRunSummary> jobRuns = emrServerlessClient.listJobRuns(request -> request.applicationId(application.id())
-                    .states(JobRunState.RUNNING, JobRunState.SCHEDULED, JobRunState.PENDING, JobRunState.SUBMITTED))
-                    .jobRuns();
-
-            jobRuns.forEach(jobRun -> emrServerlessClient.cancelJobRun(request -> request
-                    .applicationId(application.id()).jobRunId(jobRun.id())));
-
-            if (!jobRuns.isEmpty()) {
-                poll.pollUntil("all EMR Serverless jobs finished", () -> allJobsFinished(application.id()));
-            }
-
-            emrServerlessClient.stopApplication(request -> request.applicationId(application.id()));
-        }
-    }
-
-    private boolean allApplicationsTerminated() {
-        long applicationsStillRunning = listActiveApplications().size();
-        LOGGER.info("{} apps are still terminating for instance", applicationsStillRunning);
-        return applicationsStillRunning == 0;
+        emrServerlessClient.stopApplication(request -> request.applicationId(applicationId));
     }
 
     private boolean allJobsFinished(String applicationId) {
@@ -127,14 +103,6 @@ public class AutoStopEmrServerlessApplicationLambda {
             LOGGER.info("{} jobs are still unfinished for application {}", unfinishedJobRuns.size(), applicationId);
             return false;
         }
-    }
-
-    private List<ApplicationSummary> listActiveApplications() {
-        return emrServerlessClient.listApplications(request -> request.states(
-                ApplicationState.STARTING, ApplicationState.STARTED, ApplicationState.STOPPING))
-                .applications().stream()
-                .filter(summary -> summary.name().startsWith(applicationPrefix))
-                .collect(Collectors.toUnmodifiableList());
     }
 
 }

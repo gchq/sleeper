@@ -22,7 +22,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -34,16 +33,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithApplicationWithNameAndState;
-import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithApplicationWithState;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
-import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoApplications;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoJobRuns;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.anyRequestedForEmrServerless;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.cancelJobRunRequest;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.cancelJobRunRequested;
-import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.listActiveApplicationsRequested;
-import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.listActiveEmrApplicationsRequest;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.listRunningJobsForApplicationRequest;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.listRunningJobsForApplicationRequested;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.listRunningOrCancellingJobsForApplicationRequest;
@@ -51,8 +45,6 @@ import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.listRunningOrCa
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.stopApplicationRequest;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.stopApplicationRequested;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.wiremockEmrServerlessClient;
-import static sleeper.cdk.custom.WiremockEmrTestHelper.aResponseWithNoClusters;
-import static sleeper.cdk.custom.WiremockEmrTestHelper.listActiveEmrClustersRequest;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
@@ -65,32 +57,12 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
         lambda = lambda(runtimeInfo);
-        properties.set(ID, "test");
-        stubFor(listActiveEmrClustersRequest()
-                .willReturn(aResponseWithNoClusters()));
-
-    }
-
-    @Test
-    void shouldIgnoreARunningApplicationNotMatchingPrefix() throws Exception {
-        // Given
-        stubFor(listActiveEmrApplicationsRequest()
-                .willReturn(aResponseWithApplicationWithNameAndState("unmanaged-app", ApplicationState.STARTED)));
-
-        // When
-        lambda.handleEvent(eventHandlerForApplication(properties.get(ID), "Delete"), null);
-
-        // Then
-        verify(1, anyRequestedForEmrServerless());
-        verify(1, listActiveApplicationsRequested());
+        properties.set(ID, "test-app-id");
     }
 
     @Test
     void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJob() throws Exception {
         // Given
-        stubFor(listActiveEmrApplicationsRequest().inScenario("StopJob")
-                .willReturn(aResponseWithApplicationWithState(ApplicationState.STARTED))
-                .whenScenarioStateIs(STARTED));
         stubFor(listRunningJobsForApplicationRequest().inScenario("StopJob")
                 .willReturn(aResponseWithJobRunWithState("test-job-run", JobRunState.RUNNING))
                 .whenScenarioStateIs(STARTED));
@@ -103,16 +75,12 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
         stubFor(stopApplicationRequest().inScenario("StopJob")
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs("JobStopped").willSetStateTo("AppStopped"));
-        stubFor(listActiveEmrApplicationsRequest().inScenario("StopJob")
-                .willReturn(aResponseWithNoApplications())
-                .whenScenarioStateIs("AppStopped"));
 
         // When
         lambda.handleEvent(eventHandlerForApplication(properties.get(ID), "Delete"), null);
 
         // Then
-        verify(6, anyRequestedForEmrServerless());
-        verify(2, listActiveApplicationsRequested());
+        verify(4, anyRequestedForEmrServerless());
         verify(1, listRunningJobsForApplicationRequested());
         verify(1, cancelJobRunRequested("test-job-run"));
         verify(1, listRunningOrCancellingJobsForApplicationRequested());
@@ -122,24 +90,17 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
     @Test
     void shouldStopEMRServerlessWhenApplicationIsStartedWithNoRunningJobs() throws Exception {
         // Given
-        stubFor(listActiveEmrApplicationsRequest().inScenario("StopApplication")
-                .willReturn(aResponseWithApplicationWithState(ApplicationState.STARTED))
-                .whenScenarioStateIs(STARTED));
         stubFor(listRunningJobsForApplicationRequest()
                 .willReturn(aResponseWithNoJobRuns()));
         stubFor(stopApplicationRequest().inScenario("StopApplication")
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopped"));
-        stubFor(listActiveEmrApplicationsRequest().inScenario("StopApplication")
-                .willReturn(aResponseWithNoApplications())
-                .whenScenarioStateIs("ApplicationStopped"));
 
         // When
         lambda.handleEvent(eventHandlerForApplication(properties.get(ID), "Delete"), null);
 
         // Then
-        verify(4, anyRequestedForEmrServerless());
-        verify(2, listActiveApplicationsRequested());
+        verify(2, anyRequestedForEmrServerless());
         verify(1, listRunningJobsForApplicationRequested());
         verify(1, stopApplicationRequested());
     }
@@ -157,10 +118,10 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
     }
 
     private CloudFormationCustomResourceEvent eventHandlerForApplication(
-            String instanceId, String event) {
+            String applicationId, String event) {
         return CloudFormationCustomResourceEvent.builder()
                 .withRequestType(event)
-                .withResourceProperties(Map.of("instanceId", instanceId))
+                .withResourceProperties(Map.of("applicationId", applicationId))
                 .build();
     }
 
