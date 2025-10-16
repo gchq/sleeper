@@ -15,15 +15,10 @@
  */
 package sleeper.core.util;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
+import java.util.Set;
 
 /**
  * A utility to read command line arguments.
@@ -31,11 +26,11 @@ import static java.util.stream.Collectors.toMap;
 public class CommandArguments {
 
     private final Map<String, String> argByName;
-    private final CommandOptionValues optionValues;
+    private final Set<String> optionsSet;
 
-    public CommandArguments(Map<String, String> argByName, CommandOptionValues optionValues) {
-        this.argByName = argByName;
-        this.optionValues = optionValues;
+    public CommandArguments(Builder builder) {
+        argByName = builder.argByName;
+        optionsSet = builder.optionsSet;
     }
 
     public static Builder builder() {
@@ -53,87 +48,37 @@ public class CommandArguments {
     }
 
     /**
-     * Retrieves the options that were set.
+     * Checks whether a flag was set.
      *
-     * @return the options
+     * @param  name the name of the flag
+     * @return      true if the flag was set
      */
-    public CommandOptionValues options() {
-        return optionValues;
+    public boolean isFlagSet(String name) {
+        return optionsSet.contains(name);
     }
 
     /**
      * A builder for this class.
      */
     public static class Builder {
-        private List<String> positionalArguments = List.of();
-        private Map<String, CommandOption> optionByLongName = Map.of();
-        private Map<Character, CommandOption> optionByShortName = Map.of();
+        private Map<String, String> argByName = new LinkedHashMap<>();
+        private Set<String> optionsSet = new LinkedHashSet<>();
 
-        /**
-         * Sets the names of positional arguments.
-         *
-         * @param  names the names
-         * @return       this builder
-         */
-        public Builder positionalArguments(String... names) {
-            positionalArguments = List.of(names);
+        Builder positionalArg(String name, String value) {
+            argByName.put(name, value);
             return this;
         }
 
-        /**
-         * Sets the options that can be set in addition to positional arguments.
-         *
-         * @param  options the options
-         * @return         this builder
-         */
-        public Builder options(CommandOption... options) {
-            optionByLongName = Stream.of(options).collect(toMap(CommandOption::longName, Function.identity()));
-            optionByShortName = Stream.of(options).filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
+        Builder flag(CommandOption option) {
+            optionsSet.add(option.longName());
+            if (option.shortName() != null) {
+                optionsSet.add("" + option.shortName());
+            }
             return this;
         }
 
-        /**
-         * Parses the given command line arguments.
-         *
-         * @param  args the arguments
-         * @return      the parsed arguments
-         */
-        public CommandArguments parse(String... args) {
-            Map<String, String> argByName = new LinkedHashMap<>();
-            List<String> positionalValues = new ArrayList<>();
-            CommandOptionValues optionValues = new CommandOptionValues();
-            for (String arg : args) {
-                if (arg.startsWith("--")) {
-                    String longOption = arg.substring(2);
-                    CommandOption option = optionByLongName.get(longOption);
-                    if (option != null) {
-                        optionValues.setFlag(option);
-                        continue;
-                    }
-                } else if (arg.startsWith("-")) {
-                    char shortOption = arg.charAt(1);
-                    CommandOption option = optionByShortName.get(shortOption);
-                    if (option != null) {
-                        optionValues.setFlag(option);
-                        continue;
-                    }
-                }
-                positionalValues.add(arg);
-            }
-            if (positionalValues.size() != positionalArguments.size()) {
-                throw usageException();
-            }
-            for (int i = 0; i < positionalValues.size(); i++) {
-                argByName.put(positionalArguments.get(i), positionalValues.get(i));
-            }
-            return new CommandArguments(argByName, optionValues);
-        }
-
-        private IllegalArgumentException usageException() {
-            return new IllegalArgumentException("Usage: " +
-                    positionalArguments.stream()
-                            .map(name -> "<" + name + ">")
-                            .collect(joining(" ")));
+        public CommandArguments build() {
+            return new CommandArguments(this);
         }
     }
 
