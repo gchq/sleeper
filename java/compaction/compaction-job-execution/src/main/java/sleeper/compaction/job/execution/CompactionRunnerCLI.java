@@ -33,6 +33,9 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.CommandLineUsage;
+import sleeper.core.util.CommandOption;
+import sleeper.core.util.CommandOption.NumArgs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -43,6 +46,7 @@ import sleeper.statestore.StateStoreFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
@@ -55,6 +59,10 @@ public class CompactionRunnerCLI {
     }
 
     public static void main(String[] args) throws IOException, ObjectFactoryException, IteratorCreationException {
+        CommandLineUsage usage = CommandLineUsage.positionalAndOptions(
+                List.of("job.json path"),
+                List.of(CommandOption.shortOption('r', "repetitions", NumArgs.ONE)));
+
         if (args.length < 2 || args.length > 3) {
             System.out.println("Usage: <instance ID> <job.json path> <optional repetitions>");
             System.exit(1);

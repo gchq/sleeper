@@ -20,6 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.util.CommandOption.NumArgs;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -164,7 +166,7 @@ public class CommandArgumentsTest {
             // When
             CommandArguments arguments = parse("-s", "value");
 
-            // When / Then
+            // Then
             assertThat(arguments.getString("positional")).isEqualTo("value");
             assertThat(arguments.isFlagSet("short")).isTrue();
         }
@@ -177,9 +179,39 @@ public class CommandArgumentsTest {
             // When
             CommandArguments arguments = parse("value", "-s");
 
-            // When / Then
+            // Then
             assertThat(arguments.getString("positional")).isEqualTo("value");
             assertThat(arguments.isFlagSet("short")).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("Option with arguments")
+    class OptionWithArgs {
+
+        @Test
+        void shouldReadLongOptionWithOneArgument() {
+            // Given
+            setOptions(CommandOption.longOption("option", NumArgs.ONE));
+
+            // When
+            CommandArguments arguments = parse("--option", "value");
+
+            // Then
+            assertThat(arguments.getString("option")).isEqualTo("value");
+        }
+
+        @Test
+        void shouldReadShortOptionWithOneArgument() {
+            // Given
+            setOptions(CommandOption.shortOption('o', "option", NumArgs.ONE));
+
+            // When
+            CommandArguments arguments = parse("-o", "value");
+
+            // Then
+            assertThat(arguments.getString("option")).isEqualTo("value");
+            assertThat(arguments.getString("o")).isEqualTo("value");
         }
     }
 

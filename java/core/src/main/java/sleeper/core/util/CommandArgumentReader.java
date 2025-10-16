@@ -44,7 +44,7 @@ public class CommandArgumentReader {
             throw usage.usageException();
         }
         for (int i = 0; i < positionalValues.size(); i++) {
-            builder.positionalArg(usage.getPositionalArgName(i), positionalValues.get(i));
+            builder.argument(usage.getPositionalArgName(i), positionalValues.get(i));
         }
         return builder.build();
     }
@@ -55,7 +55,7 @@ public class CommandArgumentReader {
             String longOption = arg.substring(2);
             Optional<CommandOption> option = usage.getLongOption(longOption);
             if (option.isPresent()) {
-                builder.flag(option.get());
+                readOption(option.get(), builder);
                 advance();
                 return true;
             }
@@ -63,12 +63,27 @@ public class CommandArgumentReader {
             char shortOption = arg.charAt(1);
             Optional<CommandOption> option = usage.getShortOption(shortOption);
             if (option.isPresent()) {
-                builder.flag(option.get());
+                readOption(option.get(), builder);
                 advance();
                 return true;
             }
         }
         return false;
+    }
+
+    private void readOption(CommandOption option, CommandArguments.Builder builder) {
+        switch (option.numArgs()) {
+            case NONE:
+                builder.flag(option);
+                break;
+            case ONE:
+                advance();
+                builder.argument(option.longName(), arg());
+                builder.argument("" + option.shortName(), arg());
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognised number of arguments for option: " + option);
+        }
     }
 
     private String readPositionalArg() {

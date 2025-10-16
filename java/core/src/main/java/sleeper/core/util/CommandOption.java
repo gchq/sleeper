@@ -15,6 +15,8 @@
  */
 package sleeper.core.util;
 
+import java.util.Objects;
+
 /**
  * An option that may be set on the command line. Used with {@link CommandArguments}.
  *
@@ -22,7 +24,12 @@ package sleeper.core.util;
  * @param shortName the character for when the option is set like "-a"
  * @param numArgs   the number of arguments that must be passed after this option
  */
-public record CommandOption(String longName, Character shortName, int numArgs) {
+public record CommandOption(String longName, Character shortName, NumArgs numArgs) {
+
+    public CommandOption {
+        Objects.requireNonNull(longName, "longName must not be null");
+        Objects.requireNonNull(numArgs, "numArgs must not be null");
+    }
 
     /**
      * Creates an option that must be set as a long flag, with no arguments.
@@ -31,17 +38,42 @@ public record CommandOption(String longName, Character shortName, int numArgs) {
      * @return      the option
      */
     public static CommandOption longFlag(String name) {
-        return new CommandOption(name, null, 0);
+        return longOption(name, NumArgs.NONE);
+    }
+
+    /**
+     * Creates an option that must be set as a long flag, with no arguments.
+     *
+     * @param  name the name of the option to use like "--name"
+     * @return      the option
+     */
+    public static CommandOption longOption(String name, NumArgs numArgs) {
+        return new CommandOption(name, null, numArgs);
     }
 
     /**
      * Creates an option that can be set as a short or long flag, with no arguments.
      *
-     * @param character the character to use like "-c"
-     * @param  name the name of the option to use like "--name"
-     * @return      the option
+     * @param  character the character to use like "-c"
+     * @param  name      the name of the option to use like "--name"
+     * @return           the option
      */
     public static CommandOption shortFlag(char character, String name) {
-        return new CommandOption(name, character, 0);
+        return shortOption(character, name, NumArgs.NONE);
+    }
+
+    /**
+     * Creates an option that can be set as a short or long flag, with no arguments.
+     *
+     * @param  character the character to use like "-c"
+     * @param  name      the name of the option to use like "--name"
+     * @return           the option
+     */
+    public static CommandOption shortOption(char character, String name, NumArgs numArgs) {
+        return new CommandOption(name, character, numArgs);
+    }
+
+    public static enum NumArgs {
+        NONE, ONE
     }
 }

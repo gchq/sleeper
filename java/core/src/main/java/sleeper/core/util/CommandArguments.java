@@ -65,13 +65,13 @@ public class CommandArguments {
         private Set<String> optionsSet = new LinkedHashSet<>();
 
         /**
-         * Sets a positional argument.
+         * Sets an argument.
          *
          * @param  name  the name of the argument
          * @param  value the value set on the command line
          * @return       this builder
          */
-        public Builder positionalArg(String name, String value) {
+        public Builder argument(String name, String value) {
             argByName.put(name, value);
             return this;
         }
