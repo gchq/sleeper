@@ -78,7 +78,7 @@ public class CommandArgumentsTest {
                     .parse("--flag");
 
             // When / Then
-            assertThat(arguments.isOptionSet("flag")).isTrue();
+            assertThat(arguments.options().isSet("flag")).isTrue();
         }
 
         @Test
@@ -89,7 +89,7 @@ public class CommandArgumentsTest {
                     .parse();
 
             // When / Then
-            assertThat(arguments.isOptionSet("flag")).isFalse();
+            assertThat(arguments.options().isSet("flag")).isFalse();
         }
 
         @Test
@@ -102,7 +102,7 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThat(arguments.getString("positional")).isEqualTo("value");
-            assertThat(arguments.isOptionSet("flag")).isTrue();
+            assertThat(arguments.options().isSet("flag")).isTrue();
         }
 
         @Test
@@ -115,7 +115,7 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThat(arguments.getString("positional")).isEqualTo("value");
-            assertThat(arguments.isOptionSet("flag")).isTrue();
+            assertThat(arguments.options().isSet("flag")).isTrue();
         }
     }
 
@@ -131,8 +131,8 @@ public class CommandArgumentsTest {
                     .parse("-s");
 
             // When / Then
-            assertThat(arguments.isOptionSet("s")).isTrue();
-            assertThat(arguments.isOptionSet("short")).isTrue();
+            assertThat(arguments.options().isSet("s")).isTrue();
+            assertThat(arguments.options().isSet("short")).isTrue();
         }
 
         @Test
@@ -143,8 +143,8 @@ public class CommandArgumentsTest {
                     .parse("--short");
 
             // When / Then
-            assertThat(arguments.isOptionSet("s")).isTrue();
-            assertThat(arguments.isOptionSet("short")).isTrue();
+            assertThat(arguments.options().isSet("s")).isTrue();
+            assertThat(arguments.options().isSet("short")).isTrue();
         }
 
         @Test
@@ -155,8 +155,8 @@ public class CommandArgumentsTest {
                     .parse();
 
             // When / Then
-            assertThat(arguments.isOptionSet("s")).isFalse();
-            assertThat(arguments.isOptionSet("short")).isFalse();
+            assertThat(arguments.options().isSet("s")).isFalse();
+            assertThat(arguments.options().isSet("short")).isFalse();
         }
 
         @Test
@@ -169,7 +169,7 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThat(arguments.getString("positional")).isEqualTo("value");
-            assertThat(arguments.isOptionSet("short")).isTrue();
+            assertThat(arguments.options().isSet("short")).isTrue();
         }
 
         @Test
@@ -182,7 +182,7 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThat(arguments.getString("positional")).isEqualTo("value");
-            assertThat(arguments.isOptionSet("short")).isTrue();
+            assertThat(arguments.options().isSet("short")).isTrue();
         }
     }
 

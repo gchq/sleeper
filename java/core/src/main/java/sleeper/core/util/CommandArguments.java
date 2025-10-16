@@ -16,11 +16,9 @@
 package sleeper.core.util;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -33,11 +31,11 @@ import static java.util.stream.Collectors.toMap;
 public class CommandArguments {
 
     private final Map<String, String> argByName;
-    private final Set<String> optionsSet;
+    private final CommandOptionValues optionValues;
 
-    public CommandArguments(Map<String, String> argByName, Set<String> optionsSet) {
+    public CommandArguments(Map<String, String> argByName, CommandOptionValues optionValues) {
         this.argByName = argByName;
-        this.optionsSet = optionsSet;
+        this.optionValues = optionValues;
     }
 
     public static Builder builder() {
@@ -55,13 +53,12 @@ public class CommandArguments {
     }
 
     /**
-     * Checks whether an option was set.
+     * Retrieves the options that were set.
      *
-     * @param  name the name of the option
-     * @return      true if the option was set
+     * @return the options
      */
-    public boolean isOptionSet(String name) {
-        return optionsSet.contains(name);
+    public CommandOptionValues options() {
+        return optionValues;
     }
 
     /**
@@ -104,21 +101,20 @@ public class CommandArguments {
         public CommandArguments parse(String... args) {
             Map<String, String> argByName = new LinkedHashMap<>();
             List<String> positionalValues = new ArrayList<>();
-            Set<String> optionsSet = new HashSet<>();
+            CommandOptionValues optionValues = new CommandOptionValues();
             for (String arg : args) {
                 if (arg.startsWith("--")) {
                     String longOption = arg.substring(2);
                     CommandOption option = optionByLongName.get(longOption);
                     if (option != null) {
-                        addOptionSet(optionsSet, option);
+                        optionValues.setFlag(option);
                         continue;
                     }
                 } else if (arg.startsWith("-")) {
                     char shortOption = arg.charAt(1);
                     CommandOption option = optionByShortName.get(shortOption);
                     if (option != null) {
-                        optionsSet.add("" + shortOption);
-                        optionsSet.add(option.longName());
+                        optionValues.setFlag(option);
                         continue;
                     }
                 }
@@ -130,14 +126,7 @@ public class CommandArguments {
             for (int i = 0; i < positionalValues.size(); i++) {
                 argByName.put(positionalArguments.get(i), positionalValues.get(i));
             }
-            return new CommandArguments(argByName, optionsSet);
-        }
-
-        private static void addOptionSet(Set<String> optionsSet, CommandOption option) {
-            optionsSet.add(option.longName());
-            if (option.shortName() != null) {
-                optionsSet.add("" + option.shortName());
-            }
+            return new CommandArguments(argByName, optionValues);
         }
 
         private IllegalArgumentException usageException() {
