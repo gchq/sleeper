@@ -23,10 +23,31 @@ import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.bridge.ForeignFunctions;
 
+import java.util.Optional;
+
 /**
  * Calls the native library with query functionality.
  */
 public interface DataFusionQueryFunctions extends ForeignFunctions {
+
+    /**
+     * Retrives the link to the DataFusion code in Rust.
+     *
+     * @return                       the Rust DataFusion implementation
+     * @throws IllegalStateException if the DataFusion implementation failed to link
+     */
+    static DataFusionQueryFunctions getInstance() {
+        return DataFusionQueryFunctionsImpl.INSTANCE.getFunctionsOrThrow();
+    }
+
+    /**
+     * Retrives the link to the DataFusion code in Rust, unless the link failed to load.
+     *
+     * @return the Rust DataFusion implementation, if it loaded
+     */
+    static Optional<DataFusionQueryFunctions> getInstanceIfLoaded() {
+        return DataFusionQueryFunctionsImpl.INSTANCE.getFunctionsIfLoaded();
+    }
 
     /**
      * Invokes a native query. Returns a stream of Arrow record batches.

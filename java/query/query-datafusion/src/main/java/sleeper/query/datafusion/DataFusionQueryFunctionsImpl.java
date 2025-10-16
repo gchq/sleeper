@@ -30,34 +30,15 @@ import java.util.Optional;
 public class DataFusionQueryFunctionsImpl {
     public static final Logger LOGGER = LoggerFactory.getLogger(DataFusionQueryFunctionsImpl.class);
 
-    private static final LoadFailureTracker INSTANCE = LoadFailureTracker.createForeignInterface();
+    static final LoadFailureTracker INSTANCE = LoadFailureTracker.createForeignInterface();
 
     private DataFusionQueryFunctionsImpl() {
     }
 
     /**
-     * Retrives the link to the DataFusion code in Rust.
-     *
-     * @return                       the Rust DataFusion implementation
-     * @throws IllegalStateException if the DataFusion implementation failed to link
-     */
-    public static DataFusionQueryFunctions getInstance() {
-        return INSTANCE.getFunctionsOrThrow();
-    }
-
-    /**
-     * Retrives the link to the DataFusion code in Rust, unless the link failed to load.
-     *
-     * @return the Rust DataFusion implementation, if it loaded
-     */
-    public static Optional<DataFusionQueryFunctions> getInstanceIfLoaded() {
-        return INSTANCE.getFunctionsIfLoaded();
-    }
-
-    /**
      * A tracker for whether the DataFusion code failed to link.
      */
-    private static class LoadFailureTracker {
+    static class LoadFailureTracker {
 
         private final DataFusionQueryFunctions functions;
         private final Exception failure;
@@ -67,7 +48,7 @@ public class DataFusionQueryFunctionsImpl {
             this.failure = failure;
         }
 
-        static LoadFailureTracker createForeignInterface() {
+        private static LoadFailureTracker createForeignInterface() {
             try {
                 DataFusionQueryFunctions functions = FFIBridge.createForeignInterface(DataFusionQueryFunctions.class);
                 return new LoadFailureTracker(functions, null);

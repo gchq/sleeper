@@ -135,7 +135,7 @@ public class QueryClient extends QueryCommandLineClient {
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 BufferAllocator allocator = new RootAllocator();
-                FFIContext<DataFusionQueryFunctions> ffiContext = DataFusionLeafPartitionRowRetriever.createContext()) {
+                FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.getInstance())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new QueryClient(
                     instanceProperties,

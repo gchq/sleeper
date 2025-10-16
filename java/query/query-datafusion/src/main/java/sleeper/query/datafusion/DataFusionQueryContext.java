@@ -51,7 +51,7 @@ public class DataFusionQueryContext implements AutoCloseable {
      * @return           the context
      */
     public static DataFusionQueryContext createIfLoaded(Supplier<BufferAllocator> allocator) {
-        Optional<DataFusionQueryFunctions> functions = DataFusionQueryFunctionsImpl.getInstanceIfLoaded();
+        Optional<DataFusionQueryFunctions> functions = DataFusionQueryFunctions.getInstanceIfLoaded();
         if (functions.isPresent()) {
             return new DataFusionQueryContext(new FFIContext<>(functions.get()), allocator.get());
         } else {

@@ -59,7 +59,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * @return the context
      */
     public static FFIContext<DataFusionQueryFunctions> createContext() {
-        return new FFIContext<>(DataFusionQueryFunctionsImpl.getInstance());
+        return new FFIContext<>(DataFusionQueryFunctions.getInstance());
     }
 
     @Override
