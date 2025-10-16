@@ -27,13 +27,11 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
@@ -60,7 +58,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -92,15 +89,9 @@ public class QueryClient extends QueryCommandLineClient {
     @Override
     protected void init(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        List<Partition> partitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
-        out.println("Retrieved " + partitions.size() + " partitions from StateStore");
-
         if (!cachedQueryExecutors.containsKey(tableName)) {
-            QueryPlanner planner = new QueryPlanner(tableProperties, stateStoreProvider.getStateStore(tableProperties));
-            planner.init(partitions, partitionToFileMapping);
-            QueryExecutor executor = new QueryExecutor(planner,
+            QueryExecutor executor = new QueryExecutor(
+                    QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)),
                     new LeafPartitionQueryExecutor(objectFactory, tableProperties,
                             rowRetrieverProvider.getRowRetriever(tableProperties)));
             cachedQueryExecutors.put(tableName, executor);
