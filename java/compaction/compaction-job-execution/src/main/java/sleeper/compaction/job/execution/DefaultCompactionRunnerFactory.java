@@ -26,6 +26,7 @@ import sleeper.compaction.datafusion.DataFusionCompactionRunner;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.sketches.store.SketchesStore;
 
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
@@ -66,7 +67,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         switch (engine) {
             case DATAFUSION:
             case DATAFUSION_EXPERIMENTAL:
-                return new DataFusionCompactionRunner(configuration);
+                return new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), configuration);
             case JAVA:
             default:
                 return createJavaRunner();
