@@ -80,7 +80,7 @@ setupParallelTestFolders() {
     cp README.md quick
     cp -r quick slow1
     cp -r quick slow2
-    #cp -r quick slow3
+    cp -r quick slow3
     if [ "$MAIN_SUITE_NAME" == "performance" ]; then
         cp -r quick expensive1
         cp -r quick expensive2
@@ -156,10 +156,10 @@ runTestSuite(){
 }
 
 runSlowTests(){
-    #runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "-DskipRust" "-DrunIT=QuickSystemTestSuite" $@&
-    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" $@&
-    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" $@
-    #runTestSuite 900 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" $@
+    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "-DskipRust" "-DrunIT=QuickSystemTestSuite" $@&
+    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" $@&
+    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" $@
+    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" $@
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
@@ -170,11 +170,11 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     EXP2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite2)
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
-    #runSlowTests $@&
-    #runTestSuite 1200 "${EXP1_SUITE_PARAMS[@]}" $@&
-    #runTestSuite 1500 "${EXP2_SUITE_PARAMS[@]}" $@&
-    runTestSuite 0 "${EXP3_SUITE_PARAMS[@]}" $@
-    #wait
+    runSlowTests $@&
+    runTestSuite 240 "${EXP1_SUITE_PARAMS[@]}" $@&
+    runTestSuite 300 "${EXP2_SUITE_PARAMS[@]}" $@&
+    runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" $@
+    wait
 
     #Remove the temporary folders
     clearParallelTestFolders

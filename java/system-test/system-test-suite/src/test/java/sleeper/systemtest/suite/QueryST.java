@@ -26,7 +26,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.Test2;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
@@ -36,17 +35,16 @@ import static sleeper.systemtest.dsl.query.QueryRange.range;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MULTI_TABLES;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-@Test2
 public class QueryST {
     @TempDir
     private Path tempDir;
 
     @BeforeEach
     void setup(SleeperSystemTest sleeper) {
-        sleeper.connectToInstanceAddOnlineTable(MULTI_TABLES);
+        sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Nested
