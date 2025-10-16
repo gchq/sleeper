@@ -56,7 +56,7 @@ public class CompactionRunnerCLI {
 
     public static void main(String[] args) throws IOException, ObjectFactoryException, IteratorCreationException {
         if (args.length < 2 || args.length > 3) {
-            System.out.println("Usage: <instance ID> <job.json path> <optional-repetitions>");
+            System.out.println("Usage: <instance ID> <job.json path> <optional repetitions>");
             System.exit(1);
         }
 
