@@ -37,7 +37,7 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * @throws IllegalStateException if the DataFusion implementation failed to link
      */
     static DataFusionQueryFunctions getInstance() {
-        return DataFusionQueryFunctionsImpl.INSTANCE.getFunctionsOrThrow();
+        return DataFusionQueryFunctionsIfLoaded.INSTANCE.getFunctionsOrThrow();
     }
 
     /**
@@ -46,7 +46,7 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * @return the Rust DataFusion implementation, if it loaded
      */
     static Optional<DataFusionQueryFunctions> getInstanceIfLoaded() {
-        return DataFusionQueryFunctionsImpl.INSTANCE.getFunctionsIfLoaded();
+        return DataFusionQueryFunctionsIfLoaded.INSTANCE.getFunctionsIfLoaded();
     }
 
     /**
