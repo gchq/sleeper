@@ -24,7 +24,6 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -51,12 +50,9 @@ public class DataFusionQueryContext implements AutoCloseable {
      * @return           the context
      */
     public static DataFusionQueryContext createIfLoaded(Supplier<BufferAllocator> allocator) {
-        Optional<DataFusionQueryFunctions> functions = DataFusionQueryFunctions.getInstanceIfLoaded();
-        if (functions.isPresent()) {
-            return new DataFusionQueryContext(new FFIContext<>(functions.get()), allocator.get());
-        } else {
-            return new DataFusionQueryContext(null, null);
-        }
+        return DataFusionQueryFunctions.getInstanceIfLoaded()
+                .map(functions -> new DataFusionQueryContext(new FFIContext<>(functions), allocator.get()))
+                .orElseGet(() -> none());
     }
 
     /**
