@@ -33,11 +33,11 @@ class DataFusionQueryFunctionsIfLoaded {
     static final DataFusionQueryFunctionsIfLoaded INSTANCE = createForeignInterface();
 
     private final DataFusionQueryFunctions functions;
-    private final Exception failure;
+    private final Exception loadingFailure;
 
-    private DataFusionQueryFunctionsIfLoaded(DataFusionQueryFunctions functions, Exception failure) {
+    private DataFusionQueryFunctionsIfLoaded(DataFusionQueryFunctions functions, Exception loadingFailure) {
         this.functions = functions;
-        this.failure = failure;
+        this.loadingFailure = loadingFailure;
     }
 
     private static DataFusionQueryFunctionsIfLoaded createForeignInterface() {
@@ -51,8 +51,8 @@ class DataFusionQueryFunctionsIfLoaded {
     }
 
     DataFusionQueryFunctions getFunctionsOrThrow() {
-        if (failure != null) {
-            throw new IllegalStateException("Could not load foreign interface", failure);
+        if (loadingFailure != null) {
+            throw new IllegalStateException("Could not load foreign interface", loadingFailure);
         } else {
             return functions;
         }
@@ -60,5 +60,9 @@ class DataFusionQueryFunctionsIfLoaded {
 
     Optional<DataFusionQueryFunctions> getFunctionsIfLoaded() {
         return Optional.ofNullable(functions);
+    }
+
+    Exception getLoadingFailure() {
+        return loadingFailure;
     }
 }

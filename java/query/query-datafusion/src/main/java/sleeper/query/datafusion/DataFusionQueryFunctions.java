@@ -49,6 +49,10 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
         return DataFusionQueryFunctionsIfLoaded.INSTANCE.getFunctionsIfLoaded();
     }
 
+    static Exception getLoadingFailure() {
+        return DataFusionQueryFunctionsIfLoaded.INSTANCE.getLoadingFailure();
+    }
+
     /**
      * Invokes a native query. Returns a stream of Arrow record batches.
      *

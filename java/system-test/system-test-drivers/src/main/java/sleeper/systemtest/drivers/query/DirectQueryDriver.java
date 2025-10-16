@@ -31,6 +31,7 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.datafusion.DataFusionQueryContext;
@@ -62,8 +63,9 @@ public class DirectQueryDriver implements QueryDriver {
 
     public DirectQueryDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.rowRetrieverProvider = DATAFUSION_CONTEXT.createQueryEngineSelector(clients::createDataFusionAwsConfig,
-                new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE, clients.tableHadoopProvider(instance.getInstanceProperties())));
+        this.rowRetrieverProvider = QueryEngineSelector.javaAndDataFusion(
+                new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE, clients.tableHadoopProvider(instance.getInstanceProperties())),
+                DATAFUSION_CONTEXT.createDataFusionProvider(clients::createDataFusionAwsConfig));
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {

@@ -67,7 +67,7 @@ public interface SleeperClientQueryProvider {
             DataFusionQueryContext dataFusionContext = DataFusionQueryContext.createIfLoaded(RootAllocator::new);
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
             return ShutdownWrapper.shutdown(
-                    dataFusionContext.createQueryEngineSelector(DataFusionAwsConfig::getDefault, javaProvider),
+                    dataFusionContext.createQueryEngineSelectorWithFallback(DataFusionAwsConfig::getDefault, javaProvider),
                     new UncheckedAutoCloseables(List.of(
                             dataFusionContext::close,
                             executorService::shutdown)));
@@ -95,7 +95,7 @@ public interface SleeperClientQueryProvider {
         @Override
         public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(TableHadoopConfigurationProvider hadoopProvider) {
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            return ShutdownWrapper.noShutdown(dataFusionContext.createQueryEngineSelector(DataFusionAwsConfig::getDefault, javaProvider));
+            return ShutdownWrapper.noShutdown(dataFusionContext.createQueryEngineSelectorWithFallback(DataFusionAwsConfig::getDefault, javaProvider));
         }
 
         @Override

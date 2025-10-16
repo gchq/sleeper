@@ -72,13 +72,30 @@ public class DataFusionQueryContext implements AutoCloseable {
      * @param  javaProvider the Java implementation
      * @return              the row retriever provider
      */
-    public LeafPartitionRowRetrieverProvider createQueryEngineSelector(Supplier<DataFusionAwsConfig> awsConfig, LeafPartitionRowRetrieverProvider javaProvider) {
+    public LeafPartitionRowRetrieverProvider createQueryEngineSelectorWithFallback(Supplier<DataFusionAwsConfig> awsConfig, LeafPartitionRowRetrieverProvider javaProvider) {
         if (context == null) {
             LOGGER.warn("Falling back to Java row retriever as DataFusion was not loaded");
             return javaProvider;
         } else {
             return QueryEngineSelector.javaAndDataFusion(javaProvider,
                     new DataFusionLeafPartitionRowRetriever.Provider(awsConfig.get(), allocator, context));
+        }
+    }
+
+    /**
+     * Creates a DataFusion row retriever provider for use in queries. If the DataFusion functions could not be loaded,
+     * the returned row retriever will fail if it is used.
+     *
+     * @param  awsConfig a constructor for the AWS configuration
+     * @return           the row retriever provider
+     */
+    public LeafPartitionRowRetrieverProvider createDataFusionProvider(Supplier<DataFusionAwsConfig> awsConfig) {
+        if (context == null) {
+            return tableProperties -> {
+                throw new IllegalStateException("Could not load foreign interface", DataFusionQueryFunctions.getLoadingFailure());
+            };
+        } else {
+            return new DataFusionLeafPartitionRowRetriever.Provider(awsConfig.get(), allocator, context);
         }
     }
 

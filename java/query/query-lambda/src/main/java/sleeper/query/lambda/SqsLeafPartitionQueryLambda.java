@@ -72,7 +72,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
         processor = SqsLeafPartitionQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
-                .rowRetrieverProvider(dataFusionContext.createQueryEngineSelector(awsConfig,
+                .rowRetrieverProvider(dataFusionContext.createQueryEngineSelectorWithFallback(awsConfig,
                         new LeafPartitionRowRetrieverImpl.Provider(
                                 Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)),
                                 TableHadoopConfigurationProvider.withCache(
