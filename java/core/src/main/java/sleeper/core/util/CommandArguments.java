@@ -64,12 +64,25 @@ public class CommandArguments {
         private Map<String, String> argByName = new LinkedHashMap<>();
         private Set<String> optionsSet = new LinkedHashSet<>();
 
-        Builder positionalArg(String name, String value) {
+        /**
+         * Sets a positional argument.
+         *
+         * @param  name  the name of the argument
+         * @param  value the value set on the command line
+         * @return       this builder
+         */
+        public Builder positionalArg(String name, String value) {
             argByName.put(name, value);
             return this;
         }
 
-        Builder flag(CommandOption option) {
+        /**
+         * Sets a flag option.
+         *
+         * @param  option the option that was set as a flag
+         * @return        this builder
+         */
+        public Builder flag(CommandOption option) {
             optionsSet.add(option.longName());
             if (option.shortName() != null) {
                 optionsSet.add("" + option.shortName());

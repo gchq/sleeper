@@ -192,6 +192,7 @@ public class CommandArgumentsTest {
     }
 
     private CommandArguments parse(String... args) {
-        return CommandLineUsage.positionalAndOptions(positionalArguments, options).parse(args);
+        CommandLineUsage usage = CommandLineUsage.positionalAndOptions(positionalArguments, options);
+        return CommandArgumentReader.parse(usage, args);
     }
 }

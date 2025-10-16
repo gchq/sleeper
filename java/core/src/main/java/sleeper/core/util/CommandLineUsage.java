@@ -15,9 +15,9 @@
  */
 package sleeper.core.util;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.joining;
@@ -50,42 +50,50 @@ public class CommandLineUsage {
     }
 
     /**
-     * Parses the given command line arguments.
+     * Retrieves an option by its long name.
      *
-     * @param  args the arguments
-     * @return      the parsed arguments
+     * @param  name the long name
+     * @return      the option, if it exists
      */
-    public CommandArguments parse(String... args) {
-        CommandArguments.Builder builder = CommandArguments.builder();
-        List<String> positionalValues = new ArrayList<>();
-        for (String arg : args) {
-            if (arg.startsWith("--")) {
-                String longOption = arg.substring(2);
-                CommandOption option = optionByLongName.get(longOption);
-                if (option != null) {
-                    builder.flag(option);
-                    continue;
-                }
-            } else if (arg.startsWith("-")) {
-                char shortOption = arg.charAt(1);
-                CommandOption option = optionByShortName.get(shortOption);
-                if (option != null) {
-                    builder.flag(option);
-                    continue;
-                }
-            }
-            positionalValues.add(arg);
-        }
-        if (positionalValues.size() != positionalArguments.size()) {
-            throw usageException();
-        }
-        for (int i = 0; i < positionalValues.size(); i++) {
-            builder.positionalArg(positionalArguments.get(i), positionalValues.get(i));
-        }
-        return builder.build();
+    public Optional<CommandOption> getLongOption(String name) {
+        return Optional.ofNullable(optionByLongName.get(name));
     }
 
-    private IllegalArgumentException usageException() {
+    /**
+     * Retrieves an option by its short name.
+     *
+     * @param  name the short name
+     * @return      the option, if it exists
+     */
+    public Optional<CommandOption> getShortOption(Character name) {
+        return Optional.ofNullable(optionByShortName.get(name));
+    }
+
+    /**
+     * Retrieves the number of positional arguments.
+     *
+     * @return the number
+     */
+    public int getNumPositionalArgs() {
+        return positionalArguments.size();
+    }
+
+    /**
+     * Retrieves the name of a positional argument.
+     *
+     * @param  index the index of the argument, starting from 0
+     * @return       the name of the argument
+     */
+    public String getPositionalArgName(int index) {
+        return positionalArguments.get(index);
+    }
+
+    /**
+     * Creates an exception with the usage message.
+     *
+     * @return an exception
+     */
+    public IllegalArgumentException usageException() {
         return new IllegalArgumentException("Usage: " +
                 positionalArguments.stream()
                         .map(name -> "<" + name + ">")
