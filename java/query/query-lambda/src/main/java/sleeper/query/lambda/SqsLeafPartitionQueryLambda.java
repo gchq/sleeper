@@ -30,12 +30,14 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
@@ -64,7 +66,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
                 new DataFusionLeafPartitionRowRetriever.Provider(
                         DataFusionAwsConfig.getDefault(),
                         new RootAllocator(),
-                        DataFusionLeafPartitionRowRetriever.createContext()));
+                        new FFIContext<>(DataFusionQueryFunctions.getInstance())));
     }
 
     public SqsLeafPartitionQueryLambda(

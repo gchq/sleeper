@@ -53,15 +53,6 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         this.context = context;
     }
 
-    /**
-     * Creates an FFI context for reuse.
-     *
-     * @return the context
-     */
-    public static FFIContext<DataFusionQueryFunctions> createContext() {
-        return new FFIContext<>(DataFusionQueryFunctions.getInstance());
-    }
-
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
         DataFusionQueryFunctions functions = context.getFunctions();

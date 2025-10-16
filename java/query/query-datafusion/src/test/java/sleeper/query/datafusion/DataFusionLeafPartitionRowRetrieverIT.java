@@ -83,7 +83,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class DataFusionLeafPartitionRowRetrieverIT {
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
-    private static final FFIContext<DataFusionQueryFunctions> FFI_CONTEXT = DataFusionLeafPartitionRowRetriever.createContext();
+    private static final FFIContext<DataFusionQueryFunctions> FFI_CONTEXT = new FFIContext<>(DataFusionQueryFunctions.getInstance());
 
     @TempDir
     public Path tempDir;
