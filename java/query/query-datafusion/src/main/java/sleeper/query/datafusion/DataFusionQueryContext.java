@@ -60,6 +60,15 @@ public class DataFusionQueryContext implements AutoCloseable {
     }
 
     /**
+     * Creates a context where no DataFusion functions are used. Will always fall back to the Java implementation.
+     *
+     * @return the context
+     */
+    public static DataFusionQueryContext none() {
+        return new DataFusionQueryContext(null, null);
+    }
+
+    /**
      * Creates a row retriever provider for use in queries, using the Java or DataFusion implementation depending on
      * configuration. If the DataFusion functions could not be loaded, the Java implementation will always be used.
      *
