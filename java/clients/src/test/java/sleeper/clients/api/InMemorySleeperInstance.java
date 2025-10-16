@@ -18,6 +18,8 @@ package sleeper.clients.api;
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.clients.query.FakeWebSocketConnection;
+import sleeper.clients.query.QueryWebSocketClient;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -53,11 +55,17 @@ public class InMemorySleeperInstance {
     private final Map<BulkImportPlatform, Queue<BulkImportJob>> bulkImportQueues = new HashMap<>();
     private final Queue<IngestBatcherSubmitRequest> ingestBatcherQueue = new LinkedList<>();
     private final Queue<BulkExportQuery> bulkExportQueue = new LinkedList<>();
+    private final FakeWebSocketConnection webSocketConnection;
 
     public InMemorySleeperInstance(InstanceProperties properties) {
         this.properties = properties;
         this.tablePropertiesProvider = new TablePropertiesProvider(properties, tablePropertiesStore);
         this.stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(properties, transactionLogsPerTable);
+        this.webSocketConnection = new FakeWebSocketConnection();
+    }
+
+    public FakeWebSocketConnection getFakeWebSocketConnection() {
+        return webSocketConnection;
     }
 
     public SleeperClient.Builder sleeperClientBuilder() {
@@ -71,7 +79,8 @@ public class InMemorySleeperInstance {
                 .ingestJobSender(ingestQueue::add)
                 .bulkImportJobSender(bulkImportSender())
                 .ingestBatcherSender(ingestBatcherQueue::add)
-                .bulkExportQuerySender(bulkExportQueue::add);
+                .bulkExportQuerySender(bulkExportQueue::add)
+                .queryWebSocketSender(queryWebSocketSender());
     }
 
     public InMemoryIngest ingestByTableName(String tableName) {
@@ -135,6 +144,13 @@ public class InMemorySleeperInstance {
 
     private BulkImportJobSender bulkImportSender() {
         return (platform, job) -> bulkImportQueue(platform).add(job);
+    }
+
+    private QueryWebSocketSender queryWebSocketSender() {
+        return query -> {
+            QueryWebSocketClient client = new QueryWebSocketClient(properties, tablePropertiesProvider, webSocketConnection.createAdapter(), 0);
+            return client.submitQuery(query);
+        };
     }
 
     public Queue<BulkExportQuery> bulkExportQueue() {

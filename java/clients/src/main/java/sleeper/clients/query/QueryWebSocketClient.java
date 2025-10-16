@@ -47,7 +47,7 @@ public class QueryWebSocketClient {
         this(instanceProperties, tablePropertiesProvider, QueryWebSocketConnection.createAdapter(credentialsProvider), DEFAULT_TIMEOUT_MS);
     }
 
-    QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+    public QueryWebSocketClient(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             Adapter adapter, long timeoutMs) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;

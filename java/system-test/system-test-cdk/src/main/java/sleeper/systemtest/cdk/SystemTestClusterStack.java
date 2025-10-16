@@ -102,7 +102,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         new CfnOutput(this, "systemTestClusterName", writeClusterOutputProps);
 
-        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(instanceProperties, cluster, clusterName);
+        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(this, cluster);
 
         FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
                 .create(this, "TaskDefinition")

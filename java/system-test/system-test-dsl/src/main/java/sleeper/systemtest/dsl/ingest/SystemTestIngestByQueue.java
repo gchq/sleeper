@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
@@ -30,14 +30,14 @@ public class SystemTestIngestByQueue {
 
     private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueue ingest;
-    private final InstanceProperty defaultQueueProperty;
+    private final CdkDefinedInstanceProperty defaultQueueProperty;
     private final IngestTasksDriver tasksDriver;
     private final WaitForJobs waitForJobs;
     private final PollWithRetriesDriver pollDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(
-            IngestSourceFilesContext sourceFiles, IngestByQueue ingest, InstanceProperty defaultQueueProperty,
+            IngestSourceFilesContext sourceFiles, IngestByQueue ingest, CdkDefinedInstanceProperty defaultQueueProperty,
             IngestTasksDriver tasksDriver, WaitForJobs waitForJobs, PollWithRetriesDriver pollDriver) {
         this.sourceFiles = sourceFiles;
         this.ingest = ingest;
@@ -51,7 +51,7 @@ public class SystemTestIngestByQueue {
         return sendSourceFiles(defaultQueueProperty, files);
     }
 
-    public SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, String... files) {
+    public SystemTestIngestByQueue sendSourceFiles(CdkDefinedInstanceProperty queueProperty, String... files) {
         sentJobIds.add(ingest.sendJobGetId(queueProperty, sourceFiles(files)));
         return this;
     }

@@ -27,6 +27,7 @@ import org.apache.arrow.vector.complex.ListVector;
 import org.apache.arrow.vector.complex.impl.UnionListWriter;
 import org.apache.arrow.vector.complex.writer.BaseWriter;
 
+import sleeper.arrow.ArrowToRowConversionUtils;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -42,11 +43,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatch.MAP_KEY_FIELD_NAME;
-import static sleeper.ingest.runner.impl.rowbatch.arrow.ArrowRowBatch.MAP_VALUE_FIELD_NAME;
-
 /**
- * Accepts data for an Arrow row batch as Sleeper rows. Used by {@link ArrowRowBatch}.
+ * Accepts data for an Arrow row batch as Sleeper rows. Used by {@link ArrowRowBatchFactory}.
  */
 public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
 
@@ -75,6 +73,15 @@ public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
         return finalRowCount;
     }
 
+    /**
+     * Writes the given row into the Arrow record batch.
+     *
+     * @param  allFields                     list of fields to write from row to record batch
+     * @param  vectorSchemaRoot              Arrow record batch to write to
+     * @param  row                           Sleeper row to write
+     * @param  insertAtRowNo                 position to insert row in record batch
+     * @throws UnsupportedOperationException if the Sleeper column type is not recognised
+     */
     public static void writeRow(
             List<Field> allFields, VectorSchemaRoot vectorSchemaRoot, Row row, int insertAtRowNo) {
         // Follow the Arrow pattern of create > allocate > mutate > set value count > access > clear
@@ -153,8 +160,8 @@ public class ArrowRowWriterAcceptingRows implements ArrowRowWriter<Row> {
         mapOfValues.forEach((key, value) -> {
             BaseWriter.StructWriter structWriter = unionListWriter.struct();
             structWriter.start();
-            writeStructElement(bufferAllocator, unionListWriter, sleeperKeyType, key, MAP_KEY_FIELD_NAME);
-            writeStructElement(bufferAllocator, unionListWriter, sleeperValueType, value, MAP_VALUE_FIELD_NAME);
+            writeStructElement(bufferAllocator, unionListWriter, sleeperKeyType, key, ArrowToRowConversionUtils.MAP_KEY_FIELD_NAME);
+            writeStructElement(bufferAllocator, unionListWriter, sleeperValueType, value, ArrowToRowConversionUtils.MAP_VALUE_FIELD_NAME);
             structWriter.end();
         });
         unionListWriter.endList();

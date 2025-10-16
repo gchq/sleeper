@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.ingest;
 
-import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
@@ -32,17 +32,17 @@ public class IngestByQueue {
         this.driver = driver;
     }
 
-    public String sendJobGetId(InstanceProperty queueUrlProperty, List<String> files) {
+    public String sendJobGetId(CdkDefinedInstanceProperty queueUrlProperty, List<String> files) {
         return sendJobGetId(queueUrlProperty, instance.getTableName(), files);
     }
 
-    public List<String> sendJobToAllTablesGetIds(InstanceProperty queueUrlProperty, List<String> files) {
+    public List<String> sendJobToAllTablesGetIds(CdkDefinedInstanceProperty queueUrlProperty, List<String> files) {
         return instance.streamDeployedTableNames().parallel()
                 .map(tableName -> sendJobGetId(queueUrlProperty, tableName, files))
                 .collect(Collectors.toList());
     }
 
-    public String sendJobGetId(InstanceProperty queueUrlProperty, String tableName, List<String> files) {
+    public String sendJobGetId(CdkDefinedInstanceProperty queueUrlProperty, String tableName, List<String> files) {
         String queueUrl = Objects.requireNonNull(instance.getInstanceProperties().get(queueUrlProperty),
                 "queue URL property must be non-null: " + queueUrlProperty.getPropertyName());
         return driver.sendJobGetId(queueUrl, tableName, files);

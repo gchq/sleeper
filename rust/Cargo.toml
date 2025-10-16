@@ -34,9 +34,9 @@ aws-types = { version = "1.3.9" }                   # for Region
 bytes = { version = "1.10.1" }                      # Byte buffer for S3 uploading
 cargo_metadata = { version = "0.22.0" }             # Access cargo metadata programmtically
 chrono = { version = "0.4.42" }                     # Log helper
-clap = { version = "4.5.48" }                       # Cmd line args processing
+clap = { version = "4.5.49" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
-cxx = { version = "1.0.186" }                       # Exception handling for Rust
+cxx = { version = "1.0.187" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.181" }
 datafusion = { version = "48.0.1" }
 env_logger = { version = "0.11.8" }                 # Standard logging to stderr
@@ -52,13 +52,13 @@ object_store = { version = "0.12.4" }               # Remote cloud storage acces
 owo-colors = { version = "4.2.3" }                  # Colourised output
 predicates = { version = "3.1.3" }                  # Test assertions
 rand = { version = "0.9.2" }                        # Random number generation
-regex = { version = "1.11.3" }                      # Regular expressions
+regex = { version = "1.12.2" }                      # Regular expressions
 serde_json = { version = "1.0.145" }                # Process metadata JSON
 tempfile = { version = "3.23.0" }                   # Create temporary files
 test-log = { version = "0.2.18" }
 testing_logger = { version = "0.1.1" }              # Assert on logger output in tests
 thiserror = { version = "2.0.17" }                  # Derivable error enums
-tokio = { version = "1.47.1", features = ["full"] } # Async runtime
+tokio = { version = "1.48.0", features = ["full"] } # Async runtime
 tokio-test = { version = "0.4.4" }                  # Doc tests
 url = { version = "2.5.7" }                         # URL processing for S3
 mockall = { version = "0.13.1" }                    # Mock trait library

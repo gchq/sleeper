@@ -71,23 +71,16 @@ public class QueryExecutorTestBase {
         update(stateStore).addFile(fileReference);
     }
 
-    protected QueryExecutor executor() throws Exception {
-        return executorAtTime(Instant.now());
+    protected QueryPlanner planner() throws Exception {
+        return plannerAtTime(Instant.now());
     }
 
     protected QueryExecutor executorAtTime(Instant time) throws Exception {
-        QueryExecutor executor = uninitialisedExecutorAtTime(time);
-        executor.init(time);
-        return executor;
-    }
-
-    protected QueryExecutor uninitialisedExecutorAtTime(Instant time) {
-        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
-                new InMemoryLeafPartitionRowRetriever(rowStore), time);
+        return new QueryExecutor(plannerAtTime(time), leafQueryExecutor());
     }
 
     protected List<Row> getRows(Query query) throws Exception {
-        return getRows(executor(), query);
+        return getRows(new QueryExecutor(planner(), leafQueryExecutor()), query);
     }
 
     protected List<Row> getRows(QueryExecutor executor, Query query) {
@@ -97,6 +90,16 @@ public class QueryExecutorTestBase {
         } catch (QueryException | IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private QueryPlanner plannerAtTime(Instant time) throws Exception {
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore, time);
+        planner.init(time);
+        return planner;
+    }
+
+    private LeafPartitionQueryExecutor leafQueryExecutor() {
+        return new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, new InMemoryLeafPartitionRowRetriever(rowStore));
     }
 
     protected Query.Builder query() {

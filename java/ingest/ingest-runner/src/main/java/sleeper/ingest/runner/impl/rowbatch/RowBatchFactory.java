@@ -15,9 +15,21 @@
  */
 package sleeper.ingest.runner.impl.rowbatch;
 
+/**
+ * Creates row batches that accept data, sort it and convert it to Sleeper Row objects. Each row batch is single-use,
+ * and all associated resources will be released when it has been read.
+ *
+ * @param <INCOMINGDATATYPE> the incoming source data type
+ * @see                      RowBatch
+ */
 @FunctionalInterface
 public interface RowBatchFactory<INCOMINGDATATYPE> extends AutoCloseable {
 
+    /**
+     * Creates a new row batch.
+     *
+     * @return a row batch
+     */
     RowBatch<INCOMINGDATATYPE> createRowBatch();
 
     @Override
