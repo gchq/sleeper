@@ -59,6 +59,7 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
 
     public SqsLeafPartitionQueryLambda() throws ObjectFactoryException {
         this(S3Client.create(), SqsClient.create(), DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()),
+                // DataFusion is disabled because of issue https://github.com/gchq/sleeper/issues/5830
                 DataFusionQueryContext.none(), DataFusionAwsConfig::getDefault);
     }
 
