@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -59,7 +60,7 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
     //     ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER, instanceProperties);
     //     createLambda(instanceProperties, jars, logGroup, providerLogGroup);
     // }
-
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
