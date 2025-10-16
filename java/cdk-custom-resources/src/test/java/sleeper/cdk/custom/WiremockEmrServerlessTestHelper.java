@@ -54,6 +54,15 @@ public class WiremockEmrServerlessTestHelper {
     }
 
     /**
+     * Get an EMR application.
+     *
+     * @return a HTTP response
+     */
+    public static MappingBuilder getApplicationRequest() {
+        return get(getApplicationUrl());
+    }
+
+    /**
      * List running jobs on an EMR application.
      *
      * @return matching HTTP requests
@@ -97,6 +106,10 @@ public class WiremockEmrServerlessTestHelper {
      */
     public static RequestPatternBuilder anyRequestedForEmrServerless() {
         return anyRequestedFor(urlMatching("/applications.*"));
+    }
+
+    public static RequestPatternBuilder getApplicationRequested() {
+        return getRequestedFor(getApplicationUrl());
     }
 
     /**
@@ -151,6 +164,11 @@ public class WiremockEmrServerlessTestHelper {
                 "}]}");
     }
 
+    public static ResponseDefinitionBuilder aResponseWithNoApplications() {
+        return aResponse().withStatus(200)
+                .withBody("{\"applications\": []}");
+    }
+
     /**
      * Build an EMR application response with an empty list of job runs.
      *
@@ -158,6 +176,10 @@ public class WiremockEmrServerlessTestHelper {
      */
     public static ResponseDefinitionBuilder aResponseWithNoJobRuns() {
         return aResponse().withStatus(200).withBody("{\"jobRuns\":[]}");
+    }
+
+    private static UrlPattern getApplicationUrl() {
+        return urlEqualTo("/applications/test-app-id");
     }
 
     private static UrlPattern listRunningJobsUrl() {

@@ -89,6 +89,10 @@ public class AutoStopEmrServerlessApplicationLambda {
         }
 
         emrServerlessClient.stopApplication(request -> request.applicationId(applicationId));
+
+        LOGGER.info("Waiting for applications to terminate");
+        poll.pollUntil("all EMR Serverless applications terminated", this::allApplicationsTerminated);
+
     }
 
     private boolean allJobsFinished(String applicationId) {
@@ -103,6 +107,10 @@ public class AutoStopEmrServerlessApplicationLambda {
             LOGGER.info("{} jobs are still unfinished for application {}", unfinishedJobRuns.size(), applicationId);
             return false;
         }
+    }
+
+    private boolean allApplicationsTerminated() {
+        return emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application() == null;
     }
 
 }
