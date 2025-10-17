@@ -32,21 +32,14 @@ public class CommandLineUsage {
     private final Map<String, CommandOption> optionByLongName;
     private final Map<Character, CommandOption> optionByShortName;
 
-    private CommandLineUsage(List<String> positionalArguments, List<CommandOption> options) {
-        this.positionalArguments = positionalArguments;
-        optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
-        optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
+    private CommandLineUsage(Builder builder) {
+        positionalArguments = builder.positionalArguments;
+        optionByLongName = builder.options.stream().collect(toMap(CommandOption::longName, Function.identity()));
+        optionByShortName = builder.options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
     }
 
-    /**
-     * Creates a model of command line usage.
-     *
-     * @param  positionalArguments the positional arguments
-     * @param  options             the options
-     * @return                     the model
-     */
-    public static CommandLineUsage positionalAndOptions(List<String> positionalArguments, List<CommandOption> options) {
-        return new CommandLineUsage(positionalArguments, options);
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -107,6 +100,45 @@ public class CommandLineUsage {
                 positionalArguments.stream()
                         .map(name -> "<" + name + ">")
                         .collect(joining(" "));
+    }
+
+    /**
+     * A builder to create command line usage information.
+     */
+    public static class Builder {
+        private List<String> positionalArguments;
+        private List<CommandOption> options;
+
+        private Builder() {
+        }
+
+        /**
+         * Sets the names of the positional arguments. These are mandatory arguments which are always supplied in order.
+         *
+         * @param  positionalArguments the names
+         * @return                     this builder
+         */
+        public Builder positionalArguments(List<String> positionalArguments) {
+            this.positionalArguments = positionalArguments;
+            return this;
+        }
+
+        /**
+         * Sets the options that may be set in addition to positional arguments. This includes flags and arguments that
+         * are set beginning like "--name" or "-n".
+         *
+         * @param  options the options
+         * @return         this builder
+         */
+        public Builder options(List<CommandOption> options) {
+            this.options = options;
+            return this;
+        }
+
+        public CommandLineUsage build() {
+            return new CommandLineUsage(this);
+        }
+
     }
 
 }
