@@ -48,6 +48,7 @@ public class CommandArguments {
             return CommandArgumentReader.parse(usage, arguments);
         } catch (RuntimeException e) {
             System.out.println(usage.createUsageMessage());
+            System.out.println(e.getMessage());
             System.exit(1);
             return null;
         }

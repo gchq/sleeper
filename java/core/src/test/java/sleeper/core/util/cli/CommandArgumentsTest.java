@@ -58,8 +58,8 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThatThrownBy(() -> parse("a", "b"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Usage: <first> <second> <third>");
+                    .isInstanceOf(WrongNumberOfArgumentsException.class)
+                    .hasMessage("Expected 3 positional arguments, found 2");
         }
 
         @Test
@@ -69,8 +69,19 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThatThrownBy(() -> parse("a", "b", "c"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Usage: <one> <two>");
+                    .isInstanceOf(WrongNumberOfArgumentsException.class)
+                    .hasMessage("Expected 2 positional arguments, found 3");
+        }
+
+        @Test
+        void shouldFailExpectingOneArgument() {
+            // Given
+            setPositionalArguments("argument");
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "b", "c"))
+                    .isInstanceOf(WrongNumberOfArgumentsException.class)
+                    .hasMessage("Expected 1 positional argument, found 3");
         }
     }
 

@@ -48,7 +48,7 @@ public class CommandArgumentReader {
             }
         }
         if (positionalValues.size() != usage.getNumPositionalArgs()) {
-            throw usage.createUsageException();
+            throw new WrongNumberOfArgumentsException(positionalValues.size(), usage.getNumPositionalArgs());
         }
         for (int i = 0; i < positionalValues.size(); i++) {
             builder.argument(usage.getPositionalArgName(i), positionalValues.get(i));
