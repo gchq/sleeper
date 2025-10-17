@@ -61,6 +61,9 @@ public class CommandArgumentReader {
         if (!arg().startsWith("--")) {
             return false;
         }
+        if (arg().length() < 3) {
+            throw new CommandArgumentsException("Incomplete flag option: " + arg());
+        }
         Optional<CommandOption> optionOpt = usage.getLongOption(arg().substring(2));
         if (!optionOpt.isPresent()) {
             return false;

@@ -129,6 +129,13 @@ public class CommandArgumentsTest {
             assertThat(arguments.getString("positional")).isEqualTo("value");
             assertThat(arguments.isFlagSet("flag")).isTrue();
         }
+
+        @Test
+        void shouldFailWithIncompleteFlagArgument() {
+            assertThatThrownBy(() -> parse("--"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Incomplete flag option: --");
+        }
     }
 
     @Nested
