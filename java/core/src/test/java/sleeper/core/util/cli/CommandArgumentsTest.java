@@ -222,7 +222,12 @@ public class CommandArgumentsTest {
                     .hasMessage("Unrecognised flag option: a");
         }
 
-        // TODO fail if an argument is just "-"
+        @Test
+        void shouldFailWithIncompleteFlagArgument() {
+            assertThatThrownBy(() -> parse("-"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Incomplete flag option: -");
+        }
     }
 
     @Nested
