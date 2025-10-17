@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.util.cli;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.util.CommandOption.NumArgs;
+import sleeper.core.util.cli.CommandOption.NumArgs;
 
 import java.util.List;
 
