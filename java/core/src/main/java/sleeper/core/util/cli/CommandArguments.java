@@ -39,6 +39,7 @@ public class CommandArguments {
      * Reads command line arguments and detects arguments and options. Exits if validation fails or if the help text is
      * requested. Takes a method to read the arguments, where validation failures will also be handled.
      *
+     * @param  <T>           the type to read the arguments into
      * @param  usage         information about how arguments and options are specified
      * @param  arguments     the arguments from the command line
      * @param  readArguments the function to read the arguments
