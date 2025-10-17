@@ -39,9 +39,7 @@ import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.core.CoreStacks;
-import sleeper.cdk.stack.ingest.IngestBatcherStack;
-import sleeper.cdk.stack.ingest.IngestStacks;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -67,23 +65,23 @@ import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TAS
 public class SystemTestClusterStack extends NestedStack {
 
     public SystemTestClusterStack(
-            Construct scope, String id, SystemTestStandaloneProperties properties, SystemTestBucketStack bucketStack) {
+            Construct scope, String id, SystemTestStandaloneProperties properties, SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
-        create(properties, properties, properties.toInstancePropertiesForCdkUtils(), bucketStack);
+        create(properties, properties, properties.toInstancePropertiesForCdkUtils(), bucketStack, autoStopEcsClusterTasksStack);
         Tags.of(this).add("DeploymentStack", id);
     }
 
     public SystemTestClusterStack(
             Construct scope, String id, SystemTestProperties properties, SystemTestBucketStack bucketStack,
-            CoreStacks coreStacks, IngestStacks ingestStacks, IngestBatcherStack ingestBatcherStack) {
+            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
-        create(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
+        create(properties.testPropertiesOnly(), properties::set, properties, bucketStack, autoStopEcsClusterTasksStack);
         Utils.addStackTagIfSet(this, properties);
     }
 
     private void create(
             SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
-            InstanceProperties instanceProperties, SystemTestBucketStack bucketStack) {
+            InstanceProperties instanceProperties, SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -103,6 +101,8 @@ public class SystemTestClusterStack extends NestedStack {
                 .value(cluster.getClusterName())
                 .build();
         new CfnOutput(this, "systemTestClusterName", writeClusterOutputProps);
+
+        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(this, cluster);
 
         FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
                 .create(this, "TaskDefinition")

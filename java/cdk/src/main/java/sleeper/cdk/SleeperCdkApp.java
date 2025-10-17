@@ -104,8 +104,8 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private QueryQueueStack queryQueueStack;
-    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
     private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
+    private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
     private LoggingStack loggingStack;
 
     // These flags are used to control when the stacks are deployed in the SystemTest CDK app.
@@ -146,8 +146,8 @@ public class SleeperCdkApp extends Stack {
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
-        autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(
-                this, "AutoStopEcsClusterTask", instanceProperties, jars, loggingStack);
+        // Auto stop ECS cluster tasks stack
+        autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(this, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
@@ -399,6 +399,10 @@ public class SleeperCdkApp extends Stack {
 
     protected AutoDeleteS3ObjectsStack getAutoDeleteS3ObjectsStack() {
         return autoDeleteS3ObjectsStack;
+    }
+
+    protected AutoStopEcsClusterTasksStack getAutoStopEcsClusterTasksStack() {
+        return autoStopEcsClusterTasksStack;
     }
 
     public static void main(String[] args) {

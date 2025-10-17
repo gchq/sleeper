@@ -21,8 +21,8 @@ import jnr.ffi.Struct;
  * The AWS configuration to be supplied to DataFusion.
  *
  * <strong>THIS IS A C COMPATIBLE FFI STRUCT!</strong> If you updated this struct (field ordering, types, etc.),
- * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects.rs. The order and types of
- * the fields must match exactly.
+ * you MUST update the corresponding Rust definition in rust/sleeper_df/src/objects/aws_config.rs. The order and types
+ * of the fields must match exactly.
  */
 @SuppressWarnings(value = "checkstyle:memberName")
 public class FFIAwsConfig extends Struct {

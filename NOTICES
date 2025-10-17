@@ -271,7 +271,7 @@ Hamcrest (org.hamcrest:hamcrest-core:3.*)
 
 - The 3-Clause BSD License
 
-JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:4.*)
+JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:5.*)
 
 - Apache License, Version 2.0
 
@@ -412,7 +412,7 @@ FindBugs Annotations (com.google.code.findbugs:jsr305:3.*)
 
 - Apache License, Version 2.0
 
-Checkstyle (com.puppycrawl.tools:checkstyle:11.*)
+Checkstyle (com.puppycrawl.tools:checkstyle:12.*)
 
 - GNU Lesser General Public License, version 2.1
 

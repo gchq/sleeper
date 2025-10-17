@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.sourcedata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
@@ -87,7 +87,7 @@ public class SystemTestCluster {
         return this;
     }
 
-    public SystemTestCluster sendAllGeneratedFilesAsOneJob(InstanceProperty queueUrlProperty) {
+    public SystemTestCluster sendAllGeneratedFilesAsOneJob(CdkDefinedInstanceProperty queueUrlProperty) {
         jobIds.add(ingestByQueue.sendJobGetId(queueUrlProperty, lastGeneratedFiles.getIngestJobFilesCombiningAll()));
         return this;
     }

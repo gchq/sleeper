@@ -17,6 +17,7 @@ package sleeper.systemtest.drivers.testutil;
 
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
@@ -24,6 +25,7 @@ import java.util.function.Consumer;
 
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
@@ -56,6 +58,7 @@ public class LocalStackTestInstance {
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        properties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(DEFAULT_SCHEMA);

@@ -15,6 +15,8 @@
  */
 package sleeper.query.core.rowretrieval;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 import sleeper.core.properties.table.TableProperties;
 
 /**
@@ -30,5 +32,17 @@ public interface LeafPartitionRowRetrieverProvider {
      * @return                 the row retriever
      */
     LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties);
+
+    /**
+     * Creates a provider that will throw an exception saying the row retriever is not implemented.
+     *
+     * @param  message a message explaining why the retriever is not implemented
+     * @return         the provider
+     */
+    static LeafPartitionRowRetrieverProvider notImplemented(String message) {
+        return tableProperties -> {
+            throw new NotImplementedException(message);
+        };
+    }
 
 }
