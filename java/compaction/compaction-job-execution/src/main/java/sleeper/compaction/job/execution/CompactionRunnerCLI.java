@@ -119,7 +119,7 @@ public class CompactionRunnerCLI {
         }
     }
 
-    public static void main(String[] args) throws IOException, ObjectFactoryException, IteratorCreationException {
+    public static void main(String[] rawArgs) throws IOException, ObjectFactoryException, IteratorCreationException {
         CommandLineUsage usage = CommandLineUsage.builder()
                 .positionalArguments(List.of("job.json path"))
                 .helpSummary("""
@@ -133,15 +133,14 @@ public class CompactionRunnerCLI {
                         CommandOption.longOption("schema", NumArgs.ONE),
                         CommandOption.longOption("region", NumArgs.ONE)))
                 .build();
-        CommandArguments arguments = CommandArguments.parseAndValidateOrExit(usage, args);
+        Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
+                Path.of(arguments.getString("job.json path")),
+                arguments.getIntegerOrDefault("repetitions", 1),
+                arguments.getOptionalString("load-instance").orElse(null),
+                arguments.getOptionalString("schema").map(Path::of).orElse(null),
+                arguments.getOptionalString("region").map(Path::of).orElse(null)));
 
-        Path jobJsonPath = Path.of(arguments.getString("job.json path"));
-        int repetitions = arguments.getIntegerOrDefault("repetitions", 1);
-        String instanceId = arguments.getOptionalString("load-instance").orElse(null);
-        Path schemaPath = arguments.getOptionalString("schema").map(Path::of).orElse(null);
-        Path regionPath = arguments.getOptionalString("region").map(Path::of).orElse(null);
-
-        String jobJson = Files.readString(jobJsonPath);
+        String jobJson = Files.readString(args.jobJsonPath());
         CompactionJob job = new CompactionJobSerDe().fromJson(jobJson);
 
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
@@ -150,16 +149,16 @@ public class CompactionRunnerCLI {
                 S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
 
             CompactionRunnerCLI cli;
-            if (instanceId != null) {
-                cli = createForInstance(instanceId, s3Client, s3TransferManager, dynamoClient);
-            } else if (schemaPath != null) {
-                cli = createForFiles(schemaPath, regionPath, s3Client, s3TransferManager);
+            if (args.instanceId() != null) {
+                cli = createForInstance(args.instanceId(), s3Client, s3TransferManager, dynamoClient);
+            } else if (args.schemaPath() != null) {
+                cli = createForFiles(args.schemaPath(), args.regionPath(), s3Client, s3TransferManager);
             } else {
                 System.out.println("Expected --load-instance <instance id> or --schema <schema.json path>");
                 System.exit(1);
                 return;
             }
-            cli.runNTimes(job, repetitions);
+            cli.runNTimes(job, args.repetitions());
         }
     }
 
@@ -183,6 +182,9 @@ public class CompactionRunnerCLI {
 
     public interface RegionSupplier {
         Region getPartitionRegion(TableProperties tableProperties, String partitionId);
+    }
+
+    public record Arguments(Path jobJsonPath, int repetitions, String instanceId, Path schemaPath, Path regionPath) {
     }
 
 }

@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * A utility to read command line arguments.
@@ -36,25 +37,47 @@ public class CommandArguments {
 
     /**
      * Reads command line arguments and detects arguments and options. Exits if validation fails or if the help text is
+     * requested. Takes a method to read the arguments, where validation failures will also be handled.
+     *
+     * @param  usage         information about how arguments and options are specified
+     * @param  arguments     the arguments from the command line
+     * @param  readArguments the function to read the arguments
+     * @return               the result from the function
+     */
+    public static <T> T parseAndValidateOrExit(CommandLineUsage usage, String[] arguments, Function<CommandArguments, T> readArguments) {
+        try {
+            return readArguments.apply(CommandArgumentReader.parse(usage, arguments));
+        } catch (RuntimeException e) {
+            exitWithFailure(usage, e);
+            return null;
+        }
+    }
+
+    /**
+     * Reads command line arguments and detects arguments and options. Exits if validation fails or if the help text is
      * requested.
      *
      * @param  usage     information about how arguments and options are specified
      * @param  arguments the arguments from the command line
      * @return           the parsed arguments
      */
-    public static CommandArguments parseAndValidateOrExit(CommandLineUsage usage, String... arguments) {
+    public static CommandArguments parseAndValidateOrExit(CommandLineUsage usage, String[] arguments) {
         try {
             return CommandArgumentReader.parse(usage, arguments);
         } catch (RuntimeException e) {
-            System.out.println(usage.createUsageMessage());
-            if (e instanceof CommandArgumentsException) {
-                System.out.println(e.getMessage());
-            } else {
-                e.printStackTrace();
-            }
-            System.exit(1);
+            exitWithFailure(usage, e);
             return null;
         }
+    }
+
+    private static void exitWithFailure(CommandLineUsage usage, RuntimeException e) {
+        System.out.println(usage.createUsageMessage());
+        if (e instanceof CommandArgumentsException) {
+            System.out.println(e.getMessage());
+        } else {
+            e.printStackTrace();
+        }
+        System.exit(1);
     }
 
     public static Builder builder() {
