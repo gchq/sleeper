@@ -15,6 +15,9 @@
  */
 package sleeper.core.util.cli;
 
+/**
+ * A validation failure for command line arguments.
+ */
 public class CommandArgumentsException extends RuntimeException {
 
     public CommandArgumentsException(String message) {
@@ -24,5 +27,4 @@ public class CommandArgumentsException extends RuntimeException {
     public CommandArgumentsException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }

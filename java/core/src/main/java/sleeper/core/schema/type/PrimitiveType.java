@@ -46,7 +46,13 @@ public interface PrimitiveType extends Type {
         return COMPARATOR.compare(comparable1, comparable2);
     }
 
-    public static Object getMinimum(Type type) {
+    /**
+     * Retrieves the minimum possible value for the given primitive type. Used when creating a range.
+     *
+     * @param  type the type
+     * @return      the minimum value
+     */
+    static Object getMinimum(Type type) {
         if (type instanceof IntType) {
             return Integer.MIN_VALUE;
         }
