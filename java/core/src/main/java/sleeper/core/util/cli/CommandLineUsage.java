@@ -17,7 +17,6 @@ package sleeper.core.util.cli;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -36,9 +35,9 @@ public class CommandLineUsage {
     private final Map<Character, CommandOption> optionByShortName;
 
     private CommandLineUsage(Builder builder) {
-        positionalArguments = Objects.requireNonNull(builder.positionalArguments, "positionalArguments must not be null");
+        positionalArguments = Optional.ofNullable(builder.positionalArguments).orElseGet(List::of);
         helpSummary = builder.helpSummary;
-        options = Objects.requireNonNull(builder.options, "options must not be null");
+        options = Optional.ofNullable(builder.options).orElseGet(List::of);
         optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
         optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
     }

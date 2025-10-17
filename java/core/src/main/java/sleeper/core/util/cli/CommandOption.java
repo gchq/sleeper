@@ -38,17 +38,18 @@ public record CommandOption(String longName, Character shortName, NumArgs numArg
      * @return      the option
      */
     public static CommandOption longFlag(String name) {
-        return longOption(name, NumArgs.NONE);
+        return new CommandOption(name, null, NumArgs.NONE);
     }
 
     /**
-     * Creates an option that must be set as a long flag, with no arguments.
+     * Creates an option that must be set like "--name value". The next argument after the option will be taken as the
+     * value for the option.
      *
      * @param  name the name of the option to use like "--name"
      * @return      the option
      */
-    public static CommandOption longOption(String name, NumArgs numArgs) {
-        return new CommandOption(name, null, numArgs);
+    public static CommandOption longOption(String name) {
+        return new CommandOption(name, null, NumArgs.ONE);
     }
 
     /**
@@ -59,18 +60,18 @@ public record CommandOption(String longName, Character shortName, NumArgs numArg
      * @return           the option
      */
     public static CommandOption shortFlag(char character, String name) {
-        return shortOption(character, name, NumArgs.NONE);
+        return new CommandOption(name, character, NumArgs.NONE);
     }
 
     /**
-     * Creates an option that can be set as a short or long flag, with no arguments.
+     * Creates an option that can be set like "--name value", "-c value" or "-cvalue".
      *
      * @param  character the character to use like "-c"
      * @param  name      the name of the option to use like "--name"
      * @return           the option
      */
-    public static CommandOption shortOption(char character, String name, NumArgs numArgs) {
-        return new CommandOption(name, character, numArgs);
+    public static CommandOption shortOption(char character, String name) {
+        return new CommandOption(name, character, NumArgs.ONE);
     }
 
     public boolean isFlag() {

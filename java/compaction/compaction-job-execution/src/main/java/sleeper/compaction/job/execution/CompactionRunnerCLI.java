@@ -42,7 +42,6 @@ import sleeper.core.util.cli.CommandArguments;
 import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
-import sleeper.core.util.cli.CommandOption.NumArgs;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.sketches.store.S3SketchesStore;
@@ -125,14 +124,14 @@ public class CompactionRunnerCLI {
                 .positionalArguments(List.of("job.json path"))
                 .helpSummary("""
                         Runs a compaction locally. Intended for debugging. You can either load the full configuration
-                        from a running instance with --load-instance <instance id>, or set the table schema with
+                        from an existing instance with --load-instance <instance id>, or set the table schema with
                         --schema <schema.json path>. When using a schema file, the remaining configuration will be set
                         to defaults.""")
                 .options(List.of(
-                        CommandOption.shortOption('r', "repetitions", NumArgs.ONE),
-                        CommandOption.longOption("load-instance", NumArgs.ONE),
-                        CommandOption.longOption("schema", NumArgs.ONE),
-                        CommandOption.longOption("region", NumArgs.ONE)))
+                        CommandOption.longOption("load-instance"),
+                        CommandOption.longOption("schema"),
+                        CommandOption.longOption("region"),
+                        CommandOption.shortOption('r', "repetitions")))
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("job.json path")),

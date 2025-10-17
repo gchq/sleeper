@@ -20,8 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.util.cli.CommandOption.NumArgs;
-
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,8 +27,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CommandArgumentsTest {
 
-    List<String> positionalArguments = List.of();
-    List<CommandOption> options = List.of();
+    List<String> positionalArguments;
+    List<CommandOption> options;
     String helpSummary;
 
     @Nested
@@ -244,7 +242,7 @@ public class CommandArgumentsTest {
         @Test
         void shouldReadLongOptionWithOneArgument() {
             // Given
-            setOptions(CommandOption.longOption("option", NumArgs.ONE));
+            setOptions(CommandOption.longOption("option"));
 
             // When
             CommandArguments arguments = parse("--option", "value");
@@ -256,7 +254,7 @@ public class CommandArgumentsTest {
         @Test
         void shouldReadShortOptionWithOneArgument() {
             // Given
-            setOptions(CommandOption.shortOption('o', "option", NumArgs.ONE));
+            setOptions(CommandOption.shortOption('o', "option"));
 
             // When
             CommandArguments arguments = parse("-o", "value");
@@ -269,7 +267,7 @@ public class CommandArgumentsTest {
         @Test
         void shouldReadShortOptionWithOneArgumentCombined() {
             // Given
-            setOptions(CommandOption.shortOption('D', "property", NumArgs.ONE));
+            setOptions(CommandOption.shortOption('D', "property"));
 
             // When
             CommandArguments arguments = parse("-D123");
@@ -282,7 +280,7 @@ public class CommandArgumentsTest {
         @Test
         void shouldFailWhenOptionIsMissingRequiredArgument() {
             // Given
-            setOptions(CommandOption.longOption("option", NumArgs.ONE));
+            setOptions(CommandOption.longOption("option"));
 
             // When / Then
             assertThatThrownBy(() -> parse("--option"))
@@ -325,7 +323,7 @@ public class CommandArgumentsTest {
 
         @BeforeEach
         void setUp() {
-            setOptions(CommandOption.longOption("number", NumArgs.ONE));
+            setOptions(CommandOption.longOption("number"));
         }
 
         @Test
@@ -398,7 +396,7 @@ public class CommandArgumentsTest {
 
         @BeforeEach
         void setUp() {
-            setOptions(CommandOption.longOption("string", NumArgs.ONE));
+            setOptions(CommandOption.longOption("string"));
         }
 
         @Test
