@@ -59,9 +59,12 @@ public class CompactionRunnerCLI {
     }
 
     public static void main(String[] args) throws IOException, ObjectFactoryException, IteratorCreationException {
-        CommandLineUsage usage = CommandLineUsage.positionalAndOptions(
+        CommandLineUsage.positionalAndOptions(
                 List.of("job.json path"),
-                List.of(CommandOption.shortOption('r', "repetitions", NumArgs.ONE)));
+                List.of(
+                        CommandOption.shortOption('r', "repetitions", NumArgs.ONE),
+                        CommandOption.shortOption('i', "load-instance", NumArgs.ONE),
+                        CommandOption.shortOption('s', "schema", NumArgs.ONE)));
 
         if (args.length < 2 || args.length > 3) {
             System.out.println("Usage: <instance ID> <job.json path> <optional repetitions>");

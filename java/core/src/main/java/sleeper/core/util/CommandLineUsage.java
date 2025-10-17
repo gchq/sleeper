@@ -93,11 +93,20 @@ public class CommandLineUsage {
      *
      * @return an exception
      */
-    public IllegalArgumentException usageException() {
-        return new IllegalArgumentException("Usage: " +
+    public IllegalArgumentException createUsageException() {
+        return new IllegalArgumentException(createUsageMessage());
+    }
+
+    /**
+     * Creates a usage message to explain how to call from the command line.
+     *
+     * @return the message
+     */
+    public String createUsageMessage() {
+        return "Usage: " +
                 positionalArguments.stream()
                         .map(name -> "<" + name + ">")
-                        .collect(joining(" ")));
+                        .collect(joining(" "));
     }
 
 }

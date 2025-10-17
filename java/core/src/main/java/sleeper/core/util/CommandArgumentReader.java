@@ -31,6 +31,13 @@ public class CommandArgumentReader {
         this.arguments = arguments;
     }
 
+    /**
+     * Reads command line arguments and detects arguments and options.
+     *
+     * @param  usage information about how arguments and options are specified
+     * @param  args  the arguments from the command line
+     * @return       the parsed arguments
+     */
     public static CommandArguments parse(CommandLineUsage usage, String... args) {
         CommandArguments.Builder builder = CommandArguments.builder();
         CommandArgumentReader reader = new CommandArgumentReader(List.of(args));
@@ -41,7 +48,7 @@ public class CommandArgumentReader {
             }
         }
         if (positionalValues.size() != usage.getNumPositionalArgs()) {
-            throw usage.usageException();
+            throw usage.createUsageException();
         }
         for (int i = 0; i < positionalValues.size(); i++) {
             builder.argument(usage.getPositionalArgName(i), positionalValues.get(i));
@@ -78,8 +85,7 @@ public class CommandArgumentReader {
                 break;
             case ONE:
                 advance();
-                builder.argument(option.longName(), arg());
-                builder.argument("" + option.shortName(), arg());
+                builder.option(option, arg());
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognised number of arguments for option: " + option);

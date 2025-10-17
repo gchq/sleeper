@@ -38,7 +38,7 @@ public class CommandArguments {
     }
 
     /**
-     * Retrieves the value of a positional argument.
+     * Retrieves the value of an argument.
      *
      * @param  name the name of the argument
      * @return      the value
@@ -88,6 +88,18 @@ public class CommandArguments {
                 optionsSet.add("" + option.shortName());
             }
             return this;
+        }
+
+        /**
+         * Sets an option with an argument.
+         *
+         * @param  option   the option that was set
+         * @param  argument the value of the argument
+         * @return          this builder
+         */
+        public Builder option(CommandOption option, String argument) {
+            return argument(option.longName(), argument)
+                    .argument("" + option.shortName(), argument);
         }
 
         public CommandArguments build() {
