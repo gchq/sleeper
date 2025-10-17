@@ -57,25 +57,36 @@ public class CommandArgumentReader {
     }
 
     private boolean readOption(CommandLineUsage usage, CommandArguments.Builder builder) {
-        String arg = arg();
-        if (arg.startsWith("--")) {
-            String longOption = arg.substring(2);
-            Optional<CommandOption> option = usage.getLongOption(longOption);
-            if (option.isPresent()) {
-                readOption(option.get(), false, builder);
-                advance();
-                return true;
-            }
-        } else if (arg.startsWith("-")) {
-            char shortOption = arg.charAt(1);
-            Optional<CommandOption> option = usage.getShortOption(shortOption);
-            if (option.isPresent()) {
-                readOption(option.get(), true, builder);
-                advance();
-                return true;
-            }
+        if (readLongOption(usage, builder)) {
+            return true;
+        } else if (readShortOption(usage, builder)) {
+            return true;
         }
         return false;
+    }
+
+    private boolean readLongOption(CommandLineUsage usage, CommandArguments.Builder builder) {
+        if (!arg().startsWith("--")) {
+            return false;
+        }
+        Optional<CommandOption> option = usage.getLongOption(arg().substring(2));
+        if (!option.isPresent()) {
+            return false;
+        }
+        readOption(option.get(), false, builder);
+        return true;
+    }
+
+    private boolean readShortOption(CommandLineUsage usage, CommandArguments.Builder builder) {
+        if (!arg().startsWith("-")) {
+            return false;
+        }
+        Optional<CommandOption> option = usage.getShortOption(arg().charAt(1));
+        if (!option.isPresent()) {
+            return false;
+        }
+        readOption(option.get(), true, builder);
+        return true;
     }
 
     private void readOption(CommandOption option, boolean setAsShort, CommandArguments.Builder builder) {
@@ -89,6 +100,7 @@ public class CommandArgumentReader {
             default:
                 throw new IllegalArgumentException("Unrecognised number of arguments for option: " + option);
         }
+        advance();
     }
 
     private String readPositionalArg() {
@@ -99,9 +111,11 @@ public class CommandArgumentReader {
 
     private String readOptionArg(CommandOption option, boolean setAsShort) {
         if (setAsShort) {
-            String arg = arg().substring(2);
-            if (!arg.isEmpty()) {
+            try {
+                String arg = arg().substring(2);
+                Integer.parseInt(arg);
                 return arg;
+            } catch (NumberFormatException e) {
             }
         }
         advance();

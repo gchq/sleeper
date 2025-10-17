@@ -16,6 +16,7 @@
 package sleeper.core.util.cli;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -194,6 +195,26 @@ public class CommandArgumentsTest {
             // Then
             assertThat(arguments.getString("positional")).isEqualTo("value");
             assertThat(arguments.isFlagSet("short")).isTrue();
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldReadCombinedFlags() {
+            // Given
+            setOptions(
+                    CommandOption.shortFlag('a', "A"),
+                    CommandOption.shortFlag('b', "B"),
+                    CommandOption.shortFlag('c', "C"),
+                    CommandOption.shortFlag('d', "D"));
+
+            // When
+            CommandArguments arguments = parse("-abc");
+
+            // Then
+            assertThat(arguments.isFlagSet("a")).isTrue();
+            assertThat(arguments.isFlagSet("b")).isTrue();
+            assertThat(arguments.isFlagSet("c")).isTrue();
+            assertThat(arguments.isFlagSet("d")).isFalse();
         }
     }
 
