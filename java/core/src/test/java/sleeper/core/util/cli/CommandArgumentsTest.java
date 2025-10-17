@@ -215,7 +215,13 @@ public class CommandArgumentsTest {
             assertThat(arguments.isFlagSet("d")).isFalse();
         }
 
-        // TODO fail if combined flags includes unrecognised flag
+        @Test
+        void shouldFailWhenCombinedFlagIsUnrecognised() {
+            assertThatThrownBy(() -> parse("-sa"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Unrecognised flag option: a");
+        }
+
         // TODO fail if an argument is just "-"
     }
 

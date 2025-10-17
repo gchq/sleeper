@@ -88,9 +88,9 @@ public class CommandArgumentReader {
             builder.flag(option);
             char[] otherFlags = arg().substring(2).toCharArray();
             for (char flagChar : otherFlags) {
-                usage.getShortOption(flagChar)
+                builder.flag(usage.getShortOption(flagChar)
                         .filter(CommandOption::isFlag)
-                        .ifPresent(builder::flag);
+                        .orElseThrow(() -> new CommandArgumentsException("Unrecognised flag option: " + flagChar)));
             }
         } else {
             builder.option(option, readShortOptionArg(option));
