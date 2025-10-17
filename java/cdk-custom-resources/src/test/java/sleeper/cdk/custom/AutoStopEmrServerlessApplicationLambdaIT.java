@@ -35,7 +35,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
-import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoApplications;
+import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoApplication;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoJobRuns;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.anyRequestedForEmrServerless;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.cancelJobRunRequest;
@@ -80,7 +80,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs("JobStopped").willSetStateTo("AppStopped"));
         stubFor(getApplicationRequest().inScenario("StopJob")
-                .willReturn(aResponseWithNoApplications())
+                .willReturn(aResponseWithNoApplication())
                 .whenScenarioStateIs("AppStopped"));
 
         // When
@@ -104,7 +104,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopped"));
         stubFor(getApplicationRequest().inScenario("StopApplication")
-                .willReturn(aResponseWithNoApplications())
+                .willReturn(aResponseWithNoApplication())
                 .whenScenarioStateIs("ApplicationStopped"));
 
         // When

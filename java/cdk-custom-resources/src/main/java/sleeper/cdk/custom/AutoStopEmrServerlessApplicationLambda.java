@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
+import software.amazon.awssdk.services.emrserverless.model.ResourceNotFoundException;
 
 import sleeper.core.util.PollWithRetries;
 
@@ -111,7 +112,12 @@ public class AutoStopEmrServerlessApplicationLambda {
     }
 
     private boolean isApplicationTerminated() {
-        return emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application() == null;
+        try {
+            emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application();
+        } catch (ResourceNotFoundException e) {
+            return true;
+        }
+        return false;
     }
 
 }

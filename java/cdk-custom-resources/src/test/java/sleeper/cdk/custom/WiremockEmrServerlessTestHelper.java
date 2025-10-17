@@ -164,9 +164,9 @@ public class WiremockEmrServerlessTestHelper {
                 "}]}");
     }
 
-    public static ResponseDefinitionBuilder aResponseWithNoApplications() {
-        return aResponse().withStatus(200)
-                .withBody("{\"applications\": []}");
+    public static ResponseDefinitionBuilder aResponseWithNoApplication() {
+        return aResponse().withStatus(404)
+                .withHeader("X-Amzn-ErrorType", "ResourceNotFoundException");
     }
 
     /**
