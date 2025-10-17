@@ -15,13 +15,14 @@
  */
 package sleeper.core.util.cli;
 
-/**
- * Thrown when too many or too few positional arguments are provided.
- */
-public class WrongNumberOfArgumentsException extends CommandArgumentsException {
+public class CommandArgumentsException extends RuntimeException {
 
-    public WrongNumberOfArgumentsException(int actualNumber, int expectedNumber) {
-        super("Expected " + expectedNumber + " positional argument" + (expectedNumber == 1 ? "" : "s") + ", found " + actualNumber);
+    protected CommandArgumentsException(String message) {
+        super(message);
+    }
+
+    protected CommandArgumentsException(String message, Throwable cause) {
+        super(message, cause);
     }
 
 }

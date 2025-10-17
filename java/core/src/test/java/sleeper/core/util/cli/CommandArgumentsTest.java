@@ -58,7 +58,7 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThatThrownBy(() -> parse("a", "b"))
-                    .isInstanceOf(WrongNumberOfArgumentsException.class)
+                    .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 3 positional arguments, found 2");
         }
 
@@ -69,7 +69,7 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThatThrownBy(() -> parse("a", "b", "c"))
-                    .isInstanceOf(WrongNumberOfArgumentsException.class)
+                    .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 2 positional arguments, found 3");
         }
 
@@ -80,7 +80,7 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThatThrownBy(() -> parse("a", "b", "c"))
-                    .isInstanceOf(WrongNumberOfArgumentsException.class)
+                    .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 1 positional argument, found 3");
         }
     }
