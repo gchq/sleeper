@@ -48,7 +48,8 @@ public class CommandArgumentReader {
                 positionalValues.add(reader.readPositionalArg());
             }
         }
-        for (int i = 0; i < positionalValues.size(); i++) {
+        int lastPositionalArg = Math.min(positionalValues.size(), usage.getNumPositionalArgs());
+        for (int i = 0; i < lastPositionalArg; i++) {
             builder.argument(usage.getPositionalArgName(i), positionalValues.get(i));
         }
         CommandArguments arguments = builder.build();
