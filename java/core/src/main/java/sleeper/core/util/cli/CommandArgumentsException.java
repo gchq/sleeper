@@ -17,11 +17,11 @@ package sleeper.core.util.cli;
 
 public class CommandArgumentsException extends RuntimeException {
 
-    protected CommandArgumentsException(String message) {
+    public CommandArgumentsException(String message) {
         super(message);
     }
 
-    protected CommandArgumentsException(String message, Throwable cause) {
+    public CommandArgumentsException(String message, Throwable cause) {
         super(message, cause);
     }
 

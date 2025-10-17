@@ -283,14 +283,14 @@ public class CommandArgumentsTest {
         }
 
         @Test
-        void shouldReadOptionalWhenSet() {
-            assertThat(parse("--number", "123").getIntegerOrDefault("number", 456))
+        void shouldReadDefaultWhenNotSet() {
+            assertThat(parse().getIntegerOrDefault("number", 123))
                     .isEqualTo(123);
         }
 
         @Test
-        void shouldReadOptionalWhenNotSet() {
-            assertThat(parse().getIntegerOrDefault("number", 123))
+        void shouldReadSetValueWhenDefaulting() {
+            assertThat(parse("--number", "123").getIntegerOrDefault("number", 456))
                     .isEqualTo(123);
         }
 
@@ -301,7 +301,30 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThatThrownBy(() -> arguments.getInteger("number"))
-                    .isInstanceOf(NumberFormatException.class);
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Argument was not set: number");
+        }
+
+        @Test
+        void shouldFailWhenOptionIsNotANumber() {
+            // Given
+            CommandArguments arguments = parse("--number", "abc");
+
+            // When / Then
+            assertThatThrownBy(() -> arguments.getInteger("number"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected integer for argument \"number\", found \"abc\"");
+        }
+
+        @Test
+        void shouldFailWhenDefaultingGivenNonNumberValue() {
+            // Given
+            CommandArguments arguments = parse("--number", "abc");
+
+            // When / Then
+            assertThatThrownBy(() -> arguments.getIntegerOrDefault("number", 123))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected integer for argument \"number\", found \"abc\"");
         }
     }
 
@@ -321,7 +344,7 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThatThrownBy(() -> arguments.getString("string"))
-                    .isInstanceOf(NullPointerException.class)
+                    .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Argument was not set: string");
         }
 

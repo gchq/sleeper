@@ -18,7 +18,6 @@ package sleeper.core.util.cli;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -69,7 +68,8 @@ public class CommandArguments {
      * @return      the value
      */
     public String getString(String name) {
-        return Objects.requireNonNull(argByName.get(name), "Argument was not set: " + name);
+        return getOptionalString(name)
+                .orElseThrow(() -> new CommandArgumentsException("Argument was not set: " + name));
     }
 
     /**
@@ -89,7 +89,7 @@ public class CommandArguments {
      * @return      the value
      */
     public int getInteger(String name) {
-        return Integer.parseInt(argByName.get(name));
+        return readInteger(name, getString(name));
     }
 
     /**
@@ -104,7 +104,7 @@ public class CommandArguments {
         if (string == null) {
             return defaultValue;
         } else {
-            return Integer.parseInt(string);
+            return readInteger(name, string);
         }
     }
 
@@ -116,6 +116,14 @@ public class CommandArguments {
      */
     public boolean isFlagSet(String name) {
         return optionsSet.contains(name);
+    }
+
+    private static int readInteger(String name, String string) {
+        try {
+            return Integer.parseInt(string);
+        } catch (NumberFormatException e) {
+            throw new CommandArgumentsException("Expected integer for argument \"" + name + "\", found \"" + string + "\"", e);
+        }
     }
 
     /**
