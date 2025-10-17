@@ -214,18 +214,6 @@ public class CommandArgumentsTest {
             assertThat(arguments.getString("option")).isEqualTo("value");
             assertThat(arguments.getString("o")).isEqualTo("value");
         }
-
-        @Test
-        void shouldFindOptionIsNotSet() {
-            // Given
-            setOptions(CommandOption.longOption("option", NumArgs.ONE));
-
-            // When
-            CommandArguments arguments = parse();
-
-            // Then
-            assertThat(arguments.getString("option")).isNull();
-        }
     }
 
     @Nested
@@ -303,6 +291,39 @@ public class CommandArgumentsTest {
             // When / Then
             assertThatThrownBy(() -> arguments.getInteger("number"))
                     .isInstanceOf(NumberFormatException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Read string argument")
+    class ReadString {
+
+        @BeforeEach
+        void setUp() {
+            setOptions(CommandOption.longOption("string", NumArgs.ONE));
+        }
+
+        @Test
+        void shouldFailWhenMandatoryArgumentIsNotSet() {
+            // Given
+            CommandArguments arguments = parse();
+
+            // When / Then
+            assertThatThrownBy(() -> arguments.getString("string"))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("Argument was not set: string");
+        }
+
+        @Test
+        void shouldFindOptionIsSet() {
+            assertThat(parse("--string", "value").getOptionalString("string"))
+                    .contains("value");
+        }
+
+        @Test
+        void shouldFindOptionIsNotSet() {
+            assertThat(parse().getOptionalString("string"))
+                    .isEmpty();
         }
     }
 

@@ -74,7 +74,7 @@ public class CompactionRunnerCLI {
                 .build();
         CommandArguments arguments = CommandArguments.parseAndValidateOrExit(usage, args);
 
-        String instanceId = arguments.getString("load-instance");
+        String instanceId = arguments.getOptionalString("load-instance").orElse(null);
         Path jobJsonPath = Path.of(arguments.getString("job.json path"));
         int repetitions = arguments.getIntegerOrDefault("repetitions", 1);
 

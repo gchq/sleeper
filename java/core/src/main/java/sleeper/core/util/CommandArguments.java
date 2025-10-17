@@ -18,6 +18,8 @@ package sleeper.core.util;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -56,13 +58,23 @@ public class CommandArguments {
     }
 
     /**
-     * Retrieves the value of an argument.
+     * Retrieves the value of a mandatory argument.
      *
      * @param  name the name of the argument
      * @return      the value
      */
     public String getString(String name) {
-        return argByName.get(name);
+        return Objects.requireNonNull(argByName.get(name), "Argument was not set: " + name);
+    }
+
+    /**
+     * Retrieves the value of an optional argument.
+     *
+     * @param  name the name of the argument
+     * @return      the value, if it was set
+     */
+    public Optional<String> getOptionalString(String name) {
+        return Optional.ofNullable(argByName.get(name));
     }
 
     /**
@@ -72,7 +84,7 @@ public class CommandArguments {
      * @return      the value
      */
     public int getInteger(String name) {
-        return Integer.parseInt(getString(name));
+        return Integer.parseInt(argByName.get(name));
     }
 
     /**
@@ -83,7 +95,7 @@ public class CommandArguments {
      * @return              the value
      */
     public int getIntegerOrDefault(String name, int defaultValue) {
-        String string = getString(name);
+        String string = argByName.get(name);
         if (string == null) {
             return defaultValue;
         } else {
