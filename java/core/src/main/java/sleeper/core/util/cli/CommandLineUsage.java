@@ -15,10 +15,12 @@
  */
 package sleeper.core.util.cli;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -100,10 +102,19 @@ public class CommandLineUsage {
      * @return the message
      */
     public String createUsageMessage() {
-        return "Usage: " +
-                positionalArguments.stream()
-                        .map(name -> "<" + name + ">")
-                        .collect(joining(" "));
+        List<String> parts = new ArrayList<>();
+        if (!positionalArguments.isEmpty()) {
+            parts.add("Usage: " +
+                    positionalArguments.stream()
+                            .map(name -> "<" + name + ">")
+                            .collect(joining(" ")));
+        }
+        parts.add("Available options: " + Stream.of(
+                Stream.of("help"), options.stream().map(CommandOption::longName))
+                .flatMap(s -> s)
+                .map(name -> "--" + name)
+                .collect(joining(", ")));
+        return String.join("\n", parts);
     }
 
     /**
@@ -112,11 +123,12 @@ public class CommandLineUsage {
      * @return the help text
      */
     public String createHelpText() {
-        String text = createUsageMessage();
+        List<String> parts = new ArrayList<>();
+        parts.add(createUsageMessage());
         if (helpSummary != null) {
-            text += "\n\n" + helpSummary;
+            parts.add(helpSummary);
         }
-        return text;
+        return String.join("\n\n", parts);
     }
 
     /**

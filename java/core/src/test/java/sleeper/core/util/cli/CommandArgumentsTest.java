@@ -300,7 +300,8 @@ public class CommandArgumentsTest {
 
             // When / Then
             assertThat(helpText()).isEqualTo("""
-                    Usage: <a> <b> <c>""");
+                    Usage: <a> <b> <c>
+                    Available options: --help""");
         }
 
         @Test
@@ -312,8 +313,47 @@ public class CommandArgumentsTest {
             // When / Then
             assertThat(helpText()).isEqualTo("""
                     Usage: <parameter>
+                    Available options: --help
 
                     This command does something useful.""");
+        }
+
+        @Test
+        void shouldDisplayHelpSummaryWhenNoPositionalArgumentsAreSet() {
+            // Given
+            setHelpSummary("This command does something useful.");
+
+            // When / Then
+            assertThat(helpText()).isEqualTo("""
+                    Available options: --help
+
+                    This command does something useful.""");
+        }
+    }
+
+    @Nested
+    @DisplayName("Usage message")
+    class UsageMessage {
+
+        @Test
+        void shouldDisplayPositionalParameters() {
+            // Given
+            setPositionalArguments("first thing", "next", "last one");
+
+            // When / Then
+            assertThat(usageMessage()).isEqualTo("""
+                    Usage: <first thing> <next> <last one>
+                    Available options: --help""");
+        }
+
+        @Test
+        void shouldDisplayAvailableOptions() {
+            // Given
+            setOptions(CommandOption.longFlag("test"), CommandOption.shortOption('o', "other"));
+
+            // When / Then
+            assertThat(usageMessage()).isEqualTo("""
+                    Available options: --help, --test, --other""");
         }
     }
 
@@ -437,6 +477,10 @@ public class CommandArgumentsTest {
 
     private CommandArguments parse(String... args) {
         return CommandArgumentReader.parse(usage(), args);
+    }
+
+    private String usageMessage() {
+        return usage().createUsageMessage();
     }
 
     private String helpText() {
