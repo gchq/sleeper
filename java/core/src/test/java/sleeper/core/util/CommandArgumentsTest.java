@@ -214,6 +214,18 @@ public class CommandArgumentsTest {
             assertThat(arguments.getString("option")).isEqualTo("value");
             assertThat(arguments.getString("o")).isEqualTo("value");
         }
+
+        @Test
+        void shouldFindOptionIsNotSet() {
+            // Given
+            setOptions(CommandOption.longOption("option", NumArgs.ONE));
+
+            // When
+            CommandArguments arguments = parse();
+
+            // Then
+            assertThat(arguments.getString("option")).isNull();
+        }
     }
 
     @Nested
@@ -241,6 +253,60 @@ public class CommandArgumentsTest {
                     Usage: <parameter>
 
                     This command does something useful.""");
+        }
+    }
+
+    @Nested
+    @DisplayName("Read integer argument")
+    class ReadInteger {
+
+        @Test
+        void shouldReadArgument() {
+            // Given
+            setPositionalArguments("number");
+
+            // When
+            CommandArguments arguments = parse("123");
+
+            // Then
+            assertThat(arguments.getInteger("number")).isEqualTo(123);
+        }
+
+        @Test
+        void shouldReadOption() {
+            // Given
+            setOptions(CommandOption.longOption("number", NumArgs.ONE));
+
+            // When
+            CommandArguments arguments = parse("--number", "123");
+
+            // Then
+            assertThat(arguments.getInteger("number")).isEqualTo(123);
+        }
+
+        @Test
+        void shouldReadOptional() {
+            // Given
+            setOptions(CommandOption.longOption("number", NumArgs.ONE));
+
+            // When
+            CommandArguments arguments = parse();
+
+            // Then
+            assertThat(arguments.getIntegerOrDefault("number", 123)).isEqualTo(123);
+        }
+
+        @Test
+        void shouldFailWhenOptionIsNotSet() {
+            // Given
+            setOptions(CommandOption.longOption("number", NumArgs.ONE));
+
+            // When
+            CommandArguments arguments = parse();
+
+            // Then
+            assertThatThrownBy(() -> arguments.getInteger("number"))
+                    .isInstanceOf(NumberFormatException.class);
         }
     }
 

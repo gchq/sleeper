@@ -73,7 +73,10 @@ public record CommandOption(String longName, Character shortName, NumArgs numArg
         return new CommandOption(name, character, numArgs);
     }
 
-    public static enum NumArgs {
+    /**
+     * How many arguments a command line option can take.
+     */
+    public enum NumArgs {
         NONE, ONE
     }
 }

@@ -33,6 +33,24 @@ public class CommandArguments {
         optionsSet = builder.optionsSet;
     }
 
+    /**
+     * Reads command line arguments and detects arguments and options. Exits if validation fails or if the help text is
+     * requested.
+     *
+     * @param  usage     information about how arguments and options are specified
+     * @param  arguments the arguments from the command line
+     * @return           the parsed arguments
+     */
+    public static CommandArguments parseAndValidateOrExit(CommandLineUsage usage, String... arguments) {
+        try {
+            return CommandArgumentReader.parse(usage, arguments);
+        } catch (RuntimeException e) {
+            System.out.println(usage.createUsageMessage());
+            System.exit(1);
+            return null;
+        }
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -45,6 +63,32 @@ public class CommandArguments {
      */
     public String getString(String name) {
         return argByName.get(name);
+    }
+
+    /**
+     * Retrieves the value of a mandatory integer argument.
+     *
+     * @param  name the name of the argument
+     * @return      the value
+     */
+    public int getInteger(String name) {
+        return Integer.parseInt(getString(name));
+    }
+
+    /**
+     * Retrieves the value of an optional integer argument.
+     *
+     * @param  name         the name of the argument
+     * @param  defaultValue the value to return if the argument is not set
+     * @return              the value
+     */
+    public int getIntegerOrDefault(String name, int defaultValue) {
+        String string = getString(name);
+        if (string == null) {
+            return defaultValue;
+        } else {
+            return Integer.parseInt(string);
+        }
     }
 
     /**

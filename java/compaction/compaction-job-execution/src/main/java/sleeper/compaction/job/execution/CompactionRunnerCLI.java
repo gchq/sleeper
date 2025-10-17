@@ -33,6 +33,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.CommandArguments;
 import sleeper.core.util.CommandLineUsage;
 import sleeper.core.util.CommandOption;
 import sleeper.core.util.CommandOption.NumArgs;
@@ -59,7 +60,7 @@ public class CompactionRunnerCLI {
     }
 
     public static void main(String[] args) throws IOException, ObjectFactoryException, IteratorCreationException {
-        CommandLineUsage.builder()
+        CommandLineUsage usage = CommandLineUsage.builder()
                 .positionalArguments(List.of("job.json path"))
                 .helpSummary("""
                         Runs a compaction locally. Intended for debugging. You can either load the full configuration
@@ -71,15 +72,11 @@ public class CompactionRunnerCLI {
                         CommandOption.shortOption('i', "load-instance", NumArgs.ONE),
                         CommandOption.shortOption('s', "schema", NumArgs.ONE)))
                 .build();
+        CommandArguments arguments = CommandArguments.parseAndValidateOrExit(usage, args);
 
-        if (args.length < 2 || args.length > 3) {
-            System.out.println("Usage: <instance ID> <job.json path> <optional repetitions>");
-            System.exit(1);
-        }
-
-        String instanceId = args[0];
-        Path jobJsonPath = Path.of(args[1]);
-        int repetitions = args.length < 3 ? 1 : Integer.parseInt(args[2]);
+        String instanceId = arguments.getString("load-instance");
+        Path jobJsonPath = Path.of(arguments.getString("job.json path"));
+        int repetitions = arguments.getIntegerOrDefault("repetitions", 1);
 
         String jobJson = Files.readString(jobJsonPath);
         CompactionJob job = new CompactionJobSerDe().fromJson(jobJson);
