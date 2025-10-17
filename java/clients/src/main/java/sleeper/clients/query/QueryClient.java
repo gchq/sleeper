@@ -53,10 +53,6 @@ import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
