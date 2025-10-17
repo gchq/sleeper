@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -32,19 +31,16 @@ public class CommandLineUsage {
 
     private final List<String> positionalArguments;
     private final String helpSummary;
-    private final List<CommandOption> options;
+    private final List<CommandOption> options = new ArrayList<>(List.of(CommandOption.longFlag("help")));
     private final Map<String, CommandOption> optionByLongName;
     private final Map<Character, CommandOption> optionByShortName;
 
     private CommandLineUsage(Builder builder) {
         positionalArguments = Optional.ofNullable(builder.positionalArguments).orElseGet(List::of);
         helpSummary = builder.helpSummary;
-        options = Optional.ofNullable(builder.options).orElseGet(List::of);
-        List<CommandOption> optionsWithHelp = new ArrayList<>();
-        optionsWithHelp.add(CommandOption.longFlag("help"));
-        optionsWithHelp.addAll(options);
-        optionByLongName = optionsWithHelp.stream().collect(toMap(CommandOption::longName, Function.identity()));
-        optionByShortName = optionsWithHelp.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
+        Optional.ofNullable(builder.options).ifPresent(options::addAll);
+        optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
+        optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
     }
 
     public static Builder builder() {
@@ -112,9 +108,8 @@ public class CommandLineUsage {
                             .map(name -> "<" + name + ">")
                             .collect(joining(" ")));
         }
-        parts.add("Available options: " + Stream.of(
-                Stream.of("help"), options.stream().map(CommandOption::longName))
-                .flatMap(s -> s)
+        parts.add("Available options: " + options.stream()
+                .map(CommandOption::longName)
                 .map(name -> "--" + name)
                 .collect(joining(", ")));
         return String.join("\n", parts);
