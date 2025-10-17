@@ -31,6 +31,7 @@ public class CommandArgumentsTest {
 
     List<String> positionalArguments = List.of();
     List<CommandOption> options = List.of();
+    String helpSummary;
 
     @Nested
     @DisplayName("Positional arguments")
@@ -215,6 +216,34 @@ public class CommandArgumentsTest {
         }
     }
 
+    @Nested
+    @DisplayName("Help text")
+    class HelpText {
+
+        @Test
+        void shouldShowBasicUsage() {
+            // Given
+            setPositionalArguments("a", "b", "c");
+
+            // When / Then
+            assertThat(helpText()).isEqualTo("""
+                    Usage: <a> <b> <c>""");
+        }
+
+        @Test
+        void shouldAddHelpSummary() {
+            // Given
+            setHelpSummary("This command does something useful.");
+            setPositionalArguments("parameter");
+
+            // When / Then
+            assertThat(helpText()).isEqualTo("""
+                    Usage: <parameter>
+
+                    This command does something useful.""");
+        }
+    }
+
     private void setPositionalArguments(String... names) {
         positionalArguments = List.of(names);
     }
@@ -223,11 +252,23 @@ public class CommandArgumentsTest {
         this.options = List.of(options);
     }
 
+    private void setHelpSummary(String helpSummary) {
+        this.helpSummary = helpSummary;
+    }
+
     private CommandArguments parse(String... args) {
-        CommandLineUsage usage = CommandLineUsage.builder()
+        return CommandArgumentReader.parse(usage(), args);
+    }
+
+    private String helpText() {
+        return usage().createHelpText();
+    }
+
+    private CommandLineUsage usage() {
+        return CommandLineUsage.builder()
                 .positionalArguments(positionalArguments)
                 .options(options)
+                .helpSummary(helpSummary)
                 .build();
-        return CommandArgumentReader.parse(usage, args);
     }
 }

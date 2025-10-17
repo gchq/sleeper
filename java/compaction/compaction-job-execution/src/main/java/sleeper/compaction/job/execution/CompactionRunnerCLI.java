@@ -61,6 +61,11 @@ public class CompactionRunnerCLI {
     public static void main(String[] args) throws IOException, ObjectFactoryException, IteratorCreationException {
         CommandLineUsage.builder()
                 .positionalArguments(List.of("job.json path"))
+                .helpSummary("""
+                        Runs a compaction locally. Intended for debugging. You can either load the full configuration
+                        from a running instance with --load-instance <instance id>, or set the table schema with
+                        --schema <schema.json path>. When using a schema file, the remaining configuration will be set
+                        to defaults.""")
                 .options(List.of(
                         CommandOption.shortOption('r', "repetitions", NumArgs.ONE),
                         CommandOption.shortOption('i', "load-instance", NumArgs.ONE),

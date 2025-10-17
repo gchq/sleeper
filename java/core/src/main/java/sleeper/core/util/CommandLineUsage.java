@@ -17,6 +17,7 @@ package sleeper.core.util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -29,13 +30,17 @@ import static java.util.stream.Collectors.toMap;
 public class CommandLineUsage {
 
     private final List<String> positionalArguments;
+    private final String helpSummary;
+    private final List<CommandOption> options;
     private final Map<String, CommandOption> optionByLongName;
     private final Map<Character, CommandOption> optionByShortName;
 
     private CommandLineUsage(Builder builder) {
-        positionalArguments = builder.positionalArguments;
-        optionByLongName = builder.options.stream().collect(toMap(CommandOption::longName, Function.identity()));
-        optionByShortName = builder.options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
+        positionalArguments = Objects.requireNonNull(builder.positionalArguments, "positionalArguments must not be null");
+        helpSummary = builder.helpSummary;
+        options = Objects.requireNonNull(builder.options, "options must not be null");
+        optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
+        optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
     }
 
     public static Builder builder() {
@@ -103,10 +108,24 @@ public class CommandLineUsage {
     }
 
     /**
+     * Creates help text to explain in detail how to call from the command line.
+     *
+     * @return the help text
+     */
+    public String createHelpText() {
+        String text = createUsageMessage();
+        if (helpSummary != null) {
+            text += "\n\n" + helpSummary;
+        }
+        return text;
+    }
+
+    /**
      * A builder to create command line usage information.
      */
     public static class Builder {
         private List<String> positionalArguments;
+        private String helpSummary;
         private List<CommandOption> options;
 
         private Builder() {
@@ -120,6 +139,18 @@ public class CommandLineUsage {
          */
         public Builder positionalArguments(List<String> positionalArguments) {
             this.positionalArguments = positionalArguments;
+            return this;
+        }
+
+        /**
+         * Sets a summary of the command line tool. This will be displayed in the help text after basic usage
+         * information but before further details.
+         *
+         * @param  helpSummary the summary
+         * @return             this builder
+         */
+        public Builder helpSummary(String helpSummary) {
+            this.helpSummary = helpSummary;
             return this;
         }
 
