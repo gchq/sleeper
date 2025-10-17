@@ -46,7 +46,7 @@ public class CommandArguments {
      */
     public static <T> T parseAndValidateOrExit(CommandLineUsage usage, String[] arguments, Function<CommandArguments, T> readArguments) {
         try {
-            return readArguments.apply(CommandArgumentReader.parse(usage, arguments));
+            return readArguments.apply(CommandArgumentReader.parse(usage, arguments).exitIfHelpRequested(usage));
         } catch (RuntimeException e) {
             exitWithFailure(usage, e);
             return null;
@@ -63,21 +63,11 @@ public class CommandArguments {
      */
     public static CommandArguments parseAndValidateOrExit(CommandLineUsage usage, String[] arguments) {
         try {
-            return CommandArgumentReader.parse(usage, arguments);
+            return CommandArgumentReader.parse(usage, arguments).exitIfHelpRequested(usage);
         } catch (RuntimeException e) {
             exitWithFailure(usage, e);
             return null;
         }
-    }
-
-    private static void exitWithFailure(CommandLineUsage usage, RuntimeException e) {
-        System.out.println(usage.createUsageMessage());
-        if (e instanceof CommandArgumentsException) {
-            System.out.println(e.getMessage());
-        } else {
-            e.printStackTrace();
-        }
-        System.exit(1);
     }
 
     public static Builder builder() {
@@ -147,6 +137,24 @@ public class CommandArguments {
         } catch (NumberFormatException e) {
             throw new CommandArgumentsException("Expected integer for argument \"" + name + "\", found \"" + string + "\"", e);
         }
+    }
+
+    private static void exitWithFailure(CommandLineUsage usage, RuntimeException e) {
+        System.out.println(usage.createUsageMessage());
+        if (e instanceof CommandArgumentsException) {
+            System.out.println(e.getMessage());
+        } else {
+            e.printStackTrace();
+        }
+        System.exit(1);
+    }
+
+    private CommandArguments exitIfHelpRequested(CommandLineUsage usage) {
+        if (isFlagSet("help")) {
+            System.out.println(usage.createHelpText());
+            System.exit(1);
+        }
+        return this;
     }
 
     /**
