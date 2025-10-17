@@ -126,7 +126,13 @@ public class CompactionRunnerCLI {
                         Runs a compaction locally. Intended for debugging. You can either load the full configuration
                         from an existing instance with --load-instance <instance id>, or set the table schema with
                         --schema <schema.json path>. When using a schema file, the remaining configuration will be set
-                        to defaults.""")
+                        to defaults.
+
+                        You can use --region <region.json path> when using a schema file, to set the region of the
+                        partition being compacted.
+
+                        You can use --repetitions <number> to set the number of times to repeat the same job. You can
+                        also use this with -r <number>, or like -r10 for 10 repetitions.""")
                 .options(List.of(
                         CommandOption.longOption("load-instance"),
                         CommandOption.longOption("schema"),
