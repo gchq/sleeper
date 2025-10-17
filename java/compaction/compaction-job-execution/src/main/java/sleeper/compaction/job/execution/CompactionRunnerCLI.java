@@ -39,6 +39,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.core.util.cli.CommandOption.NumArgs;
@@ -151,12 +152,8 @@ public class CompactionRunnerCLI {
             CompactionRunnerCLI cli;
             if (args.instanceId() != null) {
                 cli = createForInstance(args.instanceId(), s3Client, s3TransferManager, dynamoClient);
-            } else if (args.schemaPath() != null) {
-                cli = createForFiles(args.schemaPath(), args.regionPath(), s3Client, s3TransferManager);
             } else {
-                System.out.println("Expected --load-instance <instance id> or --schema <schema.json path>");
-                System.exit(1);
-                return;
+                cli = createForFiles(args.schemaPath(), args.regionPath(), s3Client, s3TransferManager);
             }
             cli.runNTimes(job, args.repetitions());
         }
@@ -185,6 +182,12 @@ public class CompactionRunnerCLI {
     }
 
     public record Arguments(Path jobJsonPath, int repetitions, String instanceId, Path schemaPath, Path regionPath) {
+
+        public Arguments {
+            if (instanceId == null && schemaPath == null) {
+                throw new CommandArgumentsException("Expected --load-instance <instance id> or --schema <schema.json path>");
+            }
+        }
     }
 
 }
