@@ -113,11 +113,9 @@ public class CommandArgumentReader {
     }
 
     private String readShortOptionArg(CommandOption option) {
-        try {
-            String arg = arg().substring(2);
-            Integer.parseInt(arg);
-            return arg;
-        } catch (NumberFormatException e) {
+        String combinedArg = arg().substring(2);
+        if (!combinedArg.isEmpty()) {
+            return combinedArg;
         }
         return readOptionArg(option);
     }
