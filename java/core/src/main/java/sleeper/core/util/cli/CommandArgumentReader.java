@@ -62,7 +62,7 @@ public class CommandArgumentReader {
             String longOption = arg.substring(2);
             Optional<CommandOption> option = usage.getLongOption(longOption);
             if (option.isPresent()) {
-                readOption(option.get(), builder);
+                readOption(option.get(), false, builder);
                 advance();
                 return true;
             }
@@ -70,7 +70,7 @@ public class CommandArgumentReader {
             char shortOption = arg.charAt(1);
             Optional<CommandOption> option = usage.getShortOption(shortOption);
             if (option.isPresent()) {
-                readOption(option.get(), builder);
+                readOption(option.get(), true, builder);
                 advance();
                 return true;
             }
@@ -78,14 +78,13 @@ public class CommandArgumentReader {
         return false;
     }
 
-    private void readOption(CommandOption option, CommandArguments.Builder builder) {
+    private void readOption(CommandOption option, boolean setAsShort, CommandArguments.Builder builder) {
         switch (option.numArgs()) {
             case NONE:
                 builder.flag(option);
                 break;
             case ONE:
-                advance();
-                builder.option(option, arg());
+                builder.option(option, readOptionArg(option, setAsShort));
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognised number of arguments for option: " + option);
@@ -96,6 +95,20 @@ public class CommandArgumentReader {
         String arg = arg();
         advance();
         return arg;
+    }
+
+    private String readOptionArg(CommandOption option, boolean setAsShort) {
+        if (setAsShort) {
+            String arg = arg().substring(2);
+            if (!arg.isEmpty()) {
+                return arg;
+            }
+        }
+        advance();
+        if (!isArg()) {
+            throw new CommandArgumentsException("Expected an argument for option: " + option.longName());
+        }
+        return arg();
     }
 
     private boolean isArg() {

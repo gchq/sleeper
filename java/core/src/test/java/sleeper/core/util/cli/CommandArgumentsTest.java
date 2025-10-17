@@ -225,6 +225,30 @@ public class CommandArgumentsTest {
             assertThat(arguments.getString("option")).isEqualTo("value");
             assertThat(arguments.getString("o")).isEqualTo("value");
         }
+
+        @Test
+        void shouldReadShortOptionWithOneArgumentCombined() {
+            // Given
+            setOptions(CommandOption.shortOption('D', "property", NumArgs.ONE));
+
+            // When
+            CommandArguments arguments = parse("-D123");
+
+            // Then
+            assertThat(arguments.getString("property")).isEqualTo("123");
+            assertThat(arguments.getString("D")).isEqualTo("123");
+        }
+
+        @Test
+        void shouldFailWhenOptionIsMissingRequiredArgument() {
+            // Given
+            setOptions(CommandOption.longOption("option", NumArgs.ONE));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("--option"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected an argument for option: option");
+        }
     }
 
     @Nested
