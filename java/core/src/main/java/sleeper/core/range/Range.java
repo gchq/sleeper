@@ -290,7 +290,7 @@ public class Range {
          * @return              the new range
          */
         public Range createRange(String fieldName, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
-            return createRange(new Field(fieldName, rowKeyFieldToType.get(fieldName)), min, minInclusive, max, maxInclusive);
+            return createRange(field(fieldName), min, minInclusive, max, maxInclusive);
         }
 
         /**
@@ -337,6 +337,18 @@ public class Range {
          */
         public Range createExactRange(String fieldName, Object value) {
             return createRange(fieldName, value, true, value, true);
+        }
+
+        public Range createRangeCoveringAllValues(String fieldName) {
+            return createRangeCoveringAllValues(field(fieldName));
+        }
+
+        public Range createRangeCoveringAllValues(Field field) {
+            return createRange(field, PrimitiveType.getMinimum(field.getType()), true, null, false);
+        }
+
+        private Field field(String fieldName) {
+            return new Field(fieldName, rowKeyFieldToType.get(fieldName));
         }
     }
 }

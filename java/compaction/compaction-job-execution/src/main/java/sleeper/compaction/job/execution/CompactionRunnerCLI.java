@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.execution;
 
-import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -24,14 +23,18 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.core.task.CompactionRunnerFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.range.Region;
+import sleeper.core.range.RegionSerDe;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -40,8 +43,8 @@ import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 import sleeper.core.util.cli.CommandOption.NumArgs;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.sketches.store.S3SketchesStore;
-import sleeper.sketches.store.SketchesStore;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -50,13 +53,70 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * A command line tool to run a compaction job locally. Can be useful for debugging.
  */
 public class CompactionRunnerCLI {
 
-    private CompactionRunnerCLI() {
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final CompactionRunnerFactory runnerFactory;
+    private final RegionSupplier regionSupplier;
+
+    private CompactionRunnerCLI(TablePropertiesProvider tablePropertiesProvider, CompactionRunnerFactory runnerFactory, RegionSupplier regionSupplier) {
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.runnerFactory = runnerFactory;
+        this.regionSupplier = regionSupplier;
+    }
+
+    public static CompactionRunnerCLI createForInstance(
+            String instanceId, S3Client s3Client, S3TransferManager s3TransferManager, DynamoDbClient dynamoClient) throws ObjectFactoryException {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        return new CompactionRunnerCLI(
+                S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient)::getById,
+                new DefaultCompactionRunnerFactory(
+                        new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory(),
+                        TableHadoopConfigurationProvider.forClient(instanceProperties),
+                        new S3SketchesStore(s3Client, s3TransferManager)),
+                (tableProperties, partitionId) -> {
+                    StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
+                    PartitionTree partitionTree = new PartitionTree(stateStore.getAllPartitions());
+                    return partitionTree.getPartition(partitionId).getRegion();
+                });
+    }
+
+    public static CompactionRunnerCLI createForFiles(Path schemaPath, Path regionPath, S3Client s3Client, S3TransferManager s3TransferManager) throws IOException {
+        Schema schema = readSchemaFile(schemaPath);
+        Region region = readRegionFile(schema, regionPath);
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.setSchema(schema);
+        return createForFiles(tableProperties, region, s3Client, s3TransferManager);
+    }
+
+    public static CompactionRunnerCLI createForFiles(TableProperties baseTableProperties, Region region, S3Client s3Client, S3TransferManager s3TransferManager) {
+        return new CompactionRunnerCLI(
+                tableId -> {
+                    TableProperties properties = TableProperties.copyOf(baseTableProperties);
+                    properties.set(TABLE_ID, tableId);
+                    properties.set(TABLE_NAME, "unknown");
+                    return properties;
+                },
+                new DefaultCompactionRunnerFactory(
+                        ObjectFactory.noUserJars(),
+                        HadoopConfigurationProvider.getConfigurationForClient(),
+                        new S3SketchesStore(s3Client, s3TransferManager)),
+                (tableProperties, partitionId) -> region);
+    }
+
+    public void runNTimes(CompactionJob job, int times) throws IOException, IteratorCreationException {
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableId());
+        Region region = regionSupplier.getPartitionRegion(tableProperties, job.getPartitionId());
+        CompactionRunner runner = runnerFactory.createCompactor(job, tableProperties);
+        for (int i = 0; i < times; i++) {
+            runner.compact(job, tableProperties, region);
+        }
     }
 
     public static void main(String[] args) throws IOException, ObjectFactoryException, IteratorCreationException {
@@ -69,14 +129,17 @@ public class CompactionRunnerCLI {
                         to defaults.""")
                 .options(List.of(
                         CommandOption.shortOption('r', "repetitions", NumArgs.ONE),
-                        CommandOption.shortOption('i', "load-instance", NumArgs.ONE),
-                        CommandOption.shortOption('s', "schema", NumArgs.ONE)))
+                        CommandOption.longOption("load-instance", NumArgs.ONE),
+                        CommandOption.longOption("schema", NumArgs.ONE),
+                        CommandOption.longOption("region", NumArgs.ONE)))
                 .build();
         CommandArguments arguments = CommandArguments.parseAndValidateOrExit(usage, args);
 
-        String instanceId = arguments.getOptionalString("load-instance").orElse(null);
         Path jobJsonPath = Path.of(arguments.getString("job.json path"));
         int repetitions = arguments.getIntegerOrDefault("repetitions", 1);
+        String instanceId = arguments.getOptionalString("load-instance").orElse(null);
+        Path schemaPath = arguments.getOptionalString("schema").map(Path::of).orElse(null);
+        Path regionPath = arguments.getOptionalString("region").map(Path::of).orElse(null);
 
         String jobJson = Files.readString(jobJsonPath);
         CompactionJob job = new CompactionJobSerDe().fromJson(jobJson);
@@ -85,22 +148,41 @@ public class CompactionRunnerCLI {
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 S3AsyncClient s3AsyncClient = buildAwsV2Client(S3AsyncClient.crtBuilder());
                 S3TransferManager s3TransferManager = S3TransferManager.builder().s3Client(s3AsyncClient).build()) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).loadById(job.getTableId());
-            ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory();
-            Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
-            SketchesStore sketchesStore = new S3SketchesStore(s3Client, s3TransferManager);
-            StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
-            PartitionTree partitionTree = new PartitionTree(stateStore.getAllPartitions());
-            Partition partition = partitionTree.getPartition(job.getPartitionId());
 
-            DefaultCompactionRunnerFactory runnerFactory = new DefaultCompactionRunnerFactory(objectFactory, hadoopConf, sketchesStore);
-            CompactionRunner runner = runnerFactory.createCompactor(job, tableProperties);
-
-            for (int i = 0; i < repetitions; i++) {
-                runner.compact(job, tableProperties, partition.getRegion());
+            CompactionRunnerCLI cli;
+            if (instanceId != null) {
+                cli = createForInstance(instanceId, s3Client, s3TransferManager, dynamoClient);
+            } else if (schemaPath != null) {
+                cli = createForFiles(schemaPath, regionPath, s3Client, s3TransferManager);
+            } else {
+                System.out.println("Expected --load-instance <instance id> or --schema <schema.json path>");
+                System.exit(1);
+                return;
             }
+            cli.runNTimes(job, repetitions);
         }
+    }
+
+    private static Schema readSchemaFile(Path path) throws IOException {
+        String json = Files.readString(path);
+        return new SchemaSerDe().fromJson(json);
+    }
+
+    private static Region readRegionFile(Schema schema, Path path) throws IOException {
+        if (path == null) {
+            return Region.coveringAllValuesOfAllRowKeys(schema);
+        } else {
+            String json = Files.readString(path);
+            return new RegionSerDe(schema).fromJson(json);
+        }
+    }
+
+    public interface TablePropertiesProvider {
+        TableProperties getTableProperties(String tableId);
+    }
+
+    public interface RegionSupplier {
+        Region getPartitionRegion(TableProperties tableProperties, String partitionId);
     }
 
 }

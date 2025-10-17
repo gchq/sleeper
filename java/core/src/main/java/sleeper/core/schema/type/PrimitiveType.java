@@ -45,4 +45,20 @@ public interface PrimitiveType extends Type {
         Comparable comparable2 = toComparable(value2);
         return COMPARATOR.compare(comparable1, comparable2);
     }
+
+    public static Object getMinimum(Type type) {
+        if (type instanceof IntType) {
+            return Integer.MIN_VALUE;
+        }
+        if (type instanceof LongType) {
+            return Long.MIN_VALUE;
+        }
+        if (type instanceof StringType) {
+            return "";
+        }
+        if (type instanceof ByteArrayType) {
+            return new byte[]{};
+        }
+        throw new IllegalArgumentException("Unknown key type " + type);
+    }
 }
