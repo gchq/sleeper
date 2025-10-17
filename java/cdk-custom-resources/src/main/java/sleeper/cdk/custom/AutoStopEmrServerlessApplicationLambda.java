@@ -35,17 +35,18 @@ import java.util.Map;
 public class AutoStopEmrServerlessApplicationLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(AutoStopEmrServerlessApplicationLambda.class);
 
-    private final PollWithRetries poll = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
+    private final PollWithRetries poll;
     private final EmrServerlessClient emrServerlessClient;
     private String applicationId;
 
     public AutoStopEmrServerlessApplicationLambda() {
-        this(EmrServerlessClient.create());
+        this(EmrServerlessClient.create(), PollWithRetries
+                .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15)));
     }
 
-    public AutoStopEmrServerlessApplicationLambda(EmrServerlessClient emrServerlessClient) {
+    public AutoStopEmrServerlessApplicationLambda(EmrServerlessClient emrServerlessClient, PollWithRetries poll) {
         this.emrServerlessClient = emrServerlessClient;
+        this.poll = poll;
     }
 
     /**
@@ -91,7 +92,7 @@ public class AutoStopEmrServerlessApplicationLambda {
         emrServerlessClient.stopApplication(request -> request.applicationId(applicationId));
 
         LOGGER.info("Waiting for applications to terminate");
-        poll.pollUntil("all EMR Serverless applications terminated", this::allApplicationsTerminated);
+        poll.pollUntil("all EMR Serverless applications terminated", this::isApplicationTerminated);
 
     }
 
@@ -109,7 +110,7 @@ public class AutoStopEmrServerlessApplicationLambda {
         }
     }
 
-    private boolean allApplicationsTerminated() {
+    private boolean isApplicationTerminated() {
         return emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application() == null;
     }
 

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.PollWithRetries;
 
 import java.util.Map;
 
@@ -137,6 +138,6 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
     }
 
     private AutoStopEmrServerlessApplicationLambda lambda(WireMockRuntimeInfo runtimeInfo) {
-        return new AutoStopEmrServerlessApplicationLambda(wiremockEmrServerlessClient(runtimeInfo));
+        return new AutoStopEmrServerlessApplicationLambda(wiremockEmrServerlessClient(runtimeInfo), PollWithRetries.noRetries());
     }
 }
