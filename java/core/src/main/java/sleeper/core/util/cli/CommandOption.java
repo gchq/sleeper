@@ -73,6 +73,10 @@ public record CommandOption(String longName, Character shortName, NumArgs numArg
         return new CommandOption(name, character, numArgs);
     }
 
+    public boolean isFlag() {
+        return numArgs == NumArgs.NONE;
+    }
+
     /**
      * How many arguments a command line option can take.
      */

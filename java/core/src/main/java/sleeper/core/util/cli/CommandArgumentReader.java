@@ -43,7 +43,8 @@ public class CommandArgumentReader {
         CommandArgumentReader reader = new CommandArgumentReader(List.of(args));
         List<String> positionalValues = new ArrayList<>();
         while (reader.isArg()) {
-            if (!reader.readOption(usage, builder)) {
+            if (!reader.readLongOption(usage, builder)
+                    && !reader.readShortOption(usage, builder)) {
                 positionalValues.add(reader.readPositionalArg());
             }
         }
@@ -56,24 +57,21 @@ public class CommandArgumentReader {
         return builder.build();
     }
 
-    private boolean readOption(CommandLineUsage usage, CommandArguments.Builder builder) {
-        if (readLongOption(usage, builder)) {
-            return true;
-        } else if (readShortOption(usage, builder)) {
-            return true;
-        }
-        return false;
-    }
-
     private boolean readLongOption(CommandLineUsage usage, CommandArguments.Builder builder) {
         if (!arg().startsWith("--")) {
             return false;
         }
-        Optional<CommandOption> option = usage.getLongOption(arg().substring(2));
-        if (!option.isPresent()) {
+        Optional<CommandOption> optionOpt = usage.getLongOption(arg().substring(2));
+        if (!optionOpt.isPresent()) {
             return false;
         }
-        readOption(option.get(), false, builder);
+        CommandOption option = optionOpt.get();
+        if (option.isFlag()) {
+            builder.flag(option);
+        } else {
+            builder.option(option, readOptionArg(option));
+        }
+        advance();
         return true;
     }
 
@@ -81,26 +79,24 @@ public class CommandArgumentReader {
         if (!arg().startsWith("-")) {
             return false;
         }
-        Optional<CommandOption> option = usage.getShortOption(arg().charAt(1));
-        if (!option.isPresent()) {
+        Optional<CommandOption> optionOpt = usage.getShortOption(arg().charAt(1));
+        if (!optionOpt.isPresent()) {
             return false;
         }
-        readOption(option.get(), true, builder);
-        return true;
-    }
-
-    private void readOption(CommandOption option, boolean setAsShort, CommandArguments.Builder builder) {
-        switch (option.numArgs()) {
-            case NONE:
-                builder.flag(option);
-                break;
-            case ONE:
-                builder.option(option, readOptionArg(option, setAsShort));
-                break;
-            default:
-                throw new IllegalArgumentException("Unrecognised number of arguments for option: " + option);
+        CommandOption option = optionOpt.get();
+        if (option.isFlag()) {
+            builder.flag(option);
+            char[] otherFlags = arg().substring(2).toCharArray();
+            for (char flagChar : otherFlags) {
+                usage.getShortOption(flagChar)
+                        .filter(CommandOption::isFlag)
+                        .ifPresent(builder::flag);
+            }
+        } else {
+            builder.option(option, readShortOptionArg(option));
         }
         advance();
+        return true;
     }
 
     private String readPositionalArg() {
@@ -109,15 +105,17 @@ public class CommandArgumentReader {
         return arg;
     }
 
-    private String readOptionArg(CommandOption option, boolean setAsShort) {
-        if (setAsShort) {
-            try {
-                String arg = arg().substring(2);
-                Integer.parseInt(arg);
-                return arg;
-            } catch (NumberFormatException e) {
-            }
+    private String readShortOptionArg(CommandOption option) {
+        try {
+            String arg = arg().substring(2);
+            Integer.parseInt(arg);
+            return arg;
+        } catch (NumberFormatException e) {
         }
+        return readOptionArg(option);
+    }
+
+    private String readOptionArg(CommandOption option) {
         advance();
         if (!isArg()) {
             throw new CommandArgumentsException("Expected an argument for option: " + option.longName());

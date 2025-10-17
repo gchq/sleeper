@@ -16,7 +16,6 @@
 package sleeper.core.util.cli;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -198,7 +197,6 @@ public class CommandArgumentsTest {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldReadCombinedFlags() {
             // Given
             setOptions(
@@ -216,6 +214,9 @@ public class CommandArgumentsTest {
             assertThat(arguments.isFlagSet("c")).isTrue();
             assertThat(arguments.isFlagSet("d")).isFalse();
         }
+
+        // TODO fail if combined flags includes unrecognised flag
+        // TODO fail if an argument is just "-"
     }
 
     @Nested
