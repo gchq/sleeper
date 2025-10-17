@@ -40,8 +40,11 @@ public class CommandLineUsage {
         positionalArguments = Optional.ofNullable(builder.positionalArguments).orElseGet(List::of);
         helpSummary = builder.helpSummary;
         options = Optional.ofNullable(builder.options).orElseGet(List::of);
-        optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
-        optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
+        List<CommandOption> optionsWithHelp = new ArrayList<>();
+        optionsWithHelp.add(CommandOption.longFlag("help"));
+        optionsWithHelp.addAll(options);
+        optionByLongName = optionsWithHelp.stream().collect(toMap(CommandOption::longName, Function.identity()));
+        optionByShortName = optionsWithHelp.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
     }
 
     public static Builder builder() {

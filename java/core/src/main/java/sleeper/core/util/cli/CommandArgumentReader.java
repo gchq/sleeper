@@ -48,13 +48,14 @@ public class CommandArgumentReader {
                 positionalValues.add(reader.readPositionalArg());
             }
         }
-        if (positionalValues.size() != usage.getNumPositionalArgs()) {
-            throw new WrongNumberOfArgumentsException(positionalValues.size(), usage.getNumPositionalArgs());
-        }
         for (int i = 0; i < positionalValues.size(); i++) {
             builder.argument(usage.getPositionalArgName(i), positionalValues.get(i));
         }
-        return builder.build();
+        CommandArguments arguments = builder.build();
+        if (!arguments.isFlagSet("help") && positionalValues.size() != usage.getNumPositionalArgs()) {
+            throw new WrongNumberOfArgumentsException(positionalValues.size(), usage.getNumPositionalArgs());
+        }
+        return arguments;
     }
 
     private boolean readLongOption(CommandLineUsage usage, CommandArguments.Builder builder) {

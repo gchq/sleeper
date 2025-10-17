@@ -329,6 +329,18 @@ public class CommandArgumentsTest {
 
                     This command does something useful.""");
         }
+
+        @Test
+        void shouldFindHelpFlagIsSetWhenNoPositionalParametersAreGiven() {
+            // Given
+            setPositionalArguments("first", "second");
+
+            // When
+            CommandArguments arguments = parse("--help");
+
+            // Then
+            assertThat(arguments.isFlagSet("help")).isTrue();
+        }
     }
 
     @Nested
