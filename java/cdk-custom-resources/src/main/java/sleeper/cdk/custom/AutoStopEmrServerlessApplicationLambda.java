@@ -20,6 +20,7 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
+import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
 
@@ -111,7 +112,7 @@ public class AutoStopEmrServerlessApplicationLambda {
     }
 
     private boolean isApplicationTerminated() {
-        if ("TERMINATED".equals(emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application().stateAsString())) {
+        if (ApplicationState.TERMINATED.equals(emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application().state())) {
             return true;
         }
         return false;
