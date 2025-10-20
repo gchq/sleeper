@@ -27,6 +27,8 @@ import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.RUST_BACKTRACE;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.RUST_LOG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class EnvironmentUtilsTest {
@@ -67,6 +69,22 @@ public class EnvironmentUtilsTest {
                 "-Dsleeper.logging.apache.level=TRACE " +
                 "-Dsleeper.logging.parquet.level=DEBUG " +
                 "-Dsleeper.logging.aws.level=ERROR " + DEFAULT_TOOL_OPTIONS));
+    }
+
+    @Test
+    void shouldSetRustLogging() {
+        // Given
+        instanceProperties.set(RUST_BACKTRACE, "1");
+        instanceProperties.set(RUST_LOG, "reqwest=debug");
+
+        // When
+        Map<String, String> environment = EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties);
+
+        // Then
+        assertThat(environment).isEqualTo(Map.of(
+                "JAVA_TOOL_OPTIONS", DEFAULT_TOOL_OPTIONS,
+                "RUST_BACKTRACE", "1",
+                "RUST_LOG", "reqwest=debug"));
     }
 
 }
