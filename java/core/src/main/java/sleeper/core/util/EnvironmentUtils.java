@@ -27,6 +27,8 @@ import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.RUST_BACKTRACE;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.RUST_LOG;
 
 /**
  * Utilities to set environment variables during deployment.
@@ -60,6 +62,14 @@ public class EnvironmentUtils {
     public static Map<String, String> createDefaultEnvironmentNoConfigBucket(InstanceProperties instanceProperties) {
         Map<String, String> environmentVariables = new HashMap<>();
         environmentVariables.put("JAVA_TOOL_OPTIONS", createToolOptions(instanceProperties));
+        String rustBacktrace = instanceProperties.get(RUST_BACKTRACE);
+        if (rustBacktrace != null) {
+            environmentVariables.put("RUST_BACKTRACE", rustBacktrace);
+        }
+        String rustLog = instanceProperties.get(RUST_LOG);
+        if (rustLog != null) {
+            environmentVariables.put("RUST_LOG", rustLog);
+        }
         return environmentVariables;
     }
 

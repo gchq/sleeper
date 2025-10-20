@@ -1396,6 +1396,12 @@ sleeper.dashboard.time.window.minutes=5
 # The logging level for everything else.
 # sleeper.logging.root.level=
 
+# Configuration for Rust backtrace generation, set in the environment variable RUST_BACKTRACE.
+# sleeper.logging.backtrace=
+
+# Configuration for Rust logging, set in the environment variable RUST_LOG.
+# sleeper.logging.rust=
+
 
 ## The following instance properties relate to the integration with Athena.
 
