@@ -48,8 +48,11 @@ import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -71,9 +74,6 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 public class DataFusionLeafPartitionRowRetrieverIT {
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
     private static final FFIContext FFI_CONTEXT = DataFusionLeafPartitionRowRetriever.createContext();
-    private static final LeafPartitionRowRetriever ROW_RETRIEVER = new DataFusionLeafPartitionRowRetriever(
-            // DataFusion spends time trying to auth with AWS unless you override it
-            DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, FFI_CONTEXT);
 
     @TempDir
     public Path tempDir;
@@ -1066,10 +1066,13 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     private QueryExecutor initQueryExecutor() {
-        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(),
-                tableProperties, stateStore, ROW_RETRIEVER);
-        executor.init();
-        return executor;
+        LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
+                // DataFusion spends time trying to auth with AWS unless you override it
+                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, FFI_CONTEXT);
+        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+        return new QueryExecutor(
+                QueryPlanner.initialiseNow(tableProperties, stateStore),
+                new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }
 
     private Query queryWithRegion(Region region) {
