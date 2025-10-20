@@ -19,8 +19,13 @@ import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 
+import java.util.Collection;
+import java.util.List;
+
 public interface DataFilesDriver {
 
     CloseableIterator<Row> getRows(Schema schema, String filename);
+
+    List<DataFileDuplication> duplicateFiles(int times, Collection<String> files);
 
 }

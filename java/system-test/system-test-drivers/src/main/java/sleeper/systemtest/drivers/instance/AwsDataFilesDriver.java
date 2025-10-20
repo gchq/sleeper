@@ -27,10 +27,13 @@ import sleeper.core.schema.Schema;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.RowReadSupport;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.instance.DataFileDuplication;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collection;
+import java.util.List;
 
 public class AwsDataFilesDriver implements DataFilesDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsDataFilesDriver.class);
@@ -52,6 +55,12 @@ public class AwsDataFilesDriver implements DataFilesDriver {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public List<DataFileDuplication> duplicateFiles(int times, Collection<String> files) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

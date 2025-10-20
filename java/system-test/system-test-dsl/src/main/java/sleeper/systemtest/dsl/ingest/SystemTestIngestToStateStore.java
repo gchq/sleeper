@@ -21,6 +21,9 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.instance.DataFileDuplication;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
@@ -29,12 +32,19 @@ import java.util.stream.Collectors;
 
 public class SystemTestIngestToStateStore {
 
+    private final SystemTestContext context;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext ingestSource;
 
-    public SystemTestIngestToStateStore(SystemTestInstanceContext instance, IngestSourceFilesContext ingestSource) {
-        this.instance = instance;
-        this.ingestSource = ingestSource;
+    public SystemTestIngestToStateStore(SystemTestContext context) {
+        this.context = context;
+        this.instance = context.instance();
+        this.ingestSource = context.sourceFiles();
+    }
+
+    public SystemTestIngestToStateStore duplicateFilesOnSamePartition(int times, List<FileReference> fileReferences) {
+        addFiles(DataFileDuplication.duplicateByReferences(dataFilesDriver(), times, fileReferences));
+        return this;
     }
 
     public SystemTestIngestToStateStore addFileOnPartition(
@@ -71,5 +81,9 @@ public class SystemTestIngestToStateStore {
         instance.getStateStore().addTransaction(AddTransactionRequest.withTransaction(
                 AddFilesTransaction.fromReferences(fileReferences))
                 .build());
+    }
+
+    private DataFilesDriver dataFilesDriver() {
+        return instance.adminDrivers().dataFiles(context);
     }
 }
