@@ -126,7 +126,6 @@ public class CompactionTaskResources {
 
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
-        environmentVariables.put("RUST_BACKTRACE", "1");
 
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         ITaskDefinition taskDefinition;
