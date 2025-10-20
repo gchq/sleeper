@@ -338,5 +338,15 @@ public class Range {
         public Range createExactRange(String fieldName, Object value) {
             return createRange(fieldName, value, true, value, true);
         }
+
+        /**
+         * Creates a range that covers all values of a field.
+         *
+         * @param  field the field
+         * @return       the range
+         */
+        public Range createRangeCoveringAllValues(Field field) {
+            return createRange(field, PrimitiveType.getMinimum(field.getType()), true, null, false);
+        }
     }
 }

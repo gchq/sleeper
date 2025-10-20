@@ -57,10 +57,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private final DataFusionAwsConfig awsConfig;
     private final Configuration hadoopConf;
 
-    public DataFusionCompactionRunner(Configuration hadoopConf) {
-        this(DataFusionAwsConfig.getDefault(), hadoopConf);
-    }
-
     public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
         this.awsConfig = awsConfig;
         this.hadoopConf = hadoopConf;
