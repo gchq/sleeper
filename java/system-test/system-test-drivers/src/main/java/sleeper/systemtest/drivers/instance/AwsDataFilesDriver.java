@@ -32,9 +32,9 @@ import sleeper.core.util.S3Filename;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.RowReadSupport;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.instance.DataFileDuplication;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.DataFileDuplication;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

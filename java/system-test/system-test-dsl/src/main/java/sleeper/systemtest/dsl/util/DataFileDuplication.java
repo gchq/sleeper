@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.instance;
+package sleeper.systemtest.dsl.util;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 
 import java.util.List;
 import java.util.Map;

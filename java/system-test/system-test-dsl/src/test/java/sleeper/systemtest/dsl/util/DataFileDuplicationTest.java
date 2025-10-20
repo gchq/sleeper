@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.instance;
+package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +27,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataFilesDriver;
 
 import java.util.List;
@@ -65,7 +66,7 @@ public class DataFileDuplicationTest {
                 referenceFactory().rootFile("duplicate-2.parquet", 2));
         assertThat(readRows("duplicate-1.parquet"))
                 .containsExactly(new Row(Map.of("key", "value-1")));
-        assertThat(readRows("duplicate-1.parquet"))
+        assertThat(readRows("duplicate-2.parquet"))
                 .containsExactly(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3")));
     }
 

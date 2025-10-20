@@ -21,8 +21,8 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableFilePaths;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.instance.DataFileDuplication;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
+import sleeper.systemtest.dsl.util.DataFileDuplication;
 
 import java.util.ArrayList;
 import java.util.Collection;

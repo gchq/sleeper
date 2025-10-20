@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.instance;
+package sleeper.systemtest.drivers.util;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
@@ -33,8 +33,9 @@ import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
-import sleeper.systemtest.dsl.instance.DataFileDuplication;
+import sleeper.systemtest.drivers.instance.AwsDataFilesDriver;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
+import sleeper.systemtest.dsl.util.DataFileDuplication;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

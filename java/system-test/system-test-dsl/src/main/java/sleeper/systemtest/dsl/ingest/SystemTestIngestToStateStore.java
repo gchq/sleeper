@@ -22,10 +22,10 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.instance.DataFileDuplication;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.DataFileDuplication;
 
 import java.util.List;
 import java.util.stream.Collectors;
