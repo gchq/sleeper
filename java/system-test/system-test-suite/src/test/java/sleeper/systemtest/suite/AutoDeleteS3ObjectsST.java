@@ -25,7 +25,7 @@ import sleeper.core.row.Row;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.Slow;
+import sleeper.systemtest.suite.testutil.Slow3;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -38,7 +38,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTI
 
 @SystemTest
 // Slow because it needs to do multiple CDK deployments
-@Slow
+@Slow3
 public class AutoDeleteS3ObjectsST {
 
     @TempDir

@@ -23,7 +23,7 @@ import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.Slow;
+import sleeper.systemtest.suite.testutil.Slow1;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -36,7 +36,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTI
 
 @SystemTest
 // Slow because it needs to do multiple CDK deployments
-@Slow
+@Slow1
 public class AutoStopEcsTaskST {
 
     @BeforeEach
