@@ -46,7 +46,9 @@ import sleeper.clients.api.role.AssumeSleeperRoleAwsSdk;
 import sleeper.clients.api.role.AssumeSleeperRoleHadoop;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 
 import java.time.Duration;
 import java.util.Map;
@@ -74,6 +76,7 @@ public class SystemTestClients {
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
+    private final Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
     private final boolean skipAssumeRole;
@@ -98,6 +101,7 @@ public class SystemTestClients {
         cloudWatch = builder.cloudWatch;
         cloudWatchLogs = builder.cloudWatchLogs;
         cloudWatchEvents = builder.cloudWatchEvents;
+        dataFusionAwsConfig = builder.dataFusionAwsConfig;
         getAuthEnvVars = builder.getAuthEnvVars;
         configureHadoop = builder.configureHadoop;
         skipAssumeRole = builder.skipAssumeRole;
@@ -127,6 +131,7 @@ public class SystemTestClients {
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
+                .dataFusionAwsConfig(DataFusionAwsConfig::getDefault)
                 .build();
     }
 
@@ -155,6 +160,7 @@ public class SystemTestClients {
                 .cloudWatch(aws.buildClient(CloudWatchClient.builder()))
                 .cloudWatchLogs(aws.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(aws.buildClient(CloudWatchEventsClient.builder()))
+                .dataFusionAwsConfig(aws::dataFusionAwsConfig)
                 .getAuthEnvVars(aws::authEnvVars)
                 .configureHadoop(hadoop::setS3ACredentials)
                 .build();
@@ -236,12 +242,20 @@ public class SystemTestClients {
         return cloudWatchEvents;
     }
 
+    public DataFusionAwsConfig createDataFusionAwsConfig() {
+        return dataFusionAwsConfig.get();
+    }
+
     public Map<String, String> getAuthEnvVars() {
         return getAuthEnvVars.get();
     }
 
     public Configuration createHadoopConf() {
         return configureHadoop.apply(HadoopConfigurationProvider.getConfigurationForClient());
+    }
+
+    public TableHadoopConfigurationProvider tableHadoopProvider(InstanceProperties instanceProperties) {
+        return tableProperties -> createHadoopConf(instanceProperties, tableProperties);
     }
 
     public Configuration createHadoopConf(InstanceProperties instanceProperties, TableProperties tableProperties) {
@@ -277,6 +291,7 @@ public class SystemTestClients {
         private CloudWatchClient cloudWatch;
         private CloudWatchLogsClient cloudWatchLogs;
         private CloudWatchEventsClient cloudWatchEvents;
+        private Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
         private boolean skipAssumeRole = false;
@@ -372,6 +387,11 @@ public class SystemTestClients {
 
         public Builder cloudWatchEvents(CloudWatchEventsClient cloudWatchEvents) {
             this.cloudWatchEvents = cloudWatchEvents;
+            return this;
+        }
+
+        public Builder dataFusionAwsConfig(Supplier<DataFusionAwsConfig> dataFusionAwsConfig) {
+            this.dataFusionAwsConfig = dataFusionAwsConfig;
             return this;
         }
 

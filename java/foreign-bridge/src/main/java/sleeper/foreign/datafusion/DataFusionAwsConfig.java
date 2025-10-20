@@ -78,7 +78,7 @@ public class DataFusionAwsConfig {
     public FFIAwsConfig toFfi(jnr.ffi.Runtime runtime) {
         FFIAwsConfig config = new FFIAwsConfig(runtime);
         config.region.set(region);
-        config.endpoint.set(endpoint);
+        config.endpoint.set(endpoint == null ? "" : endpoint);
         config.access_key.set(accessKey);
         config.secret_key.set(secretKey);
         config.allow_http.set(allowHttp);

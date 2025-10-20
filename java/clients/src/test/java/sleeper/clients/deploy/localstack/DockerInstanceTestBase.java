@@ -35,12 +35,12 @@ import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
-import sleeper.query.runner.rowretrieval.QueryEngineSelector;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
@@ -73,7 +73,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
-        LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(Executors.newSingleThreadExecutor(), hadoopConf).getRowRetriever(tableProperties);
+        LeafPartitionRowRetriever rowRetriever = new LeafPartitionRowRetrieverImpl(ForkJoinPool.commonPool(), hadoopConf, tableProperties);
         QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
         planner.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         QueryExecutor executor = new QueryExecutor(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));

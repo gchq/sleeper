@@ -22,6 +22,8 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
+
 import java.net.URI;
 import java.util.Map;
 
@@ -68,5 +70,14 @@ public class AssumeSleeperRoleAwsSdk {
                 "AWS_SESSION_TOKEN", credentials.sessionToken(),
                 "AWS_REGION", region,
                 "AWS_DEFAULT_REGION", region);
+    }
+
+    public DataFusionAwsConfig dataFusionAwsConfig() {
+        AwsSessionCredentials credentials = (AwsSessionCredentials) credentialsProvider.resolveCredentials();
+        return DataFusionAwsConfig.builder()
+                .accessKey(credentials.accessKeyId())
+                .secretKey(credentials.secretAccessKey())
+                .region(region)
+                .build();
     }
 }
