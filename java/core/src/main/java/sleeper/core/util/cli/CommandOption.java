@@ -21,7 +21,7 @@ import java.util.Objects;
  * An option that may be set on the command line. Used with {@link CommandArguments}.
  *
  * @param longName  the name for when the option is set like "--longName"
- * @param shortName the character for when the option is set like "-a"
+ * @param shortName the character for when the option is set like "-a", or null if this should not be allowed
  * @param numArgs   the number of arguments that must be passed after this option
  */
 public record CommandOption(String longName, Character shortName, NumArgs numArgs) {
