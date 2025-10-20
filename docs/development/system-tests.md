@@ -72,13 +72,20 @@ of that class, and look at the tests in that module for examples.
 
 This test module contains several JUnit test suites:
 - QuickSystemTestSuite (the default)
-- NightlyFunctionalSystemTestSuite
-- NightlyPerformanceSystemTestSuite
+- SlowSuite1-3
+- ExpensiveSuite1-3
 
-Tests that are tagged as Slow or Expensive will not be included in the quick suite. The quick suite is intended to run
+Tests that are tagged as Slow(1-3) or Expensive(1-3) will not be included in the quick suite. The quick suite is intended to run
 in around 40 minutes. The nightly functional suite includes tests tagged as Slow, and will take a bit longer. The
 nightly performance suite includes all tests, including ones tagged as Expensive. The performance tests work with a
 larger bulk of data. They take time to run and can be costly to run frequently.
+
+Due to the time taken to run all the system tests for either a functional or performance run, multiple test suites
+now run in parallel. This is achievied by copying the Java, Python, Scripts and CodeStyle folders of Sleeper into a
+temporary folder per batch (quick, slow1-3, expensive1-3). The nightly run script then runs each of these in parallel
+with a short 60 seconds delay between each one starting up. Once all have completed it then uploads the results to S3.
+When adding a new Slow or Expensive System test add either the Slow1-3 or Expensive 1-3 tag.
+
 
 ### Running tests
 
