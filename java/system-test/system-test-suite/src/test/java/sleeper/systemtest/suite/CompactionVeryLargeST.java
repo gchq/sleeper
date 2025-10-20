@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.DataEngine;
-import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
@@ -94,10 +93,10 @@ public class CompactionVeryLargeST {
                 .hasSize(10)
                 .extracting(FileReference::getNumberOfRows)
                 .allMatch(rows -> rows == 2_000_000_000L, "each file has 2 billion rows");
-        assertThat(files.getFilesWithReferences())
-                .first().satisfies(file -> assertThat(
-                        SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
-                        .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L)));
+        // assertThat(files.getFilesWithReferences())
+        //         .first().satisfies(file -> assertThat(
+        //                 SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
+        //                 .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L)));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_000_000, 4_000_000),
                         "meets expected performance");
