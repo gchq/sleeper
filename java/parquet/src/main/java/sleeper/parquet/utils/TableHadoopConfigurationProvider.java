@@ -20,6 +20,11 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+
 /**
  * A provider to retrieve Hadoop configuration specific to a Sleeper table.
  */
@@ -51,5 +56,32 @@ public interface TableHadoopConfigurationProvider {
      */
     static TableHadoopConfigurationProvider forClient(InstanceProperties instanceProperties) {
         return tableProperties -> HadoopConfigurationProvider.getConfigurationForClient(instanceProperties, tableProperties);
+    }
+
+    /**
+     * Creates a provider that creates a new configuration every time, for a lambda running queries.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the provider
+     */
+    static TableHadoopConfigurationProvider forQueryLambdas(InstanceProperties instanceProperties) {
+        return tableProperties -> HadoopConfigurationProvider.getConfigurationForQueryLambdas(instanceProperties, tableProperties);
+    }
+
+    /**
+     * Creates a provider that caches the configuration for every Sleeper table. This is not thread safe.
+     *
+     * @param  provider the provider to create configuration on a cache miss
+     * @return          the provider
+     */
+    static TableHadoopConfigurationProvider withCache(TableHadoopConfigurationProvider provider) {
+        Map<String, Configuration> configurationCache = new HashMap<>();
+        return tableProperties -> {
+            String tableName = tableProperties.get(TABLE_NAME);
+            if (!configurationCache.containsKey(tableName)) {
+                configurationCache.put(tableName, provider.getConfiguration(tableProperties));
+            }
+            return configurationCache.get(tableName);
+        };
     }
 }

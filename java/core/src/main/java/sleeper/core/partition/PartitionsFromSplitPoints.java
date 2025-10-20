@@ -181,38 +181,13 @@ public class PartitionsFromSplitPoints {
      * @return              a builder for the new partition
      */
     public static Partition.Builder createRootPartitionThatIsLeaf(Schema schema, RangeFactory rangeFactory) {
-        List<Range> ranges = new ArrayList<>();
-        for (Field field : schema.getRowKeyFields()) {
-            ranges.add(getRangeCoveringWholeDimension(rangeFactory, field));
-        }
-        Region region = new Region(ranges);
         return Partition.builder()
-                .region(region)
+                .region(Region.coveringAllValuesOfAllRowKeys(schema, rangeFactory))
                 .id("root")
                 .leafPartition(true)
                 .parentPartitionId(null)
                 .childPartitionIds(new ArrayList<>())
                 .dimension(-1);
-    }
-
-    private static Range getRangeCoveringWholeDimension(RangeFactory rangeFactory, Field field) {
-        return rangeFactory.createRange(field, getMinimum(field.getType()), true, null, false);
-    }
-
-    private static Object getMinimum(Type type) {
-        if (type instanceof IntType) {
-            return Integer.MIN_VALUE;
-        }
-        if (type instanceof LongType) {
-            return Long.MIN_VALUE;
-        }
-        if (type instanceof StringType) {
-            return "";
-        }
-        if (type instanceof ByteArrayType) {
-            return new byte[]{};
-        }
-        throw new IllegalArgumentException("Unknown key type " + type);
     }
 
     private void validateSplitPoints() {
@@ -282,7 +257,7 @@ public class PartitionsFromSplitPoints {
         List<Field> rowKeyFields = schema.getRowKeyFields();
         List<Object> partitionBoundaries = new ArrayList<>();
         Field splitField = rowKeyFields.get(dimension);
-        partitionBoundaries.add(getMinimum(splitField.getType()));
+        partitionBoundaries.add(PrimitiveType.getMinimum(splitField.getType()));
         partitionBoundaries.addAll(splitPoints);
         partitionBoundaries.add(null);
 
@@ -293,7 +268,7 @@ public class PartitionsFromSplitPoints {
                 continue;
             }
             Field rowKeyField = rowKeyFields.get(i);
-            Range range = rangeFactory.createRange(rowKeyField, getMinimum(rowKeyField.getType()), true, null, false);
+            Range range = rangeFactory.createRangeCoveringAllValues(rowKeyField);
             ranges.add(range);
         }
 
