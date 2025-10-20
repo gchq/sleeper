@@ -183,6 +183,19 @@ public class WiremockEmrServerlessTestHelper {
     }
 
     /**
+     * Build an EMR application response for a stopping application.
+     *
+     * @return a HTTP response
+     */
+    public static ResponseDefinitionBuilder aResponseWithStoppingApplication() {
+        return aResponse().withStatus(200).withBody("{\"application\":{" +
+                "\"applicationId\":\"test-app-id\"," +
+                "\"state\":\"STOPPING\"" +
+                "}}");
+
+    }
+
+    /**
      * Build an EMR application response with an empty list of job runs.
      *
      * @return a HTTP response

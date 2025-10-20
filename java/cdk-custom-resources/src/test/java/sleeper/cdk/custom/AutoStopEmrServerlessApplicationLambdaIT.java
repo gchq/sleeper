@@ -24,7 +24,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
 import java.util.Map;
@@ -36,6 +35,7 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoJobRuns;
+import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithStoppingApplication;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithTerminatedApplication;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.anyRequestedForEmrServerless;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.cancelJobRunRequest;
@@ -49,18 +49,37 @@ import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.listRunningOrCa
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.stopApplicationRequest;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.stopApplicationRequested;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.wiremockEmrServerlessClient;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @WireMockTest
 public class AutoStopEmrServerlessApplicationLambdaIT {
 
     private AutoStopEmrServerlessApplicationLambda lambda;
-    private final InstanceProperties properties = createTestInstanceProperties();
+    private String applicationId;
 
     @BeforeEach
     void setUp() {
-        properties.set(ID, "test-app-id");
+        applicationId = "test-app-id";
+    }
+
+    @Test
+    void shouldTimeOutWhenDeleting(WireMockRuntimeInfo runtimeInfo) throws Exception {
+
+        lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
+
+        // Given
+        stubFor(listRunningJobsForApplicationRequest()
+                .willReturn(aResponseWithNoJobRuns()));
+        stubFor(stopApplicationRequest().inScenario("StopApplication")
+                .willReturn(aResponse().withStatus(200))
+                .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopping"));
+        stubFor(getApplicationRequest().inScenario("StopApplication")
+                .willReturn(aResponseWithStoppingApplication())
+                .whenScenarioStateIs("ApplicationStopping"));
+
+        // Then
+        assertThatThrownBy(() -> lambda.handleEvent(eventHandlerForApplication(applicationId, "Delete"), null))
+                .isInstanceOf(PollWithRetries.CheckFailedException.class);
+
     }
 
     @Test
@@ -86,7 +105,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
                 .whenScenarioStateIs("AppStopped"));
 
         // When
-        lambda.handleEvent(eventHandlerForApplication(properties.get(ID), "Delete"), null);
+        lambda.handleEvent(eventHandlerForApplication(applicationId, "Delete"), null);
 
         // Then
         verify(5, anyRequestedForEmrServerless());
@@ -113,7 +132,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
                 .whenScenarioStateIs("ApplicationStopped"));
 
         // When
-        lambda.handleEvent(eventHandlerForApplication(properties.get(ID), "Delete"), null);
+        lambda.handleEvent(eventHandlerForApplication(applicationId, "Delete"), null);
 
         // Then
         verify(3, anyRequestedForEmrServerless());
@@ -132,7 +151,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
         verify(0, anyRequestedForEmrServerless());
         assertThatThrownBy(
                 () -> lambda.handleEvent(
-                        eventHandlerForApplication(properties.get(ID), "TagResource"), null))
+                        eventHandlerForApplication(applicationId, "TagResource"), null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
