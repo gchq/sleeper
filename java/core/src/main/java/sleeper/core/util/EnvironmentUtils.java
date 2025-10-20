@@ -17,10 +17,13 @@ package sleeper.core.util;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
@@ -74,20 +77,21 @@ public class EnvironmentUtils {
     }
 
     private static String createToolOptions(InstanceProperties instanceProperties) {
-        StringBuilder sb = new StringBuilder();
+        List<String> options = new ArrayList<>();
         Stream.of(LOGGING_LEVEL,
                 ROOT_LOGGING_LEVEL,
                 APACHE_LOGGING_LEVEL,
                 PARQUET_LOGGING_LEVEL,
                 AWS_LOGGING_LEVEL)
                 .filter(instanceProperties::isSet)
-                .forEach(s -> sb.append("-D").append(s.getPropertyName())
-                        .append("=").append(instanceProperties.get(s)).append(" "));
+                .map(property -> "-D" + property.getPropertyName() + "=" + instanceProperties.get(property))
+                .forEach(options::add);
         Stream.of("java.base/java.nio=ALL-UNNAMED",
                 "java.base/sun.nio.ch=ALL-UNNAMED",
                 "java.base/java.util=ALL-UNNAMED",
                 "java.base/java.lang.invoke=ALL-UNNAMED")
-                .forEach(s -> sb.append("--add-opens=").append(s).append(" "));
-        return sb.toString();
+                .map(opens -> "--add-opens=" + opens)
+                .forEach(options::add);
+        return options.stream().collect(joining(" "));
     }
 }
