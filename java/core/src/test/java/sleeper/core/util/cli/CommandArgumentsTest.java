@@ -81,6 +81,14 @@ public class CommandArgumentsTest {
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 1 positional argument, found 3");
         }
+
+        @Test
+        void shouldFailExpectingNoArguments() {
+            // When / Then
+            assertThatThrownBy(() -> parse("a"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1");
+        }
     }
 
     @Nested
