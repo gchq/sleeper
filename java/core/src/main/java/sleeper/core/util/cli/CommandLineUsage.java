@@ -142,6 +142,8 @@ public class CommandLineUsage {
 
         /**
          * Sets the names of the positional arguments. These are mandatory arguments which are always supplied in order.
+         * The order you specify the names in here determines the order they must be passed on the command line. The
+         * names set here are used in the usage message, and to retrieve the values after the arguments are parsed.
          *
          * @param  positionalArguments the names
          * @return                     this builder
