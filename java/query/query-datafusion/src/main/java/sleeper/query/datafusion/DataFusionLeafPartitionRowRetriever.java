@@ -59,10 +59,10 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
         FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, awsConfig, runtime);
 
+        // Create NULL pointer which will be set by the FFI call upon return
         FFIQueryResults results = new FFIQueryResults(runtime);
-        // Perform native query
         try {
-            // Create NULL pointer which will be set by the FFI call upon return
+            // Perform native query
             int result = functions.query_stream(context, params, results);
             // Check result
             if (result != 0) {
