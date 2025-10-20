@@ -58,5 +58,4 @@ public class RedeployOptionalStacksST {
         sleeper.disableOptionalStacks(OptionalStack.all());
         sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
     }
-
 }

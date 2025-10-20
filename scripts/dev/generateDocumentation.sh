@@ -21,7 +21,7 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
-mvn install -Pquick -q -pl clients -am
+mvn install -Pquick,skipShade -q -pl clients -am -DskipRust
 echo "Regenerating templates..."
 mvn exec:java -q -pl clients \
   -Dexec.mainClass="sleeper.clients.deploy.documentation.GeneratePropertiesTemplates" \

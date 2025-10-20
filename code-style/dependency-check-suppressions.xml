@@ -105,7 +105,7 @@
         We don't expose that page, so it won't be a problem.
         This is a provided dependency for the module bulk-import/bulk-import-runner.
         ]]>        </notes>
-        <filePath regex="true">^.*/avro-ipc-1\.12\.0\.jar/.*/jquery-.*\.js$</filePath>
+        <filePath regex="true">^.*/avro-ipc-.*\.jar/.*/jquery-.*\.js$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -155,7 +155,7 @@
         This dependency is only used by WireMock, which is only used for tests.
 
         file name: http2-common-11.0.25.jar
-        ]]></notes>
+        ]]>        </notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-common@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-5115</vulnerabilityName>
     </suppress>

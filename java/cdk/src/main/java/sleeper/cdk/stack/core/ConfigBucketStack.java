@@ -25,9 +25,6 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -43,7 +40,7 @@ public class ConfigBucketStack extends NestedStack {
 
     public ConfigBucketStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, BuiltJars jars) {
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack, BuiltJars jars) {
         super(scope, id);
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "config");
@@ -57,11 +54,7 @@ public class ConfigBucketStack extends NestedStack {
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, configBucket, bucketName,
-                loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE),
-                loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE_PROVIDER));
+        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(this, configBucket);
 
         configBucket.grantRead(policiesStack.getDirectIngestPolicyForGrants());
         configBucket.grantRead(policiesStack.getIngestByQueuePolicyForGrants());

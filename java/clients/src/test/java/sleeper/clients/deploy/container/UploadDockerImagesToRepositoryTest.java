@@ -18,6 +18,7 @@ package sleeper.clients.deploy.container;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.deploy.DeployConfiguration;
 import sleeper.clients.util.command.CommandFailedException;
 import sleeper.clients.util.command.CommandPipeline;
 
@@ -43,10 +44,10 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImages(dockerImageConfiguration);
 
         // Then
-        String expectedIngestTag = "www.somedocker.com/ingest:1.0.0";
-        String expectedBulkImportTag = "www.somedocker.com/bulk-import-runner:1.0.0";
-        String expectedCompactionTag = "www.somedocker.com/compaction:1.0.0";
-        String expectedEmrTag = "www.somedocker.com/bulk-import-runner-emr-serverless:1.0.0";
+        String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
+        String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
+        String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
+        String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
                 removeOldBuildxBuilderInstanceCommand(),
                 createNewBuildxBuilderInstanceCommand(),
@@ -69,10 +70,10 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImagesNoBuildxBuilder(dockerImageConfiguration);
 
         // Then
-        String expectedIngestTag = "www.somedocker.com/ingest:1.0.0";
-        String expectedBulkImportTag = "www.somedocker.com/bulk-import-runner:1.0.0";
-        String expectedCompactionTag = "www.somedocker.com/compaction:1.0.0";
-        String expectedEmrTag = "www.somedocker.com/bulk-import-runner-emr-serverless:1.0.0";
+        String expectedIngestTag = "www.somedocker.com/prefix/ingest:1.0.0";
+        String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-runner:1.0.0";
+        String expectedCompactionTag = "www.somedocker.com/prefix/compaction:1.0.0";
+        String expectedEmrTag = "www.somedocker.com/prefix/bulk-import-runner-emr-serverless:1.0.0";
         assertThat(commandsThatRan).containsExactly(
                 buildImageCommand(expectedIngestTag, "./docker/ingest"),
                 pushImageCommand(expectedIngestTag),
@@ -98,10 +99,10 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         uploadAllImages(dockerImageConfiguration);
 
         // Then
-        String expectedStatestoreTag = "www.somedocker.com/statestore-lambda:1.0.0";
-        String expectedIngestTaskTag = "www.somedocker.com/ingest-task-creator-lambda:1.0.0";
-        String expectedBulkImportTag = "www.somedocker.com/bulk-import-starter-lambda:1.0.0";
-        String expectedAthenaTag = "www.somedocker.com/athena-lambda:1.0.0";
+        String expectedStatestoreTag = "www.somedocker.com/prefix/statestore-lambda:1.0.0";
+        String expectedIngestTaskTag = "www.somedocker.com/prefix/ingest-task-creator-lambda:1.0.0";
+        String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-starter-lambda:1.0.0";
+        String expectedAthenaTag = "www.somedocker.com/prefix/athena-lambda:1.0.0";
         assertThat(commandsThatRan).containsExactly(
                 buildImageCommandWithArgs("-t", expectedStatestoreTag, "./docker/lambda"),
                 pushImageCommand(expectedStatestoreTag),
@@ -126,7 +127,7 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         // Given
         DockerImageConfiguration dockerImageConfiguration = dockerDeploymentImageConfig();
         CommandPipeline buildImageCommand = buildImageCommand(
-                "www.somedocker.com/ingest:1.0.0",
+                "www.somedocker.com/prefix/ingest:1.0.0",
                 "./docker/ingest");
         setReturnExitCodeForCommand(42, buildImageCommand);
 
@@ -151,12 +152,13 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
     }
 
     protected void uploadAllImages(DockerImageConfiguration imageConfig, UploadDockerImages uploader) throws Exception {
-        UploadDockerImagesToRepository.uploadAllImages(imageConfig, uploader, "www.somedocker.com");
+        UploadDockerImagesToRepository.uploadAllImages(imageConfig, uploader, "www.somedocker.com/prefix");
     }
 
     protected UploadDockerImages.Builder uploaderBuilder() {
         return UploadDockerImages.builder()
                 .commandRunner(commandRunner)
+                .deployConfig(DeployConfiguration.fromLocalBuild())
                 .copyFile((source, target) -> files.put(target, files.get(source)))
                 .baseDockerDirectory(Path.of("./docker")).jarsDirectory(Path.of("./jars"))
                 .version("1.0.0");

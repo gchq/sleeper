@@ -40,6 +40,7 @@ on:
       - 'java/example-iterators/**'
       - 'java/core/**'
       - 'java/foreign-bridge/**'
+      - 'java/arrow/**'
 
 jobs:
   chunk-workflow:

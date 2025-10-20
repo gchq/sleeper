@@ -17,6 +17,7 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.DataEngine;
@@ -56,29 +57,30 @@ public class CompactionVeryLargeST {
         sleeper.compaction().scaleToZero();
     }
 
+    // We've disabled this temporarily until the following bug is resolved:
+    // https://github.com/gchq/sleeper/issues/5777
+    @Disabled
     @Test
     // This test takes about 2 hours to run, or an hour and a half if the Sleeper instance is already deployed.
     // We want to know compactions can deal with a very large amount of data.
-    // This test is based on our expectations for how much data will be compacted at once.
+    // This test is based on how much data we expect to be compacted at once.
     // The most data that can be compacted at once is the contents of a whole partition.
     // At time of writing, by default a partition will be split if it contains 1 billion rows.
-    // With some allowance for the fact that partition splitting takes time, we test with 2 billion rows.
+    // To allow for the fact that partition splitting takes time, we test with 2 billion rows.
     void shouldRunVeryLargeCompaction(SleeperSystemTest sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString(),
                 COMPACTION_FILES_BATCH_SIZE, "40"));
-        sleeper.systemTestCluster().runDataGenerationJobs(10,
-                builder -> builder.ingestMode(DIRECT).rowsPerIngest(200_000_000),
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)))
-                // 200 million rows don't fit in the local file system store of a data generation task,
-                // so we end up with 4 files from each task.
+        sleeper.systemTestCluster().runDataGenerationJobs(40,
+                builder -> builder.ingestMode(DIRECT).rowsPerIngest(50_000_000),
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
                 .waitForTotalFileReferences(40);
 
         // When
         sleeper.compaction().putTableOnlineUntilJobsAreCreated(1).waitForTasks(1)
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(5)));
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();

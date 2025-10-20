@@ -41,7 +41,7 @@ with `adminClient.sh`.
 Here's an example of how you might use these together to create and add data to a table:
 
 ```bash
-cat schema.json
+cat ./scripts/templates/schema.template
 {
   "rowKeyFields": [
     {
@@ -57,7 +57,7 @@ cat schema.json
   ]
 }
 ID=my-instance-id
-./scripts/utility/estimateSplitPoints.sh schema.json 128 100000 32768 splits.file s3a://my-bucket/file.parquet
+./scripts/utility/estimateSplitPoints.sh ./scripts/templates/schema.template 128 100000 32768 splits.file s3a://my-bucket/file.parquet
 ./scripts/utility/addTable.sh $ID table1
 ./scripts/utility/reinitialiseTable.sh $ID table1 true splits.file
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet

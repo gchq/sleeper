@@ -16,11 +16,13 @@
 
 package sleeper.clients.deploy.localstack;
 
+import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
@@ -29,7 +31,10 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.runner.rowretrieval.QueryEngineSelector;
 import sleeper.statestore.StateStoreFactory;
 
@@ -38,9 +43,17 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class DockerInstanceTestBase extends LocalStackTestBase {
+
+    InstanceProperties instanceProperties = new InstanceProperties();
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
+    }
 
     public void deployInstance(String instanceId) {
         deployInstance(instanceId, tableProperties -> {
@@ -52,7 +65,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
                 .s3Client(s3Client)
                 .dynamoClient(dynamoClient).sqsClient(sqsClient)
                 .extraTableProperties(extraProperties)
-                .build().deploy(instanceId);
+                .build().deploy(instanceProperties, instanceId);
     }
 
     public CloseableIterator<Row> queryAllRows(
@@ -60,9 +73,10 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
-        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new QueryEngineSelector(Executors.newSingleThreadExecutor(), hadoopConf).getRowRetriever(tableProperties));
-        executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
+        LeafPartitionRowRetriever rowRetriever = new QueryEngineSelector(Executors.newSingleThreadExecutor(), hadoopConf).getRowRetriever(tableProperties);
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
+        planner.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
+        QueryExecutor executor = new QueryExecutor(planner, new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
         return executor.execute(createQueryAllRows(tree, tableProperties.get(TABLE_NAME)));
     }
 

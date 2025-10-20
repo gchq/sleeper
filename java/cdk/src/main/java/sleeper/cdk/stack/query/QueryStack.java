@@ -51,7 +51,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -163,8 +162,7 @@ public class QueryStack extends NestedStack {
         return lambda;
     }
 
-    private IFunction setupLeafPartitionQueryQueueAndLambda(
-            CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic,
+    private IFunction setupLeafPartitionQueryQueueAndLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic,
             LambdaCode lambdaCode, IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
         Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
@@ -321,8 +319,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, resultsBucket, bucketName,
-                    coreStacks.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE), coreStacks.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE_PROVIDER));
+            coreStacks.addAutoDeleteS3Objects(this, resultsBucket);
         }
 
         return resultsBucket;

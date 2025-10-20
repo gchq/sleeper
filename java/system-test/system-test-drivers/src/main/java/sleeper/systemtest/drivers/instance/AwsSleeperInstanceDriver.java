@@ -130,7 +130,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
-                    .deployCommand(CdkCommand.deployExistingPaused())
+                    .deployCommand(CdkCommand.deployExisting())
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .build().update();
         } catch (InterruptedException e) {

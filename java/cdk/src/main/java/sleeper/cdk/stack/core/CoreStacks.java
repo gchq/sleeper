@@ -17,12 +17,15 @@
 package sleeper.cdk.stack.core;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.IQueue;
+import software.constructs.Construct;
 
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -43,12 +46,16 @@ public class CoreStacks {
     private final StateStoreCommitterStack stateStoreCommitterStack;
     private final IngestTrackerResources ingestTracker;
     private final CompactionTrackerResources compactionTracker;
+    private final AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
+    private final AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
 
     public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestTrackerResources ingestTracker,
-            CompactionTrackerResources compactionTracker) {
+            CompactionTrackerResources compactionTracker,
+            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
+            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         this.loggingStack = loggingStack;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
@@ -58,6 +65,8 @@ public class CoreStacks {
         this.stateStoreCommitterStack = stateStoreCommitterStack;
         this.ingestTracker = ingestTracker;
         this.compactionTracker = compactionTracker;
+        this.autoDeleteS3ObjectsStack = autoDeleteS3ObjectsStack;
+        this.autoStopEcsClusterTasksStack = autoStopEcsClusterTasksStack;
     }
 
     public ILogGroup getLogGroup(LogGroupRef logGroupRef) {
@@ -77,6 +86,10 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
     }
 
+    public void grantReadTableDataBucket(IGrantable grantee) {
+        dataStack.grantRead(grantee);
+    }
+
     public void grantReadTablesAndData(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
@@ -93,6 +106,14 @@ public class CoreStacks {
     public void grantReadTablesStatus(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
+    }
+
+    public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
+        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(scope, bucket);
+    }
+
+    public void addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
+        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(scope, cluster);
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
