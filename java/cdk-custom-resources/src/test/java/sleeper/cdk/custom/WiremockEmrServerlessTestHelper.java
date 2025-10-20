@@ -108,6 +108,11 @@ public class WiremockEmrServerlessTestHelper {
         return anyRequestedFor(urlMatching("/applications.*"));
     }
 
+    /**
+     * Get an EMR serverless application.
+     *
+     * @return the application
+     */
     public static RequestPatternBuilder getApplicationRequested() {
         return getRequestedFor(getApplicationUrl());
     }
@@ -164,9 +169,17 @@ public class WiremockEmrServerlessTestHelper {
                 "}]}");
     }
 
-    public static ResponseDefinitionBuilder aResponseWithNoApplication() {
-        return aResponse().withStatus(404)
-                .withHeader("X-Amzn-ErrorType", "ResourceNotFoundException");
+    /**
+     * Build an EMR application response for a terminated application.
+     *
+     * @return a HTTP response
+     */
+    public static ResponseDefinitionBuilder aResponseWithTerminatedApplication() {
+        return aResponse().withStatus(200).withBody("{\"application\":{" +
+                "\"applicationId\":\"test-app-id\"," +
+                "\"state\":\"TERMINATED\"" +
+                "}}");
+
     }
 
     /**

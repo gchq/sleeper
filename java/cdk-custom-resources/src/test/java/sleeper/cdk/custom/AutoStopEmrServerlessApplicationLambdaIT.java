@@ -35,8 +35,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
-import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoApplication;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoJobRuns;
+import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithTerminatedApplication;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.anyRequestedForEmrServerless;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.cancelJobRunRequest;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.cancelJobRunRequested;
@@ -59,13 +59,15 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
     private final InstanceProperties properties = createTestInstanceProperties();
 
     @BeforeEach
-    void setUp(WireMockRuntimeInfo runtimeInfo) {
-        lambda = lambda(runtimeInfo);
+    void setUp() {
         properties.set(ID, "test-app-id");
     }
 
     @Test
-    void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJob() throws Exception {
+    void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJob(WireMockRuntimeInfo runtimeInfo) throws Exception {
+
+        lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
+
         // Given
         stubFor(listRunningJobsForApplicationRequest().inScenario("StopJob")
                 .willReturn(aResponseWithJobRunWithState("test-job-run", JobRunState.RUNNING))
@@ -80,7 +82,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs("JobStopped").willSetStateTo("AppStopped"));
         stubFor(getApplicationRequest().inScenario("StopJob")
-                .willReturn(aResponseWithNoApplication())
+                .willReturn(aResponseWithTerminatedApplication())
                 .whenScenarioStateIs("AppStopped"));
 
         // When
@@ -96,7 +98,10 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
     }
 
     @Test
-    void shouldStopEMRServerlessWhenApplicationIsStartedWithNoRunningJobs() throws Exception {
+    void shouldStopEMRServerlessWhenApplicationIsStartedWithNoRunningJobs(WireMockRuntimeInfo runtimeInfo) throws Exception {
+
+        lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
+
         // Given
         stubFor(listRunningJobsForApplicationRequest()
                 .willReturn(aResponseWithNoJobRuns()));
@@ -104,7 +109,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopped"));
         stubFor(getApplicationRequest().inScenario("StopApplication")
-                .willReturn(aResponseWithNoApplication())
+                .willReturn(aResponseWithTerminatedApplication())
                 .whenScenarioStateIs("ApplicationStopped"));
 
         // When
@@ -119,7 +124,9 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
 
     @Test
     @DisplayName("Test unsupported operation")
-    void shouldRaiseExceptionOnUnsupportedOperation() {
+    void shouldRaiseExceptionOnUnsupportedOperation(WireMockRuntimeInfo runtimeInfo) {
+
+        lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
         // When / Then
         verify(0, anyRequestedForEmrServerless());
@@ -137,7 +144,7 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
                 .build();
     }
 
-    private AutoStopEmrServerlessApplicationLambda lambda(WireMockRuntimeInfo runtimeInfo) {
-        return new AutoStopEmrServerlessApplicationLambda(wiremockEmrServerlessClient(runtimeInfo), PollWithRetries.noRetries());
+    private AutoStopEmrServerlessApplicationLambda lambda(WireMockRuntimeInfo runtimeInfo, PollWithRetries poll) {
+        return new AutoStopEmrServerlessApplicationLambda(wiremockEmrServerlessClient(runtimeInfo), poll);
     }
 }
