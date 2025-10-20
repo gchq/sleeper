@@ -16,7 +16,10 @@
 package sleeper.core.util.cli;
 
 /**
- * Thrown when too many or too few positional arguments are provided.
+ * Thrown when too many or too few positional arguments are provided. Note that the exception message will be displayed
+ * to the user alongside a usage message that includes the list of expected arguments, in the order they are expected.
+ *
+ * @see CommandArguments#parseAndValidateOrExit
  */
 public class WrongNumberOfArgumentsException extends CommandArgumentsException {
 

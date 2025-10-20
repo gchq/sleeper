@@ -16,7 +16,11 @@
 package sleeper.core.util.cli;
 
 /**
- * A validation failure for command line arguments.
+ * A validation failure for command line arguments. Any exception extending this class will be caught when parsing the
+ * command line arguments, and the exception's message will be displayed to the user after a usage message. Exceptions
+ * extending this should have a message designed to be displayed to the user alongside the usage message.
+ *
+ * @see CommandArguments#parseAndValidateOrExit
  */
 public class CommandArgumentsException extends RuntimeException {
 
