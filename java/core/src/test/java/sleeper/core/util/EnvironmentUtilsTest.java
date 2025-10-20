@@ -22,9 +22,20 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class EnvironmentUtilsTest {
+
+    private static final String DEFAULT_TOOL_OPTIONS = "" +
+            "--add-opens=java.base/java.nio=ALL-UNNAMED " +
+            "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED " +
+            "--add-opens=java.base/java.util=ALL-UNNAMED " +
+            "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED";
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
 
@@ -34,10 +45,28 @@ public class EnvironmentUtilsTest {
         Map<String, String> environment = EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties);
 
         // Then
-        assertThat(environment).isEqualTo(Map.of(
-                "JAVA_TOOL_OPTIONS", "" +
-                        "--add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED " +
-                        "--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED"));
+        assertThat(environment).isEqualTo(Map.of("JAVA_TOOL_OPTIONS", DEFAULT_TOOL_OPTIONS));
+    }
+
+    @Test
+    void shouldSetJavaLogLevels() {
+        // Given
+        instanceProperties.set(LOGGING_LEVEL, "INFO");
+        instanceProperties.set(ROOT_LOGGING_LEVEL, "WARN");
+        instanceProperties.set(APACHE_LOGGING_LEVEL, "TRACE");
+        instanceProperties.set(PARQUET_LOGGING_LEVEL, "DEBUG");
+        instanceProperties.set(AWS_LOGGING_LEVEL, "ERROR");
+
+        // When
+        Map<String, String> environment = EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties);
+
+        // Then
+        assertThat(environment).isEqualTo(Map.of("JAVA_TOOL_OPTIONS", "" +
+                "-Dsleeper.logging.level=INFO " +
+                "-Dsleeper.logging.root.level=WARN " +
+                "-Dsleeper.logging.apache.level=TRACE " +
+                "-Dsleeper.logging.parquet.level=DEBUG " +
+                "-Dsleeper.logging.aws.level=ERROR " + DEFAULT_TOOL_OPTIONS));
     }
 
 }
