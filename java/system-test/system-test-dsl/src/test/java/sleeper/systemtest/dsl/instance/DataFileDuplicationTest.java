@@ -50,8 +50,8 @@ public class DataFileDuplicationTest {
     @Test
     void shouldDuplicateFiles() {
         // Given
-        data.addFile("file-1.parquet", List.of(new Row(Map.of("key", "value-1"))));
-        data.addFile("file-2.parquet", List.of(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3"))));
+        addFile("file-1.parquet", List.of(new Row(Map.of("key", "value-1"))));
+        addFile("file-2.parquet", List.of(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3"))));
         List<FileReference> originalReferences = List.of(
                 referenceFactory().rootFile("file-1.parquet", 1),
                 referenceFactory().rootFile("file-2.parquet", 2));
@@ -63,9 +63,9 @@ public class DataFileDuplicationTest {
         assertThat(results).containsExactly(
                 referenceFactory().rootFile("duplicate-1.parquet", 1),
                 referenceFactory().rootFile("duplicate-2.parquet", 2));
-        assertThat(data.streamRows(List.of("duplicate-1.parquet")))
+        assertThat(readRows("duplicate-1.parquet"))
                 .containsExactly(new Row(Map.of("key", "value-1")));
-        assertThat(data.streamRows(List.of("duplicate-2.parquet")))
+        assertThat(readRows("duplicate-1.parquet"))
                 .containsExactly(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3")));
     }
 
@@ -76,8 +76,8 @@ public class DataFileDuplicationTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "m")
                 .buildTree();
-        data.addFile("file-1.parquet", List.of(new Row(Map.of("key", "apple"))));
-        data.addFile("file-2.parquet", List.of(new Row(Map.of("key", "barbecue")), new Row(Map.of("key", "portrait"))));
+        addFile("file-1.parquet", List.of(new Row(Map.of("key", "apple"))));
+        addFile("file-2.parquet", List.of(new Row(Map.of("key", "barbecue")), new Row(Map.of("key", "portrait"))));
         FileReference leftFile = referenceFactory().partitionFile("L", "file-1.parquet", 1);
         FileReference splitFile = referenceFactory().rootFile("file-2.parquet", 2);
         List<FileReference> originalReferences = List.of(leftFile,
@@ -93,11 +93,18 @@ public class DataFileDuplicationTest {
         assertThat(results).containsExactly(newLeftFile,
                 SplitFileReference.referenceForChildPartition(newSpanningFile, "L", 1),
                 SplitFileReference.referenceForChildPartition(newSpanningFile, "R", 1));
-        assertThat(data.streamRows(List.of("duplicate-1.parquet")))
+        assertThat(readRows("duplicate-1.parquet"))
                 .containsExactly(new Row(Map.of("key", "apple")));
-        assertThat(data.streamRows(List.of("duplicate-2.parquet")))
+        assertThat(readRows("duplicate-2.parquet"))
                 .containsExactly(new Row(Map.of("key", "barbecue")), new Row(Map.of("key", "portrait")));
+    }
 
+    private void addFile(String filename, List<Row> rows) {
+        data.addFile(filename, rows);
+    }
+
+    private List<Row> readRows(String filename) {
+        return data.streamRows(List.of(filename)).toList();
     }
 
     private FileReferenceFactory referenceFactory() {
