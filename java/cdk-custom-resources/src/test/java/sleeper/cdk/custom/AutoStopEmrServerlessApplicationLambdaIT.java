@@ -137,8 +137,8 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
     }
 
     @Test
-    @DisplayName("Test unsupported operation")
-    void shouldRaiseExceptionOnUnsupportedOperation(WireMockRuntimeInfo runtimeInfo) {
+    @DisplayName("Test an invalid event")
+    void shouldRaiseExceptionOnInvalidEvent(WireMockRuntimeInfo runtimeInfo) {
 
         lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
