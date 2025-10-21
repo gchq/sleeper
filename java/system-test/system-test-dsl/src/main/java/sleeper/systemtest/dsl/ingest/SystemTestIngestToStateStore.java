@@ -42,7 +42,11 @@ public class SystemTestIngestToStateStore {
         this.ingestSource = context.sourceFiles();
     }
 
-    public DataFileDuplications duplicateFilesOnSamePartition(int times, List<FileReference> fileReferences) {
+    public DataFileDuplications duplicateFilesOnSamePartitions(int times) {
+        return duplicateFilesOnSamePartitions(times, instance.getStateStore().getFileReferences());
+    }
+
+    public DataFileDuplications duplicateFilesOnSamePartitions(int times, List<FileReference> fileReferences) {
         DataFileDuplications duplications = DataFileDuplications.duplicateByReferences(dataFilesDriver(), times, fileReferences);
         addFiles(duplications.streamNewReferences().toList());
         return duplications;
@@ -61,7 +65,7 @@ public class SystemTestIngestToStateStore {
         return this;
     }
 
-    public SystemTestIngestToStateStore addFileOnEveryPartition(String name, long numberOfRows) throws Exception {
+    public SystemTestIngestToStateStore addFileOnEveryPartition(String name, long numberOfRows) {
         String path = ingestSource.getFilePath(name);
         PartitionTree partitionTree = new PartitionTree(instance.getStateStore().getAllPartitions());
         List<Partition> leafPartitions = partitionTree.getLeafPartitions();

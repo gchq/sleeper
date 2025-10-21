@@ -28,6 +28,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.util.DataFileDuplications;
 import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -79,11 +80,13 @@ public class CompactionVeryLargeST {
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
                 .waitForTotalFileReferences(40);
         // And we duplicate those 40 files so that we have that 10 times in total
-        sleeper.ingest().toStateStore()
-                .duplicateFilesOnSamePartition(9, sleeper.tableFiles().references());
+        DataFileDuplications duplications = sleeper.ingest().toStateStore()
+                .duplicateFilesOnSamePartitions(9);
 
-        // When we run compaction
-        sleeper.compaction().forceCreateJobs(10).waitForTasks(10)
+        // When we run 10 compactions each with the same files
+        sleeper.compaction()
+                .createSeparateCompactionsForOriginalAndDuplicates(duplications)
+                .waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
