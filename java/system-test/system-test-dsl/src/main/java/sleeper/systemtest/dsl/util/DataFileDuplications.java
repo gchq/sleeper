@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.dsl.util;
 
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.core.statestore.FileReference;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 
@@ -24,6 +26,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.groupingBy;
 
 public record DataFileDuplications(List<DataFileDuplication> files, List<FileReference> originalReferences, List<DataFileSetDuplication> duplications) {
 
@@ -52,6 +56,20 @@ public record DataFileDuplications(List<DataFileDuplication> files, List<FileRef
 
     public Stream<FileReference> streamNewReferences() {
         return duplications.stream().flatMap(duplication -> duplication.newReferences().stream());
+    }
+
+    public List<CompactionJob> createSeparateCompactionsForOriginalAndDuplicates(CompactionJobFactory factory) {
+        return Stream.concat(
+                createOneCompactionForEachPartition(originalReferences, factory),
+                duplications.stream().flatMap(duplication -> createOneCompactionForEachPartition(duplication.newReferences(), factory)))
+                .toList();
+    }
+
+    private Stream<CompactionJob> createOneCompactionForEachPartition(List<FileReference> references, CompactionJobFactory factory) {
+        Map<String, List<FileReference>> partitionIdToReferences = references.stream()
+                .collect(groupingBy(FileReference::getPartitionId));
+        return partitionIdToReferences.entrySet().stream()
+                .map(entry -> factory.createCompactionJob(entry.getValue(), entry.getKey()));
     }
 
 }

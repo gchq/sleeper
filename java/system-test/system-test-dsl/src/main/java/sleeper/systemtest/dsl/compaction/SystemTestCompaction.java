@@ -117,6 +117,11 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction createSeparateCompactionsForOriginalAndDuplicates(DataFileDuplications duplications) {
+        CompactionJobFactory factory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
+        List<CompactionJob> jobs = duplications.createSeparateCompactionsForOriginalAndDuplicates(factory);
+        lastJobIds = waitForJobCreation.createJobsGetIds(jobs.size(),
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
+                () -> driver.createJobBatches(jobs));
         return this;
     }
 

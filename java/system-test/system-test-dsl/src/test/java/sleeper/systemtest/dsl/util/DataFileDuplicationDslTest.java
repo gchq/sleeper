@@ -54,16 +54,25 @@ public class DataFileDuplicationDslTest {
     void shouldCreateCompactionsFromDuplicates(SleeperSystemTest sleeper) {
         // Given
         sleeper.ingest().direct(null)
-                .numberedRows(LongStream.of(1, 2, 3));
+                .numberedRows(LongStream.of(1, 2))
+                .numberedRows(LongStream.of(3, 4));
         DataFileDuplications duplications = sleeper.ingest().toStateStore()
-                .duplicateFilesOnSamePartition(2, sleeper.tableFiles().references());
+                .duplicateFilesOnSamePartition(1, sleeper.tableFiles().references());
 
         // When
         sleeper.compaction()
-                .createSeparateCompactionsForOriginalAndDuplicates(duplications);
-        // .waitForTasks(1).waitForJobs();
+                .createSeparateCompactionsForOriginalAndDuplicates(duplications)
+                .waitForTasks(1).waitForJobs();
 
-        // Then TODO
+        // Then
+        assertThat(sleeper.tableFiles().references()).hasSize(2);
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 1, 2, 2, 3, 3, 4, 4)));
+        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
+                .matches(stats -> stats.isAllFinishedOneRunEach(2),
+                        "has two finished jobs")
+                .matches(stats -> stats.isRowsReadAndWritten(8),
+                        "read and wrote all rows");
     }
 
 }
