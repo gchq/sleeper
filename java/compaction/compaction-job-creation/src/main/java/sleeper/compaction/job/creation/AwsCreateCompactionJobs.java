@@ -46,11 +46,19 @@ public class AwsCreateCompactionJobs {
             SqsClient sqsClient) {
         return new CreateCompactionJobs(
                 instanceProperties, stateStoreProvider,
-                new CreateCompactionJobBatches(instanceProperties,
-                        new CompactionBatchJobsWriterToS3(s3Client),
-                        new CompactionBatchMessageSenderToSqs(instanceProperties, sqsClient),
-                        new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)),
-                        GenerateBatchId.random(), Instant::now),
+                batchesFrom(instanceProperties, tablePropertiesProvider, s3Client, sqsClient),
                 objectFactory, GenerateJobId.random(), new Random());
+    }
+
+    public static CreateCompactionJobBatches batchesFrom(
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            S3Client s3Client,
+            SqsClient sqsClient) {
+        return new CreateCompactionJobBatches(instanceProperties,
+                new CompactionBatchJobsWriterToS3(s3Client),
+                new CompactionBatchMessageSenderToSqs(instanceProperties, sqsClient),
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)),
+                GenerateBatchId.random(), Instant::now);
     }
 }
