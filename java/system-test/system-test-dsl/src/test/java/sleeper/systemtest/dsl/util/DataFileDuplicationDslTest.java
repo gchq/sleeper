@@ -50,4 +50,20 @@ public class DataFileDuplicationDslTest {
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRows(LongStream.of(1, 1, 1, 2, 2, 2, 3, 3, 3)));
     }
 
+    @Test
+    void shouldCreateCompactionsFromDuplicates(SleeperSystemTest sleeper) {
+        // Given
+        sleeper.ingest().direct(null)
+                .numberedRows(LongStream.of(1, 2, 3));
+        DataFileDuplications duplications = sleeper.ingest().toStateStore()
+                .duplicateFilesOnSamePartition(2, sleeper.tableFiles().references());
+
+        // When
+        sleeper.compaction()
+                .createSeparateCompactionsForOriginalAndDuplicates(duplications);
+        // .waitForTasks(1).waitForJobs();
+
+        // Then TODO
+    }
+
 }

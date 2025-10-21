@@ -28,6 +28,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.DataFileDuplications;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
@@ -115,6 +116,10 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction createSeparateCompactionsForOriginalAndDuplicates(DataFileDuplications duplications) {
+        return this;
+    }
+
     public SystemTestCompaction waitForTasks(int expectedTasks) {
         new WaitForTasks(driver.getJobTracker())
                 .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds,
@@ -159,10 +164,6 @@ public class SystemTestCompaction {
     public SystemTestCompaction sendFakeCommits(StreamFakeCompactions compactions) {
         baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
         lastJobIds = compactions.listJobIds();
-        return this;
-    }
-
-    public SystemTestCompaction duplicateAllFilesAndSendDuplicateCompactions(int duplicates) {
         return this;
     }
 
