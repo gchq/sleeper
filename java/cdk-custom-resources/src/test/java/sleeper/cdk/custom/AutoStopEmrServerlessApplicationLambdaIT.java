@@ -19,7 +19,6 @@ import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResource
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
@@ -54,12 +53,8 @@ import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.wiremockEmrServ
 public class AutoStopEmrServerlessApplicationLambdaIT {
 
     private AutoStopEmrServerlessApplicationLambda lambda;
-    private String applicationId;
-
-    @BeforeEach
-    void setUp() {
-        applicationId = "test-app-id";
-    }
+    private String applicationId = "test-app-id";
+    private String jobRunId = "test-job-run";
 
     @Test
     void shouldTimeOutWhenDeleting(WireMockRuntimeInfo runtimeInfo) throws Exception {
@@ -67,17 +62,17 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
         lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
         // Given
-        stubFor(listRunningJobsForApplicationRequest()
+        stubFor(listRunningJobsForApplicationRequest(applicationId)
                 .willReturn(aResponseWithNoJobRuns()));
-        stubFor(stopApplicationRequest().inScenario("StopApplication")
+        stubFor(stopApplicationRequest(applicationId).inScenario("StopApplication")
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopping"));
-        stubFor(getApplicationRequest().inScenario("StopApplication")
-                .willReturn(aResponseWithStoppingApplication())
+        stubFor(getApplicationRequest(applicationId).inScenario("StopApplication")
+                .willReturn(aResponseWithStoppingApplication(applicationId))
                 .whenScenarioStateIs("ApplicationStopping"));
 
         // Then
-        assertThatThrownBy(() -> lambda.handleEvent(eventHandlerForApplication(applicationId, "Delete"), null))
+        assertThatThrownBy(() -> lambda.handleEvent(applicationEvent(applicationId, "Delete"), null))
                 .isInstanceOf(PollWithRetries.CheckFailedException.class);
 
     }
@@ -88,32 +83,32 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
         lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
         // Given
-        stubFor(listRunningJobsForApplicationRequest().inScenario("StopJob")
-                .willReturn(aResponseWithJobRunWithState("test-job-run", JobRunState.RUNNING))
+        stubFor(listRunningJobsForApplicationRequest(applicationId).inScenario("StopJob")
+                .willReturn(aResponseWithJobRunWithState(applicationId, jobRunId, JobRunState.RUNNING))
                 .whenScenarioStateIs(STARTED));
-        stubFor(cancelJobRunRequest("test-job-run").inScenario("StopJob")
+        stubFor(cancelJobRunRequest(applicationId, jobRunId).inScenario("StopJob")
                 .willReturn(ResponseDefinitionBuilder.okForEmptyJson())
                 .whenScenarioStateIs(STARTED).willSetStateTo("JobStopped"));
-        stubFor(listRunningOrCancellingJobsForApplicationRequest().inScenario("StopJob")
+        stubFor(listRunningOrCancellingJobsForApplicationRequest(applicationId).inScenario("StopJob")
                 .willReturn(aResponseWithNoJobRuns())
                 .whenScenarioStateIs("JobStopped"));
-        stubFor(stopApplicationRequest().inScenario("StopJob")
+        stubFor(stopApplicationRequest(applicationId).inScenario("StopJob")
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs("JobStopped").willSetStateTo("AppStopped"));
-        stubFor(getApplicationRequest().inScenario("StopJob")
-                .willReturn(aResponseWithTerminatedApplication())
+        stubFor(getApplicationRequest(applicationId).inScenario("StopJob")
+                .willReturn(aResponseWithTerminatedApplication(applicationId))
                 .whenScenarioStateIs("AppStopped"));
 
         // When
-        lambda.handleEvent(eventHandlerForApplication(applicationId, "Delete"), null);
+        lambda.handleEvent(applicationEvent(applicationId, "Delete"), null);
 
         // Then
         verify(5, anyRequestedForEmrServerless());
-        verify(1, listRunningJobsForApplicationRequested());
-        verify(1, cancelJobRunRequested("test-job-run"));
-        verify(1, listRunningOrCancellingJobsForApplicationRequested());
-        verify(1, stopApplicationRequested());
-        verify(1, getApplicationRequested());
+        verify(1, listRunningJobsForApplicationRequested(applicationId));
+        verify(1, cancelJobRunRequested(applicationId, jobRunId));
+        verify(1, listRunningOrCancellingJobsForApplicationRequested(applicationId));
+        verify(1, stopApplicationRequested(applicationId));
+        verify(1, getApplicationRequested(applicationId));
     }
 
     @Test
@@ -122,23 +117,23 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
         lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
         // Given
-        stubFor(listRunningJobsForApplicationRequest()
+        stubFor(listRunningJobsForApplicationRequest(applicationId)
                 .willReturn(aResponseWithNoJobRuns()));
-        stubFor(stopApplicationRequest().inScenario("StopApplication")
+        stubFor(stopApplicationRequest(applicationId).inScenario("StopApplication")
                 .willReturn(aResponse().withStatus(200))
                 .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopped"));
-        stubFor(getApplicationRequest().inScenario("StopApplication")
-                .willReturn(aResponseWithTerminatedApplication())
+        stubFor(getApplicationRequest(applicationId).inScenario("StopApplication")
+                .willReturn(aResponseWithTerminatedApplication(applicationId))
                 .whenScenarioStateIs("ApplicationStopped"));
 
         // When
-        lambda.handleEvent(eventHandlerForApplication(applicationId, "Delete"), null);
+        lambda.handleEvent(applicationEvent(applicationId, "Delete"), null);
 
         // Then
         verify(3, anyRequestedForEmrServerless());
-        verify(1, listRunningJobsForApplicationRequested());
-        verify(1, stopApplicationRequested());
-        verify(1, getApplicationRequested());
+        verify(1, listRunningJobsForApplicationRequested(applicationId));
+        verify(1, stopApplicationRequested(applicationId));
+        verify(1, getApplicationRequested(applicationId));
     }
 
     @Test
@@ -148,14 +143,14 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
         lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
         // When / Then
-        verify(0, anyRequestedForEmrServerless());
         assertThatThrownBy(
                 () -> lambda.handleEvent(
-                        eventHandlerForApplication(applicationId, "TagResource"), null))
+                        applicationEvent(applicationId, "TagResource"), null))
                 .isInstanceOf(IllegalArgumentException.class);
+        verify(0, anyRequestedForEmrServerless());
     }
 
-    private CloudFormationCustomResourceEvent eventHandlerForApplication(
+    private CloudFormationCustomResourceEvent applicationEvent(
             String applicationId, String event) {
         return CloudFormationCustomResourceEvent.builder()
                 .withRequestType(event)

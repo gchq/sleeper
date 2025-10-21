@@ -56,47 +56,52 @@ public class WiremockEmrServerlessTestHelper {
     /**
      * Get an EMR application.
      *
-     * @return a HTTP response
+     * @param  applicationId the application id
+     * @return               a HTTP response
      */
-    public static MappingBuilder getApplicationRequest() {
-        return get(getApplicationUrl());
+    public static MappingBuilder getApplicationRequest(String applicationId) {
+        return get(getApplicationUrl(applicationId));
     }
 
     /**
      * List running jobs on an EMR application.
      *
-     * @return matching HTTP requests
+     * @param  applicationId the application id
+     * @return               matching HTTP requests
      */
-    public static MappingBuilder listRunningJobsForApplicationRequest() {
-        return get(listRunningJobsUrl());
+    public static MappingBuilder listRunningJobsForApplicationRequest(String applicationId) {
+        return get(listRunningJobsUrl(applicationId));
     }
 
     /**
      * List running or cnacelled jobs on EMR application.
      *
-     * @return matching HTTP requests
+     * @param  applicationId the application id
+     * @return               matching HTTP requests
      */
-    public static MappingBuilder listRunningOrCancellingJobsForApplicationRequest() {
-        return get(listRunningOrCancellingJobsUrl());
+    public static MappingBuilder listRunningOrCancellingJobsForApplicationRequest(String applicationId) {
+        return get(listRunningOrCancellingJobsUrl(applicationId));
     }
 
     /**
      * Cancel a job run.
      *
-     * @param  jobRunId the job id
-     * @return          a HTTP response
+     * @param  applicationId the application id
+     * @param  jobRunId      the job id
+     * @return               a HTTP response
      */
-    public static MappingBuilder cancelJobRunRequest(String jobRunId) {
-        return delete(cancelJobRunUrl(jobRunId));
+    public static MappingBuilder cancelJobRunRequest(String applicationId, String jobRunId) {
+        return delete(cancelJobRunUrl(applicationId, jobRunId));
     }
 
     /**
      * Stop an EMR application.
      *
-     * @return a HTTP response
+     * @param  applicationId the application id
+     * @return               a HTTP response
      */
-    public static MappingBuilder stopApplicationRequest() {
-        return post(stopApplicationUrl());
+    public static MappingBuilder stopApplicationRequest(String applicationId) {
+        return post(stopApplicationUrl(applicationId));
     }
 
     /**
@@ -111,59 +116,65 @@ public class WiremockEmrServerlessTestHelper {
     /**
      * Get an EMR serverless application.
      *
-     * @return the application
+     * @param  applicationId the application id
+     * @return               the application
      */
-    public static RequestPatternBuilder getApplicationRequested() {
-        return getRequestedFor(getApplicationUrl());
+    public static RequestPatternBuilder getApplicationRequested(String applicationId) {
+        return getRequestedFor(getApplicationUrl(applicationId));
     }
 
     /**
      * Check for a list running jobs request.
      *
-     * @return matching HTTP requests
+     * @param  applicationId the application id
+     * @return               matching HTTP requests
      */
-    public static RequestPatternBuilder listRunningJobsForApplicationRequested() {
-        return getRequestedFor(listRunningJobsUrl());
+    public static RequestPatternBuilder listRunningJobsForApplicationRequested(String applicationId) {
+        return getRequestedFor(listRunningJobsUrl(applicationId));
     }
 
     /**
      * Check for a list running or cancelled jobs request.
      *
-     * @return matching HTTP requests
+     * @param  applicationId the application id
+     * @return               matching HTTP requests
      */
-    public static RequestPatternBuilder listRunningOrCancellingJobsForApplicationRequested() {
-        return getRequestedFor(listRunningOrCancellingJobsUrl());
+    public static RequestPatternBuilder listRunningOrCancellingJobsForApplicationRequested(String applicationId) {
+        return getRequestedFor(listRunningOrCancellingJobsUrl(applicationId));
     }
 
     /**
      * Check for a stop application request.
      *
-     * @return matching HTTP requests
+     * @param  applicationId the application id
+     * @return               matching HTTP requests
      */
-    public static RequestPatternBuilder stopApplicationRequested() {
-        return postRequestedFor(stopApplicationUrl());
+    public static RequestPatternBuilder stopApplicationRequested(String applicationId) {
+        return postRequestedFor(stopApplicationUrl(applicationId));
     }
 
     /**
      * Check for a job cancellation request.
      *
-     * @param  jobRunId the job id
-     * @return          matching HTTP requests
+     * @param  applicationId the application id
+     * @param  jobRunId      the job id
+     * @return               matching HTTP requests
      */
-    public static RequestPatternBuilder cancelJobRunRequested(String jobRunId) {
-        return deleteRequestedFor(cancelJobRunUrl(jobRunId));
+    public static RequestPatternBuilder cancelJobRunRequested(String applicationId, String jobRunId) {
+        return deleteRequestedFor(cancelJobRunUrl(applicationId, jobRunId));
     }
 
     /**
      * Build an EMR application response with a give job id and state.
      *
-     * @param  jobRunId the job id
-     * @param  state    the application state
-     * @return          a HTTP response
+     * @param  applicationId the application id
+     * @param  jobRunId      the job id
+     * @param  state         the application state
+     * @return               a HTTP response
      */
-    public static ResponseDefinitionBuilder aResponseWithJobRunWithState(String jobRunId, JobRunState state) {
+    public static ResponseDefinitionBuilder aResponseWithJobRunWithState(String applicationId, String jobRunId, JobRunState state) {
         return aResponse().withStatus(200).withBody("{\"jobRuns\":[{" +
-                "\"applicationId\":\"test-app-id\"," +
+                "\"applicationId\":\"" + applicationId + "\"," +
                 "\"id\":\"" + jobRunId + "\"," +
                 "\"state\":\"" + state + "\"" +
                 "}]}");
@@ -172,11 +183,12 @@ public class WiremockEmrServerlessTestHelper {
     /**
      * Build an EMR application response for a terminated application.
      *
-     * @return a HTTP response
+     * @param  applicationId the application id
+     * @return               a HTTP response
      */
-    public static ResponseDefinitionBuilder aResponseWithTerminatedApplication() {
+    public static ResponseDefinitionBuilder aResponseWithTerminatedApplication(String applicationId) {
         return aResponse().withStatus(200).withBody("{\"application\":{" +
-                "\"applicationId\":\"test-app-id\"," +
+                "\"applicationId\":\"" + applicationId + "\"," +
                 "\"state\":\"TERMINATED\"" +
                 "}}");
 
@@ -185,11 +197,12 @@ public class WiremockEmrServerlessTestHelper {
     /**
      * Build an EMR application response for a stopping application.
      *
-     * @return a HTTP response
+     * @param  applicationId the application id
+     * @return               a HTTP response
      */
-    public static ResponseDefinitionBuilder aResponseWithStoppingApplication() {
+    public static ResponseDefinitionBuilder aResponseWithStoppingApplication(String applicationId) {
         return aResponse().withStatus(200).withBody("{\"application\":{" +
-                "\"applicationId\":\"test-app-id\"," +
+                "\"applicationId\":\"" + applicationId + "\"," +
                 "\"state\":\"STOPPING\"" +
                 "}}");
 
@@ -204,26 +217,26 @@ public class WiremockEmrServerlessTestHelper {
         return aResponse().withStatus(200).withBody("{\"jobRuns\":[]}");
     }
 
-    private static UrlPattern getApplicationUrl() {
-        return urlEqualTo("/applications/test-app-id");
+    private static UrlPattern getApplicationUrl(String applicationId) {
+        return urlEqualTo("/applications/" + applicationId);
     }
 
-    private static UrlPattern listRunningJobsUrl() {
-        return urlEqualTo("/applications/test-app-id/jobruns" +
+    private static UrlPattern listRunningJobsUrl(String applicationId) {
+        return urlEqualTo("/applications/" + applicationId + "/jobruns" +
                 "?states=RUNNING&states=SCHEDULED&states=PENDING&states=SUBMITTED");
     }
 
-    private static UrlPattern listRunningOrCancellingJobsUrl() {
-        return urlEqualTo("/applications/test-app-id/jobruns" +
+    private static UrlPattern listRunningOrCancellingJobsUrl(String applicationId) {
+        return urlEqualTo("/applications/" + applicationId + "/jobruns" +
                 "?states=RUNNING&states=SCHEDULED&states=PENDING&states=SUBMITTED&states=CANCELLING");
     }
 
-    private static UrlPattern cancelJobRunUrl(String jobRunId) {
-        return urlEqualTo("/applications/test-app-id/jobruns/" + jobRunId);
+    private static UrlPattern cancelJobRunUrl(String applicationId, String jobRunId) {
+        return urlEqualTo("/applications/" + applicationId + "/jobruns/" + jobRunId);
     }
 
-    private static UrlPattern stopApplicationUrl() {
-        return urlEqualTo("/applications/test-app-id/stop");
+    private static UrlPattern stopApplicationUrl(String applicationId) {
+        return urlEqualTo("/applications/" + applicationId + "/stop");
     }
 
 }

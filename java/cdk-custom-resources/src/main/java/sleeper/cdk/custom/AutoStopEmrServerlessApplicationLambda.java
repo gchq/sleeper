@@ -29,6 +29,8 @@ import sleeper.core.util.PollWithRetries;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 
 /**
  * Delete an EMR Serverless application.
@@ -38,7 +40,6 @@ public class AutoStopEmrServerlessApplicationLambda {
 
     private final PollWithRetries poll;
     private final EmrServerlessClient emrServerlessClient;
-    private String applicationId;
 
     public AutoStopEmrServerlessApplicationLambda() {
         this(EmrServerlessClient.create(), PollWithRetries
@@ -60,7 +61,7 @@ public class AutoStopEmrServerlessApplicationLambda {
             CloudFormationCustomResourceEvent event, Context context) throws InterruptedException {
 
         Map<String, Object> resourceProperties = event.getResourceProperties();
-        this.applicationId = (String) resourceProperties.get("applicationId");
+        String applicationId = (String) resourceProperties.get("applicationId");
 
         switch (event.getRequestType()) {
             case "Create":
@@ -93,8 +94,8 @@ public class AutoStopEmrServerlessApplicationLambda {
         emrServerlessClient.stopApplication(request -> request.applicationId(applicationId));
 
         LOGGER.info("Waiting for applications to terminate");
-        poll.pollUntil("all EMR Serverless applications terminated", this::isApplicationTerminated);
-
+        Function<String, BooleanSupplier> isApplicationTerminated = this::isApplicationTerminated;
+        poll.pollUntil("all EMR Serverless applications terminated", isApplicationTerminated.apply(applicationId));
     }
 
     private boolean allJobsFinished(String applicationId) {
@@ -111,11 +112,11 @@ public class AutoStopEmrServerlessApplicationLambda {
         }
     }
 
-    private boolean isApplicationTerminated() {
+    private BooleanSupplier isApplicationTerminated(String applicationId) {
         if (ApplicationState.TERMINATED.equals(emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application().state())) {
-            return true;
+            return () -> true;
         }
-        return false;
+        return () -> false;
     }
 
 }
