@@ -36,18 +36,18 @@ public record DataFileDuplications(List<DataFileDuplication> files, List<FileRef
 
         List<DataFileSetDuplication> duplications = IntStream.range(0, duplicates)
                 .mapToObj(i -> new DataFileSetDuplication(fileReferences, results.stream()
-                        .flatMap(result -> duplicateFileReferences(result, referencesByFilename))
+                        .flatMap(result -> duplicateFileReferences(result, i, referencesByFilename))
                         .toList()))
                 .toList();
         return new DataFileDuplications(results, fileReferences, duplications);
     }
 
     private static Stream<FileReference> duplicateFileReferences(
-            DataFileDuplication fileDuplication, Map<String, List<FileReference>> originalReferencesByFilename) {
+            DataFileDuplication fileDuplication, int fileIndex, Map<String, List<FileReference>> originalReferencesByFilename) {
         List<FileReference> originalReferences = originalReferencesByFilename.get(fileDuplication.originalFilename());
-        return fileDuplication.newFilenames().stream()
-                .flatMap(filename -> originalReferences.stream()
-                        .map(reference -> reference.toBuilder().filename(filename).build()));
+        String newFilename = fileDuplication.newFilenames().get(fileIndex);
+        return originalReferences.stream()
+                .map(reference -> reference.toBuilder().filename(newFilename).build());
     }
 
     public Stream<FileReference> streamNewReferences() {

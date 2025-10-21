@@ -98,6 +98,25 @@ public class DataFileDuplicationTest {
                 .containsExactly(new Row(Map.of("key", "barbecue")), new Row(Map.of("key", "portrait")));
     }
 
+    @Test
+    void shouldDuplicateFileMultipleTimes() {
+        // Given
+        FileReference file = referenceFactory().rootFile("file-1.parquet", 1);
+        writeRows(file, List.of(new Row(Map.of("key", "value-1"))));
+
+        // When
+        List<FileReference> results = duplicateByReferences(2, List.of(file));
+
+        // Then
+        FileReference duplicate1 = referenceFactory().rootFile("duplicate-1.parquet", 1);
+        FileReference duplicate2 = referenceFactory().rootFile("duplicate-2.parquet", 1);
+        assertThat(results).containsExactly(duplicate1, duplicate2);
+        assertThat(readRows("duplicate-1.parquet"))
+                .containsExactly(new Row(Map.of("key", "value-1")));
+        assertThat(readRows("duplicate-2.parquet"))
+                .containsExactly(new Row(Map.of("key", "value-1")));
+    }
+
     private List<FileReference> duplicateByReferences(int duplicates, List<FileReference> references) {
         return DataFileDuplications.duplicateByReferences(driver(), duplicates, references).streamNewReferences().toList();
     }
