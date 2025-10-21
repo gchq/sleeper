@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.suites.parallel;
+package sleeper.systemtest.suite.testutil;
 
-import org.junit.platform.suite.api.IncludeTags;
+import org.junit.jupiter.api.Tag;
 
-import sleeper.systemtest.suite.testutil.SystemTestSuite;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@SystemTestSuite
-@IncludeTags("test2")
-public class SlowSuite3 {
+@Tag("test1")
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Test1 {
 }
