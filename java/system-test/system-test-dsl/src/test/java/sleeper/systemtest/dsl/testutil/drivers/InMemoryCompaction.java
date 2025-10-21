@@ -18,8 +18,9 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
@@ -180,12 +181,15 @@ public class InMemoryCompaction {
         }
 
         private CreateCompactionJobs jobCreator() {
-            return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), batchJobsWriter(),
-                    compactionJobMessage -> {
-                    }, idAssignmentCommit -> {
-                    },
-                    GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
+            return new CreateCompactionJobs(
+                    instance.getInstanceProperties(), instance.getStateStoreProvider(),
+                    new CreateCompactionJobBatches(
+                            instance.getInstanceProperties(),
+                            batchJobsWriter(),
+                            compactionJobMessage -> {
+                            }, idAssignmentCommit -> {
+                            }, GenerateBatchId.random(), Instant::now),
+                    ObjectFactory.noUserJars(), GenerateJobId.random(), new Random());
         }
     }
 
@@ -255,7 +259,7 @@ public class InMemoryCompaction {
                 .sum());
     }
 
-    private CreateCompactionJobs.BatchJobsWriter batchJobsWriter() {
+    private CreateCompactionJobBatches.BatchJobsWriter batchJobsWriter() {
         return (bucketName, key, jobs) -> jobs.forEach(job -> {
             queuedJobs.add(job);
             jobTracker.jobCreated(job.createCreatedEvent());

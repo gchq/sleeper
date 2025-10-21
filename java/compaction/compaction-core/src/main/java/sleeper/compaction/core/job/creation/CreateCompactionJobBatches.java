@@ -31,6 +31,7 @@ import sleeper.core.util.SplitIntoBatches;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -38,8 +39,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 
-public class BatchCreateCompactionJobs {
-    public static final Logger LOGGER = LoggerFactory.getLogger(BatchCreateCompactionJobs.class);
+public class CreateCompactionJobBatches {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobBatches.class);
 
     private final InstanceProperties instanceProperties;
     private final BatchJobsWriter batchJobsWriter;
@@ -48,21 +49,21 @@ public class BatchCreateCompactionJobs {
     private final Supplier<String> batchIdSupplier;
     private final Supplier<Instant> timeSupplier;
 
-    public BatchCreateCompactionJobs(
+    public CreateCompactionJobBatches(
             InstanceProperties instanceProperties,
             BatchJobsWriter batchJobsWriter,
             BatchMessageSender batchMessageSender,
             StateStoreCommitRequestSender stateStoreCommitSender,
-            Supplier<String> batchIdSupplier, Supplier<Instant> timeSupplier) {
+            GenerateBatchId generateBatchId, Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.batchJobsWriter = batchJobsWriter;
         this.batchMessageSender = batchMessageSender;
         this.stateStoreCommitSender = stateStoreCommitSender;
-        this.batchIdSupplier = batchIdSupplier;
+        this.batchIdSupplier = generateBatchId::generate;
         this.timeSupplier = timeSupplier;
     }
 
-    public void createJobs(TableProperties tableProperties, StateStore stateStore, List<CompactionJob> jobs) throws IOException {
+    public void createBatches(TableProperties tableProperties, StateStore stateStore, List<CompactionJob> jobs) throws IOException {
         AssignJobIdToFiles assignJobIdsToFiles;
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
             assignJobIdsToFiles = AssignJobIdToFiles.byQueue(stateStoreCommitSender);
@@ -106,5 +107,14 @@ public class BatchCreateCompactionJobs {
     @FunctionalInterface
     public interface BatchMessageSender {
         void sendMessage(CompactionJobDispatchRequest dispatchRequest);
+    }
+
+    @FunctionalInterface
+    public interface GenerateBatchId {
+        String generate();
+
+        static GenerateBatchId random() {
+            return () -> UUID.randomUUID().toString();
+        }
     }
 }

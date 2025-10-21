@@ -22,7 +22,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
-import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -31,7 +30,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
@@ -66,29 +64,21 @@ public class CreateCompactionJobs {
 
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
-    private final BatchCreateCompactionJobs batchCreateCompactionJobs;
+    private final CreateCompactionJobBatches createBatches;
     private final ObjectFactory objectFactory;
-    private final GenerateJobId generateJobId;
+    private final Supplier<String> jobIdSupplier;
     private final Random random;
 
-    public CreateCompactionJobs(ObjectFactory objectFactory,
-            InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider,
-            BatchJobsWriter batchJobsWriter,
-            BatchMessageSender batchMessageSender,
-            StateStoreCommitRequestSender stateStoreCommitSender,
-            GenerateJobId generateJobId,
-            GenerateBatchId generateBatchId,
-            Random random,
-            Supplier<Instant> timeSupplier) {
+    public CreateCompactionJobs(
+            InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider,
+            CreateCompactionJobBatches createBatches, ObjectFactory objectFactory,
+            GenerateJobId generateJobId, Random random) {
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
+        this.createBatches = createBatches;
         this.objectFactory = objectFactory;
-        this.generateJobId = generateJobId;
+        this.jobIdSupplier = generateJobId::generate;
         this.random = random;
-        batchCreateCompactionJobs = new BatchCreateCompactionJobs(
-                instanceProperties, batchJobsWriter::writeJobs, batchMessageSender::sendMessage, stateStoreCommitSender, generateBatchId::generate,
-                timeSupplier);
     }
 
     public void createJobsWithStrategy(TableProperties table) throws IOException, ObjectFactoryException {
@@ -127,7 +117,7 @@ public class CreateCompactionJobs {
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
-        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, generateJobId::generate);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
         LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
                 table, jobFactory.getOutputFilePrefix());
 
@@ -152,7 +142,7 @@ public class CreateCompactionJobs {
         }
 
         Instant sendJobsStartTime = Instant.now();
-        batchCreateCompactionJobs.createJobs(tableProperties, stateStore, compactionJobs);
+        createBatches.createBatches(tableProperties, stateStore, compactionJobs);
         Instant finishTime = Instant.now();
 
         LOGGER.info("Created {} compaction jobs, overall took {}", compactionJobs.size(), LoggedDuration.withShortOutput(startTime, finishTime));
@@ -241,29 +231,10 @@ public class CreateCompactionJobs {
     }
 
     @FunctionalInterface
-    public interface BatchJobsWriter {
-        void writeJobs(String bucketName, String key, List<CompactionJob> compactionJobs);
-    }
-
-    @FunctionalInterface
-    public interface BatchMessageSender {
-        void sendMessage(CompactionJobDispatchRequest dispatchRequest);
-    }
-
-    @FunctionalInterface
     public interface GenerateJobId {
         String generate();
 
         static GenerateJobId random() {
-            return () -> UUID.randomUUID().toString();
-        }
-    }
-
-    @FunctionalInterface
-    public interface GenerateBatchId {
-        String generate();
-
-        static GenerateBatchId random() {
             return () -> UUID.randomUUID().toString();
         }
     }
