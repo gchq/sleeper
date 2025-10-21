@@ -82,9 +82,10 @@ public class AwsDataFilesDriver implements DataFilesDriver {
         List<DataFileDuplication> duplications = files.stream()
                 .map(file -> new DataFileDuplication(file, generateDuplicateFilePaths(times)))
                 .toList();
-        duplications.stream()
+        CompletableFuture<?>[] futures = duplications.stream()
                 .flatMap(this::performDuplication)
-                .toList().forEach(CompletableFuture::join);
+                .toArray(CompletableFuture[]::new);
+        CompletableFuture.allOf(futures).join();
         LOGGER.info("Duplicated {} files", files.size());
         return duplications;
     }
