@@ -16,25 +16,9 @@
 package sleeper.systemtest.dsl.util;
 
 import sleeper.core.statestore.FileReference;
-import sleeper.systemtest.dsl.instance.DataFilesDriver;
 
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public record DataFileSetDuplication(List<FileReference> originalReferences, List<FileReference> newReferences) {
-
-    public static List<DataFileSetDuplication> duplicateByReferences(DataFilesDriver driver, int duplicates, List<FileReference> fileReferences) {
-        Map<String, List<FileReference>> referencesByFilename = fileReferences.stream()
-                .collect(Collectors.groupingBy(FileReference::getFilename, TreeMap::new, Collectors.toUnmodifiableList()));
-        List<DataFileDuplication> results = driver.duplicateFiles(duplicates, referencesByFilename.keySet());
-        return IntStream.range(0, duplicates)
-                .mapToObj(i -> new DataFileSetDuplication(fileReferences, results.stream()
-                        .flatMap(result -> result.duplicateFileReferences(referencesByFilename.get(result.originalFilename())))
-                        .toList()))
-                .toList();
-    }
 
 }

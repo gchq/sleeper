@@ -162,6 +162,10 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction duplicateAllFilesAndSendDuplicateCompactions(int duplicates) {
+        return this;
+    }
+
     public SystemTestCompaction sendSingleCompactionBatch(String jobId, List<FileReference> inputFiles) {
         CompactionJobFactory jobFactory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
         CompactionJob job = jobFactory.createCompactionJob(jobId, inputFiles, inputFiles.get(0).getPartitionId());

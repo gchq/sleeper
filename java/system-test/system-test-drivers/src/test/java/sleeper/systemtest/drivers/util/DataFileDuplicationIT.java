@@ -68,7 +68,7 @@ public class DataFileDuplicationIT extends LocalStackTestBase {
         writeRows(file2, List.of(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3"))));
 
         // When
-        List<FileReference> results = DataFileDuplication.duplicateByReferences(driver(), 1, List.of(file1, file2));
+        List<FileReference> results = duplicateByReferences(1, List.of(file1, file2));
 
         // Then
         assertThat(results).hasSize(2);
@@ -76,6 +76,10 @@ public class DataFileDuplicationIT extends LocalStackTestBase {
                 .containsExactly(new Row(Map.of("key", "value-1")));
         assertThat(readRows(results.get(1)))
                 .containsExactly(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3")));
+    }
+
+    private List<FileReference> duplicateByReferences(int duplicates, List<FileReference> references) {
+        return DataFileDuplication.duplicateByReferences(driver(), duplicates, references);
     }
 
     private FileReferenceFactory referenceFactory() {

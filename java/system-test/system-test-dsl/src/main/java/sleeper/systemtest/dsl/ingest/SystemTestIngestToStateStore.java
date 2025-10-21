@@ -25,7 +25,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
-import sleeper.systemtest.dsl.util.DataFileDuplication;
+import sleeper.systemtest.dsl.util.DataFileDuplications;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,9 +42,10 @@ public class SystemTestIngestToStateStore {
         this.ingestSource = context.sourceFiles();
     }
 
-    public SystemTestIngestToStateStore duplicateFilesOnSamePartition(int times, List<FileReference> fileReferences) {
-        addFiles(DataFileDuplication.duplicateByReferences(dataFilesDriver(), times, fileReferences));
-        return this;
+    public DataFileDuplications duplicateFilesOnSamePartition(int times, List<FileReference> fileReferences) {
+        DataFileDuplications duplications = DataFileDuplications.duplicateByReferences(dataFilesDriver(), times, fileReferences);
+        addFiles(duplications.streamNewReferences().toList());
+        return duplications;
     }
 
     public SystemTestIngestToStateStore addFileOnPartition(

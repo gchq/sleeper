@@ -24,9 +24,7 @@ import java.util.stream.Stream;
 public record DataFileDuplication(String originalFilename, List<String> newFilenames) {
 
     public static List<FileReference> duplicateByReferences(DataFilesDriver driver, int duplicates, List<FileReference> fileReferences) {
-        return DataFileSetDuplication.duplicateByReferences(driver, duplicates, fileReferences).stream()
-                .flatMap(fileSet -> fileSet.newReferences().stream())
-                .toList();
+        return DataFileDuplications.duplicateByReferences(driver, duplicates, fileReferences).streamNewReferences().toList();
     }
 
     public Stream<FileReference> duplicateFileReferences(List<FileReference> originalReferences) {
