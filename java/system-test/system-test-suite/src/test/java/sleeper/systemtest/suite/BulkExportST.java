@@ -15,15 +15,28 @@
  */
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
+@SystemTest
 public class BulkExportST {
+
+    @BeforeEach
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+        sleeper.connectToInstanceAddOnlineTable(MAIN);
+        reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
+    }
 
     @Test
     void shouldExecuteBasicBulkExport(SleeperSystemTest sleeper) {
@@ -41,7 +54,11 @@ public class BulkExportST {
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 200)));
 
-        //TODO key action to perform this
-        //sleeper.bulkExport();
+        sleeper.bulkExport()
+                .bulkExportDriver()
+                .sendJob(BulkExportQuery.builder()
+                        .tableId("table-1")
+                        .exportId("export-1")
+                        .build());
     }
 }
