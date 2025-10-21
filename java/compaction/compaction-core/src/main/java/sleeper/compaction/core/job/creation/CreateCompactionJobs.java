@@ -63,18 +63,18 @@ public class CreateCompactionJobs {
 
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
-    private final CreateCompactionJobBatches createBatches;
+    private final CreateCompactionJobBatches batchCreator;
     private final ObjectFactory objectFactory;
     private final Supplier<String> jobIdSupplier;
     private final Random random;
 
     public CreateCompactionJobs(
             InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider,
-            CreateCompactionJobBatches createBatches, ObjectFactory objectFactory,
+            CreateCompactionJobBatches batchCreator, ObjectFactory objectFactory,
             GenerateJobId generateJobId, Random random) {
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
-        this.createBatches = createBatches;
+        this.batchCreator = batchCreator;
         this.objectFactory = objectFactory;
         this.jobIdSupplier = generateJobId::generate;
         this.random = random;
@@ -141,7 +141,7 @@ public class CreateCompactionJobs {
         }
 
         Instant sendJobsStartTime = Instant.now();
-        createBatches.createBatches(tableProperties, stateStore, compactionJobs);
+        batchCreator.createBatches(tableProperties, stateStore, compactionJobs);
         Instant finishTime = Instant.now();
 
         LOGGER.info("Created {} compaction jobs, overall took {}", compactionJobs.size(), LoggedDuration.withShortOutput(startTime, finishTime));
