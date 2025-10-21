@@ -50,13 +50,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue. This is done as follows:
@@ -68,16 +64,12 @@ import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 public class CreateCompactionJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobs.class);
 
-    private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
-    private final BatchJobsWriter batchJobsWriter;
-    private final BatchMessageSender batchMessageSender;
     private final StateStoreProvider stateStoreProvider;
-    private final StateStoreCommitRequestSender stateStoreCommitSender;
+    private final BatchCreateCompactionJobs batchCreateCompactionJobs;
+    private final ObjectFactory objectFactory;
     private final GenerateJobId generateJobId;
-    private final GenerateBatchId generateBatchId;
     private final Random random;
-    private final Supplier<Instant> timeSupplier;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
@@ -89,16 +81,14 @@ public class CreateCompactionJobs {
             GenerateBatchId generateBatchId,
             Random random,
             Supplier<Instant> timeSupplier) {
-        this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
-        this.batchJobsWriter = batchJobsWriter;
-        this.batchMessageSender = batchMessageSender;
         this.stateStoreProvider = stateStoreProvider;
-        this.stateStoreCommitSender = stateStoreCommitSender;
+        this.objectFactory = objectFactory;
         this.generateJobId = generateJobId;
-        this.generateBatchId = generateBatchId;
         this.random = random;
-        this.timeSupplier = timeSupplier;
+        batchCreateCompactionJobs = new BatchCreateCompactionJobs(
+                instanceProperties, batchJobsWriter::writeJobs, batchMessageSender::sendMessage, stateStoreCommitSender, generateBatchId::generate,
+                timeSupplier);
     }
 
     public void createJobsWithStrategy(TableProperties table) throws IOException, ObjectFactoryException {
@@ -162,16 +152,7 @@ public class CreateCompactionJobs {
         }
 
         Instant sendJobsStartTime = Instant.now();
-        AssignJobIdToFiles assignJobIdsToFiles;
-        if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
-            assignJobIdsToFiles = AssignJobIdToFiles.byQueue(stateStoreCommitSender);
-        } else {
-            assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore);
-        }
-        int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
-        for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
-            batchCreateJobs(assignJobIdsToFiles, tableProperties, batch);
-        }
+        batchCreateCompactionJobs.createJobs(tableProperties, stateStore, compactionJobs);
         Instant finishTime = Instant.now();
 
         LOGGER.info("Created {} compaction jobs, overall took {}", compactionJobs.size(), LoggedDuration.withShortOutput(startTime, finishTime));
@@ -208,29 +189,6 @@ public class CreateCompactionJobs {
                 });
 
         return outList;
-    }
-
-    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableProperties tableProperties, List<CompactionJob> compactionJobs) throws IOException {
-        TableStatus tableStatus = tableProperties.getStatus();
-        CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
-                tableProperties, generateBatchId.generate(), timeSupplier.get());
-
-        // Send batch of jobs to SQS (NB Send jobs to SQS before updating the job field of the files in the
-        // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
-        // job can be created for these files)
-        LOGGER.debug("Writing batch of {} compaction jobs for table {} in data bucket at: {}", compactionJobs.size(), tableStatus, request.getBatchKey());
-        Instant startTime = Instant.now();
-        batchJobsWriter.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
-        LOGGER.debug("Sending compaction jobs batch, wrote jobs in {}",
-                LoggedDuration.withShortOutput(startTime, Instant.now()));
-        batchMessageSender.sendMessage(request);
-
-        // Update the statuses of these files to record that a compaction job is in progress
-        LOGGER.debug("Assigning input files for compaction jobs batch in table {}", tableStatus);
-        assignJobIdToFiles.assignJobIds(compactionJobs.stream()
-                .map(CompactionJob::createAssignJobIdRequest)
-                .collect(Collectors.toList()), tableStatus);
-        LOGGER.info("Created pending batch of {} compaction jobs for table {} in data bucket at: {}", compactionJobs.size(), tableStatus, request.getBatchKey());
     }
 
     private void createJobsFromLeftoverFiles(
