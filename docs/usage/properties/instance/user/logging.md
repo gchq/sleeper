@@ -9,3 +9,5 @@ The following instance properties relate to logging.
 | sleeper.logging.parquet.level | The logging level for Parquet logs.                                                                                  |               | true                        |
 | sleeper.logging.aws.level     | The logging level for AWS logs.                                                                                      |               | true                        |
 | sleeper.logging.root.level    | The logging level for everything else.                                                                               |               | true                        |
+| sleeper.logging.backtrace     | Configuration for Rust backtrace generation, set in the environment variable RUST_BACKTRACE.                         |               | true                        |
+| sleeper.logging.rust          | Configuration for Rust logging, set in the environment variable RUST_LOG.                                            |               | true                        |

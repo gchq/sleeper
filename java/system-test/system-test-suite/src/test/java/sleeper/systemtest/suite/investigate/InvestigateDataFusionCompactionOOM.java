@@ -27,6 +27,7 @@ import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -75,7 +76,7 @@ public class InvestigateDataFusionCompactionOOM {
         Path tempDir = Files.createTempDirectory("sleeper-test");
         Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
-        CompactionRunner runner = new DataFusionCompactionRunner(new Configuration());
+        CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), new Configuration());
         runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()).getRegion());
     }
 

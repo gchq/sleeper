@@ -15,13 +15,18 @@
  */
 package sleeper.clients.api.aws;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.arrow.memory.RootAllocator;
 
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
+import sleeper.clients.util.UncheckedAutoCloseables;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
-import sleeper.query.runner.rowretrieval.QueryEngineSelector;
+import sleeper.query.datafusion.DataFusionQueryContext;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,15 +34,15 @@ import java.util.concurrent.Executors;
  * Provides row retrievers for running Sleeper queries with Hadoop.
  */
 @FunctionalInterface
-public interface SleeperClientHadoopQueryProvider {
+public interface SleeperClientQueryProvider {
 
     /**
      * Creates or retrieves a row retriever provider.
      *
-     * @param  hadoopConf the Hadoop configuration
-     * @return            the row retriever
+     * @param  hadoopProvider the Hadoop configuration provider
+     * @return                the row retriever
      */
-    ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(Configuration hadoopConf);
+    ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(TableHadoopConfigurationProvider hadoopProvider);
 
     /**
      * Creates a provider that will create a thread pool of the default size. A new thread pool will be created for each
@@ -45,7 +50,7 @@ public interface SleeperClientHadoopQueryProvider {
      *
      * @return the provider
      */
-    static SleeperClientHadoopQueryProvider createDefaultForEachClient() {
+    static SleeperClientQueryProvider createDefaultForEachClient() {
         return withThreadPoolForEachClient(10);
     }
 
@@ -56,11 +61,16 @@ public interface SleeperClientHadoopQueryProvider {
      * @param  threadPoolSize the number of threads in the thread pool for each client
      * @return                the provider
      */
-    static SleeperClientHadoopQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
-        return hadoopConf -> {
+    static SleeperClientQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
+        return hadoopProvider -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
-            QueryEngineSelector engineSelector = new QueryEngineSelector(executorService, hadoopConf);
-            return ShutdownWrapper.shutdown(engineSelector, executorService::shutdown);
+            DataFusionQueryContext dataFusionContext = DataFusionQueryContext.createIfLoaded(RootAllocator::new);
+            LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
+            return ShutdownWrapper.shutdown(
+                    dataFusionContext.createQueryEngineSelectorWithFallback(DataFusionAwsConfig::getDefault, javaProvider),
+                    new UncheckedAutoCloseables(List.of(
+                            dataFusionContext::close,
+                            executorService::shutdown)));
         };
     }
 
@@ -74,22 +84,26 @@ public interface SleeperClientHadoopQueryProvider {
         return new PersistentThreadPool(Executors.newFixedThreadPool(threadPoolSize));
     }
 
-    class PersistentThreadPool implements SleeperClientHadoopQueryProvider, UncheckedAutoCloseable {
+    class PersistentThreadPool implements SleeperClientQueryProvider, UncheckedAutoCloseable {
         private final ExecutorService executorService;
+        private final DataFusionQueryContext dataFusionContext = DataFusionQueryContext.createIfLoaded(RootAllocator::new);
 
         private PersistentThreadPool(ExecutorService executorService) {
             this.executorService = executorService;
         }
 
         @Override
-        public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(Configuration hadoopConf) {
-            return ShutdownWrapper.noShutdown(
-                    new QueryEngineSelector(executorService, hadoopConf));
+        public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(TableHadoopConfigurationProvider hadoopProvider) {
+            LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
+            return ShutdownWrapper.noShutdown(dataFusionContext.createQueryEngineSelectorWithFallback(DataFusionAwsConfig::getDefault, javaProvider));
         }
 
         @Override
         public void close() {
-            executorService.shutdown();
+            try (dataFusionContext) {
+            } finally {
+                executorService.shutdown();
+            }
         }
 
     }

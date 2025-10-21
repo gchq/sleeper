@@ -27,13 +27,11 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
@@ -50,16 +48,12 @@ import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -91,15 +85,9 @@ public class QueryClient extends QueryCommandLineClient {
     @Override
     protected void init(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        List<Partition> partitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
-        out.println("Retrieved " + partitions.size() + " partitions from StateStore");
-
         if (!cachedQueryExecutors.containsKey(tableName)) {
-            QueryPlanner planner = new QueryPlanner(tableProperties, stateStoreProvider.getStateStore(tableProperties));
-            planner.init(partitions, partitionToFileMapping);
-            QueryExecutor executor = new QueryExecutor(planner,
+            QueryExecutor executor = new QueryExecutor(
+                    QueryPlanner.initialiseNow(tableProperties, stateStoreProvider.getStateStore(tableProperties)),
                     new LeafPartitionQueryExecutor(objectFactory, tableProperties,
                             rowRetrieverProvider.getRowRetriever(tableProperties)));
             cachedQueryExecutors.put(tableName, executor);
@@ -143,14 +131,14 @@ public class QueryClient extends QueryCommandLineClient {
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 BufferAllocator allocator = new RootAllocator();
-                FFIContext ffiContext = DataFusionLeafPartitionRowRetriever.createContext()) {
+                FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.getInstance())) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new QueryClient(
                     instanceProperties,
                     new DynamoDBTableIndex(instanceProperties, dynamoClient),
                     S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
                     new ConsoleInput(System.console()), new ConsoleOutput(System.out),
-                    new S3UserJarsLoader(instanceProperties, s3Client, makeTemporaryDirectory()).buildObjectFactory(),
+                    new S3UserJarsLoader(instanceProperties, s3Client).buildObjectFactory(),
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
                     QueryEngineSelector.javaAndDataFusion(
                             new LeafPartitionRowRetrieverImpl.Provider(executorService, TableHadoopConfigurationProvider.forClient(instanceProperties)),
@@ -158,16 +146,6 @@ public class QueryClient extends QueryCommandLineClient {
                     .run();
         } finally {
             executorService.shutdown();
-        }
-    }
-
-    private static Path makeTemporaryDirectory() {
-        try {
-            Path tempDir = Files.createTempDirectory(null);
-            tempDir.toFile().deleteOnExit();
-            return tempDir;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 }

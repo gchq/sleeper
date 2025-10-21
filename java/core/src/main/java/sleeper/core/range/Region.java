@@ -16,6 +16,8 @@
 package sleeper.core.range;
 
 import sleeper.core.key.Key;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
@@ -51,6 +53,31 @@ public class Region {
 
     private Region(Map<String, Range> rowKeyFieldNameToRange) {
         this.rowKeyFieldNameToRange = rowKeyFieldNameToRange;
+    }
+
+    /**
+     * Creates a region covering all values of all row key fields.
+     *
+     * @param  schema the schema
+     * @return        the region
+     */
+    public static Region coveringAllValuesOfAllRowKeys(Schema schema) {
+        return coveringAllValuesOfAllRowKeys(schema, new RangeFactory(schema));
+    }
+
+    /**
+     * Creates a region covering all values of all row key fields.
+     *
+     * @param  schema       the schema
+     * @param  rangeFactory a range factory created from the schema
+     * @return              the region
+     */
+    public static Region coveringAllValuesOfAllRowKeys(Schema schema, RangeFactory rangeFactory) {
+        List<Range> ranges = new ArrayList<>();
+        for (Field field : schema.getRowKeyFields()) {
+            ranges.add(rangeFactory.createRangeCoveringAllValues(field));
+        }
+        return new Region(ranges);
     }
 
     /**

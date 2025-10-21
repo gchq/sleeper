@@ -43,7 +43,7 @@ public interface DataFusionCompactionFunctions extends ForeignFunctions {
      * @return                       indication of success
      * @throws IllegalStateException if the context has already been closed
      */
-    default int compact(FFIContext context, FFICommonConfig input, FFIFileResult result) {
+    default int compact(FFIContext<DataFusionCompactionFunctions> context, FFICommonConfig input, FFIFileResult result) {
         return native_compact(context.getForeignContext(), input, result);
     }
 

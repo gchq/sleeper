@@ -83,7 +83,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class DataFusionLeafPartitionRowRetrieverIT {
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
-    private static final FFIContext FFI_CONTEXT = DataFusionLeafPartitionRowRetriever.createContext();
+    private static final FFIContext<DataFusionQueryFunctions> FFI_CONTEXT = new FFIContext<>(DataFusionQueryFunctions.getInstance());
 
     @TempDir
     public Path tempDir;
@@ -106,7 +106,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
     }
 
-    // TODO tests:
+    // TODO tests for issue https://github.com/gchq/sleeper/issues/5829 (push down filtering & aggregation):
     // - Filtering is pushed down to DataFusion
     // - Aggregation is pushed down to DataFusion
     // - Restrict required values and apply filtering on same or different field
