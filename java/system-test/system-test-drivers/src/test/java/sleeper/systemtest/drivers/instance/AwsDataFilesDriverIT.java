@@ -16,23 +16,17 @@
 package sleeper.systemtest.drivers.instance;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
-import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -81,10 +75,10 @@ public class AwsDataFilesDriverIT {
     void shouldDuplicateFiles(SleeperSystemTest sleeper, SystemTestContext context) {
         // Given
         sleeper.tables().create("test", createSchemaWithKey("key", new StringType()));
-        FileReference file1 = referenceFactory(context).rootFile("file-1", 1);
-        FileReference file2 = referenceFactory(context).rootFile("file-2", 1);
-        writeRows(context, file1, List.of(new Row(Map.of("key", "value-1"))));
-        writeRows(context, file2, List.of(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3"))));
+        FileReference file1 = sleeper.ingest().toStateStore()
+                .addFileOnPartition("file-1", "root", new Row(Map.of("key", "value-1")));
+        FileReference file2 = sleeper.ingest().toStateStore()
+                .addFileOnPartition("file-2", "root", new Row(Map.of("key", "value-1")));
 
         // When
         DataFileDuplications duplications = sleeper.ingest().toStateStore().duplicateFilesOnSamePartitions(1, List.of(file1, file2));
@@ -96,24 +90,6 @@ public class AwsDataFilesDriverIT {
                 .containsExactly(new Row(Map.of("key", "value-1")));
         assertThat(readRows(context, results.get(1)))
                 .containsExactly(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3")));
-    }
-
-    private FileReferenceFactory referenceFactory(SystemTestContext context) {
-        InstanceProperties instanceProperties = context.instance().getInstanceProperties();
-        TableProperties tableProperties = context.instance().getTableProperties();
-        StateStore stateStore = context.instance().getStateStore();
-        return FileReferenceFactory.from(instanceProperties, tableProperties, stateStore);
-    }
-
-    private void writeRows(SystemTestContext context, FileReference file, List<Row> rows) {
-        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                new Path(file.getFilename()), schema(context), SleeperLocalStackClients.HADOOP_CONF)) {
-            for (Row row : rows) {
-                writer.write(row);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     private List<Row> readRows(SystemTestContext context, FileReference file) {

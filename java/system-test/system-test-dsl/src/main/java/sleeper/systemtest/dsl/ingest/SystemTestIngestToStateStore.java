@@ -18,17 +18,21 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.table.TableFilePaths;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.util.DataFileDuplications;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SystemTestIngestToStateStore {
 
@@ -52,8 +56,24 @@ public class SystemTestIngestToStateStore {
         return duplications;
     }
 
+    public FileReference addFileOnPartition(
+            String name, String partitionId, Row... rows) {
+        TableFilePaths paths = TableFilePaths.buildDataFilePathPrefix(instance.getInstanceProperties(), instance.getTableProperties());
+        String path = paths.constructPartitionParquetFilePath(partitionId, name);
+        ingestSource.writeFile(sourceFilesDriver(), path, true, Stream.of(rows));
+        FileReference reference = FileReference.builder()
+                .filename(path)
+                .partitionId(partitionId)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .numberOfRows((long) rows.length)
+                .build();
+        addFiles(List.of(reference));
+        return reference;
+    }
+
     public SystemTestIngestToStateStore addFileOnPartition(
-            String name, String partitionId, long numberOfRows) throws Exception {
+            String name, String partitionId, long numberOfRows) {
         String path = ingestSource.getFilePath(name);
         addFiles(List.of(FileReference.builder()
                 .filename(path)
@@ -90,5 +110,9 @@ public class SystemTestIngestToStateStore {
 
     private DataFilesDriver dataFilesDriver() {
         return instance.adminDrivers().dataFiles(context);
+    }
+
+    private IngestSourceFilesDriver sourceFilesDriver() {
+        return instance.adminDrivers().sourceFiles(context);
     }
 }
