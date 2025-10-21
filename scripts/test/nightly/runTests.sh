@@ -153,19 +153,19 @@ runMavenSystemTests() {
 runTestSuite(){
     SUITE=$3
     sleep $1 #Delay so that initial deployment doesn't clash with each other
+    shift 1
     echo "[$(time_str)] Starting test suite: $SUITE"
     pushd "$REPO_PARENT_DIR/sleeper/$SUITE/scripts/test" #Move into isolated repo copy
-    shift 1
     runMavenSystemTests "$@"
     popd
     echo "[$(time_str)] Finished test suite: $SUITE"
 }
 
 runSlowTests(){
-    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "-DskipRust" "-DrunIT=QuickSystemTestSuite" $@&
-    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" $@&
-    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" $@&
-    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" $@
+    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "-DskipRust" "-DrunIT=QuickSystemTestSuite" "$@" &
+    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" "$@" &
+    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" "$@" &
+    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" "$@"
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
@@ -176,10 +176,10 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     EXP2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite2)
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
-    runSlowTests $@&
-    runTestSuite 240 "${EXP1_SUITE_PARAMS[@]}" $@&
-    runTestSuite 300 "${EXP2_SUITE_PARAMS[@]}" $@&
-    runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" $@
+    runSlowTests "$@" &
+    runTestSuite 240 "${EXP1_SUITE_PARAMS[@]}" "$@" &
+    runTestSuite 300 "${EXP2_SUITE_PARAMS[@]}" "$@" &
+    runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" "$@"
     wait
 
     #Remove the temporary folders

@@ -89,7 +89,6 @@ public class SystemTestInstance {
     }
 
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::createMainConfiguration);
-    public static final SystemTestInstanceConfiguration MULTI_TABLES = usingSystemTestDefaults("mul-tb", SystemTestInstance::createMultiTablesConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionPerformanceOnDataFusionConfiguration);
@@ -156,13 +155,6 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
         setSystemTestTags(properties, "main", "Sleeper Maven system test main instance");
-        return createInstanceConfiguration(properties);
-    }
-
-    private static DeployInstanceConfiguration createMultiTablesConfiguration() {
-        InstanceProperties properties = createInstanceProperties();
-        properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
-        setSystemTestTags(properties, "multiTables", "Sleeper Maven system test multiple tables instance");
         return createInstanceConfiguration(properties);
     }
 
