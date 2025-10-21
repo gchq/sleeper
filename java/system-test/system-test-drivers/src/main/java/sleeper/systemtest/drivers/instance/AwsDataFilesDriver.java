@@ -84,7 +84,7 @@ public class AwsDataFilesDriver implements DataFilesDriver {
                 .toList();
         duplications.stream()
                 .flatMap(this::performDuplication)
-                .forEach(CompletableFuture::join);
+                .toList().forEach(CompletableFuture::join);
         LOGGER.info("Duplicated {} files", files.size());
         return duplications;
     }
