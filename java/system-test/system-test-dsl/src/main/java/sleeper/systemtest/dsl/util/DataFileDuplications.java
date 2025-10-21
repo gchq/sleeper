@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public record DataFileDuplications(List<DataFileDuplication> files, List<DataFileSetDuplication> duplications) {
+public record DataFileDuplications(List<DataFileDuplication> files, List<FileReference> originalReferences, List<DataFileSetDuplication> duplications) {
 
     public static DataFileDuplications duplicateByReferences(DataFilesDriver driver, int duplicates, List<FileReference> fileReferences) {
 
@@ -36,10 +36,18 @@ public record DataFileDuplications(List<DataFileDuplication> files, List<DataFil
 
         List<DataFileSetDuplication> duplications = IntStream.range(0, duplicates)
                 .mapToObj(i -> new DataFileSetDuplication(fileReferences, results.stream()
-                        .flatMap(result -> result.duplicateFileReferences(referencesByFilename.get(result.originalFilename())))
+                        .flatMap(result -> duplicateFileReferences(result, referencesByFilename))
                         .toList()))
                 .toList();
-        return new DataFileDuplications(results, duplications);
+        return new DataFileDuplications(results, fileReferences, duplications);
+    }
+
+    private static Stream<FileReference> duplicateFileReferences(
+            DataFileDuplication fileDuplication, Map<String, List<FileReference>> originalReferencesByFilename) {
+        List<FileReference> originalReferences = originalReferencesByFilename.get(fileDuplication.originalFilename());
+        return fileDuplication.newFilenames().stream()
+                .flatMap(filename -> originalReferences.stream()
+                        .map(reference -> reference.toBuilder().filename(filename).build()));
     }
 
     public Stream<FileReference> streamNewReferences() {

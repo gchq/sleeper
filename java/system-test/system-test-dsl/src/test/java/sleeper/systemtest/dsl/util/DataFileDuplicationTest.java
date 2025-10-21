@@ -99,7 +99,7 @@ public class DataFileDuplicationTest {
     }
 
     private List<FileReference> duplicateByReferences(int duplicates, List<FileReference> references) {
-        return DataFileDuplication.duplicateByReferences(driver(), duplicates, references);
+        return DataFileDuplications.duplicateByReferences(driver(), duplicates, references).streamNewReferences().toList();
     }
 
     private void writeRows(FileReference file, List<Row> rows) {

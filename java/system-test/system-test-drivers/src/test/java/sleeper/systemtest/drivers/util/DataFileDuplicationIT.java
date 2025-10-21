@@ -35,7 +35,7 @@ import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 import sleeper.systemtest.drivers.instance.AwsDataFilesDriver;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
-import sleeper.systemtest.dsl.util.DataFileDuplication;
+import sleeper.systemtest.dsl.util.DataFileDuplications;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -79,7 +79,7 @@ public class DataFileDuplicationIT extends LocalStackTestBase {
     }
 
     private List<FileReference> duplicateByReferences(int duplicates, List<FileReference> references) {
-        return DataFileDuplication.duplicateByReferences(driver(), duplicates, references);
+        return DataFileDuplications.duplicateByReferences(driver(), duplicates, references).streamNewReferences().toList();
     }
 
     private FileReferenceFactory referenceFactory() {

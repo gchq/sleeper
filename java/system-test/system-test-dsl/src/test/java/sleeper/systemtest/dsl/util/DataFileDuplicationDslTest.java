@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.ingest;
+package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
-public class SystemTestIngestToStateStoreTest {
+public class DataFileDuplicationDslTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
