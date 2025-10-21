@@ -41,11 +41,6 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>query-datafusion</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>query-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

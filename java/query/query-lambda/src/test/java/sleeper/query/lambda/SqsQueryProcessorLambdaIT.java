@@ -52,6 +52,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetReaderIterator;
@@ -63,6 +64,7 @@ import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
+import sleeper.query.datafusion.DataFusionQueryContext;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketOutput;
@@ -139,7 +141,9 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties = createInstance(dataDir);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(
+                s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET),
+                DataFusionQueryContext.none(), DataFusionAwsConfig::getDefault);
     }
 
     @Test

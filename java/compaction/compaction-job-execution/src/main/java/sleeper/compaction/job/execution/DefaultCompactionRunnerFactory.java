@@ -26,6 +26,8 @@ import sleeper.compaction.datafusion.DataFusionCompactionRunner;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.sketches.store.SketchesStore;
 
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
@@ -36,44 +38,49 @@ import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
  */
 public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private final ObjectFactory objectFactory;
-    private final Configuration configuration;
+    private final TableHadoopConfigurationProvider hadoopProvider;
     private final SketchesStore sketchesStore;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCompactionRunnerFactory.class);
 
     public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
+        this(objectFactory, TableHadoopConfigurationProvider.fixed(configuration), sketchesStore);
+    }
+
+    public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, TableHadoopConfigurationProvider hadoopProvider, SketchesStore sketchesStore) {
         this.objectFactory = objectFactory;
-        this.configuration = configuration;
+        this.hadoopProvider = hadoopProvider;
         this.sketchesStore = sketchesStore;
     }
 
     @Override
     public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
+        Configuration hadoopConf = hadoopProvider.getConfiguration(tableProperties);
         if (job.getIteratorClassName() != null) {
-            CompactionRunner runner = createJavaRunner();
+            CompactionRunner runner = createJavaRunner(hadoopConf);
             LOGGER.info("Table has a Java iterator set, so selecting {} for job ID {}, table {}",
                     runner.getClass().getSimpleName(), job.getId(), tableProperties.getStatus());
             return runner;
         }
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
-        CompactionRunner runner = createRunnerForEngine(engine);
+        CompactionRunner runner = createRunnerForEngine(engine, hadoopConf);
         LOGGER.info("Selecting {} for job ID {}, table {}",
                 runner.getClass().getSimpleName(), job.getId(), tableProperties.getStatus());
         return runner;
     }
 
-    private CompactionRunner createRunnerForEngine(DataEngine engine) {
+    private CompactionRunner createRunnerForEngine(DataEngine engine, Configuration hadoopConf) {
         switch (engine) {
             case DATAFUSION:
             case DATAFUSION_EXPERIMENTAL:
-                return new DataFusionCompactionRunner(configuration);
+                return new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), hadoopConf);
             case JAVA:
             default:
-                return createJavaRunner();
+                return createJavaRunner(hadoopConf);
         }
     }
 
-    private CompactionRunner createJavaRunner() {
-        return new JavaCompactionRunner(objectFactory, configuration, sketchesStore);
+    private CompactionRunner createJavaRunner(Configuration hadoopConf) {
+        return new JavaCompactionRunner(objectFactory, hadoopConf, sketchesStore);
     }
 }
