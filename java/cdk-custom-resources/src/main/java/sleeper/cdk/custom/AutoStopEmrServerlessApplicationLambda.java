@@ -27,8 +27,10 @@ import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
 import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
@@ -93,9 +95,9 @@ public class AutoStopEmrServerlessApplicationLambda {
 
         emrServerlessClient.stopApplication(request -> request.applicationId(applicationId));
 
-        LOGGER.info("Waiting for applications to terminate");
-        Function<String, BooleanSupplier> isApplicationTerminated = this::isApplicationTerminated;
-        poll.pollUntil("all EMR Serverless applications terminated", isApplicationTerminated.apply(applicationId));
+        LOGGER.info("Waiting for applications to stop");
+        Function<String, BooleanSupplier> isApplicationStopped = this::isApplicationStopped;
+        poll.pollUntil("all EMR Serverless applications stopped", isApplicationStopped.apply(applicationId));
     }
 
     private boolean allJobsFinished(String applicationId) {
@@ -112,11 +114,17 @@ public class AutoStopEmrServerlessApplicationLambda {
         }
     }
 
-    private BooleanSupplier isApplicationTerminated(String applicationId) {
-        if (ApplicationState.TERMINATED.equals(emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application().state())) {
-            return () -> true;
+    private BooleanSupplier isApplicationStopped(String applicationId) {
+
+        ApplicationState currentState = emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application().state();
+
+        Set<ApplicationState> runningApplication = EnumSet.of(ApplicationState.STARTING, ApplicationState.STARTED, ApplicationState.STOPPING);
+
+        if (runningApplication.contains(currentState)) {
+            return () -> false;
         }
-        return () -> false;
+        return () -> true;
+
     }
 
 }
