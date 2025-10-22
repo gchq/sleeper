@@ -69,17 +69,18 @@ set +e
 
 END_EXIT_CODE=0
 
+su -l
+
 pushd $SLEEPER_DIR
 #Make copies of the java folder to run independent maven builds in parallel
-sudo rm -rf quick
+rm -rf quick
 mkdir quick
-sudo cp -r java quick/java
-sudo cp -r scripts quick/scripts
-sudo cp -r python quick/python
-sudo cp -r code-style quick/code-style
-sudo cp -r rust quick/rust
+cp -r java quick/java
+cp -r scripts quick/scripts
+cp -r python quick/python
+cp -r code-style quick/code-style
+cp -r rust quick/rust
 cp README.md quick
-sudo chmod -R 777 quick
 popd
 
 copyFolderForParallelRun() {
