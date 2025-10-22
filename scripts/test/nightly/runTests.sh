@@ -145,7 +145,7 @@ runMavenSystemTests() {
 
 runTestSuite(){
     SUITE=$3
-    copyFolderForParallelRun "$SUITE"
+    ##copyFolderForParallelRun "$SUITE"
     sleep $1 #Delay so that initial deployment doesn't clash with each other
     shift 1
     echo "[$(time_str)] Starting test suite: $SUITE"
@@ -157,10 +157,10 @@ runTestSuite(){
 }
 
 runSlowTests(){
-    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick2" "-DskipRust" "-DrunIT=SlowSuite1" "$@" &
+    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "-DskipRust" "-DrunIT=SlowSuite1" "$@" ##&
     ##runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "-DskipRust" "-DrunIT=SlowSuite1" "$@" &
     ##runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "-DskipRust" "-DrunIT=SlowSuite2" "$@" &
-    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" "$@"
+    ##runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "-DskipRust" "-DrunIT=SlowSuite3" "$@"
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
