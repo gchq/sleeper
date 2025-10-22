@@ -9,6 +9,8 @@ mkdir quick
 cp README.md quick
 popd
 
+SUITE=$1
+
 copyFolderForParallelRun() {
     echo "Attempting to copy quick to: $1"
     pushd $SLEEPER_DIR
@@ -17,7 +19,7 @@ copyFolderForParallelRun() {
     popd
 }
 
-copyFolderForParallelRun "temp1"
+copyFolderForParallelRun "$1"
 
 
 
