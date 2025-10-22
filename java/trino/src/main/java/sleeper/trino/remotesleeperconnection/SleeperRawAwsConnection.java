@@ -48,8 +48,10 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.rowretrieval.QueryExecutor;
-import sleeper.query.runner.rowretrieval.QueryEngineSelector;
+import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.QueryPlanner;
+import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
@@ -258,7 +260,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     /**
      * Split a query into one or more sub-queries. Each will represent a scan of a leaf partition, which combine to
      * cover the entire original query. The leaf partition queries are generated using the core Sleeper method
-     * {@link QueryExecutor#splitIntoLeafPartitionQueries}.
+     * {@link QueryPlanner#splitIntoLeafPartitionQueries}.
      *
      * @param  asOfInstant        The instant to use when obtaining the list of files to query from the underlying state
      *                            store.
@@ -273,15 +275,10 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
         SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(tableProperties.get(TABLE_ID), asOfInstant));
 
-        // This seems like a lot of effort to go to in order to identify partitions
-        QueryExecutor queryExecutor = new QueryExecutor(
-                objectFactory,
-                tableProperties,
-                null,
-                new QueryEngineSelector(executorService, hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
-        queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
+        QueryPlanner planner = new QueryPlanner(tableProperties, null);
+        planner.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
-        return queryExecutor.splitIntoLeafPartitionQueries(query);
+        return planner.splitIntoLeafPartitionQueries(query);
     }
 
     /**
@@ -297,18 +294,12 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      */
     private CloseableIterator<Row> createResultRecordIterator(Instant asOfInstant, LeafPartitionQuery query) throws QueryException, ExecutionException, UncheckedExecutionException {
         TableProperties tableProperties = tablePropertiesProvider.getById(query.getTableId());
-        StateStore stateStore = this.stateStoreFactory.getStateStore(tableProperties);
-        SleeperTablePartitionStructure sleeperTablePartitionStructure = sleeperTablePartitionStructureCache.get(Pair.of(query.getTableId(), asOfInstant));
 
         LOGGER.debug("Creating result record iterator for query %s", query);
-        QueryExecutor queryExecutor = new QueryExecutor(
-                this.objectFactory,
-                tableProperties,
-                stateStore,
-                new QueryEngineSelector(executorService,
-                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)).getRowRetriever(tableProperties));
-        queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
-        return queryExecutor.execute(query);
+        LeafPartitionRowRetriever rowRetriever = new LeafPartitionRowRetrieverImpl(
+                executorService, hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties), tableProperties);
+        LeafPartitionQueryExecutor executor = new LeafPartitionQueryExecutor(objectFactory, tableProperties, rowRetriever);
+        return executor.getRows(query);
     }
 
     /**

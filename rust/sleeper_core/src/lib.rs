@@ -21,7 +21,7 @@
 * limitations under the License.
 */
 use crate::{
-    datafusion::LeafPartitionQuery,
+    datafusion::{CompactionResult, LeafPartitionQuery},
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
 #[cfg(doc)]
@@ -57,7 +57,7 @@ pub enum PartitionBound<'a> {
     Unbounded,
 }
 
-/// Defines a partition range of a single column.
+/// Defines a partition range of a single field.
 #[derive(Debug, Copy, Clone)]
 pub struct ColRange<'a> {
     pub lower: PartitionBound<'a>,
@@ -106,11 +106,11 @@ pub struct CommonConfig<'a> {
     input_files: Vec<Url>,
     /// Are input files individually sorted?
     input_files_sorted: bool,
-    /// Names of row-key columns
+    /// Names of row-key fields
     row_key_cols: Vec<String>,
-    /// Names of sort-key columns
+    /// Names of sort-key fields
     sort_key_cols: Vec<String>,
-    /// Ranges for each column to filter input files
+    /// Ranges for each field to filter input files
     region: SleeperRegion<'a>,
     /// How output from operation should be returned
     output: OutputType,
@@ -144,6 +144,7 @@ fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec
 
     if let OutputType::File {
         output_file,
+        write_sketch_file: _,
         opts: _,
     } = &mut output
         && output_file.scheme() == "s3a"
@@ -154,7 +155,7 @@ fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec
 }
 
 impl CommonConfig<'_> {
-    /// Get iterator for row and sort key columns in order
+    /// Get iterator for row and sort key fields in order
     pub fn sorting_columns_iter(&self) -> impl Iterator<Item = &str> {
         self.row_key_cols
             .iter()
@@ -162,7 +163,7 @@ impl CommonConfig<'_> {
             .map(String::as_str)
     }
 
-    /// List all roy and sort key columns in order
+    /// List all roy and sort key fields in order
     #[must_use]
     pub fn sorting_columns(&self) -> Vec<&str> {
         self.sorting_columns_iter().collect::<Vec<_>>()
@@ -178,11 +179,15 @@ impl Display for CommonConfig<'_> {
             self.region
         )?;
         match &self.output {
-            OutputType::ArrowRecordBatch => write!(f, " output is Arrow RecordBatches"),
+            OutputType::ArrowRecordBatch => write!(f, "output is Arrow RecordBatches"),
             OutputType::File {
                 output_file,
+                write_sketch_file,
                 opts: _,
-            } => write!(f, "output file {output_file:?}"),
+            } => write!(
+                f,
+                "output file {output_file:?} write sketch file {write_sketch_file}"
+            ),
         }
     }
 }
@@ -265,7 +270,7 @@ impl<'a> CommonConfigBuilder<'a> {
     ///
     /// # Errors
     /// The configuration must validate. Input files mustn't be empty
-    /// and the number of row key columns must match the number of region
+    /// and the number of row key fields must match the number of region
     /// dimensions.
     pub fn build(self) -> Result<CommonConfig<'a>> {
         self.validate()?;
@@ -315,18 +320,6 @@ pub struct AwsConfig {
     pub allow_http: bool,
 }
 
-/// Contains compaction results.
-///
-/// This provides the details of compaction results that Sleeper
-/// will use to update its record keeping.
-///
-pub struct CompactionResult {
-    /// The total number of rows read by a compaction.
-    pub rows_read: usize,
-    /// The total number of rows written by a compaction.
-    pub rows_written: usize,
-}
-
 /// Compacts the given Parquet files and reads the schema from the first.
 ///
 /// The `aws_creds` are optional if you are not attempting to read/write files from S3.
@@ -349,7 +342,9 @@ pub struct CompactionResult {
 /// let mut compaction_input = CommonConfigBuilder::new()
 ///     .input_files_sorted(true)
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
-///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
+///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(),
+///         write_sketch_file: true,
+///         opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
@@ -365,7 +360,6 @@ pub struct CompactionResult {
 ///
 pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResult> {
     let store_factory = create_object_store_factory(config.aws_config.as_ref()).await;
-
     crate::datafusion::compact(&store_factory, config)
         .await
         .map_err(Into::into)
@@ -394,7 +388,9 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// let mut common = CommonConfigBuilder::new()
 ///     .input_files_sorted(true)
 ///     .input_files(vec![Url::parse("file:///path/to/file1.parquet").unwrap()])
-///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(), opts: SleeperParquetOptions::default() })
+///     .output(OutputType::File{ output_file: Url::parse("file:///path/to/output").unwrap(),
+///         write_sketch_file: true,
+///         opts: SleeperParquetOptions::default() })
 ///     .row_key_cols(vec!["key".into()])
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
@@ -446,9 +442,11 @@ async fn create_object_store_factory(
 pub fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
     let creds = Credentials::from_keys(&aws_config.access_key, &aws_config.secret_key, None);
     let region = Region::new(String::from(&aws_config.region));
-    config_for_s3_module(&creds, &region)
-        .with_endpoint(&aws_config.endpoint)
-        .with_allow_http(aws_config.allow_http)
+    let mut builder = config_for_s3_module(&creds, &region);
+    if !aws_config.endpoint.is_empty() {
+        builder = builder.with_endpoint(&aws_config.endpoint);
+    }
+    builder.with_allow_http(aws_config.allow_http)
 }
 
 #[cfg(test)]
@@ -467,6 +465,7 @@ mod tests {
         ];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -490,6 +489,7 @@ mod tests {
         let input_files = vec![Url::parse("https://example.com/key").unwrap()];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -511,6 +511,7 @@ mod tests {
         let input_files = vec![Url::parse("https://example.com/key").unwrap()];
         let output = OutputType::File {
             output_file: Url::parse("s3a://bucket/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 
@@ -531,6 +532,7 @@ mod tests {
         let input_files: Vec<Url> = vec![];
         let output = OutputType::File {
             output_file: Url::parse("https://example.com/output").unwrap(),
+            write_sketch_file: true,
             opts: SleeperParquetOptions::default(),
         };
 

@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.runner.rowretrieval;
-
-import org.apache.hadoop.conf.Configuration;
+package sleeper.query.core.rowretrieval;
 
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
-import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
-
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 
@@ -31,26 +24,37 @@ import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
  * Selects a query engine based on the data engine chosen for a table.
  */
 public class QueryEngineSelector implements LeafPartitionRowRetrieverProvider {
-    /** Executor service used to create Java based query code. */
-    private final ExecutorService executorService;
-    /** Hadoop configuration needed to Java based query code. */
-    private final Configuration configuration;
 
-    public QueryEngineSelector(ExecutorService executorService, Configuration configuration) {
-        this.executorService = Objects.requireNonNull(executorService, "executorService");
-        this.configuration = Objects.requireNonNull(configuration, "configuration");
+    private final LeafPartitionRowRetrieverProvider javaProvider;
+    private final LeafPartitionRowRetrieverProvider dataFusionProvider;
+
+    private QueryEngineSelector(LeafPartitionRowRetrieverProvider javaProvider, LeafPartitionRowRetrieverProvider dataFusionProvider) {
+        this.javaProvider = javaProvider;
+        this.dataFusionProvider = dataFusionProvider;
+    }
+
+    /**
+     * Creates an engine selector from providers for the Java and DataFusion data engines.
+     *
+     * @param  javaProvider       the Java data engine provider
+     * @param  dataFusionProvider the DataFusion data engine provider
+     * @return                    the provider
+     */
+    public static LeafPartitionRowRetrieverProvider javaAndDataFusion(LeafPartitionRowRetrieverProvider javaProvider, LeafPartitionRowRetrieverProvider dataFusionProvider) {
+        return new QueryEngineSelector(javaProvider, dataFusionProvider);
     }
 
     @Override
-    @SuppressWarnings("fallthrough")
     public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
         DataEngine engine = tableProperties.getEnumValue(DATA_ENGINE, DataEngine.class);
         switch (engine) {
+            case DATAFUSION_EXPERIMENTAL:
+                return dataFusionProvider.getRowRetriever(tableProperties);
             case DATAFUSION:
-                // Not implemented yet : fall through
             case JAVA:
             default:
-                return new LeafPartitionRowRetrieverImpl(executorService, configuration, tableProperties);
+                return javaProvider.getRowRetriever(tableProperties);
         }
     }
+
 }

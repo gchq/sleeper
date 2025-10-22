@@ -54,7 +54,7 @@ public class ConfigBucketStack extends NestedStack {
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(instanceProperties, configBucket, bucketName);
+        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(this, configBucket);
 
         configBucket.grantRead(policiesStack.getDirectIngestPolicyForGrants());
         configBucket.grantRead(policiesStack.getIngestByQueuePolicyForGrants());

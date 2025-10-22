@@ -1396,6 +1396,12 @@ sleeper.dashboard.time.window.minutes=5
 # The logging level for everything else.
 # sleeper.logging.root.level=
 
+# Configuration for Rust backtrace generation, set in the environment variable RUST_BACKTRACE.
+# sleeper.logging.backtrace=
+
+# Configuration for Rust logging, set in the environment variable RUST_LOG.
+# sleeper.logging.rust=
+
 
 ## The following instance properties relate to the integration with Athena.
 
@@ -1656,5 +1662,6 @@ sleeper.default.statestore.committer.update.every.commit=false
 # before adding a batch of transactions in the asynchronous state store committer.
 sleeper.default.statestore.committer.update.every.batch=true
 
-# Select which data engine to use for the table. Valid values are: [java, datafusion]
+# Select which data engine to use for the table. Valid values are: [java, datafusion,
+# datafusion_experimental]
 sleeper.default.table.data.engine=DATAFUSION

@@ -18,35 +18,37 @@ package sleeper.foreign.bridge;
 import jnr.ffi.Pointer;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
- * Provides a high level interface to using the foreign function code.
+ * Provides a high level interface to foreign function code.
  *
  * If this class is shared between threads, external synchronisation must be used.
  *
  * Clients should create an instance of this class in a <a
- * href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">The
- * try-with-resources Statement</a>
+ * href="https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html">
+ * try-with-resources</a>
  * construct:
- * {@snippet id='header':
+ *
+ * <pre>
  * try (FFIContext context = new FFIContext(functions)) {
- * ...
+ *   ...
  * }
- * }
+ * </pre>
+ *
+ * @param <T> the interface type of the functions to be called in this context
  */
-public class FFIContext implements AutoCloseable {
+public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
      * FFI call interface. Calling any function on this object will
      * result in an FFI call.
      */
-    private final ForeignFunctions functions;
+    private final T functions;
 
     /**
-     * Pointer to the Rust side of the FFI layer. If this is empty, it means the
+     * Pointer to the Rust side of the FFI layer. If this is null, it means the
      * context has been closed.
      */
-    private Optional<Pointer> context;
+    private Pointer context;
 
     /**
      * Initialises the FFI library and context for calling functions.
@@ -57,20 +59,19 @@ public class FFIContext implements AutoCloseable {
      *
      * @param functions the native function interface
      */
-    public FFIContext(ForeignFunctions functions) {
-        this.functions = Objects.requireNonNull(functions, "functions");
+    public FFIContext(T functions) {
+        this.functions = Objects.requireNonNull(functions, "functions must not be null");
         // Create Java interface to FFI lib
         // Make FFI call to establish foreign context
-        this.context = Optional.of(functions.create_context());
+        this.context = Objects.requireNonNull(functions.create_context(), "context must not be null");
     }
 
     /**
-     * Close this FFI context.
+     * Closes this FFI context.
      *
      * Once this function has been called, no further FFI calls can be made using it
      * and will throw exceptions. It is safe to close this context whilst query
-     * streams
-     * are active; however, no further queries can be executed.
+     * streams are active; however, no further queries can be executed.
      *
      * This is an idempotent operation, calling it multiple times will have no
      * effect.
@@ -78,20 +79,19 @@ public class FFIContext implements AutoCloseable {
     @Override
     public void close() {
         // if we have a pointer, then make FFI call to destroy resources
-        context = context.map(val -> {
-            functions.destroy_context(val);
-            // set pointer to null to prevent double closing
-            return null;
-        });
+        if (context != null) {
+            functions.destroy_context(context);
+            context = null;
+        }
     }
 
     /**
-     * Check if this context has been closed.
+     * Checks if this context has been closed.
      *
      * @return true if context is closed
      */
     public boolean isClosed() {
-        return context.isEmpty();
+        return context == null;
     }
 
     /**
@@ -105,6 +105,10 @@ public class FFIContext implements AutoCloseable {
         }
     }
 
+    public T getFunctions() {
+        return functions;
+    }
+
     /**
      * Gets a pointer to the foreign context object.
      *
@@ -113,6 +117,6 @@ public class FFIContext implements AutoCloseable {
      */
     public Pointer getForeignContext() {
         checkClosed();
-        return context.get();
+        return context;
     }
 }

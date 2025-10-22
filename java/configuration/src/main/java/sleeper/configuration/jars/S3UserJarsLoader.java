@@ -26,6 +26,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -46,10 +48,24 @@ public class S3UserJarsLoader {
     private final S3Client s3Client;
     private final Path localDir;
 
+    public S3UserJarsLoader(InstanceProperties instanceProperties, S3Client s3Client) {
+        this(instanceProperties, s3Client, makeTemporaryDirectory());
+    }
+
     public S3UserJarsLoader(InstanceProperties instanceProperties, S3Client s3Client, Path localDir) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.localDir = localDir;
+    }
+
+    private static Path makeTemporaryDirectory() {
+        try {
+            Path tempDir = Files.createTempDirectory(null);
+            tempDir.toFile().deleteOnExit();
+            return tempDir;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**

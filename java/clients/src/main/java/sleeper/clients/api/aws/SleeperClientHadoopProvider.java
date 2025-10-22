@@ -18,7 +18,7 @@ package sleeper.clients.api.aws;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 
 /**
  * Provides a Hadoop configuration to instantiate a Sleeper client.
@@ -27,12 +27,12 @@ import sleeper.parquet.utils.HadoopConfigurationProvider;
 public interface SleeperClientHadoopProvider {
 
     /**
-     * Creates or retrieves the Hadoop configuration.
+     * Creates or retrieves the Hadoop configuration provider.
      *
      * @param  instanceProperties the Sleeper instance properties
-     * @return                    the Hadoop configuration
+     * @return                    the Hadoop configuration provider
      */
-    Configuration getConfiguration(InstanceProperties instanceProperties);
+    TableHadoopConfigurationProvider getProvider(InstanceProperties instanceProperties);
 
     /**
      * Creates a provider that will apply the default client configuration for a given Sleeper instance.
@@ -40,7 +40,7 @@ public interface SleeperClientHadoopProvider {
      * @return the provider
      */
     static SleeperClientHadoopProvider getDefault() {
-        return instanceProperties -> HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
+        return instanceProperties -> TableHadoopConfigurationProvider.forClient(instanceProperties);
     }
 
     /**
@@ -50,7 +50,7 @@ public interface SleeperClientHadoopProvider {
      * @return               the provider
      */
     static SleeperClientHadoopProvider withConfig(Configuration configuration) {
-        return instanceProperties -> configuration;
+        return instanceProperties -> TableHadoopConfigurationProvider.fixed(configuration);
     }
 
 }
