@@ -79,8 +79,8 @@ public class CompactionTaskHostScaler implements TaskHostScaler {
         int instancesDesired = (int) (Math.ceil(numberOfTasks / (double) containersPerInstance));
         int newClusterSize = Math.min(instancesDesired, maxInstances);
         LOGGER.info("Total containers wanted (including existing ones) {}, containers per instance {}, " +
-                "so total instances wanted {}, limited to {} by ASG maximum size limit", numberOfTasks, containersPerInstance,
-                instancesDesired, newClusterSize);
+                "so total instances wanted {}, limited to {} with ASG maximum size limit of {}", numberOfTasks, containersPerInstance,
+                instancesDesired, newClusterSize, maxInstances);
 
         asgUpdate.setClusterDesiredSize(asScalingGroup, newClusterSize);
     }
