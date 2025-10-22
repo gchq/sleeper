@@ -34,6 +34,7 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithNoJobRuns;
+import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithStoppedApplication;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithStoppingApplication;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.aResponseWithTerminatedApplication;
 import static sleeper.cdk.custom.WiremockEmrServerlessTestHelper.anyRequestedForEmrServerless;
@@ -74,6 +75,32 @@ public class AutoStopEmrServerlessApplicationLambdaIT {
         // Then
         assertThatThrownBy(() -> lambda.handleEvent(applicationEvent(applicationId, "Delete"), null))
                 .isInstanceOf(PollWithRetries.CheckFailedException.class);
+    }
+
+    @Test
+    void shouldTrackStoppingApplication(WireMockRuntimeInfo runtimeInfo) throws Exception {
+
+        lambda = lambda(runtimeInfo, PollWithRetries.immediateRetries(5));
+
+        // Given
+        stubFor(listRunningJobsForApplicationRequest(applicationId)
+                .willReturn(aResponseWithNoJobRuns()));
+        stubFor(stopApplicationRequest(applicationId).inScenario("StopApplication")
+                .willReturn(aResponse().withStatus(200))
+                .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopping"));
+        stubFor(getApplicationRequest(applicationId).inScenario("StopApplication")
+                .willReturn(aResponseWithStoppingApplication(applicationId))
+                .whenScenarioStateIs("ApplicationStopping").willSetStateTo("ApplicationStopped"));
+        stubFor(getApplicationRequest(applicationId).inScenario("StopApplication")
+                .willReturn(aResponseWithStoppedApplication(applicationId))
+                .whenScenarioStateIs("ApplicationStopped"));
+
+        // Then
+        lambda.handleEvent(applicationEvent(applicationId, "Delete"), null);
+        // Then
+        verify(4, anyRequestedForEmrServerless());
+        verify(1, stopApplicationRequested(applicationId));
+        verify(2, getApplicationRequested(applicationId));
 
     }
 

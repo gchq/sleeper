@@ -31,8 +31,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 
 /**
  * Delete an EMR Serverless application.
@@ -96,8 +94,7 @@ public class AutoStopEmrServerlessApplicationLambda {
         emrServerlessClient.stopApplication(request -> request.applicationId(applicationId));
 
         LOGGER.info("Waiting for applications to stop");
-        Function<String, BooleanSupplier> isApplicationStopped = this::isApplicationStopped;
-        poll.pollUntil("all EMR Serverless applications stopped", isApplicationStopped.apply(applicationId));
+        poll.pollUntil("all EMR Serverless applications stopped", () -> isApplicationStopped(applicationId));
     }
 
     private boolean allJobsFinished(String applicationId) {
@@ -114,16 +111,16 @@ public class AutoStopEmrServerlessApplicationLambda {
         }
     }
 
-    private BooleanSupplier isApplicationStopped(String applicationId) {
+    private boolean isApplicationStopped(String applicationId) {
 
         ApplicationState currentState = emrServerlessClient.getApplication(request -> request.applicationId(applicationId)).application().state();
 
         Set<ApplicationState> runningApplication = EnumSet.of(ApplicationState.STARTING, ApplicationState.STARTED, ApplicationState.STOPPING);
 
         if (runningApplication.contains(currentState)) {
-            return () -> false;
+            return false;
         }
-        return () -> true;
+        return true;
 
     }
 

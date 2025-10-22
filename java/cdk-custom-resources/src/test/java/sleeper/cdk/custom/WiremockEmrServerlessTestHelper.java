@@ -191,7 +191,19 @@ public class WiremockEmrServerlessTestHelper {
                 "\"applicationId\":\"" + applicationId + "\"," +
                 "\"state\":\"TERMINATED\"" +
                 "}}");
+    }
 
+    /**
+     * Build an EMR application response for a running application.
+     *
+     * @param  applicationId the application id
+     * @return               a HTTP response
+     */
+    public static ResponseDefinitionBuilder aResponseWithRunningApplication(String applicationId) {
+        return aResponse().withStatus(200).withBody("{\"application\":{" +
+                "\"applicationId\":\"" + applicationId + "\"," +
+                "\"state\":\"RUNNING\"" +
+                "}}");
     }
 
     /**
@@ -205,7 +217,19 @@ public class WiremockEmrServerlessTestHelper {
                 "\"applicationId\":\"" + applicationId + "\"," +
                 "\"state\":\"STOPPING\"" +
                 "}}");
+    }
 
+    /**
+     * Build an EMR application response for a stopped application.
+     *
+     * @param  applicationId the application id
+     * @return               a HTTP response
+     */
+    public static ResponseDefinitionBuilder aResponseWithStoppedApplication(String applicationId) {
+        return aResponse().withStatus(200).withBody("{\"application\":{" +
+                "\"applicationId\":\"" + applicationId + "\"," +
+                "\"state\":\"STOPPED\"" +
+                "}}");
     }
 
     /**
