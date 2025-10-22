@@ -17,18 +17,52 @@
 * limitations under the License.
 */
 use datafusion::{
-    common::tree_node::{TreeNode, TreeNodeRecursion},
+    common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     error::DataFusionError,
-    logical_expr::{Expr, LogicalPlan},
+    logical_expr::{Expr, Filter, LogicalPlan, TableScan},
 };
 
+/// Fixes the filtering conditions on a [`LogicalPlan`]. This is a workaround for DataFusion bug
+/// <https://github.com/apache/datafusion/issues/18214>.
+///
+/// We use the unoptimised plan filter conditions in the repaired plan and also swap out filtering predicates
+/// on a [`TableScan`] which would have been pushed down during logical plan optimization.
 pub async fn fix_filter_exprs(
-    incorrect_plan: &LogicalPlan,
+    optimised_plan: LogicalPlan,
     unoptimised_plan: &LogicalPlan,
 ) -> Result<LogicalPlan, DataFusionError> {
-    let filters = collect_filters(unoptimised_plan);
+    let filters = collect_filters(unoptimised_plan)?;
+    if !filters.is_empty() {
+        // Create combined filter of all expressions with AND
+        let combined_expr = filters
+            .clone()
+            .into_iter()
+            .reduce(|lhs, rhs| lhs.and(rhs))
+            .expect("Expression list should not be empty!");
 
-    Ok(incorrect_plan.clone())
+        // Now traverse plan looking for Filter or TableScan items to replace
+        Ok(optimised_plan
+            .transform_down(|node| {
+                Ok(match node {
+                    LogicalPlan::Filter(filter) => Transformed::yes(LogicalPlan::Filter(
+                        Filter::try_new(combined_expr.clone(), filter.input)?,
+                    )),
+                    LogicalPlan::TableScan(table_scan) => {
+                        Transformed::yes(LogicalPlan::TableScan(TableScan::try_new(
+                            table_scan.table_name,
+                            table_scan.source,
+                            table_scan.projection,
+                            filters.clone(),
+                            table_scan.fetch,
+                        )?))
+                    }
+                    _ => Transformed::no(node),
+                })
+            })?
+            .data)
+    } else {
+        Ok(optimised_plan.clone())
+    }
 }
 
 /// Collect all the [`Expr`]s that are used in filter conditions from any [`LogicalPlan::Filter`]
