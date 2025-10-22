@@ -75,7 +75,7 @@ sudo rm -rf quick
 mkdir quick
 sudo cp -r java quick/java
 sudo cp -r scripts quick/scripts
-sudo cp -r python quick/python
+cp -r python quick/python
 sudo cp -r code-style quick/code-style
 sudo cp -r rust quick/rust
 cp README.md quick
