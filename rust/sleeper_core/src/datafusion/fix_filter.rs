@@ -1,6 +1,6 @@
 //! Contains a workaround for filtering conditions bug. See <https://github.com/apache/datafusion/issues/18214>
 //!
-//! Tests also contains a 'fuse' test that will blow (fail) if the bug in DataFusion gets fixed so we can remove this workaround.
+//! Tests also contains a 'fuse' test that will blow (fail) if the bug in `DataFusion` gets fixed so we can remove this workaround.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -19,10 +19,10 @@
 use datafusion::{
     common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     error::DataFusionError,
-    logical_expr::{BinaryExpr, Expr, Filter, LogicalPlan, Operator, TableScan},
+    logical_expr::{Expr, Filter, LogicalPlan, Operator, TableScan},
 };
 
-/// Fixes the filtering conditions on a [`LogicalPlan`]. This is a workaround for DataFusion bug
+/// Fixes the filtering conditions on a [`LogicalPlan`]. This is a workaround for `DataFusion` bug
 /// <https://github.com/apache/datafusion/issues/18214>.
 ///
 /// We use the unoptimised plan filter conditions in the repaired plan and also swap out filtering predicates
@@ -35,12 +35,14 @@ pub fn fix_filter_exprs(
     unoptimised_plan: &LogicalPlan,
 ) -> Result<LogicalPlan, DataFusionError> {
     let filters = collect_filters(unoptimised_plan)?;
-    if !filters.is_empty() {
+    if filters.is_empty() {
+        Ok(optimised_plan.clone())
+    } else {
         // Create combined filter of all expressions with AND
         let combined_expr = filters
             .clone()
             .into_iter()
-            .reduce(|lhs, rhs| lhs.and(rhs))
+            .reduce(datafusion::prelude::Expr::and)
             .expect("Expression list should not be empty!");
 
         // Now traverse plan looking for Filter or TableScan items to replace
@@ -63,8 +65,6 @@ pub fn fix_filter_exprs(
                 })
             })?
             .data)
-    } else {
-        Ok(optimised_plan.clone())
     }
 }
 
@@ -101,7 +101,10 @@ fn recurse_binary_exprs(expr: Expr, filters: &mut Vec<Expr>) {
 #[cfg(test)]
 mod tests {
     use crate::datafusion::fix_filter::{collect_filters, fix_filter_exprs};
-    use datafusion::{dataframe::DataFrameWriteOptions, error::DataFusionError, prelude::*};
+    use datafusion::{
+        common::tree_node::TreeNode, dataframe::DataFrameWriteOptions, error::DataFusionError,
+        logical_expr::LogicalPlan, prelude::*,
+    };
     use tempfile::{TempDir, tempdir};
 
     #[test]
@@ -259,6 +262,65 @@ mod tests {
 
         // Then
         assert_eq!(optimised_plan, fixed_plan);
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn should_return_plan_multiple_filter() -> Result<(), DataFusionError> {
+        let tmpdir = tempdir().expect("Couldn't create temp directory");
+        // Given
+        let ctx = SessionContext::new();
+        // Write to an actual Parquet file so the TableScan in plan will support predicate pushdown
+        let path = write_test_parquet(&tmpdir).await?;
+        let df = ctx
+            .read_parquet(&path, ParquetReadOptions::default())
+            .await?
+            .filter(col("a").gt(lit(1)).and(col("a").lt(lit(10))))?
+            .filter(col("a").gt_eq(lit(1)).and(col("a").lt_eq(lit(10))))?
+            .filter(col("b").gt(lit("aaa")))?
+            .sort(vec![col("a").sort(true, false)])?;
+
+        let (state, plan) = df.into_parts();
+        let optimised_plan = state.optimize(&plan)?;
+
+        // When
+        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan)?;
+
+        // Then
+        // Manually inspect the transformed plan
+        let check_filter = fixed_plan.exists(|node| {
+            Ok(match node {
+                LogicalPlan::Filter(filter) => {
+                    let expected = col(Column::new(Some("?table?"), "b"))
+                        .gt(lit("aaa"))
+                        .and(col(Column::new(Some("?table?"), "a")).gt_eq(lit(1)))
+                        .and(col(Column::new(Some("?table?"), "a")).lt_eq(lit(10)))
+                        .and(col(Column::new(Some("?table?"), "a")).gt(lit(1)))
+                        .and(col(Column::new(Some("?table?"), "a")).lt(lit(10)));
+                    filter.predicate == expected
+                }
+                _ => false,
+            })
+        })?;
+        assert!(check_filter, "Filter expression not correct");
+
+        let check_table_scan = fixed_plan.exists(|node| {
+            Ok(match node {
+                LogicalPlan::TableScan(table_scan) => {
+                    let filter_exprs = vec![
+                        col(Column::new(Some("?table?"), "b")).gt(lit("aaa")),
+                        col(Column::new(Some("?table?"), "a")).gt_eq(lit(1)),
+                        col(Column::new(Some("?table?"), "a")).lt_eq(lit(10)),
+                        col(Column::new(Some("?table?"), "a")).gt(lit(1)),
+                        col(Column::new(Some("?table?"), "a")).lt(lit(10)),
+                    ];
+                    table_scan.filters == filter_exprs
+                }
+                _ => false,
+            })
+        })?;
+        assert!(check_table_scan, "TableScan expression not correct");
+
         Ok(())
     }
 
