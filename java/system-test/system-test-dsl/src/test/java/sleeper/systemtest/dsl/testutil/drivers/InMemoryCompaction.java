@@ -122,7 +122,7 @@ public class InMemoryCompaction {
             instance.streamTableProperties().forEach(table -> {
                 try {
                     jobCreator.createJobsWithStrategy(table);
-                } catch (IOException | ObjectFactoryException e) {
+                } catch (ObjectFactoryException e) {
                     throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
                 }
             });
@@ -134,7 +134,7 @@ public class InMemoryCompaction {
             instance.streamTableProperties().forEach(table -> {
                 try {
                     jobCreator.createJobWithForceAllFiles(table);
-                } catch (IOException | ObjectFactoryException e) {
+                } catch (ObjectFactoryException e) {
                     throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
                 }
             });
@@ -183,13 +183,17 @@ public class InMemoryCompaction {
         private CreateCompactionJobs jobCreator() {
             return new CreateCompactionJobs(
                     instance.getInstanceProperties(), instance.getStateStoreProvider(),
-                    new CreateCompactionJobBatches(
-                            instance.getInstanceProperties(),
-                            batchJobsWriter(),
-                            compactionJobMessage -> {
-                            }, idAssignmentCommit -> {
-                            }, GenerateBatchId.random(), Instant::now),
+                    jobBatchCreator(),
                     ObjectFactory.noUserJars(), GenerateJobId.random(), new Random());
+        }
+
+        private CreateCompactionJobBatches jobBatchCreator() {
+            return new CreateCompactionJobBatches(
+                    instance.getInstanceProperties(),
+                    batchJobsWriter(),
+                    compactionJobMessage -> {
+                    }, idAssignmentCommit -> {
+                    }, GenerateBatchId.random(), Instant::now);
         }
     }
 

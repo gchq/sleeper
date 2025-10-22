@@ -35,7 +35,6 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,15 +80,15 @@ public class CreateCompactionJobs {
         this.random = random;
     }
 
-    public void createJobsWithStrategy(TableProperties table) throws IOException, ObjectFactoryException {
+    public void createJobsWithStrategy(TableProperties table) throws ObjectFactoryException {
         createJobs(table, false);
     }
 
-    public void createJobWithForceAllFiles(TableProperties table) throws IOException, ObjectFactoryException {
+    public void createJobWithForceAllFiles(TableProperties table) throws ObjectFactoryException {
         createJobs(table, true);
     }
 
-    private void createJobs(TableProperties table, boolean forceAllFiles) throws IOException, ObjectFactoryException {
+    private void createJobs(TableProperties table, boolean forceAllFiles) throws ObjectFactoryException {
         StateStore stateStore = stateStoreProvider.getStateStore(table);
         LOGGER.info("Performing pre-splits on files in table {}", table.getStatus());
         Instant preSplitStartTime = Instant.now();
@@ -99,7 +98,7 @@ public class CreateCompactionJobs {
         LOGGER.info("Overall, pre-splitting files and creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
     }
 
-    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore, boolean forceAllFiles) throws IOException, ObjectFactoryException {
+    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore, boolean forceAllFiles) throws ObjectFactoryException {
         Instant startTime = Instant.now();
         TableStatus table = tableProperties.getStatus();
         LOGGER.info("Creating jobs for table {}", table);

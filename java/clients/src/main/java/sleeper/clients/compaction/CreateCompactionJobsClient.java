@@ -32,7 +32,6 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.statestore.StateStoreFactory;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
@@ -55,10 +54,10 @@ public class CreateCompactionJobsClient {
 
     @FunctionalInterface
     public interface CreateJobsMode {
-        void createJobs(CreateCompactionJobs creator, TableProperties table) throws ObjectFactoryException, IOException;
+        void createJobs(CreateCompactionJobs creator, TableProperties table) throws ObjectFactoryException;
     }
 
-    public static void main(String[] args) throws ObjectFactoryException, IOException {
+    public static void main(String[] args) throws ObjectFactoryException {
         if (args.length < 2) {
             System.out.println("Usage: <mode-all-or-default> <instance-id> <table-names-as-args>");
             return;

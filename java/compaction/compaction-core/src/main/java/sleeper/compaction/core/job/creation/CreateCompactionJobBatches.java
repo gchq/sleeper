@@ -28,7 +28,6 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.SplitIntoBatches;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -63,7 +62,7 @@ public class CreateCompactionJobBatches {
         this.timeSupplier = timeSupplier;
     }
 
-    public void createBatches(TableProperties tableProperties, StateStore stateStore, List<CompactionJob> jobs) throws IOException {
+    public void createBatches(TableProperties tableProperties, StateStore stateStore, List<CompactionJob> jobs) {
         AssignJobIdToFiles assignJobIdsToFiles;
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
             assignJobIdsToFiles = AssignJobIdToFiles.byQueue(stateStoreCommitSender);
@@ -76,7 +75,7 @@ public class CreateCompactionJobBatches {
         }
     }
 
-    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableProperties tableProperties, List<CompactionJob> compactionJobs) throws IOException {
+    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableProperties tableProperties, List<CompactionJob> compactionJobs) {
         TableStatus tableStatus = tableProperties.getStatus();
         CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
                 tableProperties, batchIdSupplier.get(), timeSupplier.get());

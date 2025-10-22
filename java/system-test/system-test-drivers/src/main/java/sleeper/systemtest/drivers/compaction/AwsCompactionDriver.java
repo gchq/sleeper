@@ -50,7 +50,6 @@ import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -125,7 +124,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
                         s3Client, sqsClient);
                 createJobs.createJobWithForceAllFiles(table);
-            } catch (IOException | ObjectFactoryException e) {
+            } catch (ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
             }
         });
