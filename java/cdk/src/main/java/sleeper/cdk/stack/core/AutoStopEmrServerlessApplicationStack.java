@@ -106,7 +106,7 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
 
         CustomResource customResource = CustomResource.Builder.create(scope, id)
                 .resourceType("Custom::AutoStopEmrServerlessApplication")
-                .properties(Map.of("instanceId", application.getAttrApplicationId()))
+                .properties(Map.of("applicationId", application.getAttrApplicationId()))
                 .serviceToken(provider.getServiceToken())
                 .build();
 
