@@ -72,7 +72,7 @@ public class BulkExportQuerySplitter {
     public void initIfNeeded() throws StateStoreException {
         Instant now = timeSupplier.get();
         if (nextInitialiseTime.isAfter(now)) {
-            LOGGER.debug("Not refreshing state for table {}", tableProperties.getStatus());
+            LOGGER.info("Not refreshing state for table {}", tableProperties.getStatus());
             return;
         }
         init(now);
@@ -104,7 +104,7 @@ public class BulkExportQuerySplitter {
      * @return                 a list of {@link LeafPartitionQuery}s
      */
     public List<BulkExportLeafPartitionQuery> splitIntoLeafPartitionQueries(BulkExportQuery bulkExportQuery) {
-        LOGGER.debug("There are {} relevant leaf partitions", leafPartitions.size());
+        LOGGER.info("There are {} relevant leaf partitions", leafPartitions.size());
 
         List<BulkExportLeafPartitionQuery> leafPartitionQueriesList = new ArrayList<>();
         for (Partition partition : leafPartitions) {
@@ -149,6 +149,7 @@ public class BulkExportQuerySplitter {
                 files.addAll(partitionToFiles.get(partitionId));
             }
         }
+        LOGGER.info("Found {} files for partition {}", files.size(), partition.getId());
         return files;
     }
 }
