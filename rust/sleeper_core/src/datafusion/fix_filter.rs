@@ -19,7 +19,7 @@
 use datafusion::{
     common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     error::DataFusionError,
-    logical_expr::{Expr, Filter, LogicalPlan, TableScan},
+    logical_expr::{BinaryExpr, Expr, Filter, LogicalPlan, Operator, TableScan},
 };
 
 /// Fixes the filtering conditions on a [`LogicalPlan`]. This is a workaround for DataFusion bug
@@ -27,7 +27,10 @@ use datafusion::{
 ///
 /// We use the unoptimised plan filter conditions in the repaired plan and also swap out filtering predicates
 /// on a [`TableScan`] which would have been pushed down during logical plan optimization.
-pub async fn fix_filter_exprs(
+///
+/// # Errors
+/// If a transformation fails, then the appropriate error is returned.
+pub fn fix_filter_exprs(
     optimised_plan: LogicalPlan,
     unoptimised_plan: &LogicalPlan,
 ) -> Result<LogicalPlan, DataFusionError> {
@@ -74,24 +77,37 @@ fn collect_filters(plan: &LogicalPlan) -> Result<Vec<Expr>, DataFusionError> {
     let mut filters = vec![];
     plan.apply(|node| {
         if let LogicalPlan::Filter(filter) = node {
-            filters.push(filter.predicate.clone())
+            recurse_binary_exprs(filter.predicate.clone(), &mut filters);
         }
         Ok(TreeNodeRecursion::Continue)
     })?;
     Ok(filters)
 }
 
+// Recursively add binary expression to the list of [`Expr`]s
+// and recurse into AND operators if they are `BinaryExpr`.
+fn recurse_binary_exprs(expr: Expr, filters: &mut Vec<Expr>) {
+    match expr {
+        Expr::BinaryExpr(bin_expr) if matches!(bin_expr.op, Operator::And) => {
+            recurse_binary_exprs(*bin_expr.left, filters);
+            recurse_binary_exprs(*bin_expr.right, filters);
+        }
+        _ => {
+            filters.push(expr);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::datafusion::fix_filter::collect_filters;
-    use datafusion::dataframe;
-    use datafusion::error::DataFusionError;
-    use datafusion::prelude::*;
+    use crate::datafusion::fix_filter::{collect_filters, fix_filter_exprs};
+    use datafusion::{dataframe::DataFrameWriteOptions, error::DataFusionError, prelude::*};
+    use tempfile::{TempDir, tempdir};
 
     #[test]
     pub fn should_return_empty_filters() -> Result<(), DataFusionError> {
         // Given
-        let df = dataframe![ "a"=> [1]]?.sort(vec![col("a").sort(true, false)])?;
+        let df = dataframe![ "a" => [1]]?.sort(vec![col("a").sort(true, false)])?;
 
         // When
         let filters = collect_filters(df.logical_plan())?;
@@ -104,7 +120,7 @@ mod tests {
     #[test]
     pub fn should_return_single_filter() -> Result<(), DataFusionError> {
         // Given
-        let df = dataframe![ "a"=> [1]]?
+        let df = dataframe![ "a" => [1]]?
             .filter(col("a").gt(lit(5)))?
             .sort(vec![col("a").sort(true, false)])?;
 
@@ -139,5 +155,126 @@ mod tests {
         assert!(filters.contains(&col(Column::new(Some("?table?"), "a")).gt(lit(5))));
         assert!(filters.contains(&col(Column::new(Some("?table?"), "b")).lt_eq(lit("value"))));
         Ok(())
+    }
+
+    #[test]
+    pub fn should_return_multiple_filters_break_apart_conjunctions() -> Result<(), DataFusionError>
+    {
+        // Given
+        let df = dataframe![
+            "a" => [1],
+            "b" => ["test"]
+        ]?
+        .filter(col("a").gt(lit(5)))?
+        .filter(
+            col("a")
+                .gt(lit(1))
+                .and(col("a").lt(lit(6)))
+                .and(col("a").not_eq(lit(4))),
+        )?
+        .sort(vec![col("a").sort(true, false)])?;
+
+        // When
+        let filters = collect_filters(df.logical_plan())?;
+
+        // Then
+        assert_eq!(filters.len(), 4);
+        assert!(filters.contains(&col(Column::new(Some("?table?"), "a")).gt(lit(5))));
+        assert!(filters.contains(&col(Column::new(Some("?table?"), "a")).gt(lit(1))));
+        assert!(filters.contains(&col(Column::new(Some("?table?"), "a")).lt(lit(6))));
+        assert!(filters.contains(&col(Column::new(Some("?table?"), "a")).not_eq(lit(4))));
+
+        Ok(())
+    }
+
+    #[test]
+    pub fn should_return_multiple_filters_keep_disjunction() -> Result<(), DataFusionError> {
+        // Given
+        let df = dataframe![
+            "a" => [1],
+            "b" => ["test"]
+        ]?
+        .filter(col("a").gt(lit(5)))?
+        .filter(col("a").gt(lit(1)).or(col("a").lt(lit(6))))?
+        .sort(vec![col("a").sort(true, false)])?;
+
+        // When
+        let filters = collect_filters(df.logical_plan())?;
+
+        // Then
+        assert_eq!(filters.len(), 2);
+        assert!(filters.contains(&col(Column::new(Some("?table?"), "a")).gt(lit(5))));
+        assert!(
+            filters.contains(
+                &col(Column::new(Some("?table?"), "a"))
+                    .gt(lit(1))
+                    .or(col(Column::new(Some("?table?"), "a")).lt(lit(6)))
+            )
+        );
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn should_not_alter_plan_no_filters() -> Result<(), DataFusionError> {
+        let tmpdir = tempdir().expect("Couldn't create temp directory");
+        // Given
+        let ctx = SessionContext::new();
+        // Write to an actual Parquet file so the TableScan in plan will support predicate pushdown
+        let path = write_test_parquet(&tmpdir).await?;
+        let df = ctx
+            .read_parquet(&path, ParquetReadOptions::default())
+            .await?
+            .sort(vec![col("a").sort(true, false)])?;
+
+        let (state, plan) = df.into_parts();
+        let optimised_plan = state.optimize(&plan)?;
+
+        // When
+        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan)?;
+
+        // Then
+        assert_eq!(optimised_plan, fixed_plan);
+        Ok(())
+    }
+
+    #[tokio::test]
+    pub async fn should_return_plan_single_filter() -> Result<(), DataFusionError> {
+        let tmpdir = tempdir().expect("Couldn't create temp directory");
+        // Given
+        let ctx = SessionContext::new();
+        // Write to an actual Parquet file so the TableScan in plan will support predicate pushdown
+        let path = write_test_parquet(&tmpdir).await?;
+        let df = ctx
+            .read_parquet(&path, ParquetReadOptions::default())
+            .await?
+            .filter(col("a").gt(lit(5)).and(col("a").lt_eq(lit(15))))?
+            .sort(vec![col("a").sort(true, false)])?;
+
+        let (state, plan) = df.into_parts();
+        let optimised_plan = state.optimize(&plan)?;
+
+        // When
+        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan)?;
+
+        // Then
+        assert_eq!(optimised_plan, fixed_plan);
+        Ok(())
+    }
+
+    async fn write_test_parquet(t: &TempDir) -> Result<String, DataFusionError> {
+        let df = dataframe![
+            "a" => [1, 2, 3],
+            "b" => ["test", "val1", "val2"]
+        ]?;
+        let path = t
+            .path()
+            .join("test.parquet")
+            .to_str()
+            .expect("Couldn't convert path")
+            .to_owned();
+        df.write_parquet(&path, DataFrameWriteOptions::default(), None)
+            .await?;
+        Ok(path)
     }
 }

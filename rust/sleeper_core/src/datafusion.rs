@@ -309,7 +309,7 @@ impl<'a> SleeperOperations<'a> {
         let optimised_plan = state.optimize(&logical_plan)?;
         println!("\n\n{}", optimised_plan.display_indent());
 
-        let fixed_plan = fix_filter_exprs(optimised_plan, &logical_plan).await?;
+        let fixed_plan = fix_filter_exprs(optimised_plan, &logical_plan)?;
         println!("\n\n{}", fixed_plan.display_indent());
 
         // Consume frame and generate initial physical plan
