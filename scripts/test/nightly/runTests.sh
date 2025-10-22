@@ -69,8 +69,6 @@ set +e
 
 END_EXIT_CODE=0
 
-su -l
-
 pushd $SLEEPER_DIR
 #Make copies of the java folder to run independent maven builds in parallel
 rm -rf quick
