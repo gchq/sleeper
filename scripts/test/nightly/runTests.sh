@@ -84,7 +84,7 @@ popd
 copyFolderForParallelRun() {
     pushd $SLEEPER_DIR
     sudo rm -rf $1
-    cp -r quick $1
+    sudo cp -r quick $1
     popd
 }
 
