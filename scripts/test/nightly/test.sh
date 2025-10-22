@@ -2,4 +2,4 @@ cd ../../..
 ls
 rm -rf temp
 mkdir temp
-sudo cp rust temp/rust
+sudo cp -r rust temp/rust
