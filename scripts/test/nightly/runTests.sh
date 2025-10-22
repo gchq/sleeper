@@ -82,6 +82,7 @@ cp README.md quick
 popd
 
 copyFolderForParallelRun() {
+    echo "Making folder sleeper/$1 for parallel build"
     pushd $SLEEPER_DIR
     sudo rm -rf $1
     sudo cp -r quick $1
@@ -89,6 +90,7 @@ copyFolderForParallelRun() {
 }
 
 removeFolderAfterParallelRun() {
+    echo "Removing folder sleeper/$1"
     pushd $SLEEPER_DIR
     sudo rm -rf $1
     popd
