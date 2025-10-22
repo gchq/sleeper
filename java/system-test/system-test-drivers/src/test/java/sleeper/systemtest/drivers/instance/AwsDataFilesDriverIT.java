@@ -75,13 +75,12 @@ public class AwsDataFilesDriverIT {
     void shouldDuplicateFiles(SleeperSystemTest sleeper, SystemTestContext context) {
         // Given
         sleeper.tables().create("test", createSchemaWithKey("key", new StringType()));
-        FileReference file1 = sleeper.ingest().toStateStore()
-                .addFileOnPartition("file-1", "root", new Row(Map.of("key", "value-1")));
-        FileReference file2 = sleeper.ingest().toStateStore()
-                .addFileOnPartition("file-2", "root", new Row(Map.of("key", "value-1")));
+        sleeper.ingest().toStateStore()
+                .addFileOnPartition("file-1.parquet", "root", new Row(Map.of("key", "value-1")))
+                .addFileOnPartition("file-2.parquet", "root", new Row(Map.of("key", "value-2")));
 
         // When
-        DataFileDuplications duplications = sleeper.ingest().toStateStore().duplicateFilesOnSamePartitions(1, List.of(file1, file2));
+        DataFileDuplications duplications = sleeper.ingest().toStateStore().duplicateFilesOnSamePartitions(1);
 
         // Then
         List<FileReference> results = duplications.streamNewReferences().toList();
@@ -89,7 +88,7 @@ public class AwsDataFilesDriverIT {
         assertThat(readRows(context, results.get(0)))
                 .containsExactly(new Row(Map.of("key", "value-1")));
         assertThat(readRows(context, results.get(1)))
-                .containsExactly(new Row(Map.of("key", "value-2")), new Row(Map.of("key", "value-3")));
+                .containsExactly(new Row(Map.of("key", "value-2")));
     }
 
     private List<Row> readRows(SystemTestContext context, FileReference file) {

@@ -18,6 +18,7 @@ package sleeper.systemtest.dsl.sourcedata;
 
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.stream.LongStream;
@@ -28,18 +29,18 @@ public class SystemTestSourceFiles {
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext context;
     private final IngestSourceFilesDriver driver;
+    private SourceFilesFolder sourceFolder;
     private boolean writeSketches = false;
 
-    public SystemTestSourceFiles(SystemTestInstanceContext instance,
-            IngestSourceFilesContext context,
-            IngestSourceFilesDriver driver) {
-        this.instance = instance;
-        this.context = context;
+    public SystemTestSourceFiles(SystemTestContext context, IngestSourceFilesDriver driver) {
+        this.instance = context.instance();
+        this.context = context.sourceFiles();
         this.driver = driver;
+        this.sourceFolder = SourceFilesFolder.writeToSystemTestBucket(context);
     }
 
     public SystemTestSourceFiles inDataBucket() {
-        context.useDataBucket();
+        sourceFolder = SourceFilesFolder.writeToDataBucket(instance);
         return this;
     }
 
@@ -61,12 +62,12 @@ public class SystemTestSourceFiles {
     }
 
     private SystemTestSourceFiles create(String filename, Stream<Row> rows) {
-        context.writeFile(driver, filename, writeSketches, rows);
+        context.writeFile(driver, filename, sourceFolder, writeSketches, rows);
         return this;
     }
 
     private SystemTestSourceFiles create(Schema schema, String filename, Stream<Row> rows) {
-        context.writeFile(driver, schema, filename, writeSketches, rows);
+        context.writeFile(driver, schema, filename, sourceFolder, writeSketches, rows);
         return this;
     }
 }

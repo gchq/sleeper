@@ -22,12 +22,12 @@ import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
-import sleeper.core.table.TableFilePaths;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.sourcedata.SourceFilesFolder;
 import sleeper.systemtest.dsl.util.DataFileDuplications;
 
 import java.util.List;
@@ -56,20 +56,17 @@ public class SystemTestIngestToStateStore {
         return duplications;
     }
 
-    public FileReference addFileOnPartition(
+    public SystemTestIngestToStateStore addFileOnPartition(
             String name, String partitionId, Row... rows) {
-        TableFilePaths paths = TableFilePaths.buildDataFilePathPrefix(instance.getInstanceProperties(), instance.getTableProperties());
-        String path = paths.constructPartitionParquetFilePath(partitionId, name);
-        ingestSource.writeFile(sourceFilesDriver(), path, true, Stream.of(rows));
-        FileReference reference = FileReference.builder()
-                .filename(path)
+        ingestSource.writeFile(sourceFilesDriver(), name, SourceFilesFolder.writeToDataBucket(instance), true, Stream.of(rows));
+        addFiles(List.of(FileReference.builder()
+                .filename(ingestSource.getFilePath(name))
                 .partitionId(partitionId)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .numberOfRows((long) rows.length)
-                .build();
-        addFiles(List.of(reference));
-        return reference;
+                .build()));
+        return this;
     }
 
     public SystemTestIngestToStateStore addFileOnPartition(
