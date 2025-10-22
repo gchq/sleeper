@@ -187,7 +187,7 @@ java -cp "${SYSTEM_TEST_JAR}" \
 
 #Clear up temporary folder
 pushd $SLEEPER_DIR
-rm -rf quick
+sudo rm -rf quick
 popd
 
 exit $END_EXIT_CODE
