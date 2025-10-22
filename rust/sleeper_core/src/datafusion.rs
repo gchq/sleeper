@@ -21,6 +21,7 @@ use crate::{
     CommonConfig,
     datafusion::{
         filter_aggregation_config::validate_aggregations,
+        fix_filter::fix_filter_exprs,
         output::Completer,
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
@@ -54,6 +55,7 @@ mod cast_udf;
 mod compact;
 mod config;
 mod filter_aggregation_config;
+mod fix_filter;
 mod leaf_partition_query;
 mod metrics;
 pub mod output;
@@ -300,8 +302,21 @@ impl<'a> SleeperOperations<'a> {
         frame: DataFrame,
         sort_ordering: Option<&LexOrdering>,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
+        // We manually go through the stages of getting the plan, optimising it and then converting to a physical
+        // plan so that we have a place to fix the optimised logical plan due to <https://github.com/apache/datafusion/issues/18214>.
+        let (state, logical_plan) = frame.into_parts();
+        println!("{}", logical_plan.display_indent());
+        let optimised_plan = state.optimize(&logical_plan)?;
+        println!("\n\n{}", optimised_plan.display_indent());
+
+        let fixed_plan = fix_filter_exprs(&optimised_plan, &logical_plan).await?;
+        println!("\n\n{}", fixed_plan.display_indent());
+
         // Consume frame and generate initial physical plan
-        let mut physical_plan = frame.create_physical_plan().await?;
+        let mut physical_plan = state
+            .query_planner()
+            .create_physical_plan(&fixed_plan, &state)
+            .await?;
         if let Some(order) = sort_ordering {
             // Unalias field names if this is going to be Arrow output
             physical_plan = self.remove_aliased_columns(physical_plan, order)?;
