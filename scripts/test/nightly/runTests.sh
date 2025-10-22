@@ -79,7 +79,7 @@ sudo cp -r python quick/python
 sudo cp -r code-style quick/code-style
 sudo cp -r rust quick/rust
 cp README.md quick
-sudo chmod 777 quick
+sudo chmod -R 777 quick
 popd
 
 copyFolderForParallelRun() {
