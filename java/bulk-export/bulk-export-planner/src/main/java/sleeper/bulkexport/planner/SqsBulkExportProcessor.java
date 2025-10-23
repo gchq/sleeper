@@ -67,7 +67,7 @@ public class SqsBulkExportProcessor {
         BulkExportLeafPartitionQuerySerDe querySerDe = new BulkExportLeafPartitionQuerySerDe(tablePropertiesProvider);
         splitter.initIfNeeded();
         List<BulkExportLeafPartitionQuery> leafPartitionQueries = splitter.splitIntoLeafPartitionQueries(bulkExportQuery);
-        LOGGER.info("Got {} leaf partition export queries for bulk export query {}.",
+        LOGGER.info("Sending {} leaf partition export queries for bulk export query {}.",
                 leafPartitionQueries.size(), bulkExportQuery.getExportId());
         leafPartitionQueries.forEach(query -> {
             LOGGER.debug("Sending leaf partition export query {} to queue {}.", query.getSubExportId(), sqsUrl);
