@@ -39,10 +39,7 @@ use datafusion::{
     dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
-    execution::{
-        config::SessionConfig, context::SessionContext,
-        options::ParquetReadOptions,
-    },
+    execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
     logical_expr::{Expr, LogicalPlanBuilder, SortExpr, ident},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
