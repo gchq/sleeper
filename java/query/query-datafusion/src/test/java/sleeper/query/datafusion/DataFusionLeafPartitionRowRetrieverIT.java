@@ -503,60 +503,60 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             return rows;
         }
 
-        // @Test
-        // void shouldReturnFirstRowsByExactMatch() throws Exception {
-        //     // Given
-        //     Range range1 = rangeFactory().createExactRange("key1", 1L);
-        //     Range range2 = rangeFactory().createExactRange("key2", "1");
+        @Test
+        void shouldReturnFirstRowsByExactMatch() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createExactRange("key1", 1L);
+            Range range2 = rangeFactory().createExactRange("key2", "1");
 
-        //     // When
-        //     List<Row> results = executeQueryByRanges(range1, range2);
+            // When
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-        //     // Then
-        //     assertThat(results).hasSize(10)
-        //             .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
-        // }
+            // Then
+            assertThat(results).hasSize(10)
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
+        }
 
-        // @Test
-        // void shouldReturnMiddleRowsByExactMatch() throws Exception {
-        //     // Given
-        //     Range range1 = rangeFactory().createExactRange("key1", 5L);
-        //     Range range2 = rangeFactory().createExactRange("key2", "5");
+        @Test
+        void shouldReturnMiddleRowsByExactMatch() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createExactRange("key1", 5L);
+            Range range2 = rangeFactory().createExactRange("key2", "5");
 
-        //     // When
-        //     List<Row> results = executeQueryByRanges(range1, range2);
+            // When
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-        //     // Then
-        //     assertThat(results).hasSize(10)
-        //             .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
-        // }
+            // Then
+            assertThat(results).hasSize(10)
+                    .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
+        }
 
-        // @Test
-        // void shouldReturnNoRowsByExactMatch() throws Exception {
-        //     // Given
-        //     Range range1 = rangeFactory().createExactRange("key1", 8L);
-        //     Range range2 = rangeFactory().createExactRange("key2", "notthere");
+        @Test
+        void shouldReturnNoRowsByExactMatch() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createExactRange("key1", 8L);
+            Range range2 = rangeFactory().createExactRange("key2", "notthere");
 
-        //     // When
-        //     List<Row> results = executeQueryByRanges(range1, range2);
+            // When
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-        //     // Then
-        //     assertThat(results).isEmpty();
-        // }
+            // Then
+            assertThat(results).isEmpty();
+        }
 
-        // @Test
-        // void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
-        //     // Given
-        //     Range range1 = rangeFactory().createRange("key1", -100000L, true, 123456789L, true);
-        //     Range range2 = rangeFactory().createRange("key2", "0", true, "99999999999", true);
+        @Test
+        void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
+            // Given
+            Range range1 = rangeFactory().createRange("key1", -100000L, true, 123456789L, true);
+            Range range2 = rangeFactory().createRange("key2", "0", true, "99999999999", true);
 
-        //     // When
-        //     List<Row> results = executeQueryByRanges(range1, range2);
+            // When
+            List<Row> results = executeQueryByRanges(range1, range2);
 
-        //     // Then
-        //     assertThat(results).hasSize(100)
-        //             .hasSameElementsAs(getMultipleRowsMultidimRowKey());
-        // }
+            // Then
+            assertThat(results).hasSize(100)
+                    .hasSameElementsAs(getMultipleRowsMultidimRowKey());
+        }
 
         @Test
         void shouldReturnSomeRowsByRangePartiallyCoveringData() throws Exception {
