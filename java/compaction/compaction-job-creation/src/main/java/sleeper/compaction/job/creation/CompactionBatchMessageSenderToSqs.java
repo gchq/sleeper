@@ -20,14 +20,14 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-import sleeper.compaction.core.job.creation.CreateCompactionJobs;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 
-public class CompactionBatchMessageSenderToSqs implements CreateCompactionJobs.BatchMessageSender {
+public class CompactionBatchMessageSenderToSqs implements CreateCompactionJobBatches.BatchMessageSender {
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionBatchMessageSenderToSqs.class);
 
     private final InstanceProperties instanceProperties;

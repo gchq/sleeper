@@ -18,8 +18,9 @@ package sleeper.compaction.job.creation;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -44,10 +45,20 @@ public class AwsCreateCompactionJobs {
             S3Client s3Client,
             SqsClient sqsClient) {
         return new CreateCompactionJobs(
-                objectFactory, instanceProperties, stateStoreProvider,
+                instanceProperties, stateStoreProvider,
+                batchesFrom(instanceProperties, tablePropertiesProvider, s3Client, sqsClient),
+                objectFactory, GenerateJobId.random(), new Random());
+    }
+
+    public static CreateCompactionJobBatches batchesFrom(
+            InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
+            S3Client s3Client,
+            SqsClient sqsClient) {
+        return new CreateCompactionJobBatches(instanceProperties,
                 new CompactionBatchJobsWriterToS3(s3Client),
                 new CompactionBatchMessageSenderToSqs(instanceProperties, sqsClient),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)),
-                GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
+                GenerateBatchId.random(), Instant::now);
     }
 }
