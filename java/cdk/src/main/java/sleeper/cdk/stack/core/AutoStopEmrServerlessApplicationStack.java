@@ -78,12 +78,12 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(15)));
 
-        // Grant this function permission to list and stop applications
+        // Grant this function permission to emrservless actions
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
                 .resources(List.of("*"))
-                .actions(List.of("emrserverless:ListJobRuns", "emerserveless:CancelJobRun", "emrserverless:StopApplication",
-                        "emrserverless:GetApplication", "iam:PassRole"))
+                .actions(List.of("emr-serverless:ListJobRuns", "emr-serverless:CancelJobRun", "emr-serverless:StopApplication",
+                        "emr-serverless:GetApplication", "iam:PassRole"))
                 .build());
 
         provider = Provider.Builder.create(this, "Provider")
