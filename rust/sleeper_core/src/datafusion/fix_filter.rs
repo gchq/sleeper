@@ -1,6 +1,7 @@
 //! Contains a workaround for filtering conditions bug. See <https://github.com/apache/datafusion/issues/18214>
 //!
 //! Tests also contains a 'fuse' test that will blow (fail) if the bug in `DataFusion` gets fixed so we can remove this workaround.
+//! When this bug is fixed, we can remove this module.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -357,5 +358,39 @@ mod tests {
         df.write_parquet(&path, DataFrameWriteOptions::default(), None)
             .await?;
         Ok(path)
+    }
+
+    // Fuse test. This test is designed to fail once the filtering bug is fixed in DataFusion.
+    #[test]
+    fn fuse_should_break_when_bug_fixed() -> Result<(), DataFusionError> {
+        // Given
+        let df = dataframe!["a" => [1,2,3,4], "b" => ["1","2","3","4"]]?;
+        let df = df.filter(col("a").gt(lit(1)).and(col("a").lt(lit(10))))?;
+        let df = df.filter(col("a").gt_eq(lit(1)).and(col("a").lt_eq(lit(10))))?;
+        // Convert to logical plan
+        let (state, plan) = df.into_parts();
+        let expected = col(Column::new(Some("?table?"), "a"))
+            .gt_eq(lit(1))
+            .and(col(Column::new(Some("?table?"), "a")).lt_eq(lit(10)));
+
+        // When
+        let optimised_plan = state.optimize(&plan)?;
+
+        // Then
+        // Look for Filter with wrong condition
+        let bug_occurred = optimised_plan.exists(|node| {
+            if let LogicalPlan::Filter(filter) = node {
+                let expr = &filter.predicate;
+                Ok(expr == &expected)
+            } else {
+                Ok(false)
+            }
+        })?;
+
+        assert!(
+            bug_occurred,
+            "Couldn't find expected Filter condition. Has bug https://github.com/apache/datafusion/issues/18214 been fixed?"
+        );
+        Ok(())
     }
 }
