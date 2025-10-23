@@ -22,7 +22,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
-import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -31,13 +30,11 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,13 +47,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 
 /**
  * Creates compaction job definitions and posts them to an SQS queue. This is done as follows:
@@ -68,48 +61,34 @@ import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 public class CreateCompactionJobs {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateCompactionJobs.class);
 
-    private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
-    private final BatchJobsWriter batchJobsWriter;
-    private final BatchMessageSender batchMessageSender;
     private final StateStoreProvider stateStoreProvider;
-    private final StateStoreCommitRequestSender stateStoreCommitSender;
-    private final GenerateJobId generateJobId;
-    private final GenerateBatchId generateBatchId;
+    private final CreateCompactionJobBatches batchCreator;
+    private final ObjectFactory objectFactory;
+    private final Supplier<String> jobIdSupplier;
     private final Random random;
-    private final Supplier<Instant> timeSupplier;
 
-    public CreateCompactionJobs(ObjectFactory objectFactory,
-            InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider,
-            BatchJobsWriter batchJobsWriter,
-            BatchMessageSender batchMessageSender,
-            StateStoreCommitRequestSender stateStoreCommitSender,
-            GenerateJobId generateJobId,
-            GenerateBatchId generateBatchId,
-            Random random,
-            Supplier<Instant> timeSupplier) {
-        this.objectFactory = objectFactory;
+    public CreateCompactionJobs(
+            InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider,
+            CreateCompactionJobBatches batchCreator, ObjectFactory objectFactory,
+            GenerateJobId generateJobId, Random random) {
         this.instanceProperties = instanceProperties;
-        this.batchJobsWriter = batchJobsWriter;
-        this.batchMessageSender = batchMessageSender;
         this.stateStoreProvider = stateStoreProvider;
-        this.stateStoreCommitSender = stateStoreCommitSender;
-        this.generateJobId = generateJobId;
-        this.generateBatchId = generateBatchId;
+        this.batchCreator = batchCreator;
+        this.objectFactory = objectFactory;
+        this.jobIdSupplier = generateJobId::generate;
         this.random = random;
-        this.timeSupplier = timeSupplier;
     }
 
-    public void createJobsWithStrategy(TableProperties table) throws IOException, ObjectFactoryException {
+    public void createJobsWithStrategy(TableProperties table) throws ObjectFactoryException {
         createJobs(table, false);
     }
 
-    public void createJobWithForceAllFiles(TableProperties table) throws IOException, ObjectFactoryException {
+    public void createJobWithForceAllFiles(TableProperties table) throws ObjectFactoryException {
         createJobs(table, true);
     }
 
-    private void createJobs(TableProperties table, boolean forceAllFiles) throws IOException, ObjectFactoryException {
+    private void createJobs(TableProperties table, boolean forceAllFiles) throws ObjectFactoryException {
         StateStore stateStore = stateStoreProvider.getStateStore(table);
         LOGGER.info("Performing pre-splits on files in table {}", table.getStatus());
         Instant preSplitStartTime = Instant.now();
@@ -119,7 +98,7 @@ public class CreateCompactionJobs {
         LOGGER.info("Overall, pre-splitting files and creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
     }
 
-    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore, boolean forceAllFiles) throws IOException, ObjectFactoryException {
+    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore, boolean forceAllFiles) throws ObjectFactoryException {
         Instant startTime = Instant.now();
         TableStatus table = tableProperties.getStatus();
         LOGGER.info("Creating jobs for table {}", table);
@@ -137,7 +116,7 @@ public class CreateCompactionJobs {
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
-        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, generateJobId::generate);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
         LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
                 table, jobFactory.getOutputFilePrefix());
 
@@ -162,16 +141,7 @@ public class CreateCompactionJobs {
         }
 
         Instant sendJobsStartTime = Instant.now();
-        AssignJobIdToFiles assignJobIdsToFiles;
-        if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
-            assignJobIdsToFiles = AssignJobIdToFiles.byQueue(stateStoreCommitSender);
-        } else {
-            assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore);
-        }
-        int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
-        for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
-            batchCreateJobs(assignJobIdsToFiles, tableProperties, batch);
-        }
+        batchCreator.createBatches(tableProperties, stateStore, compactionJobs);
         Instant finishTime = Instant.now();
 
         LOGGER.info("Created {} compaction jobs, overall took {}", compactionJobs.size(), LoggedDuration.withShortOutput(startTime, finishTime));
@@ -208,29 +178,6 @@ public class CreateCompactionJobs {
                 });
 
         return outList;
-    }
-
-    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableProperties tableProperties, List<CompactionJob> compactionJobs) throws IOException {
-        TableStatus tableStatus = tableProperties.getStatus();
-        CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
-                tableProperties, generateBatchId.generate(), timeSupplier.get());
-
-        // Send batch of jobs to SQS (NB Send jobs to SQS before updating the job field of the files in the
-        // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
-        // job can be created for these files)
-        LOGGER.debug("Writing batch of {} compaction jobs for table {} in data bucket at: {}", compactionJobs.size(), tableStatus, request.getBatchKey());
-        Instant startTime = Instant.now();
-        batchJobsWriter.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
-        LOGGER.debug("Sending compaction jobs batch, wrote jobs in {}",
-                LoggedDuration.withShortOutput(startTime, Instant.now()));
-        batchMessageSender.sendMessage(request);
-
-        // Update the statuses of these files to record that a compaction job is in progress
-        LOGGER.debug("Assigning input files for compaction jobs batch in table {}", tableStatus);
-        assignJobIdToFiles.assignJobIds(compactionJobs.stream()
-                .map(CompactionJob::createAssignJobIdRequest)
-                .collect(Collectors.toList()), tableStatus);
-        LOGGER.info("Created pending batch of {} compaction jobs for table {} in data bucket at: {}", compactionJobs.size(), tableStatus, request.getBatchKey());
     }
 
     private void createJobsFromLeftoverFiles(
@@ -283,29 +230,10 @@ public class CreateCompactionJobs {
     }
 
     @FunctionalInterface
-    public interface BatchJobsWriter {
-        void writeJobs(String bucketName, String key, List<CompactionJob> compactionJobs);
-    }
-
-    @FunctionalInterface
-    public interface BatchMessageSender {
-        void sendMessage(CompactionJobDispatchRequest dispatchRequest);
-    }
-
-    @FunctionalInterface
     public interface GenerateJobId {
         String generate();
 
         static GenerateJobId random() {
-            return () -> UUID.randomUUID().toString();
-        }
-    }
-
-    @FunctionalInterface
-    public interface GenerateBatchId {
-        String generate();
-
-        static GenerateBatchId random() {
             return () -> UUID.randomUUID().toString();
         }
     }

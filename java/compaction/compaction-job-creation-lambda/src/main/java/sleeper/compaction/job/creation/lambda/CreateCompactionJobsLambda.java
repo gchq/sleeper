@@ -42,7 +42,6 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.statestore.StateStoreFactory;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -103,7 +102,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 createJobs.createJobsWithStrategy(tableProperties);
-            } catch (RuntimeException | IOException | ObjectFactoryException e) {
+            } catch (RuntimeException | ObjectFactoryException e) {
                 LOGGER.error("Failed creating jobs for table {}", tableId, e);
                 tableMessages.stream()
                         .map(SQSMessage::getMessageId)
