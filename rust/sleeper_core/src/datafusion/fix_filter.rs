@@ -19,6 +19,7 @@
 use datafusion::{
     common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     error::DataFusionError,
+    execution::{SessionState, SessionStateBuilder},
     logical_expr::{Expr, Filter, LogicalPlan, Operator, TableScan},
 };
 
@@ -33,6 +34,7 @@ use datafusion::{
 pub fn fix_filter_exprs(
     optimised_plan: LogicalPlan,
     unoptimised_plan: &LogicalPlan,
+    state: &SessionState,
 ) -> Result<LogicalPlan, DataFusionError> {
     let filters = collect_filters(unoptimised_plan)?;
     if filters.is_empty() {
@@ -46,7 +48,7 @@ pub fn fix_filter_exprs(
             .expect("Expression list should not be empty!");
 
         // Now traverse plan looking for Filter or TableScan items to replace
-        Ok(optimised_plan
+        let fixed_plan = optimised_plan
             .transform_down(|node| {
                 Ok(match node {
                     LogicalPlan::Filter(filter) => Transformed::yes(LogicalPlan::Filter(
@@ -64,7 +66,18 @@ pub fn fix_filter_exprs(
                     _ => Transformed::no(node),
                 })
             })?
-            .data)
+            .data;
+        // Since this fix may also de-optimise some type conversions (e.g. Utf8 to Utf8View), we now re-optimise
+        // the plan with the PushDownFilter optimizer rule disabled (to prevent it un-doing the fixes above)
+        let mut state_builder = SessionStateBuilder::from(state.clone());
+        if let Some(optimizer) = state_builder.optimizer() {
+            optimizer
+                .rules
+                .retain(|rule| rule.name() != "push_down_filter");
+        }
+        let temp_state = state_builder.build();
+        // Re-optimise plan
+        temp_state.optimize(&fixed_plan)
     }
 }
 
@@ -103,7 +116,7 @@ mod tests {
     use crate::datafusion::fix_filter::{collect_filters, fix_filter_exprs};
     use datafusion::{
         common::tree_node::TreeNode, dataframe::DataFrameWriteOptions, error::DataFusionError,
-        logical_expr::LogicalPlan, prelude::*,
+        logical_expr::LogicalPlan, prelude::*, scalar::ScalarValue,
     };
     use tempfile::{TempDir, tempdir};
 
@@ -234,7 +247,7 @@ mod tests {
         let optimised_plan = state.optimize(&plan)?;
 
         // When
-        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan)?;
+        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan, &state)?;
 
         // Then
         assert_eq!(optimised_plan, fixed_plan);
@@ -258,7 +271,7 @@ mod tests {
         let optimised_plan = state.optimize(&plan)?;
 
         // When
-        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan)?;
+        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan, &state)?;
 
         // Then
         assert_eq!(optimised_plan, fixed_plan);
@@ -284,7 +297,7 @@ mod tests {
         let optimised_plan = state.optimize(&plan)?;
 
         // When
-        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan)?;
+        let fixed_plan = fix_filter_exprs(optimised_plan.clone(), &plan, &state)?;
 
         // Then
         // Manually inspect the transformed plan
@@ -292,7 +305,10 @@ mod tests {
             Ok(match node {
                 LogicalPlan::Filter(filter) => {
                     let expected = col(Column::new(Some("?table?"), "b"))
-                        .gt(lit("aaa"))
+                        .gt(Expr::Literal(
+                            ScalarValue::Utf8View(Some("aaa".into())),
+                            None,
+                        ))
                         .and(col(Column::new(Some("?table?"), "a")).gt_eq(lit(1)))
                         .and(col(Column::new(Some("?table?"), "a")).lt_eq(lit(10)))
                         .and(col(Column::new(Some("?table?"), "a")).gt(lit(1)))
@@ -308,7 +324,10 @@ mod tests {
             Ok(match node {
                 LogicalPlan::TableScan(table_scan) => {
                     let filter_exprs = vec![
-                        col(Column::new(Some("?table?"), "b")).gt(lit("aaa")),
+                        col(Column::new(Some("?table?"), "b")).gt(Expr::Literal(
+                            ScalarValue::Utf8View(Some("aaa".into())),
+                            None,
+                        )),
                         col(Column::new(Some("?table?"), "a")).gt_eq(lit(1)),
                         col(Column::new(Some("?table?"), "a")).lt_eq(lit(10)),
                         col(Column::new(Some("?table?"), "a")).gt(lit(1)),

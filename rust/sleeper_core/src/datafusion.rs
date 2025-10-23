@@ -39,7 +39,10 @@ use datafusion::{
     dataframe::DataFrame,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
-    execution::{config::SessionConfig, context::SessionContext, options::ParquetReadOptions},
+    execution::{
+        config::SessionConfig, context::SessionContext,
+        options::ParquetReadOptions,
+    },
     logical_expr::{Expr, LogicalPlanBuilder, SortExpr, ident},
     physical_expr::{LexOrdering, PhysicalSortExpr},
     physical_plan::{
@@ -309,7 +312,7 @@ impl<'a> SleeperOperations<'a> {
         let optimised_plan = state.optimize(&logical_plan)?;
         eprintln!("\n\n{}", optimised_plan.display_indent());
 
-        let fixed_plan = fix_filter_exprs(optimised_plan, &logical_plan)?;
+        let fixed_plan = fix_filter_exprs(optimised_plan, &logical_plan, &state)?;
         eprintln!("\n\n{}", fixed_plan.display_indent());
 
         // Consume frame and generate initial physical plan
