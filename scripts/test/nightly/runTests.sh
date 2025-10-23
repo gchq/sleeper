@@ -40,7 +40,7 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
   MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite "$@")
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
   shift
-  MAIN_SUITE_PARAMS=(-DrunIT=NightlyFunctionalSystemTestSuite "$@")
+  MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyFunctionalSystemTestSuite "$@")
 elif [ "$1" == "--main" ]; then
   MAIN_SUITE_NAME=custom
   MAIN_SUITE_PARAMS=("$2")
