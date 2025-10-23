@@ -82,7 +82,8 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
                 .resources(List.of("*"))
-                .actions(List.of("emrserverless:ListApplication", "emrserverless:StopApplication", "iam:PassRole"))
+                .actions(List.of("emrserverless:ListJobRuns", "emerserveless:CancelJobRun", "emrserverless:StopApplication",
+                        "emrserverless:GetApplication", "iam:PassRole"))
                 .build());
 
         provider = Provider.Builder.create(this, "Provider")
