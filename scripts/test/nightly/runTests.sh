@@ -73,19 +73,19 @@ pushd $SLEEPER_DIR
 #Make copies of the java folder to run independent maven builds in parallel
 sudo rm -rf quick
 mkdir quick
-sudo cp -r java quick/java
-sudo cp -r scripts quick/scripts
-sudo cp -r python quick/python
-sudo cp -r code-style quick/code-style
-sudo cp -r rust quick/rust
-sudo cp README.md quick
+sudo cp -r -p java quick/java
+sudo cp -r -p scripts quick/scripts
+sudo cp -r -p python quick/python
+sudo cp -r -p code-style quick/code-style
+sudo cp -r -p rust quick/rust
+sudo cp -p README.md quick
 popd
 
 copyFolderForParallelRun() {
     echo "Making folder sleeper/$1 for parallel build"
     pushd $SLEEPER_DIR
     sudo rm -rf $1
-    sudo cp -r quick $1
+    sudo cp -r -p quick $1
     popd
 }
 
