@@ -73,6 +73,14 @@ public class JobsFinishedStatistics {
                 && averageRowRate.getAverageRunRowsWrittenPerSecond() < maxRate;
     }
 
+    public boolean isRowsReadAndWritten(long numberOfRows) {
+        return isRowsReadAndWritten(numberOfRows, numberOfRows);
+    }
+
+    public boolean isRowsReadAndWritten(long rowsRead, long rowsWritten) {
+        return averageRowRate.getRowsRead() == rowsRead && averageRowRate.getRowsWritten() == rowsWritten;
+    }
+
     @Override
     public String toString() {
         return "JobsFinishedStatistics{" +

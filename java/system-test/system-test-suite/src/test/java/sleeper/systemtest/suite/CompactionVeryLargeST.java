@@ -28,6 +28,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.util.DataFileDuplications;
 import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -68,31 +69,36 @@ public class CompactionVeryLargeST {
     // At time of writing, by default a partition will be split if it contains 1 billion rows.
     // To allow for the fact that partition splitting takes time, we test with 2 billion rows.
     void shouldRunVeryLargeCompaction(SleeperSystemTest sleeper) {
-        // Given
+        // Given a table set to compact in batches of 40 files
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString(),
                 COMPACTION_FILES_BATCH_SIZE, "40"));
+        // And 40 input files
         sleeper.systemTestCluster().runDataGenerationJobs(40,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(50_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
                 .waitForTotalFileReferences(40);
+        // And we duplicate those 40 files so that we have that 10 times in total
+        DataFileDuplications duplications = sleeper.ingest().toStateStore()
+                .duplicateFilesOnSamePartitions(9);
 
-        // When
-        sleeper.compaction().putTableOnlineUntilJobsAreCreated(1).waitForTasks(1)
+        // When we run 10 compactions each with the same files
+        sleeper.compaction()
+                .createSeparateCompactionsForOriginalAndDuplicates(duplications)
+                .waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        assertThat(files.streamFileReferences())
+                .hasSize(10)
+                .extracting(FileReference::getNumberOfRows)
+                .allMatch(rows -> rows == 2_000_000_000L, "each file has 2 billion rows");
         assertThat(files.getFilesWithReferences())
-                .singleElement().satisfies(file -> {
-                    assertThat(file.getReferences())
-                            .singleElement()
-                            .extracting(FileReference::getNumberOfRows)
-                            .isEqualTo(2_000_000_000L);
-                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
-                            .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L));
-                });
+                .first().satisfies(file -> assertThat(
+                        SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
+                        .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L)));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_000_000, 4_000_000),
                         "meets expected performance");

@@ -18,27 +18,59 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.row.Row;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
+import sleeper.systemtest.dsl.sourcedata.SourceFilesFolder;
+import sleeper.systemtest.dsl.util.DataFileDuplications;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SystemTestIngestToStateStore {
 
+    private final SystemTestContext context;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext ingestSource;
 
-    public SystemTestIngestToStateStore(SystemTestInstanceContext instance, IngestSourceFilesContext ingestSource) {
-        this.instance = instance;
-        this.ingestSource = ingestSource;
+    public SystemTestIngestToStateStore(SystemTestContext context) {
+        this.context = context;
+        this.instance = context.instance();
+        this.ingestSource = context.sourceFiles();
+    }
+
+    public DataFileDuplications duplicateFilesOnSamePartitions(int times) {
+        return duplicateFilesOnSamePartitions(times, instance.getStateStore().getFileReferences());
+    }
+
+    public DataFileDuplications duplicateFilesOnSamePartitions(int times, List<FileReference> fileReferences) {
+        DataFileDuplications duplications = DataFileDuplications.duplicateByReferences(dataFilesDriver(), times, fileReferences);
+        addFiles(duplications.streamNewReferences().toList());
+        return duplications;
     }
 
     public SystemTestIngestToStateStore addFileOnPartition(
-            String name, String partitionId, long numberOfRows) throws Exception {
+            String name, String partitionId, Row... rows) {
+        ingestSource.writeFile(sourceFilesDriver(), name, SourceFilesFolder.writeToDataBucket(instance), true, Stream.of(rows));
+        addFiles(List.of(FileReference.builder()
+                .filename(ingestSource.getFilePath(name))
+                .partitionId(partitionId)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .numberOfRows((long) rows.length)
+                .build()));
+        return this;
+    }
+
+    public SystemTestIngestToStateStore addFileOnPartition(
+            String name, String partitionId, long numberOfRows) {
         String path = ingestSource.getFilePath(name);
         addFiles(List.of(FileReference.builder()
                 .filename(path)
@@ -50,7 +82,7 @@ public class SystemTestIngestToStateStore {
         return this;
     }
 
-    public SystemTestIngestToStateStore addFileOnEveryPartition(String name, long numberOfRows) throws Exception {
+    public SystemTestIngestToStateStore addFileOnEveryPartition(String name, long numberOfRows) {
         String path = ingestSource.getFilePath(name);
         PartitionTree partitionTree = new PartitionTree(instance.getStateStore().getAllPartitions());
         List<Partition> leafPartitions = partitionTree.getLeafPartitions();
@@ -71,5 +103,13 @@ public class SystemTestIngestToStateStore {
         instance.getStateStore().addTransaction(AddTransactionRequest.withTransaction(
                 AddFilesTransaction.fromReferences(fileReferences))
                 .build());
+    }
+
+    private DataFilesDriver dataFilesDriver() {
+        return instance.adminDrivers().dataFiles(context);
+    }
+
+    private IngestSourceFilesDriver sourceFilesDriver() {
+        return instance.adminDrivers().sourceFiles(context);
     }
 }

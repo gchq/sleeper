@@ -48,6 +48,7 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataGenerationTasksDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
@@ -230,7 +231,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public DataFilesDriver dataFiles(SystemTestContext context) {
-        return (schema, filename) -> data.openFile(filename);
+        return new InMemoryDataFilesDriver(data, context);
     }
 
     @Override

@@ -32,6 +32,8 @@ public interface CompactionDriver {
 
     void forceCreateJobs();
 
+    void createJobBatches(List<CompactionJob> jobs);
+
     void scaleToZero();
 
     List<CompactionJob> drainJobsQueueForWholeInstance(int expectedJobs);

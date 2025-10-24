@@ -13,20 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.instance;
+package sleeper.systemtest.dsl.util;
 
-import sleeper.core.iterator.closeable.CloseableIterator;
-import sleeper.core.row.Row;
-import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.util.DataFileDuplication;
+import sleeper.core.statestore.FileReference;
 
-import java.util.Collection;
 import java.util.List;
 
-public interface DataFilesDriver {
-
-    CloseableIterator<Row> getRows(Schema schema, String filename);
-
-    List<DataFileDuplication> duplicateFiles(int times, Collection<String> files);
+public record DataFileSetDuplication(List<FileReference> originalReferences, List<FileReference> newReferences) {
 
 }
