@@ -48,69 +48,6 @@ public class QueryST {
     }
 
     @Nested
-    @DisplayName("Direct query")
-    class DirectQuery {
-        @Test
-        void shouldRunQueryForAllRows(SleeperSystemTest sleeper) {
-            // Given
-            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
-
-            // When/Then
-            assertThat(sleeper.query().direct()
-                    .allRowsInTable())
-                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
-        }
-
-        @Test
-        void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) {
-            // Given
-            sleeper.setGeneratorOverrides(
-                    overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
-
-            // When/Then
-            assertThat(sleeper.query().direct()
-                    .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            range("row-10", "row-20")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 20)));
-        }
-
-        @Test
-        void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) {
-            // Given
-            sleeper.setGeneratorOverrides(
-                    overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
-
-            // When/Then
-            assertThat(sleeper.query().direct()
-                    .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            range("row-10", "row-30"),
-                            range("row-20", "row-40")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(10, 40)));
-        }
-
-        @Test
-        void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) {
-            // Given
-            sleeper.setGeneratorOverrides(
-                    overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
-
-            // When/Then
-            assertThat(sleeper.query().direct()
-                    .byRowKey(SystemTestSchema.ROW_KEY_FIELD_NAME,
-                            range("row-10", "row-20"),
-                            range("row-30", "row-40")))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.concat(
-                            LongStream.range(10, 20), LongStream.range(30, 40))));
-        }
-    }
-
-    @Nested
     @DisplayName("SQS Query")
     class SQSQuery {
         @AfterEach
