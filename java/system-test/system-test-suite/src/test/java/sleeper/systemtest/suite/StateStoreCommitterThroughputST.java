@@ -23,8 +23,9 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
-import sleeper.systemtest.suite.testutil.Slow3;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Slow;
+import sleeper.systemtest.suite.testutil.parallel.Slow3;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -49,6 +50,7 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
 
 @SystemTest
+@Slow
 @Slow3
 @Execution(SAME_THREAD)
 public class StateStoreCommitterThroughputST {

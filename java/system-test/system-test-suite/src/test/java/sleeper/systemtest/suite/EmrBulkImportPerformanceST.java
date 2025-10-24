@@ -23,8 +23,9 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive2;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive;
+import sleeper.systemtest.suite.testutil.parallel.Expensive2;
 
 import java.time.Duration;
 
@@ -36,7 +37,8 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_P
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
-@Expensive2 // Expensive because it takes a lot of very costly EMR instances to import this many rows.
+@Expensive // Expensive because it takes a lot of very costly EMR instances to import this many rows.
+@Expensive2
 public class EmrBulkImportPerformanceST {
 
     @BeforeEach

@@ -28,8 +28,9 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive2;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive;
+import sleeper.systemtest.suite.testutil.parallel.Expensive2;
 
 import java.time.Duration;
 import java.util.Map;
@@ -43,7 +44,8 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
 
 @SystemTest
-@Expensive2 // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
+@Expensive // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
+@Expensive2
 public class CompactionVeryLargeST {
 
     @BeforeEach

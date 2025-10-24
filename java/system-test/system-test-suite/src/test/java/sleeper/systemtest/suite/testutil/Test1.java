@@ -26,5 +26,6 @@ import java.lang.annotation.Target;
 @Tag("test1")
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Test2
 public @interface Test1 {
 }

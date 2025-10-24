@@ -25,8 +25,9 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive3;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive;
+import sleeper.systemtest.suite.testutil.parallel.Expensive3;
 
 import java.time.Duration;
 import java.util.Map;
@@ -42,6 +43,7 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMPACTIONS;
 
 @SystemTest
+@Expensive
 @Expensive3
 public class ParallelCompactionsST {
 
