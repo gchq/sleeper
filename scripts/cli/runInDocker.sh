@@ -145,7 +145,7 @@ find_runner_image_digests() {
   echo "Checking runner image digests"
   declare -ga RUNNER_DIGESTS
   local LINES=$(docker images -q sleeper-runner 2> /dev/null)
-  echo "$LINES" | while read -r LINE
+  while read -r LINE
   do
     DUPLICATE=false
     for DIGEST in "${RUNNER_DIGESTS[@]}"; do
@@ -158,7 +158,7 @@ find_runner_image_digests() {
       echo "Found runner digest for cleanup: $LINE"
       RUNNER_DIGESTS+=("$LINE")
     fi
-  done
+  done <<< "$LINES"
   declare -p RUNNER_DIGESTS
 }
 
