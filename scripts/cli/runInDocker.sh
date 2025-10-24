@@ -129,7 +129,7 @@ pull_docker_images() {
 
 find_docker_image_digests() {
   echo "Checking CLI image digests"
-  declare -gA IMAGE_DIGESTS
+  declare -ga IMAGE_DIGESTS
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     IMAGE="$IMAGE_NAME:current"
     DIGEST="$(docker images -q "$IMAGE" 2> /dev/null)"
@@ -143,7 +143,7 @@ find_docker_image_digests() {
 
 find_runner_image_digests() {
   echo "Checking runner image digests"
-  declare -gA RUNNER_DIGESTS
+  declare -ga RUNNER_DIGESTS
   local LINES=$(docker images -q sleeper-runner 2> /dev/null)
   echo "$LINES" | while read -r LINE
   do
