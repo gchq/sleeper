@@ -154,6 +154,7 @@ find_runner_image_digests() {
       fi
     done
     if [[ "$DUPLICATE" == "false" ]]; then
+      echo "Found runner digest for cleanup: $LINE"
       RUNNER_DIGESTS+=("$LINE")
     fi
   done
