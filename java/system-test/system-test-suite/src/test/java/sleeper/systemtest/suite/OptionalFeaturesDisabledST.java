@@ -25,7 +25,6 @@ import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Slow;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
 import java.nio.file.Path;
@@ -39,7 +38,7 @@ import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileRefe
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.OPTIONAL_FEATURES_DISABLED;
 
 @SystemTest
-@Slow // Slow because it deploys a separate instance just for this test, and the CDK is slow
+// Slow because it deploys a separate instance just for this test, and the CDK is slow
 @Slow2
 public class OptionalFeaturesDisabledST {
 

@@ -27,7 +27,6 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Slow;
 import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
 import java.util.Map;
@@ -44,7 +43,6 @@ import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.par
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_EKS;
 
 @SystemTest
-@Slow
 @Slow1
 // Slow because it needs to do two CDK deployments, one to add the EKS cluster and one to remove it.
 // Each CDK deployment takes around 20 minutes.

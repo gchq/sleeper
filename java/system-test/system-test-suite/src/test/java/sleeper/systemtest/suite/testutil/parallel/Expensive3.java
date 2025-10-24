@@ -26,5 +26,6 @@ import java.lang.annotation.Target;
 @Tag("expensive3")
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Expensive
 public @interface Expensive3 {
 }

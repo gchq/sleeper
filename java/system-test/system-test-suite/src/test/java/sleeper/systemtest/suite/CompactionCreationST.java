@@ -26,7 +26,6 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.compaction.FoundCompactionJobs;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Slow;
 import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
 import java.time.Duration;
@@ -46,7 +45,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_CR
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.fileFactory;
 
 @SystemTest
-@Slow // Slow because it deploys its own instance so it can drain the whole compaction jobs queue
+// Slow because it deploys its own instance so it can drain the whole compaction jobs queue
 @Slow1
 @Execution(SAME_THREAD)
 public class CompactionCreationST {

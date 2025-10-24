@@ -26,7 +26,6 @@ import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Slow;
 import sleeper.systemtest.suite.testutil.parallel.Slow3;
 
 import java.nio.file.Path;
@@ -38,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTIONAL_STACKS;
 
 @SystemTest
-@Slow // Slow because it needs to do multiple CDK deployments
+// Slow because it needs to do multiple CDK deployments
 @Slow3
 public class AutoDeleteS3ObjectsST {
 

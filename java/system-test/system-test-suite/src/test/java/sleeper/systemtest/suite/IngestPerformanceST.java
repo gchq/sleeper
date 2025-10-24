@@ -24,7 +24,6 @@ import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Expensive;
 import sleeper.systemtest.suite.testutil.parallel.Expensive3;
 
 import java.time.Duration;
@@ -37,7 +36,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFOR
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to ingest this many rows on fairly large ECS instances.
+// Expensive because it takes a long time to ingest this many rows on fairly large ECS instances.
 @Expensive3
 public class IngestPerformanceST {
 

@@ -26,5 +26,6 @@ import java.lang.annotation.Target;
 @Tag("slow3")
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@Slow
 public @interface Slow3 {
 }
