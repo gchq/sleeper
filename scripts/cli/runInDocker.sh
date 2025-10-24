@@ -128,7 +128,7 @@ pull_docker_images() {
 }
 
 find_docker_image_digests() {
-  echo "Checking image digests"
+  echo "Checking CLI image digests"
   IMAGE_DIGESTS=()
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     IMAGE="$IMAGE_NAME:current"
@@ -136,6 +136,25 @@ find_docker_image_digests() {
     if [ -n "$DIGEST" ]; then
       echo "Found digest for $IMAGE_NAME: $DIGEST"
       IMAGE_DIGESTS+=("$DIGEST")
+    fi
+  done
+}
+
+find_runner_image_digests() {
+  echo "Checking runner image digests"
+  RUNNER_DIGESTS=()
+  local LINES=$(docker images -q sleeper-runner 2> /dev/null)
+  echo "$LINES" | while read -r LINE
+  do
+    DUPLICATE=false
+    for DIGEST in "${RUNNER_DIGESTS[@]}"; do
+      if [[ "$DIGEST" == "$LINE" ]]; then
+        DUPLICATE=true
+        break
+      fi
+    done
+    if [[ "$DUPLICATE" == "false"]]; then
+      RUNNER_DIGESTS+=("$LINE")
     fi
   done
 }
@@ -155,6 +174,11 @@ remove_old_images() {
     if [[ "$UPDATED" == "true" ]]; then
       docker image rm "$OLD_DIGEST"
     fi
+  done
+  find_runner_image_digests
+  echo "Cleaning up old runner images"
+  for DIGEST in "${RUNNER_DIGESTS[@]}"; do
+    docker image rm "$DIGEST"
   done
 }
 
