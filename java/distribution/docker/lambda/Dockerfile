@@ -17,8 +17,22 @@ FROM alpine:3 AS builder
 RUN apk add --no-cache unzip
 RUN mkdir -p /lambda
 COPY lambda.jar /lambda
-RUN unzip /lambda/lambda.jar -d /lambda/uncompressed
 
-FROM public.ecr.aws/lambda/java:17
+FROM ubuntu:24.04
 
-COPY --from=builder /lambda/uncompressed ${LAMBDA_TASK_ROOT}
+# Install Amazon Corretto JDK
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor --yes -o /etc/apt/keyrings/corretto-keyring.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main"  \
+    | tee /etc/apt/sources.list.d/corretto.list > /dev/null
+RUN apt-get update && apt-get install -y \
+    java-17-amazon-corretto-jdk \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /function
+
+COPY --from=builder /lambda/lambda.jar ./
+ENTRYPOINT [ "/usr/bin/java", "-cp", "./*", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
