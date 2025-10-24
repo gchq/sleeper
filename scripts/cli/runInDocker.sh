@@ -138,7 +138,6 @@ find_docker_image_digests() {
       IMAGE_DIGESTS+=("$DIGEST")
     fi
   done
-  declare -p IMAGE_DIGESTS
 }
 
 find_runner_image_digests() {
@@ -159,15 +158,12 @@ find_runner_image_digests() {
       RUNNER_DIGESTS+=("$LINE")
     fi
   done <<< "$LINES"
-  declare -p RUNNER_DIGESTS
 }
 
 remove_old_images() {
   OLD_DIGESTS=("${IMAGE_DIGESTS[@]}")
   find_docker_image_digests
   echo "Cleaning up old CLI images"
-  declare -p OLD_DIGESTS
-  declare -p IMAGE_DIGESTS
   for OLD_DIGEST in "${OLD_DIGESTS[@]}"; do
     UPDATED=true
     for NEW_DIGEST in "${IMAGE_DIGESTS[@]}"; do
@@ -181,7 +177,6 @@ remove_old_images() {
     fi
   done
   find_runner_image_digests
-  declare -p RUNNER_DIGESTS
   echo "Cleaning up old runner images"
   for DIGEST in "${RUNNER_DIGESTS[@]}"; do
     docker image rm "$DIGEST"
