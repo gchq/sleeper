@@ -153,7 +153,7 @@ find_runner_image_digests() {
         break
       fi
     done
-    if [[ "$DUPLICATE" == "false"]]; then
+    if [[ "$DUPLICATE" == "false" ]]; then
       RUNNER_DIGESTS+=("$LINE")
     fi
   done
