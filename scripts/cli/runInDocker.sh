@@ -163,7 +163,7 @@ find_runner_image_digests() {
 remove_old_images() {
   OLD_DIGESTS=("${IMAGE_DIGESTS[@]}")
   find_docker_image_digests
-  echo "Cleaning up old Docker images"
+  echo "Cleaning up old CLI images"
   for OLD_DIGEST in "${OLD_DIGESTS[@]}"; do
     UPDATED=true
     for NEW_DIGEST in "${IMAGE_DIGESTS[@]}"; do
