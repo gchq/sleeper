@@ -29,6 +29,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
+/**
+ * Helper methods to mock an ECS cluster.
+ */
 public class WiremockEcsTestHelper {
 
     public static final String OPERATION_HEADER = "X-Amz-Target";
@@ -91,7 +94,6 @@ public class WiremockEcsTestHelper {
                 .withHeader(OPERATION_HEADER, MATCHING_UPDATE_CLUSTER_OPERATION)
                 .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
     }
-
 
     /**
      * Checks for any request that matches the pattern.

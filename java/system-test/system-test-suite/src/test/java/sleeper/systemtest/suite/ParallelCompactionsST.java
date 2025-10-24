@@ -73,7 +73,9 @@ public class ParallelCompactionsST {
                 .putTableOnlineWaitForJobCreation(40960,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
-                .waitForTasks(300)
+                .waitForTasks(300,
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(10)))
                 .waitForJobsToFinishThenCommit(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)),
