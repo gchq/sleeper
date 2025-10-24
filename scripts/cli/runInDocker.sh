@@ -128,20 +128,22 @@ pull_docker_images() {
 }
 
 find_docker_image_digests() {
+  echo "Checking image digests"
   IMAGE_DIGESTS=()
   for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
     IMAGE="$IMAGE_NAME:current"
     DIGEST="$(docker images -q "$IMAGE" 2> /dev/null)"
     if [ -n "$DIGEST" ]; then
+      echo "Found digest for $IMAGE_NAME: $DIGEST"
       IMAGE_DIGESTS+=("$DIGEST")
     fi
   done
 }
 
 remove_old_images() {
-  echo "Cleaning up old Docker images"
   OLD_DIGESTS=("${IMAGE_DIGESTS[@]}")
   find_docker_image_digests
+  echo "Cleaning up old Docker images"
   for OLD_DIGEST in "${OLD_DIGESTS[@]}"; do
     UPDATED=true
     for NEW_DIGEST in "${IMAGE_DIGESTS[@]}"; do
