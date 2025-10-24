@@ -31,6 +31,7 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
@@ -128,6 +129,12 @@ public class AwsCompactionDriver implements CompactionDriver {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
             }
         });
+    }
+
+    @Override
+    public void createJobBatches(List<CompactionJob> jobs) {
+        CreateCompactionJobBatches createBatches = AwsCreateCompactionJobs.batchesFrom(instance.getInstanceProperties(), instance.getTablePropertiesProvider(), s3Client, sqsClient);
+        createBatches.createBatches(instance.getTableProperties(), instance.getStateStore(), jobs);
     }
 
     @Override
