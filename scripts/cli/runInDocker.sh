@@ -179,7 +179,7 @@ remove_old_images() {
   find_runner_image_digests
   echo "Cleaning up old runner images"
   for DIGEST in "${RUNNER_DIGESTS[@]}"; do
-    docker image rm "$DIGEST"
+    docker image rm -f "$DIGEST"
   done
 }
 
