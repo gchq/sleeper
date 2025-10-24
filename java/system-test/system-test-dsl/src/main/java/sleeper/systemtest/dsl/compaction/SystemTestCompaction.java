@@ -126,9 +126,12 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction waitForTasks(int expectedTasks) {
+        return waitForTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(6)));
+    }
+
+    public SystemTestCompaction waitForTasks(int expectedTasks, PollWithRetries poll) {
         new WaitForTasks(driver.getJobTracker())
-                .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds,
-                        pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(6)));
+                .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds, pollDriver.poll(poll));
         return this;
     }
 
