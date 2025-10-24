@@ -109,4 +109,14 @@ public class QueryWebSocketST {
                 .allRowsInTable())
                 .isEmpty();
     }
+
+    @Test
+    void shouldRunQueryReturningManyRows(SleeperSystemTest sleeper) {
+        // Given
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 3000));
+
+        // When/Then
+        assertThat(sleeper.query().webSocket().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 3000)));
+    }
 }
