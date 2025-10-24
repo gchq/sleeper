@@ -22,6 +22,7 @@ if [ "$#" -lt 1 ]; then
 fi
 
 HOME_IN_IMAGE=/home/sleeper
+ALL_IMAGES=(sleeper-local sleeper-builder)
 
 # Allow use of runner Dockerfile in source directory or in home install
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
@@ -110,15 +111,53 @@ get_version() {
   run_in_docker sleeper-local:current cat /sleeper/version.txt
 }
 
-pull_docker_images(){
-  echo "Updating CLI runner Dockerfile"
+pull_docker_images() {
+  echo "Downloading CLI runner Dockerfile"
   mkdir -p "$HOME_RUNNER_PATH"
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runner/Dockerfile" --output "$HOME_RUNNER_PATH/Dockerfile"
-  pull_and_tag sleeper-local
-  pull_and_tag sleeper-builder
+
+  echo "Pulling CLI Docker images"
+  for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
+    echo "Pulling image: $IMAGE_NAME"
+    REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
+    LOCAL_IMAGE="$IMAGE_NAME:current"
+
+    docker pull "$REMOTE_IMAGE"
+    docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
+  done
+}
+
+find_docker_image_digests() {
+  IMAGE_DIGESTS=()
+  for IMAGE_NAME in "${ALL_IMAGES[@]}"; do
+    IMAGE="$IMAGE_NAME:current"
+    DIGEST="$(docker images -q "$IMAGE" 2> /dev/null)"
+    if [ -n "$DIGEST" ]; then
+      IMAGE_DIGESTS+=("$DIGEST")
+    fi
+  done
+}
+
+remove_old_images() {
+  echo "Cleaning up old Docker images"
+  OLD_DIGESTS=("${IMAGE_DIGESTS[@]}")
+  find_docker_image_digests
+  for OLD_DIGEST in "${OLD_DIGESTS[@]}"; do
+    UPDATED=true
+    for NEW_DIGEST in "${IMAGE_DIGESTS[@]}"; do
+      if [[ "$OLD_DIGEST" == "$NEW_DIGEST" ]]; then
+        UPDATED=false
+        break
+      fi
+    done
+    if [[ "$UPDATED" == "true" ]]; then
+      docker image rm "$OLD_DIGEST"
+    fi
+  done
 }
 
 upgrade_cli() {
+  find_docker_image_digests
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
   local TEMP_DIR=$(mktemp -d)
@@ -126,6 +165,7 @@ upgrade_cli() {
   curl "https://raw.githubusercontent.com/gchq/sleeper/develop/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
   "$TEMP_PATH" cli pull-images
+  remove_old_images
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
   rmdir "$TEMP_DIR"
   echo "Updated"
@@ -135,15 +175,6 @@ upgrade_cli() {
   # Since we're in a function, Bash will have read all of the function code from the old version, although the new
   # version may have changed.
   exit
-}
-
-pull_and_tag() {
-  IMAGE_NAME=$1
-  REMOTE_IMAGE="ghcr.io/gchq/$IMAGE_NAME:latest"
-  LOCAL_IMAGE="$IMAGE_NAME:current"
-
-  docker pull "$REMOTE_IMAGE"
-  docker tag "$REMOTE_IMAGE" "$LOCAL_IMAGE"
 }
 
 COMMAND=$1
