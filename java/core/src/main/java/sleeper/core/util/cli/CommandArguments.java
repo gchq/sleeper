@@ -181,12 +181,20 @@ public class CommandArguments {
          * Sets a flag option.
          *
          * @param  option the option that was set as a flag
+         * @param  isSet  true if the flag should be set
          * @return        this builder
          */
-        public Builder flag(CommandOption option) {
-            optionsSet.add(option.longName());
-            if (option.shortName() != null) {
-                optionsSet.add("" + option.shortName());
+        public Builder flag(CommandOption option, boolean isSet) {
+            if (isSet) {
+                optionsSet.add(option.longName());
+                if (option.shortName() != null) {
+                    optionsSet.add("" + option.shortName());
+                }
+            } else {
+                optionsSet.remove(option.longName());
+                if (option.shortName() != null) {
+                    optionsSet.remove("" + option.shortName());
+                }
             }
             return this;
         }
