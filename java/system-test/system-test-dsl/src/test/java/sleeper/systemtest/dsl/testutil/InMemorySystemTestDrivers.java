@@ -264,6 +264,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public BulkExportDriver bulkExport(SystemTestContext context) {
+        // TODO to be implemented as part of #5898
         throw new UnsupportedOperationException("Unimplemented method 'bulkExport'");
     }
 

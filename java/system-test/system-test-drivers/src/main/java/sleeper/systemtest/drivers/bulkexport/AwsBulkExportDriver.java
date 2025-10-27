@@ -36,8 +36,7 @@ public class AwsBulkExportDriver implements BulkExportDriver {
 
     @Override
     public void sendJob(BulkExportQuery query) {
-        //Fire off bulk export query to SQS
-        BulkExportQuerySender sender = BulkExportQuerySender.toSqs(instanceProperties, sqs);
-        sender.sendQueryToBulkExport(query);
+        BulkExportQuerySender.toSqs(instanceProperties, sqs)
+                .sendQueryToBulkExport(query);
     }
 }
