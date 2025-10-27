@@ -23,6 +23,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.bulkexport.core.model.BulkExportQuery;
+import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -30,12 +33,14 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
-import static sleeper.localstack.test.LocalStackTestBase.createSqsQueueGetUrl;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
 
 @LocalStackDslTest
-public class AwsBulkExportDriverIT {
+public class AwsBulkExportDriverIT extends LocalStackTestBase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsBulkExportDriverIT.class);
 
@@ -43,6 +48,7 @@ public class AwsBulkExportDriverIT {
     SqsClient sqs;
     BulkExportDriver driver;
     SystemTestInstanceContext instance;
+    InstanceProperties instanceProperties;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
@@ -51,6 +57,7 @@ public class AwsBulkExportDriverIT {
         sqs = drivers.clients().getSqs();
         driver = drivers.bulkExport(context);
         instance = context.instance();
+        instanceProperties = instance.getInstanceProperties();
     }
 
     @Test
@@ -66,7 +73,13 @@ public class AwsBulkExportDriverIT {
         driver.sendJob(query);
 
         // Then
-        //assertThat(null);
+        assertThat(recieveBulkExportQueries()).containsExactly(query);
+    }
+
+    private List<BulkExportQuery> recieveBulkExportQueries() {
+        return receiveMessages(instanceProperties.get(BULK_EXPORT_QUEUE_URL))
+                .map(new BulkExportQuerySerDe()::fromJson)
+                .toList();
     }
 
 }
