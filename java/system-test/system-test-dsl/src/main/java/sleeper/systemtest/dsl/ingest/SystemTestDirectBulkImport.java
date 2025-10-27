@@ -58,7 +58,7 @@ public class SystemTestDirectBulkImport {
                 .id(jobId)
                 .tableId(table.get(TABLE_ID))
                 .tableName(table.get(TABLE_NAME))
-                .files(sourceFiles.getIngestJobFilesInBucket(Stream.of(files)))
+                .files(sourceFiles.lastFolderWrittenTo().getIngestJobFilesInBucket(Stream.of(files)))
                 .build());
         return this;
     }

@@ -69,7 +69,7 @@ public class InMemoryRowStore {
      */
     public Stream<Row> streamRows(List<String> files) {
         return files.stream()
-                .flatMap(this::getRowsOrThrow);
+                .flatMap(file -> getRowsOrThrow(file).stream());
     }
 
     /**
@@ -82,10 +82,17 @@ public class InMemoryRowStore {
         return new WrappedIterator<>(getRowsOrThrow(filename).iterator());
     }
 
-    private Stream<Row> getRowsOrThrow(String filename) throws NoSuchElementException {
+    /**
+     * Retrieves the list of rows in a data file, or throws an exception if it does not exist.
+     *
+     * @param  filename               the filename
+     * @return                        the rows
+     * @throws NoSuchElementException if the file does not exist
+     */
+    public List<Row> getRowsOrThrow(String filename) throws NoSuchElementException {
         if (!rowsByFilename.containsKey(filename)) {
             throw new NoSuchElementException("File not found: " + filename);
         }
-        return rowsByFilename.get(filename).stream();
+        return rowsByFilename.get(filename);
     }
 }

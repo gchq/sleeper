@@ -53,7 +53,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestToStateStore toStateStore() {
-        return new SystemTestIngestToStateStore(instance(), sourceFiles());
+        return new SystemTestIngestToStateStore(context);
     }
 
     public SystemTestIngestByQueue byQueue() {

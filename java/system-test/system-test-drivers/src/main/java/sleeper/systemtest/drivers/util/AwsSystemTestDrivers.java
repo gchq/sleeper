@@ -277,7 +277,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public DataFilesDriver dataFiles(SystemTestContext context) {
-        return new AwsDataFilesDriver(clients);
+        return new AwsDataFilesDriver(context.instance(), clients);
     }
 
     @Override
