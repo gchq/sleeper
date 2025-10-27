@@ -11,13 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-FROM alpine:3 AS builder
-
-RUN apk add --no-cache unzip
-RUN mkdir -p /lambda
-COPY lambda.jar /lambda
-
 FROM ubuntu:24.04
 
 # Install Amazon Corretto JDK
@@ -33,6 +26,5 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /function
-
-COPY --from=builder /lambda/lambda.jar ./
+COPY lambda.jar ./
 ENTRYPOINT [ "/usr/bin/java", "-cp", "./*", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
