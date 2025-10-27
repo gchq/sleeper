@@ -4,11 +4,12 @@ on:
     paths:
       - 'java/**/Dockerfile'
       - 'rust/**' # We've seen Rust failures because of code built against a different glibc version than is present in the image
-      - '.github/workflows/docker-tests.yaml'
+      - '.github/workflows/docker-image-tests.yaml'
+      - '.github/workflows/docker-image-test.yaml'
 
 jobs:
   compaction:
-    uses: ./.github/workflows/docker-test.yaml
+    uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: compaction-job-execution
       testClassNames: CompactionTaskDockerImageST
