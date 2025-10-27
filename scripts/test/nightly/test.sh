@@ -1,9 +1,11 @@
 source "../../functions/checkInstalled.sh"
 source "../../functions/timeUtils.sh"
+source "../../functions/systemTestUtils.sh"
 
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
+echo "test: $(time_str)"
 
 checkInstalled rsync
 echo "Rsync'd"
