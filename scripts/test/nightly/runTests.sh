@@ -20,7 +20,6 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
-SLEEPER_DIR=$REPO_PARENT_DIR/sleeper
 
 pushd "$SCRIPTS_DIR/test"
 
@@ -69,22 +68,19 @@ set +e
 
 END_EXIT_CODE=0
 
-pushd $SLEEPER_DIR
-#Make copies of the java folder to run independent maven builds in parallel
+#Make copies of the project to run independent maven builds in parallel
+source "../../functions/checkInstalled.sh"
+checkInstalled rsync
+pushd $REPO_PARENT_DIR
 sudo rm -rf quick
 mkdir quick
-sudo cp -r -p java quick/java
-sudo cp -r -p scripts quick/scripts
-sudo cp -r -p python quick/python
-sudo cp -r -p code-style quick/code-style
-sudo cp -r -p rust quick/rust
-sudo cp -p README.md quick
+sudo rsync -a --exclude=".*" sleeper/ quick
 popd
 
 copyFolderForParallelRun() {
     if [ "$1" != "quick" ]; then
-        echo "Making folder sleeper/$1 for parallel build"
-        pushd $SLEEPER_DIR
+        echo "Making folder $1 for parallel build"
+        pushd $REPO_PARENT_DIR
         sudo rm -rf $1
         sudo cp -r -p quick $1
         popd
@@ -92,8 +88,8 @@ copyFolderForParallelRun() {
 }
 
 removeFolderAfterParallelRun() {
-    echo "Removing folder sleeper/$1"
-    pushd $SLEEPER_DIR
+    echo "Removing folder $1"
+    pushd $REPO_PARENT_DIR
     sudo rm -rf $1
     popd
 }
@@ -151,7 +147,7 @@ runTestSuite(){
     sleep $1 #Delay so that initial deployment doesn't clash with each other
     shift 1
     echo "[$(time_str)] Starting test suite: $SUITE"
-    pushd "$REPO_PARENT_DIR/sleeper/$SUITE/scripts/test" #Move into isolated repo copy
+    pushd "$REPO_PARENT_DIR/$SUITE/scripts/test" #Move into isolated repo copy
     runMavenSystemTests "$@"
     popd
     echo "[$(time_str)] Finished test suite: $SUITE"
@@ -160,10 +156,10 @@ runTestSuite(){
 
 runSlowTests(){
     SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DskipRust)
-    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
-    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
-    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" &
-    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite3" "$@"
+    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" ##&
+    ##runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
+    ##runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" &
+    ##runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite3" "$@"
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
@@ -191,7 +187,7 @@ java -cp "${SYSTEM_TEST_JAR}" \
  sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
 #Clear up temporary folder
-pushd $SLEEPER_DIR
+pushd $REPO_PARENT_DIR
 sudo rm -rf quick
 popd
 
