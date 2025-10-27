@@ -1,6 +1,7 @@
-if [ $(dpkg-query -W -f='${Status}' rsync 2>/dev/null | grep -c "ok installed") -eq 0 ];
-then
-  echo "not installed"
-else
-  echo "installed"
-fi
+source "../../functions/checkInstalled.sh"
+
+checkInstalled rsync
+cd ../../../..
+sudo rm -rf temp
+mkdir temp
+sudo rsync -a --exclude=".*" ./sleeeper/ temp
