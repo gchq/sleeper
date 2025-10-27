@@ -36,6 +36,11 @@ use std::{hash::Hash, sync::Arc};
 /// A UDF for performing primitive casting, but without producing errors if a narrowing conversion
 /// would be outside the target type's range. Casts are performed in the "standard" way, i.e. truncating
 /// upper bits on a narrowing conversion.
+///
+/// This is to make sure that input column types match output column types. With certain aggregation operators,
+/// the output type is wider than the input type. For example, `SUM(<i32 column>)` results in an i64 column type which
+/// breaks Sleeper's expectations. This UDF wraps an existing type and for certain conversions like i32/i64 will
+/// cast back to the desired type. This is documented here <https://github.com/gchq/sleeper/issues/5639>.
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct CastUDF {
     signature: Signature,

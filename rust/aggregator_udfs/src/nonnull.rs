@@ -178,6 +178,8 @@ impl From<Arc<dyn AggregateUDFImpl>> for NonNullable {
     }
 }
 
+// The trait definition of AggregateUDFImpl now requires Eq and PartialEq traits in order
+// to meet the requirement for DynEq.
 impl PartialEq for NonNullable {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.inner, &other.inner) && self.func_name == other.func_name
