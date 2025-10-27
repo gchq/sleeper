@@ -34,21 +34,24 @@ import java.util.function.Consumer;
 
 public class QueryWebSocketMessageSerDe {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketMessageSerDe.class);
-    public static final int DEFAULT_ROWS_PAYLOAD_SIZE = 128 * 1024;
+
+    // This should stay below API Gateway's limit for web socket message payload size:
+    // https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-execution-service-websocket-limits-table.html
+    public static final int DEFAULT_ROWS_PAYLOAD_MAX_BYTES = 120 * 1024;
 
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
     private final RowJsonSerDe rowSerDe;
     private final Integer rowBatchSize;
-    private final int rowsPayloadSize;
+    private final int rowsPayloadMaxBytes;
 
-    private QueryWebSocketMessageSerDe(Schema schema, Integer rowBatchSize, int rowsPayloadSize) {
+    private QueryWebSocketMessageSerDe(Schema schema, Integer rowBatchSize, int rowsPayloadMaxBytes) {
         GsonBuilder builder = new GsonBuilder()
                 .registerTypeAdapter(Row.class, new RowGsonSerialiser(schema));
         this.gson = builder.create();
         this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
         this.rowBatchSize = rowBatchSize;
-        this.rowsPayloadSize = rowsPayloadSize;
+        this.rowsPayloadMaxBytes = rowsPayloadMaxBytes;
         if (schema != null) {
             rowSerDe = new RowJsonSerDe(schema);
         } else {
@@ -63,15 +66,15 @@ public class QueryWebSocketMessageSerDe {
     public static QueryWebSocketMessageSerDe fromConfig(Schema schema, Map<String, String> config) {
         String batchSizeStr = config.get(WebSocketOutput.MAX_BATCH_SIZE);
         Integer batchSize = batchSizeStr != null && !batchSizeStr.isEmpty() ? Integer.parseInt(batchSizeStr) : null;
-        return forBatchSizeAndPayloadSize(batchSize, DEFAULT_ROWS_PAYLOAD_SIZE, schema);
+        return forRowBatchSizeAndPayloadMaxBytes(batchSize, DEFAULT_ROWS_PAYLOAD_MAX_BYTES, schema);
     }
 
-    public static QueryWebSocketMessageSerDe forBatchSizeAndPayloadSize(Integer batchSize, int payloadSize, Schema schema) {
-        return new QueryWebSocketMessageSerDe(schema, batchSize, payloadSize);
+    public static QueryWebSocketMessageSerDe forRowBatchSizeAndPayloadMaxBytes(Integer rowBatchSize, int rowsPayloadMaxBytes, Schema schema) {
+        return new QueryWebSocketMessageSerDe(schema, rowBatchSize, rowsPayloadMaxBytes);
     }
 
     public static QueryWebSocketMessageSerDe withNoBatchSize(Schema schema) {
-        return forBatchSizeAndPayloadSize(null, DEFAULT_ROWS_PAYLOAD_SIZE, schema);
+        return forRowBatchSizeAndPayloadMaxBytes(null, DEFAULT_ROWS_PAYLOAD_MAX_BYTES, schema);
     }
 
     public String toJson(QueryWebSocketMessage message) {
@@ -87,7 +90,7 @@ public class QueryWebSocketMessageSerDe {
 
         List<Row> batch = new ArrayList<>();
         long count = 0;
-        int remainingMessageLength = rowsPayloadSize - baseMessageLength;
+        int remainingMessageLength = rowsPayloadMaxBytes - baseMessageLength;
 
         try {
             while (results.hasNext()) {
@@ -111,7 +114,7 @@ public class QueryWebSocketMessageSerDe {
                     publishBatch(queryId, batch, operation);
                     count += batch.size();
                     batch.clear();
-                    remainingMessageLength = rowsPayloadSize - baseMessageLength;
+                    remainingMessageLength = rowsPayloadMaxBytes - baseMessageLength;
                 }
             }
 
