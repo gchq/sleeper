@@ -27,4 +27,4 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /function
 COPY lambda.jar ./
-ENTRYPOINT [ "/usr/bin/java", "-cp", "./*", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
+ENTRYPOINT [ "/usr/bin/java", "-cp", "./lambda.jar", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
