@@ -34,6 +34,9 @@ import java.util.function.Consumer;
 
 public class QueryWebSocketMessageSerDe {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketMessageSerDe.class);
+
+    // This should stay below API Gateway's limit for web socket message payload size:
+    // https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-execution-service-websocket-limits-table.html
     public static final int DEFAULT_ROWS_PAYLOAD_SIZE = 128 * 1024;
 
     private final Gson gson;
