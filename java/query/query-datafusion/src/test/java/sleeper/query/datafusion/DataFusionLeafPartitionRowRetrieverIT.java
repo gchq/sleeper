@@ -97,11 +97,12 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, createTempDirectory(tempDir, null).toString());
-        instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.DATAFUSION);
+        instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
     }
 
     @AfterAll
     static void afterAll() {
+        // Closes resources
         try (FFI_CONTEXT; ALLOCATOR) {
         }
     }

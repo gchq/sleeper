@@ -253,6 +253,52 @@ async fn should_aggregate_ints() -> Result<(), Error> {
 }
 
 #[test(tokio::test)]
+async fn should_not_alter_aggregate_schema() -> Result<(), Error> {
+    // Given
+    let dir = tempdir()?;
+    let file_1 = file(&dir, "file1.parquet");
+    let output = file(&dir, "output.parquet");
+    let schema = Arc::new(Schema::new(vec![
+        Field::new("row_key", DataType::Int32, false),
+        Field::new("sort_key", DataType::Int32, false),
+        Field::new("time", DataType::Int32, false),
+    ]));
+    let data_1 = batch_of_int_fields(
+        schema.clone(),
+        [
+            vec![1, 2, 2, 3, 3],
+            vec![10, 12, 12, 13, 13],
+            vec![100, 200, 300, 400, 500],
+        ],
+    )?;
+    write_file(&file_1, &data_1)?;
+
+    let input = CommonConfigBuilder::new()
+        .input_files(vec![file_1])
+        .input_files_sorted(true)
+        .row_key_cols(col_names(["row_key"]))
+        .sort_key_cols(col_names(["sort_key"]))
+        .region(SleeperRegion::new(HashMap::from([region_entry(
+            "row_key",
+            int_range(0, 100),
+        )])))
+        .output(create_output_for_compaction(&output))
+        .aggregates(Aggregate::parse_config("sum(time)")?)
+        .build()?;
+
+    // When
+    let result = run_compaction(&input).await?;
+
+    // Then
+    assert_eq!(
+        read_file_of_int_fields(&output, ["row_key", "sort_key", "time"])?,
+        vec![[1, 10, 100], [2, 12, 500], [3, 13, 900]]
+    );
+    assert_eq!([result.rows_read, result.rows_written], [5, 3]);
+    Ok(())
+}
+
+#[test(tokio::test)]
 async fn should_merge_empty_files() -> Result<(), Error> {
     // Given
     let dir = tempdir()?;

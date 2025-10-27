@@ -21,11 +21,13 @@ use crate::{
     CommonConfig,
     datafusion::{
         filter_aggregation_config::validate_aggregations,
+        fix_filter::fix_filter_exprs,
         output::Completer,
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
         util::{
-            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
+            add_numeric_casts, apply_full_sort_ordering, calculate_upload_size,
+            check_for_sort_exec, output_partition_count, register_store,
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
@@ -49,9 +51,11 @@ use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 
 mod arrow_stream;
+mod cast_udf;
 mod compact;
 mod config;
 mod filter_aggregation_config;
+mod fix_filter;
 mod leaf_partition_query;
 mod metrics;
 pub mod output;
@@ -229,16 +233,23 @@ impl<'a> SleeperOperations<'a> {
             return Ok(frame);
         }
         info!("Applying Sleeper aggregation: {aggregates:?}");
+        let orig_schema = frame.schema().clone();
         let group_by_cols = self.config.sorting_columns();
         validate_aggregations(&group_by_cols, frame.schema(), aggregates)?;
+
         let aggregation_expressions = aggregates
             .iter()
             .map(|agg| agg.to_expr(&frame))
             .collect::<Result<Vec<_>, _>>()?;
-        frame.aggregate(
+
+        let agg_frame = frame.aggregate(
             group_by_cols.iter().map(|e| ident(*e)).collect(),
             aggregation_expressions,
-        )
+        )?;
+        let agg_schema = agg_frame.schema().clone();
+
+        // Cast column schemas back if necessary
+        add_numeric_casts(agg_frame, &orig_schema, &agg_schema)
     }
 
     /// Create a sketching object to manage creation of quantile sketches.
@@ -289,15 +300,33 @@ impl<'a> SleeperOperations<'a> {
     pub async fn to_physical_plan(
         &self,
         frame: DataFrame,
+        sort_ordering: Option<&LexOrdering>,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
-        // Create sort ordering from schema and row key and sort key fields
-        let ordering = self.create_sort_expr_ordering(&frame)?;
+        // We manually go through the stages of getting the plan, optimising it and then converting to a physical
+        // plan so that we have a place to fix the optimised logical plan due to <https://github.com/apache/datafusion/issues/18214>.
+        let (state, logical_plan) = frame.into_parts();
+        eprintln!("{}", logical_plan.display_indent());
+        let optimised_plan = state.optimize(&logical_plan)?;
+        eprintln!("\n\n{}", optimised_plan.display_indent());
+
+        let fixed_plan = fix_filter_exprs(optimised_plan, &logical_plan, &state)?;
+        eprintln!("\n\n{}", fixed_plan.display_indent());
+
         // Consume frame and generate initial physical plan
-        let physical_plan = frame.create_physical_plan().await?;
-        // Unalias field names if this is going to be Arrow output
-        let physical_plan = self.remove_aliased_columns(physical_plan, &ordering)?;
-        // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
-        let physical_plan = remove_coalesce_physical_stage(&ordering, physical_plan)?;
+        let mut physical_plan = state
+            .query_planner()
+            .create_physical_plan(&fixed_plan, &state)
+            .await?;
+        if let Some(order) = sort_ordering {
+            // Unalias field names if this is going to be Arrow output
+            physical_plan = self.remove_aliased_columns(physical_plan, order)?;
+            // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
+            physical_plan = remove_coalesce_physical_stage(order, physical_plan)?;
+            // Apply full sort ordering to all SortPreservingMergeExec stages to workaround sorting bug where only some row
+            // key fields appear in sort expression
+            physical_plan = apply_full_sort_ordering(order, physical_plan)?;
+        }
+
         // Check physical plan is free of `SortExec` stages.
         // Issue <https://github.com/gchq/sleeper/issues/5248>
         if self.config.input_files_sorted {
@@ -340,14 +369,17 @@ impl<'a> SleeperOperations<'a> {
     /// The lexical ordering is based on the row-keys and sort-keys for the Sleeper
     /// operation.
     ///
+    /// Returns [`None`] if there are no sorting columns.
+    ///
     /// # Errors
     /// The columns in the schema must match the row and sort key field names.
     pub fn create_sort_expr_ordering(
         &self,
         frame: &DataFrame,
-    ) -> Result<LexOrdering, DataFusionError> {
+    ) -> Result<Option<LexOrdering>, DataFusionError> {
         let plan_schema = frame.schema().as_arrow();
         let sorting_columns = self.config.sorting_columns();
+
         Ok(LexOrdering::new(
             sorting_columns
                 .iter()
