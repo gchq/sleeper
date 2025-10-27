@@ -180,7 +180,7 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     wait
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
-    runSlowTests $@
+    runSlowTests "$@"
     wait
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"

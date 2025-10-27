@@ -1,16 +1,6 @@
-test() {
-    sleep $1
-    echo $2
-}
-
-blah(){
-    test 0 "starting" &
-    test 5 "mid" &
-    test 10 "end"
-}
-
-blah
-wait
-
-
-
+if [ $(dpkg-query -W -f='${Status}' rsync 2>/dev/null | grep -c "ok installed") -eq 0 ];
+then
+  echo "not installed"
+else
+  echo "installed"
+fi

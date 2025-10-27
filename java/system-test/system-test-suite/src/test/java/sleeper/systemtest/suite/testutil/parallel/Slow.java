@@ -23,6 +23,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/* This tag should not be added directly to a test.
+ * It is used within Slow1, Slow2 & Slow3 to declare a test as Slow.
+*/
 @Tag("slow")
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

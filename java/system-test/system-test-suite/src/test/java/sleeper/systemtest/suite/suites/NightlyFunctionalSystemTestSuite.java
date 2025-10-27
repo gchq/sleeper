@@ -21,6 +21,6 @@ import org.junit.platform.suite.api.ExcludeTags;
 import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
 @SystemTestSuite
-@ExcludeTags({"expensive1", "expensive2", "expensive3"})
+@ExcludeTags("expensive")
 public class NightlyFunctionalSystemTestSuite {
 }
