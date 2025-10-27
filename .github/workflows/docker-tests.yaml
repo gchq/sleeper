@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'java/**/Dockerfile'
+      - 'rust/**' # We've seen Rust failures because of code built against a different glibc version than is present in the image
       - '.github/workflows/docker-tests.yaml'
 
 env:
