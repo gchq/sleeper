@@ -16,6 +16,7 @@ env:
 
 jobs:
   build:
+    name: Test Docker image ${{ inputs.imageName }}
     runs-on: ubuntu-latest
 
     steps:
