@@ -13,3 +13,10 @@ jobs:
     with:
       imageName: compaction-job-execution
       testClassNames: CompactionTaskDockerImageST
+  # TODO add test (for https://github.com/gchq/sleeper/issues/5830)
+  # query:
+  #   uses: ./.github/workflows/docker-image-test.yaml
+  #   with:
+  #     imageName: query-lambda
+  #     isLambda: true
+  #     testClassNames: QueryLambdaDockerImageST
