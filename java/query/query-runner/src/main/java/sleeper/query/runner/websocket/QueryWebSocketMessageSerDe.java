@@ -37,7 +37,7 @@ public class QueryWebSocketMessageSerDe {
 
     // This should stay below API Gateway's limit for web socket message payload size:
     // https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-execution-service-websocket-limits-table.html
-    public static final int DEFAULT_ROWS_PAYLOAD_SIZE = 128 * 1024;
+    public static final int DEFAULT_ROWS_PAYLOAD_SIZE = 120 * 1024;
 
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
