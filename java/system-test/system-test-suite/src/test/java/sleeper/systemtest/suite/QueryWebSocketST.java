@@ -109,4 +109,17 @@ public class QueryWebSocketST {
                 .allRowsInTable())
                 .isEmpty();
     }
+
+    // We established an appropriate number of rows for this by roughly checking the payload size produced in
+    // QueryWebSocketMessageSerDeTest and comparing against the AWS docs:
+    // https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-execution-service-websocket-limits-table.html
+    @Test
+    void shouldRunQueryReturningManyRows(SleeperSystemTest sleeper) {
+        // Given we have a number of rows that will break API Gateway's limit on payload size
+        sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 3000));
+
+        // When/Then
+        assertThat(sleeper.query().webSocket().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 3000)));
+    }
 }
