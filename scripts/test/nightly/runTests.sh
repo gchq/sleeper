@@ -69,7 +69,7 @@ set +e
 END_EXIT_CODE=0
 
 #Make copies of the project to run independent maven builds in parallel
-source "../../functions/checkInstalled.sh"
+source "$SCRIPTS_DIR/functions/checkInstalled.sh"
 checkInstalled rsync
 pushd $REPO_PARENT_DIR
 sudo rm -rf quick
