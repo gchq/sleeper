@@ -25,5 +25,5 @@ sudo rm -rf temp3
 mkdir temp3
 CP_START_TIMESTAMP=$(time_str)
 sudo cp -r -p temp temp3
-CP_END_TIMESTAMP=$$(time_str)
+CP_END_TIMESTAMP=$(time_str)
 echo "Third one: [$CP_START_TIME] to [$CP_END_TIME]"
