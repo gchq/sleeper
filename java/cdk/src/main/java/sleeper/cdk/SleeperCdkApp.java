@@ -173,8 +173,7 @@ public class SleeperCdkApp extends Stack {
                 policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
                 loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
-                stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3ObjectsStack, autoStopEcsClusterTasksStack,
-                autoStopEmrServerlessApplicationStack);
+                stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3ObjectsStack, autoStopEcsClusterTasksStack);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
@@ -204,6 +203,7 @@ public class SleeperCdkApp extends Stack {
                     topicStack.getTopic(),
                     bulkImportBucketStack,
                     coreStacks,
+                    autoStopEmrServerlessApplicationStack,
                     errorMetrics);
 
             // Stack to created EMR studio to be used to access EMR Serverless

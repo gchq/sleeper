@@ -47,6 +47,7 @@ import software.constructs.Construct;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -96,11 +97,12 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
             CoreStacks coreStacks,
+            AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-        createEmrServerlessApplication(instanceProperties, coreStacks);
+        createEmrServerlessApplication(instanceProperties, autoStopEmrServerlessApplicationStack);
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks, jarsBucket);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
@@ -135,7 +137,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .build());
     }
 
-    public void createEmrServerlessApplication(InstanceProperties instanceProperties, CoreStacks coreStacks) {
+    public void createEmrServerlessApplication(InstanceProperties instanceProperties, AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {
         CfnApplication emrServerlessCluster = CfnApplication.Builder.create(this, "BulkImportEMRServerless")
                 .name(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties)))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
@@ -156,7 +158,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID,
                 emrServerlessCluster.getAttrApplicationId());
 
-        coreStacks.addAutoStopEmrServerlessApplication(this, emrServerlessCluster);
+        autoStopEmrServerlessApplicationStack.addAutoStopEmrServerlessApplication(this, emrServerlessCluster);
     }
 
     private String createSecurityGroup(InstanceProperties instanceProperties) {

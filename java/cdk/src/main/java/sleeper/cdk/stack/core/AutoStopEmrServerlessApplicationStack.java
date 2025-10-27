@@ -54,12 +54,6 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
                 loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_EMR_SERVERLESS_APPLICATION_PROVIDER));
     }
 
-    // public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
-    //     super(scope, id);
-    //     ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS, instanceProperties);
-    //     ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER, instanceProperties);
-    //     createLambda(instanceProperties, jars, logGroup, providerLogGroup);
-    // }
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
@@ -78,7 +72,7 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
                 .logGroup(logGroup)
                 .timeout(Duration.minutes(15)));
 
-        // Grant this function permission to emrservless actions
+        // Grant this function permission to emrserverless actions
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
                 .resources(List.of("*"))

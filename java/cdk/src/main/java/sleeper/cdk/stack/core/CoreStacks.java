@@ -18,7 +18,6 @@ package sleeper.cdk.stack.core;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.services.ecs.ICluster;
-import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -49,7 +48,6 @@ public class CoreStacks {
     private final CompactionTrackerResources compactionTracker;
     private final AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     private final AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
-    private final AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack;
 
     public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
@@ -57,8 +55,7 @@ public class CoreStacks {
             IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker,
             AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
-            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack,
-            AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {
+            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         this.loggingStack = loggingStack;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
@@ -70,7 +67,6 @@ public class CoreStacks {
         this.compactionTracker = compactionTracker;
         this.autoDeleteS3ObjectsStack = autoDeleteS3ObjectsStack;
         this.autoStopEcsClusterTasksStack = autoStopEcsClusterTasksStack;
-        this.autoStopEmrServerlessApplicationStack = autoStopEmrServerlessApplicationStack;
     }
 
     public ILogGroup getLogGroup(LogGroupRef logGroupRef) {
@@ -118,10 +114,6 @@ public class CoreStacks {
 
     public void addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
         autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(scope, cluster);
-    }
-
-    public void addAutoStopEmrServerlessApplication(Construct scope, CfnApplication application) {
-        autoStopEmrServerlessApplicationStack.addAutoStopEmrServerlessApplication(scope, application);
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
