@@ -109,13 +109,13 @@ public class BulkExportQuerySplitter {
         List<BulkExportLeafPartitionQuery> leafPartitionQueriesList = new ArrayList<>();
         for (Partition partition : leafPartitions) {
             List<String> files = getFiles(partition);
-            LOGGER.info("Found {} files for partition {}", files.size(), partition.getId());
 
             if (files.isEmpty()) {
                 LOGGER.info("No files for partition {}", partition.getId());
                 continue;
             }
 
+            LOGGER.info("Found {} files for partition {}", files.size(), partition.getId());
             // For each leaf partition, create query with pre-populated list of files that
             // need to be read.
             BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery = BulkExportLeafPartitionQuery
