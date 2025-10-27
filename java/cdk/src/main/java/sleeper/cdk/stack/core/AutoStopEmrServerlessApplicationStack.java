@@ -23,7 +23,6 @@ import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
@@ -50,26 +49,25 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
     public AutoStopEmrServerlessApplicationStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
             LoggingStack loggingStack) {
         super(scope, id);
-        createLambda(instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_EMR_SERVERLESS_APPLICATION),
-                loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_EMR_SERVERLESS_APPLICATION_PROVIDER));
+        createLambda(instanceProperties, jars, loggingStack);
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
+    private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, LoggingStack loggingStack) {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "auto-stop-emr-serverless-applications");
+                Utils.cleanInstanceId(instanceProperties), "auto-stop-emr-serverless-application");
 
         lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_EMR_SERVERLESS_APPLICATION, "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-stopping EMR Serverless application")
-                .logGroup(logGroup)
+                .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_EMR_SERVERLESS_APPLICATION))
                 .timeout(Duration.minutes(15)));
 
         // Grant this function permission to emrserverless actions
@@ -77,12 +75,12 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
                 .create()
                 .resources(List.of("*"))
                 .actions(List.of("emr-serverless:ListJobRuns", "emr-serverless:CancelJobRun", "emr-serverless:StopApplication",
-                        "emr-serverless:GetApplication", "iam:PassRole"))
+                        "emr-serverless:GetApplication"))
                 .build());
 
         provider = Provider.Builder.create(this, "Provider")
                 .onEventHandler(lambda)
-                .logGroup(providerLogGroup)
+                .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_EMR_SERVERLESS_APPLICATION_PROVIDER))
                 .build();
 
         Utils.addStackTagIfSet(this, instanceProperties);
