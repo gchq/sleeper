@@ -39,7 +39,6 @@ import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.anyRequested
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequest;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequestedFor;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNoApplications;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveApplicationsRequested;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveEmrApplicationsRequest;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.aResponseWithNoClusters;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.aResponseWithNumRunningClusters;
@@ -92,9 +91,8 @@ class ShutdownSystemProcessesIT {
         shutdown();
 
         // Then
-        verify(2, anyRequestedFor(anyUrl()));
+        verify(1, anyRequestedFor(anyUrl()));
         verify(1, listActiveClustersRequested());
-        verify(1, listActiveApplicationsRequested());
     }
 
     @Nested
