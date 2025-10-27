@@ -51,7 +51,6 @@ public class AwsBulkExportDriverIT {
         sqs = drivers.clients().getSqs();
         driver = drivers.bulkExport(context);
         instance = context.instance();
-
     }
 
     @Test

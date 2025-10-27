@@ -18,6 +18,8 @@ package sleeper.systemtest.drivers.bulkexport;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.bulkexport.core.model.BulkExportQuery;
+import sleeper.clients.api.BulkExportQuerySender;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
@@ -25,15 +27,17 @@ import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 public class AwsBulkExportDriver implements BulkExportDriver {
 
     private SqsClient sqs;
+    private InstanceProperties instanceProperties;
 
-    public AwsBulkExportDriver(SystemTestContext instance, SystemTestClients clients) {
+    public AwsBulkExportDriver(SystemTestContext context, SystemTestClients clients) {
         this.sqs = clients.getSqs();
+        this.instanceProperties = context.instance().getInstanceProperties();
     }
 
     @Override
     public void sendJob(BulkExportQuery query) {
         //Fire off bulk export query to SQS
-        //BulkExportQuerySender.toSqs(instance.getInstanceProperties(), sqs);
-        //bulkExportQuerySender.sendQueryToBulkExport(query);
+        BulkExportQuerySender sender = BulkExportQuerySender.toSqs(instanceProperties, sqs);
+        sender.sendQueryToBulkExport(query);
     }
 }
