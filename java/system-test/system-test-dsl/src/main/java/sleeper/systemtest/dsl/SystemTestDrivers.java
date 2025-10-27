@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl;
 
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
@@ -100,6 +101,8 @@ public interface SystemTestDrivers {
     QueryAllTablesDriver queryByWebSocket(SystemTestContext context);
 
     ClearQueryResultsDriver clearQueryResults(SystemTestContext context);
+
+    BulkExportDriver bulkExport(SystemTestContext context);
 
     CompactionDriver compaction(SystemTestContext context);
 
