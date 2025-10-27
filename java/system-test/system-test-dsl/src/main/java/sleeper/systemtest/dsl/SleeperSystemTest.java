@@ -111,7 +111,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(context.instance(), context.sourceFiles(), baseDrivers.sourceFiles(context));
+        return new SystemTestSourceFiles(context, baseDrivers.sourceFiles(context));
     }
 
     public SystemTestTableFiles tableFiles() {

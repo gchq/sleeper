@@ -141,6 +141,11 @@ public class InMemoryCompaction {
         }
 
         @Override
+        public void createJobBatches(List<CompactionJob> jobs) {
+            jobBatchCreator().createBatches(instance.getTableProperties(), instance.getStateStore(), jobs);
+        }
+
+        @Override
         public void scaleToZero() {
         }
 

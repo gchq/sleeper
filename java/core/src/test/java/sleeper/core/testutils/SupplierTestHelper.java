@@ -58,6 +58,18 @@ public class SupplierTestHelper {
     }
 
     /**
+     * Creates a supplier of IDs. The IDs will be generated with a format to include an autoincrementing number.
+     *
+     * @param  format the format string to include a number
+     * @return        the supplier
+     */
+    public static Supplier<String> supplyNumberedIdsWithFormat(String format) {
+        return IntStream.iterate(1, i -> i + 1)
+                .mapToObj(i -> String.format(format, i))
+                .iterator()::next;
+    }
+
+    /**
      * Creates a supplier of IDs that would usually be generated with UUID.randomUUID. The IDs will be generated with
      * each number embedded in the digits of the UUID.
      *

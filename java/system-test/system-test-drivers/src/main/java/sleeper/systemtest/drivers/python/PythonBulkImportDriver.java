@@ -49,7 +49,7 @@ public class PythonBulkImportDriver implements IngestByAnyQueueDriver {
                         "--platform", "EMRServerless",
                         "--jobid", jobId,
                         "--files"),
-                Stream.of(files).map(sourceFiles::ingestJobFileInBucket))
+                Stream.of(files).map(filename -> sourceFiles.lastFolderWrittenTo().ingestJobFileInBucket(filename)))
                 .toArray(String[]::new));
     }
 }
