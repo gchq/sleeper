@@ -4,6 +4,10 @@ on:
       imageName:
         required: true
         type: string
+      isLambda:
+        default: false
+        required: false
+        type: boolean
       testClassNames:
         required: true
         type: string
@@ -56,8 +60,7 @@ jobs:
         working-directory: ./scripts/build
         run: ./copyBuildOutput.sh
       - name: Build Docker image ${{ inputs.imageName }}
-        working-directory: ./scripts/docker/${{ inputs.imageName }}
-        run: docker build -t ${{ inputs.imageName }}:test .
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }}
       - name: Docker image tests
         working-directory: ./java
         run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
