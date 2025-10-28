@@ -90,6 +90,18 @@ temporary folder per batch (quick, slow1-3, expensive1-3). The nightly run scrip
 with a short 60 seconds delay between each one starting up. Once all have completed it then uploads the results to S3.
 When adding a new Slow or Expensive System test add either the Slow1-3 or Expensive 1-3 tag.
 
+### Current Slow and Expensive test suites
+| Slow1                | Slow2                      | Slow3                           |
+| -----                | -----                      | -----                           |
+| AutoStopEcsTaskST    | EmrPersistentBulkImportST  | AutoDeleteS3ObjectsST           |
+| CompactionCreationST | MultipleTablesST           | RedeployOptionalStacksST        |
+| CompactionOnEC2ST    | OptionalFeaturesDisabledST | StateStoreCommitterThroughputST |
+| EksBulkImportST      |
+
+| Expensive1                        | Expensive2                 | Expensive3            |
+| -----                             | -----                      | -----                 |
+| CompactionDataFusionPerformanceST | CompactionVeryLargeST      | IngestPerformanceST   |
+| CompactionPerformanceST           | EmrBulkImportPerformanceST | ParallelCompactionsST |
 
 ### Running tests
 
