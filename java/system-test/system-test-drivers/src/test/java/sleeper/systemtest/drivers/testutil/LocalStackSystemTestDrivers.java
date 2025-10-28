@@ -20,11 +20,13 @@ import software.amazon.awssdk.regions.Region;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.systemtest.drivers.bulkexport.AwsBulkExportDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -70,6 +72,10 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     public CompactionDriver compaction(SystemTestContext context) {
         return new AwsCompactionDriver(context.instance(), clients,
                 AwsDrainSqsQueue.forLocalStackTests(clients.getSqs()));
+    }
+
+    public BulkExportDriver bulkExport(SystemTestContext context) {
+        return new AwsBulkExportDriver(context, clients);
     }
 
     @Override
