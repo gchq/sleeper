@@ -111,6 +111,26 @@ public class CommandArgumentsTest {
         }
 
         @Test
+        void shouldReadFlagIsSetToTrue() {
+            assertThat(parse("--flag=true").isFlagSet("flag")).isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsSetToFalse() {
+            assertThat(parse("--flag=false").isFlagSet("flag")).isFalse();
+        }
+
+        @Test
+        void shouldReadFlagIsSetToTrueIgnoringCase() {
+            assertThat(parse("--flag=TrUe").isFlagSet("flag")).isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsSetToFalseIgnoringCase() {
+            assertThat(parse("--flag=fAlSe").isFlagSet("flag")).isFalse();
+        }
+
+        @Test
         void shouldReadBeforePositionalArg() {
             // Given
             setPositionalArguments("positional");
@@ -141,6 +161,13 @@ public class CommandArgumentsTest {
             assertThatThrownBy(() -> parse("--"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Incomplete flag option: --");
+        }
+
+        @Test
+        void shouldFailWhenFlagIsSetToNonBoolean() {
+            assertThatThrownBy(() -> parse("--flag=abc"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected boolean, found abc");
         }
     }
 
@@ -226,6 +253,13 @@ public class CommandArgumentsTest {
             assertThat(arguments.isFlagSet("b")).isTrue();
             assertThat(arguments.isFlagSet("c")).isTrue();
             assertThat(arguments.isFlagSet("d")).isFalse();
+        }
+
+        @Test
+        void shouldFailWhenShortFlagIsSetWithEquals() {
+            assertThatThrownBy(() -> parse("-s=true"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Unrecognised flag option: =");
         }
 
         @Test

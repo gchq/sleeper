@@ -109,7 +109,7 @@ public class QueryWebSocketMessageSerDeTest {
     @DisplayName("Row batch message")
     class Rows {
         Schema schema = createSchemaWithKey("key", new LongType());
-        QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(null, 1000, schema);
+        QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forRowBatchSizeAndPayloadMaxBytes(null, 1000, schema);
 
         @Test
         void shouldSerDeRows() throws Exception {
@@ -169,7 +169,7 @@ public class QueryWebSocketMessageSerDeTest {
         Schema schema = createSchemaWithKey("key", new LongType());
 
         private QueryWebSocketMessageSerDe serDeForBatchSize(int batchSize) {
-            return QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(batchSize, 1000, schema);
+            return QueryWebSocketMessageSerDe.forRowBatchSizeAndPayloadMaxBytes(batchSize, 1000, schema);
         }
 
         @Test
@@ -261,7 +261,7 @@ public class QueryWebSocketMessageSerDeTest {
         Schema schema = createSchemaWithKey("key", new LongType());
 
         private QueryWebSocketMessageSerDe serDeForPayloadSize(int payloadSize) {
-            return QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(null, payloadSize, schema);
+            return QueryWebSocketMessageSerDe.forRowBatchSizeAndPayloadMaxBytes(null, payloadSize, schema);
         }
 
         @Test
@@ -336,7 +336,7 @@ public class QueryWebSocketMessageSerDeTest {
                     new Row(Map.of("key", 30L)),
                     new Row(Map.of("key", 40L)),
                     new Row(Map.of("key", 50L)));
-            QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(2, 70, schema);
+            QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forRowBatchSizeAndPayloadMaxBytes(2, 70, schema);
 
             // When
             List<String> json = toJson(serDe, "test-query", rows);
@@ -359,7 +359,7 @@ public class QueryWebSocketMessageSerDeTest {
     @DisplayName("Validate deserialised message")
     class Validation {
         Schema schema = createSchemaWithKey("key", new LongType());
-        QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forBatchSizeAndPayloadSize(null, 1000, schema);
+        QueryWebSocketMessageSerDe serDe = QueryWebSocketMessageSerDe.forRowBatchSizeAndPayloadMaxBytes(null, 1000, schema);
 
         @Test
         void shouldFailValidationWhenMessageTypeIsMissing() {
