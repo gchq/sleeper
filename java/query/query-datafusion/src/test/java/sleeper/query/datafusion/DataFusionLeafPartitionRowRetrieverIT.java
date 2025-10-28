@@ -75,6 +75,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -128,6 +129,39 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     // - Restrict required values and apply filtering on same or different field
     // - Restrict required values and apply aggregation
     // - Custom iterators combine with filtering/aggregation
+
+    @Nested
+    @DisplayName("Filtering and Aggregation")
+    class FilteringAggregating {
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 1L, "value1", 10L, "value2", 100L)),
+                new Row(Map.of("key", 1L, "value1", 20L, "value2", 200L)),
+                new Row(Map.of("key", 1L, "value1", 30L, "value2", 300L)),
+                new Row(Map.of("key", 10L, "value1", 999999999999L, "value2", 100L)),
+                new Row(Map.of("key", 10L, "value1", 999999999999L, "value2", 200L)),
+                new Row(Map.of("key", 10L, "value1", 999999999999L, "value2", 300L)));
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            ingestData(rows);
+        }
+
+        @Test
+        void shouldPushDownFilter() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+
+            // When
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
+
+            // Then
+            assertThat(results).hasSameElementsAs(rows.stream()
+                    .filter(r -> ((long) r.get("key")) == 10L)
+                    .collect(Collectors.toList()));
+        }
+    }
 
     @Nested
     @DisplayName("No files")

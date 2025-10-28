@@ -122,8 +122,10 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
         common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.write_sketch_file.set(false);
-        common.aggregation_config.set(tableProperties.get(AGGREGATION_CONFIG));
-        common.filtering_config.set(tableProperties.get(FILTERING_CONFIG));
+        String aggregation = tableProperties.get(AGGREGATION_CONFIG);
+        String filters = tableProperties.get(FILTERING_CONFIG);
+        common.aggregation_config.set(aggregation == null ? "" : aggregation);
+        common.filtering_config.set(filters == null ? "" : filters);
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
