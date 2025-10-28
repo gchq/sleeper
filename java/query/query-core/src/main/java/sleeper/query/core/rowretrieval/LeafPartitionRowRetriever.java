@@ -39,4 +39,18 @@ public interface LeafPartitionRowRetriever {
      * @throws RowRetrievalException if the first row of any file could not be read
      */
     CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException;
+
+    /**
+     * Indicates if this implementation can apply row filters and aggregations.
+     *
+     * Some implementations support row filters (e.g. age off) and aggregations (e.g. sum) internally. This
+     * method will return true for those implementations. For implementations that do not, then appropriate iterators
+     * must be applied to the results of the {@link LeafPartitionRowRetriever#getRows(LeafPartitionQuery, Schema)}
+     * method.
+     *
+     * @return true if filters and aggregations are supported
+     */
+    default boolean supportsFiltersAndAggregations() {
+        return false;
+    }
 }

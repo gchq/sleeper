@@ -85,6 +85,14 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     }
 
     /**
+     * Returns true since DataFusion query path supports native filtering and aggregations.
+     */
+    @Override
+    public boolean supportsFiltersAndAggregations() {
+        return true;
+    }
+
+    /**
      * Creates the input struct that contains all the information needed by the Rust code
      * side of the compaction.
      *

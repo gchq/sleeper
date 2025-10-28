@@ -107,6 +107,21 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
     }
 
+    @Test
+    void shouldSupportFiltersAndAggregations() {
+        // Given
+        LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
+                // DataFusion spends time trying to auth with AWS unless you override it
+                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, FFI_CONTEXT);
+        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+
+        // When
+        boolean supportsFiltersAndAggregations = rowRetriever.supportsFiltersAndAggregations();
+
+        // Then
+        assertThat(supportsFiltersAndAggregations).isTrue();
+    }
+
     // TODO tests for issue https://github.com/gchq/sleeper/issues/5829 (push down filtering & aggregation):
     // - Filtering is pushed down to DataFusion
     // - Aggregation is pushed down to DataFusion
