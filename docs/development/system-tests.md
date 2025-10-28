@@ -92,14 +92,14 @@ When adding a new Slow or Expensive System test add either the Slow1-3 or Expens
 
 ### Current Slow and Expensive test suites
 | Slow1                | Slow2                      | Slow3                           |
-| -----                | -----                      | -----                           |
+| -------------------- | -------------------------- | ------------------------------- |
 | AutoStopEcsTaskST    | EmrPersistentBulkImportST  | AutoDeleteS3ObjectsST           |
 | CompactionCreationST | MultipleTablesST           | RedeployOptionalStacksST        |
 | CompactionOnEC2ST    | OptionalFeaturesDisabledST | StateStoreCommitterThroughputST |
 | EksBulkImportST      |
 
 | Expensive1                        | Expensive2                 | Expensive3            |
-| -----                             | -----                      | -----                 |
+| ----- --------------------------- | -------------------------- | --------------------- |
 | CompactionDataFusionPerformanceST | CompactionVeryLargeST      | IngestPerformanceST   |
 | CompactionPerformanceST           | EmrBulkImportPerformanceST | ParallelCompactionsST |
 
