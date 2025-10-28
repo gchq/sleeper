@@ -31,7 +31,6 @@ import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
-import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 
@@ -47,7 +46,6 @@ public class AwsBulkExportDriverIT extends LocalStackTestBase {
     S3Client s3;
     SqsClient sqs;
     BulkExportDriver driver;
-    SystemTestInstanceContext instance;
     InstanceProperties instanceProperties;
 
     @BeforeEach
@@ -56,14 +54,13 @@ public class AwsBulkExportDriverIT extends LocalStackTestBase {
         s3 = drivers.clients().getS3();
         sqs = drivers.clients().getSqs();
         driver = drivers.bulkExport(context);
-        instance = context.instance();
-        instanceProperties = instance.getInstanceProperties();
+        instanceProperties = context.instance().getInstanceProperties();
     }
 
     @Test
     void shouldSendBulkExportJob() {
         // Given
-        instance.getInstanceProperties().set(BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
+        instanceProperties.set(BULK_EXPORT_QUEUE_URL, createSqsQueueGetUrl());
         BulkExportQuery query = BulkExportQuery.builder()
                 .exportId("test-export")
                 .tableName("table-name")
