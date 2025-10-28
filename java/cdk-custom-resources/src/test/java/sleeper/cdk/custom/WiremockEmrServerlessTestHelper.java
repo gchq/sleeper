@@ -194,15 +194,15 @@ public class WiremockEmrServerlessTestHelper {
     }
 
     /**
-     * Build an EMR application response for a running application.
+     * Build an EMR application response for a started application.
      *
      * @param  applicationId the application id
      * @return               a HTTP response
      */
-    public static ResponseDefinitionBuilder aResponseWithRunningApplication(String applicationId) {
+    public static ResponseDefinitionBuilder aResponseWithStartedApplication(String applicationId) {
         return aResponse().withStatus(200).withBody("{\"application\":{" +
                 "\"applicationId\":\"" + applicationId + "\"," +
-                "\"state\":\"RUNNING\"" +
+                "\"state\":\"STARTED\"" +
                 "}}");
     }
 

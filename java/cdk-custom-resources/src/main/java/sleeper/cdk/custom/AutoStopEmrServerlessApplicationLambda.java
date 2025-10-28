@@ -77,6 +77,7 @@ public class AutoStopEmrServerlessApplicationLambda {
     }
 
     private void stopApplication(String applicationId) throws InterruptedException {
+
         LOGGER.info("Terminating {} running application: ", applicationId);
 
         List<JobRunSummary> jobRuns = emrServerlessClient.listJobRuns(request -> request.applicationId(applicationId)
@@ -91,10 +92,12 @@ public class AutoStopEmrServerlessApplicationLambda {
             poll.pollUntil("all EMR Serverless jobs finished", () -> allJobsFinished(applicationId));
         }
 
-        emrServerlessClient.stopApplication(request -> request.applicationId(applicationId));
+        if (!isApplicationStopped(applicationId)) {
+            emrServerlessClient.stopApplication(request -> request.applicationId(applicationId));
 
-        LOGGER.info("Waiting for applications to stop");
-        poll.pollUntil("all EMR Serverless applications stopped", () -> isApplicationStopped(applicationId));
+            LOGGER.info("Waiting for applications to stop");
+            poll.pollUntil("all EMR Serverless applications stopped", () -> isApplicationStopped(applicationId));
+        }
     }
 
     private boolean allJobsFinished(String applicationId) {
