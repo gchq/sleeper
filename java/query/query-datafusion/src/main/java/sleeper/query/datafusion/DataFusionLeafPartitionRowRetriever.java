@@ -37,6 +37,9 @@ import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
 
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
+
 /**
  * Implements a Sleeper row retriever based on Apache DataFusion using native code.
  */
@@ -54,10 +57,10 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     }
 
     @Override
-    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
+    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
         DataFusionQueryFunctions functions = context.getFunctions();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, awsConfig, runtime);
+        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
         // Create NULL pointer which will be set by the FFI call upon return
         FFIQueryResults results = new FFIQueryResults(runtime);
@@ -100,13 +103,16 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * input files, compaction
      * region etc.
      *
-     * @param  query          all details for this leaf partition query
-     * @param  dataReadSchema the input schema to read
-     * @param  awsConfig      settings to access AWS, or null to use defaults
-     * @param  runtime        FFI runtime
-     * @return                object to pass to FFI layer
+     * @param  query           all details for this leaf partition query
+     * @param  dataReadSchema  the input schema to read
+     * @param  tableProperties the properties for the table being queried
+     * @param  awsConfig       settings to access AWS, or null to use defaults
+     * @param  runtime         FFI runtime
+     * @return                 object to pass to FFI layer
      */
-    private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
+    private static FFILeafPartitionQueryConfig createFFIQueryData(LeafPartitionQuery query, Schema dataReadSchema,
+            TableProperties tableProperties, DataFusionAwsConfig awsConfig,
+            jnr.ffi.Runtime runtime) {
         FFICommonConfig common = new FFICommonConfig(runtime, awsConfig);
         common.input_files.populate(query.getFiles().toArray(String[]::new), false);
         // Files are always sorted for queries
@@ -116,8 +122,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
         common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.write_sketch_file.set(false);
-        common.aggregation_config.set("");
-        common.filtering_config.set("");
+        common.aggregation_config.set(tableProperties.get(AGGREGATION_CONFIG));
+        common.filtering_config.set(tableProperties.get(FILTERING_CONFIG));
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
