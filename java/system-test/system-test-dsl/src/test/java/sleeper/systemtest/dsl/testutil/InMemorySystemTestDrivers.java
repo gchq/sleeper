@@ -21,6 +21,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
@@ -259,6 +260,12 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     public InMemoryStateStoreCommitter stateStoreCommitter() {
         return stateStoreCommitter;
+    }
+
+    @Override
+    public BulkExportDriver bulkExport(SystemTestContext context) {
+        // TODO to be implemented as part of #5898
+        throw new UnsupportedOperationException("Unimplemented method 'bulkExport'");
     }
 
 }
