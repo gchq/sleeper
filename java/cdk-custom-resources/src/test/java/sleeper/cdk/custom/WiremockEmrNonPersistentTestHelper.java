@@ -34,6 +34,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
+/**
+ * Helper methods to mock an EMR Non-Persistent cluster.
+ */
 public class WiremockEmrNonPersistentTestHelper {
     private WiremockEmrNonPersistentTestHelper() {
     }
@@ -52,17 +55,18 @@ public class WiremockEmrNonPersistentTestHelper {
         return wiremockAwsV2Client(runtimeInfo, EmrClient.builder());
     }
 
+    /**
+     * Check for any requests to the EMR client.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder anyRequestedForEmr() {
         return anyRequestedFor(anyUrl())
                 .withHeader(OPERATION_HEADER, matching("^ElasticMapReduce\\..*"));
     }
 
-    public static ResponseDefinitionBuilder aResponseWithNoClusters() {
-        return aResponse().withStatus(200).withBody("{\"Clusters\": []}");
-    }
-
     /**
-     * Build an EMR application response with a give job id and state.
+     * Build an EMR clustern response with a given cluster id and state.
      *
      * @param  clusterId the cluster id
      * @param  state     the cluster state
@@ -76,35 +80,68 @@ public class WiremockEmrNonPersistentTestHelper {
                 "}}");
     }
 
+    /**
+     * Describe an EMR cluster.
+     *
+     * @param  clusterId the cluster id
+     * @return           a HTTP response
+     */
     public static MappingBuilder describeClusterRequest(String clusterId) {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_DESCRIBE_CLUSTER_OPERATION)
                 .willReturn(aResponse().withStatus(200));
     }
 
+    /**
+     * Terminate an EMR clusters jobs.
+     *
+     * @return a HTTP response
+     */
     public static MappingBuilder terminateJobFlowsRequest() {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
                 .willReturn(aResponse().withStatus(200));
     }
 
+    /**
+     * Check for a terminate job flows request for a given cluster.
+     *
+     * @param  clusterId the cluster id
+     * @return           matching HTTP requests
+     */
     public static RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
         return terminateJobFlowsRequested()
                 .withRequestBody(matchingJsonPath("$.JobFlowIds",
                         equalTo(clusterId)));
     }
 
+    /**
+     * Check for a terminate job flows request.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder terminateJobFlowsRequested() {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
     }
 
+    /**
+     * Describe an EMR cluster for a given cluster id.
+     *
+     * @param  clusterId the cluster id
+     * @return           matching HTTP requests
+     */
     public static RequestPatternBuilder describeClusterRequestedFor(String clusterId) {
         return describeClusterRequested()
                 .withRequestBody(matchingJsonPath("$.ClusterId",
                         equalTo(clusterId)));
     }
 
+    /**
+     * Describe an EMR cluster request.
+     *
+     * @return matching HTTP requests
+     */
     public static RequestPatternBuilder describeClusterRequested() {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER, MATCHING_DESCRIBE_CLUSTER_OPERATION);

@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Delete an EMR Serverless application.
+ * Delete an EMR Non-Persistent cluster.
  */
 public class AutoStopEmrNonPersistentClusterLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(AutoStopEmrNonPersistentClusterLambda.class);
