@@ -20,7 +20,6 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emr.EmrClient;
-import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
@@ -32,7 +31,6 @@ public class TearDownClients {
     private final CloudWatchEventsClient cloudWatch;
     private final EcrClient ecr;
     private final EmrClient emr;
-    private final EmrServerlessClient emrServerless;
     private final CloudFormationClient cloudFormation;
 
     private TearDownClients(Builder builder) {
@@ -40,7 +38,6 @@ public class TearDownClients {
         cloudWatch = Objects.requireNonNull(builder.cloudWatch, "cloudWatch must not be null");
         ecr = Objects.requireNonNull(builder.ecr, "ecr must not be null");
         emr = Objects.requireNonNull(builder.emr, "emr must not be null");
-        emrServerless = Objects.requireNonNull(builder.emrServerless, "emrServerless must not be null");
         cloudFormation = Objects.requireNonNull(builder.cloudFormation, "cloudFormation must not be null");
     }
 
@@ -49,14 +46,12 @@ public class TearDownClients {
                 CloudWatchEventsClient cloudWatchClient = CloudWatchEventsClient.create();
                 EcrClient ecrClient = EcrClient.create();
                 EmrClient emrClient = EmrClient.create();
-                EmrServerlessClient emrServerless = EmrServerlessClient.create();
                 CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
             TearDownClients clients = builder()
                     .s3(s3Client)
                     .cloudWatch(cloudWatchClient)
                     .ecr(ecrClient)
                     .emr(emrClient)
-                    .emrServerless(emrServerless)
                     .cloudFormation(cloudFormationClient)
                     .build();
             operation.tearDown(clients);
@@ -83,10 +78,6 @@ public class TearDownClients {
         return emr;
     }
 
-    public EmrServerlessClient getEmrServerless() {
-        return emrServerless;
-    }
-
     public CloudFormationClient getCloudFormation() {
         return cloudFormation;
     }
@@ -96,7 +87,6 @@ public class TearDownClients {
         private CloudWatchEventsClient cloudWatch;
         private EcrClient ecr;
         private EmrClient emr;
-        private EmrServerlessClient emrServerless;
         private CloudFormationClient cloudFormation;
 
         private Builder() {
@@ -119,11 +109,6 @@ public class TearDownClients {
 
         public Builder emr(EmrClient emr) {
             this.emr = emr;
-            return this;
-        }
-
-        public Builder emrServerless(EmrServerlessClient emrServerless) {
-            this.emrServerless = emrServerless;
             return this;
         }
 
