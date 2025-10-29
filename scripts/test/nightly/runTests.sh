@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source "../../functions/checkInstalled.sh"
-checkInstalled "rsync"
+
 
 set -e
 unset CDPATH
@@ -24,6 +23,8 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
 
+source "$SCRIPTS_DIR/functions/checkInstalled.sh"
+checkInstalled "rsync"
 pushd "$SCRIPTS_DIR/test"
 
 if [ "$#" -lt 4 ]; then
