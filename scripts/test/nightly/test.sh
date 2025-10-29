@@ -1,4 +1,4 @@
 source "../../functions/checkInstalled.sh"
 
-checkInstalled rsync
+checkInstalled "rsync"
 echo "done"
