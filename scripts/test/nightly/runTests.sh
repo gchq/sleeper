@@ -72,10 +72,12 @@ END_EXIT_CODE=0
 source "$SCRIPTS_DIR/functions/checkInstalled.sh"
 checkInstalled rsync
 pushd $REPO_PARENT_DIR
+echo "Copying sleeper to quick folder"
 sudo rm -rf quick
 mkdir quick
 sudo rsync -a --exclude=".*" sleeper/ quick
 popd
+echo "Finished copying to quick folder"
 
 copyFolderForParallelRun() {
     if [ "$1" != "quick" ]; then

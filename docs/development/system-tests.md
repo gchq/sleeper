@@ -99,7 +99,7 @@ When adding a new Slow or Expensive System test add either the Slow1-3 or Expens
 | EksBulkImportST      |
 
 | Expensive1                        | Expensive2                 | Expensive3            |
-| ----- --------------------------- | -------------------------- | --------------------- |
+| --------------------------------- | -------------------------- | --------------------- |
 | CompactionDataFusionPerformanceST | CompactionVeryLargeST      | IngestPerformanceST   |
 | CompactionPerformanceST           | EmrBulkImportPerformanceST | ParallelCompactionsST |
 
