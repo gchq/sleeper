@@ -102,19 +102,6 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
         }
     }
 
-    private void configure(GenericContainer<?> container) {
-        container.withEnv(getEnvironment())
-                .withNetwork(localStackContainer.getNetwork())
-                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
-    }
-
-    protected Map<String, String> getEnvironment() {
-        Map<String, String> environment = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
-        environment.put("AWS_ENDPOINT_URL", "http://localstack:4566");
-        LOGGER.info("Setting environment: {}", environment);
-        return environment;
-    }
-
     protected FileReference addFileAtRoot(String name, List<Row> rows) {
         FileReference reference = fileFactory().rootFile(name, rows.size());
         org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(reference.getFilename());
@@ -143,6 +130,19 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
 
     protected FileReferenceFactory fileFactory() {
         return FileReferenceFactory.from(instanceProperties, tableProperties, stateStore);
+    }
+
+    private void configure(GenericContainer<?> container) {
+        container.withEnv(getEnvironment())
+                .withNetwork(localStackContainer.getNetwork())
+                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
+    }
+
+    private Map<String, String> getEnvironment() {
+        Map<String, String> environment = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
+        environment.put("AWS_ENDPOINT_URL", "http://localstack:4566");
+        LOGGER.info("Setting environment: {}", environment);
+        return environment;
     }
 
 }
