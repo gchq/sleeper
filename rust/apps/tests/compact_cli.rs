@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+use assert_cmd::cargo_bin;
 use assert_cmd::prelude::*;
 use color_eyre::eyre::Result;
 use predicates::prelude::*; // Used for writing assertions
@@ -20,7 +21,7 @@ use std::process::Command; // Run programs
 
 #[test]
 fn invalid_region_maxs() -> Result<()> {
-    let mut cmd = Command::cargo_bin("compact")?;
+    let mut cmd = Command::new(cargo_bin!("compact"));
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
@@ -43,7 +44,7 @@ fn invalid_region_maxs() -> Result<()> {
 
 #[test]
 fn invalid_region_mins() -> Result<()> {
-    let mut cmd = Command::cargo_bin("compact")?;
+    let mut cmd = Command::new(cargo_bin!("compact"));
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
