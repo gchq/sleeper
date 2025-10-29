@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+source "$SCRIPTS_DIR/functions/checkInstalled.sh"
+checkInstalled "rsync"
 
 set -e
 unset CDPATH
@@ -30,9 +31,6 @@ if [ "$#" -lt 4 ]; then
   echo "Valid test types are: performance, functional"
   exit 1
 fi
-
-source "$SCRIPTS_DIR/functions/checkInstalled.sh"
-checkInstalled "rsync"
 
 DEPLOY_ID=$1
 VPC=$2
