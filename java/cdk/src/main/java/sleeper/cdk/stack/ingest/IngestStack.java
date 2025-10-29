@@ -29,6 +29,7 @@ import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.ContainerInsights;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
@@ -194,7 +195,7 @@ public class IngestStack extends NestedStack {
         Cluster cluster = Cluster.Builder
                 .create(this, "IngestCluster")
                 .clusterName(clusterName)
-                .containerInsights(Boolean.TRUE)
+                .containerInsightsV2(ContainerInsights.ENHANCED)
                 .vpc(vpc)
                 .build();
         instanceProperties.set(INGEST_CLUSTER, cluster.getClusterName());
