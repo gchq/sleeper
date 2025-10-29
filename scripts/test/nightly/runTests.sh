@@ -188,9 +188,4 @@ echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
  sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
-#Clear up temporary folder
-pushd $REPO_PARENT_DIR
-sudo rm -rf quick
-popd
-
 exit $END_EXIT_CODE
