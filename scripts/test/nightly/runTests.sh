@@ -23,8 +23,6 @@ SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
 
-source "$SCRIPTS_DIR/functions/checkInstalled.sh"
-checkInstalled "rsync"
 pushd "$SCRIPTS_DIR/test"
 
 if [ "$#" -lt 4 ]; then
@@ -52,6 +50,9 @@ else
   MAIN_SUITE_NAME=custom
   MAIN_SUITE_PARAMS=("$@")
 fi
+
+source "$SCRIPTS_DIR/functions/checkInstalled.sh"
+checkInstalled "rsync"
 
 echo "DEPLOY_ID=$DEPLOY_ID"
 echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
