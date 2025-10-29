@@ -78,7 +78,8 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
 
     protected void runDockerImage(String dockerImage, String... arguments) throws Exception {
         List<String> command = new ArrayList<>();
-        command.addAll(List.of("docker", "run", "--rm", "-it", "--network=host"));
+        String network = localStackContainer.getContainerInfo().getNetworkSettings().getNetworks().keySet().stream().findFirst().orElseThrow();
+        command.addAll(List.of("docker", "run", "--rm", "-it", "--network=" + network));
 
         Map<String, String> environment = getEnvironment();
         environment.forEach((variable, value) -> command.addAll(List.of("--env", variable + "=" + value)));
@@ -96,7 +97,6 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
             environment.put("LOG_LEVEL", "trace");
 
             LOGGER.info("Running handler {} with image {}", handler.getHandler(), dockerImage);
-            LOGGER.info("Setting environment: {}", environment);
 
             container.withEnv(environment)
                     .withNetwork(localStackContainer.getNetwork())
@@ -116,7 +116,8 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
 
     protected Map<String, String> getEnvironment() {
         Map<String, String> environment = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
-        environment.put("AWS_ENDPOINT_URL", localStackContainer.getEndpoint().toString());
+        environment.put("AWS_ENDPOINT_URL", "http://localstack:4566");
+        LOGGER.info("Setting environment: {}", environment);
         return environment;
     }
 
