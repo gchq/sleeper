@@ -99,6 +99,7 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
             LOGGER.info("Setting environment: {}", environment);
 
             container.withEnv(environment)
+                    .withNetwork(localStackContainer.getNetwork())
                     .withCommand(handler.getHandler())
                     .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
             container.setPortBindings(List.of("9000:8080"));
