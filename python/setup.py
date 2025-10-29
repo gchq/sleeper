@@ -26,6 +26,7 @@ setup(
         "jproperties",
         "ruff",
         "pytest",
+        "pytest-mock",
         "testcontainers[localstack]",
     ],
     package_dir={"": "src"},

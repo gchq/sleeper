@@ -3,6 +3,7 @@ import uuid
 import boto3
 import s3fs
 from mypy_boto3_dynamodb import DynamoDBServiceResource
+from mypy_boto3_dynamodb.service_resource import Table
 from mypy_boto3_s3 import S3Client, S3ServiceResource
 from mypy_boto3_s3.service_resource import Bucket
 from mypy_boto3_sqs import SQSServiceResource
@@ -95,6 +96,36 @@ class LocalStack:
         return cls.sqs_resource().create_queue(QueueName=queue_name)
 
     @classmethod
+    def create_table(cls):
+        dynamodb = cls.dynamo_resource()
+        table_name = str(uuid.uuid4())
+
+        table = dynamodb.create_table(
+            TableName=table_name,
+            AttributeDefinitions=[
+                {"AttributeName": "queryId", "AttributeType": "S"},
+                {"AttributeName": "subQueryId", "AttributeType": "S"}
+            ],
+            KeySchema=[
+                {"AttributeName": "queryId", "KeyType": "HASH"},
+                {"AttributeName": "subQueryId", "KeyType": "RANGE"}
+            ],
+            BillingMode="PAY_PER_REQUEST"
+        )
+
+        table.wait_until_exists()
+
+        dynamodb.meta.client.update_time_to_live(
+            TableName=table_name,
+            TimeToLiveSpecification={
+                "Enabled": True,
+                "AttributeName": "expiryDate"
+            }
+        )
+
+        return table
+
+    @classmethod
     def read_parquet_file(cls, path) -> list[dict]:
         results = []
         with cls.s3fs().open(path, "rb") as f:
@@ -102,3 +133,4 @@ class LocalStack:
                 for row in ParquetDeserialiser(use_threads=False).read(po):
                     results.append(row)
         return results
+
