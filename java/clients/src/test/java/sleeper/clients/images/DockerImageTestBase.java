@@ -93,8 +93,6 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
         try (GenericContainer<?> container = new GenericContainer<>(dockerImage)) {
 
             Map<String, String> environment = getEnvironment();
-            environment.put("AWS_ACCESS_KEY_ID", localStackContainer.getAccessKey());
-            environment.put("AWS_SECRET_ACCESS_KEY", localStackContainer.getSecretKey());
             environment.put("LOG_LEVEL", "trace");
 
             LOGGER.info("Running handler {} with image {}", handler.getHandler(), dockerImage);
