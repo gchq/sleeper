@@ -70,7 +70,7 @@ END_EXIT_CODE=0
 
 #Make copies of the project to run independent maven builds in parallel
 source "$SCRIPTS_DIR/functions/checkInstalled.sh"
-checkInstalled rsync
+checkInstalled "rsync"
 pushd $REPO_PARENT_DIR
 echo "Copying sleeper to quick folder"
 sudo rm -rf quick
