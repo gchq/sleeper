@@ -37,6 +37,9 @@ SUBNETS=$3
 RESULTS_BUCKET=$4
 MAIN_SUITE_NAME=$5
 
+source "$SCRIPTS_DIR/functions/checkInstalled.sh"
+checkInstalled "rsync"
+
 shift 4
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
   shift
@@ -50,9 +53,6 @@ else
   MAIN_SUITE_NAME=custom
   MAIN_SUITE_PARAMS=("$@")
 fi
-
-source "$SCRIPTS_DIR/functions/checkInstalled.sh"
-checkInstalled "rsync"
 
 echo "DEPLOY_ID=$DEPLOY_ID"
 echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
