@@ -15,12 +15,11 @@
  */
 use assert_cmd::cargo_bin;
 use assert_cmd::prelude::*;
-use color_eyre::eyre::Result;
 use predicates::prelude::*; // Used for writing assertions
 use std::process::Command; // Run programs
 
 #[test]
-fn invalid_region_maxs() -> Result<()> {
+fn invalid_region_maxs() {
     let mut cmd = Command::new(cargo_bin!("query"));
     cmd.args([
         "/tmp/output.parquet",
@@ -47,11 +46,10 @@ fn invalid_region_maxs() -> Result<()> {
     cmd.assert().failure().stderr(predicate::str::contains(
         "quantity of region maximums != quantity of row key fields",
     ));
-    Ok(())
 }
 
 #[test]
-fn invalid_region_mins() -> Result<()> {
+fn invalid_region_mins() {
     let mut cmd = Command::new(cargo_bin!("query"));
     cmd.args([
         "/tmp/output.parquet",
@@ -78,11 +76,10 @@ fn invalid_region_mins() -> Result<()> {
     cmd.assert().failure().stderr(predicate::str::contains(
         "quantity of region minimums != quantity of row key fields",
     ));
-    Ok(())
 }
 
 #[test]
-fn invalid_query_mins() -> Result<()> {
+fn invalid_query_mins() {
     let mut cmd = Command::new(cargo_bin!("query"));
     cmd.args([
         "/tmp/output.parquet",
@@ -109,11 +106,10 @@ fn invalid_query_mins() -> Result<()> {
     cmd.assert().failure().stderr(predicate::str::contains(
         "quantity of query region minimums != quantity of row key fields",
     ));
-    Ok(())
 }
 
 #[test]
-fn invalid_query_maxs() -> Result<()> {
+fn invalid_query_maxs() {
     let mut cmd = Command::new(cargo_bin!("query"));
     cmd.args([
         "/tmp/output.parquet",
@@ -140,5 +136,4 @@ fn invalid_query_maxs() -> Result<()> {
     cmd.assert().failure().stderr(predicate::str::contains(
         "quantity of query region maximums != quantity of row key fields",
     ));
-    Ok(())
 }
