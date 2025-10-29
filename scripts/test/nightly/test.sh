@@ -1,4 +1,5 @@
-if [ $(dpkg-query -W -f='${Status}' $1 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
+checkInstalled() {
+    if [ $(dpkg-query -W -f='${Status}' $1 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
         echo "$1 not installed. Installing now..."
         sudo apt-get update
         sudo apt-get install --yes $1
@@ -6,5 +7,7 @@ if [ $(dpkg-query -W -f='${Status}' $1 2>/dev/null | grep -c "ok installed") -eq
     else
         echo "$1 already installed."
     fi
+}
 
-    echo "done"
+checkInstalled rsync
+echo "done"
