@@ -78,7 +78,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
@@ -173,7 +172,6 @@ public class CompactionOnEc2Resources {
                 .vpc(vpc)
                 .launchTemplate(scalingLaunchTemplate)
                 .minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
-                .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
                 .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM))
                 .terminationPolicies(List.of(TerminationPolicy.CUSTOM_LAMBDA_FUNCTION))
                 .terminationPolicyCustomLambdaFunctionArn(customTermination.getFunctionArn())
