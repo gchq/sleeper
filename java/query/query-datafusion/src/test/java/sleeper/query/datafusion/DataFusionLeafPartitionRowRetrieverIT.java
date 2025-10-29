@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.testutil.LimitingConfigStringIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
@@ -115,9 +116,6 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         assertThat(supportsFiltersAndAggregations).isTrue();
     }
 
-    // TODO tests for issue https://github.com/gchq/sleeper/issues/5829 (push down filtering & aggregation):
-    // - Custom iterators combine with filtering/aggregation
-
     @Nested
     @DisplayName("Filtering and Aggregation")
     class FilteringAggregating {
@@ -158,7 +156,6 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldPushDownAggregation() throws Exception {
             // Given
-            tableProperties.setSchema(getLongKeySchema());
             tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
 
             // When
@@ -169,7 +166,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
 
         @Test
-        void shouldRestrictColumnOnFilterColumn() throws Exception {
+        void shouldRestrictValueColumnsOnFilterColumn() throws Exception {
             // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
             QueryProcessingConfig config = QueryProcessingConfig.builder()
@@ -185,7 +182,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
 
         @Test
-        void shouldRestrictColumnOnFilterOtherColumn() throws Exception {
+        void shouldRestrictValueColumnsOnFilterOtherColumn() throws Exception {
             // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
             QueryProcessingConfig config = QueryProcessingConfig.builder()
@@ -201,9 +198,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
 
         @Test
-        void shouldRestrictColumnsOnAggregation() throws Exception {
+        void shouldRestrictValueColumnsOnAggregation() throws Exception {
             // Given
-            tableProperties.setSchema(getLongKeySchema());
             tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
             QueryProcessingConfig config = QueryProcessingConfig.builder()
                     .requestedValueFields(List.of("value2")).build();
@@ -219,6 +215,32 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                         newRow.remove("value1");
                         return newRow;
                     }).toList());
+        }
+
+        @Test
+        void shouldCombineFilteringAggregationAndCustomIterator() throws Exception {
+            // Given
+            List<Row> extraRows = List.of(
+                    new Row(Map.of("key", 20L, "value1", 99999999999999L, "value2", 400L)),
+                    new Row(Map.of("key", 20L, "value1", 99999999999999L, "value2", 500L)),
+                    new Row(Map.of("key", 20L, "value1", 99999999999999L, "value2", 600L)));
+            ingestData(extraRows);
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+            tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
+
+            QueryProcessingConfig config = QueryProcessingConfig.builder()
+                    .queryTimeIteratorClassName(LimitingConfigStringIterator.class.getName())
+                    .queryTimeIteratorConfig("1")
+                    .build();
+
+            // When
+            List<Row> results = executeQueryByRangeConfig(rangeFactory()
+                    .createRange("key", 1L, true, 20L, true), config);
+
+            // Then
+            assertThat(results).hasSize(1).hasSameElementsAs(aggregated_rows.stream()
+                    .filter(r -> ((long) r.get("key")) == 10L)
+                    .collect(Collectors.toList()));
         }
     }
 
