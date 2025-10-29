@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source "$SCRIPTS_DIR/functions/checkInstalled.sh"
+source "../../functions/checkInstalled.sh"
 checkInstalled "rsync"
 
 set -e
