@@ -70,14 +70,19 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
         List<String> command = new ArrayList<>();
         command.addAll(List.of("docker", "run", "--rm", "-it", "--network=host"));
 
-        Map<String, String> environment = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
-        environment.put("AWS_ENDPOINT_URL", localStackContainer.getEndpoint().toString());
+        Map<String, String> environment = getEnvironment();
         environment.forEach((variable, value) -> command.addAll(List.of("--env", variable + "=" + value)));
 
         command.add(dockerImage);
         command.addAll(List.of(arguments));
 
         CommandUtils.runCommandLogOutputWithPty(command(command.toArray(String[]::new)));
+    }
+
+    protected Map<String, String> getEnvironment() {
+        Map<String, String> environment = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
+        environment.put("AWS_ENDPOINT_URL", localStackContainer.getEndpoint().toString());
+        return environment;
     }
 
     protected FileReference addFileAtRoot(String name, List<Row> rows) {

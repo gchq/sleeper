@@ -25,7 +25,13 @@ RUN apt-get update && apt-get install -y \
     java-17-amazon-corretto-jdk \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Lambda Runtime Interface Emulator
+RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.10/aws-lambda-rie && \
+    mv ./aws-lambda-rie /usr/local/bin/ && \
+    chmod +x /usr/local/bin/aws-lambda-rie
+
 WORKDIR /function
 COPY lambda.jar ./
 COPY aws-lambda-java-runtime.jar ./
-ENTRYPOINT [ "/usr/bin/java", "-cp", "./lambda.jar:./aws-lambda-java-runtime.jar", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
+COPY entrypoint.sh /
+ENTRYPOINT [ "/entrypoint.sh" ]
