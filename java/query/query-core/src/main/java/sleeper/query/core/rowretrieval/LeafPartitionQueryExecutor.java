@@ -135,6 +135,6 @@ public class LeafPartitionQueryExecutor {
             ObjectFactory objectFactory,
             IteratorConfig iteratorConfig, boolean applyFilterAggregations) throws IteratorCreationException {
         return new IteratorFactory(objectFactory)
-                .getIterator(iteratorConfig, schema, applyFilterAggregations, applyFilterAggregations);
+                .getIterator(iteratorConfig, schema, applyFilterAggregations);
     }
 }
