@@ -36,6 +36,7 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
@@ -122,10 +123,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
         common.region.set(FFISleeperRegion.from(query.getPartitionRegion(), dataReadSchema, runtime));
         common.write_sketch_file.set(false);
-        String aggregation = tableProperties.get(AGGREGATION_CONFIG);
-        String filters = tableProperties.get(FILTERING_CONFIG);
-        common.aggregation_config.set(aggregation == null ? "" : aggregation);
-        common.filtering_config.set(filters == null ? "" : filters);
+        common.aggregation_config.set(Optional.ofNullable(tableProperties.get(AGGREGATION_CONFIG)).orElse(""));
+        common.filtering_config.set(Optional.ofNullable(tableProperties.get(FILTERING_CONFIG)).orElse(""));
         common.validate();
 
         FFILeafPartitionQueryConfig queryConfig = new FFILeafPartitionQueryConfig(runtime);
