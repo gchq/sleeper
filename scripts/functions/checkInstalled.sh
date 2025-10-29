@@ -3,6 +3,7 @@ checkInstalled() {
         echo "$1 not installed. Installing now..."
         sudo apt-get update
         sudo apt-get install --yes $1
+        echo "test"
     else
         echo "$1 already installed."
     fi
