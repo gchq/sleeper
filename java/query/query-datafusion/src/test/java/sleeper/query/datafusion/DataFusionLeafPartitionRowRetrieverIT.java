@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.testutil.LimitingConfigStringIterator;
 import sleeper.core.partition.PartitionTree;
@@ -77,6 +78,8 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -256,10 +259,10 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     @Nested
-    @DisplayName("Filter on timestamp")
-    class TimestampFilter {
+    @DisplayName("Apply a custom iterator")
+    class CustomIterator {
         @Test
-        void shouldFilterRelativeToTimestamp() throws Exception {
+        void shouldApplyCustomIterator() throws Exception {
             // Given
             Row row1 = new Row(Map.of("id", "1", "timestamp", System.currentTimeMillis()));
             Row row2 = new Row(Map.of("id", "2", "timestamp", System.currentTimeMillis() - 1_000_000_000L));
@@ -271,7 +274,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .build());
             update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
             ingestData(List.of(row1, row2, row3, row4));
-            tableProperties.set(FILTERING_CONFIG, "ageOff(timestamp,1000000)");
+            tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
+            tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
 
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("id", "0", "5"));
