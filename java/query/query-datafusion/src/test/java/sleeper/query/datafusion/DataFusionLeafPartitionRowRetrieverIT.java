@@ -133,10 +133,6 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 200L)),
                 new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 300L)));
 
-        List<Row> aggregatedRows = List.of(
-                new Row(Map.of("key", 1L, "value1", 10L, "value2", 600L)),
-                new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 600L)));
-
         @BeforeEach
         void setUp() throws Exception {
             tableProperties.setSchema(getLongKeySchema());
@@ -149,26 +145,31 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         void shouldPushDownFilter() throws Exception {
             // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 100L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 200L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 300L)));
 
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
 
             // Then
-            assertThat(results).hasSize(3).hasSameElementsAs(rows.stream()
-                    .filter(r -> ((long) r.get("key")) == 10L)
-                    .collect(Collectors.toList()));
+            assertThat(results).containsExactlyElementsOf(expected);
         }
 
         @Test
         void shouldPushDownAggregation() throws Exception {
             // Given
             tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
+            List<Row> aggregatedRows = List.of(
+                    new Row(Map.of("key", 1L, "value1", 10L, "value2", 600L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 600L)));
 
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
 
             // Then
-            assertThat(results).hasSize(2).containsExactlyElementsOf(aggregatedRows);
+            assertThat(results).containsExactlyElementsOf(aggregatedRows);
         }
 
         @Test
@@ -177,14 +178,17 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
             QueryProcessingConfig config = QueryProcessingConfig.builder()
                     .requestedValueFields(List.of("value1")).build();
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L)));
+
             // When
             List<Row> results = executeQueryByRangeConfig(rangeFactory()
                     .createRange("key", 1L, true, 10L, true), config);
 
             // Then
-            assertThat(results).hasSize(3)
-                    .allMatch(row -> row.get("key") == Long.valueOf(10L))
-                    .allMatch(row -> !row.getKeys().contains("value2"));
+            assertThat(results).containsExactlyElementsOf(expected);
         }
 
         @Test
@@ -193,14 +197,17 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
             QueryProcessingConfig config = QueryProcessingConfig.builder()
                     .requestedValueFields(List.of("value2")).build();
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value2", 100L)),
+                    new Row(Map.of("key", 10L, "value2", 200L)),
+                    new Row(Map.of("key", 10L, "value2", 300L)));
+
             // When
             List<Row> results = executeQueryByRangeConfig(rangeFactory()
                     .createRange("key", 1L, true, 10L, true), config);
 
             // Then
-            assertThat(results).hasSize(3)
-                    .allMatch(row -> row.get("key") == Long.valueOf(10L))
-                    .allMatch(row -> !row.getKeys().contains("value1"));
+            assertThat(results).containsExactlyElementsOf(expected);
         }
 
         @Test
@@ -209,18 +216,16 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
             QueryProcessingConfig config = QueryProcessingConfig.builder()
                     .requestedValueFields(List.of("value2")).build();
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 1L, "value2", 600L)),
+                    new Row(Map.of("key", 10L, "value2", 600L)));
 
             // When
             List<Row> results = executeQueryByRangeConfig(rangeFactory()
                     .createRange("key", 1L, true, 10L, true), config);
 
             // Then
-            assertThat(results).hasSize(2).hasSameElementsAs(aggregatedRows.stream()
-                    .map(row -> {
-                        Row newRow = new Row(row);
-                        newRow.remove("value1");
-                        return newRow;
-                    }).toList());
+            assertThat(results).containsExactlyElementsOf(expected);
         }
 
         @Test
@@ -233,6 +238,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             ingestData(extraRows);
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
             tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 600L)));
 
             QueryProcessingConfig config = QueryProcessingConfig.builder()
                     .queryTimeIteratorClassName(LimitingConfigStringIterator.class.getName())
@@ -244,9 +251,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .createRange("key", 1L, true, 20L, true), config);
 
             // Then
-            assertThat(results).hasSize(1).hasSameElementsAs(aggregatedRows.stream()
-                    .filter(r -> ((long) r.get("key")) == 10L)
-                    .collect(Collectors.toList()));
+            assertThat(results).containsExactlyElementsOf(expected);
         }
     }
 
@@ -1195,7 +1200,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     private List<Row> executeQueryByRange(Range range) throws Exception {
-        return executeQueryByRangeConfig(range, null);
+        return executeQueryByRangeConfig(range, QueryProcessingConfig.none());
     }
 
     private List<Row> executeQueryByRangeConfig(Range range, QueryProcessingConfig config) throws Exception {
@@ -1203,7 +1208,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     private List<Row> executeQueryByRanges(Range... ranges) throws Exception {
-        return execute(queryWithRegionConfig(new Region(List.of(ranges)), null));
+        return execute(queryWithRegionConfig(new Region(List.of(ranges)), QueryProcessingConfig.none()));
     }
 
     private List<Row> execute(Query query) throws Exception {
@@ -1225,14 +1230,12 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     private Query queryWithRegionConfig(Region region, QueryProcessingConfig config) {
-        Query.Builder builder = Query.builder()
+        return Query.builder()
                 .tableName("myTable")
                 .queryId("id")
-                .regions(List.of(region));
-        if (config != null) {
-            builder = builder.processingConfig(config);
-        }
-        return builder.build();
+                .regions(List.of(region))
+                .processingConfig(config)
+                .build();
     }
 
     private Schema getLongKeySchema() {
