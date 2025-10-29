@@ -20,14 +20,12 @@ import com.google.gson.GsonBuilder;
 
 import java.util.List;
 
-public class FakeSqsLambdaInvocation {
+public record FakeSqsLambdaInvocation(List<SqsRecord> Records) {
 
     private static final Gson GSON = new GsonBuilder().create();
 
-    private final List<SqsRecord> Records;
-
-    public FakeSqsLambdaInvocation(List<String> messages) {
-        Records = messages.stream().map(SqsRecord::new).toList();
+    public static FakeSqsLambdaInvocation fromMessageBodies(List<String> messageBodies) {
+        return new FakeSqsLambdaInvocation(messageBodies.stream().map(SqsRecord::new).toList());
     }
 
     public String toJson() {

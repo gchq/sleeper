@@ -87,7 +87,7 @@ public class QueryLambdaDockerImageST extends DockerImageTestBase {
 
     private String buildInvocation(LeafPartitionQuery... queries) {
         QuerySerDe querySerDe = new QuerySerDe(tableProperties.getSchema());
-        return new FakeSqsLambdaInvocation(
+        return FakeSqsLambdaInvocation.fromMessageBodies(
                 Stream.of(queries)
                         .map(querySerDe::toJson)
                         .toList())
