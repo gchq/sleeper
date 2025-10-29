@@ -1,3 +1,5 @@
+set -e
+unset CDPATH
 set +e
 source "../../functions/checkInstalled.sh"
 
