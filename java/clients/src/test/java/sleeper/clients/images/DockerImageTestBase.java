@@ -90,12 +90,12 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
         try (GenericContainer<?> container = new GenericContainer<>(dockerImage)) {
             configure(container);
             container.setCommand(handler.getHandler());
-            container.setPortBindings(List.of("9000:8080"));
+            container.addExposedPort(8080);
             container.start();
 
             HttpClient.newHttpClient().send(
                     HttpRequest.newBuilder()
-                            .uri(URI.create("http://" + container.getHost() + ":9000/2015-03-31/functions/function/invocations"))
+                            .uri(URI.create("http://" + container.getHost() + ":" + container.getMappedPort(8080) + "/2015-03-31/functions/function/invocations"))
                             .POST(BodyPublishers.ofString(invocation))
                             .build(),
                     BodyHandlers.discarding());
