@@ -20,7 +20,7 @@ use std::process::Command; // Run programs
 
 #[test]
 fn invalid_region_maxs() -> Result<()> {
-    let mut cmd = Command::cargo_bin("query")?;
+    let mut cmd = cargo::cargo_bin!("query")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
@@ -51,7 +51,7 @@ fn invalid_region_maxs() -> Result<()> {
 
 #[test]
 fn invalid_region_mins() -> Result<()> {
-    let mut cmd = Command::cargo_bin("query")?;
+    let mut cmd = cargo::cargo_bin!("query")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
@@ -82,7 +82,7 @@ fn invalid_region_mins() -> Result<()> {
 
 #[test]
 fn invalid_query_mins() -> Result<()> {
-    let mut cmd = Command::cargo_bin("query")?;
+    let mut cmd = cargo::cargo_bin!("query")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
@@ -113,7 +113,7 @@ fn invalid_query_mins() -> Result<()> {
 
 #[test]
 fn invalid_query_maxs() -> Result<()> {
-    let mut cmd = Command::cargo_bin("query")?;
+    let mut cmd = cargo::cargo_bin!("query")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
