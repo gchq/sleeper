@@ -1,24 +1,10 @@
-source "../../functions/checkInstalled.sh"
-source "../../functions/timeUtils.sh"
-source "../../functions/systemTestUtils.sh"
+if [ $(dpkg-query -W -f='${Status}' $1 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
+        echo "$1 not installed. Installing now..."
+        sudo apt-get update
+        sudo no | apt-get install $1
+        echo "test"
+    else
+        echo "$1 already installed."
+    fi
 
-checkInstalled rsync
-
-cd ../../../..
-sudo rm -rf temp
-mkdir temp
-echo "First start: $(time_str)"
-sudo rsync -a --exclude=".*" sleeper/ temp
-echo "First end: $(time_str)"
-
-sudo rm -rf temp2
-mkdir temp2
-echo "Second start: $(time_str)"
-sudo rsync -a temp temp2
-echo "Second end: $(time_str)"
-
-sudo rm -rf temp3
-mkdir temp3
-echo "Third start: $(time_str)"
-sudo cp -r -p temp temp3
-echo "Third end: $(time_str)"
+    echo "done"
