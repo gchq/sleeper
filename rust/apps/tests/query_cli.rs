@@ -19,8 +19,8 @@ use predicates::prelude::*; // Used for writing assertions
 use std::process::Command; // Run programs
 
 #[test]
-fn invalid_region_maxs() {
-    let mut cmd = Command::new(cargo_bin!("query"));
+fn invalid_region_maxs() -> Result<()> {
+    let mut cmd = cargo::cargo_bin!("query")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
@@ -49,8 +49,8 @@ fn invalid_region_maxs() {
 }
 
 #[test]
-fn invalid_region_mins() {
-    let mut cmd = Command::new(cargo_bin!("query"));
+fn invalid_region_mins() -> Result<()> {
+    let mut cmd = cargo::cargo_bin!("query")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
@@ -79,8 +79,8 @@ fn invalid_region_mins() {
 }
 
 #[test]
-fn invalid_query_mins() {
-    let mut cmd = Command::new(cargo_bin!("query"));
+fn invalid_query_mins() -> Result<()> {
+    let mut cmd = cargo::cargo_bin!("query")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
@@ -109,8 +109,8 @@ fn invalid_query_mins() {
 }
 
 #[test]
-fn invalid_query_maxs() {
-    let mut cmd = Command::new(cargo_bin!("query"));
+fn invalid_query_maxs() -> Result<()> {
+    let mut cmd = cargo::cargo_bin!("query")?;
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
