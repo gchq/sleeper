@@ -20,8 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.startupcheck.IndefiniteWaitOneShotStartupCheckStrategy;
 
-import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.deploy.LambdaHandler;
@@ -51,7 +51,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.clients.util.command.Command.command;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -76,32 +75,21 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
         stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
     }
 
-    protected void runDockerImage(String dockerImage, String... arguments) throws Exception {
-        List<String> command = new ArrayList<>();
-        String network = localStackContainer.getContainerInfo().getNetworkSettings().getNetworks().keySet().stream().findFirst().orElseThrow();
-        command.addAll(List.of("docker", "run", "--rm", "-it", "--network=" + network));
-
-        Map<String, String> environment = getEnvironment();
-        environment.forEach((variable, value) -> command.addAll(List.of("--env", variable + "=" + value)));
-
-        command.add(dockerImage);
-        command.addAll(List.of(arguments));
-
-        CommandUtils.runCommandLogOutputWithPty(command(command.toArray(String[]::new)));
+    protected void runTask(String dockerImage, String... arguments) throws Exception {
+        LOGGER.info("Running task with image {}", dockerImage);
+        try (GenericContainer<?> container = new GenericContainer<>(dockerImage)) {
+            configure(container);
+            container.setStartupCheckStrategy(new IndefiniteWaitOneShotStartupCheckStrategy());
+            container.setCommand(arguments);
+            container.start();
+        }
     }
 
     protected void runLambda(String dockerImage, LambdaHandler handler, String invocation) throws Exception {
+        LOGGER.info("Running handler {} with image {}", handler.getHandler(), dockerImage);
         try (GenericContainer<?> container = new GenericContainer<>(dockerImage)) {
-
-            Map<String, String> environment = getEnvironment();
-            environment.put("LOG_LEVEL", "trace");
-
-            LOGGER.info("Running handler {} with image {}", handler.getHandler(), dockerImage);
-
-            container.withEnv(environment)
-                    .withNetwork(localStackContainer.getNetwork())
-                    .withCommand(handler.getHandler())
-                    .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
+            configure(container);
+            container.setCommand(handler.getHandler());
             container.setPortBindings(List.of("9000:8080"));
             container.start();
 
@@ -112,6 +100,12 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
                             .build(),
                     BodyHandlers.discarding());
         }
+    }
+
+    private void configure(GenericContainer<?> container) {
+        container.withEnv(getEnvironment())
+                .withNetwork(localStackContainer.getNetwork())
+                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
     }
 
     protected Map<String, String> getEnvironment() {

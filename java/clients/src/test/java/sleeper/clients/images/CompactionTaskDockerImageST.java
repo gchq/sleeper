@@ -67,7 +67,7 @@ public class CompactionTaskDockerImageST extends DockerImageTestBase {
         update(stateStore).assignJobId("test-job", List.of(file));
 
         // When
-        runDockerImage("compaction-job-execution:test", instanceProperties.get(CONFIG_BUCKET));
+        runTask("compaction-job-execution:test", instanceProperties.get(CONFIG_BUCKET));
 
         // Then
         assertThat(readOutputFile(job)).containsExactlyElementsOf(rows);
