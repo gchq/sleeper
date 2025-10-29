@@ -133,7 +133,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 200L)),
                 new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 300L)));
 
-        List<Row> aggregated_rows = List.of(
+        List<Row> aggregatedRows = List.of(
                 new Row(Map.of("key", 1L, "value1", 10L, "value2", 600L)),
                 new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 600L)));
 
@@ -168,7 +168,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
 
             // Then
-            assertThat(results).hasSize(2).containsExactlyElementsOf(aggregated_rows);
+            assertThat(results).hasSize(2).containsExactlyElementsOf(aggregatedRows);
         }
 
         @Test
@@ -215,7 +215,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .createRange("key", 1L, true, 10L, true), config);
 
             // Then
-            assertThat(results).hasSize(2).hasSameElementsAs(aggregated_rows.stream()
+            assertThat(results).hasSize(2).hasSameElementsAs(aggregatedRows.stream()
                     .map(row -> {
                         Row newRow = new Row(row);
                         newRow.remove("value1");
@@ -244,7 +244,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .createRange("key", 1L, true, 20L, true), config);
 
             // Then
-            assertThat(results).hasSize(1).hasSameElementsAs(aggregated_rows.stream()
+            assertThat(results).hasSize(1).hasSameElementsAs(aggregatedRows.stream()
                     .filter(r -> ((long) r.get("key")) == 10L)
                     .collect(Collectors.toList()));
         }
