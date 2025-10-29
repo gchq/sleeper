@@ -47,6 +47,7 @@ import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
@@ -115,8 +116,6 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     // TODO tests for issue https://github.com/gchq/sleeper/issues/5829 (push down filtering & aggregation):
-    // - Restrict required values and apply filtering on same or different field
-    // - Restrict required values and apply aggregation
     // - Custom iterators combine with filtering/aggregation
 
     @Nested
@@ -159,14 +158,67 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldPushDownAggregation() throws Exception {
             // Given
-            tableProperties.setSchema(getLongKeySchemaWithSortKey());
-            tableProperties.set(AGGREGATION_CONFIG, "sum(value2)");
+            tableProperties.setSchema(getLongKeySchema());
+            tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
 
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
 
             // Then
             assertThat(results).hasSize(2).containsExactlyElementsOf(aggregated_rows);
+        }
+
+        @Test
+        void shouldRestrictColumnOnFilterColumn() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+            QueryProcessingConfig config = QueryProcessingConfig.builder()
+                    .requestedValueFields(List.of("value1")).build();
+            // When
+            List<Row> results = executeQueryByRangeConfig(rangeFactory()
+                    .createRange("key", 1L, true, 10L, true), config);
+
+            // Then
+            assertThat(results).hasSize(3)
+                    .allMatch(row -> row.get("key") == Long.valueOf(10L))
+                    .allMatch(row -> !row.getKeys().contains("value2"));
+        }
+
+        @Test
+        void shouldRestrictColumnOnFilterOtherColumn() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+            QueryProcessingConfig config = QueryProcessingConfig.builder()
+                    .requestedValueFields(List.of("value2")).build();
+            // When
+            List<Row> results = executeQueryByRangeConfig(rangeFactory()
+                    .createRange("key", 1L, true, 10L, true), config);
+
+            // Then
+            assertThat(results).hasSize(3)
+                    .allMatch(row -> row.get("key") == Long.valueOf(10L))
+                    .allMatch(row -> !row.getKeys().contains("value1"));
+        }
+
+        @Test
+        void shouldRestrictColumnsOnAggregation() throws Exception {
+            // Given
+            tableProperties.setSchema(getLongKeySchema());
+            tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
+            QueryProcessingConfig config = QueryProcessingConfig.builder()
+                    .requestedValueFields(List.of("value2")).build();
+
+            // When
+            List<Row> results = executeQueryByRangeConfig(rangeFactory()
+                    .createRange("key", 1L, true, 10L, true), config);
+
+            // Then
+            assertThat(results).hasSize(2).hasSameElementsAs(aggregated_rows.stream()
+                    .map(row -> {
+                        Row newRow = new Row(row);
+                        newRow.remove("value1");
+                        return newRow;
+                    }).toList());
         }
     }
 
@@ -1116,11 +1168,15 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     private List<Row> executeQueryByRange(Range range) throws Exception {
-        return execute(queryWithRegion(new Region(range)));
+        return executeQueryByRangeConfig(range, null);
+    }
+
+    private List<Row> executeQueryByRangeConfig(Range range, QueryProcessingConfig config) throws Exception {
+        return execute(queryWithRegionConfig(new Region(range), config));
     }
 
     private List<Row> executeQueryByRanges(Range... ranges) throws Exception {
-        return execute(queryWithRegion(new Region(List.of(ranges))));
+        return execute(queryWithRegionConfig(new Region(List.of(ranges)), null));
     }
 
     private List<Row> execute(Query query) throws Exception {
@@ -1141,26 +1197,21 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }
 
-    private Query queryWithRegion(Region region) {
-        return Query.builder()
+    private Query queryWithRegionConfig(Region region, QueryProcessingConfig config) {
+        Query.Builder builder = Query.builder()
                 .tableName("myTable")
                 .queryId("id")
-                .regions(List.of(region))
-                .build();
+                .regions(List.of(region));
+        if (config != null) {
+            builder = builder.processingConfig(config);
+        }
+        return builder.build();
     }
 
     private Schema getLongKeySchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("key", new LongType()))
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build();
-    }
-
-    private Schema getLongKeySchemaWithSortKey() {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .sortKeyFields(new Field("value1", new LongType()))
-                .valueFields(new Field("value2", new LongType()))
                 .build();
     }
 
