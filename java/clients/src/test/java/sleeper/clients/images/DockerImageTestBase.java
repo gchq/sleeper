@@ -17,10 +17,14 @@ package sleeper.clients.images;
 
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.GenericContainer;
 
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
@@ -38,6 +42,11 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +60,7 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public abstract class DockerImageTestBase extends LocalStackTestBase {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DockerImageTestBase.class);
 
     protected InstanceProperties instanceProperties = createTestInstanceProperties();
     protected TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new LongType()));
@@ -77,6 +87,32 @@ public abstract class DockerImageTestBase extends LocalStackTestBase {
         command.addAll(List.of(arguments));
 
         CommandUtils.runCommandLogOutputWithPty(command(command.toArray(String[]::new)));
+    }
+
+    protected void runLambda(String dockerImage, LambdaHandler handler, String invocation) throws Exception {
+        try (GenericContainer<?> container = new GenericContainer<>(dockerImage)) {
+
+            Map<String, String> environment = getEnvironment();
+            environment.put("AWS_ACCESS_KEY_ID", localStackContainer.getAccessKey());
+            environment.put("AWS_SECRET_ACCESS_KEY", localStackContainer.getSecretKey());
+            environment.put("LOG_LEVEL", "trace");
+
+            LOGGER.info("Running handler {} with image {}", handler.getHandler(), dockerImage);
+            LOGGER.info("Setting environment: {}", environment);
+
+            container.withEnv(environment)
+                    .withCommand(handler.getHandler())
+                    .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()));
+            container.setPortBindings(List.of("9000:8080"));
+            container.start();
+
+            HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder()
+                            .uri(URI.create("http://" + container.getHost() + ":9000/2015-03-31/functions/function/invocations"))
+                            .POST(BodyPublishers.ofString(invocation))
+                            .build(),
+                    BodyHandlers.discarding());
+        }
     }
 
     protected Map<String, String> getEnvironment() {
