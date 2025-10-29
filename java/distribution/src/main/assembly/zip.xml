@@ -48,7 +48,7 @@
         </fileSet>
         <!-- Docker files -->
         <fileSet>
-            <directory>${project.basedir}/../common/docker-lambda/docker/lambda</directory>
+            <directory>${project.basedir}/../common/docker-lambda/docker</directory>
             <outputDirectory>scripts/docker/lambda</outputDirectory>
             <excludes>
                 <exclude>*.jar</exclude>
