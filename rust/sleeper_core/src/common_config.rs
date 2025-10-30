@@ -35,6 +35,8 @@ pub struct CommonConfig<'a> {
     input_files: Vec<Url>,
     /// Are input files individually sorted?
     input_files_sorted: bool,
+    /// Should we use readahead when reading from S3?
+    use_readahead_store: bool,
     /// Names of row-key fields
     row_key_cols: Vec<String>,
     /// Names of sort-key fields
@@ -45,7 +47,6 @@ pub struct CommonConfig<'a> {
     output: OutputType,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
-    use_readahead_store: bool,
 }
 
 impl Default for CommonConfig<'_> {
@@ -141,13 +142,13 @@ pub struct CommonConfigBuilder<'a> {
     aws_config: Option<AwsConfig>,
     input_files: Vec<Url>,
     input_files_sorted: bool,
+    use_readahead_store: bool,
     row_key_cols: Vec<String>,
     sort_key_cols: Vec<String>,
     region: SleeperRegion<'a>,
     output: OutputType,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
-    use_readahead_store: bool,
 }
 
 impl Default for CommonConfigBuilder<'_> {
@@ -156,13 +157,13 @@ impl Default for CommonConfigBuilder<'_> {
             aws_config: None,
             input_files: Vec::default(),
             input_files_sorted: true,
+            use_readahead_store: true,
             row_key_cols: Vec::default(),
             sort_key_cols: Vec::default(),
             region: SleeperRegion::default(),
             output: OutputType::default(),
             aggregates: Vec::default(),
             filters: Vec::default(),
-            use_readahead_store: true,
         }
     }
 }
@@ -188,6 +189,12 @@ impl<'a> CommonConfigBuilder<'a> {
     #[must_use]
     pub fn input_files_sorted(mut self, input_files_sorted: bool) -> Self {
         self.input_files_sorted = input_files_sorted;
+        self
+    }
+
+    #[must_use]
+    pub fn use_readahead_store(mut self, use_readahead_store: bool) -> Self {
+        self.use_readahead_store = use_readahead_store;
         self
     }
 
@@ -236,7 +243,6 @@ impl<'a> CommonConfigBuilder<'a> {
     pub fn build(mut self) -> Result<CommonConfig<'a>> {
         self.validate()?;
         self.normalise_s3a_urls();
-
         Ok(self.force_build())
     }
 
@@ -245,13 +251,13 @@ impl<'a> CommonConfigBuilder<'a> {
             aws_config: self.aws_config,
             input_files: self.input_files,
             input_files_sorted: self.input_files_sorted,
+            use_readahead_store: self.use_readahead_store,
             row_key_cols: self.row_key_cols,
             sort_key_cols: self.sort_key_cols,
             region: self.region,
             output: self.output,
             aggregates: self.aggregates,
             filters: self.filters,
-            use_readahead_store: self.use_readahead_store,
         }
     }
 
