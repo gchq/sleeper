@@ -259,8 +259,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
     }
 
-    // Note that this behaviour is mainly tested in QueryExecutorTest and against
-    // the iterator directly, as the iterator
+    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
     // is not pushed down to DataFusion and can therefore be tested in memory.
     @Nested
     @DisplayName("Apply a custom iterator")
@@ -772,10 +771,10 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         // - There are 4 leaf partitions:
         // (Dimension 1, second splits)
         // null +-----------+-----------+
-        // | 3 | 4 |
-        // "T" +-----------+-----------+
-        // | 1 | 2 |
-        // "" +-----------+-----------+
+        //      | 3         | 4         |
+        // "T"  +-----------+-----------+
+        //      | 1         | 2         |
+        // ""   +-----------+-----------+
         // "" "I" null (Dimension 0, first split)
         // Add 4 rows - row i is in the center of partition i
         Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
@@ -1025,8 +1024,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldExcludeRowsAtEdgeOfRangesWhenRegionCoversAllRowsWithBoundsNotInclusive() throws Exception {
             // Given
-            // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1
-            // min; 4 - excluded by key1 max and key2 max
+            // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min;
+            // 4 - excluded by key1 max and key2 max
             Range range1 = rangeFactory().createRange("key1", "C", false, "P", false);
             Range range2 = rangeFactory().createRange("key2", "H", false, "Z", false);
 
@@ -1041,8 +1040,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldIncludeRowsAtMaxOfRangesWhenRegionCoversAllRowsWithMinExclusiveMaxInclusive() throws Exception {
             // Given
-            // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1
-            // min; 4 - yes
+            // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min; 4 - yes
             Range range1 = rangeFactory().createRange("key1", "C", false, "P", true);
             Range range2 = rangeFactory().createRange("key2", "H", false, "Z", true);
 
@@ -1123,8 +1121,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
     }
 
-    // Note that this behaviour is mainly tested in QueryExecutorTest and against
-    // the iterator directly, as the iterator
+    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
     // is not pushed down to DataFusion and can therefore be tested in memory.
     @Test
     public void shouldApplyQueryTimeIterator() throws Exception {
@@ -1181,8 +1178,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 .contains("key", "value2");
     }
 
-    // Note that this behaviour is mainly tested in QueryExecutorTest and against
-    // the iterator directly, as the iterator
+    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
     // is not pushed down to DataFusion and can therefore be tested in memory.
     @Test
     public void shouldReadFieldRequiredByIteratorEvenWhenUserRequestedDifferentFields() throws Exception {
