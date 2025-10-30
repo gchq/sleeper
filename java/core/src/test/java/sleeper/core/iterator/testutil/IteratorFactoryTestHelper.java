@@ -37,9 +37,20 @@ public class IteratorFactoryTestHelper {
      * @throws Exception       if the iterator could not be created
      */
     public static SortedRowIterator createIterator(TableProperties tableProperties) throws Exception {
-        return new IteratorFactory(
-                new ObjectFactory(IteratorFactoryTestHelper.class.getClassLoader()))
-                .getIterator(IteratorConfig.from(tableProperties), tableProperties.getSchema());
+        return createIterator(tableProperties, true);
     }
 
+    /**
+     * Creates the default iterator for a Sleeper table, which is applied during compaction.
+     *
+     * @param  tableProperties          the table properties
+     * @param  applyFiltersAggregations if filtering and aggregation iterators should be added
+     * @return                          the iterator
+     * @throws Exception                if the iterator could not be created
+     */
+    public static SortedRowIterator createIterator(TableProperties tableProperties, boolean applyFiltersAggregations) throws Exception {
+        return new IteratorFactory(
+                new ObjectFactory(IteratorFactoryTestHelper.class.getClassLoader()))
+                .getIterator(IteratorConfig.from(tableProperties), tableProperties.getSchema(), applyFiltersAggregations);
+    }
 }
