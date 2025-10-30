@@ -77,6 +77,7 @@ import static sleeper.core.properties.model.EmrInstanceTypeConfig.readInstanceTy
  */
 public class PersistentEmrBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
+    private static CfnCluster emrCluster;
 
     public PersistentEmrBulkImportStack(
             Construct scope,
@@ -100,6 +101,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 LogGroupRef.BULK_IMPORT_EMR_PERSISTENT_START, commonEmrStack);
         configureJobStarterFunction(jobStarter);
         createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
+
+        autoStopEmrPersistentClusterStack.addAutoStopEmrNonPersistentCluster(scope, emrCluster);
+
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
@@ -182,7 +186,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         }
 
         CfnClusterProps emrClusterProps = propsBuilder.build();
-        CfnCluster emrCluster = new CfnCluster(scope, "PersistentEMRCluster", emrClusterProps);
+        emrCluster = new CfnCluster(scope, "PersistentEMRCluster", emrClusterProps);
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, emrCluster.getName());
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS, emrCluster.getAttrMasterPublicDns());
     }
