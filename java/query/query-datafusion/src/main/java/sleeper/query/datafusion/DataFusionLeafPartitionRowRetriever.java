@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
+import static sleeper.core.properties.table.TableProperty.DATAFUSION_S3_READAHEAD_ENABLED;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 
 /**
@@ -118,7 +119,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         common.input_files.populate(query.getFiles().toArray(String[]::new), false);
         // Files are always sorted for queries
         common.input_files_sorted.set(true);
-        common.use_readahead_store.set(true);
+        common.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
         common.row_key_cols.populate(dataReadSchema.getRowKeyFieldNames().toArray(String[]::new), false);
         common.row_key_schema.populate(FFICommonConfig.getKeyTypes(dataReadSchema.getRowKeyTypes()), false);
         common.sort_key_cols.populate(dataReadSchema.getSortKeyFieldNames().toArray(String[]::new), false);
