@@ -26,7 +26,7 @@ import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Slow2;
+import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -45,7 +45,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_P
 // Each CDK deployment takes around 20 minutes.
 // If we leave the EMR cluster deployed, the costs for the EMR instances add up to hundreds of pounds quite quickly.
 // With the CDK deployments, the cluster doesn't stay around for very long as it only imports 100 rows.
-@Slow2
+@Slow1
 public class EmrPersistentBulkImportST {
 
     @BeforeEach
