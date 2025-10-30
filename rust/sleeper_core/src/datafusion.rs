@@ -69,7 +69,7 @@ pub use arrow_stream::stream_to_ffi_arrow_stream;
 pub use compact::{CompactionResult, compact};
 pub use config::ParquetWriterConfigurer;
 pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};
-pub use output::OutputType;
+pub use output::{OutputType, SleeperParquetOptions};
 pub use region::SleeperRegion;
 
 /// Drives common operations in processing of `DataFusion` for Sleeper.

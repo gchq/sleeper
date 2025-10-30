@@ -41,7 +41,7 @@ mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
-    LeafPartitionQueryConfig, OutputType, SleeperRegion,
+    LeafPartitionQueryConfig, OutputType, SleeperParquetOptions, SleeperRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
     stream_to_ffi_arrow_stream,
 };
@@ -64,36 +64,6 @@ pub struct ColRange<'a> {
     pub lower_inclusive: bool,
     pub upper: PartitionBound<'a>,
     pub upper_inclusive: bool,
-}
-
-/// All Parquet output options supported by Sleeper.
-#[derive(Debug)]
-pub struct SleeperParquetOptions {
-    pub max_row_group_size: usize,
-    pub max_page_size: usize,
-    pub compression: String,
-    pub writer_version: String,
-    pub column_truncate_length: usize,
-    pub stats_truncate_length: usize,
-    pub dict_enc_row_keys: bool,
-    pub dict_enc_sort_keys: bool,
-    pub dict_enc_values: bool,
-}
-
-impl Default for SleeperParquetOptions {
-    fn default() -> Self {
-        Self {
-            max_row_group_size: 1_000_000,
-            max_page_size: 65535,
-            compression: "zstd".into(),
-            writer_version: "v2".into(),
-            column_truncate_length: usize::MAX,
-            stats_truncate_length: usize::MAX,
-            dict_enc_row_keys: true,
-            dict_enc_sort_keys: true,
-            dict_enc_values: true,
-        }
-    }
 }
 
 /// Common items necessary to perform any `DataFusion` related
