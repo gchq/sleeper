@@ -86,8 +86,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class DataFusionLeafPartitionRowRetrieverIT {
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
-    private static final FFIContext<DataFusionQueryFunctions> FFI_CONTEXT = new FFIContext<>(
-            DataFusionQueryFunctions.getInstance());
+    private static final FFIContext<DataFusionQueryFunctions> FFI_CONTEXT = new FFIContext<>(DataFusionQueryFunctions.getInstance());
 
     @TempDir
     public Path tempDir;
@@ -765,17 +764,17 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                         new Field("value1", new LongType()),
                         new Field("value2", new LongType()))
                 .build();
-        // Partitions:
-        // - Root partition covers the whole space
-        // - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
-        // - There are 4 leaf partitions:
+        //  Partitions:
+        //  - Root partition covers the whole space
+        //  - Root has 2 children: one is 1 and 3 below, the other is 2 and 4
+        //  - There are 4 leaf partitions:
         // (Dimension 1, second splits)
-        // null +-----------+-----------+
-        //      | 3         | 4         |
-        // "T"  +-----------+-----------+
-        //      | 1         | 2         |
-        // ""   +-----------+-----------+
-        // "" "I" null (Dimension 0, first split)
+        //      null +-----------+-----------+
+        //           |     3     |    4      |
+        //       "T" +-----------+-----------+
+        //           |     1     |    2      |
+        //        "" +-----------+-----------+
+        //           ""         "I"          null      (Dimension 0, first split)
         // Add 4 rows - row i is in the center of partition i
         Row row1 = createRowMultidimensionalKey("D", "J", 10L, 100L);
         Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
