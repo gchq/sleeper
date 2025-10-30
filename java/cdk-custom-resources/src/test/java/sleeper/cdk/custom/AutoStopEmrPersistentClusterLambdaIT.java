@@ -30,18 +30,18 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.cdk.custom.WiremockEmrNonPersistentTestHelper.aResponseWithClusterWithState;
-import static sleeper.cdk.custom.WiremockEmrNonPersistentTestHelper.anyRequestedForEmr;
-import static sleeper.cdk.custom.WiremockEmrNonPersistentTestHelper.describeClusterRequest;
-import static sleeper.cdk.custom.WiremockEmrNonPersistentTestHelper.describeClusterRequestedFor;
-import static sleeper.cdk.custom.WiremockEmrNonPersistentTestHelper.terminateJobFlowsRequest;
-import static sleeper.cdk.custom.WiremockEmrNonPersistentTestHelper.terminateJobFlowsRequestedFor;
-import static sleeper.cdk.custom.WiremockEmrNonPersistentTestHelper.wiremockEmrClient;
+import static sleeper.cdk.custom.WiremockEmrPersistentTestHelper.aResponseWithClusterWithState;
+import static sleeper.cdk.custom.WiremockEmrPersistentTestHelper.anyRequestedForEmr;
+import static sleeper.cdk.custom.WiremockEmrPersistentTestHelper.describeClusterRequest;
+import static sleeper.cdk.custom.WiremockEmrPersistentTestHelper.describeClusterRequestedFor;
+import static sleeper.cdk.custom.WiremockEmrPersistentTestHelper.terminateJobFlowsRequest;
+import static sleeper.cdk.custom.WiremockEmrPersistentTestHelper.terminateJobFlowsRequestedFor;
+import static sleeper.cdk.custom.WiremockEmrPersistentTestHelper.wiremockEmrClient;
 
 @WireMockTest
-public class AutoStopEmrNonPersistentClusterLambdaIT {
+public class AutoStopEmrPersistentClusterLambdaIT {
 
-    private AutoStopEmrNonPersistentClusterLambda lambda;
+    private AutoStopEmrPersistentClusterLambda lambda;
     private String clusterId = "test-cluster-id";
 
     private CloudFormationCustomResourceEvent clusterEvent(
@@ -52,8 +52,8 @@ public class AutoStopEmrNonPersistentClusterLambdaIT {
                 .build();
     }
 
-    private AutoStopEmrNonPersistentClusterLambda lambda(WireMockRuntimeInfo runtimeInfo, PollWithRetries poll) {
-        return new AutoStopEmrNonPersistentClusterLambda(wiremockEmrClient(runtimeInfo), poll);
+    private AutoStopEmrPersistentClusterLambda lambda(WireMockRuntimeInfo runtimeInfo, PollWithRetries poll) {
+        return new AutoStopEmrPersistentClusterLambda(wiremockEmrClient(runtimeInfo), poll);
     }
 
     @Test

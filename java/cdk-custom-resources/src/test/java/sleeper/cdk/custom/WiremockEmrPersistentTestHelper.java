@@ -35,10 +35,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 /**
- * Helper methods to mock an EMR Non-Persistent cluster.
+ * Helper methods to mock an EMR Persistent cluster.
  */
-public class WiremockEmrNonPersistentTestHelper {
-    private WiremockEmrNonPersistentTestHelper() {
+public class WiremockEmrPersistentTestHelper {
+    private WiremockEmrPersistentTestHelper() {
     }
 
     public static final String OPERATION_HEADER = "X-Amz-Target";

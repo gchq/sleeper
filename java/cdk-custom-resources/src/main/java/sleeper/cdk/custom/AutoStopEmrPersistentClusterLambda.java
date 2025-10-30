@@ -30,20 +30,20 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Delete an EMR Non-Persistent cluster.
+ * Delete an EMR Persistent cluster.
  */
-public class AutoStopEmrNonPersistentClusterLambda {
-    public static final Logger LOGGER = LoggerFactory.getLogger(AutoStopEmrNonPersistentClusterLambda.class);
+public class AutoStopEmrPersistentClusterLambda {
+    public static final Logger LOGGER = LoggerFactory.getLogger(AutoStopEmrPersistentClusterLambda.class);
 
     private final PollWithRetries poll;
     private final EmrClient emrClient;
 
-    public AutoStopEmrNonPersistentClusterLambda() {
+    public AutoStopEmrPersistentClusterLambda() {
         this(EmrClient.create(), PollWithRetries
                 .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15)));
     }
 
-    public AutoStopEmrNonPersistentClusterLambda(EmrClient emrClient, PollWithRetries poll) {
+    public AutoStopEmrPersistentClusterLambda(EmrClient emrClient, PollWithRetries poll) {
         this.emrClient = emrClient;
         this.poll = poll;
     }
@@ -79,7 +79,7 @@ public class AutoStopEmrNonPersistentClusterLambda {
             LOGGER.info("Terminating running cluster: {} ", clusterId);
             emrClient.terminateJobFlows(request -> request.jobFlowIds(clusterId));
             LOGGER.info("Waiting for cluster to stop");
-            poll.pollUntil("all EMR Non-Persistent clusters stopped", () -> isClusterStopped(clusterId));
+            poll.pollUntil("all EMR Persistent clusters stopped", () -> isClusterStopped(clusterId));
         }
 
         LOGGER.info("Terminated cluster {}", clusterId);
