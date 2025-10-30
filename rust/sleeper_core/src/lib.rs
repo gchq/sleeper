@@ -21,11 +21,7 @@
 * limitations under the License.
 */
 use crate::datafusion::{CompactionResult, LeafPartitionQuery};
-use aws_config::Region;
-use aws_credential_types::Credentials;
 use color_eyre::eyre::Result;
-use object_store::aws::AmazonS3Builder;
-use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
 
 mod common_config;
 mod datafusion;
@@ -81,7 +77,7 @@ pub use datafusion::{
 /// There must be at least one input file.
 ///
 pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResult> {
-    let store_factory = create_object_store_factory(config.aws_config()).await;
+    let store_factory = config.create_object_store_factory().await;
     crate::datafusion::compact(&store_factory, config)
         .await
         .map_err(Into::into)
@@ -139,34 +135,10 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// There must be at least one query region specified.
 ///
 pub async fn run_query(config: &LeafPartitionQueryConfig<'_>) -> Result<CompletedOutput> {
-    let store_factory = create_object_store_factory(config.common.aws_config()).await;
+    let store_factory = config.common.create_object_store_factory().await;
 
     LeafPartitionQuery::new(config, &store_factory)
         .run_query()
         .await
         .map_err(Into::into)
-}
-
-async fn create_object_store_factory(
-    aws_config_override: Option<&AwsConfig>,
-) -> ObjectStoreFactory {
-    let s3_config = match aws_config_override {
-        Some(aws_config) => Some(to_s3_config(aws_config)),
-        None => default_creds_store().await.ok(),
-    };
-    ObjectStoreFactory::new(s3_config)
-}
-
-/// Create an [`AmazonS3Builder`] from the given configuration object.
-///
-/// Credentials are extracted from the given configuration object.
-#[must_use]
-pub fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
-    let creds = Credentials::from_keys(&aws_config.access_key, &aws_config.secret_key, None);
-    let region = Region::new(String::from(&aws_config.region));
-    let mut builder = config_for_s3_module(&creds, &region);
-    if !aws_config.endpoint.is_empty() {
-        builder = builder.with_endpoint(&aws_config.endpoint);
-    }
-    builder.with_allow_http(aws_config.allow_http)
 }

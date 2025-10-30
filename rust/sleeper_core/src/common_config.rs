@@ -17,7 +17,11 @@ use crate::{
     datafusion::{OutputType, SleeperRegion},
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
 };
+use aws_config::Region;
+use aws_credential_types::Credentials;
 use color_eyre::eyre::{Result, bail};
+use object_store::aws::AmazonS3Builder;
+use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
 use std::fmt::{Display, Formatter};
 use url::Url;
 
@@ -94,8 +98,12 @@ impl CommonConfig<'_> {
         self.sorting_columns_iter().collect::<Vec<_>>()
     }
 
-    pub(crate) fn aws_config(&self) -> Option<&AwsConfig> {
-        self.aws_config.as_ref()
+    pub(crate) async fn create_object_store_factory(&self) -> ObjectStoreFactory {
+        let s3_config = match &self.aws_config {
+            Some(aws_config) => Some(aws_config.to_s3_config()),
+            None => default_creds_store().await.ok(),
+        };
+        ObjectStoreFactory::new(s3_config)
     }
 
     pub(crate) fn output(&self) -> &OutputType {
@@ -279,6 +287,22 @@ pub struct AwsConfig {
     pub access_key: String,
     pub secret_key: String,
     pub allow_http: bool,
+}
+
+impl AwsConfig {
+    /// Create an [`AmazonS3Builder`] from the given configuration object.
+    ///
+    /// Credentials are extracted from the given configuration object.
+    #[must_use]
+    fn to_s3_config(&self) -> AmazonS3Builder {
+        let creds = Credentials::from_keys(&self.access_key, &self.secret_key, None);
+        let region = Region::new(String::from(&self.region));
+        let mut builder = config_for_s3_module(&creds, &region);
+        if !self.endpoint.is_empty() {
+            builder = builder.with_endpoint(&self.endpoint);
+        }
+        builder.with_allow_http(self.allow_http)
+    }
 }
 
 #[cfg(test)]
