@@ -14,7 +14,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{ColRange, PartitionBound};
 use datafusion::logical_expr::{Expr, ident, lit};
 use std::collections::HashMap;
 
@@ -26,6 +25,26 @@ use std::collections::HashMap;
 #[derive(Debug, Default)]
 pub struct SleeperRegion<'a> {
     pub region: HashMap<String, ColRange<'a>>,
+}
+
+/// Defines a partition range of a single field.
+#[derive(Debug, Copy, Clone)]
+pub struct ColRange<'a> {
+    pub lower: PartitionBound<'a>,
+    pub lower_inclusive: bool,
+    pub upper: PartitionBound<'a>,
+    pub upper_inclusive: bool,
+}
+
+/// Type safe variant for Sleeper partition boundary
+#[derive(Debug, Copy, Clone)]
+pub enum PartitionBound<'a> {
+    Int32(i32),
+    Int64(i64),
+    String(&'a str),
+    ByteArray(&'a [u8]),
+    /// Represented by a NULL in Java
+    Unbounded,
 }
 
 impl<'a> SleeperRegion<'a> {

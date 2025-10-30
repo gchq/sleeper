@@ -41,30 +41,11 @@ mod test_utils;
 
 pub use crate::datafusion::output::CompletedOutput;
 pub use datafusion::{
-    LeafPartitionQueryConfig, OutputType, SleeperParquetOptions, SleeperRegion,
+    ColRange, LeafPartitionQueryConfig, OutputType, PartitionBound, SleeperParquetOptions,
+    SleeperRegion,
     sketch::{DataSketchVariant, deserialise_sketches},
     stream_to_ffi_arrow_stream,
 };
-
-/// Type safe variant for Sleeper partition boundary
-#[derive(Debug, Copy, Clone)]
-pub enum PartitionBound<'a> {
-    Int32(i32),
-    Int64(i64),
-    String(&'a str),
-    ByteArray(&'a [u8]),
-    /// Represented by a NULL in Java
-    Unbounded,
-}
-
-/// Defines a partition range of a single field.
-#[derive(Debug, Copy, Clone)]
-pub struct ColRange<'a> {
-    pub lower: PartitionBound<'a>,
-    pub lower_inclusive: bool,
-    pub upper: PartitionBound<'a>,
-    pub upper_inclusive: bool,
-}
 
 /// Common items necessary to perform any `DataFusion` related
 /// work for Sleeper.

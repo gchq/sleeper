@@ -70,7 +70,7 @@ pub use compact::{CompactionResult, compact};
 pub use config::ParquetWriterConfigurer;
 pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};
 pub use output::{OutputType, SleeperParquetOptions};
-pub use region::SleeperRegion;
+pub use region::{ColRange, PartitionBound, SleeperRegion};
 
 /// Drives common operations in processing of `DataFusion` for Sleeper.
 #[derive(Debug)]
