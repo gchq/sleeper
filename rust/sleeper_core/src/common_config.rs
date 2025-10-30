@@ -35,6 +35,8 @@ pub struct CommonConfig<'a> {
     input_files: Vec<Url>,
     /// Are input files individually sorted?
     input_files_sorted: bool,
+    /// Should we use readahead when reading from S3?
+    use_readahead_store: bool,
     /// Names of row-key fields
     row_key_cols: Vec<String>,
     /// Names of sort-key fields
@@ -49,17 +51,7 @@ pub struct CommonConfig<'a> {
 
 impl Default for CommonConfig<'_> {
     fn default() -> Self {
-        Self {
-            aws_config: Option::default(),
-            input_files: Vec::default(),
-            input_files_sorted: true,
-            row_key_cols: Vec::default(),
-            sort_key_cols: Vec::default(),
-            region: SleeperRegion::default(),
-            output: OutputType::default(),
-            aggregates: Vec::default(),
-            filters: Vec::default(),
-        }
+        CommonConfigBuilder::default().force_build()
     }
 }
 
@@ -83,7 +75,11 @@ impl CommonConfig<'_> {
             Some(aws_config) => Some(aws_config.to_s3_config()),
             None => default_creds_store().await.ok(),
         };
-        ObjectStoreFactory::new(s3_config)
+        if self.use_readahead_store {
+            ObjectStoreFactory::new(s3_config)
+        } else {
+            ObjectStoreFactory::new_no_readahead(s3_config)
+        }
     }
 
     pub(crate) fn output(&self) -> &OutputType {
@@ -142,17 +138,34 @@ impl Display for CommonConfig<'_> {
 }
 
 /// Builder for `CommonConfig`.
-#[derive(Default)]
 pub struct CommonConfigBuilder<'a> {
     aws_config: Option<AwsConfig>,
     input_files: Vec<Url>,
     input_files_sorted: bool,
+    use_readahead_store: bool,
     row_key_cols: Vec<String>,
     sort_key_cols: Vec<String>,
     region: SleeperRegion<'a>,
     output: OutputType,
     aggregates: Vec<Aggregate>,
     filters: Vec<Filter>,
+}
+
+impl Default for CommonConfigBuilder<'_> {
+    fn default() -> Self {
+        Self {
+            aws_config: None,
+            input_files: Vec::default(),
+            input_files_sorted: true,
+            use_readahead_store: true,
+            row_key_cols: Vec::default(),
+            sort_key_cols: Vec::default(),
+            region: SleeperRegion::default(),
+            output: OutputType::default(),
+            aggregates: Vec::default(),
+            filters: Vec::default(),
+        }
+    }
 }
 
 impl<'a> CommonConfigBuilder<'a> {
@@ -176,6 +189,12 @@ impl<'a> CommonConfigBuilder<'a> {
     #[must_use]
     pub fn input_files_sorted(mut self, input_files_sorted: bool) -> Self {
         self.input_files_sorted = input_files_sorted;
+        self
+    }
+
+    #[must_use]
+    pub fn use_readahead_store(mut self, use_readahead_store: bool) -> Self {
+        self.use_readahead_store = use_readahead_store;
         self
     }
 
@@ -221,23 +240,25 @@ impl<'a> CommonConfigBuilder<'a> {
     /// The configuration must validate. Input files mustn't be empty
     /// and the number of row key fields must match the number of region
     /// dimensions.
-    pub fn build(self) -> Result<CommonConfig<'a>> {
+    pub fn build(mut self) -> Result<CommonConfig<'a>> {
         self.validate()?;
+        self.normalise_s3a_urls();
+        Ok(self.force_build())
+    }
 
-        // s3a normalization
-        let (input_files, output) = normalise_s3a_urls(self.input_files, self.output);
-
-        Ok(CommonConfig {
+    fn force_build(self) -> CommonConfig<'a> {
+        CommonConfig {
             aws_config: self.aws_config,
-            input_files,
+            input_files: self.input_files,
             input_files_sorted: self.input_files_sorted,
+            use_readahead_store: self.use_readahead_store,
             row_key_cols: self.row_key_cols,
             sort_key_cols: self.sort_key_cols,
             region: self.region,
-            output,
+            output: self.output,
             aggregates: self.aggregates,
             filters: self.filters,
-        })
+        }
     }
 
     /// Performs validity checks on parameters.
@@ -258,26 +279,25 @@ impl<'a> CommonConfigBuilder<'a> {
         }
         Ok(())
     }
-}
 
-/// Change all input and output URLS from s3a to s3 scheme.
-fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec<Url>, OutputType) {
-    for t in &mut input_files {
-        if t.scheme() == "s3a" {
-            let _ = t.set_scheme("s3");
+    /// Change all input and output URLS from s3a to s3 scheme.
+    fn normalise_s3a_urls(&mut self) {
+        for t in &mut self.input_files {
+            if t.scheme() == "s3a" {
+                let _ = t.set_scheme("s3");
+            }
+        }
+
+        if let OutputType::File {
+            output_file,
+            write_sketch_file: _,
+            opts: _,
+        } = &mut self.output
+            && output_file.scheme() == "s3a"
+        {
+            let _ = output_file.set_scheme("s3");
         }
     }
-
-    if let OutputType::File {
-        output_file,
-        write_sketch_file: _,
-        opts: _,
-    } = &mut output
-        && output_file.scheme() == "s3a"
-    {
-        let _ = output_file.set_scheme("s3");
-    }
-    (input_files, output)
 }
 
 #[derive(Debug)]
@@ -312,6 +332,15 @@ mod tests {
 
     use super::*;
     use url::Url;
+
+    fn normalise_s3a_urls(input_files: Vec<Url>, output: OutputType) -> (Vec<Url>, OutputType) {
+        let config = CommonConfigBuilder::new()
+            .input_files(input_files)
+            .output(output)
+            .build()
+            .unwrap();
+        (config.input_files, config.output)
+    }
 
     #[test]
     fn test_convert_s3a_scheme_in_input_files() {
@@ -384,23 +413,6 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_input_files() {
-        // Given
-        let input_files: Vec<Url> = vec![];
-        let output = OutputType::File {
-            output_file: Url::parse("https://example.com/output").unwrap(),
-            write_sketch_file: true,
-            opts: SleeperParquetOptions::default(),
-        };
-
-        // When
-        let (new_files, _) = normalise_s3a_urls(input_files, output);
-
-        // Then
-        assert!(new_files.is_empty());
-    }
-
-    #[test]
     fn test_normalise_s3a_urls_arrow_record_batch() {
         // Given
         let input_files = vec![
@@ -435,7 +447,7 @@ mod tests {
             .region(region);
 
         // When
-        let result = builder.validate();
+        let result = builder.build();
 
         // Then
         assert!(result.is_err());
@@ -464,7 +476,7 @@ mod tests {
             .region(region);
 
         // When
-        let result = builder.validate();
+        let result = builder.build();
 
         // Then
         assert!(result.is_err());
@@ -498,7 +510,7 @@ mod tests {
             .region(region);
 
         // When
-        let result = builder.validate();
+        let result = builder.build();
 
         // Then
         assert!(result.is_ok());
