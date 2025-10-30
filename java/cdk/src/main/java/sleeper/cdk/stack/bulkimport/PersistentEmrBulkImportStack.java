@@ -36,6 +36,7 @@ import software.constructs.Construct;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.stack.core.AutoStopEmrPersistentClusterStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -86,6 +87,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             CoreStacks coreStacks,
+            AutoStopEmrPersistentClusterStack autoStopEmrPersistentClusterStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(

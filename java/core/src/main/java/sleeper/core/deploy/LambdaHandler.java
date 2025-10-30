@@ -134,6 +134,10 @@ public class LambdaHandler {
             .jar(LambdaJar.CUSTOM_RESOURCES)
             .handler("sleeper.cdk.custom.AutoStopEmrServerlessApplicationLambda::handleEvent")
             .core().add();
+    public static final LambdaHandler AUTO_STOP_EMR_PERSISTENT_CLUSTER = builder()
+            .jar(LambdaJar.CUSTOM_RESOURCES)
+            .handler("sleeper.cdk.custom.AutoStopEmrPersistentClusterLambda::handleEvent")
+            .core().add();
     public static final LambdaHandler PROPERTIES_WRITER = builder()
             .jar(LambdaJar.CUSTOM_RESOURCES)
             .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")

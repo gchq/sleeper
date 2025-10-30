@@ -45,6 +45,7 @@ import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
+import sleeper.cdk.stack.core.AutoStopEmrPersistentClusterStack;
 import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
@@ -108,6 +109,7 @@ public class SleeperCdkApp extends Stack {
     private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
     private AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack;
+    private AutoStopEmrPersistentClusterStack autoStopEmrPersistentClusterStack;
     private LoggingStack loggingStack;
 
     // These flags are used to control when the stacks are deployed in the SystemTest CDK app.
@@ -153,6 +155,9 @@ public class SleeperCdkApp extends Stack {
 
         // Auto stop EMR Serverless application stack
         autoStopEmrServerlessApplicationStack = new AutoStopEmrServerlessApplicationStack(this, "AutoStopEmrServerlessApplication", instanceProperties, jars, loggingStack);
+
+        // Auto stop EMR persistent cluster stack
+        autoStopEmrPersistentClusterStack = new AutoStopEmrPersistentClusterStack(this, "AutoStopEmrPersistentCluster", instanceProperties, jars, loggingStack);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
@@ -230,6 +235,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     coreStacks,
+                    autoStopEmrPersistentClusterStack,
                     errorMetrics);
         }
 

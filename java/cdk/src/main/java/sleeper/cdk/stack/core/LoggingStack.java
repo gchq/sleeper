@@ -86,6 +86,8 @@ public class LoggingStack extends NestedStack {
         AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER("auto-stop-ecs-cluster-tasks-provider"),
         AUTO_STOP_EMR_SERVERLESS_APPLICATION("auto-stop-emr-serverless-application"),
         AUTO_STOP_EMR_SERVERLESS_APPLICATION_PROVIDER("auto-stop-emr-serverless-application-provider"),
+        AUTO_STOP_EMR_PERSISTENT_CLUSTER("auto-stop-emr-persistent-cluster"),
+        AUTO_STOP_EMR_PERSISTENT_CLUSTER_PROVIDER("auto-stop-emr-persistent-cluster-provider"),
         BULK_EXPORT("bulk-export"),
         BULK_EXPORT_TASKS("FargateBulkExportTasks"),
         BULK_EXPORT_TASKS_CREATOR("bulk-export-task-creator"),
