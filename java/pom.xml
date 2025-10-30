@@ -188,7 +188,7 @@
         <cdk.version>2.221.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
-        <jsii.version>1.117.0</jsii.version>
+        <jsii.version>1.118.0</jsii.version>
         <gson.version>2.13.2</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
