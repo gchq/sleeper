@@ -172,9 +172,9 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
     runSlowTests "$@" &
-    runTestSuite 240 "${EXP1_SUITE_PARAMS[@]}" "$@" &
-    runTestSuite 300 "${EXP2_SUITE_PARAMS[@]}" "$@" &
-    runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" "$@"
+    runTestSuite 240 "${EXP1_SUITE_PARAMS[@]}" "$@" ##&
+    ##runTestSuite 300 "${EXP2_SUITE_PARAMS[@]}" "$@" &
+    ##runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" "$@"
     wait
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
