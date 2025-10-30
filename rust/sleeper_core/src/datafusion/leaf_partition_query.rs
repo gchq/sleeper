@@ -128,7 +128,7 @@ impl<'a> LeafPartitionQuery<'a> {
                 output_file,
                 write_sketch_file,
                 opts: _,
-            } = &self.config.common.output
+            } = self.config.common.output()
             && *write_sketch_file
         {
             output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
@@ -146,7 +146,7 @@ impl<'a> LeafPartitionQuery<'a> {
         ops: &'a SleeperOperations<'a>,
         frame: DataFrame,
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
-        match self.config.common.output {
+        match self.config.common.output() {
             OutputType::File {
                 output_file: _,
                 write_sketch_file: true,

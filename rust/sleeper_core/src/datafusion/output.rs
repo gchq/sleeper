@@ -155,7 +155,7 @@ impl<'a> FileOutputCompleter<'a> {
 #[async_trait]
 impl Completer for FileOutputCompleter<'_> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        match &self.ops.config.output {
+        match self.ops.config.output() {
             OutputType::File {
                 output_file: _,
                 write_sketch_file: _,
@@ -176,7 +176,7 @@ impl Completer for FileOutputCompleter<'_> {
         task_ctx: Arc<TaskContext>,
     ) -> Result<CompletedOutput, DataFusionError> {
         collect(physical_plan.clone(), task_ctx).await?;
-        let stats = collect_stats(&self.ops.config.input_files, &physical_plan)?;
+        let stats = collect_stats(self.ops.config.input_files(), &physical_plan)?;
         Ok(CompletedOutput::File(stats))
     }
 }
@@ -196,7 +196,7 @@ impl<'a> ArrowOutputCompleter<'a> {
 #[async_trait]
 impl Completer for ArrowOutputCompleter<'_> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        match &self.ops.config.output {
+        match self.ops.config.output() {
             OutputType::File {
                 output_file: _,
                 write_sketch_file: _,

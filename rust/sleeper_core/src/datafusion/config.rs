@@ -68,12 +68,12 @@ impl ParquetWriterConfigurer<'_> {
                 .column_specific_options
                 .entry(col_name.clone())
                 .or_default();
-            let dict_encode = (self.parquet_options.dict_enc_row_keys && common_config.row_key_cols.contains(&col_name))
-            || (self.parquet_options.dict_enc_sort_keys && common_config.sort_key_cols.contains(&col_name))
+            let dict_encode = (self.parquet_options.dict_enc_row_keys && common_config.row_key_cols().contains(&col_name))
+            || (self.parquet_options.dict_enc_sort_keys && common_config.sort_key_cols().contains(&col_name))
             // Check value fields
             || (self.parquet_options.dict_enc_values
-                && !common_config.row_key_cols.contains(&col_name)
-                && !common_config.sort_key_cols.contains(&col_name));
+                && !common_config.row_key_cols().contains(&col_name)
+                && !common_config.sort_key_cols().contains(&col_name));
             col_opts.dictionary_enabled = Some(dict_encode);
         }
         opts

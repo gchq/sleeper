@@ -66,13 +66,13 @@ pub async fn compact(
         output_file,
         write_sketch_file: _,
         opts: _,
-    } = &config.output
+    } = config.output()
     else {
         return plan_err!("Sleeper compactions must output to a file");
     };
 
     // Make compaction DataFrame
-    let completer = config.output.finisher(&ops);
+    let completer = config.output().finisher(&ops);
     let (sketcher, frame) = build_compaction_dataframe(&ops, store_factory).await?;
 
     let (sort_ordering, frame) = add_completion_stage(&ops, completer.as_ref(), frame)?;
