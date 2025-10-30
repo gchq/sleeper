@@ -63,26 +63,6 @@ impl Default for CommonConfig<'_> {
     }
 }
 
-/// Change all input and output URLS from s3a to s3 scheme.
-fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec<Url>, OutputType) {
-    for t in &mut input_files {
-        if t.scheme() == "s3a" {
-            let _ = t.set_scheme("s3");
-        }
-    }
-
-    if let OutputType::File {
-        output_file,
-        write_sketch_file: _,
-        opts: _,
-    } = &mut output
-        && output_file.scheme() == "s3a"
-    {
-        let _ = output_file.set_scheme("s3");
-    }
-    (input_files, output)
-}
-
 impl CommonConfig<'_> {
     /// Get iterator for row and sort key fields in order
     pub(crate) fn sorting_columns_iter(&self) -> impl Iterator<Item = &str> {
@@ -278,6 +258,26 @@ impl<'a> CommonConfigBuilder<'a> {
         }
         Ok(())
     }
+}
+
+/// Change all input and output URLS from s3a to s3 scheme.
+fn normalise_s3a_urls(mut input_files: Vec<Url>, mut output: OutputType) -> (Vec<Url>, OutputType) {
+    for t in &mut input_files {
+        if t.scheme() == "s3a" {
+            let _ = t.set_scheme("s3");
+        }
+    }
+
+    if let OutputType::File {
+        output_file,
+        write_sketch_file: _,
+        opts: _,
+    } = &mut output
+        && output_file.scheme() == "s3a"
+    {
+        let _ = output_file.set_scheme("s3");
+    }
+    (input_files, output)
 }
 
 #[derive(Debug)]
