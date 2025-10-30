@@ -27,6 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.iterator.AgeOffIterator;
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.iterator.testutil.LimitingConfigStringIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -74,7 +75,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -107,12 +110,182 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
     }
 
-    // TODO tests for issue https://github.com/gchq/sleeper/issues/5829 (push down filtering & aggregation):
-    // - Filtering is pushed down to DataFusion
-    // - Aggregation is pushed down to DataFusion
-    // - Restrict required values and apply filtering on same or different field
-    // - Restrict required values and apply aggregation
-    // - Custom iterators combine with filtering/aggregation
+    @Test
+    void shouldSupportFiltersAndAggregations() {
+        // Given
+        LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
+                // DataFusion spends time trying to auth with AWS unless you override it
+                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, FFI_CONTEXT);
+        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+
+        // When
+        boolean supportsFiltersAndAggregations = rowRetriever.supportsFiltersAndAggregations();
+
+        // Then
+        assertThat(supportsFiltersAndAggregations).isTrue();
+    }
+
+    @Nested
+    @DisplayName("Filtering and Aggregation")
+    class FilteringAggregating {
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 1L, "value1", 10L, "value2", 100L)),
+                new Row(Map.of("key", 1L, "value1", 10L, "value2", 200L)),
+                new Row(Map.of("key", 1L, "value1", 10L, "value2", 300L)),
+                new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 100L)),
+                new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 200L)),
+                new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 300L)));
+
+        @BeforeEach
+        void setUp() throws Exception {
+            tableProperties.setSchema(getLongKeySchema());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            ingestData(rows);
+
+        }
+
+        @Test
+        void shouldPushDownFilter() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 100L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 200L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 300L)));
+
+            // When
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
+
+            // Then
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldPushDownAggregation() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
+            List<Row> aggregatedRows = List.of(
+                    new Row(Map.of("key", 1L, "value1", 10L, "value2", 600L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 600L)));
+
+            // When
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
+
+            // Then
+            assertThat(results).containsExactlyElementsOf(aggregatedRows);
+        }
+
+        @Test
+        void shouldRestrictValueColumnsOnFilterColumn() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+            QueryProcessingConfig config = QueryProcessingConfig.builder()
+                    .requestedValueFields(List.of("value1")).build();
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L)),
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L)));
+
+            // When
+            List<Row> results = executeQueryByRangeConfig(rangeFactory()
+                    .createRange("key", 1L, true, 10L, true), config);
+
+            // Then
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldRestrictValueColumnsOnFilterOtherColumn() throws Exception {
+            // Given
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+            QueryProcessingConfig config = QueryProcessingConfig.builder()
+                    .requestedValueFields(List.of("value2")).build();
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value2", 100L)),
+                    new Row(Map.of("key", 10L, "value2", 200L)),
+                    new Row(Map.of("key", 10L, "value2", 300L)));
+
+            // When
+            List<Row> results = executeQueryByRangeConfig(rangeFactory()
+                    .createRange("key", 1L, true, 10L, true), config);
+
+            // Then
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldRestrictValueColumnsOnAggregation() throws Exception {
+            // Given
+            tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
+            QueryProcessingConfig config = QueryProcessingConfig.builder()
+                    .requestedValueFields(List.of("value2")).build();
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 1L, "value2", 600L)),
+                    new Row(Map.of("key", 10L, "value2", 600L)));
+
+            // When
+            List<Row> results = executeQueryByRangeConfig(rangeFactory()
+                    .createRange("key", 1L, true, 10L, true), config);
+
+            // Then
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+
+        @Test
+        void shouldCombineFilteringAggregationAndCustomIterator() throws Exception {
+            // Given
+            List<Row> extraRows = List.of(
+                    new Row(Map.of("key", 20L, "value1", 99999999999999L, "value2", 400L)),
+                    new Row(Map.of("key", 20L, "value1", 99999999999999L, "value2", 500L)),
+                    new Row(Map.of("key", 20L, "value1", 99999999999999L, "value2", 600L)));
+            ingestData(extraRows);
+            tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
+            tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
+            List<Row> expected = List.of(
+                    new Row(Map.of("key", 10L, "value1", 99999999999999L, "value2", 600L)));
+
+            QueryProcessingConfig config = QueryProcessingConfig.builder()
+                    .queryTimeIteratorClassName(LimitingConfigStringIterator.class.getName())
+                    .queryTimeIteratorConfig("1")
+                    .build();
+
+            // When
+            List<Row> results = executeQueryByRangeConfig(rangeFactory()
+                    .createRange("key", 1L, true, 20L, true), config);
+
+            // Then
+            assertThat(results).containsExactlyElementsOf(expected);
+        }
+    }
+
+    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
+    // is not pushed down to DataFusion and can therefore be tested in memory.
+    @Nested
+    @DisplayName("Apply a custom iterator")
+    class CustomIterator {
+        @Test
+        void shouldApplyCustomIterator() throws Exception {
+            // Given
+            Row row1 = new Row(Map.of("id", "1", "timestamp", System.currentTimeMillis()));
+            Row row2 = new Row(Map.of("id", "2", "timestamp", System.currentTimeMillis() - 1_000_000_000L));
+            Row row3 = new Row(Map.of("id", "3", "timestamp", System.currentTimeMillis() - 2_000_000L));
+            Row row4 = new Row(Map.of("id", "4", "timestamp", System.currentTimeMillis()));
+            tableProperties.setSchema(Schema.builder()
+                    .rowKeyFields(new Field("id", new StringType()))
+                    .valueFields(new Field("timestamp", new LongType()))
+                    .build());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            ingestData(List.of(row1, row2, row3, row4));
+            tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
+            tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
+
+            // When
+            List<Row> results = executeQueryByRange(rangeFactory().createRange("id", "0", "5"));
+
+            // Then
+            assertThat(results).containsExactly(row1, row4);
+        }
+    }
 
     @Nested
     @DisplayName("No files")
@@ -341,7 +514,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
             // When
-            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", -100000L, true, 123456789L, true));
+            List<Row> results = executeQueryByRange(
+                    rangeFactory().createRange("key", -100000L, true, 123456789L, true));
 
             // Then
             assertThat(results).hasSize(100)
@@ -448,7 +622,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
             // When
-            List<Row> results = executeQueryByRange(rangeFactory().createRange("key", -100000L, true, 123456789L, true));
+            List<Row> results = executeQueryByRange(
+                    rangeFactory().createRange("key", -100000L, true, 123456789L, true));
 
             // Then
             assertThat(results).hasSize(100)
@@ -848,7 +1023,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldExcludeRowsAtEdgeOfRangesWhenRegionCoversAllRowsWithBoundsNotInclusive() throws Exception {
             // Given
-            // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min; 4 - excluded by key1 max and key2 max
+            // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min;
+            // 4 - excluded by key1 max and key2 max
             Range range1 = rangeFactory().createRange("key1", "C", false, "P", false);
             Range range2 = rangeFactory().createRange("key2", "H", false, "Z", false);
 
@@ -947,31 +1123,6 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
     // is not pushed down to DataFusion and can therefore be tested in memory.
     @Test
-    void shouldApplyCompactionIterator() throws Exception {
-        // Given
-        Row row1 = new Row(Map.of("id", "1", "timestamp", System.currentTimeMillis()));
-        Row row2 = new Row(Map.of("id", "2", "timestamp", System.currentTimeMillis() - 1_000_000_000L));
-        Row row3 = new Row(Map.of("id", "3", "timestamp", System.currentTimeMillis() - 2_000_000L));
-        Row row4 = new Row(Map.of("id", "4", "timestamp", System.currentTimeMillis()));
-        tableProperties.setSchema(Schema.builder()
-                .rowKeyFields(new Field("id", new StringType()))
-                .valueFields(new Field("timestamp", new LongType()))
-                .build());
-        update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
-        ingestData(List.of(row1, row2, row3, row4));
-        tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
-        tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
-
-        // When
-        List<Row> results = executeQueryByRange(rangeFactory().createRange("id", "0", "5"));
-
-        // Then
-        assertThat(results).containsExactly(row1, row4);
-    }
-
-    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
-    // is not pushed down to DataFusion and can therefore be tested in memory.
-    @Test
     public void shouldApplyQueryTimeIterator() throws Exception {
         // Given
         tableProperties.setSchema(getSecurityLabelSchema());
@@ -999,8 +1150,6 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 .allSatisfy(result -> assertThat(result).isEqualTo(expected));
     }
 
-    // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
-    // is not pushed down to DataFusion and can therefore be tested in memory.
     @Test
     public void shouldReturnOnlyRequestedValuesWhenSpecified() throws Exception {
         // Given
@@ -1060,11 +1209,15 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     }
 
     private List<Row> executeQueryByRange(Range range) throws Exception {
-        return execute(queryWithRegion(new Region(range)));
+        return executeQueryByRangeConfig(range, QueryProcessingConfig.none());
+    }
+
+    private List<Row> executeQueryByRangeConfig(Range range, QueryProcessingConfig config) throws Exception {
+        return execute(queryWithRegionConfig(new Region(range), config));
     }
 
     private List<Row> executeQueryByRanges(Range... ranges) throws Exception {
-        return execute(queryWithRegion(new Region(List.of(ranges))));
+        return execute(queryWithRegionConfig(new Region(List.of(ranges)), QueryProcessingConfig.none()));
     }
 
     private List<Row> execute(Query query) throws Exception {
@@ -1085,11 +1238,12 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
     }
 
-    private Query queryWithRegion(Region region) {
+    private Query queryWithRegionConfig(Region region, QueryProcessingConfig config) {
         return Query.builder()
                 .tableName("myTable")
                 .queryId("id")
                 .regions(List.of(region))
+                .processingConfig(config)
                 .build();
     }
 
