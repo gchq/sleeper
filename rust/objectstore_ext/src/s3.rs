@@ -228,7 +228,7 @@ impl ObjectStoreFactory {
     }
 }
 
-fn apply_readahead_store(store: AmazonS3, bucket: &str) -> impl ObjectStore {
+fn apply_readahead_store<T: ObjectStore>(store: T, bucket: &str) -> ReadaheadStore<T> {
     ReadaheadStore::new(store, bucket)
         .with_max_live_streams(
             std::thread::available_parallelism()
@@ -238,7 +238,7 @@ fn apply_readahead_store(store: AmazonS3, bucket: &str) -> impl ObjectStore {
         .with_max_stream_age(Duration::from_secs(60))
 }
 
-fn apply_s3_logging_store<T: ObjectStore>(store: T, bucket: &str) -> impl ObjectStore + use<T> {
+fn apply_s3_logging_store<T: ObjectStore>(store: T, bucket: &str) -> LoggingObjectStore<T> {
     LoggingObjectStore::new(store, "DataFusion", bucket)
 }
 
