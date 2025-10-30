@@ -1220,10 +1220,6 @@ sleeper.compaction.ec2.type=t4g.xlarge
 # The minimum number of instances for the EC2 cluster (when using EC2-based compactions).
 sleeper.compaction.ec2.pool.minimum=0
 
-# The initial desired number of instances for the EC2 cluster (when using EC2-based compactions).
-# Can be set by dividing initial maximum containers by number that should fit on instance type.
-sleeper.compaction.ec2.pool.desired=0
-
 # The maximum number of instances for the EC2 cluster (when using EC2-based compactions).
 sleeper.compaction.ec2.pool.maximum=75
 
