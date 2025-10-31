@@ -38,6 +38,9 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Stops EMR persistent cluster for the CloudFormation stack.
+ */
 public class AutoStopEmrPersistentClusterStack extends NestedStack {
 
     private IFunction lambda;
@@ -86,14 +89,14 @@ public class AutoStopEmrPersistentClusterStack extends NestedStack {
      * Add a custom resource to stop EMR persistent clusters.
      *
      * @param scope   the stack to add the custom resource to
-     * @param cluster the EMR non persistent cluster
+     * @param cluster the EMR persistent cluster
      */
-    public void addAutoStopEmrNonPersistentCluster(Construct scope, CfnCluster cluster) {
+    public void addAutoStopEmrPersistentCluster(Construct scope, CfnCluster cluster) {
 
         String id = cluster.getNode().getId() + "-Autostop";
 
         CustomResource customResource = CustomResource.Builder.create(scope, id)
-                .resourceType("Custom::AutoStopEmrNonPersistentCluster")
+                .resourceType("Custom::AutoStopEmrPersistentCluster")
                 .properties(Map.of("clusterId", cluster.getClusterRef().getClusterId()))
                 .serviceToken(provider.getServiceToken())
                 .build();

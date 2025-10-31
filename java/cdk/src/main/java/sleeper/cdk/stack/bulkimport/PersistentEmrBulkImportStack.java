@@ -102,7 +102,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         configureJobStarterFunction(jobStarter);
         createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
 
-        autoStopEmrPersistentClusterStack.addAutoStopEmrNonPersistentCluster(scope, emrCluster);
+        autoStopEmrPersistentClusterStack.addAutoStopEmrPersistentCluster(scope, emrCluster);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
