@@ -16,6 +16,7 @@
 use assert_cmd::cargo_bin;
 use assert_cmd::prelude::*;
 use predicates::prelude::*; // Used for writing assertions
+use std::process::Command;
 
 #[test]
 fn invalid_region_maxs() {
@@ -40,7 +41,6 @@ fn invalid_region_maxs() {
 }
 
 #[test]
-
 fn invalid_region_mins() {
     let mut cmd = Command::new(cargo_bin!("compact"));
     cmd.args([

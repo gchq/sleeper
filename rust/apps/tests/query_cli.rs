@@ -16,6 +16,7 @@
 use assert_cmd::cargo_bin;
 use assert_cmd::prelude::*;
 use predicates::prelude::*; // Used for writing assertions
+use std::process::Command; // Run programs
 
 #[test]
 fn invalid_region_maxs() {
