@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.dsl.bulkexport;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -26,17 +27,11 @@ public class SystemTestBulkExport {
     public SystemTestBulkExport(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
         driver = baseDrivers.bulkExport(context);
-        /*
-         * this.instance = context.instance();
-         * this.sourceFiles = context.sourceFiles();
-         * SystemTestDrivers drivers = instance.adminDrivers();
-         * driver = drivers.compaction(context);
-         * pollDriver = drivers.pollWithRetries();
-         * waitForJobCreation = new WaitForCompactionJobCreation(instance, driver);
-         * waitForJobs = drivers.waitForCompaction(context);
-         * // Use base driver to drain compaction queue as admin role does not have permission to do this
-         * baseDriver = baseDrivers.compaction(context);
-         */
+    }
+
+    public SystemTestBulkExport sendBulkExportQuery(BulkExportQuery query) {
+        driver.sendJob(query);
+        return this;
     }
 
 }
