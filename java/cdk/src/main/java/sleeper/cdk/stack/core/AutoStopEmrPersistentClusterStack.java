@@ -71,7 +71,7 @@ public class AutoStopEmrPersistentClusterStack extends NestedStack {
         lambda.getRole().addToPrincipalPolicy(PolicyStatement.Builder
                 .create()
                 .resources(List.of("*"))
-                .actions(List.of("emr:DescribeCluster", "emr:TerminateJobFlows"))
+                .actions(List.of("elasticmapreduce:DescribeCluster", "elasticmapreduce:TerminateJobFlows"))
                 .build());
 
         provider = Provider.Builder.create(this, "Provider")
