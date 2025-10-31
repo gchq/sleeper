@@ -18,6 +18,7 @@ package sleeper.query.lambda;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import org.apache.arrow.memory.RootAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -39,6 +40,7 @@ import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS;
 
@@ -58,9 +60,11 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
     private final QueryMessageHandler messageHandler;
 
     public SqsLeafPartitionQueryLambda() throws ObjectFactoryException {
-        this(S3Client.create(), SqsClient.create(), DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()),
-                // DataFusion is disabled because of issue https://github.com/gchq/sleeper/issues/5830
-                DataFusionQueryContext.none(), DataFusionAwsConfig::getDefault);
+        this(buildAwsV2Client(S3Client.builder()),
+                buildAwsV2Client(SqsClient.builder()),
+                buildAwsV2Client(DynamoDbClient.builder()),
+                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()),
+                DataFusionQueryContext.createIfLoaded(RootAllocator::new), DataFusionAwsConfig::getDefault);
     }
 
     public SqsLeafPartitionQueryLambda(
@@ -68,15 +72,15 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
             DataFusionQueryContext dataFusionContext, Supplier<DataFusionAwsConfig> awsConfig) throws ObjectFactoryException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        TableHadoopConfigurationProvider hadoopProvider = TableHadoopConfigurationProvider.withCache(
+                TableHadoopConfigurationProvider.forQueryLambdas(instanceProperties));
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
-                .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
+                .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider).hadoopProvider(hadoopProvider)
                 .rowRetrieverProvider(dataFusionContext.createQueryEngineSelectorWithFallback(awsConfig,
                         new LeafPartitionRowRetrieverImpl.Provider(
-                                Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)),
-                                TableHadoopConfigurationProvider.withCache(
-                                        TableHadoopConfigurationProvider.forQueryLambdas(instanceProperties)))))
+                                Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)), hadoopProvider)))
                 .build();
     }
 

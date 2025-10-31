@@ -75,13 +75,14 @@ public class LeafPartitionQueryExecutor {
         Schema tableSchema = tableProperties.getSchema();
         SortedRowIterator compactionIterator;
         SortedRowIterator queryIterator;
+        boolean needFiltersAndAggregations = !retriever.supportsFiltersAndAggregations();
 
         try {
-            compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.from(tableProperties));
+            compactionIterator = createIterator(tableSchema, objectFactory, IteratorConfig.from(tableProperties), needFiltersAndAggregations);
             queryIterator = createIterator(tableSchema, objectFactory, IteratorConfig.builder()
                     .iteratorClassName(leafPartitionQuery.getQueryTimeIteratorClassName())
                     .iteratorConfigString(leafPartitionQuery.getQueryTimeIteratorConfig())
-                    .build());
+                    .build(), false);
         } catch (IteratorCreationException e) {
             throw new QueryException("Failed to initialise iterators", e);
         }
@@ -89,7 +90,7 @@ public class LeafPartitionQueryExecutor {
         Schema dataReadSchema = createSchemaForDataRead(leafPartitionQuery, tableSchema, compactionIterator, queryIterator);
 
         try {
-            CloseableIterator<Row> iterator = retriever.getRows(leafPartitionQuery, dataReadSchema);
+            CloseableIterator<Row> iterator = retriever.getRows(leafPartitionQuery, dataReadSchema, tableProperties);
             // Apply compaction time iterator
             iterator = compactionIterator.applyTransform(iterator);
             // Apply query time iterator
@@ -132,8 +133,8 @@ public class LeafPartitionQueryExecutor {
     private SortedRowIterator createIterator(
             Schema schema,
             ObjectFactory objectFactory,
-            IteratorConfig iteratorConfig) throws IteratorCreationException {
+            IteratorConfig iteratorConfig, boolean applyFilterAggregations) throws IteratorCreationException {
         return new IteratorFactory(objectFactory)
-                .getIterator(iteratorConfig, schema);
+                .getIterator(iteratorConfig, schema, applyFilterAggregations);
     }
 }

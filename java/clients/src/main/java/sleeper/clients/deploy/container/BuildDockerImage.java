@@ -29,6 +29,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
+import static java.util.stream.Collectors.joining;
+
 /**
  * A command line utility to build a Docker image based on the built-in configuration of images in Sleeper.
  */
@@ -41,6 +43,10 @@ public class BuildDockerImage {
         CommandLineUsage usage = CommandLineUsage.builder()
                 .positionalArguments(List.of("scripts directory", "image name", "tag"))
                 .options(List.of(CommandOption.longFlag("lambda")))
+                .helpSummary("Available Docker deployment image names: " +
+                        DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
+                        "Available lambda image names: " +
+                        LambdaJar.getAll().stream().map(LambdaJar::getImageName).collect(joining(", ")))
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),

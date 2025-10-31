@@ -1,0 +1,94 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.clients.images;
+
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.properties.model.DataEngine;
+import sleeper.core.range.Region;
+import sleeper.core.row.Row;
+import sleeper.core.statestore.FileReference;
+import sleeper.query.core.model.LeafPartitionQuery;
+import sleeper.query.core.model.QueryProcessingConfig;
+import sleeper.query.core.model.QuerySerDe;
+import sleeper.query.runner.tracker.DynamoDBQueryTrackerCreator;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.as;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+
+public class QueryLambdaDockerImageST extends DockerImageTestBase {
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.DATAFUSION_EXPERIMENTAL);
+        createBucket(instanceProperties.get(QUERY_RESULTS_BUCKET));
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        update(stateStore).initialise(tableProperties);
+    }
+
+    @Test
+    void shouldRunASubQuery() throws Exception {
+        // Given
+        List<Row> rows = List.of(
+                new Row(Map.of("key", 10L)),
+                new Row(Map.of("key", 20L)));
+        FileReference file = addFileAtRoot("test", rows);
+        LeafPartitionQuery query = LeafPartitionQuery.builder()
+                .tableId(tableProperties.get(TABLE_ID))
+                .queryId("test-query")
+                .subQueryId("test-subquery")
+                .regions(List.of(Region.coveringAllValuesOfAllRowKeys(tableProperties.getSchema())))
+                .processingConfig(QueryProcessingConfig.none())
+                .leafPartitionId("root")
+                .partitionRegion(Region.coveringAllValuesOfAllRowKeys(tableProperties.getSchema()))
+                .files(List.of(file.getFilename()))
+                .build();
+
+        // When
+        runLambda("query-lambda:test", LambdaHandler.QUERY_LEAF_PARTITION, buildInvocation(query));
+
+        // Then
+        assertThat(listObjectKeys(instanceProperties.get(QUERY_RESULTS_BUCKET)))
+                .singleElement()
+                .extracting(this::resultsFilenameFromObjectKey)
+                .extracting(this::readFile, as(InstanceOfAssertFactories.LIST))
+                .containsExactlyElementsOf(rows);
+    }
+
+    private String resultsFilenameFromObjectKey(String objectKey) {
+        return "s3a://" + instanceProperties.get(QUERY_RESULTS_BUCKET) + "/" + objectKey;
+    }
+
+    private String buildInvocation(LeafPartitionQuery... queries) {
+        QuerySerDe querySerDe = new QuerySerDe(tableProperties.getSchema());
+        List<String> messageBodies = Stream.of(queries).map(querySerDe::toJson).toList();
+        return FakeSqsLambdaInvocation.fromMessageBodies(messageBodies).toJson();
+    }
+
+}
