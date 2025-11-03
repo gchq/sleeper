@@ -21,6 +21,7 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.stack.SleeperArtefactsStack;
+import sleeper.cdk.util.Utils;
 
 public class SleeperArtefactsCdkApp {
 
@@ -33,11 +34,8 @@ public class SleeperArtefactsCdkApp {
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
         String deploymentId = (String) app.getNode().tryGetContext("id");
-        if (deploymentId == null) {
-            deploymentId = "artefacts";
-        }
         new SleeperArtefactsStack(app, "SleeperArtefacts", deploymentId, StackProps.builder()
-                .stackName(deploymentId)
+                .stackName(Utils.joinNonNullParts("-", "sleeper", deploymentId, "artefacts"))
                 .env(environment)
                 .build());
         app.synth();
