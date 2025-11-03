@@ -18,9 +18,12 @@ package sleeper.systemtest.dsl.bulkexport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
+import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
@@ -32,13 +35,12 @@ public class BulkExportTest {
     }
 
     @Test
-    void shouldPerformBasicBulkExport(SleeperSystemTest sleeper) throws Exception {
-        // Given
-
-        // When
-        sleeper.bulkExport().sendBulkExportQuery();
+    void shouldPerformBasicBulkExport(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) throws Exception {
+        // Given / When
+        BulkExportQuery bulkExportQuery = sleeper.bulkExport().sendBulkExportQuery();
 
         // Then
+        assertThat(drivers.getBulkExportQueueQueries()).contains(bulkExportQuery);
     }
 
 }

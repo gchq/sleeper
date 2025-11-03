@@ -29,12 +29,13 @@ public class SystemTestBulkExport {
 
     public SystemTestBulkExport(SystemTestContext context) {
         this.instance = context.instance();
-        driver = instance.adminDrivers().bulkExport(context); // permisssions may need adjusting?
+        driver = instance.adminDrivers().bulkExport(context);
     }
 
-    public SystemTestBulkExport sendBulkExportQuery() {
-        driver.sendJob(generateBulkExportQuery());
-        return this;
+    public BulkExportQuery sendBulkExportQuery() {
+        BulkExportQuery query = generateBulkExportQuery();
+        driver.sendJob(query);
+        return query;
     }
 
     private BulkExportQuery generateBulkExportQuery() {
