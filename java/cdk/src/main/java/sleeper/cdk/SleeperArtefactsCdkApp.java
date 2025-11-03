@@ -23,6 +23,11 @@ import software.amazon.awscdk.StackProps;
 import sleeper.cdk.stack.SleeperArtefactsStack;
 import sleeper.cdk.util.Utils;
 
+/**
+ * A CDK app to deploy AWS resources that will hold artefacts used to deploy Sleeper.
+ *
+ * @see SleeperArtefactsStack
+ */
 public class SleeperArtefactsCdkApp {
 
     public static void main(String[] args) {
