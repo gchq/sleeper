@@ -17,6 +17,8 @@
 
 //! [`RetryConfig`] connection retry policy
 
+//! File has been modified to include some backtrace and debugging information on send() failures.
+
 use crate::client::backoff::{Backoff, BackoffConfig};
 use crate::client::builder::HttpRequestBuilder;
 use crate::client::{HttpClient, HttpError, HttpErrorKind, HttpRequest, HttpResponse};
