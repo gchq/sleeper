@@ -176,7 +176,7 @@ public class LambdaJar {
         return "LambdaJar{filename=" + filename + ", imageName=" + imageName + ", artifactId=" + artifactId + "}";
     }
 
-    public static List<LambdaJar> getAll() {
+    public static List<LambdaJar> all() {
         return Collections.unmodifiableList(ALL);
     }
 

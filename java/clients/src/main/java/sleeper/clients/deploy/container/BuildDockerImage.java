@@ -46,7 +46,7 @@ public class BuildDockerImage {
                 .helpSummary("Available Docker deployment image names: " +
                         DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
                         "Available lambda image names: " +
-                        LambdaJar.getAll().stream().map(LambdaJar::getImageName).collect(joining(", ")))
+                        LambdaJar.all().stream().map(LambdaJar::getImageName).collect(joining(", ")))
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
