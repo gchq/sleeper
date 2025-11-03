@@ -17,16 +17,15 @@ package sleeper.systemtest.dsl.bulkexport;
 
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.systemtest.dsl.SystemTestContext;
-import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 public class SystemTestBulkExport {
-    SystemTestInstanceContext instance;
-    BulkExportDriver driver;
+    private final SystemTestInstanceContext instance;
+    private final BulkExportDriver driver;
 
-    public SystemTestBulkExport(SystemTestContext context, SystemTestDrivers baseDrivers) {
+    public SystemTestBulkExport(SystemTestContext context) {
         this.instance = context.instance();
-        driver = baseDrivers.bulkExport(context);
+        driver = instance.adminDrivers().bulkExport(context); // permisssions may need adjusting
     }
 
     public SystemTestBulkExport sendBulkExportQuery(BulkExportQuery query) {

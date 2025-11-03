@@ -136,7 +136,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestBulkExport bulkExport() {
-        return new SystemTestBulkExport(context, baseDrivers);
+        return new SystemTestBulkExport(context);
     }
 
     public SystemTestCompaction compaction() {
