@@ -83,10 +83,9 @@ public class WiremockEmrPersistentTestHelper {
     /**
      * Describe an EMR cluster.
      *
-     * @param  clusterId the cluster id
-     * @return           a HTTP response
+     * @return a HTTP response
      */
-    public static MappingBuilder describeClusterRequest(String clusterId) {
+    public static MappingBuilder describeClusterRequest() {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_DESCRIBE_CLUSTER_OPERATION)
                 .willReturn(aResponse().withStatus(200));
