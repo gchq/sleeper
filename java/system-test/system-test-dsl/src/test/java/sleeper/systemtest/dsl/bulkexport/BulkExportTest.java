@@ -23,8 +23,6 @@ import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
@@ -41,10 +39,9 @@ public class BulkExportTest {
     void shouldPerformBasicBulkExport(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) throws Exception {
         // Given / When
         sleeper.bulkExport().sendBulkExportQuery();
-        List<BulkExportQuery> queriesOnList = drivers.getBulkExportQueueQueries();
 
         // Then
-        assertThat(queriesOnList)
+        assertThat(drivers.getBulkExportQueueQueries())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exportId")
                 .containsExactlyInAnyOrder(bulkExportQuery(sleeper.tableProperties().get(TABLE_NAME)));
     }
