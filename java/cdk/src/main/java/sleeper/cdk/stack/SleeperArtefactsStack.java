@@ -32,6 +32,7 @@ import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
 import java.util.List;
+import java.util.Locale;
 
 public class SleeperArtefactsStack extends Stack {
 
@@ -39,7 +40,7 @@ public class SleeperArtefactsStack extends Stack {
         super(app, id, props);
 
         Bucket.Builder.create(this, "JarsBucket")
-                .bucketName(id + "-jars")
+                .bucketName(id.toLowerCase(Locale.ROOT) + "-jars")
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
