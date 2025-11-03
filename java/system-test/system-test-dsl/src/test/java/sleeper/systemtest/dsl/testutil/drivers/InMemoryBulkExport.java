@@ -16,18 +16,19 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.bulkexport.core.model.BulkExportQuery;
-import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 
-public class InMemoryBulkExportDriver implements BulkExportDriver {
-    private final InMemoryBulkExport inMemoryBulkExport;
+import java.util.ArrayList;
+import java.util.List;
 
-    public InMemoryBulkExportDriver(InMemoryBulkExport bulkExport) {
-        this.inMemoryBulkExport = bulkExport;
+public class InMemoryBulkExport {
+    private final List<BulkExportQuery> queuedQueries = new ArrayList<BulkExportQuery>();
+
+    public void addBulkExportQueryToQueue(BulkExportQuery query) {
+        queuedQueries.add(query);
     }
 
-    @Override
-    public void sendJob(BulkExportQuery query) {
-        inMemoryBulkExport.addBulkExportQueryToQueue(query);
+    public List<BulkExportQuery> getQueriesOnQueue() {
+        return queuedQueries;
     }
 
 }

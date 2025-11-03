@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
@@ -48,6 +49,8 @@ import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExport;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExportDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataGenerationTasksDriver;
@@ -73,6 +76,8 @@ import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
+import java.util.List;
+
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
@@ -87,6 +92,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
     private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
     private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
+    private final InMemoryBulkExport bulkExport = new InMemoryBulkExport();
     private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(transactionLogs.getTransactionBodyStore(), ingestByQueue, compaction);
     private long fileSizeBytesForBatcher = 1024;
 
@@ -264,8 +270,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public BulkExportDriver bulkExport(SystemTestContext context) {
-        // TODO to be implemented as part of #5898
-        throw new UnsupportedOperationException("Unimplemented method 'bulkExport'");
+        return new InMemoryBulkExportDriver(bulkExport);
+    }
+
+    public List<BulkExportQuery> getBulkExportQueueQueries() {
+        return bulkExport.getQueriesOnQueue();
     }
 
 }
