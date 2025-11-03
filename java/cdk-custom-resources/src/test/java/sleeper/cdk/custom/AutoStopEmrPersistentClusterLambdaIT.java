@@ -63,7 +63,7 @@ public class AutoStopEmrPersistentClusterLambdaIT {
         lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
         // Given
-        stubFor(describeClusterRequest(clusterId)
+        stubFor(describeClusterRequest()
                 .inScenario("TerminateEMRClusters")
                 .willReturn(aResponseWithClusterWithState(clusterId, ClusterState.RUNNING))
                 .whenScenarioStateIs(STARTED));
@@ -71,7 +71,7 @@ public class AutoStopEmrPersistentClusterLambdaIT {
                 .inScenario("TerminateEMRClusters")
                 .whenScenarioStateIs(STARTED)
                 .willSetStateTo("TERMINATED"));
-        stubFor(describeClusterRequest(clusterId)
+        stubFor(describeClusterRequest()
                 .inScenario("TerminateEMRClusters")
                 .willReturn(aResponseWithClusterWithState(clusterId, ClusterState.TERMINATED))
                 .whenScenarioStateIs("TERMINATED"));
@@ -92,7 +92,7 @@ public class AutoStopEmrPersistentClusterLambdaIT {
         lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
         // Given
-        stubFor(describeClusterRequest(clusterId)
+        stubFor(describeClusterRequest()
                 .inScenario("TerminateEMRClusters")
                 .willReturn(aResponseWithClusterWithState(clusterId, ClusterState.TERMINATED))
                 .whenScenarioStateIs(STARTED));
@@ -100,7 +100,7 @@ public class AutoStopEmrPersistentClusterLambdaIT {
                 .inScenario("TerminateEMRClusters")
                 .whenScenarioStateIs(STARTED)
                 .willSetStateTo("TERMINATED"));
-        stubFor(describeClusterRequest(clusterId)
+        stubFor(describeClusterRequest()
                 .inScenario("TerminateEMRClusters")
                 .willReturn(aResponseWithClusterWithState(clusterId, ClusterState.TERMINATED))
                 .whenScenarioStateIs("TERMINATED"));
@@ -121,7 +121,7 @@ public class AutoStopEmrPersistentClusterLambdaIT {
         lambda = lambda(runtimeInfo, PollWithRetries.noRetries());
 
         // Given
-        stubFor(describeClusterRequest(clusterId)
+        stubFor(describeClusterRequest()
                 .inScenario("TerminateEMRClusters")
                 .willReturn(aResponseWithClusterWithState(clusterId, ClusterState.RUNNING))
                 .whenScenarioStateIs(STARTED));
@@ -129,7 +129,7 @@ public class AutoStopEmrPersistentClusterLambdaIT {
                 .inScenario("TerminateEMRClusters")
                 .whenScenarioStateIs(STARTED)
                 .willSetStateTo("TERMINATING"));
-        stubFor(describeClusterRequest(clusterId)
+        stubFor(describeClusterRequest()
                 .inScenario("TerminateEMRClusters")
                 .willReturn(aResponseWithClusterWithState(clusterId, ClusterState.TERMINATING))
                 .whenScenarioStateIs("TERMINATING"));
@@ -137,6 +137,9 @@ public class AutoStopEmrPersistentClusterLambdaIT {
         // When / Then
         assertThatThrownBy(() -> lambda.handleEvent(clusterEvent(clusterId, "Delete"), null))
                 .isInstanceOf(PollWithRetries.CheckFailedException.class);
+        verify(3, anyRequestedForEmr());
+        verify(2, describeClusterRequestedFor(clusterId));
+        verify(1, terminateJobFlowsRequestedFor(clusterId));
     }
 
     @Test
