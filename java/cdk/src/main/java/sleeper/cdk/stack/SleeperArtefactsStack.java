@@ -34,6 +34,11 @@ import sleeper.core.deploy.LambdaJar;
 
 import java.util.List;
 
+/**
+ * A CDK stack to deploy AWS resources that will hold artefacts used to deploy Sleeper. This should be deployed
+ * separately before deploying a Sleeper instance. The artefacts need to be uploaded as a separate step after deploying
+ * this stack, but before deploying a Sleeper instance that requires those artefacts.
+ */
 public class SleeperArtefactsStack extends Stack {
 
     public SleeperArtefactsStack(App app, String stackId, String deploymentId, StackProps props) {
