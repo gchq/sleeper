@@ -41,6 +41,7 @@ import java.time.LocalDateTime;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
+import static sleeper.core.properties.table.TableProperty.DATAFUSION_S3_READAHEAD_ENABLED;
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
@@ -105,6 +106,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         params.input_files.populate(job.getInputFiles().toArray(String[]::new), false);
         // Files are always sorted for compactions
         params.input_files_sorted.set(true);
+        params.use_readahead_store.set(tableProperties.getBoolean(DATAFUSION_S3_READAHEAD_ENABLED));
         params.output_file.set(job.getOutputFile());
         params.write_sketch_file.set(true);
         params.row_key_cols.populate(schema.getRowKeyFieldNames().toArray(String[]::new), false);

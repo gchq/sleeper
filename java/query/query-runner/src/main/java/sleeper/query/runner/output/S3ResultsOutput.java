@@ -15,6 +15,7 @@
  */
 package sleeper.query.runner.output;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
@@ -57,13 +58,15 @@ public class S3ResultsOutput implements ResultsOutput {
     public static final String PAGE_SIZE = "pageSize";
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
+    private final Configuration hadoopConf;
     private final Map<String, String> config;
     private String s3Bucket;
     private final String fileSystem;
 
-    public S3ResultsOutput(InstanceProperties instanceProperties, TableProperties tableProperties, Map<String, String> config) {
+    public S3ResultsOutput(InstanceProperties instanceProperties, TableProperties tableProperties, Configuration hadoopConf, Map<String, String> config) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
+        this.hadoopConf = hadoopConf;
         this.config = config;
         this.s3Bucket = config.get(S3_BUCKET);
         if (null == this.s3Bucket) {
@@ -111,7 +114,7 @@ public class S3ResultsOutput implements ResultsOutput {
     private ParquetWriter<Row> buildParquetWriter(Path path) throws IOException {
         String defaultRowGroupSize = instanceProperties.get(DEFAULT_RESULTS_ROW_GROUP_SIZE);
         String defaultPageSize = instanceProperties.get(DEFAULT_RESULTS_PAGE_SIZE);
-        ParquetRowWriterFactory.Builder builder = parquetRowWriterBuilder(path, tableProperties)
+        ParquetRowWriterFactory.Builder builder = parquetRowWriterBuilder(path, tableProperties).withConf(hadoopConf)
                 .withRowGroupSize(Long.parseLong(config.getOrDefault(ROW_GROUP_SIZE, defaultRowGroupSize)))
                 .withPageSize(Integer.parseInt(config.getOrDefault(PAGE_SIZE, defaultPageSize)));
         Optional.ofNullable(config.get(COMPRESSION_CODEC)).ifPresent(builder::withCompressionCodec);

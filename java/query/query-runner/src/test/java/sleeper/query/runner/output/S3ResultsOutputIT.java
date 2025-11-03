@@ -92,7 +92,7 @@ class S3ResultsOutputIT {
     @Test
     void testDefaultConfig() throws Exception {
         // Given
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new Configuration(), new HashMap<>());
 
         // When
         resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rowList.iterator()));
@@ -110,7 +110,7 @@ class S3ResultsOutputIT {
         Map<String, String> config = new HashMap<>();
         config.put(ROW_GROUP_SIZE, "1024");
         config.put(PAGE_SIZE, "1024");
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, config);
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new Configuration(), config);
 
         // When
         resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rowList.iterator()));
@@ -127,7 +127,7 @@ class S3ResultsOutputIT {
         // Given
         instanceProperties.set(DEFAULT_RESULTS_ROW_GROUP_SIZE, "1024");
         instanceProperties.set(DEFAULT_RESULTS_PAGE_SIZE, "1020");
-        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
+        ResultsOutput resultsOutput = new S3ResultsOutput(instanceProperties, tableProperties, new Configuration(), new HashMap<>());
 
         // When
         resultsOutput.publish(new QueryOrLeafPartitionQuery(query), new WrappedIterator<>(rowList.iterator()));

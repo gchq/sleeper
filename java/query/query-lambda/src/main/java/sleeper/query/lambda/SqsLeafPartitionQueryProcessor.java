@@ -29,6 +29,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.row.Row;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
@@ -57,6 +58,7 @@ public class SqsLeafPartitionQueryProcessor {
 
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final TableHadoopConfigurationProvider hadoopProvider;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
     private final SqsClient sqsClient;
     private final ObjectFactory objectFactory;
@@ -65,6 +67,7 @@ public class SqsLeafPartitionQueryProcessor {
     private SqsLeafPartitionQueryProcessor(Builder builder) throws ObjectFactoryException {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
+        hadoopProvider = builder.hadoopProvider;
         rowRetrieverProvider = builder.rowRetrieverProvider;
         sqsClient = builder.sqsClient;
         objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, Path.of("/tmp")).buildObjectFactory();
@@ -110,13 +113,13 @@ public class SqsLeafPartitionQueryProcessor {
 
     private ResultsOutput getResultsOutput(TableProperties tableProperties, Map<String, String> resultsPublisherConfig) {
         if (null == resultsPublisherConfig || resultsPublisherConfig.isEmpty()) {
-            return new S3ResultsOutput(instanceProperties, tableProperties, new HashMap<>());
+            return new S3ResultsOutput(instanceProperties, tableProperties, hadoopProvider.getConfiguration(tableProperties), new HashMap<>());
         }
         String destination = resultsPublisherConfig.get(ResultsOutput.DESTINATION);
         if (SQSResultsOutput.SQS.equals(destination)) {
             return new SQSResultsOutput(instanceProperties, sqsClient, tableProperties.getSchema(), resultsPublisherConfig);
         } else if (S3ResultsOutput.S3.equals(destination)) {
-            return new S3ResultsOutput(instanceProperties, tableProperties, resultsPublisherConfig);
+            return new S3ResultsOutput(instanceProperties, tableProperties, hadoopProvider.getConfiguration(tableProperties), resultsPublisherConfig);
         } else if (WebSocketOutput.DESTINATION_NAME.equals(destination)) {
             return new WebSocketResultsOutput(tableProperties.getSchema(), resultsPublisherConfig);
         } else if (NO_RESULTS_OUTPUT.equals(destination)) {
@@ -131,6 +134,7 @@ public class SqsLeafPartitionQueryProcessor {
     public static final class Builder {
         private InstanceProperties instanceProperties;
         private TablePropertiesProvider tablePropertiesProvider;
+        private TableHadoopConfigurationProvider hadoopProvider;
         private LeafPartitionRowRetrieverProvider rowRetrieverProvider;
         private SqsClient sqsClient;
         private S3Client s3Client;
@@ -146,6 +150,11 @@ public class SqsLeafPartitionQueryProcessor {
 
         public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
             this.tablePropertiesProvider = tablePropertiesProvider;
+            return this;
+        }
+
+        public Builder hadoopProvider(TableHadoopConfigurationProvider hadoopProvider) {
+            this.hadoopProvider = hadoopProvider;
             return this;
         }
 

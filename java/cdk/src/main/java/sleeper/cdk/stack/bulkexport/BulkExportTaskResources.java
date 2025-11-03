@@ -27,6 +27,7 @@ import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.ContainerInsights;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
@@ -138,7 +139,7 @@ public class BulkExportTaskResources {
         Cluster cluster = Cluster.Builder
                 .create(stack, "BulkExportCluster")
                 .clusterName(clusterName)
-                .containerInsights(Boolean.TRUE)
+                .containerInsightsV2(ContainerInsights.ENHANCED)
                 .vpc(vpc)
                 .build();
         instanceProperties.set(BULK_EXPORT_CLUSTER, cluster.getClusterName());
