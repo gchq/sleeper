@@ -25,9 +25,7 @@ import software.amazon.awssdk.services.emr.model.ClusterState;
 import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
-import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Delete an EMR Persistent cluster.
@@ -89,9 +87,7 @@ public class AutoStopEmrPersistentClusterLambda {
 
         ClusterState currentState = emrClient.describeCluster(request -> request.clusterId(clusterId)).cluster().status().state();
 
-        Set<ClusterState> stoppedCluster = EnumSet.of(ClusterState.TERMINATED, ClusterState.TERMINATED_WITH_ERRORS);
-
-        if (stoppedCluster.contains(currentState)) {
+        if (currentState.equals(ClusterState.TERMINATED) || currentState.equals(ClusterState.TERMINATED_WITH_ERRORS)) {
             return true;
         }
         return false;
