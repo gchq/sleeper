@@ -48,7 +48,7 @@ public class GenerateDockerImageDocumentation {
         writeFile(path, output -> writePropertiesMarkdownFile(output, "Docker Deployment Images", getECRDescription(),
                 createDockerDeploymentTableWriter(DockerDeployment.all())));
         writeFile(path, output -> writePropertiesMarkdownFile(output, "Lambda Deployment Images", getLambdaDescription(),
-                createLambdaJarTableWriter(LambdaJar.getAll())));
+                createLambdaJarTableWriter(LambdaJar.all())));
     }
 
     private static TableWriter createDockerDeploymentTableWriter(List<DockerDeployment> deployments) {
