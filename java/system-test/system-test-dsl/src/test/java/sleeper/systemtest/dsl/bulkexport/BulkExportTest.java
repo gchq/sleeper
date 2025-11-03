@@ -23,7 +23,6 @@ import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,8 +46,12 @@ public class BulkExportTest {
         // Then
         assertThat(queriesOnList)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("exportId")
-                .isEqualTo(Collections.singletonList(BulkExportQuery.builder()
-                        .tableName(sleeper.tableProperties().get(TABLE_NAME))
-                        .build()));
+                .containsExactlyInAnyOrder(bulkExportQuery(sleeper.tableProperties().get(TABLE_NAME)));
+    }
+
+    private BulkExportQuery bulkExportQuery(String tableName) {
+        return BulkExportQuery.builder()
+                .tableName(tableName)
+                .build();
     }
 }
