@@ -158,10 +158,10 @@ runTestSuite(){
 
 runSlowTests(){
     SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DskipRust)
-    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
-    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
-    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" &
-    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite3" "$@"
+    ##runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
+    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
+    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" ##&
+    ##runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite3" "$@"
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
@@ -172,9 +172,9 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
     runSlowTests "$@" &
-    runTestSuite 240 "${EXP1_SUITE_PARAMS[@]}" "$@" ##&
-    ##runTestSuite 300 "${EXP2_SUITE_PARAMS[@]}" "$@" &
-    ##runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" "$@"
+    runTestSuite 240 "${EXP1_SUITE_PARAMS[@]}" "$@" &
+    runTestSuite 300 "${EXP2_SUITE_PARAMS[@]}" "$@" &
+    runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" "$@"
     wait
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
@@ -187,5 +187,7 @@ fi
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
  sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+
+removeFolderAfterParallelRun quick
 
 exit $END_EXIT_CODE
