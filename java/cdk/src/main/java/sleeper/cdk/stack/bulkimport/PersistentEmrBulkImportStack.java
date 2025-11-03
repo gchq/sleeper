@@ -36,6 +36,7 @@ import software.constructs.Construct;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.stack.core.AutoStopEmrPersistentClusterStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -86,6 +87,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             CoreStacks coreStacks,
+            AutoStopEmrPersistentClusterStack autoStopEmrPersistentClusterStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
@@ -97,14 +99,16 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_PERSISTENT_START, commonEmrStack);
         configureJobStarterFunction(jobStarter);
-        createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
+        createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack, autoStopEmrPersistentClusterStack);
+
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private static void createCluster(Construct scope,
             InstanceProperties instanceProperties,
             IBucket importBucket,
-            CommonEmrBulkImportStack commonStack) {
+            CommonEmrBulkImportStack commonStack,
+            AutoStopEmrPersistentClusterStack autoStopEmrPersistentClusterStack) {
 
         // EMR cluster
         String logUri = "s3://" + importBucket.getBucketName() + "/logs";
@@ -183,6 +187,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         CfnCluster emrCluster = new CfnCluster(scope, "PersistentEMRCluster", emrClusterProps);
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, emrCluster.getName());
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS, emrCluster.getAttrMasterPublicDns());
+
+        autoStopEmrPersistentClusterStack.addAutoStopEmrPersistentCluster(scope, emrCluster);
+
     }
 
     private static List<CfnCluster.InstanceTypeConfigProperty> readExecutorInstanceTypes(
