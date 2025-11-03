@@ -45,8 +45,10 @@ public class FFICommonConfig extends Struct {
     public final Struct.StructRef<FFIAwsConfig> aws_config = new Struct.StructRef<>(FFIAwsConfig.class);
     /** Array of input files to compact. */
     public final FFIArray<java.lang.String> input_files = new FFIArray<>(this);
-    /** States if the input files individually sorted based on row key and the sort key fields. */
+    /** Whether the input files are individually sorted by the row and sort key fields. */
     public final Struct.Boolean input_files_sorted = new Struct.Boolean();
+    /** Whether we should use readahead when reading from S3. */
+    public final Struct.Boolean use_readahead_store = new Struct.Boolean();
     /** Output file name. */
     public final Struct.UTF8StringRef output_file = new Struct.UTF8StringRef();
     /** Specifies if sketch output is enabled. Can only be used with file output. */

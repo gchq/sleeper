@@ -36,6 +36,7 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
 
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
@@ -59,8 +60,9 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private SqsQueryProcessor processor;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
-        this(S3Client.create(), SqsClient.create(),
-                DynamoDbClient.create(),
+        this(buildAwsV2Client(S3Client.builder()),
+                buildAwsV2Client(SqsClient.builder()),
+                buildAwsV2Client(DynamoDbClient.builder()),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 

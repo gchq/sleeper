@@ -35,6 +35,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.DATAFUSION_S3_READAHEAD_ENABLED;
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
@@ -56,9 +57,6 @@ public class CompactionVeryLargeST {
         sleeper.compaction().scaleToZero();
     }
 
-    // We've disabled this temporarily until the following bug is resolved:
-    // https://github.com/gchq/sleeper/issues/5777
-    // @Disabled
     @Test
     // This test takes about 2 hours to run, or an hour and a half if the Sleeper instance is already deployed.
     // We want to know compactions can deal with a very large amount of data.
@@ -71,7 +69,10 @@ public class CompactionVeryLargeST {
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString(),
-                COMPACTION_FILES_BATCH_SIZE, "40"));
+                COMPACTION_FILES_BATCH_SIZE, "40",
+                // We've disabled readahead temporarily until the following bug is resolved:
+                // https://github.com/gchq/sleeper/issues/5777
+                DATAFUSION_S3_READAHEAD_ENABLED, "false"));
         // And 40 input files
         sleeper.systemTestCluster().runDataGenerationJobs(40,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(50_000_000),
