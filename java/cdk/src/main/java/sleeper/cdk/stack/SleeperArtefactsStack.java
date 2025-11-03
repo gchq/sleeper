@@ -55,8 +55,10 @@ public class SleeperArtefactsStack extends Stack {
         for (LambdaJar jar : LambdaJar.all()) {
             createRepository(id, jar.getImageName());
         }
+
         for (DockerDeployment deployment : DockerDeployment.all()) {
             Repository repository = createRepository(id, deployment.getDeploymentName());
+
             if (deployment.isCreateEmrServerlessPolicy()) {
                 repository.addToResourcePolicy(PolicyStatement.Builder.create()
                         .effect(Effect.ALLOW)
