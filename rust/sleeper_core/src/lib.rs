@@ -20,20 +20,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{
-    datafusion::{CompactionResult, LeafPartitionQuery},
-    filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
-};
+use crate::datafusion::{CompactionResult, LeafPartitionQuery};
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
-use aws_config::Region;
-use aws_credential_types::Credentials;
-use color_eyre::eyre::{Result, bail};
+use color_eyre::eyre::Result;
 use log::error;
-use object_store::aws::AmazonS3Builder;
-use objectstore_ext::s3::{ObjectStoreFactory, config_for_s3_module, default_creds_store};
-use std::fmt::{Display, Formatter};
-use url::Url;
 
 mod common_config;
 mod datafusion;
