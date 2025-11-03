@@ -16,13 +16,32 @@
 package sleeper.cdk.stack;
 
 import software.amazon.awscdk.App;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.s3.BlockPublicAccess;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.BucketAccessControl;
+import software.amazon.awscdk.services.s3.BucketEncryption;
 
 public class SleeperArtefactsStack extends Stack {
 
     public SleeperArtefactsStack(App app, String id, StackProps props) {
         super(app, id, props);
+
+        Bucket.Builder.create(this, "JarsBucket")
+                .bucketName(id + "-jars")
+                .encryption(BucketEncryption.S3_MANAGED)
+                .accessControl(BucketAccessControl.PRIVATE)
+                .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
+                .removalPolicy(RemovalPolicy.DESTROY)
+                // We enable versioning so that the CDK is able to update functions when the code changes in the bucket.
+                // See the following:
+                // https://www.define.run/posts/cdk-not-updating-lambda/
+                // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
+                // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
+                .versioned(true)
+                .build();
     }
 
 }
