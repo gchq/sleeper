@@ -38,6 +38,7 @@ log = { workspace = true, features = ["release_max_level_debug"] }
 num-format = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 url = { workspace = true }
+tracing-subscriber = { workspace = true, features = [ "env-filter" ] }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

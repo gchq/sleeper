@@ -41,7 +41,7 @@ fn unalias(qualified_name: &str, original_schema: &SchemaRef) -> String {
         .iter()
         .find(|&&s| qualified_name.ends_with(s))
         .expect("Can't find unaliased column name"))
-    .to_string()
+    .clone()
 }
 
 /// Unalias column names that were changed due to a [`ProjectionExec`].

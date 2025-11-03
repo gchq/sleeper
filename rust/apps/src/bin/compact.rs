@@ -14,7 +14,6 @@
 * limitations under the License.
 */
 use apps::path_absolute;
-use chrono::Local;
 use clap::Parser;
 use color_eyre::eyre::bail;
 use human_panic::setup_panic;
@@ -26,7 +25,8 @@ use sleeper_core::{
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
     run_compaction,
 };
-use std::{collections::HashMap, io::Write};
+use std::collections::HashMap;
+use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 use url::Url;
 
 /// Runs a Sleeper compaction algorithm.
@@ -71,29 +71,16 @@ struct CmdLineArgs {
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env().add_directive(LevelFilter::INFO.into()))
+        .with_ansi(false)
+        .with_line_number(true)
+        .init();
     // Install coloured errors
     color_eyre::install().unwrap();
 
     // Install human readable panics
     setup_panic!();
-
-    // Install and configure environment logger
-    env_logger::builder()
-        .format(|buf, record| {
-            writeln!(
-                buf,
-                "{} [{}] {}:{} - {}",
-                Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                record.level(),
-                record.file().unwrap_or("??"),
-                record.line().unwrap_or(0),
-                record.args()
-            )
-        })
-        .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
-        .filter_level(log::LevelFilter::Info)
-        .format_target(false)
-        .init();
 
     let args = CmdLineArgs::parse();
 
