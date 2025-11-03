@@ -15,19 +15,11 @@
  */
 package sleeper.clients.util.cdk;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
-public class CdkDeploy implements CdkCommand {
-    private final boolean ensureNewInstance;
-    private final boolean skipVersionCheck;
-    private final boolean deployPaused;
-
-    private CdkDeploy(Builder builder) {
-        ensureNewInstance = builder.ensureNewInstance;
-        skipVersionCheck = builder.skipVersionCheck;
-        deployPaused = builder.deployPaused;
-    }
+public record CdkDeploy(List<String> arguments) implements CdkCommand {
 
     public static Builder builder() {
         return new Builder();
@@ -41,60 +33,7 @@ public class CdkDeploy implements CdkCommand {
 
     @Override
     public Stream<String> getArguments() {
-        return Stream.of(getNewInstanceArguments(), getSkipVersionCheckArguments(), getDeployPausedArguments())
-                .flatMap(s -> s);
-    }
-
-    private Stream<String> getNewInstanceArguments() {
-        if (ensureNewInstance) {
-            return Stream.of("-c", "newinstance=true");
-        } else {
-            return Stream.empty();
-        }
-    }
-
-    private Stream<String> getSkipVersionCheckArguments() {
-        if (skipVersionCheck) {
-            return Stream.of("-c", "skipVersionCheck=true");
-        } else {
-            return Stream.empty();
-        }
-    }
-
-    private Stream<String> getDeployPausedArguments() {
-        if (deployPaused) {
-            return Stream.of("-c", "deployPaused=true");
-        } else {
-            return Stream.empty();
-        }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        CdkDeploy cdkDeploy = (CdkDeploy) o;
-        return ensureNewInstance == cdkDeploy.ensureNewInstance
-                && skipVersionCheck == cdkDeploy.skipVersionCheck
-                && deployPaused == cdkDeploy.deployPaused;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(ensureNewInstance, skipVersionCheck, deployPaused);
-    }
-
-    @Override
-    public String toString() {
-        return "CdkDeploy{" +
-                "ensureNewInstance=" + ensureNewInstance +
-                ", skipVersionCheck=" + skipVersionCheck +
-                ", deployPaused=" + deployPaused +
-                '}';
+        return arguments.stream();
     }
 
     public static final class Builder {
@@ -121,7 +60,21 @@ public class CdkDeploy implements CdkCommand {
         }
 
         public CdkDeploy build() {
-            return new CdkDeploy(this);
+            return new CdkDeploy(buildArguments());
+        }
+
+        private List<String> buildArguments() {
+            List<String> arguments = new ArrayList<>();
+            if (ensureNewInstance) {
+                arguments.addAll(List.of("-c", "newinstance=true"));
+            }
+            if (skipVersionCheck) {
+                arguments.addAll(List.of("-c", "skipVersionCheck=true"));
+            }
+            if (deployPaused) {
+                arguments.addAll(List.of("-c", "deployPaused=true"));
+            }
+            return arguments;
         }
     }
 }
