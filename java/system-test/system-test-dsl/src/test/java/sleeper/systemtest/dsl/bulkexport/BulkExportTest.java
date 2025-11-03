@@ -18,7 +18,6 @@ package sleeper.systemtest.dsl.bulkexport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -29,25 +28,17 @@ public class BulkExportTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
-        sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
     void shouldPerformBasicBulkExport(SleeperSystemTest sleeper) throws Exception {
         // Given
-        //instanceProperties.set(BULK_EXPORT_QUEUE_URL,
-
-        //createSqsQueueGetUrl());
-        BulkExportQuery query = BulkExportQuery.builder()
-                .exportId("test-export")
-                .tableName("table-name")
-                .build();
 
         // When
-        sleeper.bulkExport().sendBulkExportQuery(query);
+        sleeper.bulkExport().sendBulkExportQuery();
 
         // Then
-        //assertThat(recieveBulkExportQueries()).containsExactly(query);
     }
 
 }

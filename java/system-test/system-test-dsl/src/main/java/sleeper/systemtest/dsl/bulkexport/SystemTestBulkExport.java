@@ -19,18 +19,28 @@ import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.util.UUID;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+
 public class SystemTestBulkExport {
     private final SystemTestInstanceContext instance;
     private final BulkExportDriver driver;
 
     public SystemTestBulkExport(SystemTestContext context) {
         this.instance = context.instance();
-        driver = instance.adminDrivers().bulkExport(context); // permisssions may need adjusting
+        driver = instance.adminDrivers().bulkExport(context); // permisssions may need adjusting?
     }
 
-    public SystemTestBulkExport sendBulkExportQuery(BulkExportQuery query) {
-        driver.sendJob(query);
+    public SystemTestBulkExport sendBulkExportQuery() {
+        driver.sendJob(generateBulkExportQuery());
         return this;
     }
 
+    private BulkExportQuery generateBulkExportQuery() {
+        return BulkExportQuery.builder()
+                .exportId(UUID.randomUUID().toString())
+                .tableId(instance.getTableProperties().get(TABLE_NAME))
+                .build();
+    }
 }
