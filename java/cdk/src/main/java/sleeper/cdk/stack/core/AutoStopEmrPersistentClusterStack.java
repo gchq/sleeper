@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public class AutoStopEmrPersistentClusterStack extends NestedStack {
 
-    private IFunction lambda;
+
     private Provider provider;
 
     public AutoStopEmrPersistentClusterStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
@@ -62,7 +62,7 @@ public class AutoStopEmrPersistentClusterStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-stop-emr-persistent-cluster");
 
-        lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_EMR_PERSISTENT_CLUSTER, "Lambda", builder -> builder
+        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.AUTO_STOP_EMR_PERSISTENT_CLUSTER, "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
