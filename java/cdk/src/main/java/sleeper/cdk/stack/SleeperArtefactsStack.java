@@ -28,19 +28,20 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 
+import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
 import java.util.List;
-import java.util.Locale;
 
 public class SleeperArtefactsStack extends Stack {
 
     public SleeperArtefactsStack(App app, String id, StackProps props) {
         super(app, id, props);
+        String cleanId = Utils.cleanInstanceId(id);
 
         Bucket.Builder.create(this, "JarsBucket")
-                .bucketName(id.toLowerCase(Locale.ROOT) + "-jars")
+                .bucketName(cleanId + "-jars")
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -54,11 +55,11 @@ public class SleeperArtefactsStack extends Stack {
                 .build();
 
         for (LambdaJar jar : LambdaJar.all()) {
-            createRepository(id, jar.getImageName());
+            createRepository(cleanId, jar.getImageName());
         }
 
         for (DockerDeployment deployment : DockerDeployment.all()) {
-            Repository repository = createRepository(id, deployment.getDeploymentName());
+            Repository repository = createRepository(cleanId, deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
                 repository.addToResourcePolicy(PolicyStatement.Builder.create()
