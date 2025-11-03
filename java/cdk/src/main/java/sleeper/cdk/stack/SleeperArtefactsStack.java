@@ -28,7 +28,6 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 
-import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
@@ -36,12 +35,11 @@ import java.util.List;
 
 public class SleeperArtefactsStack extends Stack {
 
-    public SleeperArtefactsStack(App app, String id, StackProps props) {
-        super(app, id, props);
-        String cleanId = Utils.cleanInstanceId(id);
+    public SleeperArtefactsStack(App app, String stackId, String deploymentId, StackProps props) {
+        super(app, stackId, props);
 
         Bucket.Builder.create(this, "JarsBucket")
-                .bucketName(cleanId + "-jars")
+                .bucketName("sleeper-" + deploymentId + "-jars")
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -55,11 +53,11 @@ public class SleeperArtefactsStack extends Stack {
                 .build();
 
         for (LambdaJar jar : LambdaJar.all()) {
-            createRepository(cleanId, jar.getImageName());
+            createRepository(deploymentId, jar.getImageName());
         }
 
         for (DockerDeployment deployment : DockerDeployment.all()) {
-            Repository repository = createRepository(cleanId, deployment.getDeploymentName());
+            Repository repository = createRepository(deploymentId, deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
                 repository.addToResourcePolicy(PolicyStatement.Builder.create()
@@ -71,9 +69,9 @@ public class SleeperArtefactsStack extends Stack {
         }
     }
 
-    private Repository createRepository(String id, String imageName) {
+    private Repository createRepository(String deploymentId, String imageName) {
         return Repository.Builder.create(this, "Repository-" + imageName)
-                .repositoryName(id + "/" + imageName)
+                .repositoryName("sleeper-" + deploymentId + "/" + imageName)
                 .build();
     }
 

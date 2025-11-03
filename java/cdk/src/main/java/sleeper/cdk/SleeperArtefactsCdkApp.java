@@ -32,8 +32,12 @@ public class SleeperArtefactsCdkApp {
                 .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
-        new SleeperArtefactsStack(app, "SleeperArtefacts", StackProps.builder()
-                .stackName("SleeperArtefacts")
+        String deploymentId = (String) app.getNode().tryGetContext("id");
+        if (deploymentId == null) {
+            deploymentId = "artefacts";
+        }
+        new SleeperArtefactsStack(app, "SleeperArtefacts", deploymentId, StackProps.builder()
+                .stackName(deploymentId)
                 .env(environment)
                 .build());
         app.synth();
