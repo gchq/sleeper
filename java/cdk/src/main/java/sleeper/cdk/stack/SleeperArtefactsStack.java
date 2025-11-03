@@ -19,10 +19,19 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ecr.Repository;
+import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
 import software.amazon.awscdk.services.s3.BucketEncryption;
+
+import sleeper.core.deploy.DockerDeployment;
+import sleeper.core.deploy.LambdaJar;
+
+import java.util.List;
 
 public class SleeperArtefactsStack extends Stack {
 
@@ -41,6 +50,26 @@ public class SleeperArtefactsStack extends Stack {
                 // https://awsteele.com/blog/2020/12/24/aws-lambda-latest-is-dangerous.html
                 // https://docs.aws.amazon.com/cdk/api/v1/java/software/amazon/awscdk/services/lambda/Version.html
                 .versioned(true)
+                .build();
+
+        for (LambdaJar jar : LambdaJar.all()) {
+            createRepository(id, jar.getImageName());
+        }
+        for (DockerDeployment deployment : DockerDeployment.all()) {
+            Repository repository = createRepository(id, deployment.getDeploymentName());
+            if (deployment.isCreateEmrServerlessPolicy()) {
+                repository.addToResourcePolicy(PolicyStatement.Builder.create()
+                        .effect(Effect.ALLOW)
+                        .principals(List.of(new ServicePrincipal("emr-serverless.amazonaws.com")))
+                        .actions(List.of("ecr:BatchGetImage", "ecr:DescribeImages", "ecr:GetDownloadUrlForLayer"))
+                        .build());
+            }
+        }
+    }
+
+    private Repository createRepository(String id, String imageName) {
+        return Repository.Builder.create(this, "Repository-" + imageName)
+                .repositoryName(id + "/" + imageName)
                 .build();
     }
 
