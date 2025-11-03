@@ -30,6 +30,9 @@ import sleeper.cdk.util.Utils;
  */
 public class SleeperArtefactsCdkApp {
 
+    private SleeperArtefactsCdkApp() {
+    }
+
     public static void main(String[] args) {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
