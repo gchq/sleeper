@@ -230,7 +230,7 @@
         <assertj.version>3.27.6</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>25.7.0</approvaltests.version>
-        <json-path.version>2.9.0</json-path.version>
+        <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
         <jsonunit.version>5.0.0</jsonunit.version>
         <checkstyle.version>12.1.1</checkstyle.version>
