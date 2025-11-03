@@ -23,6 +23,9 @@ import java.util.UUID;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
+// Future methods for class
+// - waitForBulkExportQueries
+// - getBulkExportResults
 public class SystemTestBulkExport {
     private final SystemTestInstanceContext instance;
     private final BulkExportDriver driver;
@@ -32,16 +35,15 @@ public class SystemTestBulkExport {
         driver = instance.adminDrivers().bulkExport(context);
     }
 
-    public BulkExportQuery sendBulkExportQuery() {
-        BulkExportQuery query = generateBulkExportQuery();
-        driver.sendJob(query);
-        return query;
+    public SystemTestBulkExport sendBulkExportQuery() {
+        driver.sendJob(generateBulkExportQuery());
+        return this;
     }
 
     private BulkExportQuery generateBulkExportQuery() {
         return BulkExportQuery.builder()
                 .exportId(UUID.randomUUID().toString())
-                .tableId(instance.getTableProperties().get(TABLE_NAME))
+                .tableName(instance.getTableProperties().get(TABLE_NAME))
                 .build();
     }
 }
