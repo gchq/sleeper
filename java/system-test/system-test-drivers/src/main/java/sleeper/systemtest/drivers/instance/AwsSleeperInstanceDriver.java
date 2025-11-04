@@ -84,7 +84,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     }
 
     public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
-        LOGGER.info("CreateMultiPlatformBuilder:", parameters.isCreateMultiPlatformBuilder());
+        LOGGER.info("CreateMultiPlatformBuilder: {}", parameters.isCreateMultiPlatformBuilder());
         if (deployedStackIsPresent(instanceId)) {
             return false;
         }
@@ -126,7 +126,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     }
 
     public void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
-        LOGGER.info("CreateMultiPlatformBuilder:", parameters.isCreateMultiPlatformBuilder());
+        LOGGER.info("CreateMultiPlatformBuilder: {}", parameters.isCreateMultiPlatformBuilder());
         try {
             DeployExistingInstance.builder()
                     .clients(s3, ecr)

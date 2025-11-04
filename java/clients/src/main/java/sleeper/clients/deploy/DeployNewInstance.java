@@ -110,7 +110,7 @@ public class DeployNewInstance {
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
         deployInstanceConfiguration.validate();
-        LOGGER.info("CreateMultiPlatformBuilder:", createMultiPlatformBuilder);
+        LOGGER.info("CreateMultiPlatformBuilder: {}", createMultiPlatformBuilder);
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                 new UploadDockerImagesToEcr(

@@ -95,7 +95,7 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
-        LOGGER.info("CreateMultiPlatformBuilder:", createMultiPlatformBuilder);
+        LOGGER.info("CreateMultiPlatformBuilder: {}", createMultiPlatformBuilder);
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3, scriptsDirectory),
                 new UploadDockerImagesToEcr(
