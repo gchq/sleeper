@@ -27,8 +27,8 @@ public class PythonApiDsl {
         this.context = context;
     }
 
-    public SystemTestPythonIngest ingestByQueue() {
-        return new SystemTestPythonIngest(context);
+    public PythonIngestDsl ingestByQueue() {
+        return new PythonIngestDsl(context);
     }
 
     public SystemTestPythonBulkImport bulkImport() {

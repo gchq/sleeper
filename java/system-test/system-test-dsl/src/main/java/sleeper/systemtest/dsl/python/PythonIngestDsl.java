@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class SystemTestPythonIngest {
+public class PythonIngestDsl {
     private final IngestByAnyQueueDriver fromS3Driver;
     private final IngestLocalFileByAnyQueueDriver localFileDriver;
     private final IngestTasksDriver tasksDriver;
@@ -38,7 +38,7 @@ public class SystemTestPythonIngest {
     private final PollWithRetriesDriver pollDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestPythonIngest(SystemTestContext context) {
+    public PythonIngestDsl(SystemTestContext context) {
         SystemTestDrivers drivers = context.instance().adminDrivers();
         fromS3Driver = drivers.pythonIngest(context);
         localFileDriver = drivers.pythonIngestLocalFile(context);
@@ -47,21 +47,21 @@ public class SystemTestPythonIngest {
         pollDriver = drivers.pollWithRetries();
     }
 
-    public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) {
+    public PythonIngestDsl uploadingLocalFile(Path tempDir, String file) {
         String jobId = UUID.randomUUID().toString();
         localFileDriver.uploadLocalFileAndSendJob(tempDir, jobId, file);
         sentJobIds.add(jobId);
         return this;
     }
 
-    public SystemTestPythonIngest fromS3(String... files) {
+    public PythonIngestDsl fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
         fromS3Driver.sendJobWithFiles(jobId, files);
         sentJobIds.add(jobId);
         return this;
     }
 
-    public SystemTestPythonIngest waitForTask() {
+    public PythonIngestDsl waitForTask() {
         tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobIds, pollDriver);
         return this;
     }
