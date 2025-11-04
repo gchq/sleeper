@@ -19,48 +19,48 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public record CdkCommandNew(List<String> command, List<String> arguments) {
+public record CdkCommand(List<String> command, List<String> arguments) {
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public static CdkCommandNew deployArtefacts(String deploymentId, List<String> extraEcrImages) {
+    public static CdkCommand deployArtefacts(String deploymentId, List<String> extraEcrImages) {
         return builder().deploy()
                 .context("id", deploymentId)
                 .context("extraEcrImages", String.join(",", extraEcrImages))
                 .build();
     }
 
-    public static CdkCommandNew deployPropertiesChange(Path propertiesFile) {
+    public static CdkCommand deployPropertiesChange(Path propertiesFile) {
         return builder().deploy().propertiesFile(propertiesFile).build();
     }
 
-    public static CdkCommandNew deploySystemTestStandalone(Path propertiesFile) {
+    public static CdkCommand deploySystemTestStandalone(Path propertiesFile) {
         return builder().deploy().propertiesFile(propertiesFile).build();
     }
 
-    public static CdkCommandNew deployExisting() {
+    public static CdkCommand deployExisting() {
         return builder().deploy().skipVersionCheck(true).build();
     }
 
-    public static CdkCommandNew deployExistingPaused() {
+    public static CdkCommand deployExistingPaused() {
         return builder().deploy().skipVersionCheck(true).deployPaused(true).build();
     }
 
-    public static CdkCommandNew deployNew() {
+    public static CdkCommand deployNew() {
         return builder().deploy().ensureNewInstance(true).build();
     }
 
-    public static CdkCommandNew deployNewPaused() {
+    public static CdkCommand deployNewPaused() {
         return builder().deploy().ensureNewInstance(true).deployPaused(true).build();
     }
 
-    public static CdkCommandNew destroy() {
+    public static CdkCommand destroy() {
         return builder().destroy().validate(false).build();
     }
 
-    public CdkCommandNew withPropertiesFile(Path propertiesFile) {
+    public CdkCommand withPropertiesFile(Path propertiesFile) {
         return builder().command(command).propertiesFile(propertiesFile).arguments(arguments).build();
     }
 
@@ -119,8 +119,8 @@ public record CdkCommandNew(List<String> command, List<String> arguments) {
             return context(variable, "" + value);
         }
 
-        public CdkCommandNew build() {
-            return new CdkCommandNew(command, arguments);
+        public CdkCommand build() {
+            return new CdkCommand(command, arguments);
         }
     }
 }

@@ -32,7 +32,6 @@ import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.CdkCommandNew;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
@@ -102,7 +101,7 @@ public class DeployInstance {
 
             deployInstance.deploy(DeployInstanceRequest.builder()
                     .instanceConfig(instanceConfiguration)
-                    .cdkCommand(CdkCommandNew.builder().deploy()
+                    .cdkCommand(CdkCommand.builder().deploy()
                             .ensureNewInstance(false)
                             .skipVersionCheck(true)
                             .deployPaused(deployPaused)

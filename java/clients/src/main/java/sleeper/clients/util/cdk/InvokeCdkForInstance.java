@@ -63,7 +63,7 @@ public class InvokeCdkForInstance {
         return builder().scriptsDirectory(scriptsDirectory).build();
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommandNew cdkCommand) throws IOException, InterruptedException {
+    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
         invoke(inferType(instanceProperties), cdkCommand);
     }
 
@@ -75,7 +75,7 @@ public class InvokeCdkForInstance {
         }
     }
 
-    public void invoke(Type instanceType, CdkCommandNew cdkCommand) throws IOException, InterruptedException {
+    public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",

@@ -26,7 +26,7 @@ import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
-import sleeper.clients.util.cdk.CdkCommandNew;
+import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
@@ -104,7 +104,7 @@ public class DeployExistingInstance {
 
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(DeployInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
-                .cdkCommand(deployPaused ? CdkCommandNew.deployExistingPaused() : CdkCommandNew.deployExisting())
+                .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
                 .inferInstanceType()
                 .build());
 

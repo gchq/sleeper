@@ -16,7 +16,7 @@
 package sleeper.clients.deploy;
 
 import sleeper.clients.deploy.container.StackDockerImage;
-import sleeper.clients.util.cdk.CdkCommandNew;
+import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 public class DeployInstanceRequest {
 
     private final DeployInstanceConfiguration instanceConfig;
-    private final CdkCommandNew cdkCommand;
+    private final CdkCommand cdkCommand;
     private final InvokeCdkForInstance.Type instanceType;
     private final List<StackDockerImage> extraDockerImages;
 
@@ -61,7 +61,7 @@ public class DeployInstanceRequest {
         return instanceType;
     }
 
-    public CdkCommandNew getCdkCommand() {
+    public CdkCommand getCdkCommand() {
         return cdkCommand;
     }
 
@@ -71,7 +71,7 @@ public class DeployInstanceRequest {
 
     public static class Builder {
         private DeployInstanceConfiguration instanceConfig;
-        private CdkCommandNew cdkCommand;
+        private CdkCommand cdkCommand;
         private InvokeCdkForInstance.Type instanceType = InvokeCdkForInstance.Type.STANDARD;
         private List<StackDockerImage> extraDockerImages = List.of();
 
@@ -80,7 +80,7 @@ public class DeployInstanceRequest {
             return this;
         }
 
-        public Builder cdkCommand(CdkCommandNew cdkCommand) {
+        public Builder cdkCommand(CdkCommand cdkCommand) {
             this.cdkCommand = cdkCommand;
             return this;
         }
