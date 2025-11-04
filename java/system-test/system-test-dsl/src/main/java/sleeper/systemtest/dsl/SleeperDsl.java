@@ -39,10 +39,10 @@ import sleeper.systemtest.dsl.partitioning.PartitioningDsl;
 import sleeper.systemtest.dsl.python.PythonApiDsl;
 import sleeper.systemtest.dsl.query.QueryDsl;
 import sleeper.systemtest.dsl.reporting.ReportingDsl;
+import sleeper.systemtest.dsl.sourcedata.ClusterDsl;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
-import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.dsl.statestore.SystemTestStateStore;
@@ -155,8 +155,8 @@ public class SleeperDsl {
         return new TableMetricsDsl(context.instance().adminDrivers().tableMetrics(context));
     }
 
-    public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(context, baseDrivers);
+    public ClusterDsl systemTestCluster() {
+        return new ClusterDsl(context, baseDrivers);
     }
 
     public PythonApiDsl pythonApi() {
