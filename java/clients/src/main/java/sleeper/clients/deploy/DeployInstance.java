@@ -31,6 +31,7 @@ import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.CdkCommandNew;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.deploy.DeployInstanceConfiguration;

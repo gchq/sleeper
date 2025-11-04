@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
-import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.CdkCommandNew;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
@@ -428,7 +428,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             tablePropertiesHolder.clear();
             loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
             return null;
-        }).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        }).when(cdk).invokeInferringType(any(), eq(CdkCommandNew.deployPropertiesChange(propertiesFile())));
     }
 
     private void createTableInS3(String tableName) {
@@ -446,14 +446,14 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     }
 
     private void verifyAnyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        verify(cdk).invokeInferringType(any(), eq(CdkCommandNew.deployPropertiesChange(propertiesFile())));
     }
 
     private void verifyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(instanceProperties, CdkCommand.deployPropertiesChange(propertiesFile()));
+        verify(cdk).invokeInferringType(instanceProperties, CdkCommandNew.deployPropertiesChange(propertiesFile()));
     }
 
     private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {
-        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
+        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkCommandNew.deployPropertiesChange(propertiesFile())));
     }
 }

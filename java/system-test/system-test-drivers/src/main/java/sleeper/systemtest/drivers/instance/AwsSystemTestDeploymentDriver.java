@@ -30,7 +30,7 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
-import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.CdkCommandNew;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
@@ -97,7 +97,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                     .version(SleeperVersion.getVersion())
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .build().invoke(SYSTEM_TEST_STANDALONE,
-                            CdkCommand.deploySystemTestStandalone(propertiesFile));
+                            CdkCommandNew.deploySystemTestStandalone(propertiesFile));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

@@ -34,7 +34,6 @@ public class InvokeCdkForInstance {
     private final Path jarsDirectory;
     private final String version;
     private final CommandRunner runCommand;
-    private final List<String> arguments;
 
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
@@ -54,7 +53,6 @@ public class InvokeCdkForInstance {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         runCommand = requireNonNull(builder.runCommand, "runCommand must not be null");
-        arguments = requireNonNull(builder.arguments, "arguments must not be null");
     }
 
     public static Builder builder() {
@@ -65,7 +63,7 @@ public class InvokeCdkForInstance {
         return builder().scriptsDirectory(scriptsDirectory).build();
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand) throws IOException, InterruptedException {
+    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommandNew cdkCommand) throws IOException, InterruptedException {
         invoke(inferType(instanceProperties), cdkCommand);
     }
 
@@ -77,13 +75,12 @@ public class InvokeCdkForInstance {
         }
     }
 
-    public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
+    public void invoke(Type instanceType, CdkCommandNew cdkCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
                         instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)));
         cdkCommand.getCommand().forEach(command::add);
-        command.addAll(arguments);
         cdkCommand.getArguments().forEach(command::add);
         command.add("*");
 
@@ -106,19 +103,12 @@ public class InvokeCdkForInstance {
         private Path jarsDirectory;
         private String version = SleeperVersion.getVersion();
         private CommandRunner runCommand = CommandUtils::runCommandInheritIO;
-        private List<String> arguments = new ArrayList<>();
 
         private Builder() {
         }
 
         public Builder scriptsDirectory(Path scriptsDirectory) {
-            return propertiesFile(scriptsDirectory.resolve("generated").resolve("instance.properties"))
-                    .jarsDirectory(scriptsDirectory.resolve("jars"));
-        }
-
-        public Builder propertiesFile(Path propertiesFile) {
-            arguments.addAll(List.of("-c", String.format("propertiesfile=%s", propertiesFile)));
-            return this;
+            return jarsDirectory(scriptsDirectory.resolve("jars"));
         }
 
         public Builder jarsDirectory(Path jarsDirectory) {
