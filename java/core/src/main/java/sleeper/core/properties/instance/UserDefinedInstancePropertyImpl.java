@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * A Sleeper instance property which is set by the user.
@@ -32,6 +33,7 @@ import java.util.function.Predicate;
 class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final String propertyName;
     private final String defaultValue;
+    private final DefaultBehaviour defaultBehaviour;
     private final Predicate<String> validationPredicate;
     private final String description;
     private final PropertyGroup propertyGroup;
@@ -45,6 +47,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private UserDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         defaultValue = builder.defaultValue;
+        defaultBehaviour = Objects.requireNonNull(builder.defaultBehaviour, "defaultBehaviour must not be null");
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
@@ -128,13 +131,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         if (value != null) {
             return value;
         }
-
-        InstanceProperty tempProperty = getDefaultProperty();
-        if (tempProperty != null) {
-            return instanceProperties.get(tempProperty);
-        } else {
-            return getDefaultValue();
-        }
+        return defaultBehaviour.getDefault(instanceProperties);
     }
 
     /**
@@ -143,6 +140,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     static final class Builder {
         private String propertyName;
         private String defaultValue;
+        private DefaultBehaviour defaultBehaviour = DefaultBehaviour.defaultToValue(null);
         private Predicate<String> validationPredicate = s -> true;
         private String description;
         private PropertyGroup propertyGroup;
@@ -163,7 +161,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         }
 
         public Builder defaultValue(String defaultValue) {
-            this.defaultValue = defaultValue;
+            this.defaultBehaviour = DefaultBehaviour.defaultToValue(defaultValue);
             return this;
         }
 
@@ -184,6 +182,14 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
         public Builder defaultProperty(InstanceProperty defaultProperty) {
             this.defaultProperty = defaultProperty;
+            this.defaultBehaviour = DefaultBehaviour.defaultToProperty(defaultProperty);
+            this.validationPredicate = defaultProperty.getValidationPredicate();
+            return this;
+        }
+
+        public Builder defaultProperty(InstanceProperty defaultProperty, UnaryOperator<String> adjustValue) {
+            this.defaultProperty = defaultProperty;
+            this.defaultBehaviour = DefaultBehaviour.defaultToProperty(defaultProperty, adjustValue);
             this.validationPredicate = defaultProperty.getValidationPredicate();
             return this;
         }
@@ -224,6 +230,27 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             UserDefinedInstanceProperty property = new UserDefinedInstancePropertyImpl(this);
             addToIndex.accept(property);
             return property;
+        }
+    }
+
+    /**
+     * Behaviour to get the default value for a property. Used to default to the value of another property, or perform
+     * some other logic.
+     */
+    interface DefaultBehaviour {
+
+        String getDefault(SleeperPropertyValues<InstanceProperty> instanceProperties);
+
+        static DefaultBehaviour defaultToValue(String value) {
+            return properties -> value;
+        }
+
+        static DefaultBehaviour defaultToProperty(InstanceProperty property) {
+            return properties -> properties.get(property);
+        }
+
+        static DefaultBehaviour defaultToProperty(InstanceProperty property, UnaryOperator<String> adjustValue) {
+            return properties -> Optional.ofNullable(properties.get(property)).map(adjustValue).orElse(null);
         }
     }
 }

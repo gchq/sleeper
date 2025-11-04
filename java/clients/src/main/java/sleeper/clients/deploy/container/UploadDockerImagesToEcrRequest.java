@@ -17,7 +17,6 @@
 package sleeper.clients.deploy.container;
 
 import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.ArrayList;
@@ -28,6 +27,7 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesToEcrRequest {
@@ -132,7 +132,7 @@ public class UploadDockerImagesToEcrRequest {
         }
 
         public Builder properties(InstanceProperties properties) {
-            return ecrPrefix(DockerDeployment.getEcrRepositoryPrefix(properties))
+            return ecrPrefix(properties.get(ECR_REPOSITORY_PREFIX))
                     .account(properties.get(ACCOUNT))
                     .region(properties.get(REGION))
                     .version(properties.get(VERSION));

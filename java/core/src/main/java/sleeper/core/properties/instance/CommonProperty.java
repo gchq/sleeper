@@ -19,6 +19,7 @@ package sleeper.core.properties.instance;
 import sleeper.core.properties.SleeperPropertyIndex;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.util.List;
@@ -38,6 +39,7 @@ public interface CommonProperty {
             .editable(false).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
             .description("The S3 bucket containing the jar files of the Sleeper components.")
+            .defaultProperty(ID, SleeperArtefactsLocation::getDefaultJarsBucketName)
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
@@ -179,8 +181,11 @@ public interface CommonProperty {
     UserDefinedInstanceProperty ECR_REPOSITORY_PREFIX = Index.propertyBuilder("sleeper.ecr.repository.prefix")
             .description("If set, this property will be used as a prefix for the names of ECR repositories. " +
                     "If unset, then the instance ID will be used to determine the names instead.\n" +
+                    "Repository names are generated in the format `<prefix>/<image name>`. The default prefix is the " +
+                    "instance ID.\n" +
                     "Note: This is only used by the deployment scripts to upload Docker images, not the CDK. " +
                     "We may add the ability to use this in the CDK in the future.")
+            .defaultProperty(ID, SleeperArtefactsLocation::getDefaultEcrRepositoryPrefix)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
