@@ -93,12 +93,11 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
             Path propertiesFile = generatedDirectory.resolve("system-test.properties");
             deployProperties.save(propertiesFile);
             InvokeCdkForInstance.builder()
-                    .propertiesFile(propertiesFile)
                     .jarsDirectory(parameters.getJarsDirectory())
                     .version(SleeperVersion.getVersion())
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .build().invoke(SYSTEM_TEST_STANDALONE,
-                            CdkCommand.deploySystemTestStandalone());
+                            CdkCommand.deploySystemTestStandalone(propertiesFile));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

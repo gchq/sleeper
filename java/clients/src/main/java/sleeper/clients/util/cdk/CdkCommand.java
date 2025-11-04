@@ -33,8 +33,8 @@ public interface CdkCommand {
         return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).propertiesFile(propertiesFile).build();
     }
 
-    static CdkDeploy deploySystemTestStandalone() {
-        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).build();
+    static CdkDeploy deploySystemTestStandalone(Path propertiesFile) {
+        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).propertiesFile(propertiesFile).build();
     }
 
     static CdkDeploy deployExisting() {
