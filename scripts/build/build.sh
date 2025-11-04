@@ -33,7 +33,7 @@ echo "For the first build, this should take up to 20-50 minutes. Subsequent buil
 echo "Rust compilation can be skipped to speed up the process by passing the argument -DskipRust."
 echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
-mvn clean install -Pquick -T 1C "$@"
+mvn clean install -q -Pquick -T 1C "$@"
 
 "$THIS_DIR/copyBuildOutput.sh"
 
