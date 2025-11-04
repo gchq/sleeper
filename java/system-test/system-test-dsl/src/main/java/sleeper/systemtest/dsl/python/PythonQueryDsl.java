@@ -26,37 +26,37 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class SystemTestPythonQuery {
+public class PythonQueryDsl {
     private final SystemTestInstanceContext instance;
     private final PythonQueryTypesDriver driver;
     private final Path outputDir;
     private final List<String> queryIds = new ArrayList<>();
 
-    public SystemTestPythonQuery(SystemTestContext context, Path outputDir) {
+    public PythonQueryDsl(SystemTestContext context, Path outputDir) {
         this.instance = context.instance();
         this.driver = context.instance().adminDrivers().pythonQuery(context);
         this.outputDir = outputDir;
     }
 
-    public SystemTestPythonQuery exactKeys(String keyName, String... keyValues) {
+    public PythonQueryDsl exactKeys(String keyName, String... keyValues) {
         String queryId = UUID.randomUUID().toString();
         driver.exactKeys(outputDir, queryId, keyName, List.of(keyValues));
         queryIds.add(queryId);
         return this;
     }
 
-    public SystemTestPythonQuery range(String key, Object min, Object max) {
+    public PythonQueryDsl range(String key, Object min, Object max) {
         return range(key, instance.getTableName(), min, max);
     }
 
-    public SystemTestPythonQuery range(String key, String table, Object min, Object max) {
+    public PythonQueryDsl range(String key, String table, Object min, Object max) {
         String queryId = UUID.randomUUID().toString();
         driver.range(outputDir, queryId, key, table, min, max);
         queryIds.add(queryId);
         return this;
     }
 
-    public SystemTestPythonQuery range(String key, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
+    public PythonQueryDsl range(String key, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
         String queryId = UUID.randomUUID().toString();
         driver.range(outputDir, queryId, key, min, minInclusive, max, maxInclusive);
         queryIds.add(queryId);

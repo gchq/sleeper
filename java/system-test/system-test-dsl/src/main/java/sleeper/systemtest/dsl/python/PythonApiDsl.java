@@ -35,7 +35,7 @@ public class PythonApiDsl {
         return new PythonBulkImportDsl(context);
     }
 
-    public SystemTestPythonQuery query(Path outputDir) {
-        return new SystemTestPythonQuery(context, outputDir);
+    public PythonQueryDsl query(Path outputDir) {
+        return new PythonQueryDsl(context, outputDir);
     }
 }
