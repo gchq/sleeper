@@ -41,7 +41,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_RULE;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -54,7 +53,6 @@ public class PopulateInstancePropertiesTest {
         InstanceProperties expected = new InstanceProperties();
         expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
-        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");
         expected.set(ACCOUNT, "test-account-id");
@@ -116,7 +114,6 @@ public class PopulateInstancePropertiesTest {
         InstanceProperties expected = new InstanceProperties();
         expected.set(ID, "test-instance");
         expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
-        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
         expected.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
         expected.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-BulkExportJobCreationRule");
