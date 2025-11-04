@@ -23,12 +23,12 @@ import java.util.Map;
 import static sleeper.core.properties.table.TableProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.INGEST_ROW_BATCH_TYPE;
 
-public class SystemTestIngestType {
+public class IngestTypeDsl {
 
     private final String fileWriterType;
     private final String rowBatchType;
 
-    private SystemTestIngestType(String fileWriterType, String rowBatchType) {
+    private IngestTypeDsl(String fileWriterType, String rowBatchType) {
         this.fileWriterType = fileWriterType;
         this.rowBatchType = rowBatchType;
     }
@@ -39,15 +39,15 @@ public class SystemTestIngestType {
                 INGEST_PARTITION_FILE_WRITER_TYPE, fileWriterType));
     }
 
-    public static SystemTestIngestType directWriteBackedByArrow() {
-        return new SystemTestIngestType("direct", "arrow");
+    public static IngestTypeDsl directWriteBackedByArrow() {
+        return new IngestTypeDsl("direct", "arrow");
     }
 
-    public static SystemTestIngestType asyncWriteBackedByArrow() {
-        return new SystemTestIngestType("async", "arrow");
+    public static IngestTypeDsl asyncWriteBackedByArrow() {
+        return new IngestTypeDsl("async", "arrow");
     }
 
-    public static SystemTestIngestType directWriteBackedByArrayList() {
-        return new SystemTestIngestType("direct", "arraylist");
+    public static IngestTypeDsl directWriteBackedByArrayList() {
+        return new IngestTypeDsl("direct", "arraylist");
     }
 }

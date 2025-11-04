@@ -39,7 +39,7 @@ public class IngestDsl {
         this.adminDrivers = context.instance().adminDrivers();
     }
 
-    public IngestDsl setType(SystemTestIngestType type) {
+    public IngestDsl setType(IngestTypeDsl type) {
         type.applyTo(instance());
         return this;
     }

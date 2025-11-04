@@ -25,7 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.ingest.SystemTestIngestType;
+import sleeper.systemtest.dsl.ingest.IngestTypeDsl;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -103,7 +103,7 @@ public class IngestST {
 
     @ParameterizedTest
     @MethodSource("ingestTypesToTestWithManyRows")
-    void shouldIngest20kRowsWithIngestType(SystemTestIngestType ingestType, SleeperDsl sleeper) {
+    void shouldIngest20kRowsWithIngestType(IngestTypeDsl ingestType, SleeperDsl sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 20000));
@@ -125,10 +125,10 @@ public class IngestST {
     private static Stream<Arguments> ingestTypesToTestWithManyRows() {
         return Stream.of(
                 Arguments.of(Named.of("Direct write, backed by Arrow",
-                        SystemTestIngestType.directWriteBackedByArrow())),
+                        IngestTypeDsl.directWriteBackedByArrow())),
                 Arguments.of(Named.of("Async write, backed by Arrow",
-                        SystemTestIngestType.asyncWriteBackedByArrow())),
+                        IngestTypeDsl.asyncWriteBackedByArrow())),
                 Arguments.of(Named.of("Direct write, backed by ArrayList",
-                        SystemTestIngestType.directWriteBackedByArrayList())));
+                        IngestTypeDsl.directWriteBackedByArrayList())));
     }
 }
