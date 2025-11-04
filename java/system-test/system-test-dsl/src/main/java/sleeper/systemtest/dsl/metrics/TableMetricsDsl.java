@@ -18,15 +18,15 @@ package sleeper.systemtest.dsl.metrics;
 
 import sleeper.core.metrics.TableMetrics;
 
-public class SystemTestTableMetrics {
+public class TableMetricsDsl {
 
     private final TableMetricsDriver driver;
 
-    public SystemTestTableMetrics(TableMetricsDriver driver) {
+    public TableMetricsDsl(TableMetricsDriver driver) {
         this.driver = driver;
     }
 
-    public SystemTestTableMetrics generate() {
+    public TableMetricsDsl generate() {
         driver.generateTableMetrics();
         return this;
     }
