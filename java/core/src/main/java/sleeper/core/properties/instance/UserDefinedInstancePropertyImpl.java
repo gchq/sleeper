@@ -162,6 +162,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
 
         public Builder defaultValue(String defaultValue) {
             this.defaultBehaviour = DefaultBehaviour.defaultToValue(defaultValue);
+            this.defaultValue = defaultValue;
             return this;
         }
 
