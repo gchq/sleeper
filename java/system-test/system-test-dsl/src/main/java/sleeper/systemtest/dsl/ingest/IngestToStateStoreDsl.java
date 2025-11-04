@@ -34,13 +34,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class SystemTestIngestToStateStore {
+public class IngestToStateStoreDsl {
 
     private final SystemTestContext context;
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext ingestSource;
 
-    public SystemTestIngestToStateStore(SystemTestContext context) {
+    public IngestToStateStoreDsl(SystemTestContext context) {
         this.context = context;
         this.instance = context.instance();
         this.ingestSource = context.sourceFiles();
@@ -56,7 +56,7 @@ public class SystemTestIngestToStateStore {
         return duplications;
     }
 
-    public SystemTestIngestToStateStore addFileOnPartition(
+    public IngestToStateStoreDsl addFileOnPartition(
             String name, String partitionId, Row... rows) {
         ingestSource.writeFile(sourceFilesDriver(), name, SourceFilesFolder.writeToDataBucket(instance), true, Stream.of(rows));
         addFiles(List.of(FileReference.builder()
@@ -69,7 +69,7 @@ public class SystemTestIngestToStateStore {
         return this;
     }
 
-    public SystemTestIngestToStateStore addFileOnPartition(
+    public IngestToStateStoreDsl addFileOnPartition(
             String name, String partitionId, long numberOfRows) {
         String path = ingestSource.getFilePath(name);
         addFiles(List.of(FileReference.builder()
@@ -82,7 +82,7 @@ public class SystemTestIngestToStateStore {
         return this;
     }
 
-    public SystemTestIngestToStateStore addFileOnEveryPartition(String name, long numberOfRows) {
+    public IngestToStateStoreDsl addFileOnEveryPartition(String name, long numberOfRows) {
         String path = ingestSource.getFilePath(name);
         PartitionTree partitionTree = new PartitionTree(instance.getStateStore().getAllPartitions());
         List<Partition> leafPartitions = partitionTree.getLeafPartitions();

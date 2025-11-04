@@ -52,8 +52,8 @@ public class IngestDsl {
         return new DirectIngestDsl(instance(), adminDrivers.directIngest(context), tempDir);
     }
 
-    public SystemTestIngestToStateStore toStateStore() {
-        return new SystemTestIngestToStateStore(context);
+    public IngestToStateStoreDsl toStateStore() {
+        return new IngestToStateStoreDsl(context);
     }
 
     public IngestByQueueDsl byQueue() {
