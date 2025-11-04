@@ -91,7 +91,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldSetEnsureNewInstanceFlagWhenDeployingNewInstance() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommandNew.deployNew(propertiesFile));
+            cdk().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommandNew.deployNew().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -106,7 +106,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldSetSkipVersionCheckFlagWhenDeployingExistingInstance() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommandNew.deployExisting(propertiesFile));
+            cdk().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommandNew.deployExisting().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -121,7 +121,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldSetDeployPausedFlagWhenDeployingNewInstance() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommandNew.deployNewPaused(propertiesFile));
+            cdk().invoke(InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommandNew.deployNewPaused().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -138,7 +138,7 @@ class InvokeCdkForInstanceTest {
         void shouldThrowIOExceptionWhenCommandFails() {
             // Given
             InvokeCdkForInstance cdk = cdk(returnExitCode(1)); // Anything but 0 is a failed exit code
-            CdkCommandNew cdkCommand = CdkCommandNew.deployExisting(propertiesFile);
+            CdkCommandNew cdkCommand = CdkCommandNew.deployExisting().withPropertiesFile(propertiesFile);
 
             // When / Then
             assertThatThrownBy(() -> cdk.invoke(InvokeCdkForInstance.Type.STANDARD, cdkCommand))
@@ -153,7 +153,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldRunStandardCdkDestroySuccessfully() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommandNew.destroy(propertiesFile));
+            cdk().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommandNew.destroy().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -167,7 +167,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommandNew.destroy(propertiesFile));
+            cdk().invoke(InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommandNew.destroy().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",
@@ -182,7 +182,7 @@ class InvokeCdkForInstanceTest {
         void shouldThrowIOExceptionWhenCommandFails() {
             // Given
             InvokeCdkForInstance cdk = cdk(returnExitCode(1));
-            CdkCommandNew cdkCommand = CdkCommandNew.destroy(propertiesFile);
+            CdkCommandNew cdkCommand = CdkCommandNew.destroy().withPropertiesFile(propertiesFile);
 
             // When / Then
             assertThatThrownBy(() -> cdk.invoke(InvokeCdkForInstance.Type.STANDARD, cdkCommand))
@@ -200,7 +200,7 @@ class InvokeCdkForInstanceTest {
             InstanceProperties instanceProperties = createTestInstanceProperties();
 
             // When
-            cdk().invokeInferringType(instanceProperties, CdkCommandNew.deployExisting(propertiesFile));
+            cdk().invokeInferringType(instanceProperties, CdkCommandNew.deployExisting().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(singleCommand(commandsThatRan))
@@ -216,7 +216,7 @@ class InvokeCdkForInstanceTest {
                             "sleeper.systemtest.writers=123"));
 
             // When
-            cdk().invokeInferringType(instanceProperties, CdkCommandNew.deployExisting(propertiesFile));
+            cdk().invokeInferringType(instanceProperties, CdkCommandNew.deployExisting().withPropertiesFile(propertiesFile));
 
             // Then
             assertThat(singleCommand(commandsThatRan))

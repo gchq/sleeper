@@ -17,9 +17,7 @@ package sleeper.clients.util.cdk;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 public record CdkCommandNew(List<String> command, List<String> arguments) implements CdkCommand {
@@ -43,24 +41,24 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
         return builder().deploy().propertiesFile(propertiesFile).build();
     }
 
-    public static CdkCommandNew deployExisting(Path propertiesFile) {
-        return builder().deploy().propertiesFile(propertiesFile).skipVersionCheck(true).build();
+    public static CdkCommandNew deployExisting() {
+        return builder().deploy().skipVersionCheck(true).build();
     }
 
-    public static CdkCommandNew deployExistingPaused(Path propertiesFile) {
-        return builder().deploy().propertiesFile(propertiesFile).skipVersionCheck(true).deployPaused(true).build();
+    public static CdkCommandNew deployExistingPaused() {
+        return builder().deploy().skipVersionCheck(true).deployPaused(true).build();
     }
 
-    public static CdkCommandNew deployNew(Path propertiesFile) {
-        return builder().deploy().propertiesFile(propertiesFile).ensureNewInstance(true).build();
+    public static CdkCommandNew deployNew() {
+        return builder().deploy().ensureNewInstance(true).build();
     }
 
-    public static CdkCommandNew deployNewPaused(Path propertiesFile) {
-        return builder().deploy().propertiesFile(propertiesFile).ensureNewInstance(true).deployPaused(true).build();
+    public static CdkCommandNew deployNewPaused() {
+        return builder().deploy().ensureNewInstance(true).deployPaused(true).build();
     }
 
-    public static CdkCommandNew destroy(Path propertiesFile) {
-        return builder().destroy().propertiesFile(propertiesFile).validate(false).build();
+    public static CdkCommandNew destroy() {
+        return builder().destroy().validate(false).build();
     }
 
     @Override
@@ -73,14 +71,13 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
         return arguments.stream();
     }
 
-    public Builder toBuilder() {
-        return builder().command(command).arguments(arguments);
+    public CdkCommandNew withPropertiesFile(Path propertiesFile) {
+        return builder().command(command).propertiesFile(propertiesFile).arguments(arguments).build();
     }
 
     public static final class Builder {
         private List<String> command;
-        private List<String> arguments;
-        private Map<String, String> context = new LinkedHashMap<>();
+        private List<String> arguments = new ArrayList<>();
 
         private Builder() {
         }
@@ -100,7 +97,7 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
         }
 
         public Builder arguments(List<String> arguments) {
-            this.arguments = arguments;
+            this.arguments.addAll(arguments);
             return this;
         }
 
@@ -125,7 +122,7 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
         }
 
         public Builder context(String variable, String value) {
-            context.put(variable, value);
+            arguments.addAll(List.of("-c", variable + "=" + value));
             return this;
         }
 
@@ -134,8 +131,6 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
         }
 
         public CdkCommandNew build() {
-            List<String> arguments = new ArrayList<>(this.arguments);
-            context.forEach((variable, value) -> arguments.addAll(List.of("-c", variable + "=" + value)));
             return new CdkCommandNew(command, arguments);
         }
     }
