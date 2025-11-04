@@ -121,6 +121,7 @@ public class DeployInstance {
         LOGGER.info("instanceId: {}", instanceProperties.get(ID));
         LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
         LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
+        // TODO only deploy artefacts if we're not using previously deployed artefacts
         invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID), request.getExtraDockerImageNames()));
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
