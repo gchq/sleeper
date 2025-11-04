@@ -19,8 +19,8 @@ use predicates::prelude::*; // Used for writing assertions
 use std::process::Command; // Run programs
 
 #[test]
-fn invalid_region_maxs() -> Result<()> {
-    let mut cmd = cargo::cargo_bin!("compact")?;
+fn invalid_region_maxs() {
+    let mut cmd = Command::new(cargo_bin!("compact"));
     cmd.args([
         "/tmp/output.parquet",
         "/tmp/input.parquet",
