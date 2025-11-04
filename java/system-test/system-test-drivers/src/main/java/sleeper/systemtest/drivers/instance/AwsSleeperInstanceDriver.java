@@ -30,7 +30,6 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
-import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -130,7 +129,6 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
-                    .deployCommand(CdkCommand.deployExisting())
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .build().update();
         } catch (InterruptedException e) {

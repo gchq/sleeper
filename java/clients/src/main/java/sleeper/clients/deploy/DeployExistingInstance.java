@@ -26,7 +26,7 @@ import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
-import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.CdkCommandNew;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
@@ -42,8 +42,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.clients.util.cdk.CdkCommand.deployExisting;
-import static sleeper.clients.util.cdk.CdkCommand.deployExistingPaused;
 
 public class DeployExistingInstance {
 
@@ -53,7 +51,7 @@ public class DeployExistingInstance {
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3;
     private final EcrClient ecr;
-    private final CdkCommand deployCommand;
+    private final boolean deployPaused;
     private final CommandPipelineRunner runCommand;
 
     private DeployExistingInstance(Builder builder) {
@@ -62,7 +60,7 @@ public class DeployExistingInstance {
         tablePropertiesList = builder.tablePropertiesList;
         s3 = builder.s3;
         ecr = builder.ecr;
-        deployCommand = builder.deployCommand;
+        deployPaused = builder.deployPaused;
         runCommand = builder.runCommand;
     }
 
@@ -85,7 +83,7 @@ public class DeployExistingInstance {
             builder().clients(s3Client, ecrClient)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
-                    .deployCommand(deployPaused ? deployExistingPaused() : deployExisting())
+                    .deployPaused(deployPaused)
                     .loadPropertiesFromS3(s3Client, dynamoClient)
                     .build().update();
         }
@@ -106,7 +104,7 @@ public class DeployExistingInstance {
 
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(DeployInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
-                .cdkCommand(deployCommand)
+                .cdkCommand(deployPaused ? CdkCommandNew.deployExistingPaused() : CdkCommandNew.deployExisting())
                 .inferInstanceType()
                 .build());
 
@@ -120,7 +118,7 @@ public class DeployExistingInstance {
         private List<TableProperties> tablePropertiesList;
         private S3Client s3;
         private EcrClient ecr;
-        private CdkCommand deployCommand = CdkCommand.deployExisting();
+        private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
 
         private Builder() {
@@ -156,8 +154,8 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder deployCommand(CdkCommand deployCommand) {
-            this.deployCommand = deployCommand;
+        public Builder deployPaused(boolean deployPaused) {
+            this.deployPaused = deployPaused;
             return this;
         }
 
