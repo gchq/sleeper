@@ -70,6 +70,13 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
+    UserDefinedInstanceProperty RETAIN_LOGS_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.logs.after.destroy")
+            .description("Whether to keep the sleeper log groups when the instance is destroyed.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy. Not case sensitive.\n" +
                     "Valid values: " + SleeperPropertyValueUtils.describeEnumValues(OptionalStack.class))
