@@ -24,8 +24,8 @@ import java.util.UUID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 // Future methods for class
-// - waitForBulkExportQueries
-// - getBulkExportResults
+// - waitForExport
+// - retrieveOutput
 public class SystemTestBulkExport {
     private final SystemTestInstanceContext instance;
     private final BulkExportDriver driver;
@@ -35,7 +35,7 @@ public class SystemTestBulkExport {
         driver = instance.adminDrivers().bulkExport(context);
     }
 
-    public SystemTestBulkExport sendBulkExportQuery() {
+    public SystemTestBulkExport sendAllRowsQuery() {
         driver.sendJob(generateBulkExportQuery());
         return this;
     }

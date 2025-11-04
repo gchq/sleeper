@@ -38,7 +38,7 @@ public class BulkExportTest {
     @Test
     void shouldPerformBasicBulkExport(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) throws Exception {
         // Given / When
-        sleeper.bulkExport().sendBulkExportQuery();
+        sleeper.bulkExport().sendAllRowsQuery();
 
         // Then
         assertThat(drivers.getBulkExportQueueQueries())
