@@ -21,7 +21,14 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.stack.SleeperArtefactsStack;
+import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.Utils;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.LoadLocalProperties;
+
+import java.nio.file.Path;
+
+import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
  * A CDK app to deploy AWS resources that will hold artefacts used to deploy Sleeper.
@@ -41,12 +48,25 @@ public class SleeperArtefactsCdkApp {
                 .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
-        String deploymentId = (String) app.getNode().tryGetContext("id");
+        String deploymentId = getDeploymentId(CdkContext.from(app));
         new SleeperArtefactsStack(app, "SleeperArtefacts", deploymentId, StackProps.builder()
                 .stackName(Utils.joinNonNullParts("-", "sleeper", deploymentId, "artefacts"))
                 .env(environment)
                 .build());
         app.synth();
+    }
+
+    public static String getDeploymentId(CdkContext context) {
+        String deploymentId = context.tryGetContext("id");
+        if (deploymentId != null) {
+            return deploymentId;
+        }
+        String propertiesFile = context.tryGetContext("propertiesfile");
+        if (propertiesFile == null) {
+            return null;
+        }
+        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(Path.of(propertiesFile));
+        return instanceProperties.get(ID);
     }
 
 }
