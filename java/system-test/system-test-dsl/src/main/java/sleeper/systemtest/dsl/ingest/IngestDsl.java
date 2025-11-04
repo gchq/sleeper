@@ -56,12 +56,12 @@ public class IngestDsl {
         return new SystemTestIngestToStateStore(context);
     }
 
-    public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), INGEST_JOB_QUEUE_URL, tasksDriver(), waitForIngest(), pollDriver());
+    public IngestByQueueDsl byQueue() {
+        return new IngestByQueueDsl(sourceFiles(), ingestByQueue(), INGEST_JOB_QUEUE_URL, tasksDriver(), waitForIngest(), pollDriver());
     }
 
-    public SystemTestIngestByQueue bulkImportByQueue() {
-        return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport(), pollDriver());
+    public IngestByQueueDsl bulkImportByQueue() {
+        return new IngestByQueueDsl(sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport(), pollDriver());
     }
 
     public DirectBulkImportDsl directEmrServerless() {
