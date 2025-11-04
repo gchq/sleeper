@@ -28,19 +28,19 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-public class SystemTestDirectIngest {
+public class DirectIngestDsl {
 
     private final SystemTestInstanceContext instance;
     private final DirectIngestDriver driver;
     private final Path tempDir;
 
-    public SystemTestDirectIngest(SystemTestInstanceContext instance, DirectIngestDriver driver, Path tempDir) {
+    public DirectIngestDsl(SystemTestInstanceContext instance, DirectIngestDriver driver, Path tempDir) {
         this.instance = instance;
         this.driver = driver;
         this.tempDir = tempDir;
     }
 
-    public SystemTestDirectIngest splitIngests(int numIngests, RowNumbers numbers) {
+    public DirectIngestDsl splitIngests(int numIngests, RowNumbers numbers) {
         if (numbers.numRows() % numIngests != 0) {
             throw new IllegalArgumentException("Number of ingests must split number of rows exactly");
         }
@@ -54,7 +54,7 @@ public class SystemTestDirectIngest {
         return this;
     }
 
-    public SystemTestDirectIngest numberedRows(LongStream numbers) {
+    public DirectIngestDsl numberedRows(LongStream numbers) {
         driver.ingest(tempDir, instance.numberedRows().iteratorFrom(numbers));
         return this;
     }

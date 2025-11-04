@@ -104,7 +104,7 @@ public class SystemTestIngestTest {
     void shouldNotSplitIntoFilesIfNotExactSplit(SleeperDsl sleeper) {
         // Given
         RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 10));
-        SystemTestDirectIngest ingest = sleeper.ingest().direct(null);
+        DirectIngestDsl ingest = sleeper.ingest().direct(null);
 
         // When / Then
         assertThatThrownBy(() -> ingest.splitIngests(3, numbers))

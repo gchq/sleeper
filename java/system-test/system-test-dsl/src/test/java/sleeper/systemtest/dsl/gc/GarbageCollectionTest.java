@@ -22,7 +22,7 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
-import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
+import sleeper.systemtest.dsl.ingest.DirectIngestDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -76,7 +76,7 @@ public class GarbageCollectionTest {
                 .splitToNewChildren("root", UUID.randomUUID().toString(), UUID.randomUUID().toString(), "row-50000")
                 .buildTree());
         RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
-        SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
+        DirectIngestDsl ingest = sleeper.ingest().direct(tempDir);
         IntStream.range(0, 1000)
                 .mapToObj(i -> numbers.range(i * 100, i * 100 + 100))
                 .forEach(range -> ingest.numberedRows(range));

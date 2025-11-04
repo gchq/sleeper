@@ -48,8 +48,8 @@ public class SystemTestIngest {
         return new SystemTestIngestBatcher(context, adminDrivers);
     }
 
-    public SystemTestDirectIngest direct(Path tempDir) {
-        return new SystemTestDirectIngest(instance(), adminDrivers.directIngest(context), tempDir);
+    public DirectIngestDsl direct(Path tempDir) {
+        return new DirectIngestDsl(instance(), adminDrivers.directIngest(context), tempDir);
     }
 
     public SystemTestIngestToStateStore toStateStore() {
