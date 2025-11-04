@@ -58,6 +58,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
@@ -277,5 +278,9 @@ public class Utils {
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         return errorQueue.metricApproximateNumberOfMessagesVisible(
                 MetricOptions.builder().label(label).period(Duration.minutes(timeWindowInMinutes)).statistic("Sum").build());
+    }
+
+    public static String joinNonNullParts(String delimiter, String... parts) {
+        return Stream.of(parts).filter(part -> part != null).collect(joining(delimiter));
     }
 }

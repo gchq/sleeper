@@ -176,7 +176,12 @@ public class LambdaJar {
         return "LambdaJar{filename=" + filename + ", imageName=" + imageName + ", artifactId=" + artifactId + "}";
     }
 
-    public static List<LambdaJar> getAll() {
+    /**
+     * Returns all lambda jar definitions.
+     *
+     * @return the definitions
+     */
+    public static List<LambdaJar> all() {
         return Collections.unmodifiableList(ALL);
     }
 
