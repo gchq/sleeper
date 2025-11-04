@@ -96,7 +96,7 @@ public class SystemTestParameters {
     }
 
     public String getArtefactsDeploymentId() {
-        return shortTestId + "-artefacts";
+        return shortTestId;
     }
 
     public String buildInstanceId(String identifier) {
