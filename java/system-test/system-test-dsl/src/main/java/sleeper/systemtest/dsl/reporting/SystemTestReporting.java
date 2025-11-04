@@ -34,8 +34,8 @@ public class SystemTestReporting {
         return new SystemTestIngestJobsReport(ingestDriver().jobs(context.reporting()));
     }
 
-    public SystemTestCompactionJobsReport compactionJobs() {
-        return new SystemTestCompactionJobsReport(compactionDriver().jobs(context.reporting()));
+    public CompactionJobsReportDsl compactionJobs() {
+        return new CompactionJobsReportDsl(compactionDriver().jobs(context.reporting()));
     }
 
     public List<CompactionTaskStatus> finishedCompactionTasks() {

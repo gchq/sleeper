@@ -20,10 +20,10 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.util.List;
 
-public class SystemTestCompactionJobsReport {
+public class CompactionJobsReportDsl {
     private final List<CompactionJobStatus> jobs;
 
-    public SystemTestCompactionJobsReport(List<CompactionJobStatus> jobs) {
+    public CompactionJobsReportDsl(List<CompactionJobStatus> jobs) {
         this.jobs = jobs;
     }
 
