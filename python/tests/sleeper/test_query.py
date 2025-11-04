@@ -1,7 +1,9 @@
 import json
+import time
 
 import pytest
 from mypy_boto3_dynamodb.service_resource import Table
+from mypy_boto3_s3.service_resource import Bucket
 from mypy_boto3_sqs.service_resource import Queue
 from pytest_mock import MockerFixture
 
@@ -76,6 +78,34 @@ def should_send_range_query_with_client(sleeper_client: SleeperClient, query: Qu
 
     assert messages == expected_message_json
 
+def should_send_extact_query_with_option2(sleeper_client: SleeperClient, query: Queue, table: Table):
+    # Given
+    table_name = "test-table"
+    query_id = "test-query"
+    keys = {"key": ["my_key", "my_key2"]}
+
+    insert_last_know_state(table=table, query_id=query_id, state="COMPLETED")
+
+    # When
+    # We don't care about the results for this test as they are mocked.
+    sleeper_client.exact_key_query(table_name=table_name, keys=keys, query_id=query_id)
+
+    # Then
+    expected_message_json = [
+        {
+            "queryId": "test-query",
+            "tableName": "test-table",
+            "type": "Query",
+            "regions": [
+                {"key": {"min": "my_key", "minInclusive": True, "max": "my_key", "maxInclusive": True}, "stringsBase64Encoded": False},
+                {"key": {"min": "my_key2", "minInclusive": True, "max": "my_key2", "maxInclusive": True}, "stringsBase64Encoded": False},
+            ],
+        }
+    ]
+
+    messages = receive_messages(query)
+
+    assert messages == expected_message_json
 
 @pytest.fixture
 def sleeper_client(properties: InstanceProperties) -> SleeperClient:
@@ -85,10 +115,11 @@ def sleeper_client(properties: InstanceProperties) -> SleeperClient:
 
 
 @pytest.fixture
-def properties(query: Queue, table: Table) -> InstanceProperties:
+def properties(query: Queue, table: Table, bucket: Bucket) -> InstanceProperties:
     properties = create_test_instance_properties()
     properties.set(QueryCdkProperty.QUERY_QUEUE_URL, query.url)
     properties.set(QueryCdkProperty.QUERY_TRACKER_TABLE, table.table_name)
+    properties.set(QueryCdkProperty.QUERY_RESULTS_BUCKET, bucket.name)
     return properties
 
 
@@ -96,11 +127,22 @@ def properties(query: Queue, table: Table) -> InstanceProperties:
 def query() -> Queue:
     return LocalStack.create_queue()
 
+@pytest.fixture
+def bucket() -> Bucket:
+    return LocalStack.create_bucket()
 
 @pytest.fixture
 def table() -> Table:
     return LocalStack.create_table()
 
+def insert_last_know_state(table: Table, query_id: str, state: str):
+    table.put_item(
+    Item={
+        "queryId": query_id,
+        "subQueryId": "-",
+        "lastKnownState": state,
+        "createdAt": int(time.time()),
+    })
 
 def receive_messages(queue: Queue):
     messages = queue.receive_messages(WaitTimeSeconds=0)

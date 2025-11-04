@@ -96,7 +96,7 @@ class LocalStack:
         return cls.sqs_resource().create_queue(QueueName=queue_name)
 
     @classmethod
-    def create_table(cls):
+    def create_table(cls) -> Table:
         dynamodb = cls.dynamo_resource()
         table_name = str(uuid.uuid4())
 
