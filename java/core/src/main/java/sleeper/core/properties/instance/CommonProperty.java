@@ -38,9 +38,9 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty ARTEFACTS_DEPLOYMENT_ID = Index.propertyBuilder("sleeper.artefacts.deployment")
-            .description("The ID of the artefacts deployment to use to deploy the Sleeper instance. This is used to " +
-                    "default the values for `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`. If you used " +
-                    "an artefacts CDK deployment, you can set this property instead of those properties.")
+            .description("The ID of the artefacts deployment to use to deploy the Sleeper instance. By default " +
+                    "we assume an artefacts deployment with the same ID as the Sleeper instance. This property is " +
+                    "used to compute the default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.")
             .defaultProperty(ID)
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
