@@ -61,6 +61,7 @@ public class DeployNewInstance {
     private final InvokeCdkForInstance.Type instanceType;
     private final CommandPipelineRunner runCommand;
     private final boolean deployPaused;
+    private final boolean createMultiPlatformBuilder;
 
     private DeployNewInstance(Builder builder) {
         s3Client = builder.s3Client;
@@ -72,6 +73,7 @@ public class DeployNewInstance {
         instanceType = builder.instanceType;
         runCommand = builder.runCommand;
         deployPaused = builder.deployPaused;
+        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
 
     public static Builder builder() {
@@ -108,7 +110,7 @@ public class DeployNewInstance {
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
         deployInstanceConfiguration.validate();
-
+        LOGGER.info("CreateMultiPlatformBuilder:", createMultiPlatformBuilder);
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                 new UploadDockerImagesToEcr(
@@ -116,6 +118,7 @@ public class DeployNewInstance {
                                 .scriptsDirectory(scriptsDirectory)
                                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                                 .commandRunner(runCommand)
+                                .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
                         EcrRepositoryCreator.withEcrClient(ecrClient)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
@@ -149,6 +152,7 @@ public class DeployNewInstance {
         private InvokeCdkForInstance.Type instanceType;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean deployPaused;
+        private boolean createMultiPlatformBuilder;
 
         private Builder() {
         }
@@ -195,6 +199,11 @@ public class DeployNewInstance {
 
         public Builder deployPaused(boolean deployPaused) {
             this.deployPaused = deployPaused;
+            return this;
+        }
+
+        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
+            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
             return this;
         }
 

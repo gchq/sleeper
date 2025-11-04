@@ -62,6 +62,7 @@ public class SystemTestParameters {
     private final boolean forceRedeploySystemTest;
     private final boolean forceRedeployInstances;
     private final String forceStateStoreClassname;
+    private final boolean createMultiPlatformBuilder;
     private final SystemTestStandaloneProperties standalonePropertiesTemplate;
     private final InstanceProperties instancePropertiesOverrides;
 
@@ -78,6 +79,7 @@ public class SystemTestParameters {
         forceRedeploySystemTest = builder.forceRedeploySystemTest;
         forceRedeployInstances = builder.forceRedeployInstances;
         forceStateStoreClassname = builder.forceStateStoreClassname;
+        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
         standalonePropertiesTemplate = Objects.requireNonNull(builder.standalonePropertiesTemplate, "standalonePropertiesTemplate must not be null");
         instancePropertiesOverrides = Objects.requireNonNull(builder.instancePropertiesOverrides, "instancePropertiesOverrides must not be null");
         // Combines with SystemTestInstanceConfiguration.shortName and a hyphen to create an instance ID within maximum length
@@ -164,6 +166,10 @@ public class SystemTestParameters {
 
     public boolean isForceRedeployInstances() {
         return forceRedeployInstances;
+    }
+
+    public boolean isCreateMultiPlatformBuilder() {
+        return createMultiPlatformBuilder;
     }
 
     public TableProperties createTableProperties(InstanceProperties instanceProperties, Schema schema) {
@@ -255,6 +261,7 @@ public class SystemTestParameters {
         private boolean forceRedeploySystemTest;
         private boolean forceRedeployInstances;
         private String forceStateStoreClassname;
+        private boolean createMultiPlatformBuilder;
         private SystemTestStandaloneProperties standalonePropertiesTemplate;
         private InstanceProperties instancePropertiesOverrides;
 
@@ -321,6 +328,11 @@ public class SystemTestParameters {
             return this;
         }
 
+        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
+            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
+            return this;
+        }
+
         public Builder systemTestStandalonePropertiesTemplate(SystemTestStandaloneProperties standalonePropertiesTemplate) {
             this.standalonePropertiesTemplate = standalonePropertiesTemplate;
             return this;
@@ -343,6 +355,7 @@ public class SystemTestParameters {
                     .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
                     .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
                     .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null))
+                    .createMultiPlatformBuilder(getBooleanProperty("sleeper.system.test.create.multi.platform", false))
                     .systemTestStandalonePropertiesTemplate(getOptionalProperty("sleeper.system.test.standalone.properties.template")
                             .map(Paths::get)
                             .map(SystemTestStandaloneProperties::fromFile)

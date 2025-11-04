@@ -241,6 +241,7 @@
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <sleeper.system.test.force.statestore.classname />
+        <sleeper.system.test.create.multi.platform />
         <sleeper.system.test.standalone.properties.template />
         <sleeper.system.test.instance.properties.overrides />
         <!-- Maven plugins -->
@@ -1627,7 +1628,7 @@
                             <ignoredUnusedDeclaredDependencies>
                                 <!-- Dependency plugin does not detect usages of Scala classes reliably, e.g. com.joom.spark.ExplicitRepartitionStrategy$ -->
                                 <ignoredUnusedDeclaredDependency>com.joom.spark:spark-platform_${scala.version}::</ignoredUnusedDeclaredDependency>
-                                <!-- For modules with no tests, e.g. system-test-cdk -->
+                                <!-- For modules with no tests, e.g. sleeper.system.test.short.id-cdk -->
                                 <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter-api::</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.assertj:assertj-core::</ignoredUnusedDeclaredDependency>
                                 <!-- For modules using test suites, e.g. system-test-suite -->
@@ -1938,6 +1939,10 @@
                             <property>
                                 <name>sleeper.system.test.force.statestore.classname</name>
                                 <value>${sleeper.system.test.force.statestore.classname}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.create.multi.platform</name>
+                                <value>${sleeper.system.test.create.multi.platform}</value>
                             </property>
                             <property>
                                 <name>sleeper.system.test.standalone.properties.template</name>

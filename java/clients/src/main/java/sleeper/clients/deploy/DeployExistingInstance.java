@@ -56,6 +56,7 @@ public class DeployExistingInstance {
     private final EcrClient ecr;
     private final CdkDeploy deployCommand;
     private final CommandPipelineRunner runCommand;
+    private final boolean createMultiPlatformBuilder;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
@@ -65,6 +66,7 @@ public class DeployExistingInstance {
         ecr = builder.ecr;
         deployCommand = builder.deployCommand;
         runCommand = builder.runCommand;
+        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
 
     public static Builder builder() {
@@ -93,6 +95,7 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
+        LOGGER.info("CreateMultiPlatformBuilder:", createMultiPlatformBuilder);
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3, scriptsDirectory),
                 new UploadDockerImagesToEcr(
@@ -100,6 +103,7 @@ public class DeployExistingInstance {
                                 .scriptsDirectory(scriptsDirectory)
                                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                                 .commandRunner(runCommand)
+                                .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
                         EcrRepositoryCreator.withEcrClient(ecr)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
@@ -123,6 +127,7 @@ public class DeployExistingInstance {
         private EcrClient ecr;
         private CdkDeploy deployCommand = CdkCommand.deployExisting();
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
+        private boolean createMultiPlatformBuilder;
 
         private Builder() {
         }
@@ -164,6 +169,11 @@ public class DeployExistingInstance {
 
         public Builder runCommand(CommandPipelineRunner runCommand) {
             this.runCommand = runCommand;
+            return this;
+        }
+
+        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
+            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
             return this;
         }
 

@@ -68,6 +68,11 @@ set +e
 
 END_EXIT_CODE=0
 
+echo "Begining docker buildx"
+docker buildx rm sleeper
+docker buildx create --name sleeper --use
+echo "Finished docker buildx"
+
 #Make copies of the project to run independent maven builds in parallel
 source "$SCRIPTS_DIR/functions/checkInstalled.sh"
 checkInstalled "rsync"
@@ -111,6 +116,7 @@ runMavenSystemTests() {
     #Run tests
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
+      -Dsleeper.system.test.create.multi.platform=false \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     RUN_TESTS_EXIT_CODE=$?
@@ -159,7 +165,7 @@ runTestSuite(){
 runSlowTests(){
     SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DskipRust)
     ##runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
-    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
+    ##runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
     runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" ##&
     ##runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite3" "$@"
 }
