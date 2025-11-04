@@ -27,7 +27,7 @@ import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -100,7 +100,7 @@ public class DeployExistingInstance {
                                 .build(),
                         EcrRepositoryCreator.withEcrClient(ecr)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
-                InvokeCdkForInstance.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
+                InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(DeployInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())

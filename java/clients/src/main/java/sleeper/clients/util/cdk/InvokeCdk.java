@@ -29,27 +29,27 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-public class InvokeCdkForInstance {
+public class InvokeCdk {
 
     private final Path jarsDirectory;
     private final String version;
     private final CommandRunner runCommand;
 
     public enum Type {
-        STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
-        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdkForInstance::systemTestJarFile),
-        SYSTEM_TEST_STANDALONE("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdkForInstance::systemTestJarFile);
+        STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdk::cdkJarFile),
+        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdk::systemTestJarFile),
+        SYSTEM_TEST_STANDALONE("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdk::systemTestJarFile);
 
         private final String cdkAppClassName;
-        private final Function<InvokeCdkForInstance, Path> getCdkJarFile;
+        private final Function<InvokeCdk, Path> getCdkJarFile;
 
-        Type(String cdkAppClassName, Function<InvokeCdkForInstance, Path> getCdkJarFile) {
+        Type(String cdkAppClassName, Function<InvokeCdk, Path> getCdkJarFile) {
             this.cdkAppClassName = cdkAppClassName;
             this.getCdkJarFile = getCdkJarFile;
         }
     }
 
-    private InvokeCdkForInstance(Builder builder) {
+    private InvokeCdk(Builder builder) {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         runCommand = requireNonNull(builder.runCommand, "runCommand must not be null");
@@ -59,7 +59,7 @@ public class InvokeCdkForInstance {
         return new Builder();
     }
 
-    public static InvokeCdkForInstance fromScriptsDirectory(Path scriptsDirectory) {
+    public static InvokeCdk fromScriptsDirectory(Path scriptsDirectory) {
         return builder().scriptsDirectory(scriptsDirectory).build();
     }
 
@@ -126,8 +126,8 @@ public class InvokeCdkForInstance {
             return this;
         }
 
-        public InvokeCdkForInstance build() {
-            return new InvokeCdkForInstance(this);
+        public InvokeCdk build() {
+            return new InvokeCdk(this);
         }
     }
 }

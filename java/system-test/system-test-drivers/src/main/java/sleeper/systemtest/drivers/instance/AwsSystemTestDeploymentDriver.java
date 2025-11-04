@@ -31,7 +31,7 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaJar;
@@ -46,7 +46,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
+import static sleeper.clients.util.cdk.InvokeCdk.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.drivers.cdk.DeployNewTestInstance.SYSTEM_TEST_IMAGE;
@@ -92,7 +92,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
             Path generatedDirectory = Files.createDirectories(parameters.getGeneratedDirectory());
             Path propertiesFile = generatedDirectory.resolve("system-test.properties");
             deployProperties.save(propertiesFile);
-            InvokeCdkForInstance.builder()
+            InvokeCdk.builder()
                     .jarsDirectory(parameters.getJarsDirectory())
                     .version(SleeperVersion.getVersion())
                     .runCommand(CommandUtils::runCommandLogOutput)

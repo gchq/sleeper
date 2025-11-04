@@ -35,7 +35,7 @@ import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.common.task.QueueMessageCount;
@@ -83,7 +83,7 @@ public class AdminClient {
         Path generatedDir = scriptsDir.resolve("generated");
         Path jarsDir = scriptsDir.resolve("jars");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
-        InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
+        InvokeCdk cdk = InvokeCdk.builder()
                 .jarsDirectory(jarsDir).version(version).build();
 
         ConsoleOutput out = new ConsoleOutput(System.out);
@@ -109,7 +109,7 @@ public class AdminClient {
 
     public static int start(String instanceId,
             S3Client s3Client, DynamoDbClient dynamoClient,
-            InvokeCdkForInstance cdk, Path generatedDir, UploadDockerImagesToEcr uploadDockerImages,
+            InvokeCdk cdk, Path generatedDir, UploadDockerImagesToEcr uploadDockerImages,
             ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
             QueueMessageCount.Client queueClient,
             Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {

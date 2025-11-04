@@ -32,7 +32,7 @@ import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -55,9 +55,9 @@ public class DeployInstance {
     private final SyncJars syncJars;
     private final UploadDockerImagesToEcr dockerImageUploader;
     private final WriteLocalProperties writeLocalProperties;
-    private final InvokeCdkForInstance invokeCdk;
+    private final InvokeCdk invokeCdk;
 
-    public DeployInstance(SyncJars syncJars, UploadDockerImagesToEcr dockerImageUploader, WriteLocalProperties writeLocalProperties, InvokeCdkForInstance invokeCdk) {
+    public DeployInstance(SyncJars syncJars, UploadDockerImagesToEcr dockerImageUploader, WriteLocalProperties writeLocalProperties, InvokeCdk invokeCdk) {
         this.syncJars = syncJars;
         this.dockerImageUploader = dockerImageUploader;
         this.writeLocalProperties = writeLocalProperties;
@@ -97,7 +97,7 @@ public class DeployInstance {
                             UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
                             EcrRepositoryCreator.withEcrClient(ecrClient)),
                     WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
-                    InvokeCdkForInstance.fromScriptsDirectory(scriptsDirectory));
+                    InvokeCdk.fromScriptsDirectory(scriptsDirectory));
 
             deployInstance.deploy(DeployInstanceRequest.builder()
                     .instanceConfig(instanceConfiguration)
