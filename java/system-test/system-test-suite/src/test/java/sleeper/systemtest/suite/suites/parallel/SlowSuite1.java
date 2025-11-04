@@ -21,6 +21,6 @@ import org.junit.platform.suite.api.IncludeTags;
 import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
 @SystemTestSuite
-@IncludeTags("test1")
+@IncludeTags("slow1")
 public class SlowSuite1 {
 }

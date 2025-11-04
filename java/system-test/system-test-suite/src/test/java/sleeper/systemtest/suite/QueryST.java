@@ -26,7 +26,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.Test2;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
@@ -39,7 +38,6 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.o
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-@Test2
 public class QueryST {
     @TempDir
     private Path tempDir;
