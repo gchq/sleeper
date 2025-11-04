@@ -145,7 +145,6 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
         try (FFIContext<DataFusionCompactionFunctions> context = new FFIContext<>(DataFusionCompactionFunctions.INSTANCE)) {
-            LOGGER.info("DEBUG LINE TO VERIFY IMAGE UPDATED!");
             int result = context.getFunctions().compact(context, compactionParams, compactionData);
             // Check result
             if (result != 0) {
