@@ -68,6 +68,11 @@
             <artifactId>splitter</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>bulk-export-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Test Dependencies -->
         <dependency>
             <groupId>sleeper</groupId>

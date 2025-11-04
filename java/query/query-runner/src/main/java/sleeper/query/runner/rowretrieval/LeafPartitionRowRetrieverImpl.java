@@ -127,7 +127,7 @@ public class LeafPartitionRowRetrieverImpl implements LeafPartitionRowRetriever 
     }
 
     @Override
-    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
+    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
         List<String> files = leafPartitionQuery.getFiles();
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());

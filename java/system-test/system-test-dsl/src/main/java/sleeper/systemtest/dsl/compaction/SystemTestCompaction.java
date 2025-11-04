@@ -28,6 +28,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.DataFileDuplications;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
@@ -112,6 +113,15 @@ public class SystemTestCompaction {
         forceCreateJobs(expectedJobs).waitForTasks(1).waitForJobsToFinishThenCommit(
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)),
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
+        return this;
+    }
+
+    public SystemTestCompaction createSeparateCompactionsForOriginalAndDuplicates(DataFileDuplications duplications) {
+        CompactionJobFactory factory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
+        List<CompactionJob> jobs = duplications.createSeparateCompactionsForOriginalAndDuplicates(factory);
+        lastJobIds = waitForJobCreation.createJobsGetIds(jobs.size(),
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
+                () -> driver.createJobBatches(jobs));
         return this;
     }
 

@@ -24,6 +24,7 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.systemtest.dsl.bulkexport.SystemTestBulkExport;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
@@ -111,7 +112,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(context.instance(), context.sourceFiles(), baseDrivers.sourceFiles(context));
+        return new SystemTestSourceFiles(context, baseDrivers.sourceFiles(context));
     }
 
     public SystemTestTableFiles tableFiles() {
@@ -132,6 +133,10 @@ public class SleeperSystemTest {
 
     public SystemTestQuery directQuery() {
         return query().direct();
+    }
+
+    public SystemTestBulkExport bulkExport() {
+        return new SystemTestBulkExport(context);
     }
 
     public SystemTestCompaction compaction() {

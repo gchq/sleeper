@@ -21,11 +21,13 @@ use crate::{
     CommonConfig,
     datafusion::{
         filter_aggregation_config::validate_aggregations,
+        fix_filter::fix_filter_exprs,
         output::Completer,
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
         util::{
-            calculate_upload_size, check_for_sort_exec, output_partition_count, register_store,
+            add_numeric_casts, apply_full_sort_ordering, calculate_upload_size,
+            check_for_sort_exec, output_partition_count, register_store,
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
@@ -49,9 +51,11 @@ use objectstore_ext::s3::ObjectStoreFactory;
 use std::{collections::HashMap, sync::Arc};
 
 mod arrow_stream;
+mod cast_udf;
 mod compact;
 mod config;
 mod filter_aggregation_config;
+mod fix_filter;
 mod leaf_partition_query;
 mod metrics;
 pub mod output;
@@ -65,8 +69,8 @@ pub use arrow_stream::stream_to_ffi_arrow_stream;
 pub use compact::{CompactionResult, compact};
 pub use config::ParquetWriterConfigurer;
 pub use leaf_partition_query::{LeafPartitionQuery, LeafPartitionQueryConfig};
-pub use output::OutputType;
-pub use region::SleeperRegion;
+pub use output::{OutputType, SleeperParquetOptions};
+pub use region::{ColRange, PartitionBound, SleeperRegion};
 
 /// Drives common operations in processing of `DataFusion` for Sleeper.
 #[derive(Debug)]
@@ -88,7 +92,7 @@ impl<'a> SleeperOperations<'a> {
         mut cfg: SessionConfig,
         store_factory: &ObjectStoreFactory,
     ) -> Result<SessionConfig, DataFusionError> {
-        if matches!(self.config.output, OutputType::ArrowRecordBatch) {
+        if matches!(self.config.output(), OutputType::ArrowRecordBatch) {
             // Java's Arrow FFI layer can't handle view types, so expand them at output
             cfg.options_mut().optimizer.expand_views_at_output = true;
         }
@@ -96,7 +100,7 @@ impl<'a> SleeperOperations<'a> {
         // sure the target partitions as at least as big as number of input files.
         cfg.options_mut().execution.target_partitions = std::cmp::max(
             cfg.options().execution.target_partitions,
-            self.config.input_files.len(),
+            self.config.input_files().len(),
         );
         // Disable page indexes since we won't benefit from them as we are reading large contiguous file regions
         cfg.options_mut().execution.parquet.enable_page_index = false;
@@ -108,9 +112,9 @@ impl<'a> SleeperOperations<'a> {
             output_file: _,
             write_sketch_file: _,
             opts: parquet_options,
-        } = &self.config.output
+        } = self.config.output()
         {
-            let total_input_size = retrieve_input_size(&self.config.input_files, store_factory)
+            let total_input_size = retrieve_input_size(self.config.input_files(), store_factory)
                 .await
                 .inspect_err(|e| warn!("Error getting total input data size {e}"))?;
             cfg.options_mut().execution.objectstore_writer_buffer_size =
@@ -133,8 +137,8 @@ impl<'a> SleeperOperations<'a> {
         // Register object stores for input files and output file
         register_store(
             store_factory,
-            &self.config.input_files,
-            match &self.config.output {
+            self.config.input_files(),
+            match self.config.output() {
                 OutputType::ArrowRecordBatch => None,
                 OutputType::File {
                     output_file,
@@ -158,7 +162,7 @@ impl<'a> SleeperOperations<'a> {
         &self,
         ctx: &SessionContext,
     ) -> Result<DataFrame, DataFusionError> {
-        let po = if self.config.input_files_sorted {
+        let po = if self.config.input_files_sorted() {
             let sort_order = self.create_sort_order();
             info!("Row and sort key field order: {sort_order:?}");
             ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()])
@@ -170,11 +174,11 @@ impl<'a> SleeperOperations<'a> {
         };
         // Read Parquet files and apply sort order
         let frame = ctx
-            .read_parquet(self.config.input_files.clone(), po)
+            .read_parquet(self.config.input_files().clone(), po)
             .await?;
         // Do we have partition bounds?
         Ok(
-            if let Some(expr) = Option::<Expr>::from(&self.config.region) {
+            if let Some(expr) = Option::<Expr>::from(self.config.region()) {
                 frame.filter(expr)?
             } else {
                 frame
@@ -200,7 +204,7 @@ impl<'a> SleeperOperations<'a> {
     /// expression.
     fn apply_user_filters(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
         let mut out_frame = frame;
-        for filter in &self.config.filters {
+        for filter in self.config.filters() {
             out_frame = out_frame.filter(filter.create_filter_expr()?)?;
         }
         Ok(out_frame)
@@ -224,27 +228,34 @@ impl<'a> SleeperOperations<'a> {
     /// If any configuration errors are present in the aggregations, e.g. duplicates or row key fields specified,
     /// then an error will result.
     fn apply_aggregations(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        let aggregates = &self.config.aggregates;
+        let aggregates = self.config.aggregates();
         if aggregates.is_empty() {
             return Ok(frame);
         }
         info!("Applying Sleeper aggregation: {aggregates:?}");
+        let orig_schema = frame.schema().clone();
         let group_by_cols = self.config.sorting_columns();
         validate_aggregations(&group_by_cols, frame.schema(), aggregates)?;
+
         let aggregation_expressions = aggregates
             .iter()
             .map(|agg| agg.to_expr(&frame))
             .collect::<Result<Vec<_>, _>>()?;
-        frame.aggregate(
+
+        let agg_frame = frame.aggregate(
             group_by_cols.iter().map(|e| ident(*e)).collect(),
             aggregation_expressions,
-        )
+        )?;
+        let agg_schema = agg_frame.schema().clone();
+
+        // Cast column schemas back if necessary
+        add_numeric_casts(agg_frame, &orig_schema, &agg_schema)
     }
 
     /// Create a sketching object to manage creation of quantile sketches.
     #[must_use]
     pub fn create_sketcher(&self, schema: &DFSchema) -> Sketcher<'_> {
-        Sketcher::new(&self.config.row_key_cols, schema)
+        Sketcher::new(self.config.row_key_cols(), schema)
     }
 
     /// Add a Parquet output stage on to a frame.
@@ -260,7 +271,7 @@ impl<'a> SleeperOperations<'a> {
             output_file,
             write_sketch_file: _,
             opts: _,
-        } = &self.config.output
+        } = self.config.output()
         else {
             return plan_err!("Parquet output not selected!");
         };
@@ -289,18 +300,31 @@ impl<'a> SleeperOperations<'a> {
     pub async fn to_physical_plan(
         &self,
         frame: DataFrame,
+        sort_ordering: Option<&LexOrdering>,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
-        // Create sort ordering from schema and row key and sort key fields
-        let ordering = self.create_sort_expr_ordering(&frame)?;
+        // We manually go through the stages of getting the plan, optimising it and then converting to a physical
+        // plan so that we have a place to fix the optimised logical plan due to <https://github.com/apache/datafusion/issues/18214>.
+        let (state, logical_plan) = frame.into_parts();
+        let optimised_plan = state.optimize(&logical_plan)?;
+        let fixed_plan = fix_filter_exprs(optimised_plan, &logical_plan, &state)?;
         // Consume frame and generate initial physical plan
-        let physical_plan = frame.create_physical_plan().await?;
-        // Unalias field names if this is going to be Arrow output
-        let physical_plan = self.remove_aliased_columns(physical_plan, &ordering)?;
-        // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
-        let physical_plan = remove_coalesce_physical_stage(&ordering, physical_plan)?;
+        let mut physical_plan = state
+            .query_planner()
+            .create_physical_plan(&fixed_plan, &state)
+            .await?;
+        if let Some(order) = sort_ordering {
+            // Unalias field names if this is going to be Arrow output
+            physical_plan = self.remove_aliased_columns(physical_plan, order)?;
+            // Apply workaround to sorting problem to remove CoalescePartitionsExec from top of plan
+            physical_plan = remove_coalesce_physical_stage(order, physical_plan)?;
+            // Apply full sort ordering to all SortPreservingMergeExec stages to workaround sorting bug where only some row
+            // key fields appear in sort expression
+            physical_plan = apply_full_sort_ordering(order, physical_plan)?;
+        }
+
         // Check physical plan is free of `SortExec` stages.
         // Issue <https://github.com/gchq/sleeper/issues/5248>
-        if self.config.input_files_sorted {
+        if self.config.input_files_sorted() {
             check_for_sort_exec(&physical_plan)?;
         }
         Ok(physical_plan)
@@ -317,7 +341,7 @@ impl<'a> SleeperOperations<'a> {
         ordering: &LexOrdering,
     ) -> Result<Arc<dyn ExecutionPlan>, DataFusionError> {
         Ok(
-            if matches!(self.config.output, OutputType::ArrowRecordBatch) {
+            if matches!(self.config.output(), OutputType::ArrowRecordBatch) {
                 // Remove aliased column names to make things look correct for Java
                 let physical_plan = unalias_view_projection_columns(physical_plan)?;
                 // This may have been done in parallel, which will break sort order, so add a SortPreservingMergeExec stage
@@ -340,14 +364,17 @@ impl<'a> SleeperOperations<'a> {
     /// The lexical ordering is based on the row-keys and sort-keys for the Sleeper
     /// operation.
     ///
+    /// Returns [`None`] if there are no sorting columns.
+    ///
     /// # Errors
     /// The columns in the schema must match the row and sort key field names.
     pub fn create_sort_expr_ordering(
         &self,
         frame: &DataFrame,
-    ) -> Result<LexOrdering, DataFusionError> {
+    ) -> Result<Option<LexOrdering>, DataFusionError> {
         let plan_schema = frame.schema().as_arrow();
         let sorting_columns = self.config.sorting_columns();
+
         Ok(LexOrdering::new(
             sorting_columns
                 .iter()
@@ -364,7 +391,7 @@ impl<'a> SleeperOperations<'a> {
     /// Create appropriate output completer.
     #[must_use]
     pub fn create_output_completer(&self) -> Box<dyn Completer + '_> {
-        self.config.output.finisher(self)
+        self.config.output().finisher(self)
     }
 }
 

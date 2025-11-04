@@ -1,9 +1,16 @@
-name: Docker Tests
 on:
-  pull_request:
-    paths:
-      - 'java/**/Dockerfile'
-      - '.github/workflows/docker-tests.yaml'
+  workflow_call:
+    inputs:
+      imageName:
+        required: true
+        type: string
+      isLambda:
+        default: false
+        required: false
+        type: boolean
+      testClassNames:
+        required: true
+        type: string
 
 env:
   RUST_BUILD_IMAGE_X86_64: "ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest"
@@ -13,9 +20,17 @@ env:
 
 jobs:
   build:
+    name: Test Docker image ${{ inputs.imageName }}
     runs-on: ubuntu-latest
 
     steps:
+      - name: Delete huge unnecessary tools folder
+        run: |
+          rm -rf /opt/hostedtoolcache
+          rm -rf /usr/share/dotnet
+          rm -rf /opt/ghc
+          rm -rf "/usr/local/share/boost"
+          rm -rf "$AGENT_TOOLSDIRECTORY"
       - uses: actions/checkout@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -44,9 +59,8 @@ jobs:
       - name: Copy build output
         working-directory: ./scripts/build
         run: ./copyBuildOutput.sh
-      - name: Build compaction task Docker image
-        working-directory: ./scripts/docker/compaction-job-execution
-        run: docker build -t compaction-job-execution:test .
+      - name: Build Docker image ${{ inputs.imageName }}
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }}
       - name: Docker image tests
         working-directory: ./java
-        run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=*DockerImageST" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
+        run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository

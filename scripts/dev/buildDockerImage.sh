@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,13 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3 AS builder
+set -e
+unset CDPATH
 
-RUN apk add --no-cache unzip
-RUN mkdir -p /lambda
-COPY lambda.jar /lambda
-RUN unzip /lambda/lambda.jar -d /lambda/uncompressed
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
+JARS_DIR="${SCRIPTS_DIR}/jars"
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-FROM public.ecr.aws/lambda/java:17
-
-COPY --from=builder /lambda/uncompressed ${LAMBDA_TASK_ROOT}
+java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.container.BuildDockerImage "${SCRIPTS_DIR}" "$@"

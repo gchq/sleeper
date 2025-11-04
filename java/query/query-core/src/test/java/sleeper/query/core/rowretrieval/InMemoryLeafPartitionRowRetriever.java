@@ -45,7 +45,7 @@ public class InMemoryLeafPartitionRowRetriever implements LeafPartitionRowRetrie
     }
 
     @Override
-    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
+    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
         return new WrappedIterator<>(getRowsOrThrow(leafPartitionQuery.getFiles())
                 .filter(row -> isRowInRegion(row, leafPartitionQuery, dataReadSchema))
                 .map(row -> mapToReadSchema(row, dataReadSchema))

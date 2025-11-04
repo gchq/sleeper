@@ -79,7 +79,6 @@ public class SystemTestClients {
     private final Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
     private final Supplier<Map<String, String>> getAuthEnvVars;
     private final UnaryOperator<Configuration> configureHadoop;
-    private final boolean skipAssumeRole;
 
     private SystemTestClients(Builder builder) {
         credentialsProvider = builder.credentialsProvider;
@@ -104,7 +103,6 @@ public class SystemTestClients {
         dataFusionAwsConfig = builder.dataFusionAwsConfig;
         getAuthEnvVars = builder.getAuthEnvVars;
         configureHadoop = builder.configureHadoop;
-        skipAssumeRole = builder.skipAssumeRole;
     }
 
     public static Builder builder() {
@@ -136,9 +134,6 @@ public class SystemTestClients {
     }
 
     public SystemTestClients assumeRole(AssumeSleeperRole assumeRole) {
-        if (skipAssumeRole) {
-            return this;
-        }
         AssumeSleeperRoleAwsSdk aws = assumeRole.forAwsSdk(sts);
         AssumeSleeperRoleHadoop hadoop = assumeRole.forHadoop();
         return builder()
@@ -294,7 +289,6 @@ public class SystemTestClients {
         private Supplier<DataFusionAwsConfig> dataFusionAwsConfig;
         private Supplier<Map<String, String>> getAuthEnvVars = Map::of;
         private UnaryOperator<Configuration> configureHadoop = conf -> conf;
-        private boolean skipAssumeRole = false;
 
         private Builder() {
         }
@@ -410,11 +404,6 @@ public class SystemTestClients {
                 configureHadoop.accept(conf);
                 return conf;
             };
-            return this;
-        }
-
-        public Builder skipAssumeRole(boolean skipAssumeRole) {
-            this.skipAssumeRole = skipAssumeRole;
             return this;
         }
 

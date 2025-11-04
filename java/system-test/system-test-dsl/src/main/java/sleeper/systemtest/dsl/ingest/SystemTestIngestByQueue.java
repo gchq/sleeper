@@ -75,6 +75,6 @@ public class SystemTestIngestByQueue {
     }
 
     private List<String> sourceFiles(String... files) {
-        return sourceFiles.getIngestJobFilesInBucket(Stream.of(files));
+        return sourceFiles.lastFolderWrittenTo().getIngestJobFilesInBucket(Stream.of(files));
     }
 }

@@ -17,7 +17,6 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.DataEngine;
@@ -28,6 +27,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
+import sleeper.systemtest.dsl.util.DataFileDuplications;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Expensive2;
 
@@ -36,6 +36,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.DATAFUSION_S3_READAHEAD_ENABLED;
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
@@ -58,9 +59,6 @@ public class CompactionVeryLargeST {
         sleeper.compaction().scaleToZero();
     }
 
-    // We've disabled this temporarily until the following bug is resolved:
-    // https://github.com/gchq/sleeper/issues/5777
-    @Disabled
     @Test
     // This test takes about 2 hours to run, or an hour and a half if the Sleeper instance is already deployed.
     // We want to know compactions can deal with a very large amount of data.
@@ -69,31 +67,39 @@ public class CompactionVeryLargeST {
     // At time of writing, by default a partition will be split if it contains 1 billion rows.
     // To allow for the fact that partition splitting takes time, we test with 2 billion rows.
     void shouldRunVeryLargeCompaction(SleeperSystemTest sleeper) {
-        // Given
+        // Given a table set to compact in batches of 40 files
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString(),
-                COMPACTION_FILES_BATCH_SIZE, "40"));
+                COMPACTION_FILES_BATCH_SIZE, "40",
+                // We've disabled readahead temporarily until the following bug is resolved:
+                // https://github.com/gchq/sleeper/issues/5777
+                DATAFUSION_S3_READAHEAD_ENABLED, "false"));
+        // And 40 input files
         sleeper.systemTestCluster().runDataGenerationJobs(40,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(50_000_000),
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
                 .waitForTotalFileReferences(40);
+        // And we duplicate those 40 files so that we have that 10 times in total
+        DataFileDuplications duplications = sleeper.ingest().toStateStore()
+                .duplicateFilesOnSamePartitions(9);
 
-        // When
-        sleeper.compaction().putTableOnlineUntilJobsAreCreated(1).waitForTasks(1)
+        // When we run 10 compactions each with the same files
+        sleeper.compaction()
+                .createSeparateCompactionsForOriginalAndDuplicates(duplications)
+                .waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
+        assertThat(files.streamFileReferences())
+                .hasSize(10)
+                .extracting(FileReference::getNumberOfRows)
+                .allMatch(rows -> rows == 2_000_000_000L, "each file has 2 billion rows");
         assertThat(files.getFilesWithReferences())
-                .singleElement().satisfies(file -> {
-                    assertThat(file.getReferences())
-                            .singleElement()
-                            .extracting(FileReference::getNumberOfRows)
-                            .isEqualTo(2_000_000_000L);
-                    assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
-                            .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L));
-                });
+                .first().satisfies(file -> assertThat(
+                        SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
+                        .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L)));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
                 .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_000_000, 4_000_000),
                         "meets expected performance");

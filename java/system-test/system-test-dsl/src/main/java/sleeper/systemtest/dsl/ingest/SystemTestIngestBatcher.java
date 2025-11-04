@@ -57,7 +57,7 @@ public class SystemTestIngestBatcher {
 
     public SystemTestIngestBatcher sendSourceFilesExpectingJobs(int expectedJobs, String... filenames) {
         Set<String> jobIdsBefore = jobIdsInStore().collect(toUnmodifiableSet());
-        driver.sendFiles(sourceFiles.getIngestJobFilesInBucket(Stream.of(filenames)));
+        driver.sendFiles(sourceFiles.lastFolderWrittenTo().getIngestJobFilesInBucket(Stream.of(filenames)));
         try {
             List<String> newJobIds = pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2))
                     .queryUntil("expected jobs are found",

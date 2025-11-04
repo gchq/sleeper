@@ -60,6 +60,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMP
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATAFUSION_S3_READAHEAD_ENABLED;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
@@ -244,6 +245,11 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Used to set parquet.statistics.truncate.length, see documentation here:\n" +
                     "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
                     "The length in bytes to truncate the min/max binary values in row groups.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty DATAFUSION_S3_READAHEAD_ENABLED = Index.propertyBuilder("sleeper.table.datafusion.s3.readahead.enabled")
+            .defaultProperty(DEFAULT_DATAFUSION_S3_READAHEAD_ENABLED)
+            .description("Enables a cache of data when reading from S3 with the DataFusion data engine, to hold data " +
+                    "in larger blocks than are requested by DataFusion.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty PARQUET_WRITER_VERSION = Index.propertyBuilder("sleeper.table.parquet.writer.version")
             .description("Used to set parquet.writer.version, see documentation here:\n" +

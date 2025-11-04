@@ -17,6 +17,7 @@
 package sleeper.systemtest.drivers.util;
 
 import sleeper.clients.api.role.AssumeSleeperRole;
+import sleeper.systemtest.drivers.bulkexport.AwsBulkExportDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionReportsDriver;
 import sleeper.systemtest.drivers.gc.AwsGarbageCollectionDriver;
@@ -52,6 +53,7 @@ import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterDriver;
 import sleeper.systemtest.drivers.statestore.AwsStateStoreCommitterLogsDriver;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
@@ -204,6 +206,11 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
+    public BulkExportDriver bulkExport(SystemTestContext context) {
+        return new AwsBulkExportDriver(context, clients);
+    }
+
+    @Override
     public CompactionDriver compaction(SystemTestContext context) {
         return new AwsCompactionDriver(context.instance(), clients);
     }
@@ -270,7 +277,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public DataFilesDriver dataFiles(SystemTestContext context) {
-        return new AwsDataFilesDriver(clients);
+        return new AwsDataFilesDriver(context.instance(), clients);
     }
 
     @Override

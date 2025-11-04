@@ -19,12 +19,14 @@ package sleeper.clients.deploy.container;
 import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
+import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
 import sleeper.core.properties.model.OptionalStack;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -142,6 +144,19 @@ public class DockerImageConfiguration {
         return dockerDeployments.stream()
                 .filter(image -> repositoryName.endsWith("/" + image.getDeploymentName()))
                 .map(image -> repositoryName.substring(0, repositoryName.indexOf("/")))
+                .findFirst();
+    }
+
+    public Optional<LambdaJar> getLambdaJarByImageName(String imageName) {
+        return lambdaHandlers.stream()
+                .map(LambdaHandler::getJar)
+                .filter(jar -> Objects.equals(jar.getImageName(), imageName))
+                .findFirst();
+    }
+
+    public Optional<DockerDeployment> getDockerDeploymentByName(String name) {
+        return dockerDeployments.stream()
+                .filter(deployment -> Objects.equals(deployment.getDeploymentName(), name))
                 .findFirst();
     }
 }

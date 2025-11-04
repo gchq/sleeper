@@ -66,15 +66,37 @@ public class CommandArgumentReader {
         if (arg().length() < 3) {
             throw new CommandArgumentsException("Incomplete flag option: " + arg());
         }
-        Optional<CommandOption> optionOpt = usage.getLongOption(arg().substring(2));
+        String afterDashes = arg().substring(2);
+        int equalsPos = afterDashes.indexOf('=');
+        if (equalsPos > 0) {
+            String name = afterDashes.substring(0, equalsPos);
+            String value = afterDashes.substring(equalsPos + 1, afterDashes.length());
+            return readOptionWithValue(usage.getLongOption(name), value, usage, builder);
+        }
+        Optional<CommandOption> optionOpt = usage.getLongOption(afterDashes);
         if (!optionOpt.isPresent()) {
             return false;
         }
         CommandOption option = optionOpt.get();
         if (option.isFlag()) {
-            builder.flag(option);
+            builder.flag(option, true);
         } else {
             builder.option(option, readOptionArg(option));
+        }
+        advance();
+        return true;
+    }
+
+    private boolean readOptionWithValue(Optional<CommandOption> optionOpt, String value, CommandLineUsage usage, CommandArguments.Builder builder) {
+        if (!optionOpt.isPresent()) {
+            return false;
+        }
+        CommandOption option = optionOpt.get();
+
+        if (option.isFlag()) {
+            builder.flag(option, parseBoolean(value));
+        } else {
+            builder.option(option, value);
         }
         advance();
         return true;
@@ -93,12 +115,13 @@ public class CommandArgumentReader {
         }
         CommandOption option = optionOpt.get();
         if (option.isFlag()) {
-            builder.flag(option);
+            builder.flag(option, true);
             char[] otherFlags = arg().substring(2).toCharArray();
             for (char flagChar : otherFlags) {
-                builder.flag(usage.getShortOption(flagChar)
+                CommandOption otherOption = usage.getShortOption(flagChar)
                         .filter(CommandOption::isFlag)
-                        .orElseThrow(() -> new CommandArgumentsException("Unrecognised flag option: " + flagChar)));
+                        .orElseThrow(() -> new CommandArgumentsException("Unrecognised flag option: " + flagChar));
+                builder.flag(otherOption, true);
             }
         } else {
             builder.option(option, readShortOptionArg(option));
@@ -139,6 +162,16 @@ public class CommandArgumentReader {
 
     private void advance() {
         index++;
+    }
+
+    private boolean parseBoolean(String string) {
+        if ("true".equalsIgnoreCase(string)) {
+            return true;
+        } else if ("false".equalsIgnoreCase(string)) {
+            return false;
+        } else {
+            throw new CommandArgumentsException("Expected boolean, found " + string);
+        }
     }
 
 }

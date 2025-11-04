@@ -61,7 +61,6 @@ import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
@@ -293,7 +292,6 @@ class InstancePropertiesTest {
         instanceProperties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.set(COMPACTION_EC2_TYPE, "t3.xlarge");
         instanceProperties.setNumber(COMPACTION_EC2_POOL_MINIMUM, 0);
-        instanceProperties.setNumber(COMPACTION_EC2_POOL_DESIRED, 0);
         instanceProperties.setNumber(COMPACTION_EC2_POOL_MAXIMUM, 3);
         instanceProperties.setNumber(COMPACTION_EC2_ROOT_SIZE, 50);
         instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "FARGATE");
