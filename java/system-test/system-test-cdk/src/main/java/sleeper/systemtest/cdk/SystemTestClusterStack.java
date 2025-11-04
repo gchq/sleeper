@@ -19,6 +19,7 @@ package sleeper.systemtest.cdk;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Vpc;
@@ -54,6 +55,7 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
@@ -121,6 +123,12 @@ public class SystemTestClusterStack extends NestedStack {
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, SleeperVersion.getVersion());
 
         String logGroupName = String.join("-", "sleeper", instanceId, "SystemTestTasks");
+        RemovalPolicy removalPolicy;
+        if (instanceProperties.getBoolean(RETAIN_LOGS_AFTER_DESTROY)) {
+            removalPolicy = RemovalPolicy.RETAIN;
+        } else {
+            removalPolicy = RemovalPolicy.DESTROY;
+        }
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
                 .logging(LogDriver.awsLogs(AwsLogDriverProps.builder()
@@ -128,6 +136,7 @@ public class SystemTestClusterStack extends NestedStack {
                         .logGroup(LogGroup.Builder.create(this, "SystemTestTasks")
                                 .logGroupName(logGroupName)
                                 .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                                .removalPolicy(removalPolicy)
                                 .build())
                         .build()))
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
