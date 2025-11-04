@@ -64,7 +64,7 @@ public interface CommonProperty {
             .editable(false).build();
     UserDefinedInstanceProperty USER_JARS = Index.propertyBuilder("sleeper.userjars")
             .description("A comma-separated list of the jars containing application specific iterator code. " +
-                    "These jars are assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that " +
+                    "These jars are assumed to be in the bucket given by `sleeper.jars.bucket`. For example, if that " +
                     "bucket contains two iterator jars called iterator1.jar and iterator2.jar then the " +
                     "property should be 'sleeper.userjars=iterator1.jar,iterator2.jar'.")
             .propertyGroup(InstancePropertyGroup.COMMON)
