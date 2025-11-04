@@ -42,6 +42,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 class InvokeCdkForInstanceTest {
 
     private final List<CommandPipeline> commandsThatRan = new ArrayList<>();
+    private final Path propertiesFile = Path.of("instance.properties");
 
     private InvokeCdkForInstance cdk() {
         return cdk(recordCommandsRun(commandsThatRan));
@@ -62,7 +63,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldRunStandardCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommand.deployPropertiesChange());
+            cdk().invoke(InvokeCdkForInstance.Type.STANDARD, CdkCommand.deployPropertiesChange(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command(
@@ -77,7 +78,7 @@ class InvokeCdkForInstanceTest {
         @Test
         void shouldRunSystemTestCdkDeploySuccessfully() throws IOException, InterruptedException {
             // When
-            cdk().invoke(InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommand.deployPropertiesChange());
+            cdk().invoke(InvokeCdkForInstance.Type.SYSTEM_TEST, CdkCommand.deployPropertiesChange(propertiesFile));
 
             // Then
             assertThat(commandsThatRan).containsExactly(pipeline(command("cdk",

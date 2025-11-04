@@ -102,7 +102,7 @@ public class AdminClientPropertiesStore {
                     uploadDockerImages.upload(dockerUploadOpt.get());
                 }
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
-                cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange());
+                cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
             } else {
                 LOGGER.info("Saving to AWS");
                 S3InstanceProperties.saveToS3(s3Client, properties);

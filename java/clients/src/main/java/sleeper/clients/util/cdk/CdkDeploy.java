@@ -15,6 +15,7 @@
  */
 package sleeper.clients.util.cdk;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -40,6 +41,7 @@ public record CdkDeploy(List<String> arguments) implements CdkCommand {
         private boolean ensureNewInstance;
         private boolean skipVersionCheck;
         private boolean deployPaused;
+        private Path propertiesFile;
 
         private Builder() {
         }
@@ -59,6 +61,11 @@ public record CdkDeploy(List<String> arguments) implements CdkCommand {
             return this;
         }
 
+        public Builder propertiesFile(Path propertiesFile) {
+            this.propertiesFile = propertiesFile;
+            return this;
+        }
+
         public CdkDeploy build() {
             return new CdkDeploy(buildArguments());
         }
@@ -73,6 +80,9 @@ public record CdkDeploy(List<String> arguments) implements CdkCommand {
             }
             if (deployPaused) {
                 arguments.addAll(List.of("-c", "deployPaused=true"));
+            }
+            if (propertiesFile != null) {
+                arguments.addAll(List.of("-c", "propertiesfile=" + propertiesFile));
             }
             return arguments;
         }

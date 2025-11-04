@@ -15,6 +15,7 @@
  */
 package sleeper.clients.util.cdk;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -28,8 +29,8 @@ public interface CdkCommand {
         return new CdkDeploy(List.of("-c", "id=" + deploymentId, "-c", "extraEcrImages=" + String.join(",", extraEcrImages)));
     }
 
-    static CdkDeploy deployPropertiesChange() {
-        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).build();
+    static CdkDeploy deployPropertiesChange(Path propertiesFile) {
+        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).propertiesFile(propertiesFile).build();
     }
 
     static CdkDeploy deploySystemTestStandalone() {
