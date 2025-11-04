@@ -24,24 +24,23 @@ public class SleeperArtefactsLocation {
     }
 
     /**
-     * Computes the default jars bucket name from the instance ID. See the instance property `sleeper.jars.bucket`.
+     * Computes the default jars bucket name. See the instance property `sleeper.jars.bucket`.
      *
-     * @param  instanceId the instance ID
-     * @return            the bucket name
+     * @param  artefactsDeploymentId the deployment ID
+     * @return                       the bucket name
      */
-    public static String getDefaultJarsBucketName(String instanceId) {
-        return "sleeper-" + instanceId + "-jars";
+    public static String getDefaultJarsBucketName(String artefactsDeploymentId) {
+        return "sleeper-" + artefactsDeploymentId + "-jars";
     }
 
     /**
-     * Computes the default ECR repository prefix from the instance ID. See the instance property
-     * `sleeper.ecr.repository.prefix`.
+     * Computes the default ECR repository prefix. See the instance property `sleeper.ecr.repository.prefix`.
      *
-     * @param  instanceId the instance ID
-     * @return            the repository prefix
+     * @param  artefactsDeploymentId the deployment ID
+     * @return                       the repository prefix
      */
-    public static String getDefaultEcrRepositoryPrefix(String instanceId) {
-        return instanceId;
+    public static String getDefaultEcrRepositoryPrefix(String artefactsDeploymentId) {
+        return artefactsDeploymentId;
     }
 
 }

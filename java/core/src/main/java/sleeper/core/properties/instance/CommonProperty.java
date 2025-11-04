@@ -37,12 +37,31 @@ public interface CommonProperty {
             .validationPredicate(value -> SleeperPropertyValueUtils.isNonNullNonEmptyStringWithMaxLength(value, ID_MAX_LENGTH))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
-    UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
-            .description("The S3 bucket containing the jar files of the Sleeper components.")
-            .defaultProperty(ID, SleeperArtefactsLocation::getDefaultJarsBucketName)
+    UserDefinedInstanceProperty ARTEFACTS_DEPLOYMENT_ID = Index.propertyBuilder("sleeper.artefacts.deployment")
+            .description("The ID of the artefacts deployment to use to deploy the Sleeper instance. This is used to " +
+                    "default the values for `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`. If you used " +
+                    "an artefacts CDK deployment, you can set this property instead of those properties.")
+            .defaultProperty(ID)
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
+            .description("The S3 bucket containing the jar files of the Sleeper components. If unset, a default name " +
+                    "is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it is not.")
+            .defaultProperty(ARTEFACTS_DEPLOYMENT_ID, SleeperArtefactsLocation::getDefaultJarsBucketName)
+            .validationPredicate(Objects::nonNull)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty ECR_REPOSITORY_PREFIX = Index.propertyBuilder("sleeper.ecr.repository.prefix")
+            .description("If set, this property will be used as a prefix for the names of ECR repositories. " +
+                    "If unset, a default prefix is computed from `sleeper.artefacts.deployment` if it is set, or " +
+                    "`sleeper.id` if it is not.\n" +
+                    "ECR repository names are generated in the format `<prefix>/<image name>`.\n" +
+                    "Note: This is only used by the deployment scripts to upload Docker images, not the CDK. " +
+                    "We may add the ability to use this in the CDK in the future.")
+            .defaultProperty(ARTEFACTS_DEPLOYMENT_ID, SleeperArtefactsLocation::getDefaultEcrRepositoryPrefix)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .editable(false).build();
     UserDefinedInstanceProperty USER_JARS = Index.propertyBuilder("sleeper.userjars")
             .description("A comma-separated list of the jars containing application specific iterator code. " +
                     "These jars are assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that " +
@@ -178,16 +197,6 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    UserDefinedInstanceProperty ECR_REPOSITORY_PREFIX = Index.propertyBuilder("sleeper.ecr.repository.prefix")
-            .description("If set, this property will be used as a prefix for the names of ECR repositories. " +
-                    "If unset, then the instance ID will be used to determine the names instead.\n" +
-                    "Repository names are generated in the format `<prefix>/<image name>`. The default prefix is the " +
-                    "instance ID.\n" +
-                    "Note: This is only used by the deployment scripts to upload Docker images, not the CDK. " +
-                    "We may add the ability to use this in the CDK in the future.")
-            .defaultProperty(ID, SleeperArtefactsLocation::getDefaultEcrRepositoryPrefix)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .editable(false).build();
     UserDefinedInstanceProperty ECS_SECURITY_GROUPS = Index.propertyBuilder("sleeper.ecs.security.groups")
             .description("A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.")
             .validationPredicate(value -> SleeperPropertyValueUtils.isListWithMaxSize(value, 5))
