@@ -24,7 +24,7 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
-import sleeper.systemtest.dsl.bulkexport.SystemTestBulkExport;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDsl;
 import sleeper.systemtest.dsl.compaction.SystemTestCompaction;
 import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
 import sleeper.systemtest.dsl.ingest.SystemTestIngest;
@@ -135,8 +135,8 @@ public class SleeperDsl {
         return query().direct();
     }
 
-    public SystemTestBulkExport bulkExport() {
-        return new SystemTestBulkExport(context);
+    public BulkExportDsl bulkExport() {
+        return new BulkExportDsl(context);
     }
 
     public SystemTestCompaction compaction() {

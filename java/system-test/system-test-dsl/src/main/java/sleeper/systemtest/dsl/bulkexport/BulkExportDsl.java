@@ -26,16 +26,16 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 // Future methods for class
 // - waitForExport
 // - retrieveOutput
-public class SystemTestBulkExport {
+public class BulkExportDsl {
     private final SystemTestInstanceContext instance;
     private final BulkExportDriver driver;
 
-    public SystemTestBulkExport(SystemTestContext context) {
+    public BulkExportDsl(SystemTestContext context) {
         this.instance = context.instance();
         driver = instance.adminDrivers().bulkExport(context);
     }
 
-    public SystemTestBulkExport sendAllRowsQuery() {
+    public BulkExportDsl sendAllRowsQuery() {
         driver.sendJob(generateBulkExportQuery());
         return this;
     }
