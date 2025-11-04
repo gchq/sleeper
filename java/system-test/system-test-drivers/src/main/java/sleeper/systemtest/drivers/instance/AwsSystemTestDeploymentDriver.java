@@ -35,6 +35,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
@@ -109,7 +110,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
         new SyncJars(s3, parameters.getJarsDirectory())
                 .sync(SyncJarsRequest.builder()
-                        .bucketName(parameters.buildJarsBucketName())
+                        .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(parameters.getArtefactsDeploymentId()))
                         .region(parameters.getRegion())
                         .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
                         .build());
@@ -124,7 +125,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                         .build(),
                 EcrRepositoryCreator.withEcrClient(ecr));
         dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()
-                .ecrPrefix(parameters.getSystemTestShortId())
+                .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(parameters.getArtefactsDeploymentId()))
                 .account(parameters.getAccount())
                 .region(parameters.getRegion())
                 .version(SleeperVersion.getVersion())

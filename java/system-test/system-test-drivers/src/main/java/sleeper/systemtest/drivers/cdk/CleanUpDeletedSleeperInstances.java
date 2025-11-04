@@ -27,10 +27,7 @@ import sleeper.clients.teardown.TearDownInstance;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.stream.Stream;
-
-import static sleeper.systemtest.dsl.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
 /**
  * This class can be used to clean up after deleted Sleeper instances when the CloudFormation stacks for those instances
@@ -50,7 +47,6 @@ public class CleanUpDeletedSleeperInstances {
     public void run() throws IOException, InterruptedException {
         for (String instanceId : getInstanceIds()) {
             tearDownBuilder.instanceId(instanceId)
-                    .getExtraEcrRepositories(properties -> List.of(buildSystemTestECRRepoName(instanceId)))
                     .build().tearDown();
         }
     }

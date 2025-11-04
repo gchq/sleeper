@@ -78,7 +78,6 @@ public class TearDownMavenSystemTest {
         }
         for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
             deployment.waitForStackToDelete();
-            deployment.cleanupAfterAllInstancesAndStackDeleted();
         }
 
         LOGGER.info("Tear down finished, took {}", LoggedDuration.withFullOutput(startTime, Instant.now()));
