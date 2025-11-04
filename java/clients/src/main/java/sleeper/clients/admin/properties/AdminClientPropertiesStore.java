@@ -24,7 +24,7 @@ import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.CdkCommandNew;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -102,7 +102,7 @@ public class AdminClientPropertiesStore {
                     uploadDockerImages.upload(dockerUploadOpt.get());
                 }
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
-                cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
+                cdk.invokeInferringType(properties, CdkCommandNew.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
             } else {
                 LOGGER.info("Saving to AWS");
                 S3InstanceProperties.saveToS3(s3Client, properties);
