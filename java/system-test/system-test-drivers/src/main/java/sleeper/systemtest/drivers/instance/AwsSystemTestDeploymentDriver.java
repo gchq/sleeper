@@ -67,14 +67,17 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         this.cloudFormation = clients.getCloudFormation();
     }
 
+    @Override
     public void saveProperties(SystemTestStandaloneProperties properties) {
         properties.saveToS3(s3);
     }
 
+    @Override
     public SystemTestStandaloneProperties loadProperties() {
         return SystemTestStandaloneProperties.fromS3GivenDeploymentId(s3, parameters.getSystemTestShortId());
     }
 
+    @Override
     public boolean deployIfNotPresent(SystemTestStandaloneProperties properties) {
         try {
             String deploymentId = properties.get(SYSTEM_TEST_ID);
@@ -87,6 +90,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         }
     }
 
+    @Override
     public void redeploy(SystemTestStandaloneProperties deployProperties) {
         try {
             uploadJarsAndDockerImages();
