@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.emr.EmrClient;
 
 import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
@@ -41,6 +42,10 @@ public class ClientWiremockTestHelper {
 
     public static CloudWatchEventsClient wiremockCloudWatchClient(WireMockRuntimeInfo runtimeInfo) {
         return wiremockAwsV2Client(runtimeInfo, CloudWatchEventsClient.builder());
+    }
+
+    public static EmrClient wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockAwsV2Client(runtimeInfo, EmrClient.builder());
     }
 
     public static CloudWatchLogsClient wiremockLogsClient(WireMockRuntimeInfo runtimeInfo) {
