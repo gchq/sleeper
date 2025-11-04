@@ -18,9 +18,8 @@ package sleeper.clients.util.cdk;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
-public record CdkCommandNew(List<String> command, List<String> arguments) implements CdkCommand {
+public record CdkCommandNew(List<String> command, List<String> arguments) {
 
     public static Builder builder() {
         return new Builder();
@@ -59,16 +58,6 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
 
     public static CdkCommandNew destroy() {
         return builder().destroy().validate(false).build();
-    }
-
-    @Override
-    public Stream<String> getCommand() {
-        return command.stream();
-    }
-
-    @Override
-    public Stream<String> getArguments() {
-        return arguments.stream();
     }
 
     public CdkCommandNew withPropertiesFile(Path propertiesFile) {

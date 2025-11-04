@@ -80,8 +80,8 @@ public class InvokeCdkForInstance {
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
                         instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)));
-        cdkCommand.getCommand().forEach(command::add);
-        cdkCommand.getArguments().forEach(command::add);
+        command.addAll(cdkCommand.command());
+        command.addAll(cdkCommand.arguments());
         command.add("*");
 
         int exitCode = runCommand.run(command.toArray(new String[0]));
