@@ -42,8 +42,8 @@ import sleeper.systemtest.dsl.reporting.ReportingDsl;
 import sleeper.systemtest.dsl.sourcedata.ClusterDsl;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
+import sleeper.systemtest.dsl.sourcedata.LocalFilesDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
-import sleeper.systemtest.dsl.sourcedata.SystemTestLocalFiles;
 import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.dsl.statestore.SystemTestStateStore;
 
@@ -163,8 +163,8 @@ public class SleeperDsl {
         return new PythonApiDsl(context);
     }
 
-    public SystemTestLocalFiles localFiles(Path tempDir) {
-        return new SystemTestLocalFiles(context.instance(), baseDrivers.localFiles(context), tempDir);
+    public LocalFilesDsl localFiles(Path tempDir) {
+        return new LocalFilesDsl(context.instance(), baseDrivers.localFiles(context), tempDir);
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {

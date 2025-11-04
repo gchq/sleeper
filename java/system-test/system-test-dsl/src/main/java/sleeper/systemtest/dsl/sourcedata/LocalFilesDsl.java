@@ -21,12 +21,12 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import java.nio.file.Path;
 import java.util.stream.LongStream;
 
-public class SystemTestLocalFiles {
+public class LocalFilesDsl {
     private final SystemTestInstanceContext instance;
     private final IngestLocalFilesDriver driver;
     private final Path tempDir;
 
-    public SystemTestLocalFiles(SystemTestInstanceContext instance, IngestLocalFilesDriver driver, Path tempDir) {
+    public LocalFilesDsl(SystemTestInstanceContext instance, IngestLocalFilesDriver driver, Path tempDir) {
         this.instance = instance;
         this.driver = driver;
         this.tempDir = tempDir;
