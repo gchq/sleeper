@@ -22,7 +22,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.List;
@@ -40,13 +40,13 @@ public class CompactionFakeCommitTest {
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) throws Exception {
+    void setUp(SleeperDsl sleeper) throws Exception {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.partitioning().setPartitions(partitions);
     }
 
     @Test
-    void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
+    void shouldFakeCompactionCommits(SleeperDsl sleeper) throws Exception {
         // Given
         StreamFakeCompactions compactions = StreamFakeCompactions.builder()
                 .numCompactions(100)

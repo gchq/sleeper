@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.statestore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
@@ -36,12 +36,12 @@ public class SystemTestStateStoreFakeCommitsThroughputTest {
     private InMemoryStateStoreCommitter committer;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
+    void setUp(SleeperDsl sleeper, InMemorySystemTestDrivers drivers) {
         committer = drivers.stateStoreCommitter();
     }
 
     @Test
-    void shouldAssertOnCommitsPerSecond(SleeperSystemTest sleeper) {
+    void shouldAssertOnCommitsPerSecond(SleeperDsl sleeper) {
         // Given
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         committer.setFakeCommitsPerSecond(sleeper, 10.0);
@@ -52,7 +52,7 @@ public class SystemTestStateStoreFakeCommitsThroughputTest {
     }
 
     @Test
-    void shouldAssertOnCommitsPerSecondForMultipleTables(SleeperSystemTest sleeper) {
+    void shouldAssertOnCommitsPerSecondForMultipleTables(SleeperDsl sleeper) {
         // Given
         sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         sleeper.tables().create(List.of("A", "B"), DEFAULT_SCHEMA);

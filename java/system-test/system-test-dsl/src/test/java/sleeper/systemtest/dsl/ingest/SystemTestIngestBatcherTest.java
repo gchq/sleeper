@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.ingest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
@@ -39,12 +39,12 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAI
 public class SystemTestIngestBatcherTest {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
+    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperDsl sleeper, InMemorySystemTestDrivers drivers) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),

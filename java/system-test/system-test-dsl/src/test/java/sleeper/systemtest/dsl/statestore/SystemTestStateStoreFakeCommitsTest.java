@@ -24,7 +24,7 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
@@ -44,13 +44,13 @@ public class SystemTestStateStoreFakeCommitsTest {
     private InMemoryStateStoreCommitter committer;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
+    void setUp(SleeperDsl sleeper, InMemorySystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         committer = drivers.stateStoreCommitter();
     }
 
     @Test
-    void shouldSendOneFileCommit(SleeperSystemTest sleeper) throws Exception {
+    void shouldSendOneFileCommit(SleeperDsl sleeper) throws Exception {
         // When
         sleeper.stateStore().fakeCommits()
                 .send(StateStoreCommitMessage.addPartitionFile("root", "file.parquet", 100))
@@ -65,7 +65,7 @@ public class SystemTestStateStoreFakeCommitsTest {
     }
 
     @Test
-    void shouldSendManyFileCommits(SleeperSystemTest sleeper) throws Exception {
+    void shouldSendManyFileCommits(SleeperDsl sleeper) throws Exception {
         // When
         sleeper.stateStore().fakeCommits()
                 .sendBatched(LongStream.rangeClosed(1, 1000)
@@ -77,7 +77,7 @@ public class SystemTestStateStoreFakeCommitsTest {
     }
 
     @Test
-    void shouldWaitForCommitWhenCommitWasMadeButNoRunStartOrFinishLogsWereMade(SleeperSystemTest sleeper) throws Exception {
+    void shouldWaitForCommitWhenCommitWasMadeButNoRunStartOrFinishLogsWereMade(SleeperDsl sleeper) throws Exception {
         // Given
         committer.setRunCommitterOnSend(sleeper, false);
         SystemTestStateStoreFakeCommits commitsDsl = sleeper.stateStore().fakeCommits();
@@ -90,7 +90,7 @@ public class SystemTestStateStoreFakeCommitsTest {
     }
 
     @Test
-    void shouldFakeCompactFilesIntoOnePerPartition(SleeperSystemTest sleeper) {
+    void shouldFakeCompactFilesIntoOnePerPartition(SleeperDsl sleeper) {
         // Given
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA)
                 .rootFirst("root")

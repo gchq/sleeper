@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.reporting;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.extension.TestContextFactory;
@@ -41,7 +41,7 @@ public class SystemTestReportingTest {
     private Path tempDir = null;
 
     @Test
-    void shouldReportFinishedIngestJob(SleeperSystemTest sleeper) {
+    void shouldReportFinishedIngestJob(SleeperDsl sleeper) {
         // Given
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.of(1, 2, 3));
@@ -54,7 +54,7 @@ public class SystemTestReportingTest {
     }
 
     @Test
-    void shouldReportFinishedCompactionJob(SleeperSystemTest sleeper) {
+    void shouldReportFinishedCompactionJob(SleeperDsl sleeper) {
         // Given
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 2, 3));
@@ -67,7 +67,7 @@ public class SystemTestReportingTest {
     }
 
     @Test
-    void shouldRunCompactionReportAfterTest(SleeperSystemTest sleeper, SystemTestContext context, InMemorySystemTestDrivers drivers, TestInfo info) {
+    void shouldRunCompactionReportAfterTest(SleeperDsl sleeper, SystemTestContext context, InMemorySystemTestDrivers drivers, TestInfo info) {
         // Given
         List<String> fakeOutput = new ArrayList<>();
         drivers.reports().setCompactionReport((out, time) -> fakeOutput.add("This is a test report"));

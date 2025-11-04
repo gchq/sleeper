@@ -29,7 +29,7 @@ import sleeper.systemtest.dsl.util.TestContext;
  * Tracks the context of a single running system test that will use the DSL. This is anything that needs to be
  * remembered from one step to the next, but not in between tests.
  * <p>
- * The {@link SleeperSystemTest} DSL uses this for the context of a test. Deployed resources and Sleeper instances are
+ * The {@link SleeperDsl} DSL uses this for the context of a test. Deployed resources and Sleeper instances are
  * managed separately in {@link SystemTestDeploymentContext}, outside of any test.
  */
 public class SystemTestContext {

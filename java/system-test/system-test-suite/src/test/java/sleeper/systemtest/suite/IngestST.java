@@ -23,7 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.ingest.SystemTestIngestType;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
@@ -40,13 +40,13 @@ import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.nu
 public class IngestST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
     @Test
-    void shouldIngest1File(SleeperSystemTest sleeper) {
+    void shouldIngest1File(SleeperDsl sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
@@ -62,7 +62,7 @@ public class IngestST {
     }
 
     @Test
-    void shouldIngest4FilesInOneJob(SleeperSystemTest sleeper) {
+    void shouldIngest4FilesInOneJob(SleeperDsl sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
@@ -81,7 +81,7 @@ public class IngestST {
     }
 
     @Test
-    void shouldIngest4FilesInTwoJobs(SleeperSystemTest sleeper) {
+    void shouldIngest4FilesInTwoJobs(SleeperDsl sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
@@ -103,7 +103,7 @@ public class IngestST {
 
     @ParameterizedTest
     @MethodSource("ingestTypesToTestWithManyRows")
-    void shouldIngest20kRowsWithIngestType(SystemTestIngestType ingestType, SleeperSystemTest sleeper) {
+    void shouldIngest20kRowsWithIngestType(SystemTestIngestType ingestType, SleeperDsl sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 20000));

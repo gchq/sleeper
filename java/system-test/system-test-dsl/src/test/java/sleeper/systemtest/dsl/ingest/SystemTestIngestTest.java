@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -39,12 +39,12 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAI
 public class SystemTestIngestTest {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldIngestByQueue(SleeperSystemTest sleeper) {
+    void shouldIngestByQueue(SleeperDsl sleeper) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",
@@ -65,7 +65,7 @@ public class SystemTestIngestTest {
     }
 
     @Test
-    void shouldBulkImportByQueue(SleeperSystemTest sleeper) {
+    void shouldBulkImportByQueue(SleeperDsl sleeper) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",
@@ -85,7 +85,7 @@ public class SystemTestIngestTest {
     }
 
     @Test
-    void shouldIngestSplitIntoFiles(SleeperSystemTest sleeper) {
+    void shouldIngestSplitIntoFiles(SleeperDsl sleeper) {
         // Given
         RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 100_000));
 
@@ -101,7 +101,7 @@ public class SystemTestIngestTest {
     }
 
     @Test
-    void shouldNotSplitIntoFilesIfNotExactSplit(SleeperSystemTest sleeper) {
+    void shouldNotSplitIntoFilesIfNotExactSplit(SleeperDsl sleeper) {
         // Given
         RowNumbers numbers = sleeper.scrambleNumberedRows(LongStream.range(0, 10));
         SystemTestDirectIngest ingest = sleeper.ingest().direct(null);

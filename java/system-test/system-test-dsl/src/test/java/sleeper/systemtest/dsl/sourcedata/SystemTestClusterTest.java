@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.sourcedata;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,12 +29,12 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAI
 public class SystemTestClusterTest {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldIngestDirectlyWithSystemTestCluster(SleeperSystemTest sleeper) {
+    void shouldIngestDirectlyWithSystemTestCluster(SleeperDsl sleeper) {
         // When
         sleeper.systemTestCluster().runDataGenerationJobs(2,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(123))

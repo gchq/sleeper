@@ -28,7 +28,7 @@ import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.util.DataFileDuplications;
 
@@ -48,12 +48,12 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 public class AwsDataFilesDriverIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
     }
 
     @Test
-    void shouldReadFile(SleeperSystemTest sleeper) throws Exception {
+    void shouldReadFile(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.tables().create("test", DEFAULT_SCHEMA);
         sleeper.sourceFiles().inDataBucket()
@@ -72,7 +72,7 @@ public class AwsDataFilesDriverIT {
     }
 
     @Test
-    void shouldDuplicateFiles(SleeperSystemTest sleeper, SystemTestContext context) {
+    void shouldDuplicateFiles(SleeperDsl sleeper, SystemTestContext context) {
         // Given
         sleeper.tables().create("test", createSchemaWithKey("key", new StringType()));
         sleeper.ingest().toStateStore()

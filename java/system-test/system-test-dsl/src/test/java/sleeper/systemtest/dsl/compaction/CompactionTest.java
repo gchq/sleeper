@@ -24,7 +24,7 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.nio.file.Path;
@@ -51,7 +51,7 @@ public class CompactionTest {
     private final Path tempDir = null;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) throws Exception {
+    void setUp(SleeperDsl sleeper) throws Exception {
         sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA, Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
@@ -59,7 +59,7 @@ public class CompactionTest {
     }
 
     @Test
-    void shouldCompactFilesFromMultiplePartitions(SleeperSystemTest sleeper) throws Exception {
+    void shouldCompactFilesFromMultiplePartitions(SleeperDsl sleeper) throws Exception {
         // Given we have 4 leaf partitions, LL, LR, RL, RR
         sleeper.setGeneratorOverrides(overrideField(
                 ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));

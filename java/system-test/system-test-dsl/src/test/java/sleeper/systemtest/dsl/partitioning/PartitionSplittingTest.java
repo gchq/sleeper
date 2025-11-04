@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.Map;
@@ -42,12 +42,12 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.ROW_KEY_FIELD_NAME;
 public class PartitionSplittingTest {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldSplitPartitionsWith100RowsAndThresholdOf20(SleeperSystemTest sleeper) {
+    void shouldSplitPartitionsWith100RowsAndThresholdOf20(SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(ROW_KEY_FIELD_NAME,

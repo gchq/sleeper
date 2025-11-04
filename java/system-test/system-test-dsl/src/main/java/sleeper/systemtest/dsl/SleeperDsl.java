@@ -73,13 +73,13 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
  * assume you should re-access the first system from here again the second time.
  * Try to avoid assigning variables except for data you want to reuse.
  */
-public class SleeperSystemTest {
+public class SleeperDsl {
 
     private final SystemTestParameters parameters;
     private final SystemTestDrivers baseDrivers;
     private final SystemTestContext context;
 
-    public SleeperSystemTest(SystemTestParameters parameters, SystemTestDrivers baseDrivers, SystemTestContext context) {
+    public SleeperDsl(SystemTestParameters parameters, SystemTestDrivers baseDrivers, SystemTestContext context) {
         this.parameters = parameters;
         this.baseDrivers = baseDrivers;
         this.context = context;
@@ -222,7 +222,7 @@ public class SleeperSystemTest {
         return new SystemTestTables(context.instance());
     }
 
-    public SleeperSystemTest table(String name) {
+    public SleeperDsl table(String name) {
         context.instance().setCurrentTable(name);
         return this;
     }

@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.sourcedata;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
@@ -32,7 +32,7 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAI
 public class SystemTestSourceFilesTest {
 
     @Test
-    void shouldGenerateFilenameForSourceFile(SleeperSystemTest sleeper, SystemTestContext context) {
+    void shouldGenerateFilenameForSourceFile(SleeperDsl sleeper, SystemTestContext context) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",
