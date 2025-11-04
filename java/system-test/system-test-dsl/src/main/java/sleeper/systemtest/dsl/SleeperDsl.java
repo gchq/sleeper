@@ -38,7 +38,7 @@ import sleeper.systemtest.dsl.metrics.TableMetricsDsl;
 import sleeper.systemtest.dsl.partitioning.PartitioningDsl;
 import sleeper.systemtest.dsl.python.PythonApiDsl;
 import sleeper.systemtest.dsl.query.QueryDsl;
-import sleeper.systemtest.dsl.reporting.SystemTestReporting;
+import sleeper.systemtest.dsl.reporting.ReportingDsl;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
@@ -147,8 +147,8 @@ public class SleeperDsl {
         return new SystemTestGarbageCollection(context);
     }
 
-    public SystemTestReporting reporting() {
-        return new SystemTestReporting(context);
+    public ReportingDsl reporting() {
+        return new ReportingDsl(context);
     }
 
     public TableMetricsDsl tableMetrics() {

@@ -22,11 +22,11 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 
 import java.util.List;
 
-public class SystemTestReporting {
+public class ReportingDsl {
 
     private final SystemTestContext context;
 
-    public SystemTestReporting(SystemTestContext context) {
+    public ReportingDsl(SystemTestContext context) {
         this.context = context;
     }
 
