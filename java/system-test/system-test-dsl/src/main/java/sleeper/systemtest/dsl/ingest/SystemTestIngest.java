@@ -64,8 +64,8 @@ public class SystemTestIngest {
         return new SystemTestIngestByQueue(sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport(), pollDriver());
     }
 
-    public SystemTestDirectBulkImport directEmrServerless() {
-        return new SystemTestDirectBulkImport(
+    public DirectBulkImportDsl directEmrServerless() {
+        return new DirectBulkImportDsl(
                 instance(), sourceFiles(), baseDrivers.directEmrServerless(context), waitForBulkImport());
     }
 

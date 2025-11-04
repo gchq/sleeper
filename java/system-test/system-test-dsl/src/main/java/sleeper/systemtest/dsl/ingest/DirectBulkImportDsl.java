@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-public class SystemTestDirectBulkImport {
+public class DirectBulkImportDsl {
 
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
@@ -39,7 +39,7 @@ public class SystemTestDirectBulkImport {
     private final WaitForJobs waitForJobs;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestDirectBulkImport(
+    public DirectBulkImportDsl(
             SystemTestInstanceContext instance,
             IngestSourceFilesContext sourceFiles,
             DirectBulkImportDriver driver,
@@ -50,7 +50,7 @@ public class SystemTestDirectBulkImport {
         this.waitForJobs = waitForJobs;
     }
 
-    public SystemTestDirectBulkImport sendSourceFiles(String... files) {
+    public DirectBulkImportDsl sendSourceFiles(String... files) {
         String jobId = UUID.randomUUID().toString();
         sentJobIds.add(jobId);
         TableProperties table = instance.getTableProperties();
