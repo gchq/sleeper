@@ -103,7 +103,7 @@ public class PublishJarsToRepo {
         private String version = SleeperVersion.getVersion();
         private CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
         private List<ClientJar> clientJars = ClientJar.getAll();
-        private List<LambdaJar> lambdaJars = LambdaJar.getAll();
+        private List<LambdaJar> lambdaJars = LambdaJar.all();
 
         private Builder() {
         }
