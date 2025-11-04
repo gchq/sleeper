@@ -35,7 +35,7 @@ import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
 import sleeper.systemtest.dsl.instance.SystemTestTables;
 import sleeper.systemtest.dsl.metrics.TableMetricsDsl;
-import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
+import sleeper.systemtest.dsl.partitioning.PartitioningDsl;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
@@ -119,8 +119,8 @@ public class SleeperDsl {
         return new SystemTestTableFiles(context.instance());
     }
 
-    public SystemTestPartitioning partitioning() {
-        return new SystemTestPartitioning(context);
+    public PartitioningDsl partitioning() {
+        return new PartitioningDsl(context);
     }
 
     public IngestDsl ingest() {

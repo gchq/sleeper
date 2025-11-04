@@ -33,13 +33,13 @@ import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
 
-public class SystemTestPartitioning {
+public class PartitioningDsl {
 
     private final SystemTestInstanceContext instance;
     private final PartitionSplittingDriver splittingDriver;
     private final PollWithRetriesDriver pollDriver;
 
-    public SystemTestPartitioning(SystemTestContext context) {
+    public PartitioningDsl(SystemTestContext context) {
         SystemTestDrivers drivers = context.instance().adminDrivers();
         instance = context.instance();
         splittingDriver = drivers.partitionSplitting(context);
