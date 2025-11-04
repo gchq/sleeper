@@ -124,11 +124,11 @@ public class DeployInstance {
         dockerImageUploader.upload(
                 UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
                         .withExtraImages(request.getExtraDockerImages()));
-        writeLocalProperties.write(instanceConfig);
+        Path propertiesFile = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        invokeCdk.invoke(request.getInstanceType(), request.getCdkCommand());
+        invokeCdk.invoke(request.getInstanceType(), request.getCdkCommand().withPropertiesFile(propertiesFile));
     }
 
     public interface WriteLocalProperties {
