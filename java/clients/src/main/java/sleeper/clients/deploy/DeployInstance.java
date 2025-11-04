@@ -132,7 +132,7 @@ public class DeployInstance {
     }
 
     public interface WriteLocalProperties {
-        void write(DeployInstanceConfiguration instanceConfig) throws IOException;
+        Path write(DeployInstanceConfiguration instanceConfig) throws IOException;
 
         static WriteLocalProperties underScriptsDirectory(Path scriptsDirectory) {
             return toDirectory(scriptsDirectory.resolve("generated"));
@@ -146,6 +146,7 @@ public class DeployInstance {
                 SaveLocalProperties.saveToDirectory(directory,
                         instanceConfig.getInstanceProperties(),
                         instanceConfig.getTableProperties().stream());
+                return directory.resolve("instance.properties");
             };
         }
     }
