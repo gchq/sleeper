@@ -91,12 +91,14 @@ with a short 60 seconds delay between each one starting up. Once all have comple
 When adding a new Slow or Expensive System test add either the Slow1-3 or Expensive 1-3 tag.
 
 ### Current Slow and Expensive test suites
+## This looks imabalanced but EKSBulkImportST is a lot slower than others
 | Slow1                     | Slow2                      | Slow3                           |
 | ------------------------- | -------------------------- | ------------------------------- |
 | AutoStopEcsTaskST         | EksBulkImportST            | AutoDeleteS3ObjectsST           |
-| CompactionCreationST      | MultipleTablesST           | RedeployOptionalStacksST        |
-| CompactionOnEC2ST         | OptionalFeaturesDisabledST | StateStoreCommitterThroughputST |
+| CompactionCreationST      | OptionalFeaturesDisabledST | RedeployOptionalStacksST        |
+| CompactionOnEC2ST         |                            | StateStoreCommitterThroughputST |
 | EmrPersistentBulkImportST |
+| MultipleTablesST          |
 
 | Expensive1                        | Expensive2                 | Expensive3            |
 | --------------------------------- | -------------------------- | --------------------- |

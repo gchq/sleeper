@@ -34,11 +34,10 @@ VPC=$2
 SUBNETS=$3
 RESULTS_BUCKET=$4
 MAIN_SUITE_NAME=$5
+SUITE_PARAMS=("-Dsleeper.system.test.cluster.enabled=true" "-DskipRust" "-Dsleeper.system.test.create.multi.platform=false")
 
 shift 4
-if [ "$MAIN_SUITE_NAME" == "performance" ]; then
-  shift
-elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
+if [ "$MAIN_SUITE_NAME" == "performance" ] || [ "$MAIN_SUITE_NAME" == "functional" ]; then
   shift
 elif [ "$1" == "--main" ]; then
   MAIN_SUITE_NAME=custom
@@ -68,10 +67,8 @@ set +e
 
 END_EXIT_CODE=0
 
-echo "Begining docker buildx"
 docker buildx rm sleeper
 docker buildx create --name sleeper --use
-echo "Finished docker buildx"
 
 #Make copies of the project to run independent maven builds in parallel
 source "$SCRIPTS_DIR/functions/checkInstalled.sh"
@@ -116,7 +113,7 @@ runMavenSystemTests() {
     #Run tests
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
-      -Dsleeper.system.test.create.multi.platform=false \
+       \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     RUN_TESTS_EXIT_CODE=$?
@@ -150,10 +147,8 @@ runMavenSystemTests() {
 }
 
 runTestSuite(){
-    SUITE=$3
+    SUITE=$2
     copyFolderForParallelRun "$SUITE"
-    sleep $1 #Delay so that initial deployment doesn't clash with each other
-    shift 1
     echo "[$(time_str)] Starting test suite: $SUITE"
     pushd "$REPO_PARENT_DIR/$SUITE/scripts/test" #Move into isolated repo copy
     runMavenSystemTests "$@"
@@ -163,24 +158,22 @@ runTestSuite(){
 }
 
 runSlowTests(){
-    SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DskipRust)
-    runTestSuite 0  "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
-    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
-    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" &
-    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite3" "$@"
+    runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
+    runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
+    runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" &
+    runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite3" "$@"
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     echo "Running performance tests in parallel. Start time: [$(time_str)]"
-    SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DskipRust)
     EXP1_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e1" "expensive1" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite1)
     EXP2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite2)
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
     runSlowTests "$@" &
-    runTestSuite 240 "${EXP1_SUITE_PARAMS[@]}" "$@" &
-    runTestSuite 300 "${EXP2_SUITE_PARAMS[@]}" "$@" &
-    runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" "$@"
+    runTestSuite "${EXP1_SUITE_PARAMS[@]}" "$@" &
+    runTestSuite "${EXP2_SUITE_PARAMS[@]}" "$@" &
+    runTestSuite "${EXP3_SUITE_PARAMS[@]}" "$@"
     wait
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
