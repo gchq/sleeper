@@ -27,7 +27,6 @@ import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
@@ -54,7 +53,7 @@ public class DeployExistingInstance {
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3;
     private final EcrClient ecr;
-    private final CdkDeploy deployCommand;
+    private final CdkCommand deployCommand;
     private final CommandPipelineRunner runCommand;
 
     private DeployExistingInstance(Builder builder) {
@@ -121,7 +120,7 @@ public class DeployExistingInstance {
         private List<TableProperties> tablePropertiesList;
         private S3Client s3;
         private EcrClient ecr;
-        private CdkDeploy deployCommand = CdkCommand.deployExisting();
+        private CdkCommand deployCommand = CdkCommand.deployExisting();
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
 
         private Builder() {
@@ -157,7 +156,7 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder deployCommand(CdkDeploy deployCommand) {
+        public Builder deployCommand(CdkCommand deployCommand) {
             this.deployCommand = deployCommand;
             return this;
         }
