@@ -46,31 +46,31 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
     }
 
     public static CdkCommandNew deployPropertiesChange(Path propertiesFile) {
-        return builder().deploy().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).propertiesFile(propertiesFile).build();
+        return builder().deploy().propertiesFile(propertiesFile).build();
     }
 
     public static CdkCommandNew deploySystemTestStandalone(Path propertiesFile) {
-        return builder().deploy().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).propertiesFile(propertiesFile).build();
+        return builder().deploy().propertiesFile(propertiesFile).build();
     }
 
     public static CdkCommandNew deployExisting(Path propertiesFile) {
-        return builder().deploy().ensureNewInstance(false).skipVersionCheck(true).deployPaused(false).propertiesFile(propertiesFile).build();
+        return builder().deploy().propertiesFile(propertiesFile).skipVersionCheck(true).build();
     }
 
     public static CdkCommandNew deployExistingPaused(Path propertiesFile) {
-        return builder().deploy().ensureNewInstance(false).skipVersionCheck(true).deployPaused(true).propertiesFile(propertiesFile).build();
+        return builder().deploy().propertiesFile(propertiesFile).skipVersionCheck(true).deployPaused(true).build();
     }
 
     public static CdkCommandNew deployNew(Path propertiesFile) {
-        return builder().deploy().ensureNewInstance(true).skipVersionCheck(false).deployPaused(false).propertiesFile(propertiesFile).build();
+        return builder().deploy().propertiesFile(propertiesFile).ensureNewInstance(true).build();
     }
 
     public static CdkCommandNew deployNewPaused(Path propertiesFile) {
-        return builder().deploy().ensureNewInstance(true).skipVersionCheck(false).deployPaused(true).propertiesFile(propertiesFile).build();
+        return builder().deploy().propertiesFile(propertiesFile).ensureNewInstance(true).deployPaused(true).build();
     }
 
     public static CdkCommandNew destroy(Path propertiesFile) {
-        return builder().destroy().propertiesFile(propertiesFile).build();
+        return builder().destroy().propertiesFile(propertiesFile).validate(false).build();
     }
 
     public static final class Builder {
@@ -86,8 +86,7 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
         }
 
         public Builder destroy() {
-            return command(List.of("destroy", "--force"))
-                    .validate(false);
+            return command(List.of("destroy", "--force"));
         }
 
         public Builder command(List<String> command) {
