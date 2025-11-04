@@ -35,7 +35,7 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
-public class SystemTestIngestBatcher {
+public class IngestBatcherDsl {
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final IngestBatcherDriver driver;
@@ -45,7 +45,7 @@ public class SystemTestIngestBatcher {
     private final PollWithRetriesDriver pollDriver;
     private List<String> createdJobIds = new ArrayList<>();
 
-    public SystemTestIngestBatcher(SystemTestContext context, SystemTestDrivers drivers) {
+    public IngestBatcherDsl(SystemTestContext context, SystemTestDrivers drivers) {
         instance = context.instance();
         sourceFiles = context.sourceFiles();
         driver = drivers.ingestBatcher(context);
@@ -55,7 +55,7 @@ public class SystemTestIngestBatcher {
         pollDriver = drivers.pollWithRetries();
     }
 
-    public SystemTestIngestBatcher sendSourceFilesExpectingJobs(int expectedJobs, String... filenames) {
+    public IngestBatcherDsl sendSourceFilesExpectingJobs(int expectedJobs, String... filenames) {
         Set<String> jobIdsBefore = jobIdsInStore().collect(toUnmodifiableSet());
         driver.sendFiles(sourceFiles.lastFolderWrittenTo().getIngestJobFilesInBucket(Stream.of(filenames)));
         try {
@@ -74,17 +74,17 @@ public class SystemTestIngestBatcher {
         return this;
     }
 
-    public SystemTestIngestBatcher waitForStandardIngestTask() {
+    public IngestBatcherDsl waitForStandardIngestTask() {
         tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(createdJobIds, pollDriver);
         return this;
     }
 
-    public SystemTestIngestBatcher waitForIngestJobs() {
+    public IngestBatcherDsl waitForIngestJobs() {
         waitForIngest.waitForJobs(createdJobIds);
         return this;
     }
 
-    public SystemTestIngestBatcher waitForBulkImportJobs(PollWithRetries pollWithRetries) {
+    public IngestBatcherDsl waitForBulkImportJobs(PollWithRetries pollWithRetries) {
         waitForBulkImport.waitForJobs(createdJobIds, pollWithRetries);
         return this;
     }

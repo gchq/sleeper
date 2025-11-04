@@ -44,8 +44,8 @@ public class IngestDsl {
         return this;
     }
 
-    public SystemTestIngestBatcher batcher() {
-        return new SystemTestIngestBatcher(context, adminDrivers);
+    public IngestBatcherDsl batcher() {
+        return new IngestBatcherDsl(context, adminDrivers);
     }
 
     public DirectIngestDsl direct(Path tempDir) {
