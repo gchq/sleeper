@@ -37,7 +37,7 @@ import sleeper.systemtest.dsl.instance.SystemTestTables;
 import sleeper.systemtest.dsl.metrics.TableMetricsDsl;
 import sleeper.systemtest.dsl.partitioning.PartitioningDsl;
 import sleeper.systemtest.dsl.python.PythonApiDsl;
-import sleeper.systemtest.dsl.query.SystemTestQuery;
+import sleeper.systemtest.dsl.query.QueryDsl;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
@@ -127,11 +127,11 @@ public class SleeperDsl {
         return new IngestDsl(context, baseDrivers);
     }
 
-    public SystemTestQuery query() {
-        return new SystemTestQuery(context, baseDrivers);
+    public QueryDsl query() {
+        return new QueryDsl(context, baseDrivers);
     }
 
-    public SystemTestQuery directQuery() {
+    public QueryDsl directQuery() {
         return query().direct();
     }
 

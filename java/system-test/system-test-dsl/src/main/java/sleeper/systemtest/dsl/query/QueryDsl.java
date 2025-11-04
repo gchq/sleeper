@@ -25,29 +25,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class SystemTestQuery {
+public class QueryDsl {
     private final SystemTestContext context;
     private final SystemTestDrivers baseDrivers;
     private final SystemTestDrivers adminDrivers;
     private QueryAllTablesDriver driver = null;
 
-    public SystemTestQuery(SystemTestContext context, SystemTestDrivers baseDrivers) {
+    public QueryDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context;
         this.baseDrivers = baseDrivers;
         this.adminDrivers = context.instance().adminDrivers();
     }
 
-    public SystemTestQuery byQueue() {
+    public QueryDsl byQueue() {
         driver = adminDrivers.queryByQueue(context);
         return this;
     }
 
-    public SystemTestQuery direct() {
+    public QueryDsl direct() {
         driver = adminDrivers.directQuery(context);
         return this;
     }
 
-    public SystemTestQuery webSocket() {
+    public QueryDsl webSocket() {
         // Note that this relies on permissions of the base credentials,
         // as the instance admin does not currently have working permissions for the web socket.
         // TODO add the correct permissions to the instance admin role
