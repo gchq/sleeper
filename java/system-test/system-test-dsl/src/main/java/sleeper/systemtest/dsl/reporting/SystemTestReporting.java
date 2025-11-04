@@ -30,8 +30,8 @@ public class SystemTestReporting {
         this.context = context;
     }
 
-    public SystemTestIngestJobsReport ingestJobs() {
-        return new SystemTestIngestJobsReport(ingestDriver().jobs(context.reporting()));
+    public IngestJobsReportDsl ingestJobs() {
+        return new IngestJobsReportDsl(ingestDriver().jobs(context.reporting()));
     }
 
     public CompactionJobsReportDsl compactionJobs() {

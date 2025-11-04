@@ -21,11 +21,11 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SystemTestIngestJobsReport {
+public class IngestJobsReportDsl {
 
     private final List<IngestJobStatus> jobs;
 
-    public SystemTestIngestJobsReport(List<IngestJobStatus> jobs) {
+    public IngestJobsReportDsl(List<IngestJobStatus> jobs) {
         this.jobs = jobs;
     }
 
