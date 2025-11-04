@@ -28,18 +28,18 @@ import java.nio.file.Path;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class SystemTestIngest {
+public class IngestDsl {
     private final SystemTestContext context;
     private final SystemTestDrivers baseDrivers;
     private final SystemTestDrivers adminDrivers;
 
-    public SystemTestIngest(SystemTestContext context, SystemTestDrivers baseDrivers) {
+    public IngestDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context;
         this.baseDrivers = baseDrivers;
         this.adminDrivers = context.instance().adminDrivers();
     }
 
-    public SystemTestIngest setType(SystemTestIngestType type) {
+    public IngestDsl setType(SystemTestIngestType type) {
         type.applyTo(instance());
         return this;
     }

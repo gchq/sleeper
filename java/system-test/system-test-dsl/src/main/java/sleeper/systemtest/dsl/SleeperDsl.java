@@ -27,7 +27,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDsl;
 import sleeper.systemtest.dsl.compaction.CompactionDsl;
 import sleeper.systemtest.dsl.gc.SystemTestGarbageCollection;
-import sleeper.systemtest.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.dsl.ingest.IngestDsl;
 import sleeper.systemtest.dsl.instance.DataFilesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 import sleeper.systemtest.dsl.instance.SystemTestOptionalStacks;
@@ -123,8 +123,8 @@ public class SleeperDsl {
         return new SystemTestPartitioning(context);
     }
 
-    public SystemTestIngest ingest() {
-        return new SystemTestIngest(context, baseDrivers);
+    public IngestDsl ingest() {
+        return new IngestDsl(context, baseDrivers);
     }
 
     public SystemTestQuery query() {
