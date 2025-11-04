@@ -31,8 +31,8 @@ public class PythonApiDsl {
         return new PythonIngestDsl(context);
     }
 
-    public SystemTestPythonBulkImport bulkImport() {
-        return new SystemTestPythonBulkImport(context);
+    public PythonBulkImportDsl bulkImport() {
+        return new PythonBulkImportDsl(context);
     }
 
     public SystemTestPythonQuery query(Path outputDir) {

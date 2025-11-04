@@ -27,20 +27,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class SystemTestPythonBulkImport {
+public class PythonBulkImportDsl {
     private final IngestByAnyQueueDriver ingestDriver;
     private final WaitForJobs waitForJobs;
     private final PollWithRetriesDriver pollDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestPythonBulkImport(SystemTestContext context) {
+    public PythonBulkImportDsl(SystemTestContext context) {
         SystemTestDrivers drivers = context.instance().adminDrivers();
         ingestDriver = drivers.pythonBulkImport(context);
         waitForJobs = drivers.waitForBulkImport(context);
         pollDriver = drivers.pollWithRetries();
     }
 
-    public SystemTestPythonBulkImport fromS3(String... files) {
+    public PythonBulkImportDsl fromS3(String... files) {
         String jobId = UUID.randomUUID().toString();
         ingestDriver.sendJobWithFiles(jobId, files);
         sentJobIds.add(jobId);
