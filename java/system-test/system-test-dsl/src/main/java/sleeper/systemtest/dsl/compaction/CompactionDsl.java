@@ -42,8 +42,8 @@ import java.util.Set;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
-public class SystemTestCompaction {
-    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestCompaction.class);
+public class CompactionDsl {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionDsl.class);
 
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
@@ -55,7 +55,7 @@ public class SystemTestCompaction {
     private List<String> lastJobIds;
     private List<String> lastBatchKeys;
 
-    public SystemTestCompaction(SystemTestContext context, SystemTestDrivers baseDrivers) {
+    public CompactionDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
         this.sourceFiles = context.sourceFiles();
         SystemTestDrivers drivers = instance.adminDrivers();
@@ -67,56 +67,56 @@ public class SystemTestCompaction {
         baseDriver = baseDrivers.compaction(context);
     }
 
-    public SystemTestCompaction createJobs(int expectedJobs) {
+    public CompactionDsl createJobs(int expectedJobs) {
         return createJobs(expectedJobs,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
     }
 
-    public SystemTestCompaction createJobs(int expectedJobs, PollWithRetries poll) {
+    public CompactionDsl createJobs(int expectedJobs, PollWithRetries poll) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll), driver::triggerCreateJobs);
         return this;
     }
 
-    public SystemTestCompaction putTableOnlineUntilJobsAreCreated(int expectedJobs) {
+    public CompactionDsl putTableOnlineUntilJobsAreCreated(int expectedJobs) {
         putTablesOnlineWaitForJobCreation(expectedJobs);
         instance.updateTableProperties(Map.of(TABLE_ONLINE, "false"));
         return this;
     }
 
-    public SystemTestCompaction putTableOnlineWaitForJobCreation(int expectedJobs) {
+    public CompactionDsl putTableOnlineWaitForJobCreation(int expectedJobs) {
         return putTablesOnlineWaitForJobCreation(expectedJobs);
     }
 
-    public SystemTestCompaction putTablesOnlineWaitForJobCreation(int expectedJobs) {
+    public CompactionDsl putTablesOnlineWaitForJobCreation(int expectedJobs) {
         return putTablesOnlineWaitForJobCreation(expectedJobs,
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(15), Duration.ofMinutes(2)));
     }
 
-    public SystemTestCompaction putTableOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
+    public CompactionDsl putTableOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
         return putTablesOnlineWaitForJobCreation(expectedJobs, poll);
     }
 
-    public SystemTestCompaction putTablesOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
+    public CompactionDsl putTablesOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
                 () -> instance.updateTableProperties(Map.of(TABLE_ONLINE, "true")));
         return this;
     }
 
-    public SystemTestCompaction forceCreateJobs(int expectedJobs) {
+    public CompactionDsl forceCreateJobs(int expectedJobs) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
                 driver::forceCreateJobs);
         return this;
     }
 
-    public SystemTestCompaction splitFilesAndRunJobs(int expectedJobs) {
+    public CompactionDsl splitFilesAndRunJobs(int expectedJobs) {
         forceCreateJobs(expectedJobs).waitForTasks(1).waitForJobsToFinishThenCommit(
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)),
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
         return this;
     }
 
-    public SystemTestCompaction createSeparateCompactionsForOriginalAndDuplicates(DataFileDuplications duplications) {
+    public CompactionDsl createSeparateCompactionsForOriginalAndDuplicates(DataFileDuplications duplications) {
         CompactionJobFactory factory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
         List<CompactionJob> jobs = duplications.createSeparateCompactionsForOriginalAndDuplicates(factory);
         lastJobIds = waitForJobCreation.createJobsGetIds(jobs.size(),
@@ -125,38 +125,38 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public SystemTestCompaction waitForTasks(int expectedTasks) {
+    public CompactionDsl waitForTasks(int expectedTasks) {
         return waitForTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(6)));
     }
 
-    public SystemTestCompaction waitForTasks(int expectedTasks, PollWithRetries poll) {
+    public CompactionDsl waitForTasks(int expectedTasks, PollWithRetries poll) {
         new WaitForTasks(driver.getJobTracker())
                 .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds, pollDriver.poll(poll));
         return this;
     }
 
-    public SystemTestCompaction waitForJobs() {
+    public CompactionDsl waitForJobs() {
         waitForJobs.waitForJobs(lastJobIds);
         return this;
     }
 
-    public SystemTestCompaction waitForJobs(PollWithRetries poll) {
+    public CompactionDsl waitForJobs(PollWithRetries poll) {
         waitForJobs.waitForJobs(lastJobIds, poll);
         return this;
     }
 
-    public SystemTestCompaction waitForJobsToFinishThenCommit(
+    public CompactionDsl waitForJobsToFinishThenCommit(
             PollWithRetries pollUntilFinished, PollWithRetries pollUntilCommitted) {
         waitForJobs.waitForJobs(lastJobIds, pollUntilFinished, pollUntilCommitted);
         return this;
     }
 
-    public SystemTestCompaction waitForJobsToCommit(PollWithRetries poll) {
+    public CompactionDsl waitForJobsToCommit(PollWithRetries poll) {
         waitForJobs.waitForJobsToCommit(lastJobIds, poll);
         return this;
     }
 
-    public SystemTestCompaction waitForAllJobsToCommit(PollWithRetries poll) {
+    public CompactionDsl waitForAllJobsToCommit(PollWithRetries poll) {
         waitForJobs.waitForAllJobsToCommit(poll);
         return this;
     }
@@ -169,20 +169,20 @@ public class SystemTestCompaction {
         driver.scaleToZero();
     }
 
-    public SystemTestCompaction sendFakeCommits(StreamFakeCompactions compactions) {
+    public CompactionDsl sendFakeCommits(StreamFakeCompactions compactions) {
         baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
         lastJobIds = compactions.listJobIds();
         return this;
     }
 
-    public SystemTestCompaction sendSingleCompactionBatch(String jobId, List<FileReference> inputFiles) {
+    public CompactionDsl sendSingleCompactionBatch(String jobId, List<FileReference> inputFiles) {
         CompactionJobFactory jobFactory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
         CompactionJob job = jobFactory.createCompactionJob(jobId, inputFiles, inputFiles.get(0).getPartitionId());
         lastBatchKeys = List.of(baseDriver.sendCompactionBatchGetKey(List.of(job)));
         return this;
     }
 
-    public SystemTestCompaction waitForCompactionBatchOnDeadLetterQueue() throws Exception {
+    public CompactionDsl waitForCompactionBatchOnDeadLetterQueue() throws Exception {
         Set<String> remainingBatchKeys = new HashSet<>(lastBatchKeys);
         pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
                 .pollUntil("batches are found on the dead letter queue", () -> {
@@ -194,7 +194,7 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public SystemTestCompaction waitForTotalFileReferences(int expectedFileReferences, PollWithRetries poll) {
+    public CompactionDsl waitForTotalFileReferences(int expectedFileReferences, PollWithRetries poll) {
         try {
             poll.pollUntil("file references are compacted", () -> {
                 List<FileReference> fileReferences = loadFileReferences();
