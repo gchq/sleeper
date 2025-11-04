@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -121,8 +122,9 @@ public class DeployInstance {
         LOGGER.info("instanceId: {}", instanceProperties.get(ID));
         LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
         LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
-        // TODO only deploy artefacts if we're not using previously deployed artefacts
-        invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID), request.getExtraDockerImageNames()));
+        if (!instanceProperties.isSet(ARTEFACTS_DEPLOYMENT_ID)) {
+            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID), request.getExtraDockerImageNames()));
+        }
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
                 UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
