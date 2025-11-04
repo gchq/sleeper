@@ -24,16 +24,6 @@ import java.util.stream.Stream;
 
 public record CdkCommandNew(List<String> command, List<String> arguments) implements CdkCommand {
 
-    @Override
-    public Stream<String> getCommand() {
-        return command.stream();
-    }
-
-    @Override
-    public Stream<String> getArguments() {
-        return arguments.stream();
-    }
-
     public static Builder builder() {
         return new Builder();
     }
@@ -73,8 +63,23 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
         return builder().destroy().propertiesFile(propertiesFile).validate(false).build();
     }
 
+    @Override
+    public Stream<String> getCommand() {
+        return command.stream();
+    }
+
+    @Override
+    public Stream<String> getArguments() {
+        return arguments.stream();
+    }
+
+    public Builder toBuilder() {
+        return builder().command(command).arguments(arguments);
+    }
+
     public static final class Builder {
         private List<String> command;
+        private List<String> arguments;
         private Map<String, String> context = new LinkedHashMap<>();
 
         private Builder() {
@@ -91,6 +96,11 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
 
         public Builder command(List<String> command) {
             this.command = command;
+            return this;
+        }
+
+        public Builder arguments(List<String> arguments) {
+            this.arguments = arguments;
             return this;
         }
 
@@ -124,7 +134,7 @@ public record CdkCommandNew(List<String> command, List<String> arguments) implem
         }
 
         public CdkCommandNew build() {
-            List<String> arguments = new ArrayList<>();
+            List<String> arguments = new ArrayList<>(this.arguments);
             context.forEach((variable, value) -> arguments.addAll(List.of("-c", variable + "=" + value)));
             return new CdkCommandNew(command, arguments);
         }
