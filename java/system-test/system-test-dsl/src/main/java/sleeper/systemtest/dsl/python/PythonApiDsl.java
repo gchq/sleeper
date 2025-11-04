@@ -20,10 +20,10 @@ import sleeper.systemtest.dsl.SystemTestContext;
 
 import java.nio.file.Path;
 
-public class SystemTestPythonApi {
+public class PythonApiDsl {
     private final SystemTestContext context;
 
-    public SystemTestPythonApi(SystemTestContext context) {
+    public PythonApiDsl(SystemTestContext context) {
         this.context = context;
     }
 

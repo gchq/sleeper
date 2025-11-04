@@ -36,7 +36,7 @@ import sleeper.systemtest.dsl.instance.SystemTestTableFiles;
 import sleeper.systemtest.dsl.instance.SystemTestTables;
 import sleeper.systemtest.dsl.metrics.TableMetricsDsl;
 import sleeper.systemtest.dsl.partitioning.PartitioningDsl;
-import sleeper.systemtest.dsl.python.SystemTestPythonApi;
+import sleeper.systemtest.dsl.python.PythonApiDsl;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
@@ -159,8 +159,8 @@ public class SleeperDsl {
         return new SystemTestCluster(context, baseDrivers);
     }
 
-    public SystemTestPythonApi pythonApi() {
-        return new SystemTestPythonApi(context);
+    public PythonApiDsl pythonApi() {
+        return new PythonApiDsl(context);
     }
 
     public SystemTestLocalFiles localFiles(Path tempDir) {
