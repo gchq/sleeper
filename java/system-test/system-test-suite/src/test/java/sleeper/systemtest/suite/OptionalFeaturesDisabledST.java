@@ -25,7 +25,7 @@ import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Slow2;
+import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -39,7 +39,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.OPTIONAL_FEAT
 
 @SystemTest
 // Slow because it deploys a separate instance just for this test, and the CDK is slow
-@Slow2
+@Slow1
 public class OptionalFeaturesDisabledST {
 
     @TempDir
