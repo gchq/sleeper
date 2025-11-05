@@ -1,0 +1,116 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.datasource;
+
+import org.apache.spark.sql.connector.read.InputPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.core.range.Region;
+import sleeper.core.range.RegionSerDe;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.SchemaSerDe;
+
+import java.util.List;
+
+/**
+ * Should contain all the information needed to run the query over this partition,
+ * i.e. files and partition region.
+ *
+ * Needs to be serialisable.
+ */
+public class SleeperInputPartition implements InputPartition {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInputPartition.class);
+
+    // All fields must be serialisable, so store the schema, partition region and query region as Strings.
+    private final String tableId;
+    private final String schemaAsJson;
+    private final String queryId;
+    private final String subQueryId;
+    private final String leafPartitionId;
+    private final String partitionRegionAsJson;
+    private final String regionAsJson;
+    private final List<String> files;
+    // private transient final Region partitionRegion;
+    // private transient final Region region;
+
+    public SleeperInputPartition(String tableId, String schemaAsJson, String queryId, String subQueryId, String leafPartitionId,
+            String partitionRegionAsJson, String regionAsJson, List<String> files) {
+        LOGGER.info("Initialised SleeperInputPartition for table {} with schema {}, queryId {}, subQueryId {}, leafPartitionId {}, partitionRegionAsJson {}, files {}",
+                tableId, schemaAsJson, queryId, subQueryId, leafPartitionId, partitionRegionAsJson, files);
+        this.tableId = tableId;
+        this.schemaAsJson = schemaAsJson;
+        this.queryId = queryId;
+        this.subQueryId = subQueryId;
+        this.leafPartitionId = leafPartitionId;
+        this.partitionRegionAsJson = partitionRegionAsJson;
+        this.regionAsJson = regionAsJson;
+        this.files = files;
+        // Schema schema = new SchemaSerDe().fromJson(schemaAsJson);
+        // LOGGER.info("Schema is {}", schema);
+        // RegionSerDe regionSerDe = new RegionSerDe(schema);
+        // this.partitionRegion = regionSerDe.fromJson(partitionRegionAsJson);
+        // this.region = regionSerDe.fromJson(regionAsJson);
+    }
+
+    // public SleeperInputPartition(String sleeperSchemaAsJson, String partitionAsJson, List<String> files) {
+    //     // this.sleeperSchemaAsJson = sleeperSchemaAsJson;
+    //     // this.partitionAsJson = partitionAsJson;
+    //     this.files = files;
+    //     Schema schema = new SchemaSerDe().fromJson(sleeperSchemaAsJson);
+    //     Partition partition = new PartitionSerDe(schema).fromJson(partitionAsJson);
+    //     this.partitionRegion = partition.getRegion();
+    //     this.partitionId = partitionId;
+    // }
+
+    public String getTableId() {
+        return tableId;
+    }
+
+    public String getQueryId() {
+        return queryId;
+    }
+
+    public String getSubQueryId() {
+        return subQueryId;
+    }
+
+    public List<String> getFiles() {
+        return files;
+    }
+
+    public String getLeafPartitionId() {
+        return leafPartitionId;
+    }
+
+    public Region getPartitionRegion() {
+        Schema schema = new SchemaSerDe().fromJson(schemaAsJson);
+        RegionSerDe regionSerDe = new RegionSerDe(schema);
+        return regionSerDe.fromJson(partitionRegionAsJson);
+    }
+
+    public Region getRegion() {
+        Schema schema = new SchemaSerDe().fromJson(schemaAsJson);
+        RegionSerDe regionSerDe = new RegionSerDe(schema);
+        return regionSerDe.fromJson(regionAsJson);
+    }
+
+    @Override
+    public String toString() {
+        return "SleeperInputPartition{tableId=" + tableId + ", schemaAsJson=" + schemaAsJson + ", queryId=" + queryId + ", subQueryId=" + subQueryId + ", leafPartitionId=" + leafPartitionId
+                + ", partitionRegionAsJson=" + partitionRegionAsJson + ", regionAsJson=" + regionAsJson + ", files=" + files + "}";
+    }
+}

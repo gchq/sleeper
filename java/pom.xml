@@ -53,6 +53,7 @@
         <module>build</module>
         <module>build-uptime-lambda</module>
         <module>example-iterators</module>
+        <module>spark</module>
     </modules>
 
     <properties>
