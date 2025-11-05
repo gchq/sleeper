@@ -63,7 +63,7 @@ public class SleeperArtefactsCdkApp {
         }
         String propertiesFile = context.tryGetContext("propertiesfile");
         if (propertiesFile == null) {
-            return null;
+            throw new IllegalArgumentException("ID for artefacts deployment not found in context. Please set \"id\" or \"propertiesfile\".");
         }
         InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(Path.of(propertiesFile));
         return instanceProperties.get(ID);
