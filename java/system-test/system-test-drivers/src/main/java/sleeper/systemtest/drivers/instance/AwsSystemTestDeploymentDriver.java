@@ -47,6 +47,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
 import static sleeper.clients.util.cdk.InvokeCdk.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
@@ -99,7 +100,6 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
             deployProperties.save(propertiesFile);
             InvokeCdk.builder()
                     .jarsDirectory(parameters.getJarsDirectory())
-                    .version(SleeperVersion.getVersion())
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .build().invoke(SYSTEM_TEST_STANDALONE,
                             CdkCommand.deploySystemTestStandalone(propertiesFile));
@@ -112,6 +112,11 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     }
 
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
+        InvokeCdk.builder()
+                .jarsDirectory(parameters.getJarsDirectory())
+                .runCommand(CommandUtils::runCommandLogOutput)
+                .build().invoke(ARTEFACTS,
+                        CdkCommand.deployArtefacts(parameters.getArtefactsDeploymentId(), List.of(SYSTEM_TEST_IMAGE.getImageName())));
         new SyncJars(s3, parameters.getJarsDirectory())
                 .sync(SyncJarsRequest.builder()
                         .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(parameters.getArtefactsDeploymentId()))
