@@ -82,11 +82,9 @@ public class DependencyVersions {
         }
 
         public String describe() {
-            return id.groupId() + ":" + id.artifactId() + ":" + describeVersions();
-        }
-
-        private String describeVersions() {
-            return versions.stream().map(Version::version).collect(joining(","));
+            return versions.stream()
+                    .map(version -> id.groupId() + ":" + id.artifactId() + ":" + version.version())
+                    .collect(joining(", "));
         }
     }
 

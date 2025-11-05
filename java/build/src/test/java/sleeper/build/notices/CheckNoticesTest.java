@@ -150,4 +150,26 @@ public class CheckNoticesTest {
         assertThat(CheckNotices.findProblemsInNotices(notices, versions))
                 .containsExactly("Dependency versions did not match: com.nimbusds:nimbus-jose-jwt:10.0");
     }
+
+    @Test
+    void shouldNotAllowTwoVersionsOfSameDependencySeparatedByCommas() {
+        String notices = "Jakarta RESTful WS API (jakarta.ws.rs:jakarta.ws.rs-api:2.*,4.*)";
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("jakarta.ws.rs", "jakarta.ws.rs-api", "2.0")
+                .dependency("jakarta.ws.rs", "jakarta.ws.rs-api", "4.0")
+                .build();
+        assertThat(CheckNotices.findProblemsInNotices(notices, versions))
+                .containsExactly("Dependency versions did not match: jakarta.ws.rs:jakarta.ws.rs-api:2.0, jakarta.ws.rs:jakarta.ws.rs-api:4.0");
+    }
+
+    @Test
+    void shouldAllowTwoVersionsOfSameDependencyStatedTwice() {
+        String notices = "Jakarta RESTful WS API (jakarta.ws.rs:jakarta.ws.rs-api:2.*, jakarta.ws.rs:jakarta.ws.rs-api:4.*)";
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("jakarta.ws.rs", "jakarta.ws.rs-api", "2.0")
+                .dependency("jakarta.ws.rs", "jakarta.ws.rs-api", "4.0")
+                .build();
+        assertThat(CheckNotices.findProblemsInNotices(notices, versions))
+                .isEmpty();
+    }
 }
