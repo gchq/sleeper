@@ -17,14 +17,13 @@
 package sleeper.build.github.api.containers;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.GenericType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.build.github.api.GitHubApi;
-
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
 
 import java.io.IOException;
 import java.io.Reader;

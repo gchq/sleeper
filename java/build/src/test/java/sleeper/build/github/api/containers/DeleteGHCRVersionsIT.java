@@ -20,9 +20,8 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
+import jakarta.ws.rs.InternalServerErrorException;
 import org.junit.jupiter.api.Test;
-
-import javax.ws.rs.InternalServerErrorException;
 
 import java.io.IOException;
 import java.io.StringReader;
