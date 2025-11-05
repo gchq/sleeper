@@ -28,6 +28,10 @@ public interface CdkCommand {
         return new CdkDeploy(List.of());
     }
 
+    static CdkDeploy deployArtefacts(String deploymentId) {
+        return new CdkDeploy(List.of("-c", "id=" + deploymentId));
+    }
+
     static CdkDeploy deployPropertiesChange() {
         return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).build();
     }
