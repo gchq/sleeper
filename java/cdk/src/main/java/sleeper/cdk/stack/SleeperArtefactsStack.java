@@ -40,7 +40,7 @@ import java.util.List;
  */
 public class SleeperArtefactsStack extends Stack {
 
-    public SleeperArtefactsStack(App app, String stackId, String deploymentId, StackProps props) {
+    public SleeperArtefactsStack(App app, String stackId, StackProps props, String deploymentId, List<String> extraEcrImages) {
         super(app, stackId, props);
 
         Bucket.Builder.create(this, "JarsBucket")
@@ -71,6 +71,10 @@ public class SleeperArtefactsStack extends Stack {
                         .actions(List.of("ecr:BatchGetImage", "ecr:DescribeImages", "ecr:GetDownloadUrlForLayer"))
                         .build());
             }
+        }
+
+        for (String imageName : extraEcrImages) {
+            createRepository(deploymentId, imageName);
         }
     }
 

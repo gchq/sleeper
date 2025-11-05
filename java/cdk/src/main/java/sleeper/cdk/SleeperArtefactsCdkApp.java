@@ -24,8 +24,10 @@ import sleeper.cdk.stack.SleeperArtefactsStack;
 import sleeper.cdk.util.CdkContext;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
@@ -47,11 +49,15 @@ public class SleeperArtefactsCdkApp {
                 .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
-        String deploymentId = getDeploymentId(CdkContext.from(app));
-        new SleeperArtefactsStack(app, "SleeperArtefacts", deploymentId, StackProps.builder()
-                .stackName(deploymentId + "-artefacts")
-                .env(environment)
-                .build());
+        CdkContext context = CdkContext.from(app);
+        String deploymentId = getDeploymentId(context);
+        List<String> extraEcrImages = SleeperPropertyValueUtils.readList(context.tryGetContext("extraEcrImages"));
+        new SleeperArtefactsStack(app, "SleeperArtefacts",
+                StackProps.builder()
+                        .stackName(deploymentId + "-artefacts")
+                        .env(environment)
+                        .build(),
+                deploymentId, extraEcrImages);
         app.synth();
     }
 
