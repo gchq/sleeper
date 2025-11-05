@@ -24,10 +24,6 @@ public interface CdkCommand {
 
     Stream<String> getArguments();
 
-    static CdkDeploy deployArtefacts() {
-        return new CdkDeploy(List.of());
-    }
-
     static CdkDeploy deployArtefacts(String deploymentId, List<String> extraEcrImages) {
         return new CdkDeploy(List.of("-c", "id=" + deploymentId, "-c", "extraEcrImages=" + String.join(",", extraEcrImages)));
     }
