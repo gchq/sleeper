@@ -16,10 +16,10 @@
 
 package sleeper.build.github.app;
 
-import sleeper.build.github.api.GitHubApi;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
+import sleeper.build.github.api.GitHubApi;
 
 import java.io.IOException;
 import java.nio.file.Files;

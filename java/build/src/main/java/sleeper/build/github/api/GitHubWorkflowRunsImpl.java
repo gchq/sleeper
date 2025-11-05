@@ -15,12 +15,12 @@
  */
 package sleeper.build.github.api;
 
+import jakarta.ws.rs.client.WebTarget;
+
 import sleeper.build.github.GitHubHead;
 import sleeper.build.github.GitHubRunToHead;
 import sleeper.build.github.GitHubWorkflowRun;
 import sleeper.build.github.GitHubWorkflowRuns;
-
-import javax.ws.rs.client.WebTarget;
 
 import java.util.Objects;
 import java.util.stream.Stream;
