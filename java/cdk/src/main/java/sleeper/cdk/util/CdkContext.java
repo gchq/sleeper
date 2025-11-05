@@ -17,15 +17,9 @@ package sleeper.cdk.util;
 
 import software.constructs.Construct;
 
-import java.util.Optional;
-
 public interface CdkContext {
 
     String tryGetContext(String property);
-
-    default Optional<String> getContextIfSet(String property) {
-        return Optional.ofNullable(tryGetContext(property));
-    }
 
     static CdkContext from(Construct scope) {
         return key -> (String) scope.getNode().tryGetContext(key);
