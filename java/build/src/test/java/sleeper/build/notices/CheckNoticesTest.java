@@ -159,7 +159,7 @@ public class CheckNoticesTest {
                 .dependency("jakarta.ws.rs", "jakarta.ws.rs-api", "4.0")
                 .build();
         assertThat(CheckNotices.findProblemsInNotices(notices, versions))
-                .containsExactly("Dependency versions did not match: jakarta.ws.rs:jakarta.ws.rs-api:2.0,4.0");
+                .containsExactly("Dependency versions did not match: jakarta.ws.rs:jakarta.ws.rs-api:2.0, jakarta.ws.rs:jakarta.ws.rs-api:4.0");
     }
 
     @Test
