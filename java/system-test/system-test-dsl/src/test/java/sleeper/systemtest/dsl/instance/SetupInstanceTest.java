@@ -42,7 +42,7 @@ public class SetupInstanceTest {
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_LOGS_AFTER_DESTROY))
-                .isFalse();
+                .isTrue();
     }
 
     @Test

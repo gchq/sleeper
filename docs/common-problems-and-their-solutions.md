@@ -59,20 +59,22 @@ heap space") then this is likely due to the tasks not being able to store the sp
 Try reducing the number of rows that will be held in memory. When reducing this parameter it is a good idea to also
 reduce the number of rows held on the local disk.
 
+## Resolving Sleeper Instance Re-creation Failures
 
-## I created an instance, destroyed it and then recreating it failed
+If you attempt to re-create a Sleeper instance using the same instance ID shortly after destroying it, the deployment is likely to fail.
 
-If you create an instance and destroy it then some remnants of the previous instance will still be present. Usually this
-should be log groups containing logs of the previous instance.
+The core issue is that the new deployment will attempt to create resources (like S3 buckets or log groups) that still exist from the previous instance, resulting in an "resource already exists" error.
 
-The CDK deployment process can also be configured to not delete the buckets for the tables, or the bucket for the
-results of queries. This is set in the `sleeper.retain.infra.after.destroy` instance property. In addition the deployment
-can be configured to retain log groups.  This is et in the `sleeper.retain.logs.after.destroy` instance property.  It may
-also be because the `cdk destroy` command partially failed due to there being some tasks running on ECS or EMR clusters. In this case
-the cluster cannot be destroyed until the tasks are completed or terminated.
+### Improving the CDK Deployment Cleanup Process
+The CDK deployment process offers two configuration options to control the retention of AWS resources when the stack is destroyed:
 
-If there are some remnants present, then attempting to deploy Sleeper again with the same instance id will fail as it
-will complain that some resources it needs to create already exist.
+- Data and Query Buckets: You can configure the deployment to prevent the deletion of the S3 buckets used for tables and query results. This is managed by setting the instance property `sleeper.retain.infra.after.destroy`.
 
-If you want to recreate an instance with the same instance id as one that was previously deleted, then check
-that all resources with a name containing that instance id have been deleted.
+- CloudWatch Log Groups: Similarly, you can ensure that the associated log groups are retained after the deployment is destroyed. This retention is controlled by the instance property `sleeper.retain.logs.after.destroy`.
+
+### Troubleshooting cdk destroy Failures
+If the resources are not retained but you still find elements left behind, it may indicate that the `cdk destroy` command partially failed.
+
+This typically occurs when there are active tasks running on ECS or EMR clusters. In such a scenario, the cluster cannot be destroyed until all of its tasks have either completed or been terminated.
+
+To successfully recreate the instance with the same ID, you must manually ensure a complete cleanup of all remnant resources.
