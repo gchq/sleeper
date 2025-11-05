@@ -350,7 +350,7 @@ Jakarta Activation API (jakarta.activation:jakarta.activation-api:2.*)
 
 - Eclipse Distribution License (EDL) 1.0
 
-Jakarta XML Binding API (jakarta.xml.bind:jakarta.xml.bind-api:2.*)
+Jakarta XML Binding API (jakarta.xml.bind:jakarta.xml.bind-api:2.*, jakarta.xml.bind:jakarta.xml.bind-api:4.*)
 
 - Eclipse Distribution License (EDL) 1.0
 

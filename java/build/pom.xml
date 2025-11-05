@@ -75,11 +75,6 @@
             <version>${jersey.build.version}</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>${jersey.build.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
@@ -137,4 +132,13 @@
             <artifactId>jungrapht-visualization-samples</artifactId>
         </dependency>
     </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jersey.build.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>
