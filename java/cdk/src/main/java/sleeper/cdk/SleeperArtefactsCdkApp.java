@@ -49,7 +49,7 @@ public class SleeperArtefactsCdkApp {
                 .build();
         String deploymentId = getDeploymentId(CdkContext.from(app));
         new SleeperArtefactsStack(app, "SleeperArtefacts", deploymentId, StackProps.builder()
-                .stackName(String.join("-", "sleeper", deploymentId, "artefacts"))
+                .stackName(deploymentId + "-artefacts")
                 .env(environment)
                 .build());
         app.synth();
