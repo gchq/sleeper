@@ -72,7 +72,7 @@
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
-            <version>${jakarta.ws.build.version}</version>
+            <version>${jersey.build.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.spotbugs</groupId>
