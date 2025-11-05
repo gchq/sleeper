@@ -27,6 +27,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -76,6 +77,7 @@ public class InMemoryTestInstance {
     public static InstanceProperties createDslInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "in-memory-ingest-job-queue-url");
