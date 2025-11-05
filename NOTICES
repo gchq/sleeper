@@ -315,11 +315,11 @@ AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:2.*)
 
 - MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
 
-Jersey Client (org.glassfish.jersey.core:jersey-client:2.*, org.glassfish.jersey.inject:jersey-hk2:2.*, org.glassfish.jersey.media:jersey-media-json-jackson:2.*)
+Jersey Client (org.glassfish.jersey.core:jersey-client:4.*, org.glassfish.jersey.inject:jersey-hk2:4.*, org.glassfish.jersey.media:jersey-media-json-jackson:4.*)
 
 - Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
-Jakarta RESTful WS API (jakarta.ws.rs:jakarta.ws.rs-api:2.*)
+Jakarta RESTful WS API (jakarta.ws.rs:jakarta.ws.rs-api:4.*)
 
 - Eclipse Public License 2.0
 - GNU General Public License (GPL) Version 2
