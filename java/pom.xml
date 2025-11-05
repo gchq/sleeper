@@ -193,7 +193,7 @@
         <gson.version>2.13.2</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
-        <aspectj.version>1.9.24</aspectj.version>
+        <aspectj.version>1.9.25</aspectj.version>
         <pty4j.version>0.13.11</pty4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.82</bouncycastle.version>
