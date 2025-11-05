@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
@@ -39,6 +40,8 @@ public class SetupInstanceTest {
     @Test
     void shouldConnectToInstance(SleeperSystemTest sleeper) {
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
+                .isFalse();
+        assertThat(sleeper.instanceProperties().getBoolean(RETAIN_LOGS_AFTER_DESTROY))
                 .isFalse();
     }
 
