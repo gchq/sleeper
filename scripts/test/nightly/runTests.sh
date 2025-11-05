@@ -153,13 +153,13 @@ runTestSuite(){
     runMavenSystemTests "$@"
     popd
     echo "[$(time_str)] Finished test suite: $SUITE"
-    removeFolderAfterParallelRun "$SUITE"
+    ##removeFolderAfterParallelRun "$SUITE"
 }
 
 runSlowTests(){
     ##runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
-    runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" ##&
-    ##runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" ##&
+    runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite1" "$@" &
+    runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite2" "$@" ##&
     ##runTestSuite "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSuite3" "$@"
 }
 
@@ -186,6 +186,6 @@ echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
  sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
-removeFolderAfterParallelRun quick
+##removeFolderAfterParallelRun quick
 
 exit $END_EXIT_CODE
