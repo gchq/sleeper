@@ -15,6 +15,7 @@
  */
 package sleeper.clients.util.cdk;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 public interface CdkCommand {
@@ -22,6 +23,10 @@ public interface CdkCommand {
     Stream<String> getCommand();
 
     Stream<String> getArguments();
+
+    static CdkDeploy deployArtefacts() {
+        return new CdkDeploy(List.of());
+    }
 
     static CdkDeploy deployPropertiesChange() {
         return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).build();
