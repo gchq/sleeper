@@ -22,14 +22,9 @@ import software.amazon.awscdk.StackProps;
 
 import sleeper.cdk.stack.SleeperArtefactsStack;
 import sleeper.cdk.util.CdkContext;
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperPropertyValueUtils;
 
-import java.nio.file.Path;
 import java.util.List;
-
-import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
  * A CDK app to deploy AWS resources that will hold artefacts used to deploy Sleeper.
@@ -50,7 +45,10 @@ public class SleeperArtefactsCdkApp {
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
         CdkContext context = CdkContext.from(app);
-        String deploymentId = getDeploymentId(context);
+        String deploymentId = context.tryGetContext("id");
+        if (deploymentId == null) {
+            throw new IllegalArgumentException("ID for artefacts deployment not found in context. Please set \"id\".");
+        }
         List<String> extraEcrImages = SleeperPropertyValueUtils.readList(context.tryGetContext("extraEcrImages"));
         new SleeperArtefactsStack(app, "SleeperArtefacts",
                 StackProps.builder()
@@ -59,19 +57,6 @@ public class SleeperArtefactsCdkApp {
                         .build(),
                 deploymentId, extraEcrImages);
         app.synth();
-    }
-
-    public static String getDeploymentId(CdkContext context) {
-        String deploymentId = context.tryGetContext("id");
-        if (deploymentId != null) {
-            return deploymentId;
-        }
-        String propertiesFile = context.tryGetContext("propertiesfile");
-        if (propertiesFile == null) {
-            throw new IllegalArgumentException("ID for artefacts deployment not found in context. Please set \"id\" or \"propertiesfile\".");
-        }
-        InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesNoValidation(Path.of(propertiesFile));
-        return instanceProperties.get(ID);
     }
 
 }
