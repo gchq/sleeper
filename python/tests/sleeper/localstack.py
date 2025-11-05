@@ -102,26 +102,14 @@ class LocalStack:
 
         table = dynamodb.create_table(
             TableName=table_name,
-            AttributeDefinitions=[
-                {"AttributeName": "queryId", "AttributeType": "S"},
-                {"AttributeName": "subQueryId", "AttributeType": "S"}
-            ],
-            KeySchema=[
-                {"AttributeName": "queryId", "KeyType": "HASH"},
-                {"AttributeName": "subQueryId", "KeyType": "RANGE"}
-            ],
-            BillingMode="PAY_PER_REQUEST"
+            AttributeDefinitions=[{"AttributeName": "queryId", "AttributeType": "S"}, {"AttributeName": "subQueryId", "AttributeType": "S"}],
+            KeySchema=[{"AttributeName": "queryId", "KeyType": "HASH"}, {"AttributeName": "subQueryId", "KeyType": "RANGE"}],
+            BillingMode="PAY_PER_REQUEST",
         )
 
         table.wait_until_exists()
 
-        dynamodb.meta.client.update_time_to_live(
-            TableName=table_name,
-            TimeToLiveSpecification={
-                "Enabled": True,
-                "AttributeName": "expiryDate"
-            }
-        )
+        dynamodb.meta.client.update_time_to_live(TableName=table_name, TimeToLiveSpecification={"Enabled": True, "AttributeName": "expiryDate"})
 
         return table
 
@@ -133,4 +121,3 @@ class LocalStack:
                 for row in ParquetDeserialiser(use_threads=False).read(po):
                     results.append(row)
         return results
-
