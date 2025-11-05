@@ -44,7 +44,6 @@ public interface CommonProperty {
             .defaultProperty(ID)
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .includedInTemplate(false)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
             .description("The S3 bucket containing the jar files of the Sleeper components. If unset, a default name " +
@@ -52,7 +51,6 @@ public interface CommonProperty {
             .defaultProperty(ARTEFACTS_DEPLOYMENT_ID, SleeperArtefactsLocation::getDefaultJarsBucketName)
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .includedInTemplate(false)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty ECR_REPOSITORY_PREFIX = Index.propertyBuilder("sleeper.ecr.repository.prefix")
             .description("If set, this property will be used as a prefix for the names of ECR repositories. " +
@@ -63,7 +61,6 @@ public interface CommonProperty {
                     "We may add the ability to use this in the CDK in the future.")
             .defaultProperty(ARTEFACTS_DEPLOYMENT_ID, SleeperArtefactsLocation::getDefaultEcrRepositoryPrefix)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .includedInTemplate(false)
             .editable(false).build();
     UserDefinedInstanceProperty USER_JARS = Index.propertyBuilder("sleeper.userjars")
             .description("A comma-separated list of the jars containing application specific iterator code. " +

@@ -12,6 +12,23 @@
 # globally unique as it will be used to name AWS resources such as S3 buckets.
 sleeper.id=changeme
 
+# The ID of the artefacts deployment to use to deploy the Sleeper instance. By default we assume an
+# artefacts deployment with the same ID as the Sleeper instance. This property is used to compute the
+# default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.
+sleeper.artefacts.deployment=changeme
+
+# The S3 bucket containing the jar files of the Sleeper components. If unset, a default name is
+# computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it is not.
+sleeper.jars.bucket=changeme
+
+# If set, this property will be used as a prefix for the names of ECR repositories. If unset, a
+# default prefix is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
+# is not.
+# ECR repository names are generated in the format `<prefix>/<image name>`.
+# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
+# the ability to use this in the CDK in the future.
+sleeper.ecr.repository.prefix=changeme
+
 # The AWS account number. This is the AWS account that the instance will be deployed to.
 sleeper.account=changeme
 

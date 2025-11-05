@@ -32,6 +32,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -39,7 +40,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -136,7 +140,10 @@ public class GeneratePropertiesTemplates {
 
     private static InstanceProperties generateTemplateInstanceProperties() {
         InstanceProperties properties = new InstanceProperties();
-        BASIC_INSTANCE_EXAMPLE_VALUES.keySet().forEach(property -> properties.set(property, "changeme"));
+        List<InstanceProperty> changeMeProperties = new ArrayList<>();
+        changeMeProperties.addAll(BASIC_INSTANCE_EXAMPLE_VALUES.keySet());
+        changeMeProperties.addAll(List.of(ARTEFACTS_DEPLOYMENT_ID, JARS_BUCKET, ECR_REPOSITORY_PREFIX));
+        changeMeProperties.forEach(property -> properties.set(property, "changeme"));
         return properties;
     }
 
