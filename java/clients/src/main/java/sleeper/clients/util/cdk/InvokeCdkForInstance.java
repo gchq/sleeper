@@ -18,6 +18,7 @@ package sleeper.clients.util.cdk;
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.ClientJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
@@ -94,7 +95,7 @@ public class InvokeCdkForInstance {
     }
 
     private Path cdkJarFile() {
-        return jarsDirectory.resolve(String.format("cdk-%s.jar", version));
+        return jarsDirectory.resolve(ClientJar.CDK.getFormattedFilename(version));
     }
 
     private Path systemTestJarFile() {
