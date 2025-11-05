@@ -16,7 +16,6 @@
 package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.constructs.Construct;
@@ -29,7 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 
 public class LoggingStack extends NestedStack {
 
@@ -57,17 +55,10 @@ public class LoggingStack extends NestedStack {
      * @return                    the log group
      */
     public static ILogGroup createLogGroup(Construct scope, LogGroupRef ref, InstanceProperties instanceProperties) {
-        RemovalPolicy removalPolicy;
-        if (instanceProperties.getBoolean(RETAIN_LOGS_AFTER_DESTROY)) {
-            removalPolicy = RemovalPolicy.RETAIN;
-        } else {
-            removalPolicy = RemovalPolicy.DESTROY;
-        }
-
         return LogGroup.Builder.create(scope, ref.shortName)
                 .logGroupName(ref.prefix + String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), ref.shortName))
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .removalPolicy(removalPolicy)
+                .removalPolicy(Utils.logsRemovalPolicy(instanceProperties))
                 .build();
     }
 
