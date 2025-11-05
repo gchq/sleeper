@@ -319,7 +319,7 @@ Jersey Client (org.glassfish.jersey.core:jersey-client:4.*, org.glassfish.jersey
 
 - Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
-Jakarta RESTful WS API (jakarta.ws.rs:jakarta.ws.rs-api:4.*)
+Jakarta RESTful WS API (jakarta.ws.rs:jakarta.ws.rs-api:2.*, jakarta.ws.rs:jakarta.ws.rs-api:4.*)
 
 - Eclipse Public License 2.0
 - GNU General Public License (GPL) Version 2
