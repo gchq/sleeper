@@ -5,12 +5,12 @@ from mypy_boto3_dynamodb.service_resource import Table
 from mypy_boto3_s3.service_resource import Bucket
 from mypy_boto3_sqs.service_resource import Queue
 from pytest_mock import MockerFixture
-from python.src.sleeper.web_socket_query import WebSocketQuery
 
 from sleeper.client import SleeperClient
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
 from sleeper.properties.config_bucket import save_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.web_socket_query import WebSocketQuery
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
