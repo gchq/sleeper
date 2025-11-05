@@ -25,8 +25,6 @@ sleeper.jars.bucket=changeme
 # default prefix is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
 # is not.
 # ECR repository names are generated in the format `<prefix>/<image name>`.
-# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
-# the ability to use this in the CDK in the future.
 sleeper.ecr.repository.prefix=changeme
 
 # The AWS account number. This is the AWS account that the instance will be deployed to.

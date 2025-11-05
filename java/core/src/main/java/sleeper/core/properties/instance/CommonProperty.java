@@ -56,12 +56,10 @@ public interface CommonProperty {
             .description("If set, this property will be used as a prefix for the names of ECR repositories. " +
                     "If unset, a default prefix is computed from `sleeper.artefacts.deployment` if it is set, or " +
                     "`sleeper.id` if it is not.\n" +
-                    "ECR repository names are generated in the format `<prefix>/<image name>`.\n" +
-                    "Note: This is only used by the deployment scripts to upload Docker images, not the CDK. " +
-                    "We may add the ability to use this in the CDK in the future.")
+                    "ECR repository names are generated in the format `<prefix>/<image name>`.")
             .defaultProperty(ARTEFACTS_DEPLOYMENT_ID, SleeperArtefactsLocation::getDefaultEcrRepositoryPrefix)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .editable(false).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty USER_JARS = Index.propertyBuilder("sleeper.userjars")
             .description("A comma-separated list of the jars containing application specific iterator code. " +
                     "These jars are assumed to be in the bucket given by `sleeper.jars.bucket`. For example, if that " +
