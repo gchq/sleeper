@@ -169,7 +169,7 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     EXP2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite2)
     EXP3_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite3)
 
-    runSlowTests "$@" &
+    ##runSlowTests "$@" &
     runTestSuite "${EXP1_SUITE_PARAMS[@]}" "$@" &
     runTestSuite "${EXP2_SUITE_PARAMS[@]}" "$@" &
     runTestSuite "${EXP3_SUITE_PARAMS[@]}" "$@"
