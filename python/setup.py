@@ -27,6 +27,7 @@ setup(
         "ruff",
         "pytest",
         "pytest-mock",
+        "pytest-asyncio",
         "testcontainers[localstack]",
     ],
     package_dir={"": "src"},

@@ -1,11 +1,11 @@
 import json
-import time
 
 import pytest
 from mypy_boto3_dynamodb.service_resource import Table
 from mypy_boto3_s3.service_resource import Bucket
 from mypy_boto3_sqs.service_resource import Queue
 from pytest_mock import MockerFixture
+from python.src.sleeper.web_socket_query import WebSocketQuery
 
 from sleeper.client import SleeperClient
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
@@ -52,7 +52,7 @@ def should_send_range_query_with_client(sleeper_client: SleeperClient, query: Qu
     # Given
     table_name = "test-table"
     query_id = "test-query"
-    regions = [{'key': ["my-key", "my-keys"]}, {'key': ["key", "keys"]}]
+    regions = [{"key": ["my-key", "my-keys"]}, {"key": ["key", "keys"]}]
     mocked_results = ["mocked row 1", "mocked row 2"]
     # Patch the _receive_messages function in the module sleeper.client as this is not tested in this case.
     mocker.patch("sleeper.client._receive_messages", return_value=mocked_results)
@@ -78,34 +78,30 @@ def should_send_range_query_with_client(sleeper_client: SleeperClient, query: Qu
 
     assert messages == expected_message_json
 
-def should_send_extact_query_with_option2(sleeper_client: SleeperClient, query: Queue, table: Table):
+
+@pytest.mark.asyncio
+async def should_send_exact_query_with_client_via_web_socket(sleeper_client: SleeperClient, mocker: MockerFixture):
     # Given
     table_name = "test-table"
     query_id = "test-query"
     keys = {"key": ["my_key", "my_key2"]}
-
-    insert_last_know_state(table=table, query_id=query_id, state="COMPLETED")
+    mocked_results = ["mocked row 1", "mocked row 2"]
+    mock_process = mocker.patch("sleeper.web_socket_query.WebSocketQueryProcessor.process_query", autospec=True, return_value=mocked_results)
 
     # When
     # We don't care about the results for this test as they are mocked.
-    sleeper_client.exact_key_query(table_name=table_name, keys=keys, query_id=query_id)
+    await sleeper_client.web_socket_exact_key_query(table_name=table_name, keys=keys, query_id=query_id)
 
-    # Then
-    expected_message_json = [
-        {
-            "queryId": "test-query",
-            "tableName": "test-table",
-            "type": "Query",
-            "regions": [
-                {"key": {"min": "my_key", "minInclusive": True, "max": "my_key", "maxInclusive": True}, "stringsBase64Encoded": False},
-                {"key": {"min": "my_key2", "minInclusive": True, "max": "my_key2", "maxInclusive": True}, "stringsBase64Encoded": False},
-            ],
-        }
+    expected_queries = [
+        WebSocketQuery(table_name=table_name, query_id=query_id, key="key", max_value="my_key", min_value="my_key", strings_base64_encoded=False).to_json(),
+        WebSocketQuery(table_name=table_name, query_id=query_id, key="key", max_value="my_key2", min_value="my_key2", strings_base64_encoded=False).to_json(),
     ]
 
-    messages = receive_messages(query)
+    actual_queries = [(call.args[-1]).to_json() for call in mock_process.call_args_list]
 
-    assert messages == expected_message_json
+    # Then
+    assert actual_queries == expected_queries
+
 
 @pytest.fixture
 def sleeper_client(properties: InstanceProperties) -> SleeperClient:
@@ -120,6 +116,8 @@ def properties(query: Queue, table: Table, bucket: Bucket) -> InstanceProperties
     properties.set(QueryCdkProperty.QUERY_QUEUE_URL, query.url)
     properties.set(QueryCdkProperty.QUERY_TRACKER_TABLE, table.table_name)
     properties.set(QueryCdkProperty.QUERY_RESULTS_BUCKET, bucket.name)
+    properties.set(QueryCdkProperty.QUERY_WEBSOCKET_URL, "ws://localhost:7777/_aws/ws/api_id/test")
+    properties.set(CommonCdkProperty.REGION, "eu-west-2")
     return properties
 
 
@@ -127,22 +125,16 @@ def properties(query: Queue, table: Table, bucket: Bucket) -> InstanceProperties
 def query() -> Queue:
     return LocalStack.create_queue()
 
+
 @pytest.fixture
 def bucket() -> Bucket:
     return LocalStack.create_bucket()
+
 
 @pytest.fixture
 def table() -> Table:
     return LocalStack.create_table()
 
-def insert_last_know_state(table: Table, query_id: str, state: str):
-    table.put_item(
-    Item={
-        "queryId": query_id,
-        "subQueryId": "-",
-        "lastKnownState": state,
-        "createdAt": int(time.time()),
-    })
 
 def receive_messages(queue: Queue):
     messages = queue.receive_messages(WaitTimeSeconds=0)
