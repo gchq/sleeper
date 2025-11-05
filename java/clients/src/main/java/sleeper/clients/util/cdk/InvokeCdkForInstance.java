@@ -30,10 +30,10 @@ import static java.util.Objects.requireNonNull;
 
 public class InvokeCdkForInstance {
 
-    private final Path propertiesFile;
     private final Path jarsDirectory;
     private final String version;
     private final CommandRunner runCommand;
+    private final List<String> arguments;
 
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
@@ -50,10 +50,10 @@ public class InvokeCdkForInstance {
     }
 
     private InvokeCdkForInstance(Builder builder) {
-        propertiesFile = requireNonNull(builder.propertiesFile, "propertiesFile must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         runCommand = requireNonNull(builder.runCommand, "runCommand must not be null");
+        arguments = requireNonNull(builder.arguments, "arguments must not be null");
     }
 
     public static Builder builder() {
@@ -82,7 +82,7 @@ public class InvokeCdkForInstance {
                 "-a", String.format("java -cp \"%s\" %s",
                         instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)));
         cdkCommand.getCommand().forEach(command::add);
-        command.addAll(List.of("-c", String.format("propertiesfile=%s", propertiesFile)));
+        command.addAll(arguments);
         cdkCommand.getArguments().forEach(command::add);
         command.add("*");
 
@@ -102,10 +102,10 @@ public class InvokeCdkForInstance {
     }
 
     public static final class Builder {
-        private Path propertiesFile;
         private Path jarsDirectory;
         private String version = SleeperVersion.getVersion();
         private CommandRunner runCommand = CommandUtils::runCommandInheritIO;
+        private List<String> arguments = new ArrayList<>();
 
         private Builder() {
         }
@@ -116,7 +116,7 @@ public class InvokeCdkForInstance {
         }
 
         public Builder propertiesFile(Path propertiesFile) {
-            this.propertiesFile = propertiesFile;
+            arguments.addAll(List.of("-c", String.format("propertiesfile=%s", propertiesFile)));
             return this;
         }
 
