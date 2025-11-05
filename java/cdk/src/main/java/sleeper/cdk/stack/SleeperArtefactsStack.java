@@ -80,7 +80,7 @@ public class SleeperArtefactsStack extends Stack {
 
     private Repository createRepository(String deploymentId, String imageName) {
         return Repository.Builder.create(this, "Repository-" + imageName)
-                .repositoryName(String.join("-", "sleeper", deploymentId) + "/" + imageName)
+                .repositoryName(deploymentId + "/" + imageName)
                 .build();
     }
 
