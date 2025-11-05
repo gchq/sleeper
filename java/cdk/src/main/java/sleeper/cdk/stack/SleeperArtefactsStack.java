@@ -28,7 +28,6 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 
-import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
@@ -45,7 +44,7 @@ public class SleeperArtefactsStack extends Stack {
         super(app, stackId, props);
 
         Bucket.Builder.create(this, "JarsBucket")
-                .bucketName(Utils.joinNonNullParts("-", "sleeper", deploymentId, "jars"))
+                .bucketName(String.join("-", "sleeper", deploymentId, "jars"))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -77,7 +76,7 @@ public class SleeperArtefactsStack extends Stack {
 
     private Repository createRepository(String deploymentId, String imageName) {
         return Repository.Builder.create(this, "Repository-" + imageName)
-                .repositoryName(Utils.joinNonNullParts("-", "sleeper", deploymentId) + "/" + imageName)
+                .repositoryName(String.join("-", "sleeper", deploymentId) + "/" + imageName)
                 .build();
     }
 
