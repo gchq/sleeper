@@ -85,10 +85,12 @@ nightly performance suite includes all tests, including ones tagged as Expensive
 larger bulk of data. They take time to run and can be costly to run frequently.
 
 Due to the time taken to run all the system tests for either a functional or performance run, multiple test suites
-now run in parallel. This is achievied by copying the Java, Python, Scripts and CodeStyle folders of Sleeper into a
+now run in parallel. This is achievied by copying the Sleeper folders into a
 temporary folder per batch (quick, slow1-3, expensive1-3). The nightly run script then runs each of these in parallel
 with a short 60 seconds delay between each one starting up. Once all have completed it then uploads the results to S3.
 When adding a new Slow or Expensive System test add either the Slow1-3 or Expensive 1-3 tag.
+
+When running the performance build which runs every test suite in parallel it is reccomended to have at least 300GiB volume size on the running EC2 with an incstance type that has at least 8vCPU's and 64GiB Memory
 
 ### Current Slow and Expensive test suites
 ## This looks imabalanced but EKSBulkImportST is a lot slower than others
