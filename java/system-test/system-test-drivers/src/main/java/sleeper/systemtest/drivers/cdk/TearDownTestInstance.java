@@ -45,8 +45,7 @@ public class TearDownTestInstance {
 
     public static TearDownInstance.Builder builder() {
         return TearDownInstance.builder()
-                .getExtraEcsClusters(properties -> getSystemTestEcsClusters(properties))
-                .getExtraEcrRepositories(properties -> getSystemTestEcrRepositories(properties));
+                .getExtraEcsClusters(properties -> getSystemTestEcsClusters(properties));
     }
 
     public static List<String> getSystemTestEcsClusters(InstanceProperties properties) {

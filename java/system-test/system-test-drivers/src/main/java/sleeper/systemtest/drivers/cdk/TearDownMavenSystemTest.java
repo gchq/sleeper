@@ -74,7 +74,7 @@ public class TearDownMavenSystemTest {
         }
         for (TearDownInstance instance : tearDownStandaloneInstances) {
             instance.waitForStackToDelete();
-            instance.cleanupAfterStackDeleted();
+            instance.deleteArtefactsStack();
         }
         for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
             deployment.waitForStackToDelete();
