@@ -28,10 +28,8 @@ import sleeper.core.properties.local.LoadLocalProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -43,13 +41,11 @@ public class TearDownInstance {
 
     private final TearDownClients clients;
     private final Path scriptsDir;
-    private final Function<InstanceProperties, List<String>> getExtraEcsClusters;
     private final InstanceProperties instanceProperties;
 
     private TearDownInstance(Builder builder) {
         clients = Objects.requireNonNull(builder.clients, "clients must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
-        getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
         instanceProperties = Optional.ofNullable(builder.instanceProperties)
                 .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
     }
@@ -97,7 +93,7 @@ public class TearDownInstance {
 
     public void shutdownSystemProcesses() throws InterruptedException {
         new ShutdownSystemProcesses(clients)
-                .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
+                .shutdown(instanceProperties);
     }
 
     public void deleteArtefactsStack() throws InterruptedException {
@@ -149,7 +145,6 @@ public class TearDownInstance {
         private Path scriptsDir;
         private String instanceId;
         private InstanceProperties instanceProperties;
-        private Function<InstanceProperties, List<String>> getExtraEcsClusters = properties -> List.of();
 
         private Builder() {
         }
@@ -171,11 +166,6 @@ public class TearDownInstance {
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public Builder getExtraEcsClusters(Function<InstanceProperties, List<String>> getExtraEcsClusters) {
-            this.getExtraEcsClusters = getExtraEcsClusters;
             return this;
         }
 

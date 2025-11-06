@@ -58,7 +58,7 @@ public class TearDownMavenSystemTest {
                 .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownStandaloneInstances = standaloneInstanceIds.stream()
-                .map(instanceId -> TearDownTestInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
+                .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownAllInstances = Stream.concat(tearDownMavenInstances.stream(), tearDownStandaloneInstances.stream()).collect(toUnmodifiableList());
 
