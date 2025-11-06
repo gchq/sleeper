@@ -33,10 +33,12 @@ public class UploadDockerImagesToEcr {
 
     private final UploadDockerImages uploader;
     private final EcrRepositoryCreator.Client ecrClient;
+    private final CheckVersionExistsInEcr repositoryChecker;
 
     public UploadDockerImagesToEcr(UploadDockerImages uploader, Client ecrClient) {
         this.uploader = uploader;
         this.ecrClient = ecrClient;
+        this.repositoryChecker = ecrClient::versionExistsInRepository;
     }
 
     public void upload(UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
@@ -53,7 +55,7 @@ public class UploadDockerImagesToEcr {
     private boolean imageDoesNotExistInRepositoryWithVersion(
             StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request) {
         String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (ecrClient.versionExistsInRepository(imagePath, uploader.getVersion())) {
+        if (repositoryChecker.versionExistsInRepository(imagePath, uploader.getVersion())) {
             LOGGER.info("Stack image {} already exists in ECR with version {}",
                     stackDockerImage.getImageName(), uploader.getVersion());
             return false;
