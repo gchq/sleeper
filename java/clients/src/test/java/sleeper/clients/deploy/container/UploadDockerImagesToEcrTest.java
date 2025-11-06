@@ -497,7 +497,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         void shouldBuildAndPushImageIfImageWithDifferentVersionExists() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.createRepository("test-instance/ingest");
             ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
 
             // When
@@ -515,7 +514,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
         void shouldNotBuildAndPushImageIfImageWithMatchingVersionExists() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.createRepository("test-instance/ingest");
             ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
 
             // When
@@ -532,7 +530,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             properties.setList(OPTIONAL_STACKS, List.of());
             InstanceProperties before = InstanceProperties.copyOf(properties);
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
-            ecrClient.createRepository("test-instance/ingest");
             ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
 
             // When
