@@ -18,8 +18,6 @@ package sleeper.clients.deploy.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.container.EcrRepositoryCreator.Client;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,7 +35,7 @@ public class UploadDockerImagesToEcr {
     private final UploadDockerImages uploader;
     private final CheckVersionExistsInEcr repositoryChecker;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, Client ecrClient, CheckVersionExistsInEcr repositoryChecker) {
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckVersionExistsInEcr repositoryChecker) {
         this.uploader = uploader;
         this.repositoryChecker = repositoryChecker;
     }

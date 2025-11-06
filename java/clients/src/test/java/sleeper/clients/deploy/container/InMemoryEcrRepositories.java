@@ -22,16 +22,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class InMemoryEcrRepositories implements EcrRepositoryCreator.Client, CheckVersionExistsInEcr {
+public class InMemoryEcrRepositories implements CheckVersionExistsInEcr {
     private final Map<String, Set<String>> versionsByRepositoryName = new HashMap<>();
     private final Set<String> repositoriesWithEmrServerlessPolicy = new HashSet<>();
 
-    @Override
     public boolean repositoryExists(String repository) {
         return versionsByRepositoryName.containsKey(repository);
     }
 
-    @Override
     public void createRepository(String repository) {
         if (repositoryExists(repository)) {
             throw new IllegalArgumentException("Repository already exists: " + repository);
@@ -43,12 +41,10 @@ public class InMemoryEcrRepositories implements EcrRepositoryCreator.Client, Che
         versionsByRepositoryName.get(repository).add(version);
     }
 
-    @Override
     public void deleteRepository(String repository) {
         versionsByRepositoryName.remove(repository);
     }
 
-    @Override
     public void createEmrServerlessAccessPolicy(String repository) {
         if (repositoriesWithEmrServerlessPolicy.contains(repository)) {
             throw new IllegalArgumentException("Repository already has EMR Serverless policy: " + repository);

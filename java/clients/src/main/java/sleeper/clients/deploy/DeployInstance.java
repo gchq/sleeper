@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
-import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -98,7 +97,7 @@ public class DeployInstance {
                     SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                     new UploadDockerImagesToEcr(
                             UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
-                            EcrRepositoryCreator.withEcrClient(ecrClient), CheckVersionExistsInEcr.withEcrClient(ecrClient)),
+                            CheckVersionExistsInEcr.withEcrClient(ecrClient)),
                     WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                     InvokeCdk.fromScriptsDirectory(scriptsDirectory));
 
