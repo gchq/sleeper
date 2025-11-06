@@ -32,7 +32,7 @@ import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.table.AddTable;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -58,7 +58,7 @@ public class DeployNewInstance {
     private final Path scriptsDirectory;
     private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final List<StackDockerImage> extraDockerImages;
-    private final InvokeCdkForInstance.Type instanceType;
+    private final InvokeCdk.Type instanceType;
     private final CommandPipelineRunner runCommand;
     private final boolean deployPaused;
     private final boolean createMultiPlatformBuilder;
@@ -100,7 +100,7 @@ public class DeployNewInstance {
                     .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
                             instancePropertiesFile, populateInstanceProperties, scriptsDirectory.resolve("templates")))
                     .deployPaused(deployPaused)
-                    .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                    .instanceType(InvokeCdk.Type.STANDARD)
                     .deployWithClients(s3Client, dynamoClient, ecrClient);
         }
     }
@@ -122,7 +122,7 @@ public class DeployNewInstance {
                                 .build(),
                         EcrRepositoryCreator.withEcrClient(ecrClient)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
-                InvokeCdkForInstance.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
+                InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
         deployInstance.deploy(DeployInstanceRequest.builder()
                 .instanceConfig(deployInstanceConfiguration)
@@ -149,7 +149,7 @@ public class DeployNewInstance {
         private Path scriptsDirectory;
         private DeployInstanceConfiguration deployInstanceConfiguration;
         private List<StackDockerImage> extraDockerImages = List.of();
-        private InvokeCdkForInstance.Type instanceType;
+        private InvokeCdk.Type instanceType;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean deployPaused;
         private boolean createMultiPlatformBuilder;
@@ -187,7 +187,7 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder instanceType(InvokeCdkForInstance.Type instanceType) {
+        public Builder instanceType(InvokeCdk.Type instanceType) {
             this.instanceType = instanceType;
             return this;
         }

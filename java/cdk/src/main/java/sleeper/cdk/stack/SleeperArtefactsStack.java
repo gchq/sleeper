@@ -28,7 +28,6 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 
-import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
@@ -41,11 +40,11 @@ import java.util.List;
  */
 public class SleeperArtefactsStack extends Stack {
 
-    public SleeperArtefactsStack(App app, String stackId, String deploymentId, StackProps props) {
+    public SleeperArtefactsStack(App app, String stackId, StackProps props, String deploymentId, List<String> extraEcrImages) {
         super(app, stackId, props);
 
         Bucket.Builder.create(this, "JarsBucket")
-                .bucketName(Utils.joinNonNullParts("-", "sleeper", deploymentId, "jars"))
+                .bucketName(String.join("-", "sleeper", deploymentId, "jars"))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
@@ -73,11 +72,15 @@ public class SleeperArtefactsStack extends Stack {
                         .build());
             }
         }
+
+        for (String imageName : extraEcrImages) {
+            createRepository(deploymentId, imageName);
+        }
     }
 
     private Repository createRepository(String deploymentId, String imageName) {
         return Repository.Builder.create(this, "Repository-" + imageName)
-                .repositoryName(Utils.joinNonNullParts("-", "sleeper", deploymentId) + "/" + imageName)
+                .repositoryName(deploymentId + "/" + imageName)
                 .build();
     }
 

@@ -22,7 +22,6 @@ import sleeper.core.properties.table.TableProperties;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
@@ -38,11 +37,11 @@ public class UtilsTestHelper {
     private UtilsTestHelper() {
     }
 
-    public static Function<String, String> cdkContextWithPropertiesFile(Path tempDir) {
+    public static CdkContext cdkContextWithPropertiesFile(Path tempDir) {
         return Map.of("propertiesfile", tempDir.resolve("instance.properties").toString())::get;
     }
 
-    public static Function<String, String> cdkContextWithPropertiesFileAndSkipVersionCheck(Path tempDir) {
+    public static CdkContext cdkContextWithPropertiesFileAndSkipVersionCheck(Path tempDir) {
         return Map.of("propertiesfile", tempDir.resolve("instance.properties").toString(),
                 "skipVersionCheck", "true")::get;
     }

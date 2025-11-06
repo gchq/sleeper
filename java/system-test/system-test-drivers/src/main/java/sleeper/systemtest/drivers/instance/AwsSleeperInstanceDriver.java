@@ -30,8 +30,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
-import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.DeployInstanceConfiguration;
@@ -96,7 +95,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         try {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
-                    .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                    .instanceType(InvokeCdk.Type.STANDARD)
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .deployWithClients(s3, dynamoDB, ecr);
@@ -133,7 +132,6 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
-                    .deployCommand(CdkCommand.deployExisting())
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .build().update();
