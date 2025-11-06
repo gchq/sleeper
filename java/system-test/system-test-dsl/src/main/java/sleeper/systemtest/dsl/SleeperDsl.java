@@ -45,7 +45,7 @@ import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.LocalFilesDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.dsl.sourcedata.SourceFilesDsl;
-import sleeper.systemtest.dsl.statestore.SystemTestStateStore;
+import sleeper.systemtest.dsl.statestore.StateStoreDSl;
 
 import java.nio.file.Path;
 import java.util.Collection;
@@ -214,8 +214,8 @@ public class SleeperDsl {
         new SystemTestOptionalStacks(context.instance()).removeOptionalStacks(stacks);
     }
 
-    public SystemTestStateStore stateStore() {
-        return new SystemTestStateStore(context);
+    public StateStoreDSl stateStore() {
+        return new StateStoreDSl(context);
     }
 
     public SystemTestTables tables() {

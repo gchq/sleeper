@@ -37,8 +37,8 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
-public class SystemTestStateStore {
-    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStore.class);
+public class StateStoreDSl {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreDSl.class);
 
     private final SystemTestContext context;
     private final StateStoreCommitterDriver driver;
@@ -46,7 +46,7 @@ public class SystemTestStateStore {
     private final SnapshotsDriver snapshotsDriver;
     private final PollWithRetriesDriver pollDriver;
 
-    public SystemTestStateStore(SystemTestContext context) {
+    public StateStoreDSl(SystemTestContext context) {
         this.context = context;
         SystemTestDrivers adminDrivers = context.instance().adminDrivers();
         driver = adminDrivers.stateStoreCommitter(context);
