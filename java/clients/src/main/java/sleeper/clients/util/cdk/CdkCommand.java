@@ -15,39 +15,112 @@
  */
 package sleeper.clients.util.cdk;
 
-import java.util.stream.Stream;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface CdkCommand {
+public record CdkCommand(List<String> command, List<String> arguments) {
 
-    Stream<String> getCommand();
-
-    Stream<String> getArguments();
-
-    static CdkDeploy deployPropertiesChange() {
-        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).build();
+    public static Builder builder() {
+        return new Builder();
     }
 
-    static CdkDeploy deploySystemTestStandalone() {
-        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(false).deployPaused(false).build();
+    public static CdkCommand deployArtefacts(String deploymentId, List<String> extraEcrImages) {
+        return builder().deploy()
+                .context("id", deploymentId)
+                .context("extraEcrImages", String.join(",", extraEcrImages))
+                .build();
     }
 
-    static CdkDeploy deployExisting() {
-        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(true).deployPaused(false).build();
+    public static CdkCommand deployPropertiesChange(Path propertiesFile) {
+        return builder().deploy().propertiesFile(propertiesFile).build();
     }
 
-    static CdkDeploy deployExistingPaused() {
-        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(true).deployPaused(true).build();
+    public static CdkCommand deploySystemTestStandalone(Path propertiesFile) {
+        return builder().deploy().propertiesFile(propertiesFile).build();
     }
 
-    static CdkDeploy deployNew() {
-        return CdkDeploy.builder().ensureNewInstance(true).skipVersionCheck(false).deployPaused(false).build();
+    public static CdkCommand deployExisting() {
+        return builder().deploy().skipVersionCheck(true).build();
     }
 
-    static CdkDeploy deployNewPaused() {
-        return CdkDeploy.builder().ensureNewInstance(true).skipVersionCheck(false).deployPaused(true).build();
+    public static CdkCommand deployExistingPaused() {
+        return builder().deploy().skipVersionCheck(true).deployPaused(true).build();
     }
 
-    static CdkDestroy destroy() {
-        return new CdkDestroy();
+    public static CdkCommand deployNew() {
+        return builder().deploy().ensureNewInstance(true).build();
+    }
+
+    public static CdkCommand deployNewPaused() {
+        return builder().deploy().ensureNewInstance(true).deployPaused(true).build();
+    }
+
+    public static CdkCommand destroy() {
+        return builder().destroy().validate(false).build();
+    }
+
+    public CdkCommand withPropertiesFile(Path propertiesFile) {
+        return builder().command(command).propertiesFile(propertiesFile).arguments(arguments).build();
+    }
+
+    public static final class Builder {
+        private List<String> command;
+        private List<String> arguments = new ArrayList<>();
+
+        private Builder() {
+        }
+
+        public Builder deploy() {
+            return command(List.of("deploy",
+                    "--require-approval", "never"));
+        }
+
+        public Builder destroy() {
+            return command(List.of("destroy", "--force"));
+        }
+
+        public Builder command(List<String> command) {
+            this.command = command;
+            return this;
+        }
+
+        public Builder arguments(List<String> arguments) {
+            this.arguments.addAll(arguments);
+            return this;
+        }
+
+        public Builder propertiesFile(Path propertiesFile) {
+            return context("propertiesfile", propertiesFile.toString());
+        }
+
+        public Builder ensureNewInstance(boolean ensureNewInstance) {
+            return context("newinstance", ensureNewInstance);
+        }
+
+        public Builder skipVersionCheck(boolean skipVersionCheck) {
+            return context("skipVersionCheck", skipVersionCheck);
+        }
+
+        public Builder deployPaused(boolean deployPaused) {
+            return context("deployPaused", deployPaused);
+        }
+
+        public Builder validate(boolean validate) {
+            return context("validate", validate);
+        }
+
+        public Builder context(String variable, String value) {
+            arguments.addAll(List.of("-c", variable + "=" + value));
+            return this;
+        }
+
+        public Builder context(String variable, boolean value) {
+            return context(variable, "" + value);
+        }
+
+        public CdkCommand build() {
+            return new CdkCommand(command, arguments);
+        }
     }
 }

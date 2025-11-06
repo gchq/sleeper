@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.core.deploy.PopulateInstanceProperties;
@@ -69,7 +69,7 @@ public class DeployNewTestInstance {
                             templates(scriptsDirectory, splitPointsFileForTemplate)))
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
-                    .instanceType(InvokeCdkForInstance.Type.SYSTEM_TEST)
+                    .instanceType(InvokeCdk.Type.SYSTEM_TEST)
                     .deployWithClients(s3Client, dynamoClient, ecrClient);
         }
     }

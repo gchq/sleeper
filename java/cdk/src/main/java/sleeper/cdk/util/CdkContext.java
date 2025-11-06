@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.util.cdk;
+package sleeper.cdk.util;
 
-import java.util.stream.Stream;
+import software.constructs.Construct;
 
-public class CdkDestroy implements CdkCommand {
+public interface CdkContext {
 
-    @Override
-    public Stream<String> getCommand() {
-        return Stream.of("destroy", "--force");
+    String tryGetContext(String property);
+
+    static CdkContext from(Construct scope) {
+        return key -> (String) scope.getNode().tryGetContext(key);
     }
 
-    @Override
-    public Stream<String> getArguments() {
-        return Stream.of("-c", "validate=false");
-    }
 }

@@ -26,12 +26,11 @@ import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.cdk.util.UtilsTestHelper.cdkContextWithPropertiesFile;
 import static sleeper.cdk.util.UtilsTestHelper.createUserDefinedInstanceProperties;
 import static sleeper.cdk.util.UtilsTestHelper.createUserDefinedTableProperties;
 import static sleeper.core.SleeperVersion.getVersion;
@@ -56,7 +55,7 @@ class UtilsPropertiesIT {
 
             // When / Then
             properties.set(VERSION, getVersion());
-            assertThat(loadInstanceProperties(cdkContextWithPropertiesFile()))
+            assertThat(loadInstanceProperties(cdkContextWithPropertiesFile(tempDir)))
                     .isEqualTo(properties);
         }
 
@@ -68,7 +67,7 @@ class UtilsPropertiesIT {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
 
             // When / Then
-            assertThat(Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile()))
+            assertThat(Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile(tempDir)))
                     .containsExactly(properties);
         }
 
@@ -80,7 +79,7 @@ class UtilsPropertiesIT {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile());
+            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
 
             // Then
             assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
@@ -93,7 +92,7 @@ class UtilsPropertiesIT {
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
             // When
-            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile());
+            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
 
             // Then
             assertThat(loaded.get(VERSION))
@@ -113,18 +112,14 @@ class UtilsPropertiesIT {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
             // When / Then
-            Function<String, String> context = cdkContextWithPropertiesFile();
+            CdkContext context = cdkContextWithPropertiesFile(tempDir);
             assertThatThrownBy(() -> loadInstanceProperties(context))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper instance ID is not valid as part of an S3 bucket name: aa$$aa");
         }
     }
 
-    private InstanceProperties loadInstanceProperties(Function<String, String> context) {
+    private InstanceProperties loadInstanceProperties(CdkContext context) {
         return Utils.loadInstanceProperties(InstanceProperties::createWithoutValidation, context);
-    }
-
-    private Function<String, String> cdkContextWithPropertiesFile() {
-        return Map.of("propertiesfile", tempDir.resolve("instance.properties").toString())::get;
     }
 }

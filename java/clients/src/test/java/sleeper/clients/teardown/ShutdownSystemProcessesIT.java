@@ -23,41 +23,23 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.util.StaticRateLimit;
 
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
-import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
-import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.anyRequestedForCloudWatchEvents;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequest;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequestedFor;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNoApplications;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveEmrApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.aResponseWithNoClusters;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.aResponseWithNumRunningClusters;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.anyRequestedForEmr;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersRequested;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveEmrClustersRequest;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequest;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestWithJobIdCount;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestedFor;
-import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestedWithJobIdsCount;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.util.ThreadSleepTestHelper.noWaits;
 
 @WireMockTest
 class ShutdownSystemProcessesIT {
@@ -67,8 +49,7 @@ class ShutdownSystemProcessesIT {
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo),
-                wiremockEmrClient(runtimeInfo), StaticRateLimit.none(), noWaits());
+        shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo));
     }
 
     private void shutdown() throws Exception {
@@ -79,33 +60,9 @@ class ShutdownSystemProcessesIT {
         shutdown.shutdown(properties, extraECSClusters);
     }
 
-    @Test
-    void shouldPerformNoShutdownWhenNothingToDo() throws Exception {
-        // Given
-        stubFor(listActiveEmrClustersRequest()
-                .willReturn(aResponseWithNoClusters()));
-        stubFor(listActiveEmrApplicationsRequest()
-                .willReturn(aResponseWithNoApplications()));
-
-        // When
-        shutdown();
-
-        // Then
-        verify(1, anyRequestedFor(anyUrl()));
-        verify(1, listActiveClustersRequested());
-    }
-
     @Nested
     @DisplayName("Shutdown Cloud Watch Rules")
     class ShutdownCloudWatchRules {
-
-        @BeforeEach
-        void setup() {
-            stubFor(listActiveEmrClustersRequest()
-                    .willReturn(aResponseWithNoClusters()));
-            stubFor(listActiveEmrApplicationsRequest()
-                    .willReturn(aResponseWithNoApplications()));
-        }
 
         @Test
         void shouldShutdownCloudWatchRulesWhenSet() throws Exception {
@@ -134,86 +91,4 @@ class ShutdownSystemProcessesIT {
         }
     }
 
-    @Nested
-    @DisplayName("Terminate running EMR clusters")
-    class TerminateEMRClusters {
-
-        @BeforeEach
-        void setup() {
-            properties.set(ID, "test-instance");
-            stubFor(listActiveEmrApplicationsRequest()
-                    .willReturn(aResponseWithNoApplications()));
-        }
-
-        @Test
-        void shouldTerminateEMRClusterWhenOneClusterIsRunning() throws Exception {
-            // Given
-            stubFor(listActiveEmrClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponse().withStatus(200).withBody("" +
-                            "{\"Clusters\": [{" +
-                            "   \"Name\": \"sleeper-test-instance-test-cluster\"," +
-                            "   \"Id\": \"test-cluster-id\"," +
-                            "   \"Status\": {\"State\": \"RUNNING\"}" +
-                            "}]}"))
-                    .whenScenarioStateIs(STARTED));
-            stubFor(terminateJobFlowsRequest().inScenario("TerminateEMRClusters")
-                    .whenScenarioStateIs(STARTED)
-                    .willSetStateTo("TERMINATED"));
-            stubFor(listActiveEmrClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponse().withStatus(200).withBody(
-                            "{\"Clusters\": []}"))
-                    .whenScenarioStateIs("TERMINATED"));
-
-            // When
-            shutdown();
-
-            // Then
-            verify(3, anyRequestedForEmr());
-            verify(2, listActiveClustersRequested());
-            verify(1, terminateJobFlowsRequestedFor("test-cluster-id"));
-        }
-
-        @Test
-        void shouldTerminateEMRClustersInBatchesOfTen() throws Exception {
-            // Given
-            stubFor(listActiveEmrClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponseWithNumRunningClusters(11))
-                    .whenScenarioStateIs(STARTED));
-            stubFor(terminateJobFlowsRequestWithJobIdCount(10).inScenario("TerminateEMRClusters")
-                    .whenScenarioStateIs(STARTED).willSetStateTo("PART_TERMINATED"));
-            stubFor(terminateJobFlowsRequestWithJobIdCount(1).inScenario("TerminateEMRClusters")
-                    .whenScenarioStateIs("PART_TERMINATED").willSetStateTo("TERMINATED"));
-            stubFor(listActiveEmrClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponseWithNoClusters())
-                    .whenScenarioStateIs("TERMINATED"));
-
-            // When
-            shutdown();
-
-            // Then
-            verify(4, anyRequestedForEmr());
-            verify(2, listActiveClustersRequested());
-            verify(1, terminateJobFlowsRequestedWithJobIdsCount(10));
-            verify(1, terminateJobFlowsRequestedWithJobIdsCount(1));
-        }
-
-        @Test
-        void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
-            // Given
-            stubFor(listActiveEmrClustersRequest()
-                    .willReturn(aResponse().withStatus(200).withBody("" +
-                            "{\"Clusters\": [{" +
-                            "   \"Name\": \"sleeper-another-instance-test-cluster\"," +
-                            "   \"Id\": \"test-cluster-id\"," +
-                            "   \"Status\": {\"State\": \"RUNNING\"}" +
-                            "}]}")));
-
-            // When
-            shutdown();
-
-            // Then
-            verify(1, anyRequestedForEmr());
-            verify(1, listActiveClustersRequested());
-        }
-    }
 }
