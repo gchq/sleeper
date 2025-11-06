@@ -30,6 +30,7 @@ import sleeper.clients.admin.screen.IngestBatcherReportScreen;
 import sleeper.clients.admin.screen.IngestStatusReportScreen;
 import sleeper.clients.admin.screen.InstanceConfigurationScreen;
 import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -97,7 +98,7 @@ public class AdminClient {
                 EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.fromScriptsDirectory(scriptsDir),
-                    EcrRepositoryCreator.withEcrClient(ecrClient));
+                    EcrRepositoryCreator.withEcrClient(ecrClient), CheckVersionExistsInEcr.withEcrClient(ecrClient));
             errorCode = start(instanceId, s3Client, dynamoClient,
                     cdk, generatedDir, uploadDockerImages, out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),

@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployConfiguration;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.EcrRepositoryCreator;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -132,7 +133,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                         .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
                         .commandRunner(CommandUtils::runCommandLogOutput)
                         .build(),
-                EcrRepositoryCreator.withEcrClient(ecr));
+                EcrRepositoryCreator.withEcrClient(ecr), CheckVersionExistsInEcr.withEcrClient(ecr));
         dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()
                 .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(parameters.getArtefactsDeploymentId()))
                 .account(parameters.getAccount())

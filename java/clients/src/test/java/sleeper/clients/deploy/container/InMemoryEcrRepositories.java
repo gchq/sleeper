@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class InMemoryEcrRepositories implements EcrRepositoryCreator.Client {
+public class InMemoryEcrRepositories implements EcrRepositoryCreator.Client, CheckVersionExistsInEcr {
     private final Map<String, Set<String>> versionsByRepositoryName = new HashMap<>();
     private final Set<String> repositoriesWithEmrServerlessPolicy = new HashSet<>();
 

@@ -35,10 +35,10 @@ public class UploadDockerImagesToEcr {
     private final EcrRepositoryCreator.Client ecrClient;
     private final CheckVersionExistsInEcr repositoryChecker;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, Client ecrClient) {
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, Client ecrClient, CheckVersionExistsInEcr repositoryChecker) {
         this.uploader = uploader;
         this.ecrClient = ecrClient;
-        this.repositoryChecker = ecrClient::versionExistsInRepository;
+        this.repositoryChecker = repositoryChecker;
     }
 
     public void upload(UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
