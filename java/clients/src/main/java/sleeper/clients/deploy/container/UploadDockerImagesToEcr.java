@@ -52,7 +52,7 @@ public class UploadDockerImagesToEcr {
                     command("aws", "ecr", "get-login-password", "--region", request.getRegion()),
                     command("docker", "login", "--username", "AWS", "--password-stdin", request.getRepositoryHost())));
         }
-        uploader.upload(repositoryPrefix, imagesToUpload, UploadDockerImagesCallbacks.NONE);
+        uploader.upload(repositoryPrefix, imagesToUpload);
     }
 
     private boolean imageDoesNotExistInRepositoryWithVersion(

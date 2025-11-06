@@ -63,7 +63,7 @@ public class UploadDockerImages {
                 .build();
     }
 
-    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload, UploadDockerImagesCallbacks callbacks) throws IOException, InterruptedException {
+    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
         if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;

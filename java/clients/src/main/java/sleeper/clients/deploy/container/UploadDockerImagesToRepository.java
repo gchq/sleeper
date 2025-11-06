@@ -47,7 +47,7 @@ public class UploadDockerImagesToRepository {
     }
 
     public static void uploadAllImages(DockerImageConfiguration imageConfig, UploadDockerImages uploader, String repositoryPrefix) throws IOException, InterruptedException {
-        uploader.upload(repositoryPrefix, imageConfig.getAllImagesToUpload(), UploadDockerImagesCallbacks.NONE);
+        uploader.upload(repositoryPrefix, imageConfig.getAllImagesToUpload());
     }
 
 }
