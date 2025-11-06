@@ -16,11 +16,13 @@
 
 package sleeper.systemtest.dsl.testutil;
 
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.sketches.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
@@ -47,7 +49,10 @@ import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExport;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExportDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataGenerationTasksDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
@@ -71,6 +76,8 @@ import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
+import java.util.List;
+
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
@@ -85,6 +92,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
     private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
     private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
+    private final InMemoryBulkExport bulkExport = new InMemoryBulkExport();
     private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(transactionLogs.getTransactionBodyStore(), ingestByQueue, compaction);
     private long fileSizeBytesForBatcher = 1024;
 
@@ -230,7 +238,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public DataFilesDriver dataFiles(SystemTestContext context) {
-        return (schema, filename) -> data.openFile(filename);
+        return new InMemoryDataFilesDriver(data, context);
     }
 
     @Override
@@ -258,6 +266,15 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     public InMemoryStateStoreCommitter stateStoreCommitter() {
         return stateStoreCommitter;
+    }
+
+    @Override
+    public BulkExportDriver bulkExport(SystemTestContext context) {
+        return new InMemoryBulkExportDriver(bulkExport);
+    }
+
+    public List<BulkExportQuery> getBulkExportQueueQueries() {
+        return bulkExport.getQueriesOnQueue();
     }
 
 }

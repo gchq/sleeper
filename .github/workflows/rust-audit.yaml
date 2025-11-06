@@ -25,7 +25,7 @@ jobs:
          toolchain: 1.88
       - uses: mozilla-actions/sccache-action@v0.0.9
       - name: Install cargo audit
-        run: cargo install cargo-audit
+        run: cargo install --locked cargo-audit
       - name: Audit
         working-directory: ./rust
         run: cargo audit

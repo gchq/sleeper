@@ -21,11 +21,11 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
 
 import java.util.List;
 
-public class CompactionBatchJobsWriterToS3 implements CreateCompactionJobs.BatchJobsWriter {
+public class CompactionBatchJobsWriterToS3 implements CreateCompactionJobBatches.BatchJobsWriter {
 
     private final S3Client s3Client;
     private final CompactionJobSerDe serDe = new CompactionJobSerDe();

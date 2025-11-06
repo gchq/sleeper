@@ -298,13 +298,6 @@ public interface CompactionProperty {
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    UserDefinedInstanceProperty COMPACTION_EC2_POOL_DESIRED = Index.propertyBuilder("sleeper.compaction.ec2.pool.desired")
-            .description("The initial desired number of instances for the EC2 cluster (when using EC2-based compactions).\n" +
-                    "Can be set by dividing initial maximum containers by number that should fit on instance type.")
-            .defaultValue("0")
-            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
     UserDefinedInstanceProperty COMPACTION_EC2_POOL_MAXIMUM = Index.propertyBuilder("sleeper.compaction.ec2.pool.maximum")
             .description("The maximum number of instances for the EC2 cluster (when using EC2-based compactions).")
             .defaultValue("75")

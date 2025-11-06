@@ -23,7 +23,7 @@ import sleeper.clients.admin.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.common.task.QueueMessageCount;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -47,7 +47,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     protected final S3Client s3 = SleeperLocalStackClients.S3_CLIENT;
     protected final DynamoDbClient dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
-    protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
+    protected final InvokeCdk cdk = mock(InvokeCdk.class);
     protected final UploadDockerImagesToEcr uploadDockerImages = mock(UploadDockerImagesToEcr.class);
     protected TablePropertiesStore tablePropertiesStore;
     protected TableIndex tableIndex;
@@ -82,5 +82,9 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @Override
     public void saveTableProperties(TableProperties tableProperties) {
         tablePropertiesStore.save(tableProperties);
+    }
+
+    protected Path propertiesFile() {
+        return tempDir.resolve("instance.properties");
     }
 }

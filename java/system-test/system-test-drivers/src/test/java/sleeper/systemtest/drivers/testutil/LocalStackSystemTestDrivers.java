@@ -20,12 +20,15 @@ import software.amazon.awssdk.regions.Region;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.systemtest.drivers.bulkexport.AwsBulkExportDriver;
 import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
+import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
@@ -52,7 +55,6 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
                 .sqs(SleeperLocalStackClients.SQS_CLIENT)
                 .dataFusionAwsConfig(() -> DataFusionAwsConfig.overrideEndpoint(SleeperLocalStackContainer.INSTANCE.getEndpoint().toString()))
                 .configureHadoopSetter(conf -> configureHadoop(conf, SleeperLocalStackContainer.INSTANCE))
-                .skipAssumeRole(true)
                 .build());
     }
 
@@ -72,6 +74,10 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
                 AwsDrainSqsQueue.forLocalStackTests(clients.getSqs()));
     }
 
+    public BulkExportDriver bulkExport(SystemTestContext context) {
+        return new AwsBulkExportDriver(context, clients);
+    }
+
     @Override
     public SnapshotsDriver snapshots() {
         return new NoSnapshotsDriver();
@@ -80,6 +86,11 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     @Override
     public PollWithRetriesDriver pollWithRetries() {
         return PollWithRetriesDriver.noWaits();
+    }
+
+    @Override
+    public AssumeAdminRoleDriver assumeAdminRole() {
+        return properties -> this;
     }
 
     public SystemTestClients clients() {

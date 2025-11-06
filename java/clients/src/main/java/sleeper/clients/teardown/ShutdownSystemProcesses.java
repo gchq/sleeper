@@ -18,15 +18,9 @@ package sleeper.clients.teardown;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
-import software.amazon.awssdk.services.emr.EmrClient;
-import software.amazon.awssdk.services.emr.model.ListClustersResponse;
-import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.deploy.PauseSystem;
-import sleeper.clients.util.EmrUtils;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.util.StaticRateLimit;
-import sleeper.core.util.ThreadSleep;
 
 import java.util.List;
 
@@ -37,41 +31,20 @@ public class ShutdownSystemProcesses {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShutdownSystemProcesses.class);
 
     private final CloudWatchEventsClient cloudWatch;
-    private final EmrClient emrClient;
-    private final EmrServerlessClient emrServerlessClient;
-    private final StaticRateLimit<ListClustersResponse> listActiveClustersLimit;
-    private final ThreadSleep threadSleep;
 
     public ShutdownSystemProcesses(TearDownClients clients) {
-        this(clients.getCloudWatch(), clients.getEmr(), clients.getEmrServerless(), EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT, Thread::sleep);
+        this(clients.getCloudWatch());
     }
 
-    public ShutdownSystemProcesses(
-            CloudWatchEventsClient cloudWatch,
-            EmrClient emrClient, EmrServerlessClient emrServerlessClient,
-            StaticRateLimit<ListClustersResponse> listActiveClustersLimit,
-            ThreadSleep threadSleep) {
+    public ShutdownSystemProcesses(CloudWatchEventsClient cloudWatch) {
         this.cloudWatch = cloudWatch;
-        this.emrClient = emrClient;
-        this.emrServerlessClient = emrServerlessClient;
-        this.listActiveClustersLimit = listActiveClustersLimit;
-        this.threadSleep = threadSleep;
+
     }
 
     public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws InterruptedException {
         LOGGER.info("Shutting down system processes for instance {}", instanceProperties.get(ID));
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
-        stopEMRClusters(instanceProperties);
-        stopEMRServerlessApplication(instanceProperties);
-    }
-
-    private void stopEMRClusters(InstanceProperties properties) throws InterruptedException {
-        new TerminateEMRClusters(emrClient, properties.get(ID), listActiveClustersLimit, threadSleep).run();
-    }
-
-    private void stopEMRServerlessApplication(InstanceProperties properties) throws InterruptedException {
-        new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
     }
 
 }

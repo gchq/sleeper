@@ -156,15 +156,15 @@ public class Utils {
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> properties, Construct scope) {
-        return loadInstanceProperties(properties, tryGetContext(scope));
+        return loadInstanceProperties(properties, CdkContext.from(scope));
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(
-            Function<Properties, T> constructor, Function<String, String> tryGetContext) {
-        Path propertiesFile = Path.of(tryGetContext.apply("propertiesfile"));
+            Function<Properties, T> constructor, CdkContext context) {
+        Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
 
-        if (!"false".equalsIgnoreCase(tryGetContext.apply("validate"))) {
+        if (!"false".equalsIgnoreCase(context.tryGetContext("validate"))) {
             properties.validate();
             try {
                 BucketUtils.isValidDnsBucketName(properties.get(ID), true);
@@ -174,7 +174,7 @@ public class Utils {
                         e);
             }
         }
-        if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
+        if ("true".equalsIgnoreCase(context.tryGetContext("newinstance"))) {
             try (S3Client s3Client = S3Client.create(); DynamoDbClient dynamoClient = DynamoDbClient.create()) {
                 new NewInstanceValidator(s3Client, dynamoClient).validate(properties, propertiesFile);
             }
@@ -183,7 +183,7 @@ public class Utils {
         String localVersion = SleeperVersion.getVersion();
         CdkDefinedInstanceProperty.getAll().forEach(properties::unset);
 
-        if (!"true".equalsIgnoreCase(tryGetContext.apply("skipVersionCheck"))
+        if (!"true".equalsIgnoreCase(context.tryGetContext("skipVersionCheck"))
                 && deployedVersion != null
                 && !localVersion.equals(deployedVersion)) {
             throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
@@ -196,17 +196,13 @@ public class Utils {
 
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Construct scope) {
-        return getAllTableProperties(instanceProperties, tryGetContext(scope));
+        return getAllTableProperties(instanceProperties, CdkContext.from(scope));
     }
 
     public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Function<String, String> tryGetContext) {
+            InstanceProperties instanceProperties, CdkContext cdkContext) {
         return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                instanceProperties, Path.of(tryGetContext.apply("propertiesfile")));
-    }
-
-    private static Function<String, String> tryGetContext(Construct scope) {
-        return key -> (String) scope.getNode().tryGetContext(key);
+                instanceProperties, Path.of(cdkContext.tryGetContext("propertiesfile")));
     }
 
     public static boolean shouldDeployPaused(Construct scope) {

@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.BatchJobsWriter;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches.BatchJobsWriter;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.impl.SizeRatioCompactionStrategy;
@@ -513,10 +513,9 @@ public class CreateCompactionJobsTest {
     private CreateCompactionJobs jobCreator(
             GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random, Supplier<Instant> timeSupplier) throws Exception {
         return new CreateCompactionJobs(
-                ObjectFactory.noUserJars(), instanceProperties,
-                new FixedStateStoreProvider(tableProperties, stateStore),
-                createBatchWriter(), pendingQueue::add, jobIdAssignmentCommitRequests::add,
-                generateJobId, generateBatchId, random, timeSupplier);
+                instanceProperties, new FixedStateStoreProvider(tableProperties, stateStore),
+                new CreateCompactionJobBatches(instanceProperties, createBatchWriter(), pendingQueue::add, jobIdAssignmentCommitRequests::add, generateBatchId, timeSupplier),
+                ObjectFactory.noUserJars(), generateJobId, random);
     }
 
     private CompactionJobDispatchRequest batchRequest(String batchId, Instant createTime) {

@@ -30,6 +30,7 @@
         <module>common-job</module>
         <module>common-task</module>
         <module>common-invoke-tables</module>
+        <module>docker-lambda</module>
         <module>dynamodb-tools</module>
         <module>localstack-test</module>
     </modules>

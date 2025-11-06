@@ -35,7 +35,7 @@ public class ListJars {
 
     public static void main(String[] args) {
         boolean excludeClientsJar = Set.of(args).contains("--exclude-clients-jar");
-        print(LambdaJar.getAll(), excludeClientsJar(excludeClientsJar), SleeperVersion.getVersion(), System.out);
+        print(LambdaJar.all(), excludeClientsJar(excludeClientsJar), SleeperVersion.getVersion(), System.out);
     }
 
     /**

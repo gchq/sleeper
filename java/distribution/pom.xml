@@ -184,5 +184,11 @@
             <version>${project.parent.version}</version>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>docker-lambda</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -19,7 +19,10 @@ use arrow::datatypes::SchemaRef;
 use datafusion::{
     common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
     error::DataFusionError,
-    physical_plan::{ExecutionPlan, projection::ProjectionExec},
+    physical_plan::{
+        ExecutionPlan,
+        projection::{ProjectionExec, ProjectionExpr},
+    },
 };
 use std::{cmp::Reverse, sync::Arc};
 
@@ -62,7 +65,7 @@ pub fn unalias_view_projection_columns(
                     let phys_exprs = projection
                         .expr()
                         .iter()
-                        .map(|(expr, name)| (expr.clone(), unalias(name, &schema)))
+                        .map(|e| ProjectionExpr::new(e.expr.clone(), unalias(&e.alias, &schema)))
                         .collect::<Vec<_>>();
 
                     // Make replacement stage
@@ -200,7 +203,7 @@ mod tests {
         if let Some(p) = new_plan.as_any().downcast_ref::<ProjectionExec>() {
             let exprs = p.expr();
             // Alias should be removed to original_col
-            assert_eq!(exprs[0].1, "original_col");
+            assert_eq!(exprs[0].alias, "original_col");
         } else {
             panic!("Resulting plan node is not a ProjectionExec");
         }
@@ -262,12 +265,12 @@ mod tests {
         // The top projection should be unaliased but inner remains aliased
         if let Some(top_proj) = new_plan.as_any().downcast_ref::<ProjectionExec>() {
             let exprs = top_proj.expr();
-            assert_eq!(exprs[0].1, "alias_a");
+            assert_eq!(exprs[0].alias, "alias_a");
             // The input to this projection should still be inner_projection
             if let Some(inner_proj) = top_proj.input().as_any().downcast_ref::<ProjectionExec>() {
                 // Inner projection remains unchanged
                 let exprs = inner_proj.expr();
-                assert_eq!(exprs[0].1, "alias_a");
+                assert_eq!(exprs[0].alias, "alias_a");
             } else {
                 panic!("Inner projection should remain unchanged");
             }

@@ -47,7 +47,7 @@ public class PythonIngestDriver implements IngestByAnyQueueDriver {
                         "--table", instance.getTableName(),
                         "--jobid", jobId,
                         "--files"),
-                Stream.of(files).map(sourceFiles::ingestJobFileInBucket))
+                Stream.of(files).map(filename -> sourceFiles.lastFolderWrittenTo().ingestJobFileInBucket(filename)))
                 .toArray(String[]::new));
     }
 }

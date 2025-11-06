@@ -24,7 +24,6 @@ import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -89,7 +88,7 @@ class UtilsVersionIT {
                 .doesNotThrowAnyException();
     }
 
-    private InstanceProperties loadInstanceProperties(Function<String, String> context) {
+    private InstanceProperties loadInstanceProperties(CdkContext context) {
         return Utils.loadInstanceProperties(InstanceProperties::createWithoutValidation, context);
     }
 

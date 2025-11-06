@@ -26,17 +26,12 @@ import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class IngestSourceFilesContext {
 
@@ -44,38 +39,31 @@ public class IngestSourceFilesContext {
 
     private final SystemTestInstanceContext instance;
     private final Map<String, String> filenameToPath = new TreeMap<>();
-    private final String sourceBucketFolderName = UUID.randomUUID().toString();
-    private Supplier<String> bucketName;
-    private Supplier<String> testFolderName;
+    final String sourceBucketFolderName = UUID.randomUUID().toString();
+    private SourceFilesFolder lastFolder;
 
     public IngestSourceFilesContext(DeployedSystemTestResources systemTest, SystemTestInstanceContext instance) {
         this.instance = instance;
-        bucketName = systemTest::getSystemTestBucketName;
-        testFolderName = () -> sourceBucketFolderName;
     }
 
-    public void useDataBucket() {
-        bucketName = () -> instance.getInstanceProperties().get(DATA_BUCKET);
-        testFolderName = () -> instance.getTableProperties().get(TABLE_ID);
+    public void writeFile(IngestSourceFilesDriver driver, String filename, SourceFilesFolder folder, boolean writeSketches, Stream<Row> rows) {
+        writeFile(driver, instance.getInstanceProperties(), instance.getTableProperties(), filename, folder, writeSketches, rows);
     }
 
-    public void writeFile(IngestSourceFilesDriver driver, String filename, boolean writeSketches, Stream<Row> rows) {
-        writeFile(driver, instance.getInstanceProperties(), instance.getTableProperties(), filename, writeSketches, rows);
-    }
-
-    public void writeFile(IngestSourceFilesDriver driver, Schema schema, String filename, boolean writeSketches, Stream<Row> rows) {
+    public void writeFile(IngestSourceFilesDriver driver, Schema schema, String filename, SourceFilesFolder folder, boolean writeSketches, Stream<Row> rows) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        writeFile(driver, instanceProperties, tableProperties, filename, writeSketches, rows);
+        writeFile(driver, instanceProperties, tableProperties, filename, folder, writeSketches, rows);
     }
 
     private void writeFile(
             IngestSourceFilesDriver driver, InstanceProperties instanceProperties, TableProperties tableProperties,
-            String filename, boolean writeSketches, Stream<Row> rows) {
-        String path = instance.getInstanceProperties().get(FILE_SYSTEM) + generateFilePathNoFs(filename);
+            String filename, SourceFilesFolder folder, boolean writeSketches, Stream<Row> rows) {
+        String path = instance.getInstanceProperties().get(FILE_SYSTEM) + folder.generateFilePathNoFs(filename);
         driver.writeFile(instanceProperties, tableProperties, path, writeSketches, rows.iterator());
         filenameToPath.put(filename, path);
+        lastFolder = folder;
         LOGGER.info("Wrote source file {}, path: {}", filename, path);
     }
 
@@ -87,20 +75,7 @@ public class IngestSourceFilesContext {
         return path;
     }
 
-    public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(this::ingestJobFileInBucket)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    public String ingestJobFileInBucket(String filename) {
-        return generateFilePathNoFs(filename);
-    }
-
-    private String generateFilePathNoFs(String filename) {
-        return bucketName.get() + "/" + testFolderName.get() + "/" + filename;
-    }
-
-    public String getSourceBucketName() {
-        return bucketName.get();
+    public SourceFilesFolder lastFolderWrittenTo() {
+        return lastFolder;
     }
 }

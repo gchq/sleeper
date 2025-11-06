@@ -21,6 +21,7 @@ use arrow::{
 };
 use color_eyre::eyre::Result;
 use datafusion::{
+    assert_batches_eq,
     parquet::arrow::{AsyncArrowWriter, async_writer::ParquetObjectWriter},
     prelude::{ParquetReadOptions, SessionContext},
 };
@@ -32,16 +33,33 @@ use url::Url;
 /// this test should start failing.
 #[tokio::test]
 async fn should_fail_on_datafusion_bug() -> Result<()> {
+    let schema = Arc::new(Schema::new(vec![
+        Field::new("key1", DataType::Int32, false),
+        Field::new("key2", DataType::Int32, false),
+    ]));
+
     let ctx = SessionContext::new();
     // Create a store and put a Parquet file into it
     let store1 = Arc::new(InMemory::new());
-    write_some_parquet("test_path_1.parquet", store1.clone()).await?;
+    write_some_parquet(
+        "test_path_1.parquet",
+        &schema,
+        store1.clone(),
+        [vec![1, 2, 3], vec![11, 12, 13]],
+    )
+    .await?;
     // Tell DataFusion about the store
     ctx.register_object_store(&Url::parse("mem1://memory/")?, store1);
 
     // Make another store, in reality this could be another bucket on AWS S3.
     let store2 = Arc::new(InMemory::new());
-    write_some_parquet("test_path_2.parquet", store2.clone()).await?;
+    write_some_parquet(
+        "test_path_2.parquet",
+        &schema,
+        store2.clone(),
+        [vec![4, 5, 6], vec![44, 55, 66]],
+    )
+    .await?;
     ctx.register_object_store(&Url::parse("mem2://memory/")?, store2);
 
     // Now read the data from store 1 to confirm it works
@@ -51,8 +69,18 @@ async fn should_fail_on_datafusion_bug() -> Result<()> {
             ParquetReadOptions::default(),
         )
         .await?;
-    let mem_read = frame.show().await;
+    let mem_read = frame.clone().show().await;
     assert!(mem_read.is_ok());
+    let expected = [
+        "+------+------+",
+        "| key1 | key2 |",
+        "+------+------+",
+        "| 1    | 11   |",
+        "| 2    | 12   |",
+        "| 3    | 13   |",
+        "+------+------+",
+    ];
+    assert_batches_eq!(expected, &frame.collect().await?);
 
     // Now read the data from store 2 to confirm it works
     let frame = ctx
@@ -61,13 +89,22 @@ async fn should_fail_on_datafusion_bug() -> Result<()> {
             ParquetReadOptions::default(),
         )
         .await?;
-    let mem_read = frame.show().await;
+    let mem_read = frame.clone().show().await;
     assert!(mem_read.is_ok());
+    let expected = [
+        "+------+------+",
+        "| key1 | key2 |",
+        "+------+------+",
+        "| 4    | 44   |",
+        "| 5    | 55   |",
+        "| 6    | 66   |",
+        "+------+------+",
+    ];
+    assert_batches_eq!(expected, &frame.collect().await?);
 
     // TRIGGER BUG - let's read from both
     // Expected behaviour - frame should contain data from both files
-    // Actual behaviour - operation fails with error similar to:
-    // Object at location test_path_2.parquet not found
+    // Actual behaviour - operation fails due to mem2://memory/test_path_2.parquet not being read!
     // Bug appears due to ListingTable and FileScanConfig appear to assume all files can be located
     // in first object store.
     //
@@ -82,19 +119,45 @@ async fn should_fail_on_datafusion_bug() -> Result<()> {
             ParquetReadOptions::default(),
         )
         .await?;
-    let mem_read = frame.show().await;
-
-    assert!(mem_read.is_err());
+    let mem_read = frame.clone().show().await;
+    assert!(mem_read.is_ok());
+    // When the bug is fixed, we *should* see these results below. This table contains
+    // output from both files.
+    let _ = [
+        "+------+------+",
+        "| key1 | key2 |",
+        "+------+------+",
+        "| 1    | 11   |",
+        "| 2    | 12   |",
+        "| 3    | 13   |",
+        "| 4    | 44   |",
+        "| 5    | 55   |",
+        "| 6    | 66   |",
+        "+------+------+",
+    ];
+    // What we actually see with the bug is just the first three rows as those
+    // are what is contained in mem1://memory/test_path_1.parquet.
+    let expected_bug_results = [
+        "+------+------+",
+        "| key1 | key2 |",
+        "+------+------+",
+        "| 1    | 11   |",
+        "| 2    | 12   |",
+        "| 3    | 13   |",
+        "+------+------+",
+    ];
+    assert_batches_eq!(expected_bug_results, &frame.collect().await?);
 
     Ok(())
 }
 
-async fn write_some_parquet(file_name: &str, store: Arc<dyn ObjectStore>) -> Result<()> {
-    let schema = Arc::new(Schema::new(vec![
-        Field::new("key1", DataType::Int32, false),
-        Field::new("key2", DataType::Int32, false),
-    ]));
-    let data_1 = batch_of_int_fields(schema.clone(), [vec![1, 2, 3], vec![11, 12, 13]])?;
+async fn write_some_parquet<const N: usize>(
+    file_name: &str,
+    schema: &Arc<Schema>,
+    store: Arc<dyn ObjectStore>,
+    fields_data: [Vec<i32>; N],
+) -> Result<()> {
+    let data_1 = batch_of_int_fields(schema.clone(), fields_data)?;
 
     let object_store_writer = ParquetObjectWriter::new(store.clone(), Path::from(file_name));
     let mut writer = AsyncArrowWriter::try_new(object_store_writer, data_1.schema(), None).unwrap();
