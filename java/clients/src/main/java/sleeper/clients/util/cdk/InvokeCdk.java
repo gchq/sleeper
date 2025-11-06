@@ -18,6 +18,7 @@ package sleeper.clients.util.cdk;
 import sleeper.clients.util.command.CommandRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.ClientJar;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
@@ -28,29 +29,27 @@ import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
-public class InvokeCdkForInstance {
+public class InvokeCdk {
 
-    private final Path propertiesFile;
     private final Path jarsDirectory;
     private final String version;
     private final CommandRunner runCommand;
 
     public enum Type {
-        STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
-        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdkForInstance::systemTestJarFile),
-        SYSTEM_TEST_STANDALONE("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdkForInstance::systemTestJarFile);
+        STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdk::cdkJarFile),
+        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdk::systemTestJarFile),
+        SYSTEM_TEST_STANDALONE("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdk::systemTestJarFile);
 
         private final String cdkAppClassName;
-        private final Function<InvokeCdkForInstance, Path> getCdkJarFile;
+        private final Function<InvokeCdk, Path> getCdkJarFile;
 
-        Type(String cdkAppClassName, Function<InvokeCdkForInstance, Path> getCdkJarFile) {
+        Type(String cdkAppClassName, Function<InvokeCdk, Path> getCdkJarFile) {
             this.cdkAppClassName = cdkAppClassName;
             this.getCdkJarFile = getCdkJarFile;
         }
     }
 
-    private InvokeCdkForInstance(Builder builder) {
-        propertiesFile = requireNonNull(builder.propertiesFile, "propertiesFile must not be null");
+    private InvokeCdk(Builder builder) {
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
         runCommand = requireNonNull(builder.runCommand, "runCommand must not be null");
@@ -60,7 +59,7 @@ public class InvokeCdkForInstance {
         return new Builder();
     }
 
-    public static InvokeCdkForInstance fromScriptsDirectory(Path scriptsDirectory) {
+    public static InvokeCdk fromScriptsDirectory(Path scriptsDirectory) {
         return builder().scriptsDirectory(scriptsDirectory).build();
     }
 
@@ -81,9 +80,8 @@ public class InvokeCdkForInstance {
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",
                         instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)));
-        cdkCommand.getCommand().forEach(command::add);
-        command.addAll(List.of("-c", String.format("propertiesfile=%s", propertiesFile)));
-        cdkCommand.getArguments().forEach(command::add);
+        command.addAll(cdkCommand.command());
+        command.addAll(cdkCommand.arguments());
         command.add("*");
 
         int exitCode = runCommand.run(command.toArray(new String[0]));
@@ -94,7 +92,7 @@ public class InvokeCdkForInstance {
     }
 
     private Path cdkJarFile() {
-        return jarsDirectory.resolve(String.format("cdk-%s.jar", version));
+        return jarsDirectory.resolve(ClientJar.CDK.getFormattedFilename(version));
     }
 
     private Path systemTestJarFile() {
@@ -102,7 +100,6 @@ public class InvokeCdkForInstance {
     }
 
     public static final class Builder {
-        private Path propertiesFile;
         private Path jarsDirectory;
         private String version = SleeperVersion.getVersion();
         private CommandRunner runCommand = CommandUtils::runCommandInheritIO;
@@ -111,13 +108,7 @@ public class InvokeCdkForInstance {
         }
 
         public Builder scriptsDirectory(Path scriptsDirectory) {
-            return propertiesFile(scriptsDirectory.resolve("generated").resolve("instance.properties"))
-                    .jarsDirectory(scriptsDirectory.resolve("jars"));
-        }
-
-        public Builder propertiesFile(Path propertiesFile) {
-            this.propertiesFile = propertiesFile;
-            return this;
+            return jarsDirectory(scriptsDirectory.resolve("jars"));
         }
 
         public Builder jarsDirectory(Path jarsDirectory) {
@@ -135,8 +126,8 @@ public class InvokeCdkForInstance {
             return this;
         }
 
-        public InvokeCdkForInstance build() {
-            return new InvokeCdkForInstance(this);
+        public InvokeCdk build() {
+            return new InvokeCdk(this);
         }
     }
 }

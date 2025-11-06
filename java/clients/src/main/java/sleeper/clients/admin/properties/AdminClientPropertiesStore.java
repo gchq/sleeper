@@ -25,7 +25,7 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -52,13 +52,13 @@ public class AdminClientPropertiesStore {
 
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
-    private final InvokeCdkForInstance cdk;
+    private final InvokeCdk cdk;
     private final DockerImageConfiguration dockerImageConfiguration;
     private final UploadDockerImagesToEcr uploadDockerImages;
     private final Path generatedDirectory;
 
     public AdminClientPropertiesStore(
-            S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdkForInstance cdk,
+            S3Client s3Client, DynamoDbClient dynamoClient, InvokeCdk cdk,
             Path generatedDirectory, UploadDockerImagesToEcr uploadDockerImages) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
@@ -102,7 +102,7 @@ public class AdminClientPropertiesStore {
                     uploadDockerImages.upload(dockerUploadOpt.get());
                 }
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
-                cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange());
+                cdk.invokeInferringType(properties, CdkCommand.deployPropertiesChange(generatedDirectory.resolve("instance.properties")));
             } else {
                 LOGGER.info("Saving to AWS");
                 S3InstanceProperties.saveToS3(s3Client, properties);

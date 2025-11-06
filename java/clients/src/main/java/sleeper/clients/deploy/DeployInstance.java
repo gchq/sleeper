@@ -31,8 +31,8 @@ import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.cdk.CdkDeploy;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -55,9 +55,9 @@ public class DeployInstance {
     private final SyncJars syncJars;
     private final UploadDockerImagesToEcr dockerImageUploader;
     private final WriteLocalProperties writeLocalProperties;
-    private final InvokeCdkForInstance invokeCdk;
+    private final InvokeCdk invokeCdk;
 
-    public DeployInstance(SyncJars syncJars, UploadDockerImagesToEcr dockerImageUploader, WriteLocalProperties writeLocalProperties, InvokeCdkForInstance invokeCdk) {
+    public DeployInstance(SyncJars syncJars, UploadDockerImagesToEcr dockerImageUploader, WriteLocalProperties writeLocalProperties, InvokeCdk invokeCdk) {
         this.syncJars = syncJars;
         this.dockerImageUploader = dockerImageUploader;
         this.writeLocalProperties = writeLocalProperties;
@@ -97,11 +97,11 @@ public class DeployInstance {
                             UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
                             EcrRepositoryCreator.withEcrClient(ecrClient)),
                     WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
-                    InvokeCdkForInstance.fromScriptsDirectory(scriptsDirectory));
+                    InvokeCdk.fromScriptsDirectory(scriptsDirectory));
 
             deployInstance.deploy(DeployInstanceRequest.builder()
                     .instanceConfig(instanceConfiguration)
-                    .cdkCommand(CdkDeploy.builder()
+                    .cdkCommand(CdkCommand.builder().deploy()
                             .ensureNewInstance(false)
                             .skipVersionCheck(true)
                             .deployPaused(deployPaused)
@@ -124,15 +124,15 @@ public class DeployInstance {
         dockerImageUploader.upload(
                 UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
                         .withExtraImages(request.getExtraDockerImages()));
-        writeLocalProperties.write(instanceConfig);
+        Path propertiesFile = writeLocalProperties.write(instanceConfig);
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
-        invokeCdk.invoke(request.getInstanceType(), request.getCdkCommand());
+        invokeCdk.invoke(request.getInstanceType(), request.getCdkCommand().withPropertiesFile(propertiesFile));
     }
 
     public interface WriteLocalProperties {
-        void write(DeployInstanceConfiguration instanceConfig) throws IOException;
+        Path write(DeployInstanceConfiguration instanceConfig) throws IOException;
 
         static WriteLocalProperties underScriptsDirectory(Path scriptsDirectory) {
             return toDirectory(scriptsDirectory.resolve("generated"));
@@ -146,6 +146,7 @@ public class DeployInstance {
                 SaveLocalProperties.saveToDirectory(directory,
                         instanceConfig.getInstanceProperties(),
                         instanceConfig.getTableProperties().stream());
+                return directory.resolve("instance.properties");
             };
         }
     }
