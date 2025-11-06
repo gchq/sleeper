@@ -44,7 +44,7 @@ import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRows;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.LocalFilesDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
-import sleeper.systemtest.dsl.sourcedata.SystemTestSourceFiles;
+import sleeper.systemtest.dsl.sourcedata.SourceFilesDsl;
 import sleeper.systemtest.dsl.statestore.SystemTestStateStore;
 
 import java.nio.file.Path;
@@ -111,8 +111,8 @@ public class SleeperDsl {
         context.instance().updateTableProperties(values);
     }
 
-    public SystemTestSourceFiles sourceFiles() {
-        return new SystemTestSourceFiles(context, baseDrivers.sourceFiles(context));
+    public SourceFilesDsl sourceFiles() {
+        return new SourceFilesDsl(context, baseDrivers.sourceFiles(context));
     }
 
     public SystemTestTableFiles tableFiles() {

@@ -24,7 +24,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public class SystemTestSourceFiles {
+public class SourceFilesDsl {
 
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext context;
@@ -32,41 +32,41 @@ public class SystemTestSourceFiles {
     private SourceFilesFolder sourceFolder;
     private boolean writeSketches = false;
 
-    public SystemTestSourceFiles(SystemTestContext context, IngestSourceFilesDriver driver) {
+    public SourceFilesDsl(SystemTestContext context, IngestSourceFilesDriver driver) {
         this.instance = context.instance();
         this.context = context.sourceFiles();
         this.driver = driver;
         this.sourceFolder = SourceFilesFolder.writeToSystemTestBucket(context);
     }
 
-    public SystemTestSourceFiles inDataBucket() {
+    public SourceFilesDsl inDataBucket() {
         sourceFolder = SourceFilesFolder.writeToDataBucket(instance);
         return this;
     }
 
-    public SystemTestSourceFiles writeSketches() {
+    public SourceFilesDsl writeSketches() {
         writeSketches = true;
         return this;
     }
 
-    public SystemTestSourceFiles createWithNumberedRows(String filename, LongStream numbers) {
+    public SourceFilesDsl createWithNumberedRows(String filename, LongStream numbers) {
         return create(filename, instance.numberedRows().streamFrom(numbers));
     }
 
-    public SystemTestSourceFiles createWithNumberedRows(Schema schema, String filename, LongStream numbers) {
+    public SourceFilesDsl createWithNumberedRows(Schema schema, String filename, LongStream numbers) {
         return create(schema, filename, instance.numberedRows(schema).streamFrom(numbers));
     }
 
-    public SystemTestSourceFiles create(String filename, Row... rows) {
+    public SourceFilesDsl create(String filename, Row... rows) {
         return create(filename, Stream.of(rows));
     }
 
-    private SystemTestSourceFiles create(String filename, Stream<Row> rows) {
+    private SourceFilesDsl create(String filename, Stream<Row> rows) {
         context.writeFile(driver, filename, sourceFolder, writeSketches, rows);
         return this;
     }
 
-    private SystemTestSourceFiles create(Schema schema, String filename, Stream<Row> rows) {
+    private SourceFilesDsl create(Schema schema, String filename, Stream<Row> rows) {
         context.writeFile(driver, schema, filename, sourceFolder, writeSketches, rows);
         return this;
     }
