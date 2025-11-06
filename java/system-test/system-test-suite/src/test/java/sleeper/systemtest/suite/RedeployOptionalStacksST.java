@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
-import sleeper.systemtest.suite.testutil.parallel.Slow3;
+import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -31,7 +31,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTI
 
 @SystemTest
 // Slow because it needs to do many CDK deployments
-@Slow3
+@Slow2
 public class RedeployOptionalStacksST {
 
     private static final Set<OptionalStack> REDEPLOYABLE_STACKS = new LinkedHashSet<>(OptionalStack.all());

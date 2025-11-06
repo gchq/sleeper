@@ -96,16 +96,17 @@ When running the performance build which runs every test suite in parallel it is
 ## This looks imabalanced but EKSBulkImportST is a lot slower than others
 | Slow1                      | Slow2                      | Slow3                           |
 | -------------------------- | -------------------------- | ------------------------------- |
-| AutoStopEcsTaskST          | EksBulkImportST            | AutoDeleteS3ObjectsST           |
-| CompactionCreationST       | MultipleTablesST           | RedeployOptionalStacksST        |
+| AutoStopEcsTaskST          | EksBulkImportST            | CompactionCreationST            |
+| AutoDeleteS3ObjectsST      | RedeployOptionalStacksST   | MultipleTablesST                |
 | CompactionOnEC2ST          |                            | StateStoreCommitterThroughputST |
 | EmrPersistentBulkImportST  |
 | OptionalFeaturesDisabledST |
 
+
 | Expensive1                        | Expensive2                 | Expensive3            |
 | --------------------------------- | -------------------------- | --------------------- |
-| CompactionDataFusionPerformanceST | CompactionVeryLargeST      | IngestPerformanceST   |
-| CompactionPerformanceST           | EmrBulkImportPerformanceST | ParallelCompactionsST |
+| CompactionDataFusionPerformanceST | CompactionPerformanceST    | IngestPerformanceST   |
+| CompactionVeryLargeST             | EmrBulkImportPerformanceST | ParallelCompactionsST |
 
 ### Running tests
 
