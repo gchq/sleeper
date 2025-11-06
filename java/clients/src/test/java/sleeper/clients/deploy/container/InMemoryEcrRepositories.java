@@ -19,6 +19,7 @@ package sleeper.clients.deploy.container;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class InMemoryEcrRepositories implements CheckVersionExistsInEcr {
@@ -30,6 +31,8 @@ public class InMemoryEcrRepositories implements CheckVersionExistsInEcr {
 
     @Override
     public boolean versionExistsInRepository(String repository, String version) {
-        return versionsByRepositoryName.containsKey(repository) && versionsByRepositoryName.get(repository).contains(version);
+        return Optional.ofNullable(versionsByRepositoryName.get(repository))
+                .map(versions -> versions.contains(version))
+                .orElse(false);
     }
 }
