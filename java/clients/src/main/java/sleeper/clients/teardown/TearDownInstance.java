@@ -97,6 +97,7 @@ public class TearDownInstance {
     }
 
     public void deleteArtefactsStack() throws InterruptedException {
+        // TODO split into two steps so it can parallelise when deleting multiple instances
         String stackName = instanceProperties.get(ID) + "-artefacts";
         LOGGER.info("Deleting artefacts CloudFormation stack: {}", stackName);
         try {
