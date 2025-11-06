@@ -13,38 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.systemtest.dsl.sourcedata;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.row.Row;
 import sleeper.systemtest.dsl.SleeperDsl;
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
-public class SystemTestClusterTest {
-
-    @BeforeEach
-    void setUp(SleeperDsl sleeper) {
-        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
-    }
+public class SourceFilesDslTest {
 
     @Test
-    void shouldIngestDirectlyWithSystemTestCluster(SleeperDsl sleeper) {
+    void shouldGenerateFilenameForSourceFile(SleeperDsl sleeper, SystemTestContext context) {
+        // Given
+        Row row = new Row(Map.of(
+                "key", "some-id",
+                "timestamp", 1234L,
+                "value", "Some value"));
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
+
         // When
-        sleeper.systemTestCluster().runDataGenerationJobs(2,
-                builder -> builder.ingestMode(DIRECT).rowsPerIngest(123))
-                .waitForTotalFileReferences(2);
+        sleeper.sourceFiles().create("test.parquet", row);
 
         // Then
-        assertThat(sleeper.directQuery().allRowsInTable())
-                .hasSize(246);
-        assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
-                .isEmpty();
+        assertThat(context.sourceFiles().getFilePath("test.parquet"))
+                .startsWith("file://in-memory-system-test-bucket/")
+                .endsWith("/test.parquet");
     }
-
 }

@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
-public class SystemTestIngestTest {
+public class IngestDslTest {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper) {

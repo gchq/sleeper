@@ -36,7 +36,7 @@ import static sleeper.core.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
-public class SystemTestIngestBatcherTest {
+public class IngestBatcherDslTest {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper) {
