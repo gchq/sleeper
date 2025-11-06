@@ -17,10 +17,7 @@
 package sleeper.clients.deploy.container;
 
 import software.amazon.awssdk.services.ecr.EcrClient;
-import software.amazon.awssdk.services.ecr.model.ListImagesResponse;
 import software.amazon.awssdk.services.ecr.model.RepositoryNotFoundException;
-
-import java.util.Objects;
 
 public class EcrRepositoryCreator {
     private EcrRepositoryCreator() {
@@ -66,19 +63,6 @@ public class EcrRepositoryCreator {
                             "\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"emr-serverless.amazonaws.com\"}," +
                             "\"Action\":[\"ecr:BatchGetImage\",\"ecr:DescribeImages\",\"ecr:GetDownloadUrlForLayer\"]}]}"));
         }
-
-        @Override
-        public boolean versionExistsInRepository(String repository, String version) {
-            try {
-                ListImagesResponse response = ecrClient.listImages(request -> request.repositoryName(repository));
-                return response.imageIds().stream()
-                        // Note that image tag can be null. In particular, a multiplatform image has multiple images but
-                        // only the image index is tagged.
-                        .anyMatch(imageIdentifier -> Objects.equals(version, imageIdentifier.imageTag()));
-            } catch (RepositoryNotFoundException e) {
-                return false;
-            }
-        }
     }
 
     public interface Client {
@@ -89,7 +73,5 @@ public class EcrRepositoryCreator {
         void deleteRepository(String repository);
 
         void createEmrServerlessAccessPolicy(String repository);
-
-        boolean versionExistsInRepository(String repository, String version);
     }
 }
