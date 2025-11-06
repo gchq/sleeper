@@ -50,7 +50,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     class UploadEcsImages {
 
         @Test
-        void shouldCreateRepositoryAndPushImageForIngestStack() throws Exception {
+        void shouldPushImageForIngestStack() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
 
@@ -63,13 +63,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommand(expectedTag, "./docker/ingest"),
                     pushImageCommand(expectedTag));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest");
         }
 
         @Test
-        void shouldCreateRepositoriesAndPushImagesForTwoStacks() throws Exception {
+        void shouldPushImagesForTwoStacks() throws Exception {
             // Given
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EksBulkImportStack));
 
@@ -85,13 +82,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     pushImageCommand(expectedTag1),
                     buildImageCommand(expectedTag2, "./docker/bulk-import-runner"),
                     pushImageCommand(expectedTag2));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner");
         }
 
         @Test
-        void shouldCreateRepositoryAndPushImageWhenEcrRepositoryPrefixIsSet() throws Exception {
+        void shouldPushImageWhenEcrRepositoryPrefixIsSet() throws Exception {
             // Given
             properties.set(ECR_REPOSITORY_PREFIX, "custom-ecr-prefix");
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
@@ -105,8 +99,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommand(expectedTag, "./docker/ingest"),
                     pushImageCommand(expectedTag));
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("custom-ecr-prefix/ingest");
         }
     }
 
@@ -115,7 +107,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     class UploadLambdaImages {
 
         @Test
-        void shouldCreateRepositoryAndPushCoreImage() throws Exception {
+        void shouldPushCoreImage() throws Exception {
             // Given
             properties.setList(OPTIONAL_STACKS, List.of());
             properties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
@@ -130,9 +122,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/statestore-lambda");
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/statestore.jar"), "statestore-jar-content",
                     Path.of("./docker/lambda/lambda.jar"), "statestore-jar-content"));
@@ -158,11 +147,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     pushImageCommand(expectedTag1),
                     buildImageCommandWithArgs("-t", expectedTag2, "./docker/lambda"),
                     pushImageCommand(expectedTag2));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder(
-                            "test-instance/statestore-lambda",
-                            "test-instance/ingest-task-creator-lambda");
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/statestore.jar"), "statestore-jar-content",
                     Path.of("./jars/ingest.jar"), "ingest-jar-content",
@@ -187,9 +171,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest-task-creator-lambda");
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/ingest.jar"), "ingest-jar-content",
                     Path.of("./docker/lambda/lambda.jar"), "ingest-jar-content"));
@@ -213,9 +194,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/bulk-import-starter-lambda");
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
                     Path.of("./docker/lambda/lambda.jar"), "bulk-import-starter-jar-content"));
@@ -239,9 +217,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/bulk-import-starter-lambda");
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
                     Path.of("./docker/lambda/lambda.jar"), "bulk-import-starter-jar-content"));
@@ -258,7 +233,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
 
             // Then
             assertThat(commandsThatRan).isEmpty();
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -277,9 +251,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/athena-lambda");
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/athena.jar"), "athena-jar-content",
                     Path.of("./docker/lambda/lambda.jar"), "athena-jar-content"));
@@ -299,11 +270,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
 
             // Then
             assertThat(commandsThatRan).isEmpty();
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
-        void shouldCreateRepositoryAndPushImageWhenPreviousStackHasNoDockerImage() throws Exception {
+        void shouldPushImageWhenPreviousStackHasNoDockerImage() throws Exception {
             // Given
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.QueryStack, OptionalStack.IngestStack));
 
@@ -313,9 +283,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             // Then
             assertThat(commandsThatRan)
                     .containsExactlyElementsOf(commandsToLoginDockerAndPushImages("ingest"));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest");
         }
     }
 
@@ -324,7 +291,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
     class BuildImagesWithBuildx {
 
         @Test
-        void shouldCreateRepositoryAndPushImageWhenCompactionImageNeedsToBeBuiltByBuildx() throws Exception {
+        void shouldPushImageWhenCompactionImageNeedsToBeBuiltByBuildx() throws Exception {
             // Given
             properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
 
@@ -338,13 +305,10 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     removeOldBuildxBuilderInstanceCommand(),
                     createNewBuildxBuilderInstanceCommand(),
                     buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/compaction");
         }
 
         @Test
-        void shouldCreateRepositoryAndPushImageWhenOnlyOneImageNeedsToBeBuiltByBuildx() throws Exception {
+        void shouldPushImagesWhenOnlyOneImageNeedsToBeBuiltByBuildx() throws Exception {
             // Given
             properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.CompactionStack));
 
@@ -361,38 +325,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     buildImageCommand(expectedTag1, "./docker/ingest"),
                     pushImageCommand(expectedTag1),
                     buildAndPushMultiplatformImageCommand(expectedTag2, "./docker/compaction"));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/compaction", "test-instance/ingest");
-        }
-    }
-
-    @Nested
-    @DisplayName("Create EMR Serverless security policy")
-    class CreateEMRServerlessSecurityPolicy {
-
-        @Test
-        void shouldCreateSecurityPolicyToGiveAccessToEmrServerlessImageOnly() throws Exception {
-            // Given
-            properties.setEnumList(OPTIONAL_STACKS, List.of(OptionalStack.IngestStack, OptionalStack.EmrServerlessBulkImportStack));
-
-            // When
-            uploadForDeployment(dockerDeploymentImageConfig());
-
-            // Then
-            String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner-emr-serverless:1.0.0";
-            assertThat(commandsThatRan).containsExactly(
-                    dockerLoginToEcrCommand(),
-                    buildImageCommand(expectedTag1, "./docker/ingest"),
-                    pushImageCommand(expectedTag1),
-                    buildImageCommand(expectedTag2, "./docker/bulk-import-runner-emr-serverless"),
-                    pushImageCommand(expectedTag2));
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner-emr-serverless");
-            assertThat(ecrClient.getRepositoriesWithEmrServerlessPolicy())
-                    .containsExactly("test-instance/bulk-import-runner-emr-serverless");
         }
     }
 
@@ -414,7 +346,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                         assertThat(e.getExitCode()).isEqualTo(123);
                     });
             assertThat(commandsThatRan).containsExactly(dockerLoginToEcrCommand());
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -433,8 +364,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     removeOldBuildxBuilderInstanceCommand(),
                     createNewBuildxBuilderInstanceCommand(),
                     buildAndPushMultiplatformImageCommand(expectedTag, "./docker/compaction"));
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/compaction");
         }
 
         @Test
@@ -453,7 +382,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     removeOldBuildxBuilderInstanceCommand(),
                     createNewBuildxBuilderInstanceCommand());
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -473,7 +401,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                         assertThat(e.getExitCode()).isEqualTo(42);
                     });
             assertThat(commandsThatRan).containsExactly(dockerLoginToEcrCommand(), buildImageCommand);
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -492,7 +419,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                         assertThat(e.getExitCode()).isEqualTo(123);
                     });
             assertThat(commandsThatRan).containsExactly(dockerLoginToEcrCommand(), pullCommand);
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -516,7 +442,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     pullImageCommand(sourceTag),
                     tagCommand);
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -541,7 +466,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     pullImageCommand(sourceTag),
                     tagImageCommand(sourceTag, ecrTag),
                     pushCommand);
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -563,7 +487,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommand(ecrTag, "./docker/ingest"),
                     pushCommand);
-            assertThat(ecrClient.getRepositories()).isEmpty();
         }
     }
 
@@ -586,8 +509,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommand(expectedTag, "./docker/ingest"),
                     pushImageCommand(expectedTag));
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest");
         }
 
         @Test
@@ -602,8 +523,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
 
             // Then
             assertThat(commandsThatRan).isEmpty();
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest");
         }
 
         @Test
@@ -625,8 +544,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     dockerLoginToEcrCommand(),
                     buildImageCommand(expectedTag, "./docker/ingest"),
                     pushImageCommand(expectedTag));
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest");
         }
     }
 
@@ -655,8 +572,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     pullImageCommand(sourceTag),
                     tagImageCommand(sourceTag, ecrTag),
                     pushImageCommand(ecrTag));
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest");
         }
 
         @Test
@@ -675,8 +590,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     pullImageCommand(sourceTag),
                     tagImageCommand(sourceTag, ecrTag),
                     pushImageCommand(ecrTag));
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/compaction");
         }
 
         @Test
@@ -697,8 +610,6 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
                     pullImageCommand(sourceTag),
                     tagImageCommand(sourceTag, ecrTag),
                     pushImageCommand(ecrTag));
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/statestore-lambda");
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/statestore.jar"), "statestore-jar-content"));
         }
