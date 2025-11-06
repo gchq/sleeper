@@ -55,8 +55,8 @@ public class StateStoreDSl {
         pollDriver = adminDrivers.pollWithRetries();
     }
 
-    public SystemTestStateStoreFakeCommits fakeCommits() {
-        return new SystemTestStateStoreFakeCommits(context, driver, logsDriver, pollDriver);
+    public StateStoreFakeCommitsDsl fakeCommits() {
+        return new StateStoreFakeCommitsDsl(context, driver, logsDriver, pollDriver);
     }
 
     public double commitsPerSecondForTable() {

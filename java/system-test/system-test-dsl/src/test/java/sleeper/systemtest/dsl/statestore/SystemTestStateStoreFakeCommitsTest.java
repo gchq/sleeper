@@ -80,7 +80,7 @@ public class SystemTestStateStoreFakeCommitsTest {
     void shouldWaitForCommitWhenCommitWasMadeButNoRunStartOrFinishLogsWereMade(SleeperDsl sleeper) throws Exception {
         // Given
         committer.setRunCommitterOnSend(sleeper, false);
-        SystemTestStateStoreFakeCommits commitsDsl = sleeper.stateStore().fakeCommits();
+        StateStoreFakeCommitsDsl commitsDsl = sleeper.stateStore().fakeCommits();
         commitsDsl.send(StateStoreCommitMessage.addPartitionFile("root", "file.parquet", 100));
         committer.addFakeCommits(sleeper, 1);
 

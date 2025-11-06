@@ -42,8 +42,8 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class SystemTestStateStoreFakeCommits {
-    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStoreFakeCommits.class);
+public class StateStoreFakeCommitsDsl {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreFakeCommitsDsl.class);
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
@@ -52,7 +52,7 @@ public class SystemTestStateStoreFakeCommits {
     private final Map<String, Integer> waitForNumCommitsByTableId = new ConcurrentHashMap<>();
     private final Instant getRunsAfterTime;
 
-    public SystemTestStateStoreFakeCommits(
+    public StateStoreFakeCommitsDsl(
             SystemTestContext context,
             StateStoreCommitterDriver driver,
             StateStoreCommitterLogsDriver logsDriver,
@@ -64,44 +64,44 @@ public class SystemTestStateStoreFakeCommits {
         getRunsAfterTime = context.reporting().getRecordingStartTime();
     }
 
-    public SystemTestStateStoreFakeCommits setupStateStore(StateStoreSetup setup) {
+    public StateStoreFakeCommitsDsl setupStateStore(StateStoreSetup setup) {
         setup.setup(instance.getStateStore());
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits sendBatched(Stream<StateStoreCommitMessage.Commit> commits) {
+    public StateStoreFakeCommitsDsl sendBatched(Stream<StateStoreCommitMessage.Commit> commits) {
         sendParallelBatches(forCurrentTable(commits));
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits sendBatchedForEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
+    public StateStoreFakeCommitsDsl sendBatchedForEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
         sendParallelBatches(forEachTable(commits));
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits sendBatchedInOrderForEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
+    public StateStoreFakeCommitsDsl sendBatchedInOrderForEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
         sendSequentialBatches(forEachTable(commits));
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits send(StateStoreCommitMessage.Commit commit) {
+    public StateStoreFakeCommitsDsl send(StateStoreCommitMessage.Commit commit) {
         sendSequentialBatches(forCurrentTable(Stream.of(commit)));
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits waitForCommitLogs() throws InterruptedException {
+    public StateStoreFakeCommitsDsl waitForCommitLogs() throws InterruptedException {
         waiter.waitForCommitLogs(
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(20), Duration.ofMinutes(5)),
                 waitForNumCommitsByTableId, getRunsAfterTime);
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits pauseReceivingCommitMessages() {
+    public StateStoreFakeCommitsDsl pauseReceivingCommitMessages() {
         driver.pauseReceivingMessages();
         return this;
     }
 
-    public SystemTestStateStoreFakeCommits resumeReceivingCommitMessages() {
+    public StateStoreFakeCommitsDsl resumeReceivingCommitMessages() {
         driver.resumeReceivingMessages();
         return this;
     }
