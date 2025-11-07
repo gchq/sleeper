@@ -26,7 +26,7 @@ import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
-public class ClusterDslTest {
+public class DataGenerationClusterDslTest {
 
     @BeforeEach
     void setUp(SleeperDsl sleeper) {

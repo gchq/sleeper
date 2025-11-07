@@ -40,8 +40,8 @@ import java.util.function.Consumer;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 
-public class ClusterDsl {
-    public static final Logger LOGGER = LoggerFactory.getLogger(ClusterDsl.class);
+public class DataGenerationClusterDsl {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DataGenerationClusterDsl.class);
 
     private final DeployedSystemTestResources context;
     private final SystemTestInstanceContext instance;
@@ -55,7 +55,7 @@ public class ClusterDsl {
     private GeneratedIngestSourceFiles lastGeneratedFiles = null;
     private final List<String> jobIds = new ArrayList<>();
 
-    public ClusterDsl(
+    public DataGenerationClusterDsl(
             SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.context = context.systemTest();
         instance = context.instance();
@@ -69,12 +69,12 @@ public class ClusterDsl {
         pollDriver = instanceAdminDrivers.pollWithRetries();
     }
 
-    public ClusterDsl runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config) {
+    public DataGenerationClusterDsl runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config) {
         return runDataGenerationJobs(numberOfJobs, config,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
     }
 
-    public ClusterDsl runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config, PollWithRetries poll) {
+    public DataGenerationClusterDsl runDataGenerationJobs(int numberOfJobs, Consumer<SystemTestDataGenerationJob.Builder> config, PollWithRetries poll) {
         SystemTestDataGenerationJob jobSpec = SystemTestDataGenerationJob.builder()
                 .applyMutation(config)
                 .configBucket(instance.getInstanceProperties().get(CONFIG_BUCKET))
@@ -87,17 +87,17 @@ public class ClusterDsl {
         return this;
     }
 
-    public ClusterDsl sendAllGeneratedFilesAsOneJob(CdkDefinedInstanceProperty queueUrlProperty) {
+    public DataGenerationClusterDsl sendAllGeneratedFilesAsOneJob(CdkDefinedInstanceProperty queueUrlProperty) {
         jobIds.add(ingestByQueue.sendJobGetId(queueUrlProperty, lastGeneratedFiles.getIngestJobFilesCombiningAll()));
         return this;
     }
 
-    public ClusterDsl waitForStandardIngestTask() {
+    public DataGenerationClusterDsl waitForStandardIngestTask() {
         tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(jobIds(), pollDriver);
         return this;
     }
 
-    public ClusterDsl waitForStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
+    public DataGenerationClusterDsl waitForStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
         tasksDriver.waitForTasksForCurrentInstance().waitUntilNumTasksStartedAJob(expectedTasks, jobIds(), poll);
         return this;
     }

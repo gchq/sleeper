@@ -31,7 +31,7 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAI
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @InMemoryDslTest
-public class StateStoreDslFakeCommitsThroughputTest {
+public class StateStoreDslCommitsPerSecondTest {
 
     private InMemoryStateStoreCommitter committer;
 
