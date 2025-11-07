@@ -43,6 +43,7 @@ import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
@@ -165,6 +166,13 @@ public class Utils {
         T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
         afterInstancePropertiesLoad(properties, context);
         return properties;
+    }
+
+    public static DeployInstanceConfiguration loadDeployInstanceConfiguration(CdkContext context) {
+        Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
+        DeployInstanceConfiguration configuration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+        afterInstancePropertiesLoad(configuration.getInstanceProperties(), context);
+        return configuration;
     }
 
     private static void afterInstancePropertiesLoad(InstanceProperties properties, CdkContext context) {

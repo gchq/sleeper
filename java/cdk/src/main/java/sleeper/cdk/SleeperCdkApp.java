@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.SleeperInstanceStack;
+import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -44,7 +45,8 @@ public class SleeperCdkApp {
                 .analyticsReporting(false)
                 .build());
 
-        InstanceProperties instanceProperties = Utils.loadInstanceProperties(InstanceProperties::createWithoutValidation, app);
+        DeployInstanceConfiguration configuration = Utils.loadDeployInstanceConfiguration(CdkContext.from(app));
+        InstanceProperties instanceProperties = configuration.getInstanceProperties();
 
         String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()
@@ -58,7 +60,7 @@ public class SleeperCdkApp {
                     .stackName(id)
                     .env(environment)
                     .build(),
-                    DeployInstanceConfiguration.withNoTables(instanceProperties), jars).create();
+                    configuration, jars).create();
 
             app.synth();
         }
