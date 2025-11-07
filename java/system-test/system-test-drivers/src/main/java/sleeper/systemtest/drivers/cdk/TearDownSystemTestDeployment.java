@@ -41,9 +41,11 @@ public class TearDownSystemTestDeployment {
     }
 
     public void deleteStack() {
-        String deploymentId = properties.get(SYSTEM_TEST_ID);
-        deleteStack(deploymentId);
-        deleteStack(deploymentId + "-artefacts");
+        deleteStack(properties.get(SYSTEM_TEST_ID));
+    }
+
+    public void deleteArtefactsStack() {
+        deleteStack(artefactsStackName());
     }
 
     private void deleteStack(String stackName) {
@@ -57,6 +59,14 @@ public class TearDownSystemTestDeployment {
 
     public void waitForStackToDelete() throws InterruptedException {
         WaitForStackToDelete.from(clients.getCloudFormation(), properties.get(SYSTEM_TEST_ID)).pollUntilFinished();
+    }
+
+    public void waitForArtefactsStackToDelete() throws InterruptedException {
+        WaitForStackToDelete.from(clients.getCloudFormation(), artefactsStackName()).pollUntilFinished();
+    }
+
+    private String artefactsStackName() {
+        return properties.get(SYSTEM_TEST_ID) + "-artefacts";
     }
 
     private static SystemTestStandaloneProperties loadOrDefaultProperties(S3Client s3, String deploymentId) {

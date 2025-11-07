@@ -72,16 +72,29 @@ public class TearDownInstance {
         deleteStack();
         waitForStackToDelete();
         deleteArtefactsStack();
+        waitForArtefactsStackToDelete();
         removeGeneratedDir(scriptsDir);
 
         LOGGER.info("Finished tear down");
     }
 
+    public void shutdownSystemProcesses() throws InterruptedException {
+        new ShutdownSystemProcesses(clients)
+                .shutdown(instanceProperties);
+    }
+
     public void deleteStack() {
-        String instanceId = instanceProperties.get(ID);
-        LOGGER.info("Deleting instance CloudFormation stack: {}", instanceId);
+        deleteStack(instanceProperties.get(ID));
+    }
+
+    public void deleteArtefactsStack() throws InterruptedException {
+        deleteStack(artefactsStackName());
+    }
+
+    private void deleteStack(String stackName) {
+        LOGGER.info("Deleting instance CloudFormation stack: {}", stackName);
         try {
-            clients.getCloudFormation().deleteStack(builder -> builder.stackName(instanceId));
+            clients.getCloudFormation().deleteStack(builder -> builder.stackName(stackName));
         } catch (RuntimeException e) {
             LOGGER.warn("Failed deleting stack", e);
         }
@@ -91,21 +104,12 @@ public class TearDownInstance {
         WaitForStackToDelete.from(clients.getCloudFormation(), instanceProperties.get(ID)).pollUntilFinished();
     }
 
-    public void shutdownSystemProcesses() throws InterruptedException {
-        new ShutdownSystemProcesses(clients)
-                .shutdown(instanceProperties);
+    public void waitForArtefactsStackToDelete() throws InterruptedException {
+        WaitForStackToDelete.from(clients.getCloudFormation(), artefactsStackName()).pollUntilFinished();
     }
 
-    public void deleteArtefactsStack() throws InterruptedException {
-        // TODO split into two steps so it can parallelise when deleting multiple instances
-        String stackName = instanceProperties.get(ID) + "-artefacts";
-        LOGGER.info("Deleting artefacts CloudFormation stack: {}", stackName);
-        try {
-            clients.getCloudFormation().deleteStack(builder -> builder.stackName(stackName));
-        } catch (RuntimeException e) {
-            LOGGER.warn("Failed deleting stack", e);
-        }
-        WaitForStackToDelete.from(clients.getCloudFormation(), stackName).pollUntilFinished();
+    private String artefactsStackName() {
+        return instanceProperties.get(ID) + "-artefacts";
     }
 
     public static void removeGeneratedDir(Path scriptsDir) throws IOException {
