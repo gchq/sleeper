@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.SleeperInstanceStack;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
@@ -39,7 +40,7 @@ public class SystemTestApp extends SleeperInstanceStack {
     private final BuiltJars jars;
 
     public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
-        super(app, id, props, sleeperProperties, jars);
+        super(app, id, props, DeployInstanceConfiguration.withNoTables(sleeperProperties), jars);
         this.jars = jars;
     }
 

@@ -106,18 +106,11 @@ public class SleeperInstanceStack extends Stack {
     private boolean generateLoggingStack = true;
     private boolean generateProperties = true;
 
-    public SleeperInstanceStack(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
-        super(app, id, props);
-        this.app = app;
-        this.instanceProperties = instanceProperties;
-        this.jars = jars;
-    }
-
     public SleeperInstanceStack(App app, String id, StackProps props, DeployInstanceConfiguration configuration, BuiltJars jars) {
         super(app, id, props);
-        this.app = app;
         this.instanceProperties = configuration.getInstanceProperties();
         this.jars = jars;
+        this.app = app;
     }
 
     @SuppressWarnings("checkstyle:methodlength")

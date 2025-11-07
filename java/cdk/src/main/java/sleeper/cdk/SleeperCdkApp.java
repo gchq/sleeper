@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.SleeperInstanceStack;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
@@ -57,7 +58,7 @@ public class SleeperCdkApp {
                     .stackName(id)
                     .env(environment)
                     .build(),
-                    instanceProperties, jars).create();
+                    DeployInstanceConfiguration.withNoTables(instanceProperties), jars).create();
 
             app.synth();
         }
