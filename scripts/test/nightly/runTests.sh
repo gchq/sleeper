@@ -77,7 +77,7 @@ pushd $REPO_PARENT_DIR
 echo "Copying sleeper to quick folder"
 sudo rm -rf quick
 mkdir quick
-##sudo rsync -a --exclude=".*" sleeper/ quick
+sudo rsync -a --exclude=".*" sleeper/ quick
 popd
 echo "Finished copying to quick folder"
 
@@ -147,18 +147,16 @@ runMavenSystemTests() {
 
 runTestSuite(){
     SUITE=$3
-    echo "copying $3"
-    ##copyFolderForParallelRun "$SUITE"
+    copyFolderForParallelRun "$SUITE"
     ##Wait short time to not have clashes with other process deploying
-    "$SUITE sleeping for $1"
     sleep $1
     shift 1
     echo "[$(time_str)] Starting test suite: $SUITE"
-    ##pushd "$REPO_PARENT_DIR/$SUITE/scripts/test" #Move into isolated repo copy
-    ##runMavenSystemTests "$@"
-    ##popd
+    pushd "$REPO_PARENT_DIR/$SUITE/scripts/test" #Move into isolated repo copy
+    runMavenSystemTests "$@"
+    popd
     echo "[$(time_str)] Finished test suite: $SUITE"
-    ##removeFolderAfterParallelRun "$SUITE"
+    removeFolderAfterParallelRun "$SUITE"
 }
 
 runSlowTests(){
@@ -188,9 +186,9 @@ else
 fi
 
 echo "[$(time_str)] Uploading test output"
-##java -cp "${SYSTEM_TEST_JAR}" \
-## sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
+java -cp "${SYSTEM_TEST_JAR}" \
+ sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
-##removeFolderAfterParallelRun quick
+removeFolderAfterParallelRun quick
 
 exit $END_EXIT_CODE
