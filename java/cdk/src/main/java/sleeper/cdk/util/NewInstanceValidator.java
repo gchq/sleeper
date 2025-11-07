@@ -23,8 +23,6 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.nio.file.Path;
-
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 class NewInstanceValidator {
@@ -36,7 +34,7 @@ class NewInstanceValidator {
         this.dynamoClient = dynamoClient;
     }
 
-    void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
+    void validate(InstanceProperties instanceProperties) {
         checkQueryResultsBucketDoesNotExist(instanceProperties);
         checkDataBucketDoesNotExist(instanceProperties);
         checkTransactionLogStateStoreDoesNotExist(instanceProperties);

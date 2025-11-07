@@ -75,6 +75,6 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     }
 
     private void validate() throws IOException {
-        new NewInstanceValidator(s3Client, dynamoClient).validate(instanceProperties, null);
+        new NewInstanceValidator(s3Client, dynamoClient).validate(instanceProperties);
     }
 }

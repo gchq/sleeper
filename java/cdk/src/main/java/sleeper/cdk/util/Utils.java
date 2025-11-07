@@ -176,7 +176,7 @@ public class Utils {
         }
         if ("true".equalsIgnoreCase(context.tryGetContext("newinstance"))) {
             try (S3Client s3Client = S3Client.create(); DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-                new NewInstanceValidator(s3Client, dynamoClient).validate(properties, propertiesFile);
+                new NewInstanceValidator(s3Client, dynamoClient).validate(properties);
             }
         }
         String deployedVersion = properties.get(VERSION);
