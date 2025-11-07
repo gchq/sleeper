@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.util.LoggedDuration;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.DeployedSleeperInstances;
@@ -43,7 +43,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperSystemTestExtension.class);
     private static final Set<Class<?>> SUPPORTED_PARAMETER_TYPES = Set.of(
-            SleeperSystemTest.class, AfterTestReports.class,
+            SleeperDsl.class, AfterTestReports.class,
             SystemTestParameters.class, SystemTestDrivers.class,
             DeployedSystemTestResources.class, DeployedSleeperInstances.class,
             SystemTestContext.class);
@@ -53,7 +53,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     private final DeployedSystemTestResources deployedResources;
     private final DeployedSleeperInstances deployedInstances;
     private SystemTestContext systemTestContext = null;
-    private SleeperSystemTest dsl = null;
+    private SleeperDsl dsl = null;
     private AfterTestReports reporting = null;
     private Instant testStartTime = null;
 
@@ -74,7 +74,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        if (type == SleeperSystemTest.class) {
+        if (type == SleeperDsl.class) {
             return dsl;
         } else if (type == AfterTestReports.class) {
             return reporting;
@@ -105,7 +105,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         LOGGER.info("Beginning system test: {}", testContext.getTestClassAndMethod());
         drivers.generatedSourceFiles(parameters, deployedResources).emptyBucket();
         systemTestContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances, testContext);
-        dsl = new SleeperSystemTest(parameters, drivers, systemTestContext);
+        dsl = new SleeperDsl(parameters, drivers, systemTestContext);
         reporting = new AfterTestReports(systemTestContext);
     }
 

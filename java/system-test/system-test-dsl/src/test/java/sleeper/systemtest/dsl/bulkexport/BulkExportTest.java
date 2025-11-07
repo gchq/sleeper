@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkexport.core.model.BulkExportQuery;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import sleeper.systemtest.dsl.testutil.InMemorySystemTestDrivers;
 
@@ -31,12 +31,12 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAI
 public class BulkExportTest {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) throws Exception {
+    void setUp(SleeperDsl sleeper) throws Exception {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldPerformBasicBulkExport(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) throws Exception {
+    void shouldPerformBasicBulkExport(SleeperDsl sleeper, InMemorySystemTestDrivers drivers) throws Exception {
         // Given / When
         sleeper.bulkExport().sendAllRowsQuery();
 

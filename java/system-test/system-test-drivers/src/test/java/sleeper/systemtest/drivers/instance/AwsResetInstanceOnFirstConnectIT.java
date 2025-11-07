@@ -24,7 +24,7 @@ import sleeper.systemtest.drivers.testutil.AwsSendCompactionJobsTestHelper;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -50,7 +50,7 @@ public class AwsResetInstanceOnFirstConnectIT {
     AwsDrainSqsQueue drainQueue;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, LocalStackSystemTestDrivers drivers, SystemTestContext context, SystemTestParameters parameters) {
+    void setUp(SleeperDsl sleeper, LocalStackSystemTestDrivers drivers, SystemTestContext context, SystemTestParameters parameters) {
         sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
         instance = context.instance();
         instanceProperties = sleeper.instanceProperties();
@@ -62,7 +62,7 @@ public class AwsResetInstanceOnFirstConnectIT {
     }
 
     @Test
-    void shouldDeleteOneTableAndDrainQueues(SleeperSystemTest sleeper) {
+    void shouldDeleteOneTableAndDrainQueues(SleeperDsl sleeper) {
         // Given
         sleeper.tables().create("A", DEFAULT_SCHEMA);
         AwsSendCompactionJobsTestHelper.sendNCompactionJobs(20,

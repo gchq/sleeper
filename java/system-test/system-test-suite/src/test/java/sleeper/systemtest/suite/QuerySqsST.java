@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -40,17 +40,17 @@ public class QuerySqsST {
     private Path tempDir;
 
     @BeforeEach
-    void setup(SleeperSystemTest sleeper) {
+    void setup(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperDsl sleeper) {
         sleeper.query().emptyResultsBucket();
     }
 
     @Test
-    void shouldRunQueryForAllRows(SleeperSystemTest sleeper) {
+    void shouldRunQueryForAllRows(SleeperDsl sleeper) {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
@@ -61,7 +61,7 @@ public class QuerySqsST {
     }
 
     @Test
-    void shouldRunQueryWithOneRange(SleeperSystemTest sleeper) {
+    void shouldRunQueryWithOneRange(SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -76,7 +76,7 @@ public class QuerySqsST {
     }
 
     @Test
-    void shouldRunQueryWithTwoRangesThatOverlap(SleeperSystemTest sleeper) {
+    void shouldRunQueryWithTwoRangesThatOverlap(SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -92,7 +92,7 @@ public class QuerySqsST {
     }
 
     @Test
-    void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperSystemTest sleeper) {
+    void shouldRunQueryWithTwoRangesThatDoNotOverlap(SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
