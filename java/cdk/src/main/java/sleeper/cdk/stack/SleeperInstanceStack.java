@@ -60,6 +60,7 @@ import sleeper.cdk.stack.query.KeepLambdaWarmStack;
 import sleeper.cdk.stack.query.QueryQueueStack;
 import sleeper.cdk.stack.query.QueryStack;
 import sleeper.cdk.stack.query.WebSocketQueryStack;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
 
@@ -72,7 +73,9 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
 /**
- * Deploys an instance of Sleeper, including any configured optional stacks.
+ * Deploys an instance of Sleeper, including any configured optional stacks. Does not create Sleeper tables. If the
+ * configuration for tables is provided then the optional DashboardStack will create individual dashboards for each
+ * table.
  */
 public class SleeperInstanceStack extends Stack {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceStack.class);
@@ -107,6 +110,13 @@ public class SleeperInstanceStack extends Stack {
         super(app, id, props);
         this.app = app;
         this.instanceProperties = instanceProperties;
+        this.jars = jars;
+    }
+
+    public SleeperInstanceStack(App app, String id, StackProps props, DeployInstanceConfiguration configuration, BuiltJars jars) {
+        super(app, id, props);
+        this.app = app;
+        this.instanceProperties = configuration.getInstanceProperties();
         this.jars = jars;
     }
 
