@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -40,17 +40,17 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTI
 public class AutoStopEcsTaskST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(REENABLE_OPTIONAL_STACKS);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperDsl sleeper) {
         sleeper.disableOptionalStacks(OptionalStack.all());
     }
 
     @Test
-    void shouldRemoveIngestStackWhileTaskIsRunning(SleeperSystemTest sleeper) {
+    void shouldRemoveIngestStackWhileTaskIsRunning(SleeperDsl sleeper) {
         // Given an ingest task is running
         sleeper.enableOptionalStacks(List.of(OptionalStack.IngestStack));
         sleeper.systemTestCluster()

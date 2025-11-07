@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.Map;
@@ -32,18 +32,18 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAI
 @InMemoryDslTest
 public class SetupInstanceTest {
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldConnectToInstance(SleeperSystemTest sleeper) {
+    void shouldConnectToInstance(SleeperDsl sleeper) {
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
     }
 
     @Test
-    void shouldIngestOneRow(SleeperSystemTest sleeper) {
+    void shouldIngestOneRow(SleeperDsl sleeper) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",

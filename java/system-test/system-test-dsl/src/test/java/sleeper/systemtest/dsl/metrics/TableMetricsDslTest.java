@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.nio.file.Path;
@@ -41,14 +41,14 @@ public class TableMetricsDslTest {
     private final Path tempDir = null;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.setGeneratorOverrides(
                 overrideField(ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
     }
 
     @Test
-    void shouldReportTableMetrics(SleeperSystemTest sleeper) {
+    void shouldReportTableMetrics(SleeperDsl sleeper) {
         // Given
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
@@ -71,7 +71,7 @@ public class TableMetricsDslTest {
     }
 
     @Test
-    void shouldReportTableMetricsForMoreTablesThanBatchSize(SleeperSystemTest sleeper) {
+    void shouldReportTableMetricsForMoreTablesThanBatchSize(SleeperDsl sleeper) {
         // Given
         sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         sleeper.tables().create(List.of("A", "B", "C"), DEFAULT_SCHEMA).forEach(() -> {
