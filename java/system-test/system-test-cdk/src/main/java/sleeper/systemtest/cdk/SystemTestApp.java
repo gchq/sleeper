@@ -21,8 +21,8 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.stack.SleeperInstanceStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -35,7 +35,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
 /**
  * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
-public class SystemTestApp extends SleeperCdkApp {
+public class SystemTestApp extends SleeperInstanceStack {
     private final BuiltJars jars;
 
     public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
