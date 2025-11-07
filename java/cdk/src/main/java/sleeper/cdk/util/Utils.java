@@ -163,7 +163,11 @@ public class Utils {
             Function<Properties, T> constructor, CdkContext context) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
+        afterInstancePropertiesLoad(properties, context);
+        return properties;
+    }
 
+    private static void afterInstancePropertiesLoad(InstanceProperties properties, CdkContext context) {
         if (!"false".equalsIgnoreCase(context.tryGetContext("validate"))) {
             properties.validate();
             try {
@@ -191,7 +195,6 @@ public class Utils {
                     localVersion, deployedVersion));
         }
         properties.set(VERSION, localVersion);
-        return properties;
     }
 
     public static Stream<TableProperties> getAllTableProperties(
