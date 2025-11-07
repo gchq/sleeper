@@ -156,10 +156,6 @@ public class Utils {
         }
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> properties, Construct scope) {
-        return loadInstanceProperties(properties, CdkContext.from(scope));
-    }
-
     public static <T extends InstanceProperties> T loadInstanceProperties(
             Function<Properties, T> constructor, CdkContext context) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));

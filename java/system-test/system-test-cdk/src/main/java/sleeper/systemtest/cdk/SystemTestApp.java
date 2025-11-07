@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.SleeperInstanceStack;
+import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -88,7 +89,7 @@ public class SystemTestApp extends SleeperInstanceStack {
                 .analyticsReporting(false)
                 .build());
 
-        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, app);
+        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, CdkContext.from(app));
 
         String id = systemTestProperties.get(ID);
         Environment environment = Environment.builder()
