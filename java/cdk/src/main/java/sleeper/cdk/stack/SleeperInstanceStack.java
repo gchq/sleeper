@@ -86,7 +86,6 @@ public class SleeperInstanceStack extends Stack {
     private SleeperCoreStacks coreStacks;
     private IngestStacks ingestStacks;
     private IngestStack ingestStack;
-    private IngestBatcherStack ingestBatcherStack;
     private CompactionStack compactionStack;
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
@@ -308,7 +307,7 @@ public class SleeperInstanceStack extends Stack {
 
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(OptionalStack.IngestBatcherStack)) {
-            ingestBatcherStack = new IngestBatcherStack(this, "IngestBatcher",
+            new IngestBatcherStack(this, "IngestBatcher",
                     instanceProperties, jars,
                     topicStack.getTopic(),
                     coreStacks,
@@ -340,22 +339,6 @@ public class SleeperInstanceStack extends Stack {
 
         this.generateProperties();
         addTags(app);
-    }
-
-    protected InstanceProperties getInstanceProperties() {
-        return instanceProperties;
-    }
-
-    public SleeperCoreStacks getSleeperCoreStacks() {
-        return coreStacks;
-    }
-
-    public IngestStacks getIngestStacks() {
-        return ingestStacks;
-    }
-
-    public IngestBatcherStack getIngestBatcherStack() {
-        return ingestBatcherStack;
     }
 
     private void addTags(Construct construct) {

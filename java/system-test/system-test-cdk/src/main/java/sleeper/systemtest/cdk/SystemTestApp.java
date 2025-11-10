@@ -39,16 +39,16 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  */
 public class SystemTestApp extends SleeperInstanceStack {
     private final BuiltJars jars;
+    private final SystemTestProperties properties;
 
-    public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
-        super(app, id, props, DeployInstanceConfiguration.withNoTables(sleeperProperties), jars);
+    public SystemTestApp(App app, String id, StackProps props, DeployInstanceConfiguration configuration, BuiltJars jars) {
+        super(app, id, props, configuration, jars);
         this.jars = jars;
+        this.properties = SystemTestProperties.from(configuration.getInstanceProperties());
     }
 
     @Override
     public void create() {
-
-        SystemTestProperties properties = getInstanceProperties();
 
         generateLoggingStack();
 
@@ -75,36 +75,28 @@ public class SystemTestApp extends SleeperInstanceStack {
         generateProperties();
     }
 
-    @Override
-    protected SystemTestProperties getInstanceProperties() throws RuntimeException {
-        InstanceProperties properties = super.getInstanceProperties();
-        if (properties instanceof SystemTestProperties) {
-            return (SystemTestProperties) properties;
-        }
-        throw new RuntimeException("Error when retrieving instance properties");
-    }
-
     public static void main(String[] args) {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
                 .build());
 
-        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, CdkContext.from(app));
+        DeployInstanceConfiguration configuration = Utils.loadDeployInstanceConfiguration(CdkContext.from(app));
+        InstanceProperties instanceProperties = configuration.getInstanceProperties();
 
-        String id = systemTestProperties.get(ID);
+        String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()
-                .account(systemTestProperties.get(ACCOUNT))
-                .region(systemTestProperties.get(REGION))
+                .account(instanceProperties.get(ACCOUNT))
+                .region(instanceProperties.get(REGION))
                 .build();
 
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = BuiltJars.from(s3Client, systemTestProperties);
+            BuiltJars jars = BuiltJars.from(s3Client, instanceProperties);
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)
                     .env(environment)
                     .build(),
-                    systemTestProperties, jars).create();
+                    configuration, jars).create();
 
             app.synth();
         }
