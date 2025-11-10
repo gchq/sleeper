@@ -47,7 +47,6 @@ import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
-import sleeper.core.properties.table.TableProperties;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -57,7 +56,6 @@ import java.util.Properties;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -199,17 +197,6 @@ public class Utils {
                     localVersion, deployedVersion));
         }
         properties.set(VERSION, localVersion);
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Construct scope) {
-        return getAllTableProperties(instanceProperties, CdkContext.from(scope));
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, CdkContext cdkContext) {
-        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                instanceProperties, Path.of(cdkContext.tryGetContext("propertiesfile")));
     }
 
     public static boolean shouldDeployPaused(Construct scope) {

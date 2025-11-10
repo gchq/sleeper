@@ -63,6 +63,7 @@ import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
+import sleeper.core.properties.table.TableProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,6 +82,7 @@ public class SleeperInstanceStack extends Stack {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceStack.class);
 
     private final InstanceProperties instanceProperties;
+    private final List<TableProperties> tableProperties;
     private final BuiltJars jars;
     private final App app;
     private SleeperCoreStacks coreStacks;
@@ -108,6 +110,7 @@ public class SleeperInstanceStack extends Stack {
     public SleeperInstanceStack(App app, String id, StackProps props, DeployInstanceConfiguration configuration, BuiltJars jars) {
         super(app, id, props);
         this.instanceProperties = configuration.getInstanceProperties();
+        this.tableProperties = configuration.getTableProperties();
         this.jars = jars;
         this.app = app;
     }
@@ -321,7 +324,7 @@ public class SleeperInstanceStack extends Stack {
                     ingestStack,
                     compactionStack,
                     partitionSplittingStack,
-                    instanceProperties,
+                    instanceProperties, tableProperties,
                     errorMetrics);
         }
 
