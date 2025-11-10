@@ -57,7 +57,7 @@ public class SleeperOptionalStacks {
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
         if (optionalStacks.contains(OptionalStack.TableMetricsStack)) {
-            new TableMetricsStack(scope, "TableMetrics", instanceProperties, jars, coreStacks.getAlertsTopic(), coreStacks, coreStacks.getErrorMetrics());
+            new TableMetricsStack(scope, "TableMetrics", instanceProperties, jars, coreStacks);
         }
 
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {

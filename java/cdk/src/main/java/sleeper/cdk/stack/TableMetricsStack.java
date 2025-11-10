@@ -61,7 +61,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars, Topic topic, SleeperCoreStacks coreStacks, List<IMetric> errorMetrics) {
+            SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
