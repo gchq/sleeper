@@ -25,19 +25,9 @@ import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.stack.bulkexport.BulkExportStack;
-import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
-import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
-import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
-import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
-import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
-import sleeper.cdk.stack.bulkimport.EmrStudioStack;
-import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
-import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
-import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
@@ -51,25 +41,14 @@ import sleeper.cdk.stack.core.TransactionLogSnapshotStack;
 import sleeper.cdk.stack.core.TransactionLogStateStoreStack;
 import sleeper.cdk.stack.core.TransactionLogTransactionStack;
 import sleeper.cdk.stack.core.VpcCheckStack;
-import sleeper.cdk.stack.ingest.IngestBatcherStack;
-import sleeper.cdk.stack.ingest.IngestStack;
-import sleeper.cdk.stack.ingest.IngestStacks;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
-import sleeper.cdk.stack.query.KeepLambdaWarmStack;
-import sleeper.cdk.stack.query.QueryQueueStack;
-import sleeper.cdk.stack.query.QueryStack;
-import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
 /**
@@ -85,20 +64,8 @@ public class SleeperInstanceStack extends Stack {
     private final SleeperJarsInBucket jars;
     private final App app;
     private SleeperCoreStacks coreStacks;
-    private IngestStacks ingestStacks;
-    private IngestStack ingestStack;
-    private CompactionStack compactionStack;
-    private PartitionSplittingStack partitionSplittingStack;
-    private BulkImportBucketStack bulkImportBucketStack;
-    private CommonEmrBulkImportStack emrBulkImportCommonStack;
-    private EmrBulkImportStack emrBulkImportStack;
-    private EmrServerlessBulkImportStack emrServerlessBulkImportStack;
-    private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
-    private EksBulkImportStack eksBulkImportStack;
-    private QueryQueueStack queryQueueStack;
     private AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     private AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
-    private AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack;
     private LoggingStack loggingStack;
 
     // These flags are used to control when the stacks are deployed in the SystemTest CDK app.
@@ -116,10 +83,6 @@ public class SleeperInstanceStack extends Stack {
 
     @SuppressWarnings("checkstyle:methodlength")
     public void create() {
-        // Optional stacks to be included
-        Set<OptionalStack> optionalStacks = instanceProperties
-                .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
-                .collect(toUnmodifiableSet());
 
         List<IMetric> errorMetrics = new ArrayList<>();
 
@@ -142,9 +105,6 @@ public class SleeperInstanceStack extends Stack {
 
         // Auto stop ECS cluster tasks stack
         autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(this, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
-
-        // Auto stop EMR Serverless application stack
-        autoStopEmrServerlessApplicationStack = new AutoStopEmrServerlessApplicationStack(this, "AutoStopEmrServerlessApplication", instanceProperties, jars, loggingStack);
 
         // Stacks for tables
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
@@ -171,170 +131,8 @@ public class SleeperInstanceStack extends Stack {
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
         new TransactionLogTransactionStack(this, "TransactionLogTransaction",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
-        if (optionalStacks.contains(OptionalStack.TableMetricsStack)) {
-            new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, topicStack.getTopic(), coreStacks, errorMetrics);
-        }
 
-        // Stack for Athena analytics
-        if (optionalStacks.contains(OptionalStack.AthenaStack)) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
-        }
-
-        if (OptionalStack.BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            bulkImportBucketStack = new BulkImportBucketStack(this, "BulkImportBucket", instanceProperties, coreStacks, jars);
-        }
-        if (OptionalStack.EMR_BULK_IMPORT_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
-                    instanceProperties, coreStacks, bulkImportBucketStack);
-        }
-
-        // Stack to run bulk import jobs via EMR Serverless
-        if (optionalStacks.contains(OptionalStack.EmrServerlessBulkImportStack)) {
-            emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(this, "BulkImportEMRServerless",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    bulkImportBucketStack,
-                    coreStacks,
-                    autoStopEmrServerlessApplicationStack,
-                    errorMetrics);
-
-            // Stack to created EMR studio to be used to access EMR Serverless
-            if (optionalStacks.contains(OptionalStack.EmrStudioStack)) {
-                new EmrStudioStack(this, "EmrStudio", instanceProperties);
-            }
-        }
-        // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
-        if (optionalStacks.contains(OptionalStack.EmrBulkImportStack)) {
-            emrBulkImportStack = new EmrBulkImportStack(this, "BulkImportEMR",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    bulkImportBucketStack,
-                    emrBulkImportCommonStack,
-                    coreStacks,
-                    errorMetrics);
-        }
-
-        // Stack to run bulk import jobs via a persistent EMR cluster
-        if (optionalStacks.contains(OptionalStack.PersistentEmrBulkImportStack)) {
-            persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(this, "BulkImportPersistentEMR",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    bulkImportBucketStack,
-                    emrBulkImportCommonStack,
-                    coreStacks,
-                    errorMetrics);
-        }
-
-        // Stack to run bulk import jobs via EKS
-        if (optionalStacks.contains(OptionalStack.EksBulkImportStack)) {
-            eksBulkImportStack = new EksBulkImportStack(this, "BulkImportEKS",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    bulkImportBucketStack,
-                    coreStacks,
-                    errorMetrics);
-        }
-
-        // Stack to run bulk export jobs
-        if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
-            new BulkExportStack(this,
-                    "BulkExport",
-                    instanceProperties,
-                    jars,
-                    coreStacks);
-        }
-
-        // Stack to garbage collect old files
-        if (optionalStacks.contains(OptionalStack.GarbageCollectorStack)) {
-            new GarbageCollectorStack(this,
-                    "GarbageCollector",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    coreStacks,
-                    errorMetrics);
-        }
-        // Stack for containers for compactions and splitting compactions
-        if (optionalStacks.contains(OptionalStack.CompactionStack)) {
-            compactionStack = new CompactionStack(this,
-                    "Compaction",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    coreStacks,
-                    errorMetrics);
-        }
-
-        // Stack to split partitions
-        if (optionalStacks.contains(OptionalStack.PartitionSplittingStack)) {
-            partitionSplittingStack = new PartitionSplittingStack(this,
-                    "PartitionSplitting",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    coreStacks,
-                    errorMetrics);
-        }
-
-        QueryStack queryStack = null;
-        // Stack to execute queries
-        if (OptionalStack.QUERY_STACKS.stream().anyMatch(optionalStacks::contains)) {
-            queryQueueStack = new QueryQueueStack(this, "QueryQueue",
-                    instanceProperties,
-                    topicStack.getTopic(), coreStacks,
-                    errorMetrics);
-            queryStack = new QueryStack(this,
-                    "Query",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    coreStacks, queryQueueStack,
-                    errorMetrics);
-            // Stack to execute queries using the web socket API
-            if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
-                new WebSocketQueryStack(this,
-                        "WebSocketQuery",
-                        instanceProperties, jars,
-                        coreStacks, queryQueueStack, queryStack);
-            }
-        }
-        // Stack for ingest jobs
-        if (optionalStacks.contains(OptionalStack.IngestStack)) {
-            ingestStack = new IngestStack(this,
-                    "Ingest",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    coreStacks,
-                    errorMetrics);
-        }
-
-        // Aggregate ingest stacks
-        ingestStacks = new IngestStacks(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack, emrServerlessBulkImportStack);
-
-        // Stack to batch up files to ingest and create jobs
-        if (optionalStacks.contains(OptionalStack.IngestBatcherStack)) {
-            new IngestBatcherStack(this, "IngestBatcher",
-                    instanceProperties, jars,
-                    topicStack.getTopic(),
-                    coreStacks,
-                    ingestStacks,
-                    errorMetrics);
-        }
-
-        if (optionalStacks.contains(OptionalStack.DashboardStack)) {
-            new DashboardStack(this,
-                    "Dashboard",
-                    ingestStack,
-                    compactionStack,
-                    partitionSplittingStack,
-                    instanceProperties, tableProperties,
-                    errorMetrics);
-        }
-
-        if (optionalStacks.contains(OptionalStack.KeepLambdaWarmStack)) {
-            new KeepLambdaWarmStack(this,
-                    "KeepLambdaWarmExecution",
-                    instanceProperties,
-                    jars,
-                    coreStacks,
-                    queryQueueStack);
-        }
+        SleeperOptionalStacks.create(this, instanceProperties, tableProperties, jars, coreStacks);
 
         // Only create roles after we know which policies are deployed in the instance
         policiesStack.createRoles();

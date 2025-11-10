@@ -50,12 +50,15 @@ public class SleeperOptionalStacks {
     private SleeperOptionalStacks() {
     }
 
-    public void create(
+    public static void create(
             Construct scope, InstanceProperties instanceProperties, List<TableProperties> tableProperties,
             SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
         Set<OptionalStack> optionalStacks = instanceProperties
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
+        if (optionalStacks.contains(OptionalStack.TableMetricsStack)) {
+            new TableMetricsStack(scope, "TableMetrics", instanceProperties, jars, coreStacks.getAlertsTopic(), coreStacks, coreStacks.getErrorMetrics());
+        }
 
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
             new AthenaStack(scope, "Athena", instanceProperties, jars, coreStacks);
