@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk.stack.core;
+package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.services.ecs.ICluster;
@@ -28,7 +28,16 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
+import sleeper.cdk.stack.core.ConfigBucketStack;
+import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
+import sleeper.cdk.stack.core.StateStoreCommitterStack;
+import sleeper.cdk.stack.core.StateStoreStacks;
+import sleeper.cdk.stack.core.TableDataStack;
+import sleeper.cdk.stack.core.TableIndexStack;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
 
 import javax.annotation.Nullable;
