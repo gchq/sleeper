@@ -17,7 +17,6 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -25,7 +24,6 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -66,7 +64,7 @@ public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars, Topic topic, SleeperCoreStacks coreStacks, List<IMetric> errorMetrics) {
+            SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         // Jars bucket

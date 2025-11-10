@@ -133,9 +133,7 @@ public class SleeperOptionalStacks {
             new GarbageCollectorStack(scope,
                     "GarbageCollector",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    coreStacks);
         }
         // Stack for containers for compactions and splitting compactions
         CompactionStack compactionStack = null;
