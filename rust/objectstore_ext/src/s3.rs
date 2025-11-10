@@ -116,20 +116,11 @@ pub struct ObjectStoreFactory {
 
 impl ObjectStoreFactory {
     #[must_use]
-    pub fn new(s3_config: Option<AmazonS3Builder>) -> Self {
+    pub fn new(s3_config: Option<AmazonS3Builder>, use_readahead: bool) -> Self {
         Self {
             s3_config,
             store_map: RefCell::new(HashMap::new()),
-            use_readahead: true,
-        }
-    }
-
-    #[must_use]
-    pub fn new_no_readahead(s3_config: Option<AmazonS3Builder>) -> Self {
-        Self {
-            s3_config,
-            store_map: RefCell::new(HashMap::new()),
-            use_readahead: false,
+            use_readahead,
         }
     }
 

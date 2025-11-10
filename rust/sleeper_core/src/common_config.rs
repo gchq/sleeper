@@ -28,25 +28,28 @@ use url::Url;
 /// Common items necessary to perform any `DataFusion` related
 /// work for Sleeper.
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct CommonConfig<'a> {
     /// Aws credentials configuration
-    aws_config: Option<AwsConfig>,
+    pub aws_config: Option<AwsConfig>,
     /// Input file URLs
-    input_files: Vec<Url>,
+    pub input_files: Vec<Url>,
     /// Are input files individually sorted?
-    input_files_sorted: bool,
+    pub input_files_sorted: bool,
     /// Should we use readahead when reading from S3?
-    use_readahead_store: bool,
+    pub use_readahead_store: bool,
     /// Names of row-key fields
-    row_key_cols: Vec<String>,
+    pub row_key_cols: Vec<String>,
     /// Names of sort-key fields
-    sort_key_cols: Vec<String>,
+    pub sort_key_cols: Vec<String>,
     /// Ranges for each field to filter input files
-    region: SleeperRegion<'a>,
+    pub region: SleeperRegion<'a>,
     /// How output from operation should be returned
-    output: OutputType,
-    aggregates: Vec<Aggregate>,
-    filters: Vec<Filter>,
+    pub output: OutputType,
+    /// Aggregate functions to be applied AFTER merge-sorting
+    pub aggregates: Vec<Aggregate>,
+    /// Row filters to be applied before aggregation
+    pub filters: Vec<Filter>,
 }
 
 impl Default for CommonConfig<'_> {
@@ -75,43 +78,7 @@ impl CommonConfig<'_> {
             Some(aws_config) => Some(aws_config.to_s3_config()),
             None => default_creds_store().await.ok(),
         };
-        if self.use_readahead_store {
-            ObjectStoreFactory::new(s3_config)
-        } else {
-            ObjectStoreFactory::new_no_readahead(s3_config)
-        }
-    }
-
-    pub(crate) fn output(&self) -> &OutputType {
-        &self.output
-    }
-
-    pub(crate) fn input_files(&self) -> &Vec<Url> {
-        &self.input_files
-    }
-
-    pub(crate) fn input_files_sorted(&self) -> bool {
-        self.input_files_sorted
-    }
-
-    pub(crate) fn row_key_cols(&self) -> &Vec<String> {
-        &self.row_key_cols
-    }
-
-    pub(crate) fn sort_key_cols(&self) -> &Vec<String> {
-        &self.sort_key_cols
-    }
-
-    pub(crate) fn region(&self) -> &SleeperRegion<'_> {
-        &self.region
-    }
-
-    pub(crate) fn aggregates(&self) -> &Vec<Aggregate> {
-        &self.aggregates
-    }
-
-    pub(crate) fn filters(&self) -> &Vec<Filter> {
-        &self.filters
+        ObjectStoreFactory::new(s3_config, self.use_readahead_store)
     }
 }
 
