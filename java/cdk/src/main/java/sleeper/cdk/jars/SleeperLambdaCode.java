@@ -34,13 +34,13 @@ import sleeper.core.properties.model.LambdaDeployType;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class LambdaCode {
+public class SleeperLambdaCode {
 
     private final SleeperJarsInBucket builtJars;
     private final LambdaDeployType deployType;
     private final IBucket bucket;
 
-    LambdaCode(SleeperJarsInBucket builtJars, LambdaDeployType deployType, IBucket bucket) {
+    SleeperLambdaCode(SleeperJarsInBucket builtJars, LambdaDeployType deployType, IBucket bucket) {
         this.builtJars = builtJars;
         this.deployType = deployType;
         this.bucket = bucket;

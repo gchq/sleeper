@@ -59,8 +59,8 @@ public class SleeperJarsInBucket {
         return bucketName;
     }
 
-    public LambdaCode lambdaCode(IBucket bucketConstruct) {
-        return new LambdaCode(this, deployType, bucketConstruct);
+    public SleeperLambdaCode lambdaCode(IBucket bucketConstruct) {
+        return new SleeperLambdaCode(this, deployType, bucketConstruct);
     }
 
     public String getLatestVersionId(LambdaJar jar) {

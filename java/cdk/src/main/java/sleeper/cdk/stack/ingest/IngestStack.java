@@ -46,8 +46,8 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
@@ -113,7 +113,7 @@ public class IngestStack extends NestedStack {
         //  - A lambda that stops task when a delete cluster event is triggered.
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         // SQS queue for ingest jobs
         sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
@@ -184,7 +184,7 @@ public class IngestStack extends NestedStack {
             IBucket jarsBucket,
             SleeperCoreStacks coreStacks,
             Queue ingestJobQueue,
-            LambdaCode lambdaCode) {
+            SleeperLambdaCode lambdaCode) {
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -245,7 +245,7 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(SleeperCoreStacks coreStacks, Queue ingestJobQueue, LambdaCode lambdaCode) {
+    private void lambdaToCreateIngestTasks(SleeperCoreStacks coreStacks, Queue ingestJobQueue, SleeperLambdaCode lambdaCode) {
 
         // Run tasks function
         String functionName = String.join("-", "sleeper",

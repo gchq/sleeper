@@ -33,8 +33,8 @@ import software.amazon.awscdk.services.sqs.FifoThroughputLimit;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
@@ -80,7 +80,7 @@ public class StateStoreCommitterStack extends NestedStack {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, topic, errorMetrics);
         lambdaToCommitStateStoreUpdates(
@@ -124,7 +124,7 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void lambdaToCommitStateStoreUpdates(
-            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode lambdaCode,
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, SleeperLambdaCode lambdaCode,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
             CompactionTrackerResources compactionTracker,
             IngestTrackerResources ingestTracker) {
