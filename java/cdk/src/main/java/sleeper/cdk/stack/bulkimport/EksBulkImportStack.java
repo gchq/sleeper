@@ -61,8 +61,8 @@ import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
@@ -100,7 +100,7 @@ public final class EksBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 
     public EksBulkImportStack(
-            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
             Topic errorsTopic, BulkImportBucketStack importBucketStack, SleeperCoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
@@ -137,7 +137,7 @@ public final class EksBulkImportStack extends NestedStack {
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
         IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper", instanceId, "bulk-import-eks-starter");
 

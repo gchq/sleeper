@@ -54,7 +54,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 import software.constructs.IDependable;
 
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
@@ -97,7 +97,7 @@ public class CompactionOnEc2Resources {
     }
 
     public ITaskDefinition createTaskDefinition(
-            Cluster cluster, IVpc vpc, LambdaCode taskCreatorJar,
+            Cluster cluster, IVpc vpc, SleeperLambdaCode taskCreatorJar,
             ContainerImage containerImage, Map<String, String> environmentVariables) {
 
         Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder
@@ -127,7 +127,7 @@ public class CompactionOnEc2Resources {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void addEC2CapacityProvider(Cluster cluster, IVpc vpc, LambdaCode taskCreatorJar) {
+    private void addEC2CapacityProvider(Cluster cluster, IVpc vpc, SleeperLambdaCode taskCreatorJar) {
 
         // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
@@ -199,7 +199,7 @@ public class CompactionOnEc2Resources {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private IFunction lambdaForCustomTerminationPolicy(SleeperCoreStacks coreStacks, LambdaCode lambdaCode) {
+    private IFunction lambdaForCustomTerminationPolicy(SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
 
         // Run tasks function
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);

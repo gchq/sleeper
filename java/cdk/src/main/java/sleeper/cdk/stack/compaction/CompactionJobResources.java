@@ -32,7 +32,7 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
@@ -114,7 +114,7 @@ public class CompactionJobResources {
 
     public CompactionJobResources(Stack stack,
             InstanceProperties instanceProperties,
-            LambdaCode lambdaCode,
+            SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
             Topic topic,
             SleeperCoreStacks coreStacks,
@@ -183,7 +183,7 @@ public class CompactionJobResources {
 
     private IFunction lambdaToCreateCompactionJobBatches(
             SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, LambdaCode lambdaCode,
+            IBucket jarsBucket, SleeperLambdaCode lambdaCode,
             Queue compactionJobsQueue) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -244,7 +244,7 @@ public class CompactionJobResources {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // Queue.getDeadLetterQueue is marked as nullable but will always be set
     private IFunction lambdaToSendCompactionJobBatches(
-            SleeperCoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue) {
+            SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode, Queue pendingQueue) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-dispatcher");
@@ -334,7 +334,7 @@ public class CompactionJobResources {
     }
 
     private void lambdaToBatchUpCompactionCommits(
-            SleeperCoreStacks coreStacks, LambdaCode lambdaCode, Queue batcherQueue) {
+            SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode, Queue batcherQueue) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-commit-batcher");
 

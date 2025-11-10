@@ -47,8 +47,8 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
@@ -88,7 +88,7 @@ public class QueryStack extends NestedStack {
     public QueryStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars,
+            SleeperJarsInBucket jars,
             Topic topic,
             SleeperCoreStacks coreStacks,
             QueryQueueStack queryQueueStack,
@@ -96,7 +96,7 @@ public class QueryStack extends NestedStack {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String tableName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-tracking-table");
@@ -123,7 +123,7 @@ public class QueryStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private IFunction setupQueryExecutorLambda(SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode lambdaCode,
+    private IFunction setupQueryExecutorLambda(SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-executor");
@@ -163,7 +163,7 @@ public class QueryStack extends NestedStack {
     }
 
     private IFunction setupLeafPartitionQueryQueueAndLambda(SleeperCoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic,
-            LambdaCode lambdaCode, IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
+            SleeperLambdaCode lambdaCode, IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
         Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
@@ -302,7 +302,7 @@ public class QueryStack extends NestedStack {
         return resultsQueue;
     }
 
-    private IBucket setupResultsBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, LambdaCode lambdaCode) {
+    private IBucket setupResultsBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-results");

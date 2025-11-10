@@ -28,11 +28,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class BuiltJarsIT extends LocalStackTestBase {
+public class SleeperJarsInBucketIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final BuiltJars builtJars = BuiltJars.from(s3Client, instanceProperties);
+    private final SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
 
     @Test
     void shouldGetLatestVersionOfAJar() {
@@ -41,7 +41,7 @@ public class BuiltJarsIT extends LocalStackTestBase {
                 .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
         String versionId = putObject(bucketName, "test.jar", "data").versionId();
 
-        assertThat(builtJars.getLatestVersionId(
+        assertThat(jars.getLatestVersionId(
                 LambdaJar.builder()
                         .filenameFormat("test.jar")
                         .imageName("test-lambda")

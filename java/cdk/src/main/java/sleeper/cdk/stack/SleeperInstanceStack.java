@@ -24,7 +24,7 @@ import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
@@ -83,7 +83,7 @@ public class SleeperInstanceStack extends Stack {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
-    private final BuiltJars jars;
+    private final SleeperJarsInBucket jars;
     private final App app;
     private SleeperCoreStacks coreStacks;
     private IngestStacks ingestStacks;
@@ -107,7 +107,7 @@ public class SleeperInstanceStack extends Stack {
     private boolean generateLoggingStack = true;
     private boolean generateProperties = true;
 
-    public SleeperInstanceStack(App app, String id, StackProps props, DeployInstanceConfiguration configuration, BuiltJars jars) {
+    public SleeperInstanceStack(App app, String id, StackProps props, DeployInstanceConfiguration configuration, SleeperJarsInBucket jars) {
         super(app, id, props);
         this.instanceProperties = configuration.getInstanceProperties();
         this.tableProperties = configuration.getTableProperties();
