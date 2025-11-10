@@ -147,7 +147,7 @@ public class SleeperCoreStacks {
         new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
                 instanceProperties, jars, stacks, transactionLogStateStoreStack, deadLetters);
         new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
-                instanceProperties, jars, stacks, transactionLogStateStoreStack, topicStack.getTopic(), deadLetters.getErrorMetrics());
+                instanceProperties, jars, stacks, transactionLogStateStoreStack, deadLetters);
         return stacks;
     }
 
