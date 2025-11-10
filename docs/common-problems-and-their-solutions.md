@@ -69,8 +69,9 @@ To successfully recreate the instance with the same ID, you must manually ensure
 
 ### Configuration when destroying an instance
 
-The CDK deployment process offers two configuration options to control the retention of AWS resources when the stack is destroyed:
+The CDK deployment process offers two configuration options that can be used if you wish to delete the entire deployment and start again:
 
-- Data and Query Buckets: You can configure the deployment to prevent the deletion of the S3 buckets used for tables and query results. This is managed by setting the instance property `sleeper.retain.infra.after.destroy`.
+- Data and Query Buckets: You can configure the deployment to delete the S3 buckets used for tables and query results. This is managed by setting the instance property `sleeper.retain.infra.after.destroy` to false.
 
-- CloudWatch Log Groups: Similarly, you can ensure that the associated log groups are retained after the deployment is destroyed. This retention is controlled by the instance property `sleeper.retain.logs.after.destroy`.
+- CloudWatch Log Groups: Similarly, you can ensure that the associated log groups are deleted after the deployment is destroyed. This is controlled by settng the instance property `sleeper.retain.logs.after.destroy` to false.
+
