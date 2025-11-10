@@ -32,7 +32,6 @@ import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.core.statestore.StateStore;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.rowretrieval.QueryPlanner;
@@ -48,53 +47,78 @@ public class SleeperBatch implements Batch {
 
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
-    private StateStore stateStore;
+    private String tableId;
+    private Schema schema;
+    private String schemaAsJson;
+    private RegionSerDe regionSerDe;
+    private RangeFactory rangeFactory;
+    private QueryPlanner queryPlanner;
     private Filter[] pushedFilters;
 
-    public SleeperBatch(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore,
+    public SleeperBatch(InstanceProperties instanceProperties, TableProperties tableProperties, QueryPlanner queryPlanner,
             Filter[] pushedFilters) {
+        LOGGER.info("Created SleeperBatch");
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
-        this.stateStore = stateStore;
+        this.tableId = this.tableProperties.get(TableProperty.TABLE_ID);
+        this.schema = this.tableProperties.getSchema();
+        this.schemaAsJson = new SchemaSerDe().toJson(schema);
+        this.regionSerDe = new RegionSerDe(this.tableProperties.getSchema());
+        this.rangeFactory = new RangeFactory(schema);
+        this.queryPlanner = queryPlanner;
         this.pushedFilters = pushedFilters;
     }
 
     @Override
     public InputPartition[] planInputPartitions() {
-        String tableId = tableProperties.get(TableProperty.TABLE_ID);
-        Schema schema = tableProperties.getSchema();
-        String schemaAsJson = new SchemaSerDe().toJson(schema);
-
-        // Create one InputPartition per leaf partition (later we will restrict the partitions to be read based
-        // on the user's filters)
-        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
-        planner.init();
-        Region region;
-        if (null == pushedFilters || pushedFilters.length == 0) {
-            region = Region.coveringAllValuesOfAllRowKeys(schema);
-        } else {
-            // In SleeperScanBuilder we only accepted filters of type EqualTo on the key column.
-            EqualTo equalTo = (EqualTo) pushedFilters[0];
-            // TODO Sanity check this is on the first row key field
-            String key = (String) equalTo.value();
-            RangeFactory rangeFactory = new RangeFactory(schema);
-            Range range = rangeFactory.createExactRange(schema.getRowKeyFields().get(0), key);
-            region = new Region(range);
-        }
+        List<Region> regions = getMinimumRegionCoveringPushedFilters();
         Query query = Query.builder()
                 .queryId(UUID.randomUUID().toString())
                 .tableName(tableProperties.get(TableProperty.TABLE_NAME))
-                .regions(List.of(region))
+                .regions(regions)
                 .build();
-        List<LeafPartitionQuery> leafPartitionQueries = planner.splitIntoLeafPartitionQueries(query);
-        LOGGER.info("Split query into {} leaf partition queries", leafPartitionQueries.size());
+        List<LeafPartitionQuery> leafPartitionQueries = queryPlanner.splitIntoLeafPartitionQueries(query);
+        LOGGER.error("Split query into {} leaf partition queries", leafPartitionQueries.size());
 
-        RegionSerDe regionSerDe = new RegionSerDe(schema);
         return leafPartitionQueries.stream()
-                .map(q -> new SleeperInputPartition(tableId, schemaAsJson, q.getQueryId(), q.getSubQueryId(), q.getLeafPartitionId(),
-                        regionSerDe.toJson(q.getPartitionRegion()), regionSerDe.toJson(region),
-                        q.getFiles()))
+                .map(q -> queryToSleeperInputPartition(q))
                 .toArray(SleeperInputPartition[]::new);
+    }
+
+    private SleeperInputPartition queryToSleeperInputPartition(LeafPartitionQuery query) {
+        String partitionRegionAsJson = regionSerDe.toJson(query.getPartitionRegion());
+        List<String> regionsAsJson = query.getRegions()
+                .stream()
+                .map(r -> regionSerDe.toJson(r))
+                .toList();
+        return new SleeperInputPartition(tableId, schemaAsJson, query.getQueryId(), query.getSubQueryId(), query.getLeafPartitionId(),
+                partitionRegionAsJson, regionsAsJson, query.getFiles());
+    }
+
+    /**
+     * NB: Currently always returns a list containing one region. In future this may return
+     * a list of regions as there are some combinations of filters that might result in
+     * multiple regions.
+     *
+     * @return a list of the regions covering the pushed filters.
+     */
+    private List<Region> getMinimumRegionCoveringPushedFilters() {
+        Schema schema = tableProperties.getSchema();
+
+        // If no filters have been pushed to the data source then return a region covering the
+        // entire key space.
+        if (null == pushedFilters || pushedFilters.length == 0) {
+            return List.of(Region.coveringAllValuesOfAllRowKeys(schema));
+        }
+
+        // In SleeperScanBuilder we only accepted filters of type EqualTo on the key column and we checked
+        // that this was applied to the first key column. (In future we will accept more filters so the following
+        // code will get more complex.)
+        EqualTo equalTo = (EqualTo) pushedFilters[0];
+        String key = (String) equalTo.value();
+        Range range = rangeFactory.createExactRange(schema.getRowKeyFields().get(0), key);
+        Region region = new Region(range);
+        return List.of(region);
     }
 
     @Override

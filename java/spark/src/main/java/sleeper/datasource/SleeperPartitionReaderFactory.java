@@ -19,6 +19,7 @@ import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.read.InputPartition;
 import org.apache.spark.sql.connector.read.PartitionReader;
 import org.apache.spark.sql.connector.read.PartitionReaderFactory;
+import org.apache.spark.sql.vectorized.ColumnarBatch;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -36,9 +37,21 @@ public class SleeperPartitionReaderFactory implements PartitionReaderFactory {
     }
 
     @Override
+    public PartitionReader<ColumnarBatch> createColumnarReader(InputPartition partition) {
+        InstanceProperties instanceProperties = Utils.loadInstancePropertiesFromString(instancePropertiesAsString);
+        TableProperties tableProperties = Utils.loadTablePropertiesFromString(instanceProperties, tablePropertiesAsString);
+        return new SleeperColumnarBatchPartitionReader(instanceProperties, tableProperties, partition);
+    }
+
+    @Override
     public PartitionReader<InternalRow> createReader(InputPartition partition) {
         InstanceProperties instanceProperties = Utils.loadInstancePropertiesFromString(instancePropertiesAsString);
         TableProperties tableProperties = Utils.loadTablePropertiesFromString(instanceProperties, tablePropertiesAsString);
-        return new SleeperPartitionReader(instanceProperties, tableProperties, partition);
+        return new SleeperRowPartitionReader(instanceProperties, tableProperties, partition);
+    }
+
+    @Override
+    public boolean supportColumnarReads(InputPartition inputPartition) {
+        return true;
     }
 }

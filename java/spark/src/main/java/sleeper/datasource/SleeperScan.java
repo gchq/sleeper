@@ -22,7 +22,7 @@ import org.apache.spark.sql.types.StructType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStore;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 
 /**
  * Doesn't need to be serialisable.
@@ -31,15 +31,15 @@ public class SleeperScan implements Scan {
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private StructType structType;
-    private StateStore stateStore;
+    private QueryPlanner queryPlanner;
     private Filter[] pushedFilters;
 
     public SleeperScan(InstanceProperties instanceProperties, TableProperties tableProperties, StructType structType,
-            StateStore stateStore, Filter[] pushedFilters) {
+            QueryPlanner queryPlanner, Filter[] pushedFilters) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.structType = structType;
-        this.stateStore = stateStore;
+        this.queryPlanner = queryPlanner;
         this.pushedFilters = pushedFilters;
     }
 
@@ -50,6 +50,6 @@ public class SleeperScan implements Scan {
 
     @Override
     public Batch toBatch() {
-        return new SleeperBatch(instanceProperties, tableProperties, stateStore, pushedFilters);
+        return new SleeperBatch(instanceProperties, tableProperties, queryPlanner, pushedFilters);
     }
 }

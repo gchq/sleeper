@@ -27,6 +27,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 
 import java.util.Map;
 
@@ -61,7 +62,8 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
     public Table getTable(StructType structType, Transform[] partitioning, Map<String, String> properties) {
         InstanceProperties instanceProperties = sleeperClient.getInstanceProperties();
         TableProperties tableProperties = sleeperClient.getTableProperties(tableName);
-        return new SleeperTable(instanceProperties, tableProperties, structType, stateStore);
+        QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
+        return new SleeperTable(instanceProperties, tableProperties, structType, planner);
     }
 
     public boolean supportsExternalMetadata() {

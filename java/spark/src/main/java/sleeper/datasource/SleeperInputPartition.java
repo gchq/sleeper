@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Should contain all the information needed to run the query over this partition,
@@ -42,11 +43,11 @@ public class SleeperInputPartition implements InputPartition {
     private final String subQueryId;
     private final String leafPartitionId;
     private final String partitionRegionAsJson;
-    private final String regionAsJson;
+    private final List<String> regionsAsJson;
     private final List<String> files;
 
     public SleeperInputPartition(String tableId, String schemaAsJson, String queryId, String subQueryId, String leafPartitionId,
-            String partitionRegionAsJson, String regionAsJson, List<String> files) {
+            String partitionRegionAsJson, List<String> regionsAsJson, List<String> files) {
         LOGGER.info("Initialised SleeperInputPartition for table {} with schema {}, queryId {}, subQueryId {}, leafPartitionId {}, partitionRegionAsJson {}, files {}",
                 tableId, schemaAsJson, queryId, subQueryId, leafPartitionId, partitionRegionAsJson, files);
         this.tableId = tableId;
@@ -55,7 +56,7 @@ public class SleeperInputPartition implements InputPartition {
         this.subQueryId = subQueryId;
         this.leafPartitionId = leafPartitionId;
         this.partitionRegionAsJson = partitionRegionAsJson;
-        this.regionAsJson = regionAsJson;
+        this.regionsAsJson = regionsAsJson;
         this.files = files;
     }
 
@@ -85,15 +86,18 @@ public class SleeperInputPartition implements InputPartition {
         return regionSerDe.fromJson(partitionRegionAsJson);
     }
 
-    public Region getRegion() {
+    public List<Region> getRegions() {
         Schema schema = new SchemaSerDe().fromJson(schemaAsJson);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
-        return regionSerDe.fromJson(regionAsJson);
+        List<Region> regions = regionsAsJson.stream()
+                .map(regionSerDe::fromJson)
+                .collect(Collectors.toList());
+        return regions;
     }
 
     @Override
     public String toString() {
         return "SleeperInputPartition{tableId=" + tableId + ", schemaAsJson=" + schemaAsJson + ", queryId=" + queryId + ", subQueryId=" + subQueryId + ", leafPartitionId=" + leafPartitionId
-                + ", partitionRegionAsJson=" + partitionRegionAsJson + ", regionAsJson=" + regionAsJson + ", files=" + files + "}";
+                + ", partitionRegionAsJson=" + partitionRegionAsJson + ", regionsAsJson=" + regionsAsJson + ", files=" + files + "}";
     }
 }

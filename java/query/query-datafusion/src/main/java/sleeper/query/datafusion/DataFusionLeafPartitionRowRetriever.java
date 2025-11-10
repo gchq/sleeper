@@ -18,6 +18,7 @@ package sleeper.query.datafusion;
 import org.apache.arrow.c.ArrowArrayStream;
 import org.apache.arrow.c.Data;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.ipc.ArrowReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,33 +61,47 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
 
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
+        try {
+            return new RowIteratorFromArrowReader(getArrowReader(leafPartitionQuery, dataReadSchema, tableProperties));
+        } catch (IOException e) {
+            throw new RowRetrievalException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Returns an {@link ArrowReader} containing the results of the query.
+     *
+     * @param  leafPartitionQuery    the query to execute
+     * @param  dataReadSchema        the schema with which to read the data
+     * @param  tableProperties       the table properties
+     * @return
+     * @throws RowRetrievalException
+     */
+    public ArrowReader getArrowReader(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
         DataFusionQueryFunctions functions = context.getFunctions();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
         FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
         // Create NULL pointer which will be set by the FFI call upon return
         FFIQueryResults results = new FFIQueryResults(runtime);
-        try {
-            // Perform native query
-            int result = functions.query_stream(context, params, results);
-            // Check result
-            if (result != 0) {
-                LOGGER.error("DataFusion query failed, return code: {}", result);
-                throw new RowRetrievalException("DataFusion query failed with return code " + result);
-            }
 
-            // A zeroed (NULL) results pointer is NEVER correct here
-            if (results.arrowArrayStream.longValue() == 0) {
-                throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
-            }
-
-            // Convert pointer from Rust to Java FFI Arrow array stream.
-            // At this point Java assumes ownership of the stream and must release it when no longer
-            // needed.
-            return new RowIteratorFromArrowReader(Data.importArrayStream(allocator, ArrowArrayStream.wrap(results.arrowArrayStream.longValue())));
-        } catch (IOException e) {
-            throw new RowRetrievalException(e.getMessage(), e);
+        // Perform native query
+        int result = functions.query_stream(context, params, results);
+        // Check result
+        if (result != 0) {
+            LOGGER.error("DataFusion query failed, return code: {}", result);
+            throw new RowRetrievalException("DataFusion query failed with return code " + result);
         }
+
+        // A zeroed (NULL) results pointer is NEVER correct here
+        if (results.arrowArrayStream.longValue() == 0) {
+            throw new RowRetrievalException("Call to DataFusion query layer returned a NULL pointer");
+        }
+
+        // Convert pointer from Rust to Java FFI Arrow array stream.
+        // At this point Java assumes ownership of the stream and must release it when no longer
+        // needed.
+        return Data.importArrayStream(allocator, ArrowArrayStream.wrap(results.arrowArrayStream.longValue()));
     }
 
     /**

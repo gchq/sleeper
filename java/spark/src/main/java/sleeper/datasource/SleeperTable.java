@@ -23,7 +23,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStore;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 
 import java.util.Set;
 
@@ -31,20 +31,20 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Doesn't need to be serialisable.
- *
- * TODO - why passing in statestore and partitions and filerefs?
  */
 public class SleeperTable implements SupportsRead {
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private StructType structType;
-    private StateStore stateStore;
+    private QueryPlanner queryPlanner;
 
-    SleeperTable(InstanceProperties instanceProperties, TableProperties tableProperties, StructType structType, StateStore stateStore) {
+    SleeperTable(InstanceProperties instanceProperties, TableProperties tableProperties, StructType structType,
+            QueryPlanner queryPlanner) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.structType = new StructTypeFactoryCopy().getStructType(tableProperties.getSchema());
-        this.stateStore = stateStore;
+        this.queryPlanner = queryPlanner;
+        this.queryPlanner.init();
     }
 
     @Override
@@ -64,6 +64,6 @@ public class SleeperTable implements SupportsRead {
 
     @Override
     public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-        return new SleeperScanBuilder(instanceProperties, tableProperties, structType, stateStore);
+        return new SleeperScanBuilder(instanceProperties, tableProperties, structType, queryPlanner);
     }
 }
