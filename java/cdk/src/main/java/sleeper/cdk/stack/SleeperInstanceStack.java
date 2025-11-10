@@ -42,7 +42,6 @@ import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
-import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
 import sleeper.cdk.stack.core.StateStoreStacks;
 import sleeper.cdk.stack.core.TableDataStack;

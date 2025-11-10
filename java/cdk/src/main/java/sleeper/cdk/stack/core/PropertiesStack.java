@@ -25,6 +25,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
