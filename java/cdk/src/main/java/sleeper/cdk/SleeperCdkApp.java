@@ -19,6 +19,7 @@ import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.Tags;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
@@ -61,6 +62,8 @@ public class SleeperCdkApp {
                     .env(environment)
                     .build(),
                     configuration, jars).create();
+            instanceProperties.getTags()
+                    .forEach((key, value) -> Tags.of(app).add(key, value));
 
             app.synth();
         }

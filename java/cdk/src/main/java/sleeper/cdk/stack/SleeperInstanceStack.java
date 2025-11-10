@@ -20,8 +20,6 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.Tags;
-import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.core.PropertiesStack;
@@ -42,14 +40,12 @@ public class SleeperInstanceStack extends Stack {
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
     private final SleeperJarsInBucket jars;
-    private final App app;
 
     public SleeperInstanceStack(App app, String id, StackProps props, DeployInstanceConfiguration configuration, SleeperJarsInBucket jars) {
         super(app, id, props);
         this.instanceProperties = configuration.getInstanceProperties();
         this.tableProperties = configuration.getTableProperties();
         this.jars = jars;
-        this.app = app;
     }
 
     public void create() {
@@ -59,12 +55,6 @@ public class SleeperInstanceStack extends Stack {
         coreStacks.createRoles();
         // Only write properties after CDK-defined properties are set
         new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
-        addTags(app);
-    }
-
-    private void addTags(Construct construct) {
-        instanceProperties.getTags()
-                .forEach((key, value) -> Tags.of(construct).add(key, value));
     }
 
 }
