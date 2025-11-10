@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack;
 
+import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
@@ -22,11 +23,35 @@ import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
+/**
+ * Deploys an instance of Sleeper, including any configured optional stacks. Does not create Sleeper tables. If the
+ * configuration for tables is provided then the optional DashboardStack will create individual dashboards for each
+ * table.
+ */
 public class SleeperInstanceStacks {
 
     private SleeperInstanceStacks() {
     }
 
+    /**
+     * Adds an instance of Sleeper to the CDK app.
+     *
+     * @param scope         the scope to add the Sleeper instance to
+     * @param configuration the configuration of the instance
+     * @param s3Client      the S3 client to use to scan the jars bucket for jars to deploy
+     */
+    public static void create(Construct scope, DeployInstanceConfiguration configuration, S3Client s3Client) {
+        SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, configuration.getInstanceProperties());
+        create(scope, configuration, jars);
+    }
+
+    /**
+     * Adds an instance of Sleeper to the CDK app.
+     *
+     * @param scope         the scope to add the Sleeper instance to
+     * @param configuration the configuration of the instance
+     * @param jars          a pointer to the jars in S3 to use to deploy lambdas
+     */
     public static void create(Construct scope, DeployInstanceConfiguration configuration, SleeperJarsInBucket jars) {
         InstanceProperties instanceProperties = configuration.getInstanceProperties();
 

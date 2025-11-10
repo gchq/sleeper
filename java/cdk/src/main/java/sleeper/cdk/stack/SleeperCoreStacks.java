@@ -77,7 +77,7 @@ public class SleeperCoreStacks {
     private final AutoStopEcsClusterTasksStack autoStopEcsStack;
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
-    public SleeperCoreStacks(
+    private SleeperCoreStacks(
             LoggingStack loggingStack, TopicStack topicStack, List<IMetric> errorMetrics,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
