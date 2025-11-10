@@ -23,7 +23,7 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.FoundCompactionJobs;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow1;
@@ -51,12 +51,12 @@ import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.fi
 public class CompactionCreationST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(COMPACTION_CREATION);
     }
 
     @Test
-    void shouldCreateLargeQuantitiesOfCompactionJobsAtOnce(SleeperSystemTest sleeper) throws Exception {
+    void shouldCreateLargeQuantitiesOfCompactionJobsAtOnce(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
@@ -84,7 +84,7 @@ public class CompactionCreationST {
     }
 
     @Test
-    void shouldSendBadCompactionBatchToDeadLetterQueue(SleeperSystemTest sleeper) throws Exception {
+    void shouldSendBadCompactionBatchToDeadLetterQueue(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         FileReference inputFile = fileFactory(sleeper).rootFile("input.parquet", 100);

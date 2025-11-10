@@ -55,7 +55,7 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 
 /**
  * The interface for the system test DSL to interact with Sleeper and the deployed environment. Where
- * {@link SleeperSystemTest} defines the language for interacting with Sleeper, the implementation is defined
+ * {@link SleeperDsl} defines the language for interacting with Sleeper, the implementation is defined
  * by drivers that can be accessed through an implementation of this interface.
  */
 public interface SystemTestDrivers {

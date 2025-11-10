@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.OptionalStack;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow2;
 
@@ -43,17 +43,17 @@ public class RedeployOptionalStacksST {
     }
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(REENABLE_OPTIONAL_STACKS);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperDsl sleeper) {
         sleeper.disableOptionalStacks(OptionalStack.all());
     }
 
     @Test
-    void shouldDisableAndReenableAllOptionalStacks(SleeperSystemTest sleeper) {
+    void shouldDisableAndReenableAllOptionalStacks(SleeperDsl sleeper) {
         sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
         sleeper.disableOptionalStacks(OptionalStack.all());
         sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);

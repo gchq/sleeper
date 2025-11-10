@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.OptionalStack;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
@@ -50,7 +50,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_E
 public class EksBulkImportST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, SystemTestParameters parameters) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting, SystemTestParameters parameters) {
         if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
             return;
         }
@@ -60,7 +60,7 @@ public class EksBulkImportST {
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper, SystemTestParameters parameters) {
+    void tearDown(SleeperDsl sleeper, SystemTestParameters parameters) {
         if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
             return;
         }
@@ -68,7 +68,7 @@ public class EksBulkImportST {
     }
 
     @Test
-    void shouldBulkImport100Rows(SleeperSystemTest sleeper, SystemTestParameters parameters) {
+    void shouldBulkImport100Rows(SleeperDsl sleeper, SystemTestParameters parameters) {
         // This is intended to ignore this test when running in an environment where log retention must not be set.
         // This is because we're currently unable to prevent an EKS cluster deployment from creating log groups with log
         // retention set. See the following issue:

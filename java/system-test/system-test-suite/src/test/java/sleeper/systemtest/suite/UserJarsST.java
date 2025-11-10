@@ -24,7 +24,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -47,7 +47,7 @@ public class UserJarsST {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(MAIN);
         sleeper.tables().createWithProperties("test",
                 Schema.builder()
@@ -61,7 +61,7 @@ public class UserJarsST {
     }
 
     @Test
-    void shouldApplyTableIteratorFromUserJarDuringIngest(SleeperSystemTest sleeper) throws Exception {
+    void shouldApplyTableIteratorFromUserJarDuringIngest(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.sourceFiles().createWithNumberedRows("test.parquet", LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
@@ -77,7 +77,7 @@ public class UserJarsST {
     }
 
     @Test
-    void shouldApplyTableIteratorFromUserJarDuringCompaction(SleeperSystemTest sleeper) throws Exception {
+    void shouldApplyTableIteratorFromUserJarDuringCompaction(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
@@ -93,7 +93,7 @@ public class UserJarsST {
     }
 
     @Test
-    void shouldApplyTableIteratorFromUserJarDuringQuery(SleeperSystemTest sleeper) throws Exception {
+    void shouldApplyTableIteratorFromUserJarDuringQuery(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
@@ -109,7 +109,7 @@ public class UserJarsST {
     }
 
     @Test
-    void shouldApplyQueryIteratorFromUserJar(SleeperSystemTest sleeper) throws Exception {
+    void shouldApplyQueryIteratorFromUserJar(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 

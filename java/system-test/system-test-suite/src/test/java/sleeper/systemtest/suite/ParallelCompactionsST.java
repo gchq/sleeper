@@ -22,7 +22,7 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -46,13 +46,13 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMP
 public class ParallelCompactionsST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) throws Exception {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) throws Exception {
         sleeper.connectToInstanceNoTables(PARALLEL_COMPACTIONS);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @Test
-    void shouldApplyOneCompactionPerPartition(SleeperSystemTest sleeper) {
+    void shouldApplyOneCompactionPerPartition(SleeperDsl sleeper) {
         // Given we configure to compact many partitions
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",

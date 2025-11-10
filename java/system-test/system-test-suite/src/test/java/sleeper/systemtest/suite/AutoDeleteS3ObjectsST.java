@@ -24,7 +24,7 @@ import sleeper.core.properties.model.OptionalStack;
 import sleeper.core.row.Row;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.suite.testutil.SystemTest;
 import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
@@ -45,17 +45,17 @@ public class AutoDeleteS3ObjectsST {
     Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(REENABLE_OPTIONAL_STACKS);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperDsl sleeper) {
         sleeper.disableOptionalStacks(OptionalStack.all());
     }
 
     @Test
-    void shouldRemoveQueryStackWithDataInQueryBucket(SleeperSystemTest sleeper) {
+    void shouldRemoveQueryStackWithDataInQueryBucket(SleeperDsl sleeper) {
         // When there is data in the query results bucket
         sleeper.enableOptionalStacks(List.of(OptionalStack.QueryStack));
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
@@ -30,19 +30,19 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 public class AwsSleeperTablesDriverIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
     }
 
     @Test
-    void shouldAddOneTable(SleeperSystemTest sleeper) {
+    void shouldAddOneTable(SleeperDsl sleeper) {
         sleeper.tables().create("A", DEFAULT_SCHEMA);
         assertThat(sleeper.tables().list())
                 .containsExactly(sleeper.table("A").tableProperties().getStatus());
     }
 
     @Test
-    void shouldInitialiseTablePartitions(SleeperSystemTest sleeper) {
+    void shouldInitialiseTablePartitions(SleeperDsl sleeper) {
         sleeper.tables().create("A", DEFAULT_SCHEMA);
         assertThat(sleeper.table("A").partitioning().tree().getAllPartitions())
                 .hasSize(1);

@@ -1,0 +1,105 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sleeper.systemtest.dsl.ingest;
+
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
+import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
+import sleeper.systemtest.dsl.util.WaitForJobs;
+
+import java.nio.file.Path;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+
+public class IngestDsl {
+    private final SystemTestContext context;
+    private final SystemTestDrivers baseDrivers;
+    private final SystemTestDrivers adminDrivers;
+
+    public IngestDsl(SystemTestContext context, SystemTestDrivers baseDrivers) {
+        this.context = context;
+        this.baseDrivers = baseDrivers;
+        this.adminDrivers = context.instance().adminDrivers();
+    }
+
+    public IngestDsl setType(IngestTypeDsl type) {
+        type.applyTo(instance());
+        return this;
+    }
+
+    public IngestBatcherDsl batcher() {
+        return new IngestBatcherDsl(context, adminDrivers);
+    }
+
+    public DirectIngestDsl direct(Path tempDir) {
+        return new DirectIngestDsl(instance(), adminDrivers.directIngest(context), tempDir);
+    }
+
+    public IngestToStateStoreDsl toStateStore() {
+        return new IngestToStateStoreDsl(context);
+    }
+
+    public IngestByQueueDsl byQueue() {
+        return new IngestByQueueDsl(sourceFiles(), ingestByQueue(), INGEST_JOB_QUEUE_URL, tasksDriver(), waitForIngest(), pollDriver());
+    }
+
+    public IngestByQueueDsl bulkImportByQueue() {
+        return new IngestByQueueDsl(sourceFiles(), ingestByQueue(), BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, noTasksDriverForBulkImport(), waitForBulkImport(), pollDriver());
+    }
+
+    public DirectBulkImportDsl directEmrServerless() {
+        return new DirectBulkImportDsl(
+                instance(), sourceFiles(), baseDrivers.directEmrServerless(context), waitForBulkImport());
+    }
+
+    private SystemTestInstanceContext instance() {
+        return context.instance();
+    }
+
+    private IngestSourceFilesContext sourceFiles() {
+        return context.sourceFiles();
+    }
+
+    private IngestByQueue ingestByQueue() {
+        return adminDrivers.ingestByQueue(context);
+    }
+
+    private IngestTasksDriver noTasksDriverForBulkImport() {
+        return () -> {
+            throw new IllegalArgumentException("Bulk import does not use tasks.");
+        };
+    }
+
+    private IngestTasksDriver tasksDriver() {
+        return adminDrivers.ingestTasks(context);
+    }
+
+    private WaitForJobs waitForIngest() {
+        return adminDrivers.waitForIngest(context);
+    }
+
+    private WaitForJobs waitForBulkImport() {
+        return adminDrivers.waitForBulkImport(context);
+    }
+
+    private PollWithRetriesDriver pollDriver() {
+        return adminDrivers.pollWithRetries();
+    }
+}

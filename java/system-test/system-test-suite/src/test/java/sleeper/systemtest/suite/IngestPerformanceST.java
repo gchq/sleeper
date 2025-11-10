@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -41,13 +41,13 @@ import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.nu
 public class IngestPerformanceST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceAddOnlineTable(INGEST_PERFORMANCE);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
     @Test
-    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperSystemTest sleeper) {
+    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions(SleeperDsl sleeper) {
         sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
         sleeper.systemTestCluster()
                 .runDataGenerationJobs(11,
