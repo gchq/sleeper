@@ -18,12 +18,12 @@ package sleeper.cdk;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
-import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
-import sleeper.cdk.stack.SleeperInstanceStack;
+import sleeper.cdk.stack.SleeperInstanceStacks;
 import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DeployInstanceConfiguration;
@@ -56,12 +56,11 @@ public class SleeperCdkApp {
                 .build();
         try (S3Client s3Client = S3Client.create()) {
             SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
-
-            new SleeperInstanceStack(app, id, StackProps.builder()
+            Stack stack = Stack.Builder.create(app, id)
                     .stackName(id)
                     .env(environment)
-                    .build(),
-                    configuration, jars).create();
+                    .build();
+            SleeperInstanceStacks.create(stack, configuration, jars);
             instanceProperties.getTags()
                     .forEach((key, value) -> Tags.of(app).add(key, value));
 
