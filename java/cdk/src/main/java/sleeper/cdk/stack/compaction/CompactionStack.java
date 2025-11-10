@@ -70,7 +70,7 @@ public class CompactionStack extends NestedStack {
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         jobResources = new CompactionJobResources(this,
-                instanceProperties, lambdaCode, jarsBucket, topic, coreStacks, errorMetrics);
+                instanceProperties, lambdaCode, jarsBucket, coreStacks);
 
         new CompactionTaskResources(this,
                 instanceProperties, lambdaCode, jarsBucket, jobResources, topic, coreStacks, errorMetrics);
