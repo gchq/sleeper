@@ -115,8 +115,8 @@ public class SleeperCoreStacks {
             LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
                     + "in very significant NAT charges.");
         }
-        TopicStack topicStack = new TopicStack(scope, "Topic", instanceProperties);
-        TrackDeadLetters deadLetters = new TrackDeadLetters(instanceProperties, topicStack);
+        TrackDeadLetters deadLetters = new TrackDeadLetters(instanceProperties,
+                new TopicStack(scope, "Topic", instanceProperties));
 
         // Custom resource providers
         AutoStopEcsClusterTasksStack autoStopEcsStack = new AutoStopEcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
