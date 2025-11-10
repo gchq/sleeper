@@ -106,10 +106,9 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks, jarsBucket);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                BulkImportPlatform.EMRServerless, instanceProperties, coreStacks, errorMetrics);
+                BulkImportPlatform.EMRServerless, instanceProperties, coreStacks);
         bulkImportJobQueue = commonHelper.createJobQueue(
-                BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
-                errorsTopic);
+                BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN);
 
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 bulkImportJobQueue, lambdaCode, importBucketStack.getImportBucket(),

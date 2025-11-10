@@ -89,10 +89,9 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             List<IMetric> errorMetrics) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, BulkImportPlatform.PersistentEMR, instanceProperties, coreStacks, errorMetrics);
+                this, BulkImportPlatform.PersistentEMR, instanceProperties, coreStacks);
         bulkImportJobQueue = commonHelper.createJobQueue(
-                BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN,
-                errorsTopic);
+                BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_PERSISTENT_START, commonEmrStack);
