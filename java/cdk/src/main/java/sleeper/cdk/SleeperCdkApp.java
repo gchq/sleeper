@@ -59,7 +59,7 @@ import sleeper.cdk.stack.core.TopicStack;
 import sleeper.cdk.stack.core.TransactionLogSnapshotStack;
 import sleeper.cdk.stack.core.TransactionLogStateStoreStack;
 import sleeper.cdk.stack.core.TransactionLogTransactionStack;
-import sleeper.cdk.stack.core.VpcStack;
+import sleeper.cdk.stack.core.VpcCheckStack;
 import sleeper.cdk.stack.ingest.IngestBatcherStack;
 import sleeper.cdk.stack.ingest.IngestStack;
 import sleeper.cdk.stack.ingest.IngestStacks;
@@ -136,7 +136,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Checking VPC configuration
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
-            new VpcStack(this, "Vpc", instanceProperties, jars, loggingStack);
+            new VpcCheckStack(this, "Vpc", instanceProperties, jars, loggingStack);
         } else {
             LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
                     + "in very significant NAT charges.");

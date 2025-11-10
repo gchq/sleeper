@@ -41,9 +41,9 @@ import java.util.Map;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
-public class VpcStack extends NestedStack {
+public class VpcCheckStack extends NestedStack {
 
-    public VpcStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, LoggingStack logging) {
+    public VpcCheckStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, LoggingStack logging) {
         super(scope, id);
 
         // Jars bucket
