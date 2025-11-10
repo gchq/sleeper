@@ -43,6 +43,11 @@ import sleeper.cdk.stack.core.StateStoreCommitterStack;
 import sleeper.cdk.stack.core.StateStoreStacks;
 import sleeper.cdk.stack.core.TableDataStack;
 import sleeper.cdk.stack.core.TableIndexStack;
+import sleeper.cdk.stack.core.TopicStack;
+import sleeper.cdk.stack.core.TransactionLogSnapshotStack;
+import sleeper.cdk.stack.core.TransactionLogStateStoreStack;
+import sleeper.cdk.stack.core.TransactionLogTransactionStack;
+import sleeper.cdk.stack.core.VpcCheckStack;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
 import sleeper.core.properties.instance.InstanceProperties;
 
