@@ -32,7 +32,7 @@ public class BuiltJarsIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final BuiltJars builtJars = BuiltJars.from(s3Client, instanceProperties);
+    private final SleeperJarsInBucket builtJars = SleeperJarsInBucket.from(s3Client, instanceProperties);
 
     @Test
     void shouldGetLatestVersionOfAJar() {

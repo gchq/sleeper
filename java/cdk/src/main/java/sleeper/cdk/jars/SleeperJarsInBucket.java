@@ -31,9 +31,9 @@ import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PRE
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
-public class BuiltJars {
+public class SleeperJarsInBucket {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(BuiltJars.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarsInBucket.class);
 
     private final S3Client s3;
     private final String bucketName;
@@ -41,15 +41,15 @@ public class BuiltJars {
     private final String ecrRepositoryPrefix;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    private BuiltJars(S3Client s3, String bucketName, LambdaDeployType deployType, String ecrRepositoryPrefix) {
+    private SleeperJarsInBucket(S3Client s3, String bucketName, LambdaDeployType deployType, String ecrRepositoryPrefix) {
         this.s3 = s3;
         this.bucketName = bucketName;
         this.deployType = deployType;
         this.ecrRepositoryPrefix = ecrRepositoryPrefix;
     }
 
-    public static BuiltJars from(S3Client s3, InstanceProperties instanceProperties) {
-        return new BuiltJars(s3,
+    public static SleeperJarsInBucket from(S3Client s3, InstanceProperties instanceProperties) {
+        return new SleeperJarsInBucket(s3,
                 instanceProperties.get(JARS_BUCKET),
                 instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
                 instanceProperties.get(ECR_REPOSITORY_PREFIX));

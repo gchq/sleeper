@@ -23,8 +23,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -41,7 +41,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 public class PropertiesStack extends NestedStack {
 
     public PropertiesStack(
-            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         // Jars bucket

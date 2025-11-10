@@ -36,11 +36,11 @@ import java.util.function.Consumer;
 
 public class LambdaCode {
 
-    private final BuiltJars builtJars;
+    private final SleeperJarsInBucket builtJars;
     private final LambdaDeployType deployType;
     private final IBucket bucket;
 
-    LambdaCode(BuiltJars builtJars, LambdaDeployType deployType, IBucket bucket) {
+    LambdaCode(SleeperJarsInBucket builtJars, LambdaDeployType deployType, IBucket bucket) {
         this.builtJars = builtJars;
         this.deployType = deployType;
         this.bucket = bucket;

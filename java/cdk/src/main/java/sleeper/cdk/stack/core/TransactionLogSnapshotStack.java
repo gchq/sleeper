@@ -30,8 +30,8 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -71,7 +71,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
     public TransactionLogSnapshotStack(
             Construct scope, String id,
-            InstanceProperties instanceProperties, BuiltJars jars, SleeperCoreStacks coreStacks,
+            InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);

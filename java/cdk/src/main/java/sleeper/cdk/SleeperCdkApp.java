@@ -27,7 +27,7 @@ import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.AthenaStack;
 import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
@@ -90,7 +90,7 @@ public class SleeperCdkApp extends Stack {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCdkApp.class);
 
     private final InstanceProperties instanceProperties;
-    private final BuiltJars jars;
+    private final SleeperJarsInBucket jars;
     private final App app;
     private SleeperCoreStacks coreStacks;
     private IngestStacks ingestStacks;
@@ -115,7 +115,7 @@ public class SleeperCdkApp extends Stack {
     private boolean generateLoggingStack = true;
     private boolean generateProperties = true;
 
-    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
+    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
         super(app, id, props);
         this.app = app;
         this.instanceProperties = instanceProperties;
@@ -424,7 +424,7 @@ public class SleeperCdkApp extends Stack {
                 .region(instanceProperties.get(REGION))
                 .build();
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = BuiltJars.from(s3Client, instanceProperties);
+            SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
 
             new SleeperCdkApp(app, id, StackProps.builder()
                     .stackName(id)
