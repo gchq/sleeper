@@ -246,7 +246,7 @@ automated deployment script:
 * `sleeper.subnets` - multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
-* `sleeper.retain.logs.after.destroy` - set to false so the the log groups are removed after running CDK destroy.
+* `sleeper.retain.logs.after.destroy` - set to true so the log groups are retained after running CDK destroy.
 
 You will also need to ensure your Docker images are in ECR repositories with the correct names. If you followed the
 steps above this will already be correct. Each repository must have the expected name appended to a prefix,
@@ -256,9 +256,8 @@ the `scripts/docker` folder that is created when the system is built.
 
 Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false when deploying then however you
 choose to tear down Sleeper later on you will also need to destroy some further S3 buckets and DynamoDB tables manually.
-This is because by default they are kept.  The default setting of property `sleeper.retain.logs.after.destroy` is false.
-This means all log groups will be deleted when the Sleeper instance is torn down.
-Change this to true to retain log groups for further analysis.
+This is because by default they are kept.  The default setting of property `sleeper.retain.logs.after.destroy` is true.
+This means all log groups will be retained when the Sleeper instance is torn down.
 
 Please ensure you predefine split points for your table. See [tables](../usage/tables.md#pre-split-partitions) for how
 to do this. If you decide not to set split points, your state store will be initialised with a single root partition.

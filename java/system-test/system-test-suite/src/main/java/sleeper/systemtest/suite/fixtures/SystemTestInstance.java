@@ -120,7 +120,7 @@ public class SystemTestInstance {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
-        properties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
+        properties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.setTags(Map.of(

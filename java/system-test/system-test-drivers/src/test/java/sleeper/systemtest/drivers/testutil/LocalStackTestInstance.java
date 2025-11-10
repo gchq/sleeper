@@ -59,7 +59,7 @@ public class LocalStackTestInstance {
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
-        properties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
+        properties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         properties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
 
         TableProperties tableProperties = new TableProperties(properties);

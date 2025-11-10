@@ -59,22 +59,18 @@ heap space") then this is likely due to the tasks not being able to store the sp
 Try reducing the number of rows that will be held in memory. When reducing this parameter it is a good idea to also
 reduce the number of rows held on the local disk.
 
-## Resolving Sleeper Instance Re-creation Failures
+## Sleeper instance re-creation failures
 
-If you attempt to re-create a Sleeper instance using the same instance ID shortly after destroying it, the deployment is likely to fail.
+If you attempt to re-create a Sleeper instance using the same instance ID, but resources have been retained from the previous deployment, the deployment will fail.
 
-The core issue is that the new deployment will attempt to create resources (like S3 buckets or log groups) that still exist from the previous instance, resulting in an "resource already exists" error.
+The core issue is that the new deployment will attempt to create resources (like S3 buckets or log groups) that still exist from the previous instance, resulting in a "resource already exists" error.
 
-### Improving the CDK Deployment Cleanup Process
+To successfully recreate the instance with the same ID, you must manually ensure a complete cleanup of all remnant resources.
+
+### Configuration when destroying an instance
+
 The CDK deployment process offers two configuration options to control the retention of AWS resources when the stack is destroyed:
 
 - Data and Query Buckets: You can configure the deployment to prevent the deletion of the S3 buckets used for tables and query results. This is managed by setting the instance property `sleeper.retain.infra.after.destroy`.
 
 - CloudWatch Log Groups: Similarly, you can ensure that the associated log groups are retained after the deployment is destroyed. This retention is controlled by the instance property `sleeper.retain.logs.after.destroy`.
-
-### Troubleshooting cdk destroy Failures
-If the resources are not retained but you still find elements left behind, it may indicate that the `cdk destroy` command partially failed.
-
-This typically occurs when there are active tasks running on ECS or EMR clusters. In such a scenario, the cluster cannot be destroyed until all of its tasks have either completed or been terminated.
-
-To successfully recreate the instance with the same ID, you must manually ensure a complete cleanup of all remnant resources.

@@ -77,7 +77,7 @@ public class InMemoryTestInstance {
     public static InstanceProperties createDslInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
-        instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "false");
+        instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "in-memory-ingest-job-queue-url");
