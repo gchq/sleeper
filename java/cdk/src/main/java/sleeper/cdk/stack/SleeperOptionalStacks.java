@@ -115,10 +115,8 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.EksBulkImportStack)) {
             eksBulkImportStack = new EksBulkImportStack(scope, "BulkImportEKS",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
                     bulkImportBucketStack,
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    coreStacks);
         }
 
         // Stack to run bulk export jobs
