@@ -17,6 +17,9 @@
 package sleeper.cdk.stack.core;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
@@ -24,20 +27,30 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sns.ITopic;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.constructs.Construct;
 
+import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
+
 public class SleeperCoreStacks {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCoreStacks.class);
 
     private final LoggingStack loggingStack;
+    private final TopicStack topicStack;
+    private final List<IMetric> errorMetrics;
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
     private final ManagedPoliciesStack policiesStack;
@@ -49,7 +62,10 @@ public class SleeperCoreStacks {
     private final AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     private final AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
 
-    public SleeperCoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
+    public SleeperCoreStacks(
+            LoggingStack loggingStack, TopicStack topicStack, List<IMetric> errorMetrics,
+            ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestTrackerResources ingestTracker,
@@ -57,6 +73,8 @@ public class SleeperCoreStacks {
             AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
             AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         this.loggingStack = loggingStack;
+        this.topicStack = topicStack;
+        this.errorMetrics = errorMetrics;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
         this.policiesStack = policiesStack;
@@ -67,6 +85,58 @@ public class SleeperCoreStacks {
         this.compactionTracker = compactionTracker;
         this.autoDeleteS3ObjectsStack = autoDeleteS3ObjectsStack;
         this.autoStopEcsClusterTasksStack = autoStopEcsClusterTasksStack;
+    }
+
+    public static SleeperCoreStacks create(
+            Construct scope, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
+        LoggingStack loggingStack = new LoggingStack(scope, "Logging", instanceProperties);
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
+        return create(scope, instanceProperties, jars, loggingStack, autoDeleteS3Stack);
+    }
+
+    public static SleeperCoreStacks create(
+            Construct scope, InstanceProperties instanceProperties, SleeperJarsInBucket jars, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
+        if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
+            new VpcCheckStack(scope, "Vpc", instanceProperties, jars, loggingStack);
+        } else {
+            LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
+                    + "in very significant NAT charges.");
+        }
+        TopicStack topicStack = new TopicStack(scope, "Topic", instanceProperties);
+        List<IMetric> errorMetrics = new ArrayList<>();
+        AutoStopEcsClusterTasksStack autoStopEcsStack = new AutoStopEcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
+        ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(scope, "Policies", instanceProperties);
+        TableDataStack dataStack = new TableDataStack(scope, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
+        TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
+                scope, "TransactionLogStateStore", instanceProperties, dataStack);
+        StateStoreStacks stateStoreStacks = new StateStoreStacks(transactionLogStateStoreStack, policiesStack);
+        IngestTrackerResources ingestTracker = IngestTrackerResources.from(
+                scope, "IngestTracker", instanceProperties, policiesStack);
+        CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
+                scope, "CompactionTracker", instanceProperties, policiesStack);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(scope, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
+        TableIndexStack tableIndexStack = new TableIndexStack(scope, "TableIndex", instanceProperties, policiesStack);
+        StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(scope, "StateStoreCommitter",
+                instanceProperties, jars,
+                loggingStack, configBucketStack, tableIndexStack,
+                stateStoreStacks, ingestTracker, compactionTracker,
+                policiesStack, topicStack.getTopic(), errorMetrics);
+        SleeperCoreStacks stacks = new SleeperCoreStacks(loggingStack, topicStack, errorMetrics,
+                configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
+                stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3Stack, autoStopEcsStack);
+        new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
+                instanceProperties, jars, stacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
+        new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
+                instanceProperties, jars, stacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
+        return stacks;
+    }
+
+    public ITopic getAlertsTopic() {
+        return topicStack.getTopic();
+    }
+
+    public List<IMetric> getErrorMetrics() {
+        return errorMetrics;
     }
 
     public ILogGroup getLogGroup(LogGroupRef logGroupRef) {

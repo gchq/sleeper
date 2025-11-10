@@ -165,7 +165,7 @@ public class SleeperInstanceStack extends Stack {
                 stateStoreStacks, ingestTracker, compactionTracker,
                 policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new SleeperCoreStacks(
-                loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
+                loggingStack, topicStack, errorMetrics, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3ObjectsStack, autoStopEcsClusterTasksStack);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
