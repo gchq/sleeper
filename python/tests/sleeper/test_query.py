@@ -18,11 +18,13 @@ from tests.sleeper.properties.instance_properties_helper import create_test_inst
 class MatchesQueryJson:
     def __init__(self, expected_json: str):
         self.expected_json = expected_json
+
     def __eq__(self, other) -> bool:
         try:
             return other.to_json() == self.expected_json
         except Exception:
             return False
+
 
 def should_send_exact_query_with_client(sleeper_client: SleeperClient, query_resource: Queue, mocker: MockerFixture):
     # Given
@@ -104,6 +106,7 @@ async def should_send_exact_query_with_client_via_web_socket(sleeper_client: Sle
 
     # Then
     assert mock_process.call_args_list == [call(ANY, MatchesQueryJson(expected_query))]
+
 
 @pytest.mark.asyncio
 async def should_send_range_query_with_client_via_web_socket(sleeper_client: SleeperClient, mocker: MockerFixture):
