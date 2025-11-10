@@ -20,7 +20,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::datafusion::{CompactionResult, LeafPartitionQuery};
+use crate::{
+    datafusion::{CompactionResult, LeafPartitionQuery},
+    sleeper_context::SleeperContext,
+};
 use color_eyre::eyre::Result;
 
 mod common_config;
@@ -48,8 +51,8 @@ pub use datafusion::{
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
-/// # use crate::sleeper_core::{run_compaction, CommonConfig, CommonConfigBuilder, PartitionBound, ColRange,
-/// # OutputType, SleeperParquetOptions, SleeperRegion};
+/// # use crate::sleeper_core::{sleeper_context::SleeperContext, run_compaction, CommonConfig, CommonConfigBuilder,
+/// # PartitionBound, ColRange, OutputType, SleeperParquetOptions, SleeperRegion};
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// region.insert("key".into(), ColRange {
@@ -68,7 +71,7 @@ pub use datafusion::{
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
 /// # tokio_test::block_on(async {
-/// let result = run_compaction(&compaction_input).await;
+/// let result = run_compaction(&compaction_input, &SleeperContext::default()).await;
 /// # });
 /// # Ok(())
 /// # }
@@ -77,7 +80,10 @@ pub use datafusion::{
 /// # Errors
 /// There must be at least one input file.
 ///
-pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResult> {
+pub async fn run_compaction(
+    config: &CommonConfig<'_>,
+    sleeper_context: &SleeperContext,
+) -> Result<CompactionResult> {
     let store_factory = config.create_object_store_factory().await;
     crate::datafusion::compact(&store_factory, config)
         .await
@@ -93,8 +99,8 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// # use url::Url;
 /// # use aws_types::region::Region;
 /// # use std::collections::HashMap;
-/// # use crate::sleeper_core::{run_query, CommonConfigBuilder, PartitionBound, ColRange,
-/// # OutputType, SleeperParquetOptions, SleeperRegion};
+/// # use crate::sleeper_core::{sleeper_context::SleeperContext, run_query, CommonConfigBuilder,
+/// PartitionBound, ColRange, OutputType, SleeperParquetOptions, SleeperRegion};
 /// # use sleeper_core::LeafPartitionQueryConfig;
 /// # fn main() -> Result<(), color_eyre::eyre::Report> {
 /// let mut region : HashMap<String, ColRange<'_>> = HashMap::new();
@@ -125,7 +131,7 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// leaf_config.ranges = vec![SleeperRegion::new(query_region)];
 ///
 /// # tokio_test::block_on(async {
-/// let result = run_query(&leaf_config).await;
+/// let result = run_query(&leaf_config, &SleeperContext::default()).await;
 /// # });
 /// # Ok(())
 /// # }
@@ -135,7 +141,10 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
 /// There must be at least one input file.
 /// There must be at least one query region specified.
 ///
-pub async fn run_query(config: &LeafPartitionQueryConfig<'_>) -> Result<CompletedOutput> {
+pub async fn run_query(
+    config: &LeafPartitionQueryConfig<'_>,
+    sleeper_context: &SleeperContext,
+) -> Result<CompletedOutput> {
     let store_factory = config.common.create_object_store_factory().await;
 
     LeafPartitionQuery::new(config, &store_factory)
