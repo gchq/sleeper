@@ -1,8 +1,6 @@
 import json
 
 import pytest
-from mypy_boto3_dynamodb.service_resource import Table
-from mypy_boto3_s3.service_resource import Bucket
 from mypy_boto3_sqs.service_resource import Queue
 from pytest_mock import MockerFixture
 
@@ -16,7 +14,7 @@ from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
 
 
-def should_send_extact_query_with_client(sleeper_client: SleeperClient, query: Queue, mocker: MockerFixture):
+def should_send_exact_query_with_client(sleeper_client: SleeperClient, query_resource: Queue, mocker: MockerFixture):
     # Given
     table_name = "test-table"
     query_id = "test-query"
@@ -43,12 +41,12 @@ def should_send_extact_query_with_client(sleeper_client: SleeperClient, query: Q
         }
     ]
 
-    messages = receive_messages(query)
+    messages = receive_messages(query_resource)
 
     assert messages == expected_message_json
 
 
-def should_send_range_query_with_client(sleeper_client: SleeperClient, query: Queue, mocker: MockerFixture):
+def should_send_range_query_with_client(sleeper_client: SleeperClient, query_resource: Queue, mocker: MockerFixture):
     # Given
     table_name = "test-table"
     query_id = "test-query"
@@ -74,7 +72,7 @@ def should_send_range_query_with_client(sleeper_client: SleeperClient, query: Qu
         }
     ]
 
-    messages = receive_messages(query)
+    messages = receive_messages(query_resource)
 
     assert messages == expected_message_json
 
@@ -134,31 +132,19 @@ def sleeper_client(properties: InstanceProperties) -> SleeperClient:
 
 
 @pytest.fixture
-def properties(query: Queue, table: Table, bucket: Bucket) -> InstanceProperties:
+def properties(query_resource: Queue) -> InstanceProperties:
     properties = create_test_instance_properties()
-    properties.set(QueryCdkProperty.QUERY_QUEUE_URL, query.url)
-    properties.set(QueryCdkProperty.QUERY_TRACKER_TABLE, table.table_name)
-    properties.set(QueryCdkProperty.QUERY_RESULTS_BUCKET, bucket.name)
+    properties.set(QueryCdkProperty.QUERY_QUEUE_URL, query_resource.url)
     properties.set(QueryCdkProperty.QUERY_WEBSOCKET_URL, "ws://localhost:7777/_aws/ws/api_id/test")
     properties.set(CommonCdkProperty.REGION, "eu-west-2")
     return properties
 
 
 @pytest.fixture
-def query() -> Queue:
+def query_resource() -> Queue:
     return LocalStack.create_queue()
 
 
-@pytest.fixture
-def bucket() -> Bucket:
-    return LocalStack.create_bucket()
-
-
-@pytest.fixture
-def table() -> Table:
-    return LocalStack.create_table()
-
-
-def receive_messages(queue: Queue):
-    messages = queue.receive_messages(WaitTimeSeconds=0)
+def receive_messages(queue_resource: Queue):
+    messages = queue_resource.receive_messages(WaitTimeSeconds=0)
     return list(map(lambda message: json.loads(message.body), messages))
