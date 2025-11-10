@@ -44,7 +44,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_DLQ_URL;
@@ -117,10 +116,7 @@ public class TableMetricsStack extends NestedStack {
         instanceProperties.set(TABLE_METRICS_QUEUE_ARN, queue.getQueueArn());
         instanceProperties.set(TABLE_METRICS_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(TABLE_METRICS_DLQ_ARN, deadLetterQueue.getQueueArn());
-        createAlarmForDlq(this, "MetricsJobAlarm",
-                "Alarms if there are any messages on the dead letter queue for the table metrics queue",
-                deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "MetricsJobAlarm", "table metrics", deadLetterQueue);
         tableMetricsPublisher.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE))
                 .maxConcurrency(instanceProperties.getIntOrNull(METRICS_LAMBDA_CONCURRENCY_MAXIMUM))

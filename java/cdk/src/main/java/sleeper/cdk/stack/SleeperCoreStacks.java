@@ -29,6 +29,7 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.IQueue;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
@@ -49,11 +50,11 @@ import sleeper.cdk.stack.core.TransactionLogStateStoreStack;
 import sleeper.cdk.stack.core.TransactionLogTransactionStack;
 import sleeper.cdk.stack.core.VpcCheckStack;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
+import sleeper.cdk.util.TrackDeadLetters;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import javax.annotation.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -63,8 +64,7 @@ public class SleeperCoreStacks {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCoreStacks.class);
 
     private final LoggingStack loggingStack;
-    private final TopicStack topicStack;
-    private final List<IMetric> errorMetrics;
+    private final TrackDeadLetters deadLetters;
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
     private final ManagedPoliciesStack policiesStack;
@@ -78,7 +78,7 @@ public class SleeperCoreStacks {
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     private SleeperCoreStacks(
-            LoggingStack loggingStack, TopicStack topicStack, List<IMetric> errorMetrics,
+            LoggingStack loggingStack, TrackDeadLetters deadLetters,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
@@ -87,8 +87,7 @@ public class SleeperCoreStacks {
             AutoDeleteS3ObjectsStack autoDeleteS3Stack,
             AutoStopEcsClusterTasksStack autoStopEcsStack) {
         this.loggingStack = loggingStack;
-        this.topicStack = topicStack;
-        this.errorMetrics = errorMetrics;
+        this.deadLetters = deadLetters;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
         this.policiesStack = policiesStack;
@@ -117,7 +116,7 @@ public class SleeperCoreStacks {
                     + "in very significant NAT charges.");
         }
         TopicStack topicStack = new TopicStack(scope, "Topic", instanceProperties);
-        List<IMetric> errorMetrics = new ArrayList<>();
+        TrackDeadLetters deadLetters = new TrackDeadLetters(instanceProperties, topicStack);
 
         // Custom resource providers
         AutoStopEcsClusterTasksStack autoStopEcsStack = new AutoStopEcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
@@ -138,26 +137,30 @@ public class SleeperCoreStacks {
                 instanceProperties, jars,
                 loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestTracker, compactionTracker,
-                policiesStack, topicStack.getTopic(), errorMetrics);
+                policiesStack, deadLetters);
 
-        SleeperCoreStacks stacks = new SleeperCoreStacks(loggingStack, topicStack, errorMetrics,
+        SleeperCoreStacks stacks = new SleeperCoreStacks(loggingStack, deadLetters,
                 configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3Stack, autoStopEcsStack);
 
         // Table state store maintenance
         new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
-                instanceProperties, jars, stacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
+                instanceProperties, jars, stacks, transactionLogStateStoreStack, topicStack.getTopic(), deadLetters.getErrorMetrics());
         new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
-                instanceProperties, jars, stacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
+                instanceProperties, jars, stacks, transactionLogStateStoreStack, topicStack.getTopic(), deadLetters.getErrorMetrics());
         return stacks;
     }
 
     public Topic getAlertsTopic() {
-        return topicStack.getTopic();
+        return deadLetters.getTopic();
+    }
+
+    public void alarmOnDeadLetters(Construct scope, String id, String description, Queue dlq) {
+        deadLetters.alarmOnDeadLetters(scope, id, description, dlq);
     }
 
     public List<IMetric> getErrorMetrics() {
-        return errorMetrics;
+        return deadLetters.getErrorMetrics();
     }
 
     public LoggingStack getLoggingStack() {
