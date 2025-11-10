@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.Row;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -36,12 +36,12 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class EmrServerlessBulkImportST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Test
-    void shouldBulkImportOneRowWithEmrServerlessByQueue(SleeperSystemTest sleeper) {
+    void shouldBulkImportOneRowWithEmrServerlessByQueue(SleeperDsl sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Row row = new Row(Map.of(
@@ -60,7 +60,7 @@ public class EmrServerlessBulkImportST {
     }
 
     @Test
-    void shouldBulkImportOneRowWithEmrServerlessDirectly(SleeperSystemTest sleeper) {
+    void shouldBulkImportOneRowWithEmrServerlessDirectly(SleeperDsl sleeper) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",

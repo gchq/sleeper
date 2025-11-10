@@ -24,7 +24,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
@@ -51,13 +51,13 @@ public class PartitionSplittingST {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceNoTables(MAIN);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::partitionStatus);
     }
 
     @Test
-    void shouldSplitPartitionsWith100RowsAndThresholdOf20(SleeperSystemTest sleeper) {
+    void shouldSplitPartitionsWith100RowsAndThresholdOf20(SleeperDsl sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",

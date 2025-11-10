@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.row.Row;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -40,18 +40,18 @@ public class SetupInstanceST {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Test
-    void shouldConnectToInstance(SleeperSystemTest sleeper) {
+    void shouldConnectToInstance(SleeperDsl sleeper) {
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
     }
 
     @Test
-    void shouldIngestOneRow(SleeperSystemTest sleeper) {
+    void shouldIngestOneRow(SleeperDsl sleeper) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",
@@ -67,7 +67,7 @@ public class SetupInstanceST {
     }
 
     @Test
-    void shouldIngestByQueueWithSystemTestCluster(SleeperSystemTest sleeper) {
+    void shouldIngestByQueueWithSystemTestCluster(SleeperDsl sleeper) {
         if (sleeper.systemTestCluster().isDisabled()) {
             return;
         }
@@ -86,7 +86,7 @@ public class SetupInstanceST {
     }
 
     @Test
-    void shouldIngestDirectlyWithSystemTestCluster(SleeperSystemTest sleeper) {
+    void shouldIngestDirectlyWithSystemTestCluster(SleeperDsl sleeper) {
         if (sleeper.systemTestCluster().isDisabled()) {
             return;
         }

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.row.Row;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -36,18 +36,18 @@ public class SetupInstanceLocalIT {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
     }
 
     @Test
-    void shouldConnectToInstance(SleeperSystemTest sleeper) {
+    void shouldConnectToInstance(SleeperDsl sleeper) {
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
     }
 
     @Test
-    void shouldIngestOneRow(SleeperSystemTest sleeper) {
+    void shouldIngestOneRow(SleeperDsl sleeper) {
         // Given
         Row row = new Row(Map.of(
                 "key", "some-id",

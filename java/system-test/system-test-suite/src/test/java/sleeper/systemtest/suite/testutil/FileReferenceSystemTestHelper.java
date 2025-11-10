@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.testutil;
 
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class FileReferenceSystemTestHelper {
     private FileReferenceSystemTestHelper() {
     }
 
-    public static FileReferenceFactory fileFactory(SleeperSystemTest sleeper) {
+    public static FileReferenceFactory fileFactory(SleeperDsl sleeper) {
         return FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), sleeper.partitioning().tree());
     }
 

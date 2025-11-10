@@ -23,7 +23,7 @@ import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.nio.file.Path;
@@ -52,12 +52,12 @@ public class ParallelCompactionsTest {
     private final Path tempDir = null;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) throws Exception {
+    void setUp(SleeperDsl sleeper) throws Exception {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldApplyOneCompactionPerPartition(SleeperSystemTest sleeper) {
+    void shouldApplyOneCompactionPerPartition(SleeperDsl sleeper) {
         // Given we have partitions split evenly across the intended range of rows
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(4).then(addPrefix("row-"))));

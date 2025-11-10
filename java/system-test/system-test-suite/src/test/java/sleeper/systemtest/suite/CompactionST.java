@@ -25,7 +25,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -58,7 +58,7 @@ public class CompactionST {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceNoTables(MAIN);
         sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
@@ -68,7 +68,7 @@ public class CompactionST {
     }
 
     @Test
-    void shouldCompactFilesFromMultiplePartitionsInJava(SleeperSystemTest sleeper) throws Exception {
+    void shouldCompactFilesFromMultiplePartitionsInJava(SleeperDsl sleeper) throws Exception {
         // Given we compact in Java
         sleeper.updateTableProperties(Map.of(
                 DATA_ENGINE, DataEngine.JAVA.toString()));
@@ -115,7 +115,7 @@ public class CompactionST {
     }
 
     @Test
-    void shouldCompactFilesFromMultiplePartitionsInDataFusion(SleeperSystemTest sleeper) throws Exception {
+    void shouldCompactFilesFromMultiplePartitionsInDataFusion(SleeperDsl sleeper) throws Exception {
         // Given we compact in DataFusion
         sleeper.updateTableProperties(Map.of(
                 DATA_ENGINE, DataEngine.DATAFUSION.toString()));

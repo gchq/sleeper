@@ -30,7 +30,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
@@ -56,12 +56,12 @@ public class SleeperInstanceTablesTest {
     @DisplayName("Define named tables")
     class DefineNamedTables {
         @BeforeEach
-        void setUp(SleeperSystemTest sleeper) {
+        void setUp(SleeperDsl sleeper) {
             sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         }
 
         @Test
-        void shouldCreateTwoTablesWithDifferentPartitionsAndSchemas(SleeperSystemTest sleeper) {
+        void shouldCreateTwoTablesWithDifferentPartitionsAndSchemas(SleeperDsl sleeper) {
             // Given
             Schema schemaA = createSchemaWithKey("keyA", new StringType());
             Schema schemaB = createSchemaWithKey("keyA", new LongType());
@@ -88,7 +88,7 @@ public class SleeperInstanceTablesTest {
         }
 
         @Test
-        void shouldSetPartitionsForMultipleTables(SleeperSystemTest sleeper) {
+        void shouldSetPartitionsForMultipleTables(SleeperDsl sleeper) {
             // Given
             Schema schema = createSchemaWithKey("key", new StringType());
             sleeper.tables().create(List.of("A", "B"), schema);
@@ -111,12 +111,12 @@ public class SleeperInstanceTablesTest {
     @DisplayName("Load data for all tables at once")
     class InspectAllTables {
         @BeforeEach
-        void setUp(SleeperSystemTest sleeper) {
+        void setUp(SleeperDsl sleeper) {
             sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         }
 
         @Test
-        void shouldQueryRowsForNamedTables(SleeperSystemTest sleeper) {
+        void shouldQueryRowsForNamedTables(SleeperDsl sleeper) {
             // Given
             sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
             sleeper.table("A").ingest().direct(null).numberedRows(LongStream.of(1, 2));
@@ -135,7 +135,7 @@ public class SleeperInstanceTablesTest {
         }
 
         @Test
-        void shouldQueryNoRowsForNamedTables(SleeperSystemTest sleeper) {
+        void shouldQueryNoRowsForNamedTables(SleeperDsl sleeper) {
             // Given
             sleeper.tables().create(List.of("A", "B"), createSchemaWithKey("key", new LongType()));
 
@@ -148,7 +148,7 @@ public class SleeperInstanceTablesTest {
         }
 
         @Test
-        void shouldNotIncludeTablesNotManagedByDsl(SleeperSystemTest sleeper, SystemTestDrivers drivers, SystemTestContext context) {
+        void shouldNotIncludeTablesNotManagedByDsl(SleeperDsl sleeper, SystemTestDrivers drivers, SystemTestContext context) {
             // Given
             InstanceProperties instanceProperties = context.instance().getInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key"));
@@ -163,7 +163,7 @@ public class SleeperInstanceTablesTest {
         }
 
         @Test
-        void shouldIncludeUnnamedTables(SleeperSystemTest sleeper) {
+        void shouldIncludeUnnamedTables(SleeperDsl sleeper) {
             // When
             sleeper.tables().createMany(2, createSchemaWithKey("key"));
 
@@ -179,7 +179,7 @@ public class SleeperInstanceTablesTest {
     class DeriveTableName {
 
         @Test
-        void shouldGenerateNameForTableDefinedInTest(SleeperSystemTest sleeper) {
+        void shouldGenerateNameForTableDefinedInTest(SleeperDsl sleeper) {
             // Given
             sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
 
@@ -192,7 +192,7 @@ public class SleeperInstanceTablesTest {
         }
 
         @Test
-        void shouldGenerateNameForPredefinedTable(SleeperSystemTest sleeper) {
+        void shouldGenerateNameForPredefinedTable(SleeperDsl sleeper) {
             // When
             sleeper.connectToInstanceAddOnlineTable(PREDEFINED_TABLE);
 
@@ -202,7 +202,7 @@ public class SleeperInstanceTablesTest {
         }
 
         @Test
-        void shouldRefusePredefinedTableWithNoName(SleeperSystemTest sleeper) {
+        void shouldRefusePredefinedTableWithNoName(SleeperDsl sleeper) {
             // When / Then
             assertThatThrownBy(() -> sleeper.connectToInstanceAddOnlineTable(PREDEFINED_TABLE_NO_NAME))
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
@@ -214,14 +214,14 @@ public class SleeperInstanceTablesTest {
     class FailWithNoInstanceOrTable {
 
         @Test
-        void shouldFailToIngestWhenNoInstanceConnected(SleeperSystemTest sleeper) {
+        void shouldFailToIngestWhenNoInstanceConnected(SleeperDsl sleeper) {
             // When / Then
             assertThatThrownBy(() -> sleeper.ingest())
                     .isInstanceOf(NoInstanceConnectedException.class);
         }
 
         @Test
-        void shouldFailToIngestWhenNoTableChosen(SleeperSystemTest sleeper) {
+        void shouldFailToIngestWhenNoTableChosen(SleeperDsl sleeper) {
             // Given
             sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
             var ingest = sleeper.ingest().direct(null);

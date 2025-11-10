@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.row.testutils.SortedRowsCheck;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.nio.file.Path;
@@ -35,12 +35,12 @@ public class SystemTestTableFilesSortedCheckTest {
     Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldFindFileIsSortedAfterIngest(SleeperSystemTest sleeper) {
+    void shouldFindFileIsSortedAfterIngest(SleeperDsl sleeper) {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 3, 2));
 
@@ -53,7 +53,7 @@ public class SystemTestTableFilesSortedCheckTest {
     }
 
     @Test
-    void shouldFindFileIsNotSortedAfterAddingSourceFile(SleeperSystemTest sleeper) throws Exception {
+    void shouldFindFileIsNotSortedAfterAddingSourceFile(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.sourceFiles().inDataBucket().createWithNumberedRows("test.parquet", LongStream.of(1, 3, 2));
         sleeper.ingest().toStateStore().addFileOnEveryPartition("test.parquet", 3);

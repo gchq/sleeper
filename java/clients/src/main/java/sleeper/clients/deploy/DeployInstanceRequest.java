@@ -17,7 +17,7 @@ package sleeper.clients.deploy;
 
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -30,7 +30,7 @@ public class DeployInstanceRequest {
 
     private final DeployInstanceConfiguration instanceConfig;
     private final CdkCommand cdkCommand;
-    private final InvokeCdkForInstance.Type instanceType;
+    private final InvokeCdk.Type instanceType;
     private final List<StackDockerImage> extraDockerImages;
 
     private DeployInstanceRequest(Builder builder) {
@@ -44,12 +44,12 @@ public class DeployInstanceRequest {
         return new Builder();
     }
 
-    private static InvokeCdkForInstance.Type inferInstanceType(DeployInstanceConfiguration instanceConfig) {
+    private static InvokeCdk.Type inferInstanceType(DeployInstanceConfiguration instanceConfig) {
         InstanceProperties instanceProperties = instanceConfig.getInstanceProperties();
         if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
-            return InvokeCdkForInstance.Type.SYSTEM_TEST;
+            return InvokeCdk.Type.SYSTEM_TEST;
         } else {
-            return InvokeCdkForInstance.Type.STANDARD;
+            return InvokeCdk.Type.STANDARD;
         }
     }
 
@@ -57,7 +57,7 @@ public class DeployInstanceRequest {
         return instanceConfig;
     }
 
-    public InvokeCdkForInstance.Type getInstanceType() {
+    public InvokeCdk.Type getInstanceType() {
         return instanceType;
     }
 
@@ -72,7 +72,7 @@ public class DeployInstanceRequest {
     public static class Builder {
         private DeployInstanceConfiguration instanceConfig;
         private CdkCommand cdkCommand;
-        private InvokeCdkForInstance.Type instanceType = InvokeCdkForInstance.Type.STANDARD;
+        private InvokeCdk.Type instanceType = InvokeCdk.Type.STANDARD;
         private List<StackDockerImage> extraDockerImages = List.of();
 
         public Builder instanceConfig(DeployInstanceConfiguration instanceConfig) {
@@ -85,7 +85,7 @@ public class DeployInstanceRequest {
             return this;
         }
 
-        public Builder instanceType(InvokeCdkForInstance.Type instanceType) {
+        public Builder instanceType(InvokeCdk.Type instanceType) {
             this.instanceType = instanceType;
             return this;
         }

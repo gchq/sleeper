@@ -16,7 +16,7 @@
 package sleeper.systemtest.dsl.testutil;
 
 import sleeper.core.metrics.TableMetrics;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -26,7 +26,7 @@ public class SystemTestTableMetricsHelper {
     private SystemTestTableMetricsHelper() {
     }
 
-    public static TableMetrics.Builder tableMetrics(SleeperSystemTest sleeper) {
+    public static TableMetrics.Builder tableMetrics(SleeperDsl sleeper) {
         return TableMetrics.builder()
                 .instanceId(sleeper.instanceProperties().get(ID))
                 .tableName(sleeper.tableProperties().get(TABLE_NAME));
