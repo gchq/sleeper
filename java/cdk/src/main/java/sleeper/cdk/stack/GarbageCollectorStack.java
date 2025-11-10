@@ -41,7 +41,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_ARN;
@@ -136,10 +135,7 @@ public class GarbageCollectorStack extends NestedStack {
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_ARN, queue.getQueueArn());
         instanceProperties.set(GARBAGE_COLLECTOR_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(GARBAGE_COLLECTOR_DLQ_ARN, deadLetterQueue.getQueueArn());
-        createAlarmForDlq(this, "GarbageCollectorAlarm",
-                "Alarms if there are any messages on the dead letter queue for the garbage collector",
-                deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Garbage Collection Errors", deadLetterQueue, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "GarbageCollectorAlarm", "garbage collection", deadLetterQueue);
         queue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE))
