@@ -35,8 +35,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -85,7 +85,7 @@ public class PartitionSplittingStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             Topic topic,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
 
@@ -145,7 +145,7 @@ public class PartitionSplittingStack extends NestedStack {
         return findPartitionsToSplitQueue;
     }
 
-    private Queue createJobQueues(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
+    private Queue createJobQueues(InstanceProperties instanceProperties, Topic topic, SleeperCoreStacks coreStacks, List<IMetric> errorMetrics) {
         // Create queue for partition splitting job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue partitionSplittingJobDlq = Queue.Builder
@@ -185,7 +185,7 @@ public class PartitionSplittingStack extends NestedStack {
         return partitionSplittingJobQueue;
     }
 
-    private void createTriggerFunction(InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, Map<String, String> environmentVariables) {
+    private void createTriggerFunction(InstanceProperties instanceProperties, LambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
         String triggerFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "partition-splitting-trigger");
         IFunction triggerFunction = lambdaCode.buildFunction(this, LambdaHandler.FIND_PARTITIONS_TO_SPLIT_TRIGGER, "FindPartitionsToSplitTriggerLambda", builder -> builder
@@ -213,7 +213,7 @@ public class PartitionSplittingStack extends NestedStack {
         coreStacks.grantInvokeScheduled(triggerFunction, findPartitionsToSplitQueue);
     }
 
-    private void createFindPartitionsToSplitFunction(InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, Map<String, String> environmentVariables) {
+    private void createFindPartitionsToSplitFunction(InstanceProperties instanceProperties, LambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "partition-splitting-find-to-split");
         IFunction findPartitionsToSplitLambda = lambdaCode.buildFunction(this, LambdaHandler.FIND_PARTITIONS_TO_SPLIT, "FindPartitionsToSplitLambda", builder -> builder
@@ -233,7 +233,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .build());
     }
 
-    private void createSplitPartitionFunction(InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, Map<String, String> environmentVariables) {
+    private void createSplitPartitionFunction(InstanceProperties instanceProperties, LambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
         String splitFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "partition-splitting-handler");
 

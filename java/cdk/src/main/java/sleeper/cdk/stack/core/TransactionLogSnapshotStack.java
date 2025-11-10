@@ -71,7 +71,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
     public TransactionLogSnapshotStack(
             Construct scope, String id,
-            InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks,
+            InstanceProperties instanceProperties, BuiltJars jars, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
@@ -82,7 +82,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private void createSnapshotCreationLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks,
+    private void createSnapshotCreationLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation-trigger");
@@ -149,7 +149,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         transactionLogStateStoreStack.grantCreateSnapshots(snapshotCreationLambda);
     }
 
-    private void createSnapshotDeletionLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks,
+    private void createSnapshotDeletionLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion-trigger");

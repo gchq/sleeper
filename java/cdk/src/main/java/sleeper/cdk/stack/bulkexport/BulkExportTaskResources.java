@@ -41,8 +41,8 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
@@ -74,7 +74,7 @@ public class BulkExportTaskResources {
     private final Stack stack;
     private final Queue jobsQueue;
 
-    public BulkExportTaskResources(Stack stack, CoreStacks coreStacks, InstanceProperties instanceProperties,
+    public BulkExportTaskResources(Stack stack, SleeperCoreStacks coreStacks, InstanceProperties instanceProperties,
             LambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue, IBucket resultsBucket) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
@@ -84,7 +84,7 @@ public class BulkExportTaskResources {
     }
 
     private void lambdaToCreateTasks(
-            CoreStacks coreStacks, LambdaCode lambdaCode, InstanceProperties instanceProperties) {
+            SleeperCoreStacks coreStacks, LambdaCode lambdaCode, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
                 instanceId, "bulk-export-tasks-creator");
@@ -128,7 +128,7 @@ public class BulkExportTaskResources {
         instanceProperties.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
     }
 
-    private void ecsClusterForBulkExportTasks(CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar,
+    private void ecsClusterForBulkExportTasks(SleeperCoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar,
             IBucket resultsBucket) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))

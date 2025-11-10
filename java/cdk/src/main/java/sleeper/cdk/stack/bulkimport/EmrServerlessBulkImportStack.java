@@ -48,8 +48,8 @@ import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -96,7 +96,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             BuiltJars jars,
             Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
@@ -208,7 +208,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     private IRole createEmrServerlessRole(
             InstanceProperties instanceProperties,
             BulkImportBucketStack bulkImportBucketStack,
-            CoreStacks coreStacks, IBucket jarsBucket) {
+            SleeperCoreStacks coreStacks, IBucket jarsBucket) {
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper",
                         Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-serverless"))

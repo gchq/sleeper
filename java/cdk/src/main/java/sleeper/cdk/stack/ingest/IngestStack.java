@@ -48,8 +48,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
@@ -100,7 +100,7 @@ public class IngestStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             Topic topic,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -127,7 +127,7 @@ public class IngestStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForIngestJobs(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForIngestJobs(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for ingest job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "IngestJobDLQ");
@@ -182,7 +182,7 @@ public class IngestStack extends NestedStack {
 
     private Cluster ecsClusterForIngestTasks(
             IBucket jarsBucket,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             Queue ingestJobQueue,
             LambdaCode lambdaCode) {
 
@@ -245,7 +245,7 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, LambdaCode lambdaCode) {
+    private void lambdaToCreateIngestTasks(SleeperCoreStacks coreStacks, Queue ingestJobQueue, LambdaCode lambdaCode) {
 
         // Run tasks function
         String functionName = String.join("-", "sleeper",

@@ -36,8 +36,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -73,7 +73,7 @@ public class BulkExportStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            CoreStacks coreStacks) {
+            SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -174,7 +174,7 @@ public class BulkExportStack extends NestedStack {
      * @param  lambdaCode         the lambda code
      * @return                    the export results bucket
      */
-    private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks,
+    private IBucket setupExportBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks,
             LambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         String bucketName = String.join("-", "sleeper",

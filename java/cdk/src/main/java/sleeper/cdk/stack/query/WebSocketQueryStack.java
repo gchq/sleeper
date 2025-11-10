@@ -40,8 +40,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -58,7 +58,7 @@ public final class WebSocketQueryStack extends NestedStack {
     public WebSocketQueryStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars, CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
+            BuiltJars jars, SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -68,7 +68,7 @@ public final class WebSocketQueryStack extends NestedStack {
     }
 
     private void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode lambdaCode,
-            CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
+            SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "query-websocket-handler");

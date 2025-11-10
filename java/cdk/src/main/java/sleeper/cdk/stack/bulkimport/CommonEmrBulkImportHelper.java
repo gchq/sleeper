@@ -33,8 +33,8 @@ import software.constructs.Construct;
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -54,12 +54,12 @@ public class CommonEmrBulkImportHelper {
     private final Construct scope;
     private final BulkImportPlatform platform;
     private final InstanceProperties instanceProperties;
-    private final CoreStacks coreStacks;
+    private final SleeperCoreStacks coreStacks;
     private final List<IMetric> errorMetrics;
 
     public CommonEmrBulkImportHelper(
             Construct scope, BulkImportPlatform platform, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, List<IMetric> errorMetrics) {
+            SleeperCoreStacks coreStacks, List<IMetric> errorMetrics) {
         this.scope = scope;
         this.platform = platform;
         this.instanceProperties = instanceProperties;

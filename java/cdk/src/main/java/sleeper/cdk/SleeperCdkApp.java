@@ -47,10 +47,10 @@ import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
 import sleeper.cdk.stack.core.StateStoreStacks;
 import sleeper.cdk.stack.core.TableDataStack;
@@ -92,7 +92,7 @@ public class SleeperCdkApp extends Stack {
     private final InstanceProperties instanceProperties;
     private final BuiltJars jars;
     private final App app;
-    private CoreStacks coreStacks;
+    private SleeperCoreStacks coreStacks;
     private IngestStacks ingestStacks;
     private IngestStack ingestStack;
     private IngestBatcherStack ingestBatcherStack;
@@ -171,7 +171,7 @@ public class SleeperCdkApp extends Stack {
                 loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestTracker, compactionTracker,
                 policiesStack, topicStack.getTopic(), errorMetrics);
-        coreStacks = new CoreStacks(
+        coreStacks = new SleeperCoreStacks(
                 loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3ObjectsStack, autoStopEcsClusterTasksStack);
 
@@ -355,7 +355,7 @@ public class SleeperCdkApp extends Stack {
         return instanceProperties;
     }
 
-    public CoreStacks getCoreStacks() {
+    public SleeperCoreStacks getCoreStacks() {
         return coreStacks;
     }
 

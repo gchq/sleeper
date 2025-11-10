@@ -24,8 +24,8 @@ import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
 import software.amazon.awscdk.services.ecs.RuntimePlatform;
 
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.ContainerConstants;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -40,10 +40,10 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 public class CompactionOnFargateResources {
     private final InstanceProperties instanceProperties;
     private final Stack stack;
-    private final CoreStacks coreStacks;
+    private final SleeperCoreStacks coreStacks;
 
     public CompactionOnFargateResources(
-            InstanceProperties instanceProperties, Stack stack, CoreStacks coreStacks) {
+            InstanceProperties instanceProperties, Stack stack, SleeperCoreStacks coreStacks) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
         this.coreStacks = coreStacks;

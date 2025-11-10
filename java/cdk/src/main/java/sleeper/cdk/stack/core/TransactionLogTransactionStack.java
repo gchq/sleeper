@@ -67,7 +67,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FO
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
             Construct scope, String id,
-            InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks,
+            InstanceProperties instanceProperties, BuiltJars jars, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
@@ -79,7 +79,7 @@ public class TransactionLogTransactionStack extends NestedStack {
     }
 
     private void createTransactionDeletionLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode,
-            CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
+            SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
             Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion-trigger");
@@ -147,7 +147,7 @@ public class TransactionLogTransactionStack extends NestedStack {
     }
 
     private void createFunctionToFollowTransactionLog(
-            InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
+            InstanceProperties instanceProperties, LambdaCode lambdaCode, SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "state-transaction-follower");
         IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder

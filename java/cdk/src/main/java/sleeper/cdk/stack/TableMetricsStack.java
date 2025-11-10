@@ -35,8 +35,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -63,7 +63,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
+            BuiltJars jars, Topic topic, SleeperCoreStacks coreStacks, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);

@@ -55,8 +55,8 @@ import software.constructs.Construct;
 import software.constructs.IDependable;
 
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.ContainerConstants;
 import sleeper.core.deploy.LambdaHandler;
@@ -87,10 +87,10 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 public class CompactionOnEc2Resources {
     private final InstanceProperties instanceProperties;
     private final Stack stack;
-    private final CoreStacks coreStacks;
+    private final SleeperCoreStacks coreStacks;
 
     public CompactionOnEc2Resources(
-            InstanceProperties instanceProperties, Stack stack, CoreStacks coreStacks) {
+            InstanceProperties instanceProperties, Stack stack, SleeperCoreStacks coreStacks) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
         this.coreStacks = coreStacks;
@@ -114,7 +114,7 @@ public class CompactionOnEc2Resources {
     }
 
     private ContainerDefinitionOptions createEC2ContainerDefinition(
-            CoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
+            SleeperCoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
@@ -199,7 +199,7 @@ public class CompactionOnEc2Resources {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private IFunction lambdaForCustomTerminationPolicy(CoreStacks coreStacks, LambdaCode lambdaCode) {
+    private IFunction lambdaForCustomTerminationPolicy(SleeperCoreStacks coreStacks, LambdaCode lambdaCode) {
 
         // Run tasks function
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);

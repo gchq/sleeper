@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
 
 import java.util.Objects;
 
-public class CoreStacks {
+public class SleeperCoreStacks {
 
     private final LoggingStack loggingStack;
     private final ConfigBucketStack configBucketStack;
@@ -49,7 +49,7 @@ public class CoreStacks {
     private final AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     private final AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
 
-    public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+    public SleeperCoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestTrackerResources ingestTracker,

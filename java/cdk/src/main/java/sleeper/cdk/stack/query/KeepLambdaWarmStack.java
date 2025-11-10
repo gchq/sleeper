@@ -29,8 +29,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -57,7 +57,7 @@ public class KeepLambdaWarmStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             QueryQueueStack queryQueueStack) {
         super(scope, id);
 

@@ -41,7 +41,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 public class PropertiesStack extends NestedStack {
 
     public PropertiesStack(
-            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         // Jars bucket

@@ -33,8 +33,8 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -117,7 +117,7 @@ public class CompactionJobResources {
             LambdaCode lambdaCode,
             IBucket jarsBucket,
             Topic topic,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
@@ -135,7 +135,7 @@ public class CompactionJobResources {
         grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, sendFunction);
     }
 
-    private Queue sqsQueueForCompactionJobs(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionJobs(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for compaction job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "CompactionJobDLQ");
@@ -182,7 +182,7 @@ public class CompactionJobResources {
     }
 
     private IFunction lambdaToCreateCompactionJobBatches(
-            CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
+            SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
             IBucket jarsBucket, LambdaCode lambdaCode,
             Queue compactionJobsQueue) {
 
@@ -235,7 +235,7 @@ public class CompactionJobResources {
         return handlerFunction;
     }
 
-    private void grantCreateCompactionJobs(CoreStacks coreStacks, IBucket jarsBucket, Queue pendingQueue, IGrantable grantee) {
+    private void grantCreateCompactionJobs(SleeperCoreStacks coreStacks, IBucket jarsBucket, Queue pendingQueue, IGrantable grantee) {
         coreStacks.grantCreateCompactionJobs(grantee);
         jarsBucket.grantRead(grantee);
         compactionJobsQueue.grantSendMessages(grantee);
@@ -244,7 +244,7 @@ public class CompactionJobResources {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // Queue.getDeadLetterQueue is marked as nullable but will always be set
     private IFunction lambdaToSendCompactionJobBatches(
-            CoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue) {
+            SleeperCoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-dispatcher");
@@ -267,7 +267,7 @@ public class CompactionJobResources {
         return function;
     }
 
-    private Queue sqsQueueForCompactionJobCreation(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionJobCreation(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for compaction job creation invocation
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue deadLetterQueue = Queue.Builder
@@ -299,7 +299,7 @@ public class CompactionJobResources {
         return queue;
     }
 
-    private Queue sqsQueueForCompactionJobBatches(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionJobBatches(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         // Create queue for compaction job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "PendingCompactionJobBatchDLQ");
@@ -334,7 +334,7 @@ public class CompactionJobResources {
     }
 
     private void lambdaToBatchUpCompactionCommits(
-            CoreStacks coreStacks, LambdaCode lambdaCode, Queue batcherQueue) {
+            SleeperCoreStacks coreStacks, LambdaCode lambdaCode, Queue batcherQueue) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-commit-batcher");
 
@@ -356,7 +356,7 @@ public class CompactionJobResources {
         coreStacks.grantSendStateStoreCommits(function);
     }
 
-    private Queue sqsQueueForCompactionBatcher(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionBatcher(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue deadLetterQueue = Queue.Builder
                 .create(stack, "CompactionCommitDLQ")

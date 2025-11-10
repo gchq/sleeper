@@ -63,8 +63,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
@@ -101,7 +101,7 @@ public final class EksBulkImportStack extends NestedStack {
 
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks,
+            Topic errorsTopic, BulkImportBucketStack importBucketStack, SleeperCoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
 
@@ -225,7 +225,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, CoreStacks coreStacks, Topic errorsTopic) {
+    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, Topic errorsTopic) {
         String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
 
         Map<String, Object> runJobState = parseEksStepDefinition(
