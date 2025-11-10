@@ -81,11 +81,9 @@ public class SleeperOptionalStacks {
                     scope, "AutoStopEmrServerlessApplication", instanceProperties, jars, coreStacks.getLoggingStack());
             emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(scope, "BulkImportEMRServerless",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
                     bulkImportBucketStack,
                     coreStacks,
-                    autoStopEmrServerlessStack,
-                    coreStacks.getErrorMetrics());
+                    autoStopEmrServerlessStack);
 
             // Stack to created EMR studio to be used to access EMR Serverless
             if (optionalStacks.contains(OptionalStack.EmrStudioStack)) {
@@ -97,11 +95,9 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.EmrBulkImportStack)) {
             emrBulkImportStack = new EmrBulkImportStack(scope, "BulkImportEMR",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    coreStacks);
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
@@ -109,11 +105,9 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.PersistentEmrBulkImportStack)) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(scope, "BulkImportPersistentEMR",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    coreStacks);
         }
 
         // Stack to run bulk import jobs via EKS

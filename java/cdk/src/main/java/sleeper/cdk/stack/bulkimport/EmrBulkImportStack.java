@@ -16,11 +16,9 @@
 package sleeper.cdk.stack.bulkimport;
 
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -50,11 +48,9 @@ public class EmrBulkImportStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             SleeperJarsInBucket jars,
-            Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
-            SleeperCoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
