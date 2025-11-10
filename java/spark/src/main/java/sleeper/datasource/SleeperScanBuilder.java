@@ -22,11 +22,8 @@ import org.apache.spark.sql.sources.EqualTo;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.types.StructType;
 
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 
 import java.util.ArrayList;
@@ -40,31 +37,25 @@ import java.util.List;
 public class SleeperScanBuilder implements ScanBuilder, SupportsPushDownFilters {
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
-    private Schema schema;
     private String keyFieldName;
     private StructType structType;
     private StateStore stateStore;
-    private List<Partition> partitions;
-    private List<FileReference> fileReferences;
     // Initialise to an empty array because "It's possible that there is no filters in the query and
     // {@link #pushFilters(Filter[])} is never called, empty array should be returned for this case".
     private Filter[] pushedFilters = new Filter[0];
 
-    public SleeperScanBuilder(InstanceProperties instanceProperties, TableProperties tableProperties, Schema schema, StructType structType,
-            StateStore stateStore, List<Partition> partitions, List<FileReference> fileReferences) {
+    public SleeperScanBuilder(InstanceProperties instanceProperties, TableProperties tableProperties, StructType structType,
+            StateStore stateStore) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
-        this.schema = schema;
-        this.keyFieldName = schema.getRowKeyFieldNames().get(0);
+        this.keyFieldName = tableProperties.getSchema().getRowKeyFieldNames().get(0);
         this.structType = structType;
         this.stateStore = stateStore;
-        this.partitions = partitions;
-        this.fileReferences = fileReferences;
     }
 
     @Override
     public Scan build() {
-        return new SleeperScan(instanceProperties, tableProperties, structType, stateStore, partitions, fileReferences, pushedFilters);
+        return new SleeperScan(instanceProperties, tableProperties, structType, stateStore, pushedFilters);
     }
 
     /**

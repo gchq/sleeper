@@ -15,10 +15,13 @@
  */
 package sleeper.datasource;
 
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.connector.read.InputPartition;
 import org.apache.spark.sql.connector.read.PartitionReader;
+import org.apache.spark.unsafe.types.UTF8String;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -26,17 +29,18 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.core.util.ObjectFactory;
-import sleeper.parquet.utils.TableHadoopConfigurationProvider;
+import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
-import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
+import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -48,28 +52,21 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  * SleeperScan will need to use columnarSupportMode to indicate that it supports column mode.
  */
 public class SleeperPartitionReader implements PartitionReader<InternalRow> {
-    // private String instancePropertiesAsString;
-    // private String tablePropertiesAsString;
-    private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private Schema schema;
     private int numFields;
-    private InputPartition partition;
     private LeafPartitionQueryExecutor leafPartitionQueryExecutor;
     private CloseableIterator<Row> rows;
 
     public SleeperPartitionReader(InstanceProperties instanceProperties, TableProperties tableProperties, InputPartition partition) {
-        // this.instancePropertiesA = instancePropertiesAString;
-        this.instanceProperties = instanceProperties;
-        // this.tablePropertiesAsString = tablePropertiesAsString;
         this.tableProperties = tableProperties;
         this.schema = this.tableProperties.getSchema();
         this.numFields = this.schema.getAllFieldNames().size();
 
         SleeperInputPartition sleeperInputPartition = (SleeperInputPartition) partition;
-        LeafPartitionRowRetriever rowRetriever = new LeafPartitionRowRetrieverImpl.Provider(Executors.newSingleThreadExecutor(),
-                TableHadoopConfigurationProvider.forClient(instanceProperties))
-                .getRowRetriever(tableProperties);
+        BufferAllocator allocator = new RootAllocator();
+        FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.getInstance());
+        LeafPartitionRowRetriever rowRetriever = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, ffiContext).getRowRetriever(tableProperties);
 
         this.leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), this.tableProperties, rowRetriever);
 
@@ -106,7 +103,13 @@ public class SleeperPartitionReader implements PartitionReader<InternalRow> {
         Object[] values = new Object[numFields];
         int i = 0;
         for (String fieldName : schema.getAllFieldNames()) {
-            values[i] = row.get(fieldName);
+            Object object = row.get(fieldName);
+            // TODO Does this work with lists and maps?
+            if (object instanceof String) {
+                values[i] = UTF8String.fromString((String) object);
+            } else {
+                values[i] = object;
+            }
             i++;
         }
         return new GenericInternalRow(values);

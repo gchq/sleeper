@@ -23,8 +23,6 @@ import org.apache.spark.sql.sources.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
@@ -34,7 +32,6 @@ import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
@@ -52,38 +49,24 @@ public class SleeperBatch implements Batch {
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private StateStore stateStore;
-    private List<Partition> partitions;
-    private List<FileReference> fileReferences;
     private Filter[] pushedFilters;
 
-    public SleeperBatch(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore, List<Partition> partitions,
-            List<FileReference> fileReferences, Filter[] pushedFilters) {
+    public SleeperBatch(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore,
+            Filter[] pushedFilters) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.stateStore = stateStore;
-        this.partitions = partitions;
-        this.fileReferences = fileReferences;
         this.pushedFilters = pushedFilters;
     }
 
     @Override
     public InputPartition[] planInputPartitions() {
-        // Create PartitionTree
-        // InstanceProperties instanceProperties = Utils.loadInstancePropertiesFromString(instancePropertiesAsString);
-        // TableProperties tableProperties = Utils.loadTablePropertiesFromString(instanceProperties, tablePropertiesAsString);
         String tableId = tableProperties.get(TableProperty.TABLE_ID);
         Schema schema = tableProperties.getSchema();
         String schemaAsJson = new SchemaSerDe().toJson(schema);
-        // PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
-        // Collection<Partition> partitions = partitionsAsJson.stream()
-        //         .map(p -> partitionSerDe.fromJson(p))
-        //         .toList();
-        PartitionTree partitionTree = new PartitionTree(partitions);
 
         // Create one InputPartition per leaf partition (later we will restrict the partitions to be read based
         // on the user's filters)
-        // List<Partition> leafPartitions = partitionTree.getLeafPartitions();
-        // StateStore stateStore = null;
         QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
         planner.init();
         Region region;
@@ -107,13 +90,6 @@ public class SleeperBatch implements Batch {
         LOGGER.info("Split query into {} leaf partition queries", leafPartitionQueries.size());
 
         RegionSerDe regionSerDe = new RegionSerDe(schema);
-        Region temp = leafPartitionQueries.get(0).getPartitionRegion();
-        String temp2 = regionSerDe.toJson(temp);
-        Region temp3 = regionSerDe.fromJson(temp2);
-        LOGGER.error("temp {}", temp);
-        LOGGER.error("temp2 {}", temp2);
-        LOGGER.error("temp3 {}", temp3);
-
         return leafPartitionQueries.stream()
                 .map(q -> new SleeperInputPartition(tableId, schemaAsJson, q.getQueryId(), q.getSubQueryId(), q.getLeafPartitionId(),
                         regionSerDe.toJson(q.getPartitionRegion()), regionSerDe.toJson(region),

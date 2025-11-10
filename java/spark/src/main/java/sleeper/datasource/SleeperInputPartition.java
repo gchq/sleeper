@@ -44,8 +44,6 @@ public class SleeperInputPartition implements InputPartition {
     private final String partitionRegionAsJson;
     private final String regionAsJson;
     private final List<String> files;
-    // private transient final Region partitionRegion;
-    // private transient final Region region;
 
     public SleeperInputPartition(String tableId, String schemaAsJson, String queryId, String subQueryId, String leafPartitionId,
             String partitionRegionAsJson, String regionAsJson, List<String> files) {
@@ -59,22 +57,7 @@ public class SleeperInputPartition implements InputPartition {
         this.partitionRegionAsJson = partitionRegionAsJson;
         this.regionAsJson = regionAsJson;
         this.files = files;
-        // Schema schema = new SchemaSerDe().fromJson(schemaAsJson);
-        // LOGGER.info("Schema is {}", schema);
-        // RegionSerDe regionSerDe = new RegionSerDe(schema);
-        // this.partitionRegion = regionSerDe.fromJson(partitionRegionAsJson);
-        // this.region = regionSerDe.fromJson(regionAsJson);
     }
-
-    // public SleeperInputPartition(String sleeperSchemaAsJson, String partitionAsJson, List<String> files) {
-    //     // this.sleeperSchemaAsJson = sleeperSchemaAsJson;
-    //     // this.partitionAsJson = partitionAsJson;
-    //     this.files = files;
-    //     Schema schema = new SchemaSerDe().fromJson(sleeperSchemaAsJson);
-    //     Partition partition = new PartitionSerDe(schema).fromJson(partitionAsJson);
-    //     this.partitionRegion = partition.getRegion();
-    //     this.partitionId = partitionId;
-    // }
 
     public String getTableId() {
         return tableId;

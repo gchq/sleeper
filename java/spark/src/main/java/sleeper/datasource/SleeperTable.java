@@ -21,15 +21,13 @@ import org.apache.spark.sql.connector.read.ScanBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 
-import java.util.List;
 import java.util.Set;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Doesn't need to be serialisable.
@@ -37,36 +35,21 @@ import java.util.Set;
  * TODO - why passing in statestore and partitions and filerefs?
  */
 public class SleeperTable implements SupportsRead {
-    // private String instancePropertiesAsString;
-    // private String tablePropertiesAsString;
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
-    private String tableName;
-    private Schema schema;
     private StructType structType;
     private StateStore stateStore;
-    private List<Partition> partitions;
-    private List<FileReference> fileReferences;
 
-    SleeperTable(InstanceProperties instanceProperties, TableProperties tableProperties, String tableName, Schema schema,
-            StructType structType, StateStore stateStore, List<Partition> partitions, List<FileReference> fileReferences) {
-        // this.instancePropertiesAsString = instancePropertiesAsString;
-        // this.tablePropertiesAsString = tablePropertiesAsString;
+    SleeperTable(InstanceProperties instanceProperties, TableProperties tableProperties, StructType structType, StateStore stateStore) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
-        this.tableName = tableName;
-        this.schema = schema;
-        this.structType = structType;
+        this.structType = new StructTypeFactoryCopy().getStructType(tableProperties.getSchema());
         this.stateStore = stateStore;
-        this.partitions = partitions;
-        this.fileReferences = fileReferences;
-        // this.partitionsAsJson = partitionsAsJson;
-        // this.fileReferencesAsJson = fileReferencesAsJson;
     }
 
     @Override
     public String name() {
-        return tableName;
+        return tableProperties.get(TABLE_NAME);
     }
 
     @Override
@@ -81,6 +64,6 @@ public class SleeperTable implements SupportsRead {
 
     @Override
     public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-        return new SleeperScanBuilder(instanceProperties, tableProperties, schema, structType, stateStore, partitions, fileReferences);
+        return new SleeperScanBuilder(instanceProperties, tableProperties, structType, stateStore);
     }
 }

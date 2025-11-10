@@ -20,13 +20,9 @@ import org.apache.spark.sql.connector.read.Scan;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.types.StructType;
 
-import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-
-import java.util.List;
 
 /**
  * Doesn't need to be serialisable.
@@ -36,19 +32,14 @@ public class SleeperScan implements Scan {
     private TableProperties tableProperties;
     private StructType structType;
     private StateStore stateStore;
-    private List<Partition> partitions;
-    private List<FileReference> fileReferences;
     private Filter[] pushedFilters;
 
     public SleeperScan(InstanceProperties instanceProperties, TableProperties tableProperties, StructType structType,
-            StateStore stateStore,
-            List<Partition> partitions, List<FileReference> fileReferences, Filter[] pushedFilters) {
+            StateStore stateStore, Filter[] pushedFilters) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.structType = structType;
         this.stateStore = stateStore;
-        this.partitions = partitions;
-        this.fileReferences = fileReferences;
         this.pushedFilters = pushedFilters;
     }
 
@@ -59,6 +50,6 @@ public class SleeperScan implements Scan {
 
     @Override
     public Batch toBatch() {
-        return new SleeperBatch(instanceProperties, tableProperties, stateStore, partitions, fileReferences, pushedFilters);
+        return new SleeperBatch(instanceProperties, tableProperties, stateStore, pushedFilters);
     }
 }

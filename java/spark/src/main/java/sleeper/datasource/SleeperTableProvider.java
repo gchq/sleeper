@@ -22,7 +22,6 @@ import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import sleeper.bulkimport.runner.StructTypeFactory;
 import sleeper.clients.api.SleeperClient;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -55,31 +54,14 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
         loadSleeperClient();
         Schema schema = sleeperClient.getTableProperties(tableName).getSchema();
         stateStore = sleeperClient.getStateStore(tableName);
-        return new StructTypeFactory().getStructType(schema);
+        return new StructTypeFactoryCopy().getStructType(schema);
     }
 
     @Override
     public Table getTable(StructType structType, Transform[] partitioning, Map<String, String> properties) {
-        // String instanceId = (String) properties.get("instanceid");
-        // String tableName = (String) properties.get("tablename");
-        // SleeperClient sleeperClient = SleeperClient.createForInstanceId(instanceId);
         InstanceProperties instanceProperties = sleeperClient.getInstanceProperties();
         TableProperties tableProperties = sleeperClient.getTableProperties(tableName);
-        Schema schema = tableProperties.getSchema();
-        //  stateStore = sleeperClient.getStateStore(tableName);
-        // PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
-        // List<String> partitionsAsJson = stateStore
-        //         .getAllPartitions()
-        //         .stream()
-        //         .map(p -> partitionSerDe.toJson(p))
-        //         .toList();
-        // FileReferenceSerDe fileReferenceSerDe = new FileReferenceSerDe();
-        // List<String> fileReferencesAsJson = stateStore
-        //         .getFileReferences()
-        //         .stream()
-        //         .map(f -> fileReferenceSerDe.toJson(f))
-        //         .toList();
-        return new SleeperTable(instanceProperties, tableProperties, tableName, schema, structType, stateStore, stateStore.getAllPartitions(), stateStore.getFileReferences());
+        return new SleeperTable(instanceProperties, tableProperties, structType, stateStore);
     }
 
     public boolean supportsExternalMetadata() {
