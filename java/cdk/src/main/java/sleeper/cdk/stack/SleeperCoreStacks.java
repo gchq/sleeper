@@ -27,7 +27,7 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.ITopic;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.constructs.Construct;
 
@@ -152,12 +152,16 @@ public class SleeperCoreStacks {
         return stacks;
     }
 
-    public ITopic getAlertsTopic() {
+    public Topic getAlertsTopic() {
         return topicStack.getTopic();
     }
 
     public List<IMetric> getErrorMetrics() {
         return errorMetrics;
+    }
+
+    public LoggingStack getLoggingStack() {
+        return loggingStack;
     }
 
     public ILogGroup getLogGroup(LogGroupRef logGroupRef) {
@@ -267,7 +271,7 @@ public class SleeperCoreStacks {
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
-
+    // Needed to write transaction body to S3
     public void grantSendStateStoreCommits(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
