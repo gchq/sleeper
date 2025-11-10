@@ -41,7 +41,7 @@ use std::{
 };
 
 /// All information needed for a Sleeper leaf partition query.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct LeafPartitionQueryConfig<'a> {
     /// Basic information
     pub common: CommonConfig<'a>,

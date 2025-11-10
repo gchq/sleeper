@@ -52,12 +52,6 @@ pub struct CommonConfig<'a> {
     pub filters: Vec<Filter>,
 }
 
-impl Default for CommonConfig<'_> {
-    fn default() -> Self {
-        CommonConfigBuilder::default().force_build()
-    }
-}
-
 impl CommonConfig<'_> {
     /// Get iterator for row and sort key fields in order
     pub(crate) fn sorting_columns_iter(&self) -> impl Iterator<Item = &str> {
@@ -210,11 +204,8 @@ impl<'a> CommonConfigBuilder<'a> {
     pub fn build(mut self) -> Result<CommonConfig<'a>> {
         self.validate()?;
         self.normalise_s3a_urls();
-        Ok(self.force_build())
-    }
 
-    fn force_build(self) -> CommonConfig<'a> {
-        CommonConfig {
+        Ok(CommonConfig {
             aws_config: self.aws_config,
             input_files: self.input_files,
             input_files_sorted: self.input_files_sorted,
@@ -225,7 +216,7 @@ impl<'a> CommonConfigBuilder<'a> {
             output: self.output,
             aggregates: self.aggregates,
             filters: self.filters,
-        }
+        })
     }
 
     /// Performs validity checks on parameters.
