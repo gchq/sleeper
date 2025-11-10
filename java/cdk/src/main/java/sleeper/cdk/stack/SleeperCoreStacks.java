@@ -118,8 +118,12 @@ public class SleeperCoreStacks {
         }
         TopicStack topicStack = new TopicStack(scope, "Topic", instanceProperties);
         List<IMetric> errorMetrics = new ArrayList<>();
+
+        // Custom resource providers
         AutoStopEcsClusterTasksStack autoStopEcsStack = new AutoStopEcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
         ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(scope, "Policies", instanceProperties);
+
+        // Stacks for tables
         TableDataStack dataStack = new TableDataStack(scope, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 scope, "TransactionLogStateStore", instanceProperties, dataStack);
@@ -135,9 +139,12 @@ public class SleeperCoreStacks {
                 loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestTracker, compactionTracker,
                 policiesStack, topicStack.getTopic(), errorMetrics);
+
         SleeperCoreStacks stacks = new SleeperCoreStacks(loggingStack, topicStack, errorMetrics,
                 configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3Stack, autoStopEcsStack);
+
+        // Table state store maintenance
         new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
                 instanceProperties, jars, stacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);
         new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
@@ -259,6 +266,7 @@ public class SleeperCoreStacks {
         dataStack.grantRead(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
+
 
     public void grantSendStateStoreCommits(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
