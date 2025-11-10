@@ -26,6 +26,7 @@ use color_eyre::eyre::Result;
 mod common_config;
 mod datafusion;
 pub mod filter_aggregation_config;
+pub mod sleeper_context;
 #[cfg(test)]
 mod test_utils;
 

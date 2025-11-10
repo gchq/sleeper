@@ -300,7 +300,7 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct AwsConfig {
     pub region: String,
     pub endpoint: String,

@@ -19,7 +19,7 @@ use crate::{
     log::maybe_cfg_log,
     objects::{
         FFIFileResult,
-        common_config::FFICommonConfig,
+        ffi_common_config::FFICommonConfig,
         query::{FFILeafPartitionQueryConfig, FFIQueryResults},
     },
 };
