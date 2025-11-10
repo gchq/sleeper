@@ -73,8 +73,8 @@ public class SleeperCoreStacks {
     private final StateStoreCommitterStack stateStoreCommitterStack;
     private final IngestTrackerResources ingestTracker;
     private final CompactionTrackerResources compactionTracker;
-    private final AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
-    private final AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
+    private final AutoDeleteS3ObjectsStack autoDeleteS3Stack;
+    private final AutoStopEcsClusterTasksStack autoStopEcsStack;
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public SleeperCoreStacks(
@@ -84,8 +84,8 @@ public class SleeperCoreStacks {
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker,
-            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
-            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            AutoDeleteS3ObjectsStack autoDeleteS3Stack,
+            AutoStopEcsClusterTasksStack autoStopEcsStack) {
         this.loggingStack = loggingStack;
         this.topicStack = topicStack;
         this.errorMetrics = errorMetrics;
@@ -97,8 +97,8 @@ public class SleeperCoreStacks {
         this.stateStoreCommitterStack = stateStoreCommitterStack;
         this.ingestTracker = ingestTracker;
         this.compactionTracker = compactionTracker;
-        this.autoDeleteS3ObjectsStack = autoDeleteS3ObjectsStack;
-        this.autoStopEcsClusterTasksStack = autoStopEcsClusterTasksStack;
+        this.autoDeleteS3Stack = autoDeleteS3Stack;
+        this.autoStopEcsStack = autoStopEcsStack;
     }
 
     public static SleeperCoreStacks create(
@@ -204,11 +204,15 @@ public class SleeperCoreStacks {
     }
 
     public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
-        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(scope, bucket);
+        autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
     }
 
     public void addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
-        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(scope, cluster);
+        autoStopEcsStack.addAutoStopEcsClusterTasks(scope, cluster);
+    }
+
+    public AutoStopEcsClusterTasksStack getAutoStopEcsStack() {
+        return autoStopEcsStack;
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
@@ -323,5 +327,9 @@ public class SleeperCoreStacks {
 
     public IGrantable getPurgeQueuesPolicyForGrants() {
         return policiesStack.getPurgeQueuesPolicyForGrants();
+    }
+
+    public void createRoles() {
+        policiesStack.createRoles();
     }
 }
