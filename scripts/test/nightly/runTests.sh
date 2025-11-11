@@ -70,7 +70,7 @@ END_EXIT_CODE=0
 docker buildx rm sleeper
 docker buildx create --name sleeper --use
 
-createQuickSuiteFolder() {}
+createQuickSuiteFolder() {
     set -e
     # Make copies of the project to run independent maven builds in parallel
     source "$SCRIPTS_DIR/functions/checkInstalled.sh"
