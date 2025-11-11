@@ -78,7 +78,7 @@ public class SleeperInstanceStacksProps {
                 .build();
     }
 
-    public void prepare() {
+    void prepare() {
         if (validateProperties) {
             instanceProperties.validate();
             try {
