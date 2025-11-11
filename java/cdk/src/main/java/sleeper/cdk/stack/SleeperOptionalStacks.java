@@ -151,9 +151,7 @@ public class SleeperOptionalStacks {
         QueryQueueStack queryQueueStack = null;
         if (OptionalStack.QUERY_STACKS.stream().anyMatch(optionalStacks::contains)) {
             queryQueueStack = new QueryQueueStack(scope, "QueryQueue",
-                    instanceProperties,
-                    coreStacks.getAlertsTopic(), coreStacks,
-                    coreStacks.getErrorMetrics());
+                    instanceProperties, coreStacks);
             queryStack = new QueryStack(scope,
                     "Query",
                     instanceProperties, jars,
