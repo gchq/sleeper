@@ -37,9 +37,7 @@ import sleeper.cdk.stack.query.QueryStack;
 import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
-import sleeper.core.properties.table.TableProperties;
 
-import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -51,8 +49,9 @@ public class SleeperOptionalStacks {
     }
 
     public static void create(
-            Construct scope, InstanceProperties instanceProperties, List<TableProperties> tableProperties,
-            SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
+            Construct scope, SleeperInstanceStacksProps props, SleeperCoreStacks coreStacks) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        SleeperJarsInBucket jars = props.getJars();
         Set<OptionalStack> optionalStacks = instanceProperties
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
@@ -186,7 +185,7 @@ public class SleeperOptionalStacks {
                     ingestStack,
                     compactionStack,
                     partitionSplittingStack,
-                    instanceProperties, tableProperties,
+                    instanceProperties, props.getTableProperties(),
                     coreStacks.getErrorMetrics());
         }
 

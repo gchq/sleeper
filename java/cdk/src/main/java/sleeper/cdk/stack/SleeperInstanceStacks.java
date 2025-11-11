@@ -18,7 +18,6 @@ package sleeper.cdk.stack;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.PropertiesStack;
-import sleeper.core.properties.instance.InstanceProperties;
 
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks. Does not create Sleeper tables. If the
@@ -37,15 +36,14 @@ public class SleeperInstanceStacks {
      * @param props configuration to deploy the instance
      */
     public static void create(Construct scope, SleeperInstanceStacksProps props) {
-        InstanceProperties instanceProperties = props.getInstanceProperties();
 
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(scope, props);
-        SleeperOptionalStacks.create(scope, instanceProperties, props.getTableProperties(), props.getJars(), coreStacks);
+        SleeperOptionalStacks.create(scope, props, coreStacks);
 
         // Only create roles after we know which policies are deployed in the instance
         coreStacks.createRoles();
         // Only write properties after CDK-defined properties are set
-        new PropertiesStack(scope, "Properties", instanceProperties, props.getJars(), coreStacks);
+        new PropertiesStack(scope, "Properties", props.getInstanceProperties(), props.getJars(), coreStacks);
     }
 
 }

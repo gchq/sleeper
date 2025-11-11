@@ -31,10 +31,7 @@ import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
-
-import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -48,14 +45,12 @@ public class SystemTestApp extends Stack {
     private final SleeperInstanceStacksProps props;
     private final SleeperJarsInBucket jars;
     private final SystemTestProperties instanceProperties;
-    private final List<TableProperties> tableProperties;
 
     public SystemTestApp(App app, String id, StackProps props, SleeperInstanceStacksProps sleeperProps) {
         super(app, id, props);
         this.props = sleeperProps;
         this.jars = sleeperProps.getJars();
         this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
-        this.tableProperties = sleeperProps.getTableProperties();
     }
 
     public void create() {
@@ -69,7 +64,7 @@ public class SystemTestApp extends Stack {
 
         // Sleeper instance
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, loggingStack, autoDeleteS3Stack);
-        SleeperOptionalStacks.create(this, instanceProperties, tableProperties, jars, coreStacks);
+        SleeperOptionalStacks.create(this, props, coreStacks);
         coreStacks.createRoles();
 
         // Stack for writing random data
