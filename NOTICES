@@ -616,7 +616,9 @@ test-log (https://github.com/d-e-s-o/test-log)
 
 - Apache 2 License
 
+tracing-subscriber (https://github.com/tokio-rs/tracing)
 
+- MIT License
 
 The build pipeline uses the following GitHub Actions from the marketplace.
 

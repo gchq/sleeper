@@ -14,10 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use chrono::Local;
-use log::LevelFilter;
-use std::io::Write;
 use std::sync::Once;
+use tracing_subscriber::{EnvFilter, filter::LevelFilter};
 
 /// An object guaranteed to only initialise once. Thread safe.
 static LOG_CFG: Once = Once::new();
@@ -30,21 +28,10 @@ static LOG_CFG: Once = Once::new();
 pub fn maybe_cfg_log() {
     LOG_CFG.call_once(|| {
         // Install and configure environment logger
-        env_logger::builder()
-            .format(|buf, record| {
-                writeln!(
-                    buf,
-                    "{} [{}] {}:{} - {}",
-                    Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                    record.level(),
-                    record.file().unwrap_or("??"),
-                    record.line().unwrap_or(0),
-                    record.args()
-                )
-            })
-            .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
-            .format_target(false)
-            .filter_level(LevelFilter::Info)
+        tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::from_default_env().add_directive(LevelFilter::INFO.into()))
+            .with_ansi(false)
+            .with_line_number(true)
             .init();
     });
 }

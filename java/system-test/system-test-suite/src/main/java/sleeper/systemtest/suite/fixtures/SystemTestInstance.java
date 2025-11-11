@@ -60,6 +60,7 @@ import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.core.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.core.properties.instance.LoggingLevelsProperty.RUST_BACKTRACE;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_TABLE_BATCH_SIZE;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
@@ -205,6 +206,7 @@ public class SystemTestInstance {
         properties.set(COMPACTION_TASK_ARM_MEMORY, "8192");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
         properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
+        properties.set(RUST_BACKTRACE, "1");
         setSystemTestTags(properties, "compactionOnDataFusion", "Sleeper Maven system test compaction performance on DataFusion");
         return createInstanceConfiguration(properties);
     }

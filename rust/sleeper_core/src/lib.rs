@@ -21,7 +21,10 @@
 * limitations under the License.
 */
 use crate::datafusion::{CompactionResult, LeafPartitionQuery};
+#[cfg(doc)]
+use arrow::record_batch::RecordBatch;
 use color_eyre::eyre::Result;
+use log::error;
 
 mod common_config;
 mod datafusion;
@@ -80,7 +83,14 @@ pub async fn run_compaction(config: &CommonConfig<'_>) -> Result<CompactionResul
     let store_factory = config.create_object_store_factory().await;
     crate::datafusion::compact(&store_factory, config)
         .await
-        .map_err(Into::into)
+        .map_err(|e| {
+            error!("DataFusion error: {e}");
+            error!("DataFusion error debug output: {e:?}");
+            let root_error = e.find_root();
+            error!("DataFusion root error: {root_error}");
+            error!("DataFusion root error debug output: {root_error:?}");
+            e.into()
+        })
 }
 
 /// Runs the given Sleeper leaf partition query on the given Parquet files and reads the schema from the first.

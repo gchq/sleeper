@@ -71,9 +71,7 @@ public class CompactionVeryLargeST {
                 TABLE_ONLINE, "false",
                 DATA_ENGINE, DataEngine.DATAFUSION.toString(),
                 COMPACTION_FILES_BATCH_SIZE, "40",
-                // We've disabled readahead temporarily until the following bug is resolved:
-                // https://github.com/gchq/sleeper/issues/5777
-                DATAFUSION_S3_READAHEAD_ENABLED, "false"));
+                DATAFUSION_S3_READAHEAD_ENABLED, "true"));
         // And 40 input files
         sleeper.systemTestCluster().runDataGenerationJobs(40,
                 builder -> builder.ingestMode(DIRECT).rowsPerIngest(50_000_000),
