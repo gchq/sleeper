@@ -107,7 +107,7 @@ class SleeperInstanceStacksPropsIT {
 
             // When / Then
             CdkContext context = cdkContextWithPropertiesFile(tempDir);
-            assertThatThrownBy(() -> prepareProps(context))
+            assertThatThrownBy(() -> readProps(context))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Sleeper instance ID is not valid as part of an S3 bucket name: aa$$aa");
         }
@@ -124,7 +124,7 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
             // When/Then
-            assertThatCode(() -> prepareProps(
+            assertThatCode(() -> readProps(
                     cdkContextWithPropertiesFile(tempDir)))
                     .doesNotThrowAnyException();
         }
@@ -137,7 +137,7 @@ class SleeperInstanceStacksPropsIT {
 
             // When/Then
             var readContext = cdkContextWithPropertiesFile(tempDir);
-            assertThatThrownBy(() -> prepareProps(readContext))
+            assertThatThrownBy(() -> readProps(readContext))
                     .isInstanceOf(MismatchedVersionException.class)
                     .hasMessage("Local version " + getVersion() + " does not match deployed version 0.14.0-SNAPSHOT. " +
                             "Please upgrade/downgrade to make these match");
@@ -150,7 +150,7 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
             // When/Then
-            assertThatCode(() -> prepareProps(
+            assertThatCode(() -> readProps(
                     cdkContextWithPropertiesFileAndSkipVersionCheck(tempDir)))
                     .doesNotThrowAnyException();
         }
@@ -162,20 +162,18 @@ class SleeperInstanceStacksPropsIT {
             SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.empty());
 
             // When/Then
-            assertThatCode(() -> prepareProps(
+            assertThatCode(() -> readProps(
                     cdkContextWithPropertiesFile(tempDir)))
                     .doesNotThrowAnyException();
         }
     }
 
     private InstanceProperties loadInstanceProperties(CdkContext context) {
-        return prepareProps(context).getInstanceProperties();
+        return readProps(context).getInstanceProperties();
     }
 
-    private SleeperInstanceStacksProps prepareProps(CdkContext context) {
-        SleeperInstanceStacksProps props = SleeperInstanceStacksProps.fromContext(context, null, null);
-        props.prepare();
-        return props;
+    private SleeperInstanceStacksProps readProps(CdkContext context) {
+        return SleeperInstanceStacksProps.fromContext(context, null, null);
     }
 
     private static CdkContext cdkContextWithPropertiesFile(Path tempDir) {

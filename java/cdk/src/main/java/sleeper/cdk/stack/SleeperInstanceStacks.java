@@ -15,12 +15,9 @@
  */
 package sleeper.cdk.stack;
 
-import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.core.PropertiesStack;
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
 /**
@@ -36,32 +33,19 @@ public class SleeperInstanceStacks {
     /**
      * Adds an instance of Sleeper to the CDK app.
      *
-     * @param scope         the scope to add the Sleeper instance to
-     * @param configuration the configuration of the instance
-     * @param s3Client      the S3 client to use to scan the jars bucket for jars to deploy
+     * @param scope the scope to add the Sleeper instance to
+     * @param props configuration to deploy the instance
      */
-    public static void create(Construct scope, DeployInstanceConfiguration configuration, S3Client s3Client) {
-        SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, configuration.getInstanceProperties());
-        create(scope, configuration, jars);
-    }
+    public static void create(Construct scope, SleeperInstanceStacksProps props) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
 
-    /**
-     * Adds an instance of Sleeper to the CDK app.
-     *
-     * @param scope         the scope to add the Sleeper instance to
-     * @param configuration the configuration of the instance
-     * @param jars          a pointer to the jars in S3 to use to deploy lambdas
-     */
-    public static void create(Construct scope, DeployInstanceConfiguration configuration, SleeperJarsInBucket jars) {
-        InstanceProperties instanceProperties = configuration.getInstanceProperties();
-
-        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(scope, instanceProperties, jars);
-        SleeperOptionalStacks.create(scope, instanceProperties, configuration.getTableProperties(), jars, coreStacks);
+        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(scope, instanceProperties, props.getJars());
+        SleeperOptionalStacks.create(scope, instanceProperties, props.getTableProperties(), props.getJars(), coreStacks);
 
         // Only create roles after we know which policies are deployed in the instance
         coreStacks.createRoles();
         // Only write properties after CDK-defined properties are set
-        new PropertiesStack(scope, "Properties", instanceProperties, jars, coreStacks);
+        new PropertiesStack(scope, "Properties", instanceProperties, props.getJars(), coreStacks);
     }
 
 }

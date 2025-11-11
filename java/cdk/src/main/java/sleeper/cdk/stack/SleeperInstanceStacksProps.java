@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
+import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.util.CdkContext;
@@ -36,24 +37,19 @@ import java.util.Objects;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
+/**
+ * Configuration to deploy a Sleeper instance with the CDK.
+ */
 public class SleeperInstanceStacksProps {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
     private final SleeperJarsInBucket jars;
-    private final NewInstanceValidator newInstanceValidator;
-    private final boolean validateProperties;
-    private final boolean ensureInstanceDoesNotExist;
-    private final boolean checkVersionMatchesProperties;
 
     private SleeperInstanceStacksProps(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
         tableProperties = Objects.requireNonNull(builder.tableProperties, "tableProperties must not be null");
         jars = Objects.requireNonNull(builder.jars, "jars must not be null");
-        newInstanceValidator = builder.newInstanceValidator;
-        validateProperties = builder.validateProperties;
-        ensureInstanceDoesNotExist = builder.ensureInstanceDoesNotExist;
-        checkVersionMatchesProperties = builder.checkVersionMatchesProperties;
     }
 
     public static Builder builder() {
@@ -67,6 +63,10 @@ public class SleeperInstanceStacksProps {
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
+    public static SleeperInstanceStacksProps fromContext(Construct scope, S3Client s3Client, DynamoDbClient dynamoClient) {
+        return fromContext(CdkContext.from(scope), s3Client, dynamoClient);
+    }
+
     public static SleeperInstanceStacksProps fromContext(CdkContext context, S3Client s3Client, DynamoDbClient dynamoClient) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         DeployInstanceConfiguration configuration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
@@ -76,36 +76,6 @@ public class SleeperInstanceStacksProps {
                 .ensureInstanceDoesNotExist("true".equalsIgnoreCase(context.tryGetContext("newinstance")))
                 .checkVersionMatchesProperties(!"true".equalsIgnoreCase(context.tryGetContext("skipVersionCheck")))
                 .build();
-    }
-
-    void prepare() {
-        if (validateProperties) {
-            instanceProperties.validate();
-            try {
-                BucketUtils.isValidDnsBucketName(instanceProperties.get(ID), true);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + instanceProperties.get(ID),
-                        e);
-            }
-            for (TableProperties table : tableProperties) {
-                table.validate();
-            }
-        }
-        if (ensureInstanceDoesNotExist) {
-            newInstanceValidator.validate(instanceProperties);
-        }
-        String deployedVersion = instanceProperties.get(VERSION);
-        String localVersion = SleeperVersion.getVersion();
-        if (checkVersionMatchesProperties
-                && deployedVersion != null
-                && !localVersion.equals(deployedVersion)) {
-            throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
-                    "Please upgrade/downgrade to make these match",
-                    localVersion, deployedVersion));
-        }
-        CdkDefinedInstanceProperty.getAll().forEach(instanceProperties::unset);
-        instanceProperties.set(VERSION, localVersion);
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -165,6 +135,38 @@ public class SleeperInstanceStacksProps {
         }
 
         public SleeperInstanceStacksProps build() {
+
+            if (validateProperties) {
+                instanceProperties.validate();
+                try {
+                    BucketUtils.isValidDnsBucketName(instanceProperties.get(ID), true);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException(
+                            "Sleeper instance ID is not valid as part of an S3 bucket name: " + instanceProperties.get(ID),
+                            e);
+                }
+                for (TableProperties table : tableProperties) {
+                    table.validate();
+                }
+            }
+
+            if (ensureInstanceDoesNotExist) {
+                newInstanceValidator.validate(instanceProperties);
+            }
+
+            String deployedVersion = instanceProperties.get(VERSION);
+            String localVersion = SleeperVersion.getVersion();
+            if (checkVersionMatchesProperties
+                    && deployedVersion != null
+                    && !localVersion.equals(deployedVersion)) {
+                throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
+                        "Please upgrade/downgrade to make these match",
+                        localVersion, deployedVersion));
+            }
+
+            CdkDefinedInstanceProperty.getAll().forEach(instanceProperties::unset);
+            instanceProperties.set(VERSION, localVersion);
+
             return new SleeperInstanceStacksProps(this);
         }
     }
