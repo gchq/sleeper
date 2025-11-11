@@ -120,8 +120,6 @@ pub async fn run_compaction(
 ///     .row_key_cols(vec!["key".into()])
 ///     .region(SleeperRegion::new(region))
 ///     .build()?;
-/// let mut leaf_config = LeafPartitionQueryConfig::default();
-/// leaf_config.common = common;
 /// let mut query_region : HashMap<String, ColRange<'_>> = HashMap::new();
 /// query_region.insert("key".into(), ColRange {
 ///     lower : PartitionBound::String("a"),
@@ -129,7 +127,8 @@ pub async fn run_compaction(
 ///     upper: PartitionBound::String("h"),
 ///     upper_inclusive: true,
 /// });
-/// leaf_config.ranges = vec![SleeperRegion::new(query_region)];
+/// let ranges = vec![SleeperRegion::new(query_region)];
+/// let leaf_config = LeafPartitionQueryConfig { common, ranges, requested_value_fields: None, explain_plans: true };
 ///
 /// # tokio_test::block_on(async {
 /// let result = run_query(&leaf_config, &SleeperContext::default()).await;
