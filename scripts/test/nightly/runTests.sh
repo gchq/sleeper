@@ -73,8 +73,8 @@ docker buildx create --name sleeper --use
 createQuickSuiteFolder() {
     set -e
     # Make copies of the project to run independent maven builds in parallel
-    sudo apt-get update
-    sudo apt-get install --yes rsync
+    #sudo apt-get update
+    #sudo apt-get install --yes rsync
     pushd $REPO_PARENT_DIR
     echo "Copying sleeper to quick folder"
     sudo rm -rf quick
