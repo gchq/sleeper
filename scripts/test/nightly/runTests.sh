@@ -70,29 +70,17 @@ END_EXIT_CODE=0
 docker buildx rm sleeper
 docker buildx create --name sleeper --use
 
-createQuickSuiteFolder() {
+copyFolderForParallelRun() {
     set -e
-    # Make copies of the project to run independent maven builds in parallel
+    echo "Making folder $1 for parallel build"
     #sudo apt-get update
     #sudo apt-get install --yes rsync
     pushd $REPO_PARENT_DIR
-    echo "Copying sleeper to quick folder"
-    sudo rm -rf quick
-    mkdir quick
-    sudo rsync -a --exclude=".*" sleeper/ quick
+    sudo rm -rf $1
+    mkdir $1
+    sudo rsync -a --exclude=".*" sleeper/ $1
     popd
-    echo "Finished copying to quick folder"
     set +e
-}
-
-copyFolderForParallelRun() {
-    if [ "$1" != "quick" ]; then
-        echo "Making folder $1 for parallel build"
-        pushd $REPO_PARENT_DIR
-        sudo rm -rf $1
-        sudo cp -r -p quick $1
-        popd
-    fi
 }
 
 removeFolderAfterParallelRun() {
@@ -164,7 +152,6 @@ runTestSuite(){
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
-    createQuickSuiteFolder
     echo "Running performance tests in parallel. Start time: [$(time_str)]"
     EXP1_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e1" "expensive1" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite1)
     EXP2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite2)
@@ -179,7 +166,6 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" "$@" &
     wait
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
-    createQuickSuiteFolder
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
     runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
     runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &
