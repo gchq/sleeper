@@ -17,23 +17,21 @@
  */
 use crate::datafusion::sketch_udf::SketchUDF;
 use arrow::{array::ArrayAccessor, datatypes::DataType};
-use bytes::{Buf, BufMut};
-use color_eyre::eyre::eyre;
+use bytes::BufMut;
 use cxx::{Exception, UniquePtr};
 use datafusion::{
     common::DFSchema,
     dataframe::DataFrame,
     error::DataFusionError,
     logical_expr::{ScalarUDF, ident},
-    parquet::data_type::AsBytes,
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
 use rust_sketch::quantiles::{
-    byte::{byte_deserialize, byte_sketch_t, new_byte_sketch},
-    i64::{i64_deserialize, i64_sketch_t, new_i64_sketch},
-    str::{new_str_sketch, str_deserialize, string_sketch_t},
+    byte::{byte_sketch_t, new_byte_sketch},
+    i64::{i64_sketch_t, new_i64_sketch},
+    str::{new_str_sketch, string_sketch_t},
 };
 use std::{
     fmt::Debug,
