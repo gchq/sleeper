@@ -121,27 +121,21 @@ public class SleeperOptionalStacks {
 
         // Stack to run bulk export jobs
         if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
-            new BulkExportStack(scope,
-                    "BulkExport",
-                    instanceProperties,
-                    jars,
-                    coreStacks);
+            new BulkExportStack(scope, "BulkExport",
+                    instanceProperties, jars, coreStacks);
         }
 
         // Stack to garbage collect old files
         if (optionalStacks.contains(OptionalStack.GarbageCollectorStack)) {
-            new GarbageCollectorStack(scope,
-                    "GarbageCollector",
-                    instanceProperties, jars,
-                    coreStacks);
+            new GarbageCollectorStack(scope, "GarbageCollector",
+                    instanceProperties, jars, coreStacks);
         }
         // Stack for containers for compactions and splitting compactions
         CompactionStack compactionStack = null;
         if (optionalStacks.contains(OptionalStack.CompactionStack)) {
             compactionStack = new CompactionStack(scope,
                     "Compaction",
-                    instanceProperties, jars,
-                    coreStacks);
+                    instanceProperties, jars, coreStacks);
         }
 
         // Stack to split partitions
@@ -149,10 +143,7 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.PartitionSplittingStack)) {
             partitionSplittingStack = new PartitionSplittingStack(scope,
                     "PartitionSplitting",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    instanceProperties, jars, coreStacks);
         }
 
         // Stack to execute queries
