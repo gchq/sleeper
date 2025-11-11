@@ -151,7 +151,7 @@ public class DeployNewInstance {
         private InvokeCdk.Type instanceType;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean deployPaused;
-        private boolean createMultiPlatformBuilder;
+        private boolean createMultiPlatformBuilder = true;
 
         private Builder() {
         }

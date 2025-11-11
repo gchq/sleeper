@@ -261,7 +261,7 @@ public class SystemTestParameters {
         private boolean forceRedeploySystemTest;
         private boolean forceRedeployInstances;
         private String forceStateStoreClassname;
-        private boolean createMultiPlatformBuilder;
+        private boolean createMultiPlatformBuilder = true;
         private SystemTestStandaloneProperties standalonePropertiesTemplate;
         private InstanceProperties instancePropertiesOverrides;
 
@@ -355,7 +355,7 @@ public class SystemTestParameters {
                     .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
                     .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
                     .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null))
-                    .createMultiPlatformBuilder(getBooleanProperty("sleeper.system.test.create.multi.platform", false))
+                    .createMultiPlatformBuilder(getBooleanProperty("sleeper.system.test.create.multi.platform.builder", true))
                     .systemTestStandalonePropertiesTemplate(getOptionalProperty("sleeper.system.test.standalone.properties.template")
                             .map(Paths::get)
                             .map(SystemTestStandaloneProperties::fromFile)

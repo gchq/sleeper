@@ -34,7 +34,7 @@ VPC=$2
 SUBNETS=$3
 RESULTS_BUCKET=$4
 MAIN_SUITE_NAME=$5
-SUITE_PARAMS=("-Dsleeper.system.test.cluster.enabled=true" "-DskipRust" "-Dsleeper.system.test.create.multi.platform=false")
+SUITE_PARAMS=("-Dsleeper.system.test.cluster.enabled=true" "-DskipRust" "-Dsleeper.system.test.create.multi.platform.builder=false")
 
 shift 4
 if [ "$MAIN_SUITE_NAME" == "performance" ] || [ "$MAIN_SUITE_NAME" == "functional" ]; then

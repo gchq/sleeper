@@ -241,7 +241,7 @@
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <sleeper.system.test.force.statestore.classname />
-        <sleeper.system.test.create.multi.platform />
+        <sleeper.system.test.create.multi.platform.builder>true</sleeper.system.test.create.multi.platform.builder>
         <sleeper.system.test.standalone.properties.template />
         <sleeper.system.test.instance.properties.overrides />
         <!-- Maven plugins -->
@@ -1946,8 +1946,8 @@
                                 <value>${sleeper.system.test.force.statestore.classname}</value>
                             </property>
                             <property>
-                                <name>sleeper.system.test.create.multi.platform</name>
-                                <value>${sleeper.system.test.create.multi.platform}</value>
+                                <name>sleeper.system.test.create.multi.platform.builder</name>
+                                <value>${sleeper.system.test.create.multi.platform.builder}</value>
                             </property>
                             <property>
                                 <name>sleeper.system.test.standalone.properties.template</name>

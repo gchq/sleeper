@@ -123,7 +123,7 @@ public class DeployExistingInstance {
         private EcrClient ecr;
         private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
-        private boolean createMultiPlatformBuilder;
+        private boolean createMultiPlatformBuilder = true;
 
         private Builder() {
         }
