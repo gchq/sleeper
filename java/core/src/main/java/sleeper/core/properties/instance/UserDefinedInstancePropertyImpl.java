@@ -84,6 +84,11 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     }
 
     @Override
+    public InstanceProperty getDefaultProperty() {
+        return defaultProperty;
+    }
+
+    @Override
     public PropertyGroup getPropertyGroup() {
         return propertyGroup;
     }
@@ -120,10 +125,6 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     @Override
     public boolean isIgnoreEmptyValue() {
         return ignoreEmptyValue;
-    }
-
-    public InstanceProperty getDefaultProperty() {
-        return defaultProperty;
     }
 
     @Override
