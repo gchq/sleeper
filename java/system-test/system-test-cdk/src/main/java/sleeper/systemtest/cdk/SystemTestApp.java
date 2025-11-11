@@ -20,17 +20,16 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.SleeperCoreStacks;
+import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.SleeperOptionalStacks;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.PropertiesStack;
-import sleeper.cdk.util.CdkContext;
-import sleeper.cdk.util.Utils;
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -50,11 +49,11 @@ public class SystemTestApp extends Stack {
     private final SystemTestProperties instanceProperties;
     private final List<TableProperties> tableProperties;
 
-    public SystemTestApp(App app, String id, StackProps props, DeployInstanceConfiguration configuration, SleeperJarsInBucket jars) {
+    public SystemTestApp(App app, String id, StackProps props, SleeperInstanceStacksProps sleeperProps) {
         super(app, id, props);
-        this.jars = jars;
-        this.instanceProperties = SystemTestProperties.from(configuration.getInstanceProperties());
-        this.tableProperties = configuration.getTableProperties();
+        this.jars = sleeperProps.getJars();
+        this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
+        this.tableProperties = sleeperProps.getTableProperties();
     }
 
     public void create() {
@@ -85,23 +84,22 @@ public class SystemTestApp extends Stack {
                 .analyticsReporting(false)
                 .build());
 
-        DeployInstanceConfiguration configuration = Utils.loadDeployInstanceConfiguration(CdkContext.from(app));
-        InstanceProperties instanceProperties = configuration.getInstanceProperties();
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create()) {
+            SleeperInstanceStacksProps props = SleeperInstanceStacksProps.fromContext(app, s3Client, dynamoClient);
+            InstanceProperties instanceProperties = props.getInstanceProperties();
 
-        String id = instanceProperties.get(ID);
-        Environment environment = Environment.builder()
-                .account(instanceProperties.get(ACCOUNT))
-                .region(instanceProperties.get(REGION))
-                .build();
-
-        try (S3Client s3Client = S3Client.create()) {
-            SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
+            String id = instanceProperties.get(ID);
+            Environment environment = Environment.builder()
+                    .account(instanceProperties.get(ACCOUNT))
+                    .region(instanceProperties.get(REGION))
+                    .build();
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)
                     .env(environment)
                     .build(),
-                    configuration, jars).create();
+                    props).create();
 
             app.synth();
         }

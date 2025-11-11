@@ -28,27 +28,16 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.stepfunctions.LogLevel;
 import software.amazon.awscdk.services.stepfunctions.LogOptions;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
-import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.DeployInstanceConfiguration;
-import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.LoadLocalProperties;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Properties;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
@@ -142,51 +131,6 @@ public class Utils {
             default:
                 throw new IllegalArgumentException("Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
         }
-    }
-
-    public static <T extends InstanceProperties> T loadInstanceProperties(
-            Function<Properties, T> constructor, CdkContext context) {
-        Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
-        T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
-        afterInstancePropertiesLoad(properties, context);
-        return properties;
-    }
-
-    public static DeployInstanceConfiguration loadDeployInstanceConfiguration(CdkContext context) {
-        Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
-        DeployInstanceConfiguration configuration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
-        afterInstancePropertiesLoad(configuration.getInstanceProperties(), context);
-        return configuration;
-    }
-
-    private static void afterInstancePropertiesLoad(InstanceProperties properties, CdkContext context) {
-        if (!"false".equalsIgnoreCase(context.tryGetContext("validate"))) {
-            properties.validate();
-            try {
-                BucketUtils.isValidDnsBucketName(properties.get(ID), true);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + properties.get(ID),
-                        e);
-            }
-        }
-        if ("true".equalsIgnoreCase(context.tryGetContext("newinstance"))) {
-            try (S3Client s3Client = S3Client.create(); DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-                new NewInstanceValidator(s3Client, dynamoClient).validate(properties);
-            }
-        }
-        String deployedVersion = properties.get(VERSION);
-        String localVersion = SleeperVersion.getVersion();
-        CdkDefinedInstanceProperty.getAll().forEach(properties::unset);
-
-        if (!"true".equalsIgnoreCase(context.tryGetContext("skipVersionCheck"))
-                && deployedVersion != null
-                && !localVersion.equals(deployedVersion)) {
-            throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
-                    "Please upgrade/downgrade to make these match",
-                    localVersion, deployedVersion));
-        }
-        properties.set(VERSION, localVersion);
     }
 
     public static boolean shouldDeployPaused(Construct scope) {
