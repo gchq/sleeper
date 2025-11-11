@@ -19,7 +19,6 @@ package sleeper.core.properties.instance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.properties.PropertyGroup;
-import sleeper.core.properties.SleeperProperty;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -58,7 +57,7 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
     }
 
     @Override
-    public SleeperProperty getDefaultProperty() {
+    public InstanceProperty getDefaultProperty() {
         return null;
     }
 
