@@ -4417,9 +4417,13 @@ name = "test_util"
 version = "0.34.0-SNAPSHOT"
 dependencies = [
  "arrow",
+ "bytes",
  "color-eyre",
  "datafusion",
  "futures",
+ "object_store",
+ "objectstore_ext",
+ "rust_sketch",
  "sleeper_core",
  "tempfile",
  "url",

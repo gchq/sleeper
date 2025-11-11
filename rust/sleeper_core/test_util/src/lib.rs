@@ -17,6 +17,7 @@ use arrow::{
     array::{Array, ArrayRef, Int32Array, RecordBatch},
     datatypes::{DataType, Field, Schema},
 };
+use bytes::{Buf, BufMut};
 use color_eyre::eyre::{Error, OptionExt, eyre};
 use datafusion::{
     execution::SendableRecordBatchStream,
@@ -28,10 +29,13 @@ use datafusion::{
             },
         },
         basic::{Compression, ZstdLevel},
+        data_type::AsBytes,
         file::properties::WriterProperties,
     },
 };
 use futures::StreamExt;
+use objectstore_ext::s3::ObjectStoreFactory;
+use rust_sketch::quantiles::{byte::byte_deserialize, i64::i64_deserialize, str::str_deserialize};
 use sleeper_core::{ColRange, DataSketchVariant, PartitionBound};
 use std::{collections::HashMap, fs::File, sync::Arc};
 use tempfile::TempDir;
