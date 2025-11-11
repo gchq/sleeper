@@ -158,7 +158,6 @@ public class PartitionSplittingStack extends NestedStack {
         instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_URL, partitionSplittingJobDlq.getQueueUrl());
         instanceProperties.set(PARTITION_SPLITTING_JOB_DLQ_ARN, partitionSplittingJobDlq.getQueueArn());
 
-        // Add alarm to send message to SNS if there are any messages on the dead letter queue
         coreStacks.alarmOnDeadLetters(this, "PartitionSplittingAlarm", "partition splitting", partitionSplittingJobDlq);
 
         CfnOutputProps partitionSplittingQueueOutputProps = new CfnOutputProps.Builder()

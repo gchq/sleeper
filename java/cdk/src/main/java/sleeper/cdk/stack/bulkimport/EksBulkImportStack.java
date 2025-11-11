@@ -113,7 +113,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .queue(queueForDLs)
                 .build();
 
-        coreStacks.alarmOnDeadLetters(this, "BulkImportEKSUndeliveredJobsAlarm", "passing bulk import jobs to state machine for EKS", queueForDLs);
+        coreStacks.alarmOnDeadLetters(this, "BulkImportEKSUndeliveredJobsAlarm", "passing bulk import jobs to the state machine for EKS", queueForDLs);
 
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")

@@ -308,7 +308,6 @@ public class CompactionJobResources {
         instanceProperties.set(COMPACTION_PENDING_DLQ_URL, pendingDLQ.getQueueUrl());
         instanceProperties.set(COMPACTION_PENDING_DLQ_ARN, pendingDLQ.getQueueArn());
 
-        // Add alarm to send message to SNS if there are any messages on the dead letter queue
         coreStacks.alarmOnDeadLetters(stack, "PendingCompactionAlarm", "pending compaction job batches", pendingDLQ);
         pendingQ.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
 
