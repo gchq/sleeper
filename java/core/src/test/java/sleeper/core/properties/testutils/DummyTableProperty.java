@@ -67,6 +67,11 @@ public class DummyTableProperty implements TableProperty {
     }
 
     @Override
+    public SleeperProperty getDefaultProperty() {
+        return defaultProperty;
+    }
+
+    @Override
     public String getDescription() {
         return null;
     }
@@ -79,11 +84,6 @@ public class DummyTableProperty implements TableProperty {
     @Override
     public boolean isRunCdkDeployWhenChanged() {
         return false;
-    }
-
-    @Override
-    public SleeperProperty getDefaultProperty() {
-        return defaultProperty;
     }
 
     @Override

@@ -17,6 +17,7 @@
 package sleeper.core.properties.testutils;
 
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 
@@ -37,6 +38,11 @@ public class DummyInstanceProperty implements InstanceProperty {
 
     @Override
     public String getDefaultValue() {
+        return null;
+    }
+
+    @Override
+    public SleeperProperty getDefaultProperty() {
         return null;
     }
 
