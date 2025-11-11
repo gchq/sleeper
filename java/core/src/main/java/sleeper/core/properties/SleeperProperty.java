@@ -41,6 +41,15 @@ public interface SleeperProperty {
     String getDefaultValue();
 
     /**
+     * Retrieves the property that sets the default value for this property if it is unset. May be null if this property
+     * does not default to the value of another property. The value of the default property might not be the exact
+     * default value, as it could have some further processing applied.
+     *
+     * @return the default property
+     */
+    SleeperProperty getDefaultProperty();
+
+    /**
      * Retrieves a description of the property. Used in documentation and when displaying the value in a human-readable
      * way.
      *

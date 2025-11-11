@@ -41,6 +41,11 @@ public class DummyInstanceProperty implements InstanceProperty {
     }
 
     @Override
+    public InstanceProperty getDefaultProperty() {
+        return null;
+    }
+
+    @Override
     public String getDescription() {
         return null;
     }
