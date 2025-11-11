@@ -31,25 +31,25 @@ use url::Url;
 #[non_exhaustive]
 pub struct CommonConfig<'a> {
     /// Aws credentials configuration
-    pub aws_config: Option<AwsConfig>,
+    aws_config: Option<AwsConfig>,
     /// Input file URLs
-    pub input_files: Vec<Url>,
+    input_files: Vec<Url>,
     /// Are input files individually sorted?
-    pub input_files_sorted: bool,
+    input_files_sorted: bool,
     /// Should we use readahead when reading from S3?
-    pub use_readahead_store: bool,
+    use_readahead_store: bool,
     /// Names of row-key fields
-    pub row_key_cols: Vec<String>,
+    row_key_cols: Vec<String>,
     /// Names of sort-key fields
-    pub sort_key_cols: Vec<String>,
+    sort_key_cols: Vec<String>,
     /// Ranges for each field to filter input files
-    pub region: SleeperRegion<'a>,
+    region: SleeperRegion<'a>,
     /// How output from operation should be returned
-    pub output: OutputType,
+    output: OutputType,
     /// Aggregate functions to be applied AFTER merge-sorting
-    pub aggregates: Vec<Aggregate>,
+    aggregates: Vec<Aggregate>,
     /// Row filters to be applied before aggregation
-    pub filters: Vec<Filter>,
+    filters: Vec<Filter>,
 }
 
 impl CommonConfig<'_> {
@@ -73,6 +73,38 @@ impl CommonConfig<'_> {
             None => default_creds_store().await.ok(),
         };
         ObjectStoreFactory::new(s3_config, self.use_readahead_store)
+    }
+
+    pub(crate) fn output(&self) -> &OutputType {
+        &self.output
+    }
+
+    pub(crate) fn input_files(&self) -> &Vec<Url> {
+        &self.input_files
+    }
+
+    pub(crate) fn input_files_sorted(&self) -> bool {
+        self.input_files_sorted
+    }
+
+    pub(crate) fn row_key_cols(&self) -> &Vec<String> {
+        &self.row_key_cols
+    }
+
+    pub(crate) fn sort_key_cols(&self) -> &Vec<String> {
+        &self.sort_key_cols
+    }
+
+    pub(crate) fn region(&self) -> &SleeperRegion<'_> {
+        &self.region
+    }
+
+    pub(crate) fn aggregates(&self) -> &Vec<Aggregate> {
+        &self.aggregates
+    }
+
+    pub(crate) fn filters(&self) -> &Vec<Filter> {
+        &self.filters
     }
 }
 

@@ -85,7 +85,8 @@ pub async fn run_compaction(
     sleeper_context: &SleeperContext,
 ) -> Result<CompactionResult> {
     let store_factory = config.create_object_store_factory().await;
-    crate::datafusion::compact(&store_factory, config)
+    let rt = sleeper_context.retrieve_runtime_env()?;
+    crate::datafusion::compact(&store_factory, config, rt)
         .await
         .map_err(Into::into)
 }
@@ -146,8 +147,9 @@ pub async fn run_query(
     sleeper_context: &SleeperContext,
 ) -> Result<CompletedOutput> {
     let store_factory = config.common.create_object_store_factory().await;
+    let rt = sleeper_context.retrieve_runtime_env()?;
 
-    LeafPartitionQuery::new(config, &store_factory)
+    LeafPartitionQuery::new(config, &store_factory, rt)
         .run_query()
         .await
         .map_err(Into::into)

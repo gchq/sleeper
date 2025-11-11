@@ -15,27 +15,33 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{AwsConfig, CommonConfig};
-use std::sync::Mutex;
+use datafusion::{
+    error::DataFusionError,
+    execution::runtime_env::{RuntimeEnv, RuntimeEnvBuilder},
+};
+use std::sync::{Arc, Mutex};
 
 /// A thread-safe class containing internal DataFusion context that needs to be
 /// persisted between queries/compactions.
 #[derive(Debug, Default)]
 pub struct SleeperContext {
-    inner: Mutex<State>,
-}
-
-/// Inner state that can be mutated behind a lock
-#[derive(Debug)]
-struct State {
-    aws_config: Option<AwsConfig>,
-    use_readahead: bool,
+    // Interior mutable runtime
+    inner: Mutex<RuntimeEnv>,
 }
 
 impl SleeperContext {
-    pub fn should_recreate_context(&self, common_config: &CommonConfig) -> bool {
+    /// Retrieves a runtime environment for `DataFusion` to work with.
+    ///
+    /// The previous runtime is cloned and the [`ObjectStoreRegistry`] replaced to prevent object stores
+    /// being cached across queries/compactions.
+    pub fn retrieve_runtime_env(&self) -> Result<Arc<RuntimeEnv>, DataFusionError> {
         let guard = self.inner.lock().expect("SleeperContext lock poisoned");
-        guard.use_readahead == common_config.use_readahead_store
-            && guard.aws_config == common_config.aws_config
+        Ok(Arc::new(
+            RuntimeEnvBuilder::from_runtime_env(&guard)
+                .with_object_store_registry(
+                    RuntimeEnvBuilder::default().object_store_registry.clone(),
+                )
+                .build()?,
+        ))
     }
 }

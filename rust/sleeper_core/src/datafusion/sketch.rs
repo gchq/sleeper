@@ -477,7 +477,7 @@ pub async fn deserialise_sketches(
     path: &Url,
     key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let factory = ObjectStoreFactory::new(None);
+    let factory = ObjectStoreFactory::new(None, true);
     deserialise_sketches_with_factory(&factory, path, key_types).await
 }
 
