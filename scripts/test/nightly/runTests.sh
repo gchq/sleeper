@@ -70,16 +70,21 @@ END_EXIT_CODE=0
 docker buildx rm sleeper
 docker buildx create --name sleeper --use
 
-#Make copies of the project to run independent maven builds in parallel
-source "$SCRIPTS_DIR/functions/checkInstalled.sh"
-checkInstalled "rsync"
-pushd $REPO_PARENT_DIR
-echo "Copying sleeper to quick folder"
-sudo rm -rf quick
-mkdir quick
-sudo rsync -a --exclude=".*" sleeper/ quick
-popd
-echo "Finished copying to quick folder"
+createQuickSuiteFolder() {}
+    set -e
+    # Make copies of the project to run independent maven builds in parallel
+    source "$SCRIPTS_DIR/functions/checkInstalled.sh"
+    sudo apt-get update
+    sudo apt-get install --yes rsync
+    pushd $REPO_PARENT_DIR
+    echo "Copying sleeper to quick folder"
+    sudo rm -rf quick
+    mkdir quick
+    sudo rsync -a --exclude=".*" sleeper/ quick
+    popd
+    echo "Finished copying to quick folder"
+    set +e
+}
 
 copyFolderForParallelRun() {
     if [ "$1" != "quick" ]; then
@@ -99,7 +104,7 @@ removeFolderAfterParallelRun() {
 }
 
 runMavenSystemTests() {
-    #Setup
+    # Setup
     NEW_MAVEN_DIR=$(cd ../../java && pwd)
     SHORT_ID=$1
     TEST_NAME=$2
@@ -110,7 +115,7 @@ runMavenSystemTests() {
     mkdir "$TEST_OUTPUT_DIR"
     echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
 
-    #Run tests
+    # Run tests
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
@@ -122,7 +127,7 @@ runMavenSystemTests() {
       TEST_EXIT_CODE=$RUN_TESTS_EXIT_CODE
     fi
 
-    #Create output files
+    # Generate site HTML
     pushd "$NEW_MAVEN_DIR"
     echo "Running maven batch mode command for $SHORT_ID"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
@@ -134,7 +139,7 @@ runMavenSystemTests() {
     popd
     rm -rf "$TEST_OUTPUT_DIR/site"
 
-    #Tear down instances used for tests
+    # Tear down instances used for tests
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     TEARDOWN_EXIT_CODE=$?
@@ -148,7 +153,7 @@ runMavenSystemTests() {
 runTestSuite(){
     SUITE=$3
     copyFolderForParallelRun "$SUITE"
-    ##Wait short time to not have clashes with other process deploying
+    # Wait short time to not have clashes with other process deploying
     sleep $1
     shift 1
     echo "[$(time_str)] Starting test suite: $SUITE"
@@ -160,6 +165,7 @@ runTestSuite(){
 }
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+    createQuickSuiteFolder
     echo "Running performance tests in parallel. Start time: [$(time_str)]"
     EXP1_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e1" "expensive1" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite1)
     EXP2_SUITE_PARAMS=("${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" -DrunIT=ExpensiveSuite2)
@@ -174,6 +180,7 @@ if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     runTestSuite 360 "${EXP3_SUITE_PARAMS[@]}" "$@" &
     wait
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
+    createQuickSuiteFolder
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
     runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
     runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &
@@ -188,6 +195,6 @@ echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
  sleeper.systemtest.drivers.nightly.RecordNightlyTestOutput "$RESULTS_BUCKET" "$START_TIMESTAMP" "$OUTPUT_DIR"
 
-removeFolderAfterParallelRun quick
+popd
 
 exit $END_EXIT_CODE
