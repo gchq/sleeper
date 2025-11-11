@@ -73,7 +73,6 @@ docker buildx create --name sleeper --use
 createQuickSuiteFolder() {
     set -e
     # Make copies of the project to run independent maven builds in parallel
-    source "$SCRIPTS_DIR/functions/checkInstalled.sh"
     sudo apt-get update
     sudo apt-get install --yes rsync
     pushd $REPO_PARENT_DIR
