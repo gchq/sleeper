@@ -141,9 +141,7 @@ public class SleeperOptionalStacks {
             compactionStack = new CompactionStack(scope,
                     "Compaction",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    coreStacks);
         }
 
         // Stack to split partitions
