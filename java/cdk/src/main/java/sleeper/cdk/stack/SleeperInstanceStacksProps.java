@@ -45,11 +45,13 @@ public class SleeperInstanceStacksProps {
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
     private final SleeperJarsInBucket jars;
+    private final boolean deployPaused;
 
     private SleeperInstanceStacksProps(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
         jars = builder.jars;
+        deployPaused = builder.deployPaused;
     }
 
     public static Builder builder() {
@@ -75,6 +77,7 @@ public class SleeperInstanceStacksProps {
                 .validateProperties(!"false".equalsIgnoreCase(context.tryGetContext("validate")))
                 .ensureInstanceDoesNotExist("true".equalsIgnoreCase(context.tryGetContext("newinstance")))
                 .checkVersionMatchesProperties(!"true".equalsIgnoreCase(context.tryGetContext("skipVersionCheck")))
+                .deployPaused("true".equalsIgnoreCase(context.tryGetContext("deployPaused")))
                 .build();
     }
 
@@ -90,6 +93,10 @@ public class SleeperInstanceStacksProps {
         return jars;
     }
 
+    public boolean isDeployPaused() {
+        return deployPaused;
+    }
+
     public static class Builder {
         private InstanceProperties instanceProperties;
         private List<TableProperties> tableProperties = List.of();
@@ -98,6 +105,7 @@ public class SleeperInstanceStacksProps {
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
         private boolean checkVersionMatchesProperties = true;
+        private boolean deployPaused = false;
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
@@ -131,6 +139,11 @@ public class SleeperInstanceStacksProps {
 
         public Builder checkVersionMatchesProperties(boolean checkVersionMatchesProperties) {
             this.checkVersionMatchesProperties = checkVersionMatchesProperties;
+            return this;
+        }
+
+        public Builder deployPaused(boolean deployPaused) {
+            this.deployPaused = deployPaused;
             return this;
         }
 
