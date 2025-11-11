@@ -28,7 +28,6 @@ use url::Url;
 /// Common items necessary to perform any `DataFusion` related
 /// work for Sleeper.
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct CommonConfig<'a> {
     /// Aws credentials configuration
     aws_config: Option<AwsConfig>,
@@ -290,7 +289,7 @@ impl<'a> CommonConfigBuilder<'a> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub struct AwsConfig {
     pub region: String,
     pub endpoint: String,

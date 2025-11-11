@@ -26,13 +26,14 @@ use crate::{
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
-use datafusion::{common::plan_err, logical_expr::Expr, physical_plan::displayable};
 use datafusion::{
+    common::plan_err,
     dataframe::DataFrame,
     error::DataFusionError,
-    execution::{config::SessionConfig, context::SessionContext},
+    execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
+    logical_expr::{Expr, ident},
+    physical_plan::displayable,
 };
-use datafusion::{execution::runtime_env::RuntimeEnv, logical_expr::ident};
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
 use std::{
