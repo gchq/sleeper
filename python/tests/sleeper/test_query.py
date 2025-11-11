@@ -26,7 +26,7 @@ class MatchesQueryJson:
             return False
 
 
-def should_send_exact_query_with_client(sleeper_client: SleeperClient, query_resource: Queue, mocker: MockerFixture):
+def should_send_exact_query_with_client(sleeper_client: SleeperClient, query_queue_resource: Queue, mocker: MockerFixture):
     # Given
     table_name = "test-table"
     query_id = "test-query"
@@ -53,12 +53,12 @@ def should_send_exact_query_with_client(sleeper_client: SleeperClient, query_res
         }
     ]
 
-    messages = receive_messages(query_resource)
+    messages = receive_messages(query_queue_resource)
 
     assert messages == expected_message_json
 
 
-def should_send_range_query_with_client(sleeper_client: SleeperClient, query_resource: Queue, mocker: MockerFixture):
+def should_send_range_query_with_client(sleeper_client: SleeperClient, query_queue_resource: Queue, mocker: MockerFixture):
     # Given
     table_name = "test-table"
     query_id = "test-query"
@@ -84,7 +84,7 @@ def should_send_range_query_with_client(sleeper_client: SleeperClient, query_res
         }
     ]
 
-    messages = receive_messages(query_resource)
+    messages = receive_messages(query_queue_resource)
 
     assert messages == expected_message_json
 
@@ -135,16 +135,16 @@ def sleeper_client(properties: InstanceProperties) -> SleeperClient:
 
 
 @pytest.fixture
-def properties(query_resource: Queue) -> InstanceProperties:
+def properties(query_queue_resource: Queue) -> InstanceProperties:
     properties = create_test_instance_properties()
-    properties.set(QueryCdkProperty.QUERY_QUEUE_URL, query_resource.url)
+    properties.set(QueryCdkProperty.QUERY_QUEUE_URL, query_queue_resource.url)
     properties.set(QueryCdkProperty.QUERY_WEBSOCKET_URL, "ws://localhost:7777/_aws/ws/api_id/test")
     properties.set(CommonCdkProperty.REGION, "eu-west-2")
     return properties
 
 
 @pytest.fixture
-def query_resource() -> Queue:
+def query_queue_resource() -> Queue:
     return LocalStack.create_queue()
 
 
