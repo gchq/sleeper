@@ -47,9 +47,9 @@ public class SleeperInstanceStacksProps {
     private final SleeperJarsInBucket jars;
 
     private SleeperInstanceStacksProps(Builder builder) {
-        instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
-        tableProperties = Objects.requireNonNull(builder.tableProperties, "tableProperties must not be null");
-        jars = Objects.requireNonNull(builder.jars, "jars must not be null");
+        instanceProperties = builder.instanceProperties;
+        tableProperties = builder.tableProperties;
+        jars = builder.jars;
     }
 
     public static Builder builder() {
@@ -135,6 +135,9 @@ public class SleeperInstanceStacksProps {
         }
 
         public SleeperInstanceStacksProps build() {
+            Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
+            Objects.requireNonNull(tableProperties, "tableProperties must not be null");
+            Objects.requireNonNull(jars, "jars must not be null");
 
             if (validateProperties) {
                 instanceProperties.validate();
