@@ -67,9 +67,8 @@ public class UploadDockerImages {
         if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
-        } else {
-            LOGGER.info("Building and uploading images: {}", imagesToUpload);
         }
+        LOGGER.info("Building and uploading images: {}", imagesToUpload);
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
                 && createMultiplatformBuilder

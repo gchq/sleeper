@@ -29,9 +29,9 @@ public interface CheckVersionExistsInEcr {
         return (repository, version) -> {
             try {
                 ListImagesResponse response = ecrClient.listImages(request -> request.repositoryName(repository));
+                // Note that the image tag can be null. In particular, a multiplatform image has multiple images but
+                // only the image index is tagged.
                 return response.imageIds().stream()
-                        // Note that image tag can be null. In particular, a multiplatform image has multiple images but
-                        // only the image index is tagged.
                         .anyMatch(imageIdentifier -> Objects.equals(version, imageIdentifier.imageTag()));
             } catch (RepositoryNotFoundException e) {
                 return false;

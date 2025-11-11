@@ -22,6 +22,7 @@ import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.table.TablePropertyGroup;
@@ -32,7 +33,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -40,10 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -140,10 +137,17 @@ public class GeneratePropertiesTemplates {
 
     private static InstanceProperties generateTemplateInstanceProperties() {
         InstanceProperties properties = new InstanceProperties();
-        List<InstanceProperty> changeMeProperties = new ArrayList<>();
-        changeMeProperties.addAll(BASIC_INSTANCE_EXAMPLE_VALUES.keySet());
-        changeMeProperties.addAll(List.of(ARTEFACTS_DEPLOYMENT_ID, JARS_BUCKET, ECR_REPOSITORY_PREFIX));
-        changeMeProperties.forEach(property -> properties.set(property, "changeme"));
+        BASIC_INSTANCE_EXAMPLE_VALUES.keySet()
+                .forEach(property -> properties.set(property, "changeme"));
+        // The template has separate sections for template values and default values. This structure suggests that the
+        // default values should be left unchanged. If you did that when it's defaulting to another property, you'd set
+        // them to the templated value instead of the real value set when the user fills in the template.
+        // To avoid that, we set these to "changeme" which makes them appear under template values instead. We rely on
+        // the description of the property to explain this.
+        UserDefinedInstanceProperty.getAll().stream()
+                .filter(property -> property.getDefaultProperty() != null)
+                .filter(property -> properties.isSet(property.getDefaultProperty()))
+                .forEach(property -> properties.set(property, "changeme"));
         return properties;
     }
 

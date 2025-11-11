@@ -34,6 +34,11 @@ public class DummySleeperProperty implements SleeperProperty {
     }
 
     @Override
+    public SleeperProperty getDefaultProperty() {
+        return null;
+    }
+
+    @Override
     public String getDescription() {
         return null;
     }
