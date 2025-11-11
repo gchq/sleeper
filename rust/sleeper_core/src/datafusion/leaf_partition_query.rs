@@ -70,7 +70,7 @@ pub struct LeafPartitionQuery<'a> {
     config: &'a LeafPartitionQueryConfig<'a>,
     /// Used to create object store implementations
     store_factory: &'a ObjectStoreFactory,
-    /// DataFusion runtime for this query
+    /// Runtime for this query
     runtime: Arc<RuntimeEnv>,
 }
 

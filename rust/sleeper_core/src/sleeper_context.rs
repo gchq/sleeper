@@ -21,7 +21,7 @@ use datafusion::{
 };
 use std::sync::{Arc, Mutex};
 
-/// A thread-safe class containing internal DataFusion context that needs to be
+/// A thread-safe class containing internal `DataFusion` context that needs to be
 /// persisted between queries/compactions.
 #[derive(Debug, Default)]
 pub struct SleeperContext {
@@ -34,6 +34,12 @@ impl SleeperContext {
     ///
     /// The previous runtime is cloned and the [`ObjectStoreRegistry`] replaced to prevent object stores
     /// being cached across queries/compactions.
+    ///
+    /// # Panics
+    /// If the lock protecting the runtime can't be unlocked due to a lock posion.
+    ///
+    /// # Errors
+    /// An error results if the runtime can't be built
     pub fn retrieve_runtime_env(&self) -> Result<Arc<RuntimeEnv>, DataFusionError> {
         let guard = self.inner.lock().expect("SleeperContext lock poisoned");
         Ok(Arc::new(
