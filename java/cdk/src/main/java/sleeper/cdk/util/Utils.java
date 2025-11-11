@@ -15,16 +15,9 @@
  */
 package sleeper.cdk.util;
 
-import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
-import software.amazon.awscdk.services.cloudwatch.Alarm;
-import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
-import software.amazon.awscdk.services.cloudwatch.MetricOptions;
-import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
-import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.iam.Effect;
@@ -33,8 +26,6 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
-import software.amazon.awscdk.services.sns.Topic;
-import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.stepfunctions.LogLevel;
 import software.amazon.awscdk.services.stepfunctions.LogOptions;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -61,7 +52,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
-import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 /**
  * Collection of utility methods related to the CDK deployment.
@@ -237,22 +227,6 @@ public class Utils {
         }
     }
 
-    public static void createAlarmForDlq(Construct scope, String id, String description, Queue dlq, Topic topic) {
-        Alarm alarm = Alarm.Builder
-                .create(scope, id)
-                .alarmName(dlq.getQueueName())
-                .alarmDescription(description)
-                .metric(dlq.metricApproximateNumberOfMessagesVisible()
-                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
-                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
-                .threshold(0)
-                .evaluationPeriods(1)
-                .datapointsToAlarm(1)
-                .treatMissingData(TreatMissingData.IGNORE)
-                .build();
-        alarm.addAlarmAction(new SnsAction(topic));
-    }
-
     public static void grantInvokeOnPolicy(IFunction function, ManagedPolicy policy) {
         // IFunction.grantInvoke does not work with a ManagedPolicy at time of writing.
         // It tries to set it as a Principal, which you can't do with a ManagedPolicy.
@@ -261,11 +235,5 @@ public class Utils {
                 .actions(List.of("lambda:InvokeFunction"))
                 .resources(List.of(function.getFunctionArn()))
                 .build());
-    }
-
-    public static IMetric createErrorMetric(String label, Queue errorQueue, InstanceProperties instanceProperties) {
-        int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
-        return errorQueue.metricApproximateNumberOfMessagesVisible(
-                MetricOptions.builder().label(label).period(Duration.minutes(timeWindowInMinutes)).statistic("Sum").build());
     }
 }
