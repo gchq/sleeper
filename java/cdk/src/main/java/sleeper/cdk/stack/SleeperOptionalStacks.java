@@ -176,11 +176,8 @@ public class SleeperOptionalStacks {
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(OptionalStack.IngestBatcherStack)) {
             new IngestBatcherStack(scope, "IngestBatcher",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    ingestStacks,
-                    coreStacks.getErrorMetrics());
+                    instanceProperties, jars, coreStacks,
+                    ingestStacks);
         }
 
         if (optionalStacks.contains(OptionalStack.DashboardStack)) {

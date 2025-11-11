@@ -18,7 +18,6 @@ package sleeper.cdk.stack.ingest;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -31,7 +30,6 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -52,7 +50,6 @@ import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
@@ -78,10 +75,8 @@ public class IngestBatcherStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             SleeperJarsInBucket jars,
-            Topic topic,
             SleeperCoreStacks coreStacks,
-            IngestStacks ingestStacks,
-            List<IMetric> errorMetrics) {
+            IngestStacks ingestStacks) {
         super(scope, id);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
 
@@ -105,10 +100,8 @@ public class IngestBatcherStack extends NestedStack {
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, submitDLQ.getQueueUrl());
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_ARN, submitDLQ.getQueueArn());
 
-        createAlarmForDlq(this, "IngestBatcherAlarm",
-                "Alarms if there are any messages on the dead letter queue for the ingest batcher queue",
-                submitDLQ, topic);
-        errorMetrics.add(Utils.createErrorMetric("Ingest Batcher Errors", submitDLQ, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "IngestBatcherAlarm", "ingest batcher submission", submitDLQ);
+
         // DynamoDB table to track submitted files
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Table ingestRequestsTable = Table.Builder
