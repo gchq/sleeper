@@ -472,55 +472,6 @@ pub fn create_sketch_path(output_path: &Url) -> Url {
     res
 }
 
-#[allow(clippy::missing_errors_doc)]
-pub async fn deserialise_sketches(
-    path: &Url,
-    key_types: Vec<DataType>,
-) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let factory = ObjectStoreFactory::new(None, true);
-    deserialise_sketches_with_factory(&factory, path, key_types).await
-}
-
-async fn deserialise_sketches_with_factory(
-    store_factory: &ObjectStoreFactory,
-    path: &Url,
-    key_types: Vec<DataType>,
-) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let store_path = object_store::path::Path::from(path.path());
-    let store = store_factory.get_object_store(path)?;
-    let result = store.get(&store_path).await?;
-    read_sketches_from_result(result, key_types).await
-}
-
-async fn read_sketches_from_result(
-    result: object_store::GetResult,
-    key_types: Vec<DataType>,
-) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let mut bytes = result.bytes().await?;
-    let mut sketches: Vec<DataSketchVariant> = vec![];
-    for key_type in key_types {
-        let length = bytes.get_u32() as usize;
-        let sketch_bytes = bytes.split_to(length);
-        sketches.push(read_sketch(sketch_bytes.as_bytes(), key_type)?);
-    }
-    Ok(sketches)
-}
-
-fn read_sketch(bytes: &[u8], key_type: DataType) -> color_eyre::Result<DataSketchVariant> {
-    match key_type {
-        t @ (DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64) => {
-            Ok(DataSketchVariant::Int(t.clone(), i64_deserialize(bytes)?))
-        }
-        t @ (DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View) => {
-            Ok(DataSketchVariant::Str(t.clone(), str_deserialize(bytes)?))
-        }
-        t @ (DataType::Binary | DataType::LargeBinary | DataType::BinaryView) => Ok(
-            DataSketchVariant::Bytes(t.clone(), byte_deserialize(bytes)?),
-        ),
-        _ => Err(eyre!("DataType not supported {key_type}")),
-    }
-}
-
 /// Update the given sketch from an array.
 ///
 /// The list of values in the given array are updated into the data sketch.

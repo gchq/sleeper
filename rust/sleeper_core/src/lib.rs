@@ -37,9 +37,7 @@ pub use crate::datafusion::output::CompletedOutput;
 pub use common_config::{AwsConfig, CommonConfig, CommonConfigBuilder};
 pub use datafusion::{
     ColRange, LeafPartitionQueryConfig, OutputType, PartitionBound, SleeperParquetOptions,
-    SleeperRegion,
-    sketch::{DataSketchVariant, deserialise_sketches},
-    stream_to_ffi_arrow_stream,
+    SleeperRegion, sketch::DataSketchVariant, stream_to_ffi_arrow_stream,
 };
 
 /// Compacts the given Parquet files and reads the schema from the first.
