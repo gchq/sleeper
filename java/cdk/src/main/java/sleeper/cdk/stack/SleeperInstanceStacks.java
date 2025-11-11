@@ -39,7 +39,7 @@ public class SleeperInstanceStacks {
     public static void create(Construct scope, SleeperInstanceStacksProps props) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
 
-        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(scope, instanceProperties, props.getJars());
+        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(scope, props);
         SleeperOptionalStacks.create(scope, instanceProperties, props.getTableProperties(), props.getJars(), coreStacks);
 
         // Only create roles after we know which policies are deployed in the instance

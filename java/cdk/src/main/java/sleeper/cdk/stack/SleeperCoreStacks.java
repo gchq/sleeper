@@ -100,14 +100,18 @@ public class SleeperCoreStacks {
         this.autoStopEcsStack = autoStopEcsStack;
     }
 
-    public static SleeperCoreStacks create(
-            Construct scope, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
-        LoggingStack loggingStack = new LoggingStack(scope, "Logging", instanceProperties);
-        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
-        return create(scope, instanceProperties, jars, loggingStack, autoDeleteS3Stack);
+    public static SleeperCoreStacks create(Construct scope, SleeperInstanceStacksProps props) {
+        LoggingStack loggingStack = new LoggingStack(scope, "Logging", props.getInstanceProperties());
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
+        return create(scope, props.getInstanceProperties(), props.getJars(), loggingStack, autoDeleteS3Stack);
     }
 
     public static SleeperCoreStacks create(
+            Construct scope, SleeperInstanceStacksProps props, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
+        return create(scope, props.getInstanceProperties(), props.getJars(), loggingStack, autoDeleteS3Stack);
+    }
+
+    private static SleeperCoreStacks create(
             Construct scope, InstanceProperties instanceProperties, SleeperJarsInBucket jars, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
             new VpcCheckStack(scope, "Vpc", instanceProperties, jars, loggingStack);

@@ -45,12 +45,14 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
 public class SystemTestApp extends Stack {
+    private final SleeperInstanceStacksProps props;
     private final SleeperJarsInBucket jars;
     private final SystemTestProperties instanceProperties;
     private final List<TableProperties> tableProperties;
 
     public SystemTestApp(App app, String id, StackProps props, SleeperInstanceStacksProps sleeperProps) {
         super(app, id, props);
+        this.props = sleeperProps;
         this.jars = sleeperProps.getJars();
         this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
         this.tableProperties = sleeperProps.getTableProperties();
@@ -66,7 +68,7 @@ public class SystemTestApp extends Stack {
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", instanceProperties, jars, autoDeleteS3Stack);
 
         // Sleeper instance
-        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, instanceProperties, jars, loggingStack, autoDeleteS3Stack);
+        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, loggingStack, autoDeleteS3Stack);
         SleeperOptionalStacks.create(this, instanceProperties, tableProperties, jars, coreStacks);
         coreStacks.createRoles();
 
