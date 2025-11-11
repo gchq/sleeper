@@ -22,10 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.properties.instance.InstanceProperties;
-
 import java.util.Map;
-import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -34,14 +31,11 @@ import static sleeper.cdk.custom.WiremockCweTestHelper.anyRequestedForCloudWatch
 import static sleeper.cdk.custom.WiremockCweTestHelper.disableRuleRequest;
 import static sleeper.cdk.custom.WiremockCweTestHelper.disableRuleRequestedFor;
 import static sleeper.cdk.custom.WiremockCweTestHelper.wiremockCweClient;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @WireMockTest
 public class PauseScheduledRuleLambdaIT {
 
     private PauseScheduledRuleLambda lambda;
-    private final InstanceProperties properties = createTestInstanceProperties();
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
@@ -53,9 +47,7 @@ public class PauseScheduledRuleLambdaIT {
     void shouldShutdownCloudWatchRuleWhenSet() throws Exception {
 
         // Given
-        properties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-compaction-job-creation-rule");
-
-        String scheduledRuleName = UUID.randomUUID().toString();
+        String scheduledRuleName = "test-compaction-job-creation-rule";
 
         stubFor(disableRuleRequest()
                 .willReturn(aResponse().withStatus(200)));
@@ -65,7 +57,7 @@ public class PauseScheduledRuleLambdaIT {
 
         // Then
         verify(1, anyRequestedForCloudWatchEvents());
-        verify(1, disableRuleRequestedFor("test-compaction-job-creation-rule"));
+        verify(1, disableRuleRequestedFor(scheduledRuleName));
 
     }
 
