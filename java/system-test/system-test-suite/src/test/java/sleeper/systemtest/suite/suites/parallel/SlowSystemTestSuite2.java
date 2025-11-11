@@ -22,5 +22,5 @@ import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
 @SystemTestSuite
 @IncludeTags("slow2")
-public class SlowSuite2 {
+public class SlowSystemTestSuite2 {
 }

@@ -22,5 +22,5 @@ import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
 @SystemTestSuite
 @IncludeTags("expensive1")
-public class ExpensiveSuite1 {
+public class ExpensiveSystemTestSuite1 {
 }
