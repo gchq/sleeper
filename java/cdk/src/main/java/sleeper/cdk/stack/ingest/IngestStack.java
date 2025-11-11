@@ -20,7 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -41,7 +40,6 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -61,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
@@ -99,9 +96,7 @@ public class IngestStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             SleeperJarsInBucket jars,
-            Topic topic,
-            SleeperCoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            SleeperCoreStacks coreStacks) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         // The ingest stack consists of the following components:
@@ -116,7 +111,7 @@ public class IngestStack extends NestedStack {
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         // SQS queue for ingest jobs
-        sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
+        sqsQueueForIngestJobs(coreStacks);
 
         // ECS cluster for ingest tasks
         ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
@@ -127,7 +122,7 @@ public class IngestStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForIngestJobs(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForIngestJobs(SleeperCoreStacks coreStacks) {
         // Create queue for ingest job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "IngestJobDLQ");
@@ -153,12 +148,7 @@ public class IngestStack extends NestedStack {
         instanceProperties.set(INGEST_JOB_DLQ_ARN, ingestJobDeadLetterQueue.getQueue().getQueueArn());
         ingestJobQueue.grantSendMessages(coreStacks.getIngestByQueuePolicyForGrants());
         ingestJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
-
-        // Add alarm to send message to SNS if there are any messages on the dead letter queue
-        createAlarmForDlq(this, "IngestAlarm",
-                "Alarms if there are any messages on the dead letter queue for the ingest queue",
-                ingestDLQ, topic);
-        errorMetrics.add(Utils.createErrorMetric("Ingest Errors", ingestDLQ, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "IngestAlarm", "ingest jobs", ingestDLQ);
 
         CfnOutputProps ingestJobQueueProps = new CfnOutputProps.Builder()
                 .value(ingestJobQueue.getQueueUrl())
