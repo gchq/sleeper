@@ -152,12 +152,9 @@ public class SleeperOptionalStacks {
         if (OptionalStack.QUERY_STACKS.stream().anyMatch(optionalStacks::contains)) {
             queryQueueStack = new QueryQueueStack(scope, "QueryQueue",
                     instanceProperties, coreStacks);
-            queryStack = new QueryStack(scope,
-                    "Query",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks, queryQueueStack,
-                    coreStacks.getErrorMetrics());
+            queryStack = new QueryStack(scope, "Query",
+                    instanceProperties, jars, coreStacks,
+                    queryQueueStack);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
                 new WebSocketQueryStack(scope,
