@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.stack;
+package sleeper.cdk;
 
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -40,14 +40,14 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 /**
  * Configuration to deploy a Sleeper instance with the CDK.
  */
-public class SleeperInstanceStacksProps {
+public class SleeperInstanceProps {
 
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
     private final SleeperJarsInBucket jars;
     private final boolean deployPaused;
 
-    private SleeperInstanceStacksProps(Builder builder) {
+    private SleeperInstanceProps(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
         jars = builder.jars;
@@ -65,11 +65,11 @@ public class SleeperInstanceStacksProps {
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
-    public static SleeperInstanceStacksProps fromContext(Construct scope, S3Client s3Client, DynamoDbClient dynamoClient) {
+    public static SleeperInstanceProps fromContext(Construct scope, S3Client s3Client, DynamoDbClient dynamoClient) {
         return fromContext(CdkContext.from(scope), s3Client, dynamoClient);
     }
 
-    public static SleeperInstanceStacksProps fromContext(CdkContext context, S3Client s3Client, DynamoDbClient dynamoClient) {
+    public static SleeperInstanceProps fromContext(CdkContext context, S3Client s3Client, DynamoDbClient dynamoClient) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         DeployInstanceConfiguration configuration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
@@ -147,7 +147,7 @@ public class SleeperInstanceStacksProps {
             return this;
         }
 
-        public SleeperInstanceStacksProps build() {
+        public SleeperInstanceProps build() {
             Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
             Objects.requireNonNull(tableProperties, "tableProperties must not be null");
             Objects.requireNonNull(jars, "jars must not be null");
@@ -183,7 +183,7 @@ public class SleeperInstanceStacksProps {
             CdkDefinedInstanceProperty.getAll().forEach(instanceProperties::unset);
             instanceProperties.set(VERSION, localVersion);
 
-            return new SleeperInstanceStacksProps(this);
+            return new SleeperInstanceProps(this);
         }
     }
 

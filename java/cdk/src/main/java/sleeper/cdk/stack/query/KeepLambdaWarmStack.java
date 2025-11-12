@@ -27,9 +27,9 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -54,7 +54,7 @@ public class KeepLambdaWarmStack extends NestedStack {
 
     public KeepLambdaWarmStack(
             Construct scope, String id,
-            SleeperInstanceStacksProps props,
+            SleeperInstanceProps props,
             SleeperCoreStacks coreStacks,
             QueryQueueStack queryQueueStack) {
         super(scope, id);

@@ -42,9 +42,9 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -82,11 +82,11 @@ public class CompactionTaskResources {
     private static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
 
     private final Stack stack;
-    private final SleeperInstanceStacksProps props;
+    private final SleeperInstanceProps props;
     private final InstanceProperties instanceProperties;
 
     public CompactionTaskResources(Stack stack,
-            SleeperInstanceStacksProps props,
+            SleeperInstanceProps props,
             SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
             CompactionJobResources jobResources,

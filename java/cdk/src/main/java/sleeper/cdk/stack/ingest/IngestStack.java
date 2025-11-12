@@ -44,9 +44,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -86,14 +86,14 @@ public class IngestStack extends NestedStack {
     public static final String INGEST_CLUSTER_NAME = "IngestClusterName";
     public static final String INGEST_CONTAINER_ROLE_ARN = "IngestContainerRoleARN";
 
-    private final SleeperInstanceStacksProps props;
+    private final SleeperInstanceProps props;
     private final InstanceProperties instanceProperties;
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
 
     public IngestStack(
             Construct scope, String id,
-            SleeperInstanceStacksProps props,
+            SleeperInstanceProps props,
             SleeperCoreStacks coreStacks) {
         super(scope, id);
         this.props = props;

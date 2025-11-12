@@ -32,9 +32,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.TrackDeadLetters;
 import sleeper.cdk.util.Utils;
@@ -64,7 +64,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FO
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
             Construct scope, String id,
-            SleeperInstanceStacksProps props, SleeperCoreStacks coreStacks,
+            SleeperInstanceProps props, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters trackDeadLetters) {
         super(scope, id);
@@ -75,7 +75,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         Utils.addStackTagIfSet(this, props.getInstanceProperties());
     }
 
-    private void createTransactionDeletionLambda(SleeperInstanceStacksProps props, SleeperLambdaCode lambdaCode,
+    private void createTransactionDeletionLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode,
             SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters trackDeadLetters) {
         InstanceProperties instanceProperties = props.getInstanceProperties();

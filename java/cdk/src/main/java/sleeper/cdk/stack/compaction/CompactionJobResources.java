@@ -30,9 +30,9 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -105,13 +105,13 @@ public class CompactionJobResources {
     private static final String COMPACTION_STACK_DLQ_URL = "CompactionStackDLQUrlKey";
 
     private final Stack stack;
-    private final SleeperInstanceStacksProps props;
+    private final SleeperInstanceProps props;
     private final InstanceProperties instanceProperties;
     private final Queue compactionJobsQueue;
     private final Queue commitBatcherQueue;
 
     public CompactionJobResources(Stack stack,
-            SleeperInstanceStacksProps props,
+            SleeperInstanceProps props,
             SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
             SleeperCoreStacks coreStacks) {

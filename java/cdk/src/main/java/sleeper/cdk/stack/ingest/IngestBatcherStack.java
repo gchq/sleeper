@@ -35,9 +35,9 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -71,7 +71,7 @@ public class IngestBatcherStack extends NestedStack {
 
     public IngestBatcherStack(
             Construct scope, String id,
-            SleeperInstanceStacksProps props,
+            SleeperInstanceProps props,
             SleeperCoreStacks coreStacks,
             IngestStacks ingestStacks) {
         super(scope, id);

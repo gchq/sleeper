@@ -31,6 +31,7 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -77,7 +78,7 @@ public class PartitionSplittingStack extends NestedStack {
 
     public PartitionSplittingStack(
             Construct scope, String id,
-            SleeperInstanceStacksProps props,
+            SleeperInstanceProps props,
             SleeperCoreStacks coreStacks) {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
@@ -172,7 +173,7 @@ public class PartitionSplittingStack extends NestedStack {
         return partitionSplittingJobQueue;
     }
 
-    private void createTriggerFunction(SleeperInstanceStacksProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
+    private void createTriggerFunction(SleeperInstanceProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
         String triggerFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "partition-splitting-trigger");

@@ -28,9 +28,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.TrackDeadLetters;
 import sleeper.cdk.util.Utils;
@@ -68,7 +68,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
     public TransactionLogSnapshotStack(
             Construct scope, String id,
-            SleeperInstanceStacksProps props, SleeperCoreStacks coreStacks,
+            SleeperInstanceProps props, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters deadLetters) {
         super(scope, id);
@@ -79,7 +79,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         Utils.addStackTagIfSet(this, props.getInstanceProperties());
     }
 
-    private void createSnapshotCreationLambda(SleeperInstanceStacksProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
+    private void createSnapshotCreationLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, TrackDeadLetters deadLetters) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -144,7 +144,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
         transactionLogStateStoreStack.grantCreateSnapshots(snapshotCreationLambda);
     }
 
-    private void createSnapshotDeletionLambda(SleeperInstanceStacksProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
+    private void createSnapshotDeletionLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, TrackDeadLetters deadLetters) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
         String instanceId = Utils.cleanInstanceId(instanceProperties);

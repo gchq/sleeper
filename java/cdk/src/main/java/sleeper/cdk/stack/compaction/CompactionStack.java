@@ -21,10 +21,10 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.util.Utils;
 
 /**
@@ -42,7 +42,7 @@ public class CompactionStack extends NestedStack {
 
     public CompactionStack(
             Construct scope, String id,
-            SleeperInstanceStacksProps props,
+            SleeperInstanceProps props,
             SleeperCoreStacks coreStacks) {
         super(scope, id);
         // The compaction stack consists of the following components:

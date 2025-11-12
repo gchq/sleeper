@@ -28,6 +28,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
@@ -61,7 +62,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
 public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
-            Construct scope, String id, SleeperInstanceStacksProps props, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         super(scope, id);
         InstanceProperties instanceProperties = props.getInstanceProperties();
 

@@ -23,9 +23,9 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.SleeperOptionalStacks;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.LoggingStack;
@@ -42,11 +42,11 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
 public class SystemTestApp extends Stack {
-    private final SleeperInstanceStacksProps props;
+    private final SleeperInstanceProps props;
     private final SleeperJarsInBucket jars;
     private final SystemTestProperties instanceProperties;
 
-    public SystemTestApp(App app, String id, StackProps props, SleeperInstanceStacksProps sleeperProps) {
+    public SystemTestApp(App app, String id, StackProps props, SleeperInstanceProps sleeperProps) {
         super(app, id, props);
         this.props = sleeperProps;
         this.jars = sleeperProps.getJars();
@@ -83,7 +83,7 @@ public class SystemTestApp extends Stack {
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-            SleeperInstanceStacksProps props = SleeperInstanceStacksProps.fromContext(app, s3Client, dynamoClient);
+            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
             InstanceProperties instanceProperties = props.getInstanceProperties();
 
             String id = instanceProperties.get(ID);

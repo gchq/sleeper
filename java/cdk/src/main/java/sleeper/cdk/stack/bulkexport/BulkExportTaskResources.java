@@ -40,9 +40,9 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -71,12 +71,12 @@ public class BulkExportTaskResources {
     private static final String BULK_EXPORT_CLUSTER_NAME = "BulkExportClusterName";
 
     private final Stack stack;
-    private final SleeperInstanceStacksProps props;
+    private final SleeperInstanceProps props;
     private final InstanceProperties instanceProperties;
     private final Queue jobsQueue;
 
     public BulkExportTaskResources(
-            Stack stack, SleeperInstanceStacksProps props, SleeperCoreStacks coreStacks,
+            Stack stack, SleeperInstanceProps props, SleeperCoreStacks coreStacks,
             SleeperLambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue, IBucket resultsBucket) {
         this.stack = stack;
         this.props = props;

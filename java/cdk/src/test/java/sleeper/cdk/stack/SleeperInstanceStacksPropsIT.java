@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.MismatchedVersionException;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -172,8 +173,8 @@ class SleeperInstanceStacksPropsIT {
         return readProps(context).getInstanceProperties();
     }
 
-    private SleeperInstanceStacksProps readProps(CdkContext context) {
-        return SleeperInstanceStacksProps.fromContext(context, null, null);
+    private SleeperInstanceProps readProps(CdkContext context) {
+        return SleeperInstanceProps.fromContext(context, null, null);
     }
 
     private static CdkContext cdkContextWithPropertiesFile(Path tempDir) {

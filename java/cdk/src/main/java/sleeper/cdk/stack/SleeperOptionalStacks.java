@@ -17,6 +17,7 @@ package sleeper.cdk.stack;
 
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
@@ -49,7 +50,7 @@ public class SleeperOptionalStacks {
     }
 
     public static void create(
-            Construct scope, SleeperInstanceStacksProps props, SleeperCoreStacks coreStacks) {
+            Construct scope, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
         SleeperJarsInBucket jars = props.getJars();
         Set<OptionalStack> optionalStacks = instanceProperties

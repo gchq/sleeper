@@ -23,8 +23,6 @@ import software.amazon.awscdk.Tags;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.stack.SleeperInstanceStacks;
-import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
@@ -46,7 +44,7 @@ public class SleeperCdkApp {
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-            SleeperInstanceStacksProps props = SleeperInstanceStacksProps.fromContext(app, s3Client, dynamoClient);
+            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
             InstanceProperties instanceProperties = props.getInstanceProperties();
 
             String id = instanceProperties.get(ID);
@@ -58,7 +56,7 @@ public class SleeperCdkApp {
                     .stackName(id)
                     .env(environment)
                     .build();
-            SleeperInstanceStacks.create(stack, props);
+            SleeperInstance.addNestedStacks(stack, props);
             instanceProperties.getTags()
                     .forEach((key, value) -> Tags.of(app).add(key, value));
 
