@@ -25,6 +25,7 @@ import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.SleeperOptionalStacks;
 import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.cdk.stack.core.SleeperInstanceRoles;
+import sleeper.core.properties.instance.InstanceProperties;
 
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks. Does not create Sleeper tables. If the
@@ -33,10 +34,16 @@ import sleeper.cdk.stack.core.SleeperInstanceRoles;
  */
 public class SleeperInstance {
 
+    private final InstanceProperties instanceProperties;
     private final SleeperCoreStacks coreStacks;
 
-    private SleeperInstance(SleeperCoreStacks coreStacks) {
+    private SleeperInstance(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
+        this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
+    }
+
+    public InstanceProperties getInstanceProperties() {
+        return instanceProperties;
     }
 
     public SleeperInstanceRoles getRoles() {
@@ -79,7 +86,7 @@ public class SleeperInstance {
         coreStacks.createRoles();
         // Only write properties after CDK-defined properties are set
         new PropertiesStack(scope, "Properties", props.getInstanceProperties(), props.getJars(), coreStacks);
-        return new SleeperInstance(coreStacks);
+        return new SleeperInstance(props.getInstanceProperties(), coreStacks);
     }
 
 }
