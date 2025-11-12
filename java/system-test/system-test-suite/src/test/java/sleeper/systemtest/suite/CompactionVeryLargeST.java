@@ -24,7 +24,7 @@ import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.DataFileDuplications;
@@ -48,13 +48,13 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PE
 public class CompactionVeryLargeST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceNoTables(COMPACTION_PERFORMANCE_DATAFUSION);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperDsl sleeper) {
         sleeper.compaction().scaleToZero();
     }
 
@@ -65,7 +65,7 @@ public class CompactionVeryLargeST {
     // The most data that can be compacted at once is the contents of a whole partition.
     // At time of writing, by default a partition will be split if it contains 1 billion rows.
     // To allow for the fact that partition splitting takes time, we test with 2 billion rows.
-    void shouldRunVeryLargeCompaction(SleeperSystemTest sleeper) {
+    void shouldRunVeryLargeCompaction(SleeperDsl sleeper) {
         // Given a table set to compact in batches of 40 files
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",

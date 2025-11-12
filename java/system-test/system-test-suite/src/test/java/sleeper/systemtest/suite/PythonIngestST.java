@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -37,13 +37,13 @@ public class PythonIngestST {
     private Path tempDir;
 
     @BeforeEach
-    void setup(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setup(SleeperDsl sleeper, AfterTestReports reporting) {
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
         sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Test
-    void shouldBatchWriteOneFile(SleeperSystemTest sleeper) {
+    void shouldBatchWriteOneFile(SleeperDsl sleeper) {
         // Given
         sleeper.localFiles(tempDir)
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
@@ -60,7 +60,7 @@ public class PythonIngestST {
     }
 
     @Test
-    void shouldIngestTwoFilesFromS3(SleeperSystemTest sleeper) {
+    void shouldIngestTwoFilesFromS3(SleeperDsl sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRows("file1.parquet", LongStream.range(0, 100))
@@ -78,7 +78,7 @@ public class PythonIngestST {
     }
 
     @Test
-    void shouldIngestDirectoryFromS3(SleeperSystemTest sleeper) {
+    void shouldIngestDirectoryFromS3(SleeperDsl sleeper) {
         // Given
         sleeper.sourceFiles()
                 .createWithNumberedRows("test-dir/file1.parquet", LongStream.range(0, 100))

@@ -31,7 +31,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
@@ -55,14 +55,14 @@ public class AwsStateStoreCommitterDriverIT {
     private SystemTestInstanceContext instance;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
+    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
         sqs = drivers.clients().getSqs();
         instance = context.instance();
     }
 
     @Test
-    void shouldSendCommitToSqsQueue(SleeperSystemTest sleeper) {
+    void shouldSendCommitToSqsQueue(SleeperDsl sleeper) {
         // When
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         FileReference file = FileReferenceFactory.from(partitions).rootFile("file.parquet", 123);
@@ -79,7 +79,7 @@ public class AwsStateStoreCommitterDriverIT {
     }
 
     @Test
-    void shouldSendMoreCommitsThanBatchSize(SleeperSystemTest sleeper) {
+    void shouldSendMoreCommitsThanBatchSize(SleeperDsl sleeper) {
         // When
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
@@ -99,7 +99,7 @@ public class AwsStateStoreCommitterDriverIT {
                         .collect(toUnmodifiableList()));
     }
 
-    private List<Message> receiveCommitRequests(SleeperSystemTest sleeper) {
+    private List<Message> receiveCommitRequests(SleeperDsl sleeper) {
         String queueUrl = sleeper.instanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL);
         List<Message> messages = sqs.receiveMessage(request -> request
                 .queueUrl(queueUrl)
@@ -119,7 +119,7 @@ public class AwsStateStoreCommitterDriverIT {
         return messages;
     }
 
-    private List<Message> receiveCommitRequestsForBatches(SleeperSystemTest sleeper, int batches) {
+    private List<Message> receiveCommitRequestsForBatches(SleeperDsl sleeper, int batches) {
         List<Message> allMessages = new ArrayList<>();
         for (int i = 0; i < batches; i++) {
             List<Message> messages = receiveCommitRequests(sleeper);

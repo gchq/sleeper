@@ -29,7 +29,7 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.drivers.util.sqs.AwsDrainSqsQueue;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
 
 import java.util.List;
@@ -54,7 +54,7 @@ public class CompactionFakeCommitIT {
     String tableId;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, LocalStackSystemTestDrivers drivers) throws Exception {
+    void setUp(SleeperDsl sleeper, LocalStackSystemTestDrivers drivers) throws Exception {
         sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
         sleeper.partitioning().setPartitions(partitions);
         sqsClient = drivers.clients().getSqs();
@@ -64,7 +64,7 @@ public class CompactionFakeCommitIT {
     }
 
     @Test
-    void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
+    void shouldFakeCompactionCommits(SleeperDsl sleeper) throws Exception {
         // Given
         StreamFakeCompactions compactions = StreamFakeCompactions.builder()
                 .numCompactions(100)

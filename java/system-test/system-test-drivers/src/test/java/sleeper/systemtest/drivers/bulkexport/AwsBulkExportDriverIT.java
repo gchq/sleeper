@@ -28,7 +28,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 
@@ -49,7 +49,7 @@ public class AwsBulkExportDriverIT extends LocalStackTestBase {
     InstanceProperties instanceProperties;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
+    void setUp(SleeperDsl sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
         sleeper.connectToInstanceAddOfflineTable(LOCALSTACK_MAIN);
         s3 = drivers.clients().getS3();
         sqs = drivers.clients().getSqs();

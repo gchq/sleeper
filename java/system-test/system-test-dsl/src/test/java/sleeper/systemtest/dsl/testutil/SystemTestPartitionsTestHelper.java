@@ -21,7 +21,7 @@ import sleeper.core.partition.PartitionTreeTestHelper;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -35,24 +35,24 @@ public class SystemTestPartitionsTestHelper {
     private SystemTestPartitionsTestHelper() {
     }
 
-    public static PartitionTree create2StringPartitions(SleeperSystemTest sleeper) {
+    public static PartitionTree create2StringPartitions(SleeperDsl sleeper) {
         return createStringPartitionsFromSplitPointsDirectory(sleeper, "2-partitions.txt");
     }
 
-    public static PartitionTree create128StringPartitions(SleeperSystemTest sleeper) {
+    public static PartitionTree create128StringPartitions(SleeperDsl sleeper) {
         return createStringPartitionsFromSplitPointsDirectory(sleeper, "128-partitions.txt");
     }
 
-    public static PartitionTree create512StringPartitions(SleeperSystemTest sleeper) {
+    public static PartitionTree create512StringPartitions(SleeperDsl sleeper) {
         return createStringPartitionsFromSplitPointsDirectory(sleeper, "512-partitions.txt");
     }
 
-    public static PartitionTree create8192StringPartitions(SleeperSystemTest sleeper) {
+    public static PartitionTree create8192StringPartitions(SleeperDsl sleeper) {
         return createStringPartitionsFromSplitPointsDirectory(sleeper, "8192-partitions.txt");
     }
 
     public static PartitionTree createStringPartitionsFromSplitPointsDirectory(
-            SleeperSystemTest sleeper, String filename) {
+            SleeperDsl sleeper, String filename) {
         return createPartitionsFromSplitPoints(sleeper.tableProperties().getSchema(),
                 readStringSplitPoints(sleeper.getSplitPointsDirectory()
                         .resolve("string").resolve(filename)));
@@ -62,7 +62,7 @@ public class SystemTestPartitionsTestHelper {
         return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 
-    public static PartitionTree createPartitionTreeWithRowsPerPartitionAndTotal(int rowsPerPartition, int totalRows, SleeperSystemTest sleeper) {
+    public static PartitionTree createPartitionTreeWithRowsPerPartitionAndTotal(int rowsPerPartition, int totalRows, SleeperDsl sleeper) {
         return PartitionTreeTestHelper.createPartitionTreeWithRowsPerPartitionAndTotal(
                 rowsPerPartition, totalRows,
                 sleeper.numberedRows()::generateRow,
@@ -77,7 +77,7 @@ public class SystemTestPartitionsTestHelper {
         }
     }
 
-    public static PartitionsBuilder partitionsBuilder(SleeperSystemTest sleeper) {
+    public static PartitionsBuilder partitionsBuilder(SleeperDsl sleeper) {
         return new PartitionsBuilder(sleeper.tableProperties().getSchema());
     }
 

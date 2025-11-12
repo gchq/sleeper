@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -37,12 +37,12 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class StateStoreCommitterST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOfflineTable(MAIN);
     }
 
     @Test
-    void shouldAddManyFiles(SleeperSystemTest sleeper) throws Exception {
+    void shouldAddManyFiles(SleeperDsl sleeper) throws Exception {
         // Given
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
         sleeper.partitioning().setPartitions(partitions);

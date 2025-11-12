@@ -20,7 +20,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.InMemoryTransactionBodyStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.committer.StateStoreCommitter;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
@@ -65,17 +65,17 @@ public class InMemoryStateStoreCommitter {
         return new FakeLogs(numCommitsByTableId, Map.of());
     }
 
-    public void setRunCommitterOnSend(SleeperSystemTest sleeper, boolean runCommitterOnSend) {
+    public void setRunCommitterOnSend(SleeperDsl sleeper, boolean runCommitterOnSend) {
         runCommitterOnSendByTableId.put(sleeper.tableProperties().get(TABLE_ID), runCommitterOnSend);
     }
 
-    public void addFakeCommits(SleeperSystemTest sleeper, int commits) {
+    public void addFakeCommits(SleeperDsl sleeper, int commits) {
         numCommitsByTableId.compute(
                 sleeper.tableProperties().get(TABLE_ID),
                 (id, count) -> count == null ? commits : count + commits);
     }
 
-    public void setFakeCommitsPerSecond(SleeperSystemTest sleeper, double commitsPerSecond) {
+    public void setFakeCommitsPerSecond(SleeperDsl sleeper, double commitsPerSecond) {
         commitsPerSecondByTableId.put(sleeper.tableProperties().get(TABLE_ID), commitsPerSecond);
     }
 
