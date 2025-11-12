@@ -19,6 +19,17 @@ import sleeper.core.row.testutils.InMemoryRowStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.sketches.testutils.InMemorySketchesStore;
+import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
+import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExport;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryReports;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
+import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
+import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
 
 public class InMemorySystemTestState {
 
@@ -27,11 +38,22 @@ public class InMemorySystemTestState {
     private final InMemorySketchesStore sketches = new InMemorySketchesStore();
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
+    private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
+    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(transactionLogs);
+    private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
+    private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data, sketches);
+    private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
+    private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
+    private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
 
     private long fileSizeBytesForBatcher = 1024;
 
-    public InMemoryRowStore data() {
-        return data;
+    public void setFileSizeBytesForBatcher(long fileSizeBytesForBatcher) {
+        this.fileSizeBytesForBatcher = fileSizeBytesForBatcher;
+    }
+
+    public long getFileSizeBytesForBatcher() {
+        return fileSizeBytesForBatcher;
     }
 
     public InMemoryRowStore getSourceFiles() {
@@ -54,12 +76,43 @@ public class InMemorySystemTestState {
         return batcherStore;
     }
 
-    public long getFileSizeBytesForBatcher() {
-        return fileSizeBytesForBatcher;
+    public SystemTestDeploymentDriver getSystemTestDeploymentDriver() {
+        return systemTestDeploymentDriver;
     }
 
-    public void setFileSizeBytesForBatcher(long sizeForBatcher) {
-        this.fileSizeBytesForBatcher = sizeForBatcher;
+    public InMemorySleeperTablesDriver getTablesDriver() {
+        return tablesDriver;
     }
+
+    public SleeperInstanceDriver getInstanceDriver() {
+        return instanceDriver;
+    }
+
+    public InMemoryIngestByQueue getIngestByQueue() {
+        return ingestByQueue;
+    }
+
+    public InMemoryCompaction getCompaction() {
+        return compaction;
+    }
+
+    public InMemoryTableMetrics getMetrics() {
+        return metrics;
+    }
+
+    public InMemoryReports getReports() {
+        return reports;
+    }
+
+    public InMemoryBulkExport getBulkExport() {
+        return bulkExport;
+    }
+
+    public InMemoryStateStoreCommitter getStateStoreCommitter() {
+        return stateStoreCommitter;
+    }
+
+    private final InMemoryBulkExport bulkExport = new InMemoryBulkExport();
+    private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(transactionLogs.getTransactionBodyStore(), ingestByQueue, compaction);
 
 }

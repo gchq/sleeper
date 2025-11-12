@@ -45,9 +45,7 @@ import sleeper.systemtest.dsl.sourcedata.GeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExport;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryBulkExportDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemoryCompaction;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDataGenerationTasksDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectIngestDriver;
@@ -55,16 +53,11 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryDirectQueryDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGarbageCollectionDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryGeneratedIngestSourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestBatcherDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemoryIngestByQueue;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryPartitionSplittingDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryQueryByQueueDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryReports;
-import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
-import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
 import sleeper.systemtest.dsl.util.NoScheduleRulesDriver;
 import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
@@ -78,24 +71,14 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     private final InMemorySystemTestState state = new InMemorySystemTestState();
 
-    private final SystemTestDeploymentDriver systemTestDeploymentDriver = new InMemorySystemTestDeploymentDriver();
-    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(state.getTransactionLogs());
-    private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
-    private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(state.getSourceFiles(), state.getData(), state.getSketches());
-    private final InMemoryCompaction compaction = new InMemoryCompaction(state.getData(), state.getSketches());
-    private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
-    private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
-    private final InMemoryBulkExport bulkExport = new InMemoryBulkExport();
-    private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(state.getTransactionLogs().getTransactionBodyStore(), ingestByQueue, compaction);
-
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
-        return systemTestDeploymentDriver;
+        return state.getSystemTestDeploymentDriver();
     }
 
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
-        return instanceDriver;
+        return state.getInstanceDriver();
     }
 
     @Override
@@ -105,7 +88,7 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public SleeperTablesDriver tables(SystemTestParameters parameters) {
-        return tablesDriver;
+        return state.getTablesDriver();
     }
 
     @Override
@@ -120,12 +103,12 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
-        return stateStoreCommitter.withContext(context);
+        return state.getStateStoreCommitter().withContext(context);
     }
 
     @Override
     public StateStoreCommitterLogsDriver stateStoreCommitterLogs(SystemTestContext context) {
-        return stateStoreCommitter.logsDriver();
+        return state.getStateStoreCommitter().logsDriver();
     }
 
     @Override
@@ -135,27 +118,27 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public IngestByQueue ingestByQueue(SystemTestContext context) {
-        return new IngestByQueue(context.instance(), ingestByQueue.byQueueDriver(context));
+        return new IngestByQueue(context.instance(), state.getIngestByQueue().byQueueDriver(context));
     }
 
     @Override
     public IngestTasksDriver ingestTasks(SystemTestContext context) {
-        return ingestByQueue.tasksDriver(context);
+        return state.getIngestByQueue().tasksDriver(context);
     }
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return ingestByQueue.waitForIngest(context, pollWithRetries());
+        return state.getIngestByQueue().waitForIngest(context, pollWithRetries());
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return ingestByQueue.waitForBulkImport(context, pollWithRetries());
+        return state.getIngestByQueue().waitForBulkImport(context, pollWithRetries());
     }
 
     @Override
     public IngestBatcherDriver ingestBatcher(SystemTestContext context) {
-        return new InMemoryIngestBatcherDriver(context, state.getBatcherStore(), ingestByQueue, state.getFileSizeBytesForBatcher());
+        return new InMemoryIngestBatcherDriver(context, state.getBatcherStore(), state.getIngestByQueue(), state.getFileSizeBytesForBatcher());
     }
 
     public void fixSizeOfFilesSeenByBatcherInBytes(long fileSizeBytes) {
@@ -164,12 +147,12 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public CompactionDriver compaction(SystemTestContext context) {
-        return compaction.driver(context.instance());
+        return state.getCompaction().driver(context.instance());
     }
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
-        return compaction.waitForJobs(context, pollWithRetries());
+        return state.getCompaction().waitForJobs(context, pollWithRetries());
     }
 
     @Override
@@ -205,22 +188,22 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public TableMetricsDriver tableMetrics(SystemTestContext context) {
-        return metrics.driver(context);
+        return state.getMetrics().driver(context);
     }
 
     @Override
     public CompactionReportsDriver compactionReports(SystemTestContext context) {
-        return reports.compaction(context.instance());
+        return state.getReports().compaction(context.instance());
     }
 
     @Override
     public IngestReportsDriver ingestReports(SystemTestContext context) {
-        return reports.ingest(context.instance());
+        return state.getReports().ingest(context.instance());
     }
 
     @Override
     public PartitionReportDriver partitionReports(SystemTestContext context) {
-        return reports.partitions(context.instance());
+        return state.getReports().partitions(context.instance());
     }
 
     @Override
@@ -249,20 +232,20 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     public InMemoryReports reports() {
-        return reports;
+        return state.getReports();
     }
 
     public InMemoryStateStoreCommitter stateStoreCommitter() {
-        return stateStoreCommitter;
+        return state.getStateStoreCommitter();
     }
 
     @Override
     public BulkExportDriver bulkExport(SystemTestContext context) {
-        return new InMemoryBulkExportDriver(bulkExport);
+        return new InMemoryBulkExportDriver(state.getBulkExport());
     }
 
     public List<BulkExportQuery> getBulkExportQueueQueries() {
-        return bulkExport.getQueriesOnQueue();
+        return state.getBulkExport().getQueriesOnQueue();
     }
 
 }
