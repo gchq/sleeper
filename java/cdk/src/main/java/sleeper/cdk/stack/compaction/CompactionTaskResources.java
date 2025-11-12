@@ -44,6 +44,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
+import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -57,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
@@ -81,18 +81,20 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 public class CompactionTaskResources {
     private static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
 
-    private final InstanceProperties instanceProperties;
     private final Stack stack;
+    private final SleeperInstanceStacksProps props;
+    private final InstanceProperties instanceProperties;
 
     public CompactionTaskResources(Stack stack,
-            InstanceProperties instanceProperties,
+            SleeperInstanceStacksProps props,
             SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
             CompactionJobResources jobResources,
             SleeperCoreStacks coreStacks) {
 
-        this.instanceProperties = instanceProperties;
         this.stack = stack;
+        this.props = props;
+        this.instanceProperties = props.getInstanceProperties();
 
         ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, jobResources);
         lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
@@ -188,7 +190,7 @@ public class CompactionTaskResources {
                 .create(stack, "CompactionTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.COMPACTION_TASK_CREATION.getDescription())
-                .enabled(!shouldDeployPaused(stack))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();

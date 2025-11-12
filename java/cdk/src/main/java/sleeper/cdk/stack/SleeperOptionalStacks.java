@@ -130,9 +130,7 @@ public class SleeperOptionalStacks {
         // Stack for containers for compactions and splitting compactions
         CompactionStack compactionStack = null;
         if (optionalStacks.contains(OptionalStack.CompactionStack)) {
-            compactionStack = new CompactionStack(scope,
-                    "Compaction",
-                    instanceProperties, jars, coreStacks);
+            compactionStack = new CompactionStack(scope, "Compaction", props, coreStacks);
         }
 
         // Stack to split partitions
