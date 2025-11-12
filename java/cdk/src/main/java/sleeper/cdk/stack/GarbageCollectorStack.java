@@ -39,7 +39,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_URL;
@@ -63,9 +62,10 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
 public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
-            Construct scope, String id, InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
+            Construct scope, String id, SleeperInstanceStacksProps props, SleeperCoreStacks coreStacks) {
         super(scope, id);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        SleeperJarsInBucket jars = props.getJars();
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -108,7 +108,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .create(this, "GarbageCollectorPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.GARBAGE_COLLECTOR.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.GARBAGE_COLLECTOR.getDescription())
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(triggerFunction)))
                 .build();

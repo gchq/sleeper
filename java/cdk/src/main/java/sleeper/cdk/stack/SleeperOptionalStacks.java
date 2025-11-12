@@ -126,8 +126,7 @@ public class SleeperOptionalStacks {
 
         // Stack to garbage collect old files
         if (optionalStacks.contains(OptionalStack.GarbageCollectorStack)) {
-            new GarbageCollectorStack(scope, "GarbageCollector",
-                    instanceProperties, jars, coreStacks);
+            new GarbageCollectorStack(scope, "GarbageCollector", props, coreStacks);
         }
         // Stack for containers for compactions and splitting compactions
         CompactionStack compactionStack = null;
