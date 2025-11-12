@@ -171,8 +171,7 @@ public class SleeperOptionalStacks {
         }
 
         if (optionalStacks.contains(OptionalStack.DashboardStack)) {
-            new DashboardStack(scope,
-                    "Dashboard",
+            new DashboardStack(scope, "Dashboard",
                     ingestStack,
                     compactionStack,
                     partitionSplittingStack,
@@ -181,12 +180,7 @@ public class SleeperOptionalStacks {
         }
 
         if (optionalStacks.contains(OptionalStack.KeepLambdaWarmStack)) {
-            new KeepLambdaWarmStack(scope,
-                    "KeepLambdaWarmExecution",
-                    instanceProperties,
-                    jars,
-                    coreStacks,
-                    queryQueueStack);
+            new KeepLambdaWarmStack(scope, "KeepLambdaWarmExecution", props, coreStacks, queryQueueStack);
         }
     }
 

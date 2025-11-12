@@ -27,9 +27,9 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
+import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -53,19 +53,19 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_WARM_LAMBDA_E
  */
 public class KeepLambdaWarmStack extends NestedStack {
 
-    public KeepLambdaWarmStack(Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+    public KeepLambdaWarmStack(
+            Construct scope, String id,
+            SleeperInstanceStacksProps props,
             SleeperCoreStacks coreStacks,
             QueryQueueStack queryQueueStack) {
         super(scope, id);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-keep-warm");
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         // Keep lambda warm function
         IFunction handler = lambdaCode.buildFunction(this, LambdaHandler.KEEP_QUERY_WARM, "WarmQueryExecutorLambda", builder -> builder
