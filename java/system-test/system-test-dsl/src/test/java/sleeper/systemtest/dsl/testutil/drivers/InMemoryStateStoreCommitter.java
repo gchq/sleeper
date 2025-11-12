@@ -40,17 +40,13 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class InMemoryStateStoreCommitter {
 
     private final InMemoryTransactionBodyStore transactionBodyStore;
-    private final InMemoryIngestByQueue ingest;
-    private final InMemoryCompaction compaction;
     private final Queue<StateStoreCommitRequest> queue = new LinkedList<>();
     private final Map<String, Integer> numCommitsByTableId = new HashMap<>();
     private final Map<String, Double> commitsPerSecondByTableId = new HashMap<>();
     private final Map<String, Boolean> runCommitterOnSendByTableId = new HashMap<>();
 
-    public InMemoryStateStoreCommitter(InMemoryTransactionBodyStore transactionBodyStore, InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
+    public InMemoryStateStoreCommitter(InMemoryTransactionBodyStore transactionBodyStore) {
         this.transactionBodyStore = transactionBodyStore;
-        this.ingest = ingest;
-        this.compaction = compaction;
     }
 
     public StateStoreCommitterDriver withContext(SystemTestContext context) {
