@@ -120,8 +120,7 @@ public class SleeperOptionalStacks {
 
         // Stack to run bulk export jobs
         if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
-            new BulkExportStack(scope, "BulkExport",
-                    instanceProperties, jars, coreStacks);
+            new BulkExportStack(scope, "BulkExport", props, coreStacks);
         }
 
         // Stack to garbage collect old files

@@ -37,6 +37,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
+import sleeper.cdk.stack.SleeperInstanceStacksProps;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -69,12 +70,13 @@ public class BulkExportStack extends NestedStack {
     public static final String LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL = "LeafPartitionBulkExportQueueDlqUrl";
     public static final String LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_NAME = "LeafPartitionBulkExportQueueDlqName";
 
-    public BulkExportStack(Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+    public BulkExportStack(
+            Construct scope, String id,
+            SleeperInstanceStacksProps props,
             SleeperCoreStacks coreStacks) {
         super(scope, id);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        SleeperJarsInBucket jars = props.getJars();
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
@@ -131,8 +133,9 @@ public class BulkExportStack extends NestedStack {
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
 
         IBucket exportResultsBucket = setupExportBucket(instanceProperties, coreStacks, lambdaCode);
-        new BulkExportTaskResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ,
-                exportResultsBucket);
+        new BulkExportTaskResources(this,
+                props, coreStacks, lambdaCode, jarsBucket,
+                leafPartitionQueuesQ, exportResultsBucket);
     }
 
     /**
