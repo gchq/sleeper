@@ -69,16 +69,16 @@ import java.util.List;
 
 public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
-    private final InMemorySystemTestState state = new InMemorySystemTestState();
+    private final InMemorySystemTestState inMemoryState = new InMemorySystemTestState();
 
     @Override
     public SystemTestDeploymentDriver systemTestDeployment(SystemTestParameters parameters) {
-        return state.getSystemTestDeploymentDriver();
+        return inMemoryState.getSystemTestDeploymentDriver();
     }
 
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
-        return state.getInstanceDriver();
+        return inMemoryState.getInstanceDriver();
     }
 
     @Override
@@ -88,91 +88,91 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public SleeperTablesDriver tables(SystemTestParameters parameters) {
-        return state.getTablesDriver();
+        return inMemoryState.getTablesDriver();
     }
 
     @Override
     public IngestSourceFilesDriver sourceFiles(SystemTestContext context) {
-        return new InMemorySourceFilesDriver(state.getSourceFiles(), state.getData(), state.getSketches());
+        return new InMemorySourceFilesDriver(inMemoryState.getSourceFiles(), inMemoryState.getData(), inMemoryState.getSketches());
     }
 
     @Override
     public GeneratedIngestSourceFilesDriver generatedSourceFiles(SystemTestParameters parameters, DeployedSystemTestResources systemTest) {
-        return new InMemoryGeneratedIngestSourceFilesDriver(state.getSourceFiles());
+        return new InMemoryGeneratedIngestSourceFilesDriver(inMemoryState.getSourceFiles());
     }
 
     @Override
     public StateStoreCommitterDriver stateStoreCommitter(SystemTestContext context) {
-        return state.getStateStoreCommitter().withContext(context);
+        return inMemoryState.getStateStoreCommitter().withContext(context);
     }
 
     @Override
     public StateStoreCommitterLogsDriver stateStoreCommitterLogs(SystemTestContext context) {
-        return state.getStateStoreCommitter().logsDriver();
+        return inMemoryState.getStateStoreCommitter().logsDriver();
     }
 
     @Override
     public DirectIngestDriver directIngest(SystemTestContext context) {
-        return new InMemoryDirectIngestDriver(context.instance(), state.getData(), state.getSketches());
+        return new InMemoryDirectIngestDriver(context.instance(), inMemoryState.getData(), inMemoryState.getSketches());
     }
 
     @Override
     public IngestByQueue ingestByQueue(SystemTestContext context) {
-        return new IngestByQueue(context.instance(), state.getIngestByQueue().byQueueDriver(context));
+        return new IngestByQueue(context.instance(), inMemoryState.getIngestByQueue().byQueueDriver(context));
     }
 
     @Override
     public IngestTasksDriver ingestTasks(SystemTestContext context) {
-        return state.getIngestByQueue().tasksDriver(context);
+        return inMemoryState.getIngestByQueue().tasksDriver(context);
     }
 
     @Override
     public WaitForJobs waitForIngest(SystemTestContext context) {
-        return state.getIngestByQueue().waitForIngest(context, pollWithRetries());
+        return inMemoryState.getIngestByQueue().waitForIngest(context, pollWithRetries());
     }
 
     @Override
     public WaitForJobs waitForBulkImport(SystemTestContext context) {
-        return state.getIngestByQueue().waitForBulkImport(context, pollWithRetries());
+        return inMemoryState.getIngestByQueue().waitForBulkImport(context, pollWithRetries());
     }
 
     @Override
     public IngestBatcherDriver ingestBatcher(SystemTestContext context) {
-        return new InMemoryIngestBatcherDriver(context, state.getBatcherStore(), state.getIngestByQueue(), state.getFileSizeBytesForBatcher());
+        return new InMemoryIngestBatcherDriver(context, inMemoryState.getBatcherStore(), inMemoryState.getIngestByQueue(), inMemoryState.getFileSizeBytesForBatcher());
     }
 
     public void fixSizeOfFilesSeenByBatcherInBytes(long fileSizeBytes) {
-        state.setFileSizeBytesForBatcher(fileSizeBytes);
+        inMemoryState.setFileSizeBytesForBatcher(fileSizeBytes);
     }
 
     @Override
     public CompactionDriver compaction(SystemTestContext context) {
-        return state.getCompaction().driver(context.instance());
+        return inMemoryState.getCompaction().driver(context.instance());
     }
 
     @Override
     public WaitForJobs waitForCompaction(SystemTestContext context) {
-        return state.getCompaction().waitForJobs(context, pollWithRetries());
+        return inMemoryState.getCompaction().waitForJobs(context, pollWithRetries());
     }
 
     @Override
     public GarbageCollectionDriver garbageCollection(SystemTestContext context) {
-        return new InMemoryGarbageCollectionDriver(context.instance(), state.getData());
+        return new InMemoryGarbageCollectionDriver(context.instance(), inMemoryState.getData());
     }
 
     @Override
     public QueryAllTablesDriver directQuery(SystemTestContext context) {
-        return InMemoryDirectQueryDriver.allTablesDriver(context.instance(), state.getData());
+        return InMemoryDirectQueryDriver.allTablesDriver(context.instance(), inMemoryState.getData());
     }
 
     @Override
     public QueryAllTablesDriver queryByQueue(SystemTestContext context) {
-        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), state.getData());
+        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), inMemoryState.getData());
     }
 
     @Override
     public QueryAllTablesDriver queryByWebSocket(SystemTestContext context) {
-        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), state.getData());
+        return InMemoryQueryByQueueDriver.allTablesDriver(context.instance(), inMemoryState.getData());
     }
 
     @Override
@@ -183,37 +183,37 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public PartitionSplittingDriver partitionSplitting(SystemTestContext context) {
-        return new InMemoryPartitionSplittingDriver(context.instance(), state.getSketches());
+        return new InMemoryPartitionSplittingDriver(context.instance(), inMemoryState.getSketches());
     }
 
     @Override
     public TableMetricsDriver tableMetrics(SystemTestContext context) {
-        return state.getMetrics().driver(context);
+        return inMemoryState.getMetrics().driver(context);
     }
 
     @Override
     public CompactionReportsDriver compactionReports(SystemTestContext context) {
-        return state.getReports().compaction(context.instance());
+        return inMemoryState.getReports().compaction(context.instance());
     }
 
     @Override
     public IngestReportsDriver ingestReports(SystemTestContext context) {
-        return state.getReports().ingest(context.instance());
+        return inMemoryState.getReports().ingest(context.instance());
     }
 
     @Override
     public PartitionReportDriver partitionReports(SystemTestContext context) {
-        return state.getReports().partitions(context.instance());
+        return inMemoryState.getReports().partitions(context.instance());
     }
 
     @Override
     public DataGenerationTasksDriver dataGenerationTasks(SystemTestContext context) {
-        return new InMemoryDataGenerationTasksDriver(context.instance(), state.getData(), state.getSketches());
+        return new InMemoryDataGenerationTasksDriver(context.instance(), inMemoryState.getData(), inMemoryState.getSketches());
     }
 
     @Override
     public DataFilesDriver dataFiles(SystemTestContext context) {
-        return new InMemoryDataFilesDriver(state.getData(), context);
+        return new InMemoryDataFilesDriver(inMemoryState.getData(), context);
     }
 
     @Override
@@ -232,20 +232,20 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     }
 
     public InMemoryReports reports() {
-        return state.getReports();
+        return inMemoryState.getReports();
     }
 
     public InMemoryStateStoreCommitter stateStoreCommitter() {
-        return state.getStateStoreCommitter();
+        return inMemoryState.getStateStoreCommitter();
     }
 
     @Override
     public BulkExportDriver bulkExport(SystemTestContext context) {
-        return new InMemoryBulkExportDriver(state.getBulkExport());
+        return new InMemoryBulkExportDriver(inMemoryState.getBulkExport());
     }
 
     public List<BulkExportQuery> getBulkExportQueueQueries() {
-        return state.getBulkExport().getQueriesOnQueue();
+        return inMemoryState.getBulkExport().getQueriesOnQueue();
     }
 
 }
