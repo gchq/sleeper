@@ -17,6 +17,7 @@ use arrow::{
     array::{Array, ArrayRef, Int32Array, RecordBatch},
     datatypes::{DataType, Field, Schema},
 };
+use bytes::Buf;
 use color_eyre::eyre::{Error, OptionExt, eyre};
 use datafusion::{
     execution::SendableRecordBatchStream,
@@ -28,11 +29,14 @@ use datafusion::{
             },
         },
         basic::{Compression, ZstdLevel},
+        data_type::AsBytes,
         file::properties::WriterProperties,
     },
 };
 use futures::StreamExt;
-use sleeper_core::{ColRange, DataSketchVariant, PartitionBound, deserialise_sketches};
+use objectstore_ext::s3::ObjectStoreFactory;
+use rust_sketch::quantiles::{byte::byte_deserialize, i64::i64_deserialize, str::str_deserialize};
+use sleeper_core::{ColRange, DataSketchVariant, PartitionBound};
 use std::{collections::HashMap, fs::File, sync::Arc};
 use tempfile::TempDir;
 use url::Url;
@@ -111,6 +115,55 @@ pub async fn read_sketch_approx_row_count(path: &Url) -> Result<u64, Error> {
 async fn read_sketch_of_ints(path: &Url) -> Result<DataSketchVariant, Error> {
     let mut sketches = deserialise_sketches(path, vec![DataType::Int32]).await?;
     sketches.pop().ok_or_eyre("Expected one sketch, found 0")
+}
+
+#[allow(clippy::missing_errors_doc)]
+async fn deserialise_sketches(
+    path: &Url,
+    key_types: Vec<DataType>,
+) -> color_eyre::Result<Vec<DataSketchVariant>> {
+    let factory = ObjectStoreFactory::new(None, true);
+    deserialise_sketches_with_factory(&factory, path, key_types).await
+}
+
+async fn deserialise_sketches_with_factory(
+    store_factory: &ObjectStoreFactory,
+    path: &Url,
+    key_types: Vec<DataType>,
+) -> color_eyre::Result<Vec<DataSketchVariant>> {
+    let store_path = object_store::path::Path::from(path.path());
+    let store = store_factory.get_object_store(path)?;
+    let result = store.get(&store_path).await?;
+    read_sketches_from_result(result, key_types).await
+}
+
+async fn read_sketches_from_result(
+    result: object_store::GetResult,
+    key_types: Vec<DataType>,
+) -> color_eyre::Result<Vec<DataSketchVariant>> {
+    let mut bytes = result.bytes().await?;
+    let mut sketches: Vec<DataSketchVariant> = vec![];
+    for key_type in key_types {
+        let length = bytes.get_u32() as usize;
+        let sketch_bytes = bytes.split_to(length);
+        sketches.push(read_sketch(sketch_bytes.as_bytes(), key_type)?);
+    }
+    Ok(sketches)
+}
+
+fn read_sketch(bytes: &[u8], key_type: DataType) -> color_eyre::Result<DataSketchVariant> {
+    match key_type {
+        t @ (DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64) => {
+            Ok(DataSketchVariant::Int(t.clone(), i64_deserialize(bytes)?))
+        }
+        t @ (DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View) => {
+            Ok(DataSketchVariant::Str(t.clone(), str_deserialize(bytes)?))
+        }
+        t @ (DataType::Binary | DataType::LargeBinary | DataType::BinaryView) => Ok(
+            DataSketchVariant::Bytes(t.clone(), byte_deserialize(bytes)?),
+        ),
+        _ => Err(eyre!("DataType not supported {key_type}")),
+    }
 }
 
 #[must_use]

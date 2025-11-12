@@ -276,7 +276,7 @@ mod tests {
     fn should_widen_bounds_from_int32_to_int64() {
         // Given
         let udf = CastUDF::new(&DataType::Int32, &DataType::Int64, false);
-        let intervals = vec![
+        let intervals = [
             make_interval(&ScalarValue::Int32(Some(1)), &ScalarValue::Int32(Some(10))),
             make_interval(
                 &ScalarValue::Int32(Some(-100)),
@@ -297,7 +297,7 @@ mod tests {
     fn should_narrow_bounds_from_int64_to_int32_and_truncate() {
         // Given
         let udf = CastUDF::new(&DataType::Int64, &DataType::Int32, false);
-        let intervals = vec![
+        let intervals = [
             make_interval(
                 &ScalarValue::Int64(Some(i64::from(i32::MIN) - 1)), // -2147483649
                 &ScalarValue::Int64(Some(i64::from(i32::MAX) + 1)), // 2147483648
@@ -321,7 +321,7 @@ mod tests {
     fn should_return_same_bounds_when_types_match() {
         // Given
         let udf = CastUDF::new(&DataType::Int32, &DataType::Int32, false);
-        let intervals = vec![
+        let intervals = [
             make_interval(
                 &ScalarValue::Int32(Some(50)),
                 &ScalarValue::Int32(Some(200)),
