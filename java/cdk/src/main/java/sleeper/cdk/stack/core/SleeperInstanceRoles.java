@@ -17,5 +17,12 @@ package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.services.iam.IRole;
 
+/**
+ * References for roles that can be assumed to interact with Sleeper.
+ *
+ * @param instanceAdmin a role for admin access to the Sleeper instance
+ * @param ingestByQueue a role to add data to Sleeper via SQS queues, by standard ingest or bulk import
+ * @param directIngest  a role to add data to Sleeper directly against the underlying AWS resources
+ */
 public record SleeperInstanceRoles(IRole instanceAdmin, IRole ingestByQueue, IRole directIngest) {
 }
