@@ -23,7 +23,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -46,12 +46,12 @@ public class CompactionCommitThroughputST {
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceNoTables(MAIN);
     }
 
     @Test
-    void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
+    void shouldFakeCompactionCommits(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA,
                 Map.of(TABLE_ONLINE, "false"));

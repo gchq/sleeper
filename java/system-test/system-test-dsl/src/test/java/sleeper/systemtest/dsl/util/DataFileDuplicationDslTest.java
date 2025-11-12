@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.Map;
@@ -39,12 +39,12 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.ROW_KEY_FIELD_NAME;
 public class DataFileDuplicationDslTest {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldDuplicateFiles(SleeperSystemTest sleeper) {
+    void shouldDuplicateFiles(SleeperDsl sleeper) {
         // Given
         sleeper.ingest().direct(null)
                 .numberedRows(LongStream.of(1, 2, 3));
@@ -60,7 +60,7 @@ public class DataFileDuplicationDslTest {
     }
 
     @Test
-    void shouldCreateCompactionsFromDuplicates(SleeperSystemTest sleeper) {
+    void shouldCreateCompactionsFromDuplicates(SleeperDsl sleeper) {
         // Given
         sleeper.ingest().direct(null)
                 .numberedRows(LongStream.of(1, 2))
@@ -85,7 +85,7 @@ public class DataFileDuplicationDslTest {
     }
 
     @Test
-    void shouldCreateCompactionsFromDuplicatesOnMultiplePartitions(SleeperSystemTest sleeper) {
+    void shouldCreateCompactionsFromDuplicatesOnMultiplePartitions(SleeperDsl sleeper) {
         // Given
         sleeper.setGeneratorOverrides(overrideField(
                 ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));

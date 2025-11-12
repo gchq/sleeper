@@ -19,7 +19,7 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -35,13 +35,13 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class PythonBulkImportST {
 
     @BeforeEach
-    void setup(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setup(SleeperDsl sleeper, AfterTestReports reporting) {
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
         sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Test
-    void shouldBulkImportFilesFromS3(SleeperSystemTest sleeper) {
+    void shouldBulkImportFilesFromS3(SleeperDsl sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.sourceFiles()

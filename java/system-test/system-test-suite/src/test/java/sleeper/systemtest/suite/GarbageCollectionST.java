@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -46,12 +46,12 @@ public class GarbageCollectionST {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(MAIN);
     }
 
     @Test
-    void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
+    void shouldGarbageCollectFilesAfterCompaction(SleeperDsl sleeper) {
         // Given
         int numberOfFilesToGC = 11_000;
         int rowsPerFile = 100;

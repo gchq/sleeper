@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
@@ -35,12 +35,12 @@ public class DirectQueryDriverIT {
     Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
     }
 
     @Test
-    void shouldQueryFile(SleeperSystemTest sleeper) throws Exception {
+    void shouldQueryFile(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.of(1, 3, 2));
 
