@@ -15,6 +15,10 @@
  */
 package sleeper.cdk;
 
+import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.NestedStackProps;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.SleeperCoreStacks;
@@ -40,14 +44,33 @@ public class SleeperInstance {
     }
 
     /**
-     * Adds all nested stacks for an instance of Sleeper at a given scope. This should only be used at a scope with no
-     * other constructs, as the IDs of the nested stack constructs are not namespaced.
+     * Declares an instance of Sleeper as a nested stack.
      *
-     * @param  scope the scope of the Sleeper instance
-     * @param  props configuration to deploy the instance
-     * @return       the Sleeper instance
+     * @param  scope        the scope to add the instance to, usually a Stack or NestedStack
+     * @param  id           the nested stack ID
+     * @param  stackProps   configuration of the nested stack
+     * @param  sleeperProps configuration to deploy the instance
+     * @return              a reference to interact with constructs in the Sleeper instance
      */
-    public static SleeperInstance addNestedStacks(Construct scope, SleeperInstanceProps props) {
+    public static SleeperInstance createAsNestedStack(Construct scope, String id, NestedStackProps stackProps, SleeperInstanceProps sleeperProps) {
+        NestedStack stack = new NestedStack(scope, id, stackProps);
+        return addNestedStacks(stack, sleeperProps);
+    }
+
+    /**
+     * Declares an instance of Sleeper as a root level stack.
+     *
+     * @param scope        the scope to add the instance to, usually an App or Stage
+     * @param id           the stack ID
+     * @param stackProps   configuration of the stack
+     * @param sleeperProps configuration to deploy the instance
+     */
+    public static void createAsRootStack(Construct scope, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
+        Stack stack = new Stack(scope, id, stackProps);
+        addNestedStacks(stack, sleeperProps);
+    }
+
+    private static SleeperInstance addNestedStacks(Construct scope, SleeperInstanceProps props) {
 
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(scope, props);
         SleeperOptionalStacks.create(scope, props, coreStacks);
