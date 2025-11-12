@@ -28,7 +28,6 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.stepfunctions.LogLevel;
 import software.amazon.awscdk.services.stepfunctions.LogOptions;
-import software.constructs.Construct;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -131,10 +130,6 @@ public class Utils {
             default:
                 throw new IllegalArgumentException("Invalid number of days; see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options");
         }
-    }
-
-    public static boolean shouldDeployPaused(Construct scope) {
-        return "true".equalsIgnoreCase((String) scope.getNode().tryGetContext("deployPaused"));
     }
 
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
