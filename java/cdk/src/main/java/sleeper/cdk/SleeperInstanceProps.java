@@ -145,9 +145,11 @@ public class SleeperInstanceProps {
         }
 
         /**
-         * Sets how to find jars to deploy lambda functions. This will be used to find the latest version of each jar
-         * in a versioned S3 bucket. The deployment will be done against a specific version of each jar. This is
-         * required.
+         * Sets how to find jars to deploy lambda functions. This is required.
+         * <p>
+         * This will be used to find the latest version of each jar in a versioned S3 bucket. The deployment will be
+         * done against a specific version of each jar. It will only check the bucket once for each jar, and you can
+         * reuse the same object for multiple Sleeper instances.
          *
          * @param  jars the jars
          * @return      this builder

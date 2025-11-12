@@ -31,6 +31,11 @@ import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PRE
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
+/**
+ * Finds jars to deploy lambda functions. This will finds the latest version of each jar in a versioned S3 bucket. The
+ * deployment will be done against a specific version of each jar. It will only check the bucket once for each jar, and
+ * you can reuse the same object for multiple Sleeper instances.
+ */
 public class SleeperJarsInBucket {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarsInBucket.class);
