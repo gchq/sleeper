@@ -50,14 +50,6 @@ public class InMemorySystemTestState {
 
     private long fileSizeBytesForBatcher = 1024;
 
-    public void setFileSizeBytesForBatcher(long fileSizeBytesForBatcher) {
-        this.fileSizeBytesForBatcher = fileSizeBytesForBatcher;
-    }
-
-    public long getFileSizeBytesForBatcher() {
-        return fileSizeBytesForBatcher;
-    }
-
     public InMemoryRowStore getSourceFiles() {
         return sourceFiles;
     }
@@ -112,6 +104,14 @@ public class InMemorySystemTestState {
 
     public InMemoryStateStoreCommitter getStateStoreCommitter() {
         return stateStoreCommitter;
+    }
+
+    public void setFileSizeBytesForBatcher(long fileSizeBytesForBatcher) {
+        this.fileSizeBytesForBatcher = fileSizeBytesForBatcher;
+    }
+
+    public long getFileSizeBytesForBatcher() {
+        return fileSizeBytesForBatcher;
     }
 
 }
