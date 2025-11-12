@@ -17,7 +17,7 @@
 use color_eyre::eyre::eyre;
 
 pub mod aws_config;
-pub mod common_config;
+pub mod ffi_common_config;
 pub mod query;
 pub mod sleeper_region;
 

@@ -19,7 +19,7 @@ use crate::{
     log::maybe_cfg_log,
     objects::{
         FFIFileResult,
-        common_config::FFICommonConfig,
+        ffi_common_config::FFICommonConfig,
         query::{FFILeafPartitionQueryConfig, FFIQueryResults},
     },
 };
@@ -96,7 +96,9 @@ pub extern "C" fn native_compact(
     };
 
     // Run compaction
-    let result = context.rt.block_on(run_compaction(&details));
+    let result = context
+        .rt
+        .block_on(run_compaction(&details, &context.sleeper_context));
     match result {
         Ok(res) => {
             if let Some(data) = unsafe { output_data.as_mut() } {
@@ -205,7 +207,9 @@ pub extern "C" fn native_query_stream(
     };
 
     // Run compaction
-    let result = context.rt.block_on(run_query(&details));
+    let result = context
+        .rt
+        .block_on(run_query(&details, &context.sleeper_context));
     match result {
         Ok(res) => {
             let CompletedOutput::ArrowRecordBatch(batch_stream) = res else {
@@ -300,7 +304,9 @@ pub extern "C" fn native_query_file(
     };
 
     // Run compaction
-    let result = context.rt.block_on(run_query(&details));
+    let result = context
+        .rt
+        .block_on(run_query(&details, &context.sleeper_context));
     match result {
         Ok(res) => {
             let CompletedOutput::File(row_counts) = res else {
