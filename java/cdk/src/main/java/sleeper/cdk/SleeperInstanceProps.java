@@ -58,6 +58,14 @@ public class SleeperInstanceProps {
         return new Builder();
     }
 
+    /**
+     * Creates a builder with default settings to deploy an instance.
+     *
+     * @param  instanceProperties the configuration of the instance to deploy
+     * @param  s3Client           the S3 client, to scan for jars to deploy and validate the current state
+     * @param  dynamoClient       the DynamoDB client, to validate the current state
+     * @return                    the builder
+     */
     public static Builder builder(InstanceProperties instanceProperties, S3Client s3Client, DynamoDbClient dynamoClient) {
         return builder()
                 .instanceProperties(instanceProperties)
@@ -65,10 +73,28 @@ public class SleeperInstanceProps {
                 .newInstanceValidator(new NewInstanceValidator(s3Client, dynamoClient));
     }
 
+    /**
+     * Reads configuration from the CDK context. Usually only used when deploying a single instance of Sleeper in its
+     * own CDK app. Will read instance and table properties from the local file system.
+     *
+     * @param  scope        the scope to read context variables from
+     * @param  s3Client     the S3 client, to scan for jars to deploy and validate the current state
+     * @param  dynamoClient the DynamoDB client, to validate the current state
+     * @return              the configuration
+     */
     public static SleeperInstanceProps fromContext(Construct scope, S3Client s3Client, DynamoDbClient dynamoClient) {
         return fromContext(CdkContext.from(scope), s3Client, dynamoClient);
     }
 
+    /**
+     * Reads configuration from the CDK context. Usually only used when deploying a single instance of Sleeper in its
+     * own CDK app. Will read instance and table properties from the local file system.
+     *
+     * @param  context      the context to read variables from
+     * @param  s3Client     the S3 client, to scan for jars to deploy and validate the current state
+     * @param  dynamoClient the DynamoDB client, to validate the current state
+     * @return              the configuration
+     */
     public static SleeperInstanceProps fromContext(CdkContext context, S3Client s3Client, DynamoDbClient dynamoClient) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         DeployInstanceConfiguration configuration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
@@ -99,49 +125,116 @@ public class SleeperInstanceProps {
 
     public static class Builder {
         private InstanceProperties instanceProperties;
-        private List<TableProperties> tableProperties = List.of();
         private SleeperJarsInBucket jars;
         private NewInstanceValidator newInstanceValidator;
+        private List<TableProperties> tableProperties = List.of();
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
         private boolean checkVersionMatchesProperties = true;
         private boolean deployPaused = false;
 
+        /**
+         * Sets the properties of the Sleeper instance to deploy. This is required.
+         *
+         * @param  instanceProperties the instance properties
+         * @return                    this builder
+         */
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
             return this;
         }
 
-        public Builder tableProperties(List<TableProperties> tableProperties) {
-            this.tableProperties = tableProperties;
-            return this;
-        }
-
+        /**
+         * Sets how to find jars to deploy lambda functions. This will be used to find the latest version of each jar
+         * in a versioned S3 bucket. The deployment will be done against a specific version of each jar. This is
+         * required.
+         *
+         * @param  jars the jars
+         * @return      this builder
+         */
         public Builder jars(SleeperJarsInBucket jars) {
             this.jars = jars;
             return this;
         }
 
+        /**
+         * Sets how to validate that a new instance does not already exist. This is required if
+         * {@link #ensureInstanceDoesNotExist(boolean)} is set to true.
+         *
+         * @param  newInstanceValidator the validator
+         * @return                      this builder
+         */
         public Builder newInstanceValidator(NewInstanceValidator newInstanceValidator) {
             this.newInstanceValidator = newInstanceValidator;
             return this;
         }
 
+        /**
+         * Sets the properties of the Sleeper tables that will exist in this instance. This will not add these tables to
+         * the instance, but will be used for optional stacks that require knowledge of tables in the instance at
+         * deployment time. For example, DashboardStack creates dashboard UI elements for each table.
+         * <p>
+         * Default: an empty list (e.g. tables will not be shown on the dashboard deployed by DashboardStack)
+         *
+         * @param  tableProperties the table properties
+         * @return                 this builder
+         */
+        public Builder tableProperties(List<TableProperties> tableProperties) {
+            this.tableProperties = tableProperties;
+            return this;
+        }
+
+        /**
+         * Sets whether to validate the instance and table properties before deployment.
+         * <p>
+         * Default: true
+         *
+         * @param  validateProperties true if the properties should be validated
+         * @return                    this builder
+         */
         public Builder validateProperties(boolean validateProperties) {
             this.validateProperties = validateProperties;
             return this;
         }
 
+        /**
+         * Sets whether to check that the instance does not exist before deployment. Can be used when deploying a fresh
+         * instance.
+         * <p>
+         * Default: false
+         *
+         * @param  ensureInstanceDoesNotExist true to check the instance does not exist
+         * @return                            this builder
+         */
         public Builder ensureInstanceDoesNotExist(boolean ensureInstanceDoesNotExist) {
             this.ensureInstanceDoesNotExist = ensureInstanceDoesNotExist;
             return this;
         }
 
+        /**
+         * Sets whether to check that the version in the instance properties matches the version of Sleeper being used
+         * for the deployment. This can be used when the instance properties were loaded from an existing instance,
+         * or when a specific version of Sleeper is set in your configuration. If no version is set in the
+         * instance properties, this will be ignored.
+         * <p>
+         * Default: true
+         *
+         * @param  checkVersionMatchesProperties true to check the version number matches
+         * @return                               this builder
+         */
         public Builder checkVersionMatchesProperties(boolean checkVersionMatchesProperties) {
             this.checkVersionMatchesProperties = checkVersionMatchesProperties;
             return this;
         }
 
+        /**
+         * Sets whether the instance should be paused or not. If this is true, schedules will be disabled that trigger
+         * regular operations, or start tasks to run pending operations. An instance can also be paused or resumed
+         * separately after deployment.
+         *
+         * @param  deployPaused true if the instance should be paused
+         * @return              this builder
+         */
         public Builder deployPaused(boolean deployPaused) {
             this.deployPaused = deployPaused;
             return this;
