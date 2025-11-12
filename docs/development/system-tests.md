@@ -83,14 +83,7 @@ Tests that are tagged as Slow(1-n) or Expensive(1-n) will not be included in the
 in around 40 minutes. The nightly functional suite includes tests tagged as Slow, and will take a bit longer. The
 nightly performance suite includes all tests, including ones tagged as Expensive. The performance tests work with a
 larger bulk of data. They take time to run and can be costly to run frequently.
-
-Due to the time taken to run all the system tests for either a functional or performance run, multiple test suites
-now run in parallel. This is achievied by copying the Sleeper folders into a
-temporary folder per batch (quick, slow1-n, expensive1-n). The nightly run script then runs each of these in parallel
-with a short 60 seconds delay between each one starting up. Once all have completed it then uploads the results to S3.
-When adding a new Slow or Expensive System test add either the Slow1-n or Expensive 1-n tag.
-
-When running the performance build which runs every test suite in parallel, it is recomended to have at least 350GiB volume size on the running EC2 with an instance type that has at least 4vCPU's and 32GiB Memory.
+When adding a new Slow or Expensive System test add either the Slow1-n or Expensive1-n tag.
 
 ### Current Slow and Expensive test suites
 The current system tests running in each suite can be seen in [system-test-suites](system-test-suites.md).

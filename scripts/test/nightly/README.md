@@ -26,6 +26,9 @@ git clone https://github.com/gchq/sleeper.git
 cd sleeper
 ```
 
+When running the performance build, which runs every test suite in parallel, it is recomended to have at least 350GiB
+volume size on the running EC2 with an instance type that has at least 4vCPU's and 32GiB Memory.
+
 ### Configuration
 
 You can configure the nightly tests inside the builder. Note that any files you put in the builder under the
@@ -68,7 +71,10 @@ To run the tests as they would be run by the cron job, use this command from the
 sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh /sleeper-builder/nightlyTestSettings.json <test-type> &> /tmp/sleeperTests.log
 ```
 
-With the performance test suite, this will take 6 hours or so.
+Due to the time taken to run all the system tests for either a functional or performance run, multiple test suites
+now run in parallel. This is achievied by copying the Sleeper folders into a
+temporary folder per batch (quick, slow1-n, expensive1-n). The nightly run script then runs each of these in parallel
+with a short 60 seconds delay between each one starting up. Once all have completed it then uploads the results to S3.
 
 ### Output
 
