@@ -120,6 +120,7 @@ public class SleeperScanBuilder implements SupportsPushDownFilters {
                 || f instanceof StringContains) {
             return false;
         }
+        // TODO Check the following for any of the row key fields
         if (f instanceof EqualTo && ((EqualTo) f).attribute().equals(keyFieldName)) {
             return true;
         }
@@ -127,16 +128,16 @@ public class SleeperScanBuilder implements SupportsPushDownFilters {
             return false; // TODO Apply this
         }
         if (f instanceof GreaterThan && ((GreaterThan) f).attribute().equals(keyFieldName)) {
-            return false; // TODO Apply this
+            return true;
         }
         if (f instanceof GreaterThanOrEqual && ((GreaterThanOrEqual) f).attribute().equals(keyFieldName)) {
-            return false; // TODO Apply this
+            return true;
         }
         if (f instanceof LessThan && ((LessThan) f).attribute().equals(keyFieldName)) {
-            return false; // TODO Apply this
+            return true;
         }
         if (f instanceof LessThanOrEqual && ((LessThanOrEqual) f).attribute().equals(keyFieldName)) {
-            return false; // TODO Apply this
+            return true;
         }
         if (f instanceof In && ((In) f).attribute().equals(keyFieldName)) {
             return false; // TODO Apply this

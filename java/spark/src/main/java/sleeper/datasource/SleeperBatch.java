@@ -20,6 +20,10 @@ import org.apache.spark.sql.connector.read.InputPartition;
 import org.apache.spark.sql.connector.read.PartitionReaderFactory;
 import org.apache.spark.sql.sources.EqualTo;
 import org.apache.spark.sql.sources.Filter;
+import org.apache.spark.sql.sources.GreaterThan;
+import org.apache.spark.sql.sources.GreaterThanOrEqual;
+import org.apache.spark.sql.sources.LessThan;
+import org.apache.spark.sql.sources.LessThanOrEqual;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,13 +34,20 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -111,14 +122,132 @@ public class SleeperBatch implements Batch {
             return List.of(Region.coveringAllValuesOfAllRowKeys(schema));
         }
 
+        // pushedFilters contains all the filters that we can apply when reading the data.
+        // Iterate through this array, identifying any which apply to a row-key field and are either =, <, <=, > or >=.
+        // Group these by the row-key field. If any of the filters are ‘AND’ and one of the terms is also row-key
+        // field and is either =, <, <=, > or >= then we can also extract that. In these grouped lists of filters,
+        // look for one of the following combination of possibilities:
+        // - key = ‘abc’
+        // - key > ‘abc’
+        // - key >= ‘abc’
+        // - key < ‘abc’
+        // - key <= ‘abc’
+        // - ‘abc’ < key AND key < ‘def’
+        // - 'abc’ < key AND key <= ‘def’
+        // - 'abc’ <= key AND key < ‘def’
+        // - 'abc’ <= key AND key <= ‘def’
+        // This will let us create ranges for one or more of the row-key fields, and hence create a Region.
+        Map<String, List<Filter>> rowKeyFieldNameToFilters = new HashMap<>();
+        for (String rowKeyFieldName : schema.getRowKeyFieldNames()) {
+            rowKeyFieldNameToFilters.put(rowKeyFieldName, new ArrayList<Filter>());
+        }
+        Set<String> rowKeyFieldNames = new HashSet<>(schema.getRowKeyFieldNames());
+        int numFound = 0;
+        for (Filter filter : pushedFilters) {
+            String fieldName = filter.references()[0]; // TODO Is this safe?
+            if (rowKeyFieldNames.contains(fieldName) && isFilterAnEqualityOrInequality(filter)) {
+                rowKeyFieldNameToFilters.get(fieldName).add(filter);
+                numFound++;
+            }
+        }
+        if (numFound == 0) {
+            return List.of(Region.coveringAllValuesOfAllRowKeys(schema));
+        }
+        Map<String, Range> rowKeyFieldNameToRange = new HashMap<>();
+        for (Map.Entry<String, List<Filter>> entry : rowKeyFieldNameToFilters.entrySet()) {
+            String rowKeyFieldName = entry.getKey();
+            List<Filter> filters = entry.getValue();
+            Range range;
+            if (filters.size() == 1) {
+                range = getRangeFromFilter(schema.getField(rowKeyFieldName).get(), filters.get(0));
+            } else if (filters.size() == 2) {
+                range = getRangeFromPairOfFilters(schema.getField(rowKeyFieldName).get(), filters.get(0), filters.get(1));
+            } else {
+                range = rangeFactory.createRangeCoveringAllValues(schema.getField(rowKeyFieldName).get());
+            }
+            rowKeyFieldNameToRange.put(rowKeyFieldName, range);
+        }
+        Region region = new Region(rowKeyFieldNameToRange.values());
+
         // In SleeperScanBuilder we only accepted filters of type EqualTo on the key column and we checked
         // that this was applied to the first key column. (In future we will accept more filters so the following
         // code will get more complex.)
-        EqualTo equalTo = (EqualTo) pushedFilters[0];
-        String key = (String) equalTo.value();
-        Range range = rangeFactory.createExactRange(schema.getRowKeyFields().get(0), key);
-        Region region = new Region(range);
+        // EqualTo equalTo = (EqualTo) pushedFilters[0];
+        // String key = (String) equalTo.value();
+        // Range range = rangeFactory.createExactRange(schema.getRowKeyFields().get(0), key);
+        // Region region = new Region(range);
         return List.of(region);
+    }
+
+    // This is technically unnecessary as the following types of filter are the only ones we accept at the
+    // moment, but when we accept more filters we will need to identify these types.
+    private boolean isFilterAnEqualityOrInequality(Filter filter) {
+        if (filter instanceof EqualTo
+                || filter instanceof GreaterThan
+                || filter instanceof GreaterThanOrEqual
+                || filter instanceof LessThan
+                || filter instanceof LessThanOrEqual) {
+            return true;
+        }
+        return false;
+    }
+
+    private Range getRangeFromFilter(Field field, Filter filter) {
+        MutableRange mutableRange = new MutableRange(field);
+        updateRangeWithFilter(mutableRange, filter);
+        return mutableRange.getRange();
+    }
+
+    private Range getRangeFromPairOfFilters(Field field, Filter filter1, Filter filter2) {
+        MutableRange mutableRange = new MutableRange(field);
+        updateRangeWithFilter(mutableRange, filter1);
+        updateRangeWithFilter(mutableRange, filter2);
+        return mutableRange.getRange();
+    }
+
+    private class MutableRange {
+        private final String fieldName;
+        Object min;
+        boolean minInclusive = false;
+        Object max = null;
+        boolean maxInclusive = false;
+
+        MutableRange(Field field) {
+            this.fieldName = field.getName();
+            this.min = PrimitiveType.getMinimum(field.getType());
+        }
+
+        Range getRange() {
+            return rangeFactory.createRange(fieldName, min, minInclusive, max, maxInclusive);
+        }
+    }
+
+    private void updateRangeWithFilter(MutableRange mutableRange, Filter filter) {
+        if (filter instanceof EqualTo) {
+            // TODO - Can this happen? If filter1 is EqualTo and filter2 is a different filter of any type
+            // then there can be no results.
+            Object wantedKey = ((EqualTo) filter).value();
+            mutableRange.minInclusive = true;
+            mutableRange.min = wantedKey;
+            mutableRange.maxInclusive = true;
+            mutableRange.max = wantedKey;
+        } else if (filter instanceof GreaterThan) {
+            Object minimumKey = ((GreaterThan) filter).value();
+            mutableRange.minInclusive = false;
+            mutableRange.min = minimumKey;
+        } else if (filter instanceof GreaterThanOrEqual) {
+            Object minimumKey = ((GreaterThanOrEqual) filter).value();
+            mutableRange.minInclusive = true;
+            mutableRange.min = minimumKey;
+        } else if (filter instanceof LessThan) {
+            Object maxiumKey = ((LessThan) filter).value();
+            mutableRange.maxInclusive = false;
+            mutableRange.max = maxiumKey;
+        } else if (filter instanceof LessThanOrEqual) {
+            Object maxiumKey = ((LessThanOrEqual) filter).value();
+            mutableRange.maxInclusive = true;
+            mutableRange.max = maxiumKey;
+        }
     }
 
     @Override
