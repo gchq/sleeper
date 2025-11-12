@@ -19,4 +19,3 @@ The following instance properties relate to queries.
 | sleeper.query.leaf.partition.queue.arn | The ARN of the queue responsible for sending a leaf partition query to sleeper.       |
 | sleeper.query.leaf.partition.dlq.url   | The URL of the dead letter queue used when leaf partition querying sleeper.           |
 | sleeper.query.leaf.partition.dlq.arn   | The ARN of the dead letter queue used when leaf partition querying sleeper.           |
-| sleeper.query.role.arn                 | The ARN of a role that has permissions to query the instance.                         |
