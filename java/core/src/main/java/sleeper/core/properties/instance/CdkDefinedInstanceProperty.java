@@ -308,6 +308,10 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the dead letter queue used when leaf partition querying sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
+    CdkDefinedInstanceProperty QUERY_ROLE_ARN = Index.propertyBuilder("sleeper.query.role.arn")
+            .description("The ARN of a role that has permissions to query the instance.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
     // Bulk Export
     CdkDefinedInstanceProperty BULK_EXPORT_QUEUE_URL = Index
             .propertyBuilder("sleeper.bulk.export.queue.url")

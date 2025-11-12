@@ -17,5 +17,5 @@ package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.services.iam.IRole;
 
-public record SleeperInstanceRoles(IRole instanceAdmin, IRole ingestByQueue, IRole directIngest) {
+public record SleeperInstanceRoles(IRole instanceAdmin, IRole ingestByQueue, IRole directIngest, IRole query) {
 }

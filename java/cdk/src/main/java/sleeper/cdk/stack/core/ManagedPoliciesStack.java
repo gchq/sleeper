@@ -38,6 +38,7 @@ import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_ROLE_ARN;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
@@ -79,7 +80,8 @@ public class ManagedPoliciesStack extends NestedStack {
         return new SleeperInstanceRoles(
                 createAdminRole(),
                 createIngestByQueueRole(),
-                createDirectIngestRole());
+                createDirectIngestRole(),
+                createQueryRole());
     }
 
     public ManagedPolicy getDirectIngestPolicyForGrants() {
@@ -189,6 +191,16 @@ public class ManagedPoliciesStack extends NestedStack {
                 .build();
         directIngestPolicy.attachToRole(role);
         instanceProperties.set(INGEST_DIRECT_ROLE_ARN, role.getRoleArn());
+        return role;
+    }
+
+    private Role createQueryRole() {
+        Role role = Role.Builder.create(this, "QueryRole")
+                .assumedBy(new AccountRootPrincipal())
+                .roleName("sleeper-query-" + Utils.cleanInstanceId(instanceProperties))
+                .build();
+        queryPolicy.attachToRole(role);
+        instanceProperties.set(QUERY_ROLE_ARN, role.getRoleArn());
         return role;
     }
 }
