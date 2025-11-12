@@ -45,6 +45,8 @@ public class InMemorySystemTestState {
     private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
     private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
     private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
+    private final InMemoryBulkExport bulkExport = new InMemoryBulkExport();
+    private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(transactionLogs.getTransactionBodyStore());
 
     private long fileSizeBytesForBatcher = 1024;
 
@@ -111,8 +113,5 @@ public class InMemorySystemTestState {
     public InMemoryStateStoreCommitter getStateStoreCommitter() {
         return stateStoreCommitter;
     }
-
-    private final InMemoryBulkExport bulkExport = new InMemoryBulkExport();
-    private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(transactionLogs.getTransactionBodyStore(), ingestByQueue, compaction);
 
 }
