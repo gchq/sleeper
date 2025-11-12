@@ -84,6 +84,7 @@ public class SleeperArtefactsStack extends Stack {
         return Repository.Builder.create(this, "Repository-" + imageName)
                 .repositoryName(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(deploymentId) + "/" + imageName)
                 .removalPolicy(RemovalPolicy.DESTROY)
+                .emptyOnDelete(true)
                 .build();
     }
 
