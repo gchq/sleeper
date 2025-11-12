@@ -159,8 +159,7 @@ public class SleeperOptionalStacks {
         // Stack for ingest jobs
         IngestStack ingestStack = null;
         if (optionalStacks.contains(OptionalStack.IngestStack)) {
-            ingestStack = new IngestStack(scope, "Ingest",
-                    instanceProperties, jars, coreStacks);
+            ingestStack = new IngestStack(scope, "Ingest", props, coreStacks);
         }
 
         // Aggregate ingest stacks
