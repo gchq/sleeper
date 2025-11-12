@@ -140,9 +140,7 @@ public class SleeperOptionalStacks {
         // Stack to split partitions
         PartitionSplittingStack partitionSplittingStack = null;
         if (optionalStacks.contains(OptionalStack.PartitionSplittingStack)) {
-            partitionSplittingStack = new PartitionSplittingStack(scope,
-                    "PartitionSplitting",
-                    instanceProperties, jars, coreStacks);
+            partitionSplittingStack = new PartitionSplittingStack(scope, "PartitionSplitting", props, coreStacks);
         }
 
         // Stack to execute queries

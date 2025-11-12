@@ -43,7 +43,6 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_QUEUE_ARN;
@@ -76,27 +75,28 @@ public class PartitionSplittingStack extends NestedStack {
     private final Queue partitionSplittingJobQueue;
     private final Queue findPartitionsToSplitQueue;
 
-    public PartitionSplittingStack(Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+    public PartitionSplittingStack(
+            Construct scope, String id,
+            SleeperInstanceStacksProps props,
             SleeperCoreStacks coreStacks) {
         super(scope, id);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        SleeperJarsInBucket jars = props.getJars();
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
         // Create queue for batching tables
-        this.findPartitionsToSplitQueue = createBatchQueues(instanceProperties, coreStacks);
+        findPartitionsToSplitQueue = createBatchQueues(instanceProperties, coreStacks);
         // Create queue for partition splitting job definitions
-        this.partitionSplittingJobQueue = createJobQueues(instanceProperties, coreStacks);
+        partitionSplittingJobQueue = createJobQueues(instanceProperties, coreStacks);
 
         // Partition splitting code
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
 
         // Lambda to batch tables and put requests on the batch SQS queue, to be consumed by FindPartitionsToSplit
-        createTriggerFunction(instanceProperties, lambdaCode, coreStacks, environmentVariables);
+        createTriggerFunction(props, lambdaCode, coreStacks, environmentVariables);
 
         // Lambda to look for partitions that need splitting (for each partition that
         // needs splitting it puts a definition of the splitting job onto a queue)
@@ -172,7 +172,8 @@ public class PartitionSplittingStack extends NestedStack {
         return partitionSplittingJobQueue;
     }
 
-    private void createTriggerFunction(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
+    private void createTriggerFunction(SleeperInstanceStacksProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, Map<String, String> environmentVariables) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
         String triggerFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "partition-splitting-trigger");
         IFunction triggerFunction = lambdaCode.buildFunction(this, LambdaHandler.FIND_PARTITIONS_TO_SPLIT_TRIGGER, "FindPartitionsToSplitTriggerLambda", builder -> builder
@@ -188,7 +189,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .create(this, "FindPartitionsToSplitPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.PARTITION_SPLITTING.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.PARTITION_SPLITTING.getDescription())
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(triggerFunction)))
                 .build();
