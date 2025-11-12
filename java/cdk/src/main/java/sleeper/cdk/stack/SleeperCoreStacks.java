@@ -148,7 +148,7 @@ public class SleeperCoreStacks {
         new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
                 props, stacks, transactionLogStateStoreStack, deadLetters);
         new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
-                instanceProperties, jars, stacks, transactionLogStateStoreStack, deadLetters);
+                props, stacks, transactionLogStateStoreStack, deadLetters);
         return stacks;
     }
 
