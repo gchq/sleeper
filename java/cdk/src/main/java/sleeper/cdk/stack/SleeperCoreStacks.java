@@ -146,7 +146,7 @@ public class SleeperCoreStacks {
 
         // Table state store maintenance
         new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
-                instanceProperties, jars, stacks, transactionLogStateStoreStack, deadLetters);
+                props, stacks, transactionLogStateStoreStack, deadLetters);
         new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
                 instanceProperties, jars, stacks, transactionLogStateStoreStack, deadLetters);
         return stacks;
