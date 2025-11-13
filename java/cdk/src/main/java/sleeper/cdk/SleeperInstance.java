@@ -28,9 +28,10 @@ import sleeper.cdk.stack.core.SleeperInstanceRoles;
 import sleeper.core.properties.instance.InstanceProperties;
 
 /**
- * Deploys an instance of Sleeper, including any configured optional stacks. Does not create Sleeper tables. If the
- * configuration for tables is provided then the optional DashboardStack will create individual dashboards for each
- * table.
+ * Deploys an instance of Sleeper, including any configured optional stacks.
+ * <p>
+ * Does not create Sleeper tables. If the configuration for tables is provided then the optional DashboardStack will
+ * create individual dashboards for each table.
  */
 public class SleeperInstance {
 
