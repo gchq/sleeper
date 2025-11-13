@@ -63,8 +63,9 @@ public class IngestPerformanceST {
                 .matches(files -> numberOfRowsIn(files) == 440_000_000,
                         "contain 440 million rows");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(11)
-                        && stats.isAverageRunRowsPerSecondInRange(150_000, 250_000),
+                .matches(stats -> stats.isAllFinishedOneRunEach(11),
+                        "jobs finished with one run each")
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(150_000, 250_000),
                         "meets expected performance");
     }
 }

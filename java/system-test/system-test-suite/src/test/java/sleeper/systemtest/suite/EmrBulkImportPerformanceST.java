@@ -64,8 +64,9 @@ public class EmrBulkImportPerformanceST {
                 .matches(files -> numberOfRowsIn(files) == 5_000_000_000L,
                         "contain 5 billion rows");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(5)
-                        && stats.isAverageRunRowsPerSecondInRange(3_500_000, 5_000_000),
+                .matches(stats -> stats.isAllFinishedOneRunEach(5),
+                        "jobs finished with one run each")
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_500_000, 5_000_000),
                         "meets expected performance");
     }
 }
