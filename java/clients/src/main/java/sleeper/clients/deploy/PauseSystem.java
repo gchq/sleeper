@@ -16,11 +16,9 @@
 package sleeper.clients.deploy;
 
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
-import software.amazon.awssdk.services.cloudwatchevents.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
 public class PauseSystem {
@@ -37,22 +35,7 @@ public class PauseSystem {
         try (S3Client s3Client = S3Client.create();
                 CloudWatchEventsClient cwClient = CloudWatchEventsClient.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            pause(cwClient, instanceProperties);
-        }
-    }
-
-    public static void pause(CloudWatchEventsClient cwClient, InstanceProperties instanceProperties) {
-
-        SleeperScheduleRule.getDeployedRules(instanceProperties)
-                .forEach(rule -> disableRule(cwClient, rule.getRuleName()));
-    }
-
-    private static void disableRule(CloudWatchEventsClient cwClient, String ruleName) {
-        try {
-            cwClient.disableRule(request -> request.name(ruleName));
-            System.out.println("Disabled rule: " + ruleName);
-        } catch (ResourceNotFoundException e) {
-            System.out.println("Rule not found: " + ruleName);
+            new AwsScheduleRules(cwClient).pauseInstance(instanceProperties);
         }
     }
 }

@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.AwsScheduleRules;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.PopulateInstanceProperties;
@@ -39,13 +40,12 @@ public class TearDownInstance {
 
     private final TearDownClients clients;
     private final Path scriptsDir;
-    private final InstanceProperties instanceProperties;
     private final String instanceId;
 
     private TearDownInstance(Builder builder) {
         clients = Objects.requireNonNull(builder.clients, "clients must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
-        instanceProperties = Optional.ofNullable(builder.instanceProperties)
+        InstanceProperties instanceProperties = Optional.ofNullable(builder.instanceProperties)
                 .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
         instanceId = instanceProperties.get(ID);
     }
@@ -77,8 +77,7 @@ public class TearDownInstance {
     }
 
     public void shutdownSystemProcesses() throws InterruptedException {
-        new ShutdownSystemProcesses(clients)
-                .shutdown(instanceProperties);
+        new AwsScheduleRules(clients.getCloudWatch()).pauseInstance(instanceId);
     }
 
     public void deleteStack() {
