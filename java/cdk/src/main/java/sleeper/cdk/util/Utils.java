@@ -43,10 +43,10 @@ import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
 import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
-import sleeper.core.properties.table.TableProperties;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -56,7 +56,6 @@ import java.util.Properties;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -155,15 +154,22 @@ public class Utils {
         }
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> properties, Construct scope) {
-        return loadInstanceProperties(properties, CdkContext.from(scope));
-    }
-
     public static <T extends InstanceProperties> T loadInstanceProperties(
             Function<Properties, T> constructor, CdkContext context) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
+        afterInstancePropertiesLoad(properties, context);
+        return properties;
+    }
 
+    public static DeployInstanceConfiguration loadDeployInstanceConfiguration(CdkContext context) {
+        Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
+        DeployInstanceConfiguration configuration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+        afterInstancePropertiesLoad(configuration.getInstanceProperties(), context);
+        return configuration;
+    }
+
+    private static void afterInstancePropertiesLoad(InstanceProperties properties, CdkContext context) {
         if (!"false".equalsIgnoreCase(context.tryGetContext("validate"))) {
             properties.validate();
             try {
@@ -176,7 +182,7 @@ public class Utils {
         }
         if ("true".equalsIgnoreCase(context.tryGetContext("newinstance"))) {
             try (S3Client s3Client = S3Client.create(); DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-                new NewInstanceValidator(s3Client, dynamoClient).validate(properties, propertiesFile);
+                new NewInstanceValidator(s3Client, dynamoClient).validate(properties);
             }
         }
         String deployedVersion = properties.get(VERSION);
@@ -191,18 +197,6 @@ public class Utils {
                     localVersion, deployedVersion));
         }
         properties.set(VERSION, localVersion);
-        return properties;
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Construct scope) {
-        return getAllTableProperties(instanceProperties, CdkContext.from(scope));
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, CdkContext cdkContext) {
-        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                instanceProperties, Path.of(cdkContext.tryGetContext("propertiesfile")));
     }
 
     public static boolean shouldDeployPaused(Construct scope) {

@@ -22,7 +22,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
-import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,7 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.util.UtilsTestHelper.cdkContextWithPropertiesFile;
 import static sleeper.cdk.util.UtilsTestHelper.createUserDefinedInstanceProperties;
-import static sleeper.cdk.util.UtilsTestHelper.createUserDefinedTableProperties;
 import static sleeper.core.SleeperVersion.getVersion;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
@@ -57,18 +55,6 @@ class UtilsPropertiesIT {
             properties.set(VERSION, getVersion());
             assertThat(loadInstanceProperties(cdkContextWithPropertiesFile(tempDir)))
                     .isEqualTo(properties);
-        }
-
-        @Test
-        void shouldLoadValidTablePropertiesFromFile() throws IOException {
-            // Given
-            InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
-            TableProperties properties = createUserDefinedTableProperties(instanceProperties);
-            SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
-
-            // When / Then
-            assertThat(Utils.getAllTableProperties(instanceProperties, cdkContextWithPropertiesFile(tempDir)))
-                    .containsExactly(properties);
         }
 
         @Test

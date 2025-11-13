@@ -21,9 +21,11 @@ import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.stack.SleeperInstanceStack;
+import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
@@ -35,18 +37,18 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
 /**
  * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
-public class SystemTestApp extends SleeperCdkApp {
+public class SystemTestApp extends SleeperInstanceStack {
     private final SleeperJarsInBucket jars;
+    private final SystemTestProperties properties;
 
-    public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, SleeperJarsInBucket jars) {
-        super(app, id, props, sleeperProperties, jars);
+    public SystemTestApp(App app, String id, StackProps props, DeployInstanceConfiguration configuration, SleeperJarsInBucket jars) {
+        super(app, id, props, configuration, jars);
         this.jars = jars;
+        this.properties = SystemTestProperties.from(configuration.getInstanceProperties());
     }
 
     @Override
     public void create() {
-
-        SystemTestProperties properties = getInstanceProperties();
 
         generateLoggingStack();
 
@@ -73,36 +75,28 @@ public class SystemTestApp extends SleeperCdkApp {
         generateProperties();
     }
 
-    @Override
-    protected SystemTestProperties getInstanceProperties() throws RuntimeException {
-        InstanceProperties properties = super.getInstanceProperties();
-        if (properties instanceof SystemTestProperties) {
-            return (SystemTestProperties) properties;
-        }
-        throw new RuntimeException("Error when retrieving instance properties");
-    }
-
     public static void main(String[] args) {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
                 .build());
 
-        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, app);
+        DeployInstanceConfiguration configuration = Utils.loadDeployInstanceConfiguration(CdkContext.from(app));
+        InstanceProperties instanceProperties = configuration.getInstanceProperties();
 
-        String id = systemTestProperties.get(ID);
+        String id = instanceProperties.get(ID);
         Environment environment = Environment.builder()
-                .account(systemTestProperties.get(ACCOUNT))
-                .region(systemTestProperties.get(REGION))
+                .account(instanceProperties.get(ACCOUNT))
+                .region(instanceProperties.get(REGION))
                 .build();
 
         try (S3Client s3Client = S3Client.create()) {
-            SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, systemTestProperties);
+            SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)
                     .env(environment)
                     .build(),
-                    systemTestProperties, jars).create();
+                    configuration, jars).create();
 
             app.synth();
         }
