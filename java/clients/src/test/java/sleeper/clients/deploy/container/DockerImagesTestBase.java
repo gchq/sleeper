@@ -104,10 +104,8 @@ public class DockerImagesTestBase {
         return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
     }
 
-    protected CommandPipeline buildImageCommandWithArgs(String... args) {
-        List<String> fullArgs = new ArrayList<>(List.of("docker", "build"));
-        fullArgs.addAll(List.of(args));
-        return pipeline(command(fullArgs.toArray(String[]::new)));
+    protected CommandPipeline buildLambdaImageCommand(String tag, String dockerDirectory) {
+        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
     }
 
     protected CommandPipeline pullImageCommand(String tag) {

@@ -120,7 +120,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/statestore-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildLambdaImageCommand(expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/statestore.jar"), "statestore-jar-content",
@@ -143,9 +143,9 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag1, "./docker/lambda"),
+                    buildLambdaImageCommand(expectedTag1, "./docker/lambda"),
                     pushImageCommand(expectedTag1),
-                    buildImageCommandWithArgs("-t", expectedTag2, "./docker/lambda"),
+                    buildLambdaImageCommand(expectedTag2, "./docker/lambda"),
                     pushImageCommand(expectedTag2));
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/statestore.jar"), "statestore-jar-content",
@@ -169,7 +169,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest-task-creator-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildLambdaImageCommand(expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/ingest.jar"), "ingest-jar-content",
@@ -192,7 +192,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-starter-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildLambdaImageCommand(expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
@@ -215,7 +215,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-starter-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildLambdaImageCommand(expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/bulk-import-starter.jar"), "bulk-import-starter-jar-content",
@@ -249,7 +249,7 @@ public class UploadDockerImagesToEcrTest extends UploadDockerImagesToEcrTestBase
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/athena-lambda:1.0.0";
             assertThat(commandsThatRan).containsExactly(
                     dockerLoginToEcrCommand(),
-                    buildImageCommandWithArgs("-t", expectedTag, "./docker/lambda"),
+                    buildLambdaImageCommand(expectedTag, "./docker/lambda"),
                     pushImageCommand(expectedTag));
             assertThat(files).isEqualTo(Map.of(
                     Path.of("./jars/athena.jar"), "athena-jar-content",
