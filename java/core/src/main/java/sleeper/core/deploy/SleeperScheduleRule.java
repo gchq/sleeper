@@ -119,17 +119,6 @@ public class SleeperScheduleRule {
     }
 
     /**
-     * Streams through all CloudWatch rule default values for a given Sleeper instance.
-     *
-     * @param  instanceId the instance ID
-     * @return            default values for each CloudWatch rule property, with rule names derived from the instance ID
-     */
-    public static Stream<InstanceRule> getDefaultRules(String instanceId) {
-        return RULES.stream()
-                .map(rule -> rule.getDefault(instanceId));
-    }
-
-    /**
      * Reads the value of this CloudWatch rule property.
      *
      * @param  properties the instance properties
@@ -147,16 +136,6 @@ public class SleeperScheduleRule {
      */
     public String buildRuleName(InstanceProperties properties) {
         return buildRuleName(properties.get(ID));
-    }
-
-    /**
-     * Derives the default CloudWatch rule name from the instance ID, for this property.
-     *
-     * @param  instanceId the instance ID
-     * @return            the default value, containing rule names
-     */
-    public InstanceRule getDefault(String instanceId) {
-        return new InstanceRule(buildRuleName(instanceId));
     }
 
     /**
