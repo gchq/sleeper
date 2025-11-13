@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk.stack.core;
+package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.services.ecs.ICluster;
@@ -28,14 +28,23 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
+import sleeper.cdk.stack.core.ConfigBucketStack;
+import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
+import sleeper.cdk.stack.core.StateStoreCommitterStack;
+import sleeper.cdk.stack.core.StateStoreStacks;
+import sleeper.cdk.stack.core.TableDataStack;
+import sleeper.cdk.stack.core.TableIndexStack;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
 
 import javax.annotation.Nullable;
 
 import java.util.Objects;
 
-public class CoreStacks {
+public class SleeperCoreStacks {
 
     private final LoggingStack loggingStack;
     private final ConfigBucketStack configBucketStack;
@@ -49,7 +58,7 @@ public class CoreStacks {
     private final AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
     private final AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
 
-    public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+    public SleeperCoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestTrackerResources ingestTracker,

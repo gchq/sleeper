@@ -45,10 +45,10 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.BulkImportPlatform;
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -93,15 +93,15 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars,
+            SleeperJarsInBucket jars,
             Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack,
             List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         createEmrServerlessApplication(instanceProperties, autoStopEmrServerlessApplicationStack);
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks, jarsBucket);
@@ -208,7 +208,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     private IRole createEmrServerlessRole(
             InstanceProperties instanceProperties,
             BulkImportBucketStack bulkImportBucketStack,
-            CoreStacks coreStacks, IBucket jarsBucket) {
+            SleeperCoreStacks coreStacks, IBucket jarsBucket) {
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper",
                         Utils.cleanInstanceId(instanceProperties), "bulk-import-emr-serverless"))

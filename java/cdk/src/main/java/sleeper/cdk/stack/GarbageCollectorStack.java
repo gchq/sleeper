@@ -30,9 +30,8 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -68,14 +67,14 @@ public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
+            SleeperJarsInBucket jars, Topic topic, SleeperCoreStacks coreStacks, List<IMetric> errorMetrics) {
         super(scope, id);
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
 
         // Garbage collector code
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "garbage-collector-trigger");

@@ -34,8 +34,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -67,19 +68,19 @@ import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FO
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
             Construct scope, String id,
-            InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks,
+            InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             Topic topic, List<IMetric> errorMetrics) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         createFunctionToFollowTransactionLog(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack);
         createTransactionDeletionLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private void createTransactionDeletionLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode,
-            CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
+    private void createTransactionDeletionLambda(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
+            SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
             Topic topic, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion-trigger");
@@ -147,7 +148,7 @@ public class TransactionLogTransactionStack extends NestedStack {
     }
 
     private void createFunctionToFollowTransactionLog(
-            InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
+            InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "state-transaction-follower");
         IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder

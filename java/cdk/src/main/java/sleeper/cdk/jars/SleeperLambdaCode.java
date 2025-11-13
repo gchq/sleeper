@@ -34,14 +34,14 @@ import sleeper.core.properties.model.LambdaDeployType;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class LambdaCode {
+public class SleeperLambdaCode {
 
-    private final BuiltJars builtJars;
+    private final SleeperJarsInBucket jars;
     private final LambdaDeployType deployType;
     private final IBucket bucket;
 
-    LambdaCode(BuiltJars builtJars, LambdaDeployType deployType, IBucket bucket) {
-        this.builtJars = builtJars;
+    SleeperLambdaCode(SleeperJarsInBucket jars, LambdaDeployType deployType, IBucket bucket) {
+        this.jars = jars;
         this.deployType = deployType;
         this.bucket = bucket;
     }
@@ -73,12 +73,12 @@ public class LambdaCode {
     }
 
     private Code jarCode(LambdaJar jar) {
-        return Code.fromBucket(bucket, jar.getFilename(), builtJars.getLatestVersionId(jar));
+        return Code.fromBucket(bucket, jar.getFilename(), jars.getLatestVersionId(jar));
     }
 
     private DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
         return DockerImageCode.fromEcr(
-                Repository.fromRepositoryName(scope, id + "Repository", builtJars.getRepositoryName(handler.getJar())),
+                Repository.fromRepositoryName(scope, id + "Repository", jars.getRepositoryName(handler.getJar())),
                 EcrImageCodeProps.builder()
                         .cmd(List.of(handler.getHandler()))
                         .tagOrDigest(SleeperVersion.getVersion())

@@ -23,9 +23,9 @@ import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -48,9 +48,9 @@ public class CompactionStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars,
+            SleeperJarsInBucket jars,
             Topic topic,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
         // The compaction stack consists of the following components:
@@ -67,7 +67,7 @@ public class CompactionStack extends NestedStack {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         jobResources = new CompactionJobResources(this,
                 instanceProperties, lambdaCode, jarsBucket, topic, coreStacks, errorMetrics);

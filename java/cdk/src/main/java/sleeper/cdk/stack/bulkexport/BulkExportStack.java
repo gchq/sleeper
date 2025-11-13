@@ -34,9 +34,9 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -72,8 +72,8 @@ public class BulkExportStack extends NestedStack {
     public BulkExportStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars,
-            CoreStacks coreStacks) {
+            SleeperJarsInBucket jars,
+            SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -91,7 +91,7 @@ public class BulkExportStack extends NestedStack {
         setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT_PLANNER,
                 "BulkExportPlanner",
@@ -174,8 +174,8 @@ public class BulkExportStack extends NestedStack {
      * @param  lambdaCode         the lambda code
      * @return                    the export results bucket
      */
-    private IBucket setupExportBucket(InstanceProperties instanceProperties, CoreStacks coreStacks,
-            LambdaCode lambdaCode) {
+    private IBucket setupExportBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks,
+            SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-export-results");

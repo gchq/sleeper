@@ -22,7 +22,7 @@ import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.SleeperCdkApp;
-import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -36,9 +36,9 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
 public class SystemTestApp extends SleeperCdkApp {
-    private final BuiltJars jars;
+    private final SleeperJarsInBucket jars;
 
-    public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
+    public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, SleeperJarsInBucket jars) {
         super(app, id, props, sleeperProperties, jars);
         this.jars = jars;
     }
@@ -96,7 +96,7 @@ public class SystemTestApp extends SleeperCdkApp {
                 .build();
 
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = BuiltJars.from(s3Client, systemTestProperties);
+            SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, systemTestProperties);
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)

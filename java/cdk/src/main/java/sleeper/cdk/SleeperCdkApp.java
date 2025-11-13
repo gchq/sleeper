@@ -27,11 +27,12 @@ import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.AthenaStack;
 import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.TableMetricsStack;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
@@ -47,7 +48,6 @@ import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.stack.core.AutoStopEmrServerlessApplicationStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
@@ -59,7 +59,7 @@ import sleeper.cdk.stack.core.TopicStack;
 import sleeper.cdk.stack.core.TransactionLogSnapshotStack;
 import sleeper.cdk.stack.core.TransactionLogStateStoreStack;
 import sleeper.cdk.stack.core.TransactionLogTransactionStack;
-import sleeper.cdk.stack.core.VpcStack;
+import sleeper.cdk.stack.core.VpcCheckStack;
 import sleeper.cdk.stack.ingest.IngestBatcherStack;
 import sleeper.cdk.stack.ingest.IngestStack;
 import sleeper.cdk.stack.ingest.IngestStacks;
@@ -90,9 +90,9 @@ public class SleeperCdkApp extends Stack {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCdkApp.class);
 
     private final InstanceProperties instanceProperties;
-    private final BuiltJars jars;
+    private final SleeperJarsInBucket jars;
     private final App app;
-    private CoreStacks coreStacks;
+    private SleeperCoreStacks coreStacks;
     private IngestStacks ingestStacks;
     private IngestStack ingestStack;
     private IngestBatcherStack ingestBatcherStack;
@@ -115,7 +115,7 @@ public class SleeperCdkApp extends Stack {
     private boolean generateLoggingStack = true;
     private boolean generateProperties = true;
 
-    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
+    public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
         super(app, id, props);
         this.app = app;
         this.instanceProperties = instanceProperties;
@@ -136,7 +136,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Checking VPC configuration
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
-            new VpcStack(this, "Vpc", instanceProperties, jars, loggingStack);
+            new VpcCheckStack(this, "Vpc", instanceProperties, jars, loggingStack);
         } else {
             LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
                     + "in very significant NAT charges.");
@@ -171,7 +171,7 @@ public class SleeperCdkApp extends Stack {
                 loggingStack, configBucketStack, tableIndexStack,
                 stateStoreStacks, ingestTracker, compactionTracker,
                 policiesStack, topicStack.getTopic(), errorMetrics);
-        coreStacks = new CoreStacks(
+        coreStacks = new SleeperCoreStacks(
                 loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3ObjectsStack, autoStopEcsClusterTasksStack);
 
@@ -355,7 +355,7 @@ public class SleeperCdkApp extends Stack {
         return instanceProperties;
     }
 
-    public CoreStacks getCoreStacks() {
+    public SleeperCoreStacks getCoreStacks() {
         return coreStacks;
     }
 
@@ -424,7 +424,7 @@ public class SleeperCdkApp extends Stack {
                 .region(instanceProperties.get(REGION))
                 .build();
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = BuiltJars.from(s3Client, instanceProperties);
+            SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
 
             new SleeperCdkApp(app, id, StackProps.builder()
                     .stackName(id)

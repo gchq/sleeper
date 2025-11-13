@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -50,7 +50,7 @@ public class QueryQueueStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             Topic topic,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
         queryQueue = setupQueryQueue(instanceProperties, topic, coreStacks, errorMetrics);
@@ -65,7 +65,7 @@ public class QueryQueueStack extends NestedStack {
      * @param  errorMetrics       the metrics to track dead letters
      * @return                    the queue to be used for queries
      */
-    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
+    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, SleeperCoreStacks coreStacks, List<IMetric> errorMetrics) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "QueryDLQ");
         Queue queryDlq = Queue.Builder

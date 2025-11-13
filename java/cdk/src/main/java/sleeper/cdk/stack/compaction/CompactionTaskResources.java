@@ -44,8 +44,8 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -88,11 +88,11 @@ public class CompactionTaskResources {
 
     public CompactionTaskResources(Stack stack,
             InstanceProperties instanceProperties,
-            LambdaCode lambdaCode,
+            SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
             CompactionJobResources jobResources,
             Topic topic,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             List<IMetric> errorMetrics) {
 
         this.instanceProperties = instanceProperties;
@@ -106,7 +106,7 @@ public class CompactionTaskResources {
 
     }
 
-    private void ecsClusterForCompactionTasks(CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, CompactionJobResources jobResources) {
+    private void ecsClusterForCompactionTasks(SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperLambdaCode taskCreatorJar, CompactionJobResources jobResources) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -159,7 +159,7 @@ public class CompactionTaskResources {
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void lambdaToCreateCompactionTasks(
-            CoreStacks coreStacks, LambdaCode lambdaCode, Queue compactionJobsQueue) {
+            SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode, Queue compactionJobsQueue) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-tasks-creator");
 

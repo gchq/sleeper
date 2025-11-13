@@ -37,9 +37,9 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -77,9 +77,9 @@ public class IngestBatcherStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars,
+            SleeperJarsInBucket jars,
             Topic topic,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             IngestStacks ingestStacks,
             List<IMetric> errorMetrics) {
         super(scope, id);
@@ -132,7 +132,7 @@ public class IngestBatcherStack extends NestedStack {
 
         // Lambdas to receive submitted files and create batches
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String submitterName = String.join("-", "sleeper", instanceId, "ingest-batcher-submit-files");
         String jobCreatorName = String.join("-", "sleeper", instanceId, "ingest-batcher-create-jobs");
