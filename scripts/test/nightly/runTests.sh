@@ -64,12 +64,12 @@ mkdir -p "$OUTPUT_DIR"
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 
+set +e
+
 END_EXIT_CODE=0
 
 docker buildx rm sleeper
 docker buildx create --name sleeper --use
-
-set +e
 
 copyFolderForParallelRun() {
     echo "Making folder $1 for parallel build"
