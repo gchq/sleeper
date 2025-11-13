@@ -16,7 +16,6 @@
 package sleeper.cdk.stack.bulkimport;
 
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
@@ -40,7 +39,6 @@ import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -94,11 +92,9 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             SleeperJarsInBucket jars,
-            Topic errorsTopic,
             BulkImportBucketStack importBucketStack,
             SleeperCoreStacks coreStacks,
-            AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack,
-            List<IMetric> errorMetrics) {
+            AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
@@ -106,10 +102,9 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks, jarsBucket);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                BulkImportPlatform.EMRServerless, instanceProperties, coreStacks, errorMetrics);
+                BulkImportPlatform.EMRServerless, instanceProperties, coreStacks);
         bulkImportJobQueue = commonHelper.createJobQueue(
-                BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
-                errorsTopic);
+                BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN);
 
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 bulkImportJobQueue, lambdaCode, importBucketStack.getImportBucket(),

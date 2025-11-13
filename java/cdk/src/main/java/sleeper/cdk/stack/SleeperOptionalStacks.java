@@ -57,7 +57,7 @@ public class SleeperOptionalStacks {
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
         if (optionalStacks.contains(OptionalStack.TableMetricsStack)) {
-            new TableMetricsStack(scope, "TableMetrics", instanceProperties, jars, coreStacks.getAlertsTopic(), coreStacks, coreStacks.getErrorMetrics());
+            new TableMetricsStack(scope, "TableMetrics", instanceProperties, jars, coreStacks);
         }
 
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
@@ -81,11 +81,9 @@ public class SleeperOptionalStacks {
                     scope, "AutoStopEmrServerlessApplication", instanceProperties, jars, coreStacks.getLoggingStack());
             emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(scope, "BulkImportEMRServerless",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
                     bulkImportBucketStack,
                     coreStacks,
-                    autoStopEmrServerlessStack,
-                    coreStacks.getErrorMetrics());
+                    autoStopEmrServerlessStack);
 
             // Stack to created EMR studio to be used to access EMR Serverless
             if (optionalStacks.contains(OptionalStack.EmrStudioStack)) {
@@ -97,11 +95,9 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.EmrBulkImportStack)) {
             emrBulkImportStack = new EmrBulkImportStack(scope, "BulkImportEMR",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    coreStacks);
         }
 
         // Stack to run bulk import jobs via a persistent EMR cluster
@@ -109,11 +105,9 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.PersistentEmrBulkImportStack)) {
             persistentEmrBulkImportStack = new PersistentEmrBulkImportStack(scope, "BulkImportPersistentEMR",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    coreStacks);
         }
 
         // Stack to run bulk import jobs via EKS
@@ -121,39 +115,27 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.EksBulkImportStack)) {
             eksBulkImportStack = new EksBulkImportStack(scope, "BulkImportEKS",
                     instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
                     bulkImportBucketStack,
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    coreStacks);
         }
 
         // Stack to run bulk export jobs
         if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
-            new BulkExportStack(scope,
-                    "BulkExport",
-                    instanceProperties,
-                    jars,
-                    coreStacks);
+            new BulkExportStack(scope, "BulkExport",
+                    instanceProperties, jars, coreStacks);
         }
 
         // Stack to garbage collect old files
         if (optionalStacks.contains(OptionalStack.GarbageCollectorStack)) {
-            new GarbageCollectorStack(scope,
-                    "GarbageCollector",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+            new GarbageCollectorStack(scope, "GarbageCollector",
+                    instanceProperties, jars, coreStacks);
         }
         // Stack for containers for compactions and splitting compactions
         CompactionStack compactionStack = null;
         if (optionalStacks.contains(OptionalStack.CompactionStack)) {
             compactionStack = new CompactionStack(scope,
                     "Compaction",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    instanceProperties, jars, coreStacks);
         }
 
         // Stack to split partitions
@@ -161,10 +143,7 @@ public class SleeperOptionalStacks {
         if (optionalStacks.contains(OptionalStack.PartitionSplittingStack)) {
             partitionSplittingStack = new PartitionSplittingStack(scope,
                     "PartitionSplitting",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+                    instanceProperties, jars, coreStacks);
         }
 
         // Stack to execute queries
@@ -172,15 +151,10 @@ public class SleeperOptionalStacks {
         QueryQueueStack queryQueueStack = null;
         if (OptionalStack.QUERY_STACKS.stream().anyMatch(optionalStacks::contains)) {
             queryQueueStack = new QueryQueueStack(scope, "QueryQueue",
-                    instanceProperties,
-                    coreStacks.getAlertsTopic(), coreStacks,
-                    coreStacks.getErrorMetrics());
-            queryStack = new QueryStack(scope,
-                    "Query",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks, queryQueueStack,
-                    coreStacks.getErrorMetrics());
+                    instanceProperties, coreStacks);
+            queryStack = new QueryStack(scope, "Query",
+                    instanceProperties, jars, coreStacks,
+                    queryQueueStack);
             // Stack to execute queries using the web socket API
             if (optionalStacks.contains(OptionalStack.WebSocketQueryStack)) {
                 new WebSocketQueryStack(scope,
@@ -192,12 +166,8 @@ public class SleeperOptionalStacks {
         // Stack for ingest jobs
         IngestStack ingestStack = null;
         if (optionalStacks.contains(OptionalStack.IngestStack)) {
-            ingestStack = new IngestStack(scope,
-                    "Ingest",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    coreStacks.getErrorMetrics());
+            ingestStack = new IngestStack(scope, "Ingest",
+                    instanceProperties, jars, coreStacks);
         }
 
         // Aggregate ingest stacks
@@ -206,11 +176,8 @@ public class SleeperOptionalStacks {
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(OptionalStack.IngestBatcherStack)) {
             new IngestBatcherStack(scope, "IngestBatcher",
-                    instanceProperties, jars,
-                    coreStacks.getAlertsTopic(),
-                    coreStacks,
-                    ingestStacks,
-                    coreStacks.getErrorMetrics());
+                    instanceProperties, jars, coreStacks,
+                    ingestStacks);
         }
 
         if (optionalStacks.contains(OptionalStack.DashboardStack)) {

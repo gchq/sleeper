@@ -21,7 +21,6 @@ import com.google.gson.reflect.TypeToken;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v32.KubectlV32Layer;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Subnet;
@@ -47,7 +46,6 @@ import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.stepfunctions.Choice;
@@ -81,7 +79,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
@@ -101,8 +98,7 @@ public final class EksBulkImportStack extends NestedStack {
 
     public EksBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
-            Topic errorsTopic, BulkImportBucketStack importBucketStack, SleeperCoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            BulkImportBucketStack importBucketStack, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -117,10 +113,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .queue(queueForDLs)
                 .build();
 
-        createAlarmForDlq(this, "BulkImportEKSUndeliveredJobsAlarm",
-                "Alarms if there are any messages that have failed validation or failed to be passed to the statemachine",
-                queueForDLs, errorsTopic);
-        errorMetrics.add(Utils.createErrorMetric("Bulk Import EKS Errors", queueForDLs, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "BulkImportEKSUndeliveredJobsAlarm", "passing bulk import jobs to the state machine for EKS", queueForDLs);
 
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
@@ -200,7 +193,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .forEach(sa -> sa.getNode().addDependency(namespace));
         coreStacks.grantIngest(sparkServiceAccount.getRole());
 
-        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, coreStacks, errorsTopic);
+        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, coreStacks);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
@@ -225,7 +218,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, Topic errorsTopic) {
+    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
 
         Map<String, Object> runJobState = parseEksStepDefinition(
@@ -245,7 +238,7 @@ public final class EksBulkImportStack extends NestedStack {
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
                 .message(TaskInput.fromJsonPathAt("$.errorMessage"))
-                .topic(errorsTopic)
+                .topic(coreStacks.getAlertsTopic())
                 .build();
 
         Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage")

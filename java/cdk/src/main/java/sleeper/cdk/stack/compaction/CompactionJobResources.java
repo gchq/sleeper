@@ -20,7 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -28,7 +27,6 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 
@@ -44,7 +42,6 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_URL;
@@ -116,17 +113,14 @@ public class CompactionJobResources {
             InstanceProperties instanceProperties,
             SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
-            Topic topic,
-            SleeperCoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            SleeperCoreStacks coreStacks) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
 
-        Queue pendingQueue = sqsQueueForCompactionJobBatches(coreStacks, topic, errorMetrics);
-        commitBatcherQueue = sqsQueueForCompactionBatcher(coreStacks, topic, errorMetrics);
-        compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);
-        IFunction creationFunction = lambdaToCreateCompactionJobBatches(coreStacks, topic, errorMetrics, jarsBucket,
-                lambdaCode, compactionJobsQueue);
+        Queue pendingQueue = sqsQueueForCompactionJobBatches(coreStacks);
+        commitBatcherQueue = sqsQueueForCompactionBatcher(coreStacks);
+        compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks);
+        IFunction creationFunction = lambdaToCreateCompactionJobBatches(coreStacks, jarsBucket, lambdaCode, compactionJobsQueue);
         IFunction sendFunction = lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue);
         lambdaToBatchUpCompactionCommits(coreStacks, lambdaCode, commitBatcherQueue);
 
@@ -135,7 +129,7 @@ public class CompactionJobResources {
         grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, sendFunction);
     }
 
-    private Queue sqsQueueForCompactionJobs(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionJobs(SleeperCoreStacks coreStacks) {
         // Create queue for compaction job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "CompactionJobDLQ");
@@ -162,11 +156,7 @@ public class CompactionJobResources {
         instanceProperties.set(COMPACTION_JOB_DLQ_ARN,
                 compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueArn());
 
-        // Add alarm to send message to SNS if there are any messages on the dead letter queue
-        createAlarmForDlq(stack, "CompactionAlarm",
-                "Alarms if there are any messages on the dead letter queue for the compactions queue",
-                compactionDLQ, topic);
-        errorMetrics.add(Utils.createErrorMetric("Compaction Errors", compactionDLQ, instanceProperties));
+        coreStacks.alarmOnDeadLetters(stack, "CompactionAlarm", "compaction jobs", compactionDLQ);
         compactionJobQ.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
 
         CfnOutputProps compactionJobDefinitionsQueueProps = new CfnOutputProps.Builder()
@@ -182,9 +172,7 @@ public class CompactionJobResources {
     }
 
     private IFunction lambdaToCreateCompactionJobBatches(
-            SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, SleeperLambdaCode lambdaCode,
-            Queue compactionJobsQueue) {
+            SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperLambdaCode lambdaCode, Queue compactionJobsQueue) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-trigger");
@@ -210,7 +198,7 @@ public class CompactionJobResources {
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_CREATION_HANDLER)));
 
         // Send messages from the trigger function to the handler function
-        Queue jobCreationQueue = sqsQueueForCompactionJobCreation(coreStacks, topic, errorMetrics);
+        Queue jobCreationQueue = sqsQueueForCompactionJobCreation(coreStacks);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCreationQueue)
                 .batchSize(instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE))
                 .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM))
@@ -267,7 +255,7 @@ public class CompactionJobResources {
         return function;
     }
 
-    private Queue sqsQueueForCompactionJobCreation(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionJobCreation(SleeperCoreStacks coreStacks) {
         // Create queue for compaction job creation invocation
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue deadLetterQueue = Queue.Builder
@@ -291,15 +279,12 @@ public class CompactionJobResources {
         instanceProperties.set(COMPACTION_JOB_CREATION_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(COMPACTION_JOB_CREATION_DLQ_ARN, deadLetterQueue.getQueueArn());
 
-        createAlarmForDlq(stack, "CompactionJobCreationBatchAlarm",
-                "Alarms if there are any messages on the dead letter queue for compaction job creation",
-                deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Compaction Batching Errors", deadLetterQueue, instanceProperties));
+        coreStacks.alarmOnDeadLetters(stack, "CompactionJobCreationBatchAlarm", "compaction job creation triggers", deadLetterQueue);
         queue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
         return queue;
     }
 
-    private Queue sqsQueueForCompactionJobBatches(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionJobBatches(SleeperCoreStacks coreStacks) {
         // Create queue for compaction job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "PendingCompactionJobBatchDLQ");
@@ -323,11 +308,7 @@ public class CompactionJobResources {
         instanceProperties.set(COMPACTION_PENDING_DLQ_URL, pendingDLQ.getQueueUrl());
         instanceProperties.set(COMPACTION_PENDING_DLQ_ARN, pendingDLQ.getQueueArn());
 
-        // Add alarm to send message to SNS if there are any messages on the dead letter queue
-        createAlarmForDlq(stack, "PendingCompactionAlarm",
-                "Alarms if there are any messages on the dead letter queue for the compactions queue",
-                pendingDLQ, topic);
-        errorMetrics.add(Utils.createErrorMetric("Pending Compaction Errors", pendingDLQ, instanceProperties));
+        coreStacks.alarmOnDeadLetters(stack, "PendingCompactionAlarm", "pending compaction job batches", pendingDLQ);
         pendingQ.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
 
         return pendingQ;
@@ -356,7 +337,7 @@ public class CompactionJobResources {
         coreStacks.grantSendStateStoreCommits(function);
     }
 
-    private Queue sqsQueueForCompactionBatcher(SleeperCoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForCompactionBatcher(SleeperCoreStacks coreStacks) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue deadLetterQueue = Queue.Builder
                 .create(stack, "CompactionCommitDLQ")
@@ -378,10 +359,7 @@ public class CompactionJobResources {
         instanceProperties.set(COMPACTION_COMMIT_DLQ_ARN, deadLetterQueue.getQueueArn());
 
         queue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
-        createAlarmForDlq(stack, "CompactionCommitAlarm",
-                "Alarms if there are any messages on the dead letter queue for the compaction commit batcher lambda",
-                deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Compaction Batcher Errors", deadLetterQueue, instanceProperties));
+        coreStacks.alarmOnDeadLetters(stack, "CompactionCommitAlarm", "compaction commits", deadLetterQueue);
         return queue;
     }
 

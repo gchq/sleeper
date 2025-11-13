@@ -16,10 +16,8 @@
 package sleeper.cdk.stack.compaction;
 
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -28,8 +26,6 @@ import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
-
-import java.util.List;
 
 /**
  * Deploys the resources needed to create and execute compaction jobs. This is done by delegating
@@ -49,9 +45,7 @@ public class CompactionStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             SleeperJarsInBucket jars,
-            Topic topic,
-            SleeperCoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            SleeperCoreStacks coreStacks) {
         super(scope, id);
         // The compaction stack consists of the following components:
         // - An SQS queue for the compaction jobs.
@@ -70,10 +64,10 @@ public class CompactionStack extends NestedStack {
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         jobResources = new CompactionJobResources(this,
-                instanceProperties, lambdaCode, jarsBucket, topic, coreStacks, errorMetrics);
+                instanceProperties, lambdaCode, jarsBucket, coreStacks);
 
         new CompactionTaskResources(this,
-                instanceProperties, lambdaCode, jarsBucket, jobResources, topic, coreStacks, errorMetrics);
+                instanceProperties, lambdaCode, jarsBucket, jobResources, coreStacks);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

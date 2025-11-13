@@ -17,7 +17,6 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -25,7 +24,6 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -41,7 +39,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_DLQ_ARN;
@@ -67,7 +64,7 @@ public class GarbageCollectorStack extends NestedStack {
 
     public GarbageCollectorStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars, Topic topic, SleeperCoreStacks coreStacks, List<IMetric> errorMetrics) {
+            SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         // Jars bucket
@@ -136,10 +133,7 @@ public class GarbageCollectorStack extends NestedStack {
         instanceProperties.set(GARBAGE_COLLECTOR_QUEUE_ARN, queue.getQueueArn());
         instanceProperties.set(GARBAGE_COLLECTOR_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(GARBAGE_COLLECTOR_DLQ_ARN, deadLetterQueue.getQueueArn());
-        createAlarmForDlq(this, "GarbageCollectorAlarm",
-                "Alarms if there are any messages on the dead letter queue for the garbage collector",
-                deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Garbage Collection Errors", deadLetterQueue, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "GarbageCollectorAlarm", "garbage collection", deadLetterQueue);
         queue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE))
