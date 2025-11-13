@@ -27,6 +27,7 @@ import java.util.Map;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.custom.WiremockCweTestHelper.anyRequestedForCloudWatchEvents;
 import static sleeper.cdk.custom.WiremockCweTestHelper.disableRuleRequest;
 import static sleeper.cdk.custom.WiremockCweTestHelper.disableRuleRequestedFor;
@@ -59,6 +60,21 @@ public class PauseScheduledRuleLambdaIT {
         verify(1, anyRequestedForCloudWatchEvents());
         verify(1, disableRuleRequestedFor(scheduledRuleName));
 
+    }
+
+    @Test
+    @DisplayName("Test unsupported operation")
+    void shouldRaiseExceptionOnUnsupportedOperation() {
+
+        // Given
+        String scheduledRuleName = "test-compaction-job-creation-rule";
+
+        // When / Then
+        verify(0, anyRequestedForCloudWatchEvents());
+        assertThatThrownBy(
+                () -> lambda.handleEvent(
+                        eventHandlerForCloudWatch(scheduledRuleName, "TagResource"), null))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private CloudFormationCustomResourceEvent eventHandlerForCloudWatch(
