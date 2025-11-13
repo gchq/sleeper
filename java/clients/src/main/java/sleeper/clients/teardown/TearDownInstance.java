@@ -32,8 +32,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class TearDownInstance {
@@ -42,12 +40,14 @@ public class TearDownInstance {
     private final TearDownClients clients;
     private final Path scriptsDir;
     private final InstanceProperties instanceProperties;
+    private final String instanceId;
 
     private TearDownInstance(Builder builder) {
         clients = Objects.requireNonNull(builder.clients, "clients must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
         instanceProperties = Optional.ofNullable(builder.instanceProperties)
                 .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
+        instanceId = instanceProperties.get(ID);
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -64,9 +64,7 @@ public class TearDownInstance {
         LOGGER.info("Tear Down");
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("scriptsDir: {}", scriptsDir);
-        LOGGER.info("{}: {}", ID.getPropertyName(), instanceProperties.get(ID));
-        LOGGER.info("{}: {}", CONFIG_BUCKET.getPropertyName(), instanceProperties.get(CONFIG_BUCKET));
-        LOGGER.info("{}: {}", QUERY_RESULTS_BUCKET.getPropertyName(), instanceProperties.get(QUERY_RESULTS_BUCKET));
+        LOGGER.info("{}: {}", ID.getPropertyName(), instanceId);
 
         shutdownSystemProcesses();
         deleteStack();
@@ -84,7 +82,7 @@ public class TearDownInstance {
     }
 
     public void deleteStack() {
-        deleteStack(instanceProperties.get(ID));
+        deleteStack(instanceId);
     }
 
     public void deleteArtefactsStack() throws InterruptedException {
@@ -101,7 +99,7 @@ public class TearDownInstance {
     }
 
     public void waitForStackToDelete() throws InterruptedException {
-        WaitForStackToDelete.from(clients.getCloudFormation(), instanceProperties.get(ID)).pollUntilFinished();
+        WaitForStackToDelete.from(clients.getCloudFormation(), instanceId).pollUntilFinished();
     }
 
     public void waitForArtefactsStackToDelete() throws InterruptedException {
@@ -109,7 +107,7 @@ public class TearDownInstance {
     }
 
     private String artefactsStackName() {
-        return instanceProperties.get(ID) + "-artefacts";
+        return instanceId + "-artefacts";
     }
 
     public static void removeGeneratedDir(Path scriptsDir) throws IOException {
