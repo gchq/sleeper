@@ -69,7 +69,7 @@ To successfully recreate the instance with the same ID, you must manually ensure
 
 ### Configuration when destroying an instance
 
-The CDK deployment process offers two configuration options that can be used if you wish to delete the entire deployment and start again:
+The CDK deployment process offers two configuration options that can be set prior to deployment, if you wish to delete the deployment and start again:
 
 - Data and Query Buckets: You can configure the deployment to delete the S3 buckets used for tables and query results. This is managed by setting the instance property `sleeper.retain.infra.after.destroy` to false.
 
