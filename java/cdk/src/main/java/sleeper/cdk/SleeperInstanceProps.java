@@ -100,10 +100,10 @@ public class SleeperInstanceProps {
         DeployInstanceConfiguration configuration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
                 .tableProperties(configuration.getTableProperties())
-                .validateProperties(!"false".equalsIgnoreCase(context.tryGetContext("validate")))
-                .ensureInstanceDoesNotExist("true".equalsIgnoreCase(context.tryGetContext("newinstance")))
-                .checkVersionMatchesProperties(!"true".equalsIgnoreCase(context.tryGetContext("skipVersionCheck")))
-                .deployPaused("true".equalsIgnoreCase(context.tryGetContext("deployPaused")))
+                .validateProperties(context.getBooleanOrDefault("validate", true))
+                .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
+                .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
+                .deployPaused(context.getBooleanOrDefault("deployPaused", false))
                 .build();
     }
 
@@ -130,7 +130,7 @@ public class SleeperInstanceProps {
         private List<TableProperties> tableProperties = List.of();
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
-        private boolean checkVersionMatchesProperties = true;
+        private boolean skipCheckingVersionMatchesProperties = false;
         private boolean deployPaused = false;
 
         /**
@@ -215,17 +215,17 @@ public class SleeperInstanceProps {
 
         /**
          * Sets whether to check that the version in the instance properties matches the version of Sleeper being used
-         * for the deployment. This can be used when the instance properties were loaded from an existing instance,
-         * or when a specific version of Sleeper is set in your configuration. If no version is set in the
-         * instance properties, this will be ignored.
+         * for the deployment. This check can be useful when the instance properties were loaded from an existing
+         * instance, or when a specific version of Sleeper is set in your configuration. If no version is set in the
+         * instance properties, this will be ignored and no check will be made.
          * <p>
-         * Default: true
+         * Default: false
          *
-         * @param  checkVersionMatchesProperties true to check the version number matches
-         * @return                               this builder
+         * @param  skipCheckingVersionMatchesProperties true to skip checking that the version number matches
+         * @return                                      this builder
          */
-        public Builder checkVersionMatchesProperties(boolean checkVersionMatchesProperties) {
-            this.checkVersionMatchesProperties = checkVersionMatchesProperties;
+        public Builder skipCheckingVersionMatchesProperties(boolean skipCheckingVersionMatchesProperties) {
+            this.skipCheckingVersionMatchesProperties = skipCheckingVersionMatchesProperties;
             return this;
         }
 
@@ -267,7 +267,7 @@ public class SleeperInstanceProps {
 
             String deployedVersion = instanceProperties.get(VERSION);
             String localVersion = SleeperVersion.getVersion();
-            if (checkVersionMatchesProperties
+            if (!skipCheckingVersionMatchesProperties
                     && deployedVersion != null
                     && !localVersion.equals(deployedVersion)) {
                 throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
