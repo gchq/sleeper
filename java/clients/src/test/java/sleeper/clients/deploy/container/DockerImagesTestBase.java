@@ -105,7 +105,7 @@ public class DockerImagesTestBase {
     }
 
     protected CommandPipeline buildLambdaImageCommand(String tag, String dockerDirectory) {
-        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
+        return pipeline(command("docker", "build", "--provenance=false", "-t", tag, dockerDirectory));
     }
 
     protected CommandPipeline pullImageCommand(String tag) {
