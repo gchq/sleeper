@@ -257,7 +257,7 @@ the `scripts/docker` folder that is created when the system is built.
 Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false when deploying then however you
 choose to tear down Sleeper later on you will also need to destroy some further S3 buckets and DynamoDB tables manually.
 This is because by default they are kept.  Similarly, by default all log groups will be retained when the Sleeper instance is
-torn down. You can set sleeper.retain.logs.after.destroy to false as well.
+torn down. You can set `sleeper.retain.logs.after.destroy` to false as well.
 
 Please ensure you predefine split points for your table. See [tables](../usage/tables.md#pre-split-partitions) for how
 to do this. If you decide not to set split points, your state store will be initialised with a single root partition.
