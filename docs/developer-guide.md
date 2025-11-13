@@ -164,7 +164,7 @@ deployment repository it will publish the files to the local file system at `/tm
 Here's an example of running this script:
 
 ```bash
-scripts/dev/publishMaven.sh -DaltDeploymentRepository=my-repo::https://my.repository.com/path
+scripts/dev/publishMaven.sh -DaltDeploymentRepository=my-repo-id::https://my.repository.com/path
 ```
 
 Your Maven settings file will need to have this repository declared, with a matching ID and any necessary
@@ -173,9 +173,6 @@ authentication. Here's a guide to set this up: https://www.baeldung.com/maven-se
 This can be tested locally by using a repository url similar to file:/path/to/output that will publish these files to
 the local file system.
 
-The development team are adding a way to retrieve and publish jars to AWS. Right now we only support deploying to AWS
-from jars that were built locally, but in the future you will be able to deploy jars from a Maven repository as well.
-
 ### Publishing Docker images
 
 There is a script [`scripts/dev/publishDocker.sh`](/scripts/dev/publishDocker.sh) to publish the Docker images to a
@@ -183,12 +180,46 @@ repository.
 
 It takes in two arguments:
 *   The repository prefix path.
-*   An optional boolean to create the images that should be built for multiple platforms, this defaults to true.
-        See [StackDockerImage.java](/java/clients/src/main/java/sleeper/clients/deploy/container/StackDockerImage.java) for more details.
+*   An optional boolean for whether to create a new Docker builder.
 
-The development team are adding a way to retrieve and publish Docker images to AWS. Right now we only support uploading
-the images to AWS if they were built locally, but in the future you will be able to upload images from an external
-repository as well.
+By default a Docker builder will be created that is capable of publishing multiplatform images, like this:
+
+```bash
+docker buildx create --name sleeper --use
+```
+
+This may not be suitable for all use cases. You can disable this by passing "false" as the second argument. In that
+case, you will need to ensure a Docker builder is set that can build multiplatform images before calling this script.
+
+### Installing published artefacts
+
+We have implemented a process to install Sleeper from published artefacts. This is not yet recommended for general use
+as we have not published Sleeper to Maven Central or Docker Hub. To install your own pre-published artefacts, you can
+follow these steps:
+
+1. Prepare a clone of this Git repository.
+2. Use `scripts/deploy/installJarsFromMaven.sh` to retrieve the jars from Maven.
+3. Use `scripts/deploy/setDeployFromRemoteDocker.sh` to configure the Sleeper scripts to pull published Docker images.
+4. Use the Sleeper scripts as though you had built from scratch.
+
+The `installJarsFromMaven.sh` script can be used like this:
+
+```bash
+./scripts/deploy/installJarsFromMaven.sh <version> ./scripts/jars -DremoteRepositories=my-repo-id::https://my.repository.com/path
+```
+
+Your Maven settings file will need to have your repository declared, with a matching ID and any necessary
+authentication. Here's a guide to set this up: https://www.baeldung.com/maven-settings-xml#5-servers
+
+The version must be the Maven version as it was in the Sleeper `java/pom.xml` when it was published to the repository.
+
+The `setDeployFromRemoteDocker.sh` script can be used like this:
+
+```bash
+./scripts/deploy/setDeployFromRemoteDocker.sh my.registry.com/path
+```
+
+The path in your registry must be the prefix you used to publish the images.
 
 ## Using the codebase
 
