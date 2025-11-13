@@ -44,7 +44,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_ARN;
@@ -87,18 +86,18 @@ public class IngestStack extends NestedStack {
     public static final String INGEST_CLUSTER_NAME = "IngestClusterName";
     public static final String INGEST_CONTAINER_ROLE_ARN = "IngestContainerRoleARN";
 
+    private final SleeperInstanceProps props;
+    private final InstanceProperties instanceProperties;
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
-    private final InstanceProperties instanceProperties;
 
     public IngestStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+            Construct scope, String id,
+            SleeperInstanceProps props,
             SleeperCoreStacks coreStacks) {
         super(scope, id);
-        this.instanceProperties = instanceProperties;
+        this.props = props;
+        this.instanceProperties = props.getInstanceProperties();
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
@@ -107,8 +106,8 @@ public class IngestStack extends NestedStack {
         //      then it creates more tasks).
         //  - A lambda that stops task when a delete cluster event is triggered.
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         // SQS queue for ingest jobs
         sqsQueueForIngestJobs(coreStacks);
@@ -273,7 +272,7 @@ public class IngestStack extends NestedStack {
                 .create(this, "IngestTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.INGEST_TASK_CREATION.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.INGEST_TASK_CREATION.getDescription())
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(handler)))
                 .build();

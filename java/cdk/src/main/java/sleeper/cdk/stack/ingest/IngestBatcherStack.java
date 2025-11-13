@@ -35,7 +35,7 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS;
@@ -71,13 +70,12 @@ public class IngestBatcherStack extends NestedStack {
     private final IQueue submitQueue;
 
     public IngestBatcherStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+            Construct scope, String id,
+            SleeperInstanceProps props,
             SleeperCoreStacks coreStacks,
             IngestStacks ingestStacks) {
         super(scope, id);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
         String instanceId = Utils.cleanInstanceId(instanceProperties);
 
         // Queue to submit files to the batcher
@@ -124,8 +122,8 @@ public class IngestBatcherStack extends NestedStack {
                 .build();
 
         // Lambdas to receive submitted files and create batches
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         String submitterName = String.join("-", "sleeper", instanceId, "ingest-batcher-submit-files");
         String jobCreatorName = String.join("-", "sleeper", instanceId, "ingest-batcher-create-jobs");
@@ -171,7 +169,7 @@ public class IngestBatcherStack extends NestedStack {
                 .create(this, "IngestBatcherJobCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.getDescription())
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(jobCreatorLambda)))
                 .build();

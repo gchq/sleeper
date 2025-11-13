@@ -30,6 +30,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -42,7 +43,6 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_ARN;
@@ -104,18 +104,20 @@ public class CompactionJobResources {
     private static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
     private static final String COMPACTION_STACK_DLQ_URL = "CompactionStackDLQUrlKey";
 
-    private final InstanceProperties instanceProperties;
     private final Stack stack;
+    private final SleeperInstanceProps props;
+    private final InstanceProperties instanceProperties;
     private final Queue compactionJobsQueue;
     private final Queue commitBatcherQueue;
 
     public CompactionJobResources(Stack stack,
-            InstanceProperties instanceProperties,
+            SleeperInstanceProps props,
             SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
             SleeperCoreStacks coreStacks) {
-        this.instanceProperties = instanceProperties;
         this.stack = stack;
+        this.props = props;
+        this.instanceProperties = props.getInstanceProperties();
 
         Queue pendingQueue = sqsQueueForCompactionJobBatches(coreStacks);
         commitBatcherQueue = sqsQueueForCompactionBatcher(coreStacks);
@@ -213,7 +215,7 @@ public class CompactionJobResources {
                 .create(stack, "CompactionJobCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.COMPACTION_JOB_CREATION.getDescription())
-                .enabled(!shouldDeployPaused(stack))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(triggerFunction)))
                 .build();

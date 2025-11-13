@@ -17,6 +17,7 @@ package sleeper.cdk.stack;
 
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
@@ -37,9 +38,7 @@ import sleeper.cdk.stack.query.QueryStack;
 import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.OptionalStack;
-import sleeper.core.properties.table.TableProperties;
 
-import java.util.List;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
@@ -51,13 +50,14 @@ public class SleeperOptionalStacks {
     }
 
     public static void create(
-            Construct scope, InstanceProperties instanceProperties, List<TableProperties> tableProperties,
-            SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
+            Construct scope, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        SleeperJarsInBucket jars = props.getJars();
         Set<OptionalStack> optionalStacks = instanceProperties
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
         if (optionalStacks.contains(OptionalStack.TableMetricsStack)) {
-            new TableMetricsStack(scope, "TableMetrics", instanceProperties, jars, coreStacks);
+            new TableMetricsStack(scope, "TableMetrics", props, coreStacks);
         }
 
         if (optionalStacks.contains(OptionalStack.AthenaStack)) {
@@ -121,29 +121,23 @@ public class SleeperOptionalStacks {
 
         // Stack to run bulk export jobs
         if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
-            new BulkExportStack(scope, "BulkExport",
-                    instanceProperties, jars, coreStacks);
+            new BulkExportStack(scope, "BulkExport", props, coreStacks);
         }
 
         // Stack to garbage collect old files
         if (optionalStacks.contains(OptionalStack.GarbageCollectorStack)) {
-            new GarbageCollectorStack(scope, "GarbageCollector",
-                    instanceProperties, jars, coreStacks);
+            new GarbageCollectorStack(scope, "GarbageCollector", props, coreStacks);
         }
         // Stack for containers for compactions and splitting compactions
         CompactionStack compactionStack = null;
         if (optionalStacks.contains(OptionalStack.CompactionStack)) {
-            compactionStack = new CompactionStack(scope,
-                    "Compaction",
-                    instanceProperties, jars, coreStacks);
+            compactionStack = new CompactionStack(scope, "Compaction", props, coreStacks);
         }
 
         // Stack to split partitions
         PartitionSplittingStack partitionSplittingStack = null;
         if (optionalStacks.contains(OptionalStack.PartitionSplittingStack)) {
-            partitionSplittingStack = new PartitionSplittingStack(scope,
-                    "PartitionSplitting",
-                    instanceProperties, jars, coreStacks);
+            partitionSplittingStack = new PartitionSplittingStack(scope, "PartitionSplitting", props, coreStacks);
         }
 
         // Stack to execute queries
@@ -166,8 +160,7 @@ public class SleeperOptionalStacks {
         // Stack for ingest jobs
         IngestStack ingestStack = null;
         if (optionalStacks.contains(OptionalStack.IngestStack)) {
-            ingestStack = new IngestStack(scope, "Ingest",
-                    instanceProperties, jars, coreStacks);
+            ingestStack = new IngestStack(scope, "Ingest", props, coreStacks);
         }
 
         // Aggregate ingest stacks
@@ -175,28 +168,20 @@ public class SleeperOptionalStacks {
 
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(OptionalStack.IngestBatcherStack)) {
-            new IngestBatcherStack(scope, "IngestBatcher",
-                    instanceProperties, jars, coreStacks,
-                    ingestStacks);
+            new IngestBatcherStack(scope, "IngestBatcher", props, coreStacks, ingestStacks);
         }
 
         if (optionalStacks.contains(OptionalStack.DashboardStack)) {
-            new DashboardStack(scope,
-                    "Dashboard",
+            new DashboardStack(scope, "Dashboard",
                     ingestStack,
                     compactionStack,
                     partitionSplittingStack,
-                    instanceProperties, tableProperties,
+                    instanceProperties, props.getTableProperties(),
                     coreStacks.getErrorMetrics());
         }
 
         if (optionalStacks.contains(OptionalStack.KeepLambdaWarmStack)) {
-            new KeepLambdaWarmStack(scope,
-                    "KeepLambdaWarmExecution",
-                    instanceProperties,
-                    jars,
-                    coreStacks,
-                    queryQueueStack);
+            new KeepLambdaWarmStack(scope, "KeepLambdaWarmExecution", props, coreStacks, queryQueueStack);
         }
     }
 

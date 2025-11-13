@@ -28,7 +28,7 @@ import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
@@ -41,7 +41,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_ARN;
@@ -52,7 +51,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_DELETION_RULE;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.TableStateProperty.SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED;
@@ -70,19 +68,20 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
     public TransactionLogSnapshotStack(
             Construct scope, String id,
-            InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks,
+            SleeperInstanceProps props, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters deadLetters) {
         super(scope, id);
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-        createSnapshotCreationLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, deadLetters);
-        createSnapshotDeletionLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, deadLetters);
-        Utils.addStackTagIfSet(this, instanceProperties);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
+        createSnapshotCreationLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, deadLetters);
+        createSnapshotDeletionLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, deadLetters);
+        Utils.addStackTagIfSet(this, props.getInstanceProperties());
     }
 
-    private void createSnapshotCreationLambda(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
+    private void createSnapshotCreationLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, TrackDeadLetters deadLetters) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation-trigger");
         String creationFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-creation");
@@ -109,7 +108,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.seconds(
                         instanceProperties.getInt(SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_SECONDS))))
                 .targets(List.of(new LambdaFunction(snapshotCreationTrigger)))
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .build();
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE, rule.getRuleName());
 
@@ -145,8 +144,9 @@ public class TransactionLogSnapshotStack extends NestedStack {
         transactionLogStateStoreStack.grantCreateSnapshots(snapshotCreationLambda);
     }
 
-    private void createSnapshotDeletionLambda(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
+    private void createSnapshotDeletionLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack, TrackDeadLetters deadLetters) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-snapshot-deletion");
@@ -173,7 +173,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.minutes(
                         instanceProperties.getLong(SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(snapshotDeletionTrigger)))
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .build();
         instanceProperties.set(TRANSACTION_LOG_SNAPSHOT_DELETION_RULE, rule.getRuleName());
 

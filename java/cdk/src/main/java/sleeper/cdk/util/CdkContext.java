@@ -21,6 +21,20 @@ public interface CdkContext {
 
     String tryGetContext(String property);
 
+    default boolean getBooleanOrDefault(String property, boolean defaultValue) {
+        String string = tryGetContext(property);
+        if (string == null || string.isBlank()) {
+            return defaultValue;
+        }
+        if ("true".equalsIgnoreCase(string)) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(string)) {
+            return false;
+        }
+        throw new IllegalArgumentException("Expected true or false for context variable: " + property);
+    }
+
     static CdkContext from(Construct scope) {
         return key -> (String) scope.getNode().tryGetContext(key);
     }

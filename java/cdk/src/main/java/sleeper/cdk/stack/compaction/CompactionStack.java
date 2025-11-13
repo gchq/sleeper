@@ -21,11 +21,11 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
-import sleeper.core.properties.instance.InstanceProperties;
 
 /**
  * Deploys the resources needed to create and execute compaction jobs. This is done by delegating
@@ -41,10 +41,8 @@ public class CompactionStack extends NestedStack {
     private CompactionJobResources jobResources;
 
     public CompactionStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            SleeperJarsInBucket jars,
+            Construct scope, String id,
+            SleeperInstanceProps props,
             SleeperCoreStacks coreStacks) {
         super(scope, id);
         // The compaction stack consists of the following components:
@@ -60,16 +58,15 @@ public class CompactionStack extends NestedStack {
         //   then it creates more tasks).
 
         // Jars bucket
+        SleeperJarsInBucket jars = props.getJars();
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        jobResources = new CompactionJobResources(this,
-                instanceProperties, lambdaCode, jarsBucket, coreStacks);
+        jobResources = new CompactionJobResources(this, props, lambdaCode, jarsBucket, coreStacks);
 
-        new CompactionTaskResources(this,
-                instanceProperties, lambdaCode, jarsBucket, jobResources, coreStacks);
+        new CompactionTaskResources(this, props, lambdaCode, jarsBucket, jobResources, coreStacks);
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addStackTagIfSet(this, props.getInstanceProperties());
     }
 
     public Queue getCompactionJobsQueue() {

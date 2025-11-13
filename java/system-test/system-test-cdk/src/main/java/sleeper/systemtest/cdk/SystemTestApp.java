@@ -20,22 +20,18 @@ import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.SleeperOptionalStacks;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.PropertiesStack;
-import sleeper.cdk.util.CdkContext;
-import sleeper.cdk.util.Utils;
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
-
-import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -46,15 +42,15 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
  * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
 public class SystemTestApp extends Stack {
+    private final SleeperInstanceProps props;
     private final SleeperJarsInBucket jars;
     private final SystemTestProperties instanceProperties;
-    private final List<TableProperties> tableProperties;
 
-    public SystemTestApp(App app, String id, StackProps props, DeployInstanceConfiguration configuration, SleeperJarsInBucket jars) {
+    public SystemTestApp(App app, String id, StackProps props, SleeperInstanceProps sleeperProps) {
         super(app, id, props);
-        this.jars = jars;
-        this.instanceProperties = SystemTestProperties.from(configuration.getInstanceProperties());
-        this.tableProperties = configuration.getTableProperties();
+        this.props = sleeperProps;
+        this.jars = sleeperProps.getJars();
+        this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
     }
 
     public void create() {
@@ -67,8 +63,8 @@ public class SystemTestApp extends Stack {
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", instanceProperties, jars, autoDeleteS3Stack);
 
         // Sleeper instance
-        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, instanceProperties, jars, loggingStack, autoDeleteS3Stack);
-        SleeperOptionalStacks.create(this, instanceProperties, tableProperties, jars, coreStacks);
+        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, loggingStack, autoDeleteS3Stack);
+        SleeperOptionalStacks.create(this, props, coreStacks);
         coreStacks.createRoles();
 
         // Stack for writing random data
@@ -85,23 +81,22 @@ public class SystemTestApp extends Stack {
                 .analyticsReporting(false)
                 .build());
 
-        DeployInstanceConfiguration configuration = Utils.loadDeployInstanceConfiguration(CdkContext.from(app));
-        InstanceProperties instanceProperties = configuration.getInstanceProperties();
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create()) {
+            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
+            InstanceProperties instanceProperties = props.getInstanceProperties();
 
-        String id = instanceProperties.get(ID);
-        Environment environment = Environment.builder()
-                .account(instanceProperties.get(ACCOUNT))
-                .region(instanceProperties.get(REGION))
-                .build();
-
-        try (S3Client s3Client = S3Client.create()) {
-            SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
+            String id = instanceProperties.get(ID);
+            Environment environment = Environment.builder()
+                    .account(instanceProperties.get(ACCOUNT))
+                    .region(instanceProperties.get(REGION))
+                    .build();
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)
                     .env(environment)
                     .build(),
-                    configuration, jars).create();
+                    props).create();
 
             app.synth();
         }

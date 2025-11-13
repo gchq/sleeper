@@ -18,14 +18,11 @@ package sleeper.cdk;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
-import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
 import software.amazon.awscdk.Tags;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.stack.SleeperInstanceStacks;
-import sleeper.cdk.util.CdkContext;
-import sleeper.cdk.util.Utils;
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
@@ -45,20 +42,22 @@ public class SleeperCdkApp {
                 .analyticsReporting(false)
                 .build());
 
-        DeployInstanceConfiguration configuration = Utils.loadDeployInstanceConfiguration(CdkContext.from(app));
-        InstanceProperties instanceProperties = configuration.getInstanceProperties();
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create()) {
+            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
+            InstanceProperties instanceProperties = props.getInstanceProperties();
 
-        String id = instanceProperties.get(ID);
-        Environment environment = Environment.builder()
-                .account(instanceProperties.get(ACCOUNT))
-                .region(instanceProperties.get(REGION))
-                .build();
-        try (S3Client s3Client = S3Client.create()) {
-            Stack stack = Stack.Builder.create(app, id)
-                    .stackName(id)
-                    .env(environment)
+            String id = instanceProperties.get(ID);
+            Environment environment = Environment.builder()
+                    .account(instanceProperties.get(ACCOUNT))
+                    .region(instanceProperties.get(REGION))
                     .build();
-            SleeperInstanceStacks.create(stack, configuration, s3Client);
+            SleeperInstance.createAsRootStack(app, id,
+                    StackProps.builder()
+                            .stackName(id)
+                            .env(environment)
+                            .build(),
+                    SleeperInstanceProps.fromContext(app, s3Client, dynamoClient));
             instanceProperties.getTags()
                     .forEach((key, value) -> Tags.of(app).add(key, value));
 

@@ -32,6 +32,7 @@ import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
@@ -40,6 +41,7 @@ import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
+import sleeper.cdk.stack.core.SleeperInstanceRoles;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
 import sleeper.cdk.stack.core.StateStoreStacks;
 import sleeper.cdk.stack.core.TableDataStack;
@@ -75,6 +77,7 @@ public class SleeperCoreStacks {
     private final CompactionTrackerResources compactionTracker;
     private final AutoDeleteS3ObjectsStack autoDeleteS3Stack;
     private final AutoStopEcsClusterTasksStack autoStopEcsStack;
+    private SleeperInstanceRoles roles;
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     private SleeperCoreStacks(
@@ -100,15 +103,16 @@ public class SleeperCoreStacks {
         this.autoStopEcsStack = autoStopEcsStack;
     }
 
-    public static SleeperCoreStacks create(
-            Construct scope, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
-        LoggingStack loggingStack = new LoggingStack(scope, "Logging", instanceProperties);
-        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
-        return create(scope, instanceProperties, jars, loggingStack, autoDeleteS3Stack);
+    public static SleeperCoreStacks create(Construct scope, SleeperInstanceProps props) {
+        LoggingStack loggingStack = new LoggingStack(scope, "Logging", props.getInstanceProperties());
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
+        return create(scope, props, loggingStack, autoDeleteS3Stack);
     }
 
     public static SleeperCoreStacks create(
-            Construct scope, InstanceProperties instanceProperties, SleeperJarsInBucket jars, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
+            Construct scope, SleeperInstanceProps props, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        SleeperJarsInBucket jars = props.getJars();
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
             new VpcCheckStack(scope, "Vpc", instanceProperties, jars, loggingStack);
         } else {
@@ -145,9 +149,9 @@ public class SleeperCoreStacks {
 
         // Table state store maintenance
         new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
-                instanceProperties, jars, stacks, transactionLogStateStoreStack, deadLetters);
+                props, stacks, transactionLogStateStoreStack, deadLetters);
         new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
-                instanceProperties, jars, stacks, transactionLogStateStoreStack, deadLetters);
+                props, stacks, transactionLogStateStoreStack, deadLetters);
         return stacks;
     }
 
@@ -333,6 +337,10 @@ public class SleeperCoreStacks {
     }
 
     public void createRoles() {
-        policiesStack.createRoles();
+        roles = policiesStack.createRoles();
+    }
+
+    public SleeperInstanceRoles getRoles() {
+        return roles;
     }
 }
