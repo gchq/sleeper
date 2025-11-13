@@ -13,25 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.deploy.container;
+package sleeper.cdk.stack.core;
 
-import java.io.IOException;
+import software.amazon.awscdk.services.iam.IRole;
 
 /**
- * Callbacks to be invoked while building and uploading Docker images. This may be used to authenticate with Docker,
- * and/or to create the repositories being uploaded to, e.g. in AWS ECR.
+ * References for roles that can be assumed to interact with Sleeper.
+ *
+ * @param instanceAdmin a role for admin access to the Sleeper instance
+ * @param ingestByQueue a role to add data to Sleeper via SQS queues, by standard ingest or bulk import
+ * @param directIngest  a role to add data to Sleeper directly against the underlying AWS resources
  */
-public interface UploadDockerImagesCallbacks {
-
-    UploadDockerImagesCallbacks NONE = new UploadDockerImagesCallbacks() {
-    };
-
-    default void beforeAll() throws IOException, InterruptedException {
-    }
-
-    default void beforeEach(StackDockerImage image) {
-    }
-
-    default void onFail(StackDockerImage image, Exception e) {
-    }
+public record SleeperInstanceRoles(IRole instanceAdmin, IRole ingestByQueue, IRole directIngest) {
 }

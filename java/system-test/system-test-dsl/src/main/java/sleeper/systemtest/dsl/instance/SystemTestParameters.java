@@ -20,6 +20,7 @@ import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.LoadLocalProperties;
+import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.configuration.SystemTestProperty;
@@ -32,7 +33,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.function.Predicate.not;
-import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -94,24 +95,12 @@ public class SystemTestParameters {
         return shortTestId;
     }
 
+    public String getArtefactsDeploymentId() {
+        return shortTestId;
+    }
+
     public String buildInstanceId(String identifier) {
         return shortTestId + "-" + identifier;
-    }
-
-    public String buildJarsBucketName() {
-        return buildJarsBucketName(shortTestId);
-    }
-
-    public static String buildJarsBucketName(String shortId) {
-        return String.format("sleeper-%s-jars", shortId);
-    }
-
-    public String buildSystemTestECRRepoName() {
-        return buildSystemTestECRRepoName(shortTestId);
-    }
-
-    public static String buildSystemTestECRRepoName(String shortId) {
-        return shortId + "/system-test";
     }
 
     public String getAccount() {
@@ -176,7 +165,7 @@ public class SystemTestParameters {
 
     public void setRequiredProperties(DeployInstanceConfiguration deployConfig) {
         InstanceProperties properties = deployConfig.getInstanceProperties();
-        properties.set(ECR_REPOSITORY_PREFIX, shortTestId);
+        properties.set(ARTEFACTS_DEPLOYMENT_ID, getArtefactsDeploymentId());
         if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_ECS_SECURITY_GROUPS)) {
             properties.set(ECS_SECURITY_GROUPS, standalonePropertiesTemplate.get(SYSTEM_TEST_ECS_SECURITY_GROUPS));
         }
@@ -203,8 +192,8 @@ public class SystemTestParameters {
         properties.set(SYSTEM_TEST_ACCOUNT, getAccount());
         properties.set(SYSTEM_TEST_REGION, getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, getVpcId());
-        properties.set(SYSTEM_TEST_JARS_BUCKET, buildJarsBucketName());
-        properties.set(SYSTEM_TEST_REPO, buildSystemTestECRRepoName());
+        properties.set(SYSTEM_TEST_JARS_BUCKET, SleeperArtefactsLocation.getDefaultJarsBucketName(getArtefactsDeploymentId()));
+        properties.set(SYSTEM_TEST_REPO, SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(getArtefactsDeploymentId()) + "/system-test");
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(isSystemTestClusterEnabled()));
         return properties;
     }

@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 use crate::{
-    objects::{common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
+    objects::{ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
     unpack::unpack_string_array,
 };
 use arrow::ffi_stream::FFI_ArrowArrayStream;

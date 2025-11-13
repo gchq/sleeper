@@ -694,11 +694,4 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     .addToIndex(INSTANCE::add);
         }
     }
-
-    /**
-     * Retrieves the property that sets the default value for this property if unset.
-     *
-     * @return the default property
-     */
-    SleeperProperty getDefaultProperty();
 }

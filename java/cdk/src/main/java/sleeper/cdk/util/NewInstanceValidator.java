@@ -23,20 +23,18 @@ import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.nio.file.Path;
-
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-class NewInstanceValidator {
+public class NewInstanceValidator {
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
 
-    NewInstanceValidator(S3Client s3Client, DynamoDbClient dynamoClient) {
+    public NewInstanceValidator(S3Client s3Client, DynamoDbClient dynamoClient) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
     }
 
-    void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
+    public void validate(InstanceProperties instanceProperties) {
         checkQueryResultsBucketDoesNotExist(instanceProperties);
         checkDataBucketDoesNotExist(instanceProperties);
         checkTransactionLogStateStoreDoesNotExist(instanceProperties);

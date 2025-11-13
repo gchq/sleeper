@@ -18,7 +18,6 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -28,14 +27,12 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -45,8 +42,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
@@ -62,11 +57,11 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
 
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
-            Construct scope, String id, InstanceProperties instanceProperties,
-            BuiltJars jars, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
+            Construct scope, String id, SleeperInstanceProps props, SleeperCoreStacks coreStacks) {
         super(scope, id);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "metrics-trigger");
         String publishFunctionName = String.join("-", "sleeper", instanceId, "metrics-publisher");
@@ -95,7 +90,7 @@ public class TableMetricsStack extends NestedStack {
                 .description(SleeperScheduleRule.TABLE_METRICS.getDescription())
                 .schedule(Schedule.rate(Duration.minutes(1)))
                 .targets(List.of(new LambdaFunction(tableMetricsTrigger)))
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .build();
         instanceProperties.set(TABLE_METRICS_RULE, rule.getRuleName());
 
@@ -118,10 +113,7 @@ public class TableMetricsStack extends NestedStack {
         instanceProperties.set(TABLE_METRICS_QUEUE_ARN, queue.getQueueArn());
         instanceProperties.set(TABLE_METRICS_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(TABLE_METRICS_DLQ_ARN, deadLetterQueue.getQueueArn());
-        createAlarmForDlq(this, "MetricsJobAlarm",
-                "Alarms if there are any messages on the dead letter queue for the table metrics queue",
-                deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "MetricsJobAlarm", "table metrics generation triggers", deadLetterQueue);
         tableMetricsPublisher.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE))
                 .maxConcurrency(instanceProperties.getIntOrNull(METRICS_LAMBDA_CONCURRENCY_MAXIMUM))

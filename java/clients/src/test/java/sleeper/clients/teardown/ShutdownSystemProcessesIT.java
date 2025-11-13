@@ -24,8 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.List;
-
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
@@ -53,11 +51,7 @@ class ShutdownSystemProcessesIT {
     }
 
     private void shutdown() throws Exception {
-        shutdownWithExtraEcsClusters(List.of());
-    }
-
-    private void shutdownWithExtraEcsClusters(List<String> extraECSClusters) throws Exception {
-        shutdown.shutdown(properties, extraECSClusters);
+        shutdown.shutdown(properties);
     }
 
     @Nested

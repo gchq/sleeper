@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{objects::common_config::FFICommonConfig, unpack::unpack_string};
+use crate::{objects::ffi_common_config::FFICommonConfig, unpack::unpack_string};
 use color_eyre::eyre::bail;
 use sleeper_core::AwsConfig;
 use std::ffi::c_char;

@@ -42,6 +42,7 @@ import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterPro
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
@@ -119,6 +120,7 @@ public class SystemTestInstance {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        properties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.setTags(Map.of(

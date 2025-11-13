@@ -28,31 +28,24 @@ import sleeper.core.properties.local.LoadLocalProperties;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class TearDownInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownInstance.class);
 
     private final TearDownClients clients;
     private final Path scriptsDir;
-    private final Function<InstanceProperties, List<String>> getExtraEcsClusters;
-    private final Function<InstanceProperties, List<String>> getExtraEcrRepositories;
     private final InstanceProperties instanceProperties;
 
     private TearDownInstance(Builder builder) {
         clients = Objects.requireNonNull(builder.clients, "clients must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
-        getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
-        getExtraEcrRepositories = Objects.requireNonNull(builder.getExtraEcrRepositories, "getExtraEcrRepositories must not be null");
         instanceProperties = Optional.ofNullable(builder.instanceProperties)
                 .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
     }
@@ -78,17 +71,30 @@ public class TearDownInstance {
         shutdownSystemProcesses();
         deleteStack();
         waitForStackToDelete();
-        cleanupAfterStackDeleted();
+        deleteArtefactsStack();
+        waitForArtefactsStackToDelete();
         removeGeneratedDir(scriptsDir);
 
         LOGGER.info("Finished tear down");
     }
 
+    public void shutdownSystemProcesses() throws InterruptedException {
+        new ShutdownSystemProcesses(clients)
+                .shutdown(instanceProperties);
+    }
+
     public void deleteStack() {
-        String instanceId = instanceProperties.get(ID);
-        LOGGER.info("Deleting instance CloudFormation stack: {}", instanceId);
+        deleteStack(instanceProperties.get(ID));
+    }
+
+    public void deleteArtefactsStack() throws InterruptedException {
+        deleteStack(artefactsStackName());
+    }
+
+    private void deleteStack(String stackName) {
+        LOGGER.info("Deleting instance CloudFormation stack: {}", stackName);
         try {
-            clients.getCloudFormation().deleteStack(builder -> builder.stackName(instanceId));
+            clients.getCloudFormation().deleteStack(builder -> builder.stackName(stackName));
         } catch (RuntimeException e) {
             LOGGER.warn("Failed deleting stack", e);
         }
@@ -98,15 +104,12 @@ public class TearDownInstance {
         WaitForStackToDelete.from(clients.getCloudFormation(), instanceProperties.get(ID)).pollUntilFinished();
     }
 
-    public void shutdownSystemProcesses() throws InterruptedException {
-        new ShutdownSystemProcesses(clients)
-                .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
+    public void waitForArtefactsStackToDelete() throws InterruptedException {
+        WaitForStackToDelete.from(clients.getCloudFormation(), artefactsStackName()).pollUntilFinished();
     }
 
-    public void cleanupAfterStackDeleted() throws InterruptedException {
-        LOGGER.info("Removing the jars bucket and docker containers");
-        RemoveJarsBucket.remove(clients.getS3(), instanceProperties.get(JARS_BUCKET));
-        RemoveECRRepositories.remove(clients.getEcr(), instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
+    private String artefactsStackName() {
+        return instanceProperties.get(ID) + "-artefacts";
     }
 
     public static void removeGeneratedDir(Path scriptsDir) throws IOException {
@@ -147,8 +150,6 @@ public class TearDownInstance {
         private Path scriptsDir;
         private String instanceId;
         private InstanceProperties instanceProperties;
-        private Function<InstanceProperties, List<String>> getExtraEcsClusters = properties -> List.of();
-        private Function<InstanceProperties, List<String>> getExtraEcrRepositories = properties -> List.of();
 
         private Builder() {
         }
@@ -170,16 +171,6 @@ public class TearDownInstance {
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public Builder getExtraEcsClusters(Function<InstanceProperties, List<String>> getExtraEcsClusters) {
-            this.getExtraEcsClusters = getExtraEcsClusters;
-            return this;
-        }
-
-        public Builder getExtraEcrRepositories(Function<InstanceProperties, List<String>> getExtraEcrRepositories) {
-            this.getExtraEcrRepositories = getExtraEcrRepositories;
             return this;
         }
 

@@ -27,7 +27,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -44,7 +43,6 @@ public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
         InstanceProperties expected = new InstanceProperties();
         expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
-        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");
         expected.set(ACCOUNT, stsClient.getCallerIdentity().account());

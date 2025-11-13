@@ -43,6 +43,10 @@ public class SystemTestProperties extends InstanceProperties {
         super(properties);
     }
 
+    public static SystemTestProperties from(InstanceProperties instanceProperties) {
+        return new SystemTestProperties(instanceProperties.getProperties());
+    }
+
     public static SystemTestProperties loadFromBucket(S3Client s3Client, String bucket) {
         SystemTestProperties properties = new SystemTestProperties();
 

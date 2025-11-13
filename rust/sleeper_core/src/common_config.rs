@@ -45,14 +45,10 @@ pub struct CommonConfig<'a> {
     region: SleeperRegion<'a>,
     /// How output from operation should be returned
     output: OutputType,
+    /// Aggregate functions to be applied AFTER merge-sorting
     aggregates: Vec<Aggregate>,
+    /// Row filters to be applied before aggregation
     filters: Vec<Filter>,
-}
-
-impl Default for CommonConfig<'_> {
-    fn default() -> Self {
-        CommonConfigBuilder::default().force_build()
-    }
 }
 
 impl CommonConfig<'_> {
@@ -75,11 +71,7 @@ impl CommonConfig<'_> {
             Some(aws_config) => Some(aws_config.to_s3_config()),
             None => default_creds_store().await.ok(),
         };
-        if self.use_readahead_store {
-            ObjectStoreFactory::new(s3_config)
-        } else {
-            ObjectStoreFactory::new_no_readahead(s3_config)
-        }
+        ObjectStoreFactory::new(s3_config, self.use_readahead_store)
     }
 
     pub(crate) fn output(&self) -> &OutputType {
@@ -243,11 +235,8 @@ impl<'a> CommonConfigBuilder<'a> {
     pub fn build(mut self) -> Result<CommonConfig<'a>> {
         self.validate()?;
         self.normalise_s3a_urls();
-        Ok(self.force_build())
-    }
 
-    fn force_build(self) -> CommonConfig<'a> {
-        CommonConfig {
+        Ok(CommonConfig {
             aws_config: self.aws_config,
             input_files: self.input_files,
             input_files_sorted: self.input_files_sorted,
@@ -258,7 +247,7 @@ impl<'a> CommonConfigBuilder<'a> {
             output: self.output,
             aggregates: self.aggregates,
             filters: self.filters,
-        }
+        })
     }
 
     /// Performs validity checks on parameters.

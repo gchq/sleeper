@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployConfiguration;
-import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -35,6 +35,7 @@ import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
@@ -46,6 +47,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
 import static sleeper.clients.util.cdk.InvokeCdk.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.core.deploy.LambdaJar.CUSTOM_RESOURCES;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
@@ -66,14 +68,17 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         this.cloudFormation = clients.getCloudFormation();
     }
 
+    @Override
     public void saveProperties(SystemTestStandaloneProperties properties) {
         properties.saveToS3(s3);
     }
 
+    @Override
     public SystemTestStandaloneProperties loadProperties() {
         return SystemTestStandaloneProperties.fromS3GivenDeploymentId(s3, parameters.getSystemTestShortId());
     }
 
+    @Override
     public boolean deployIfNotPresent(SystemTestStandaloneProperties properties) {
         try {
             String deploymentId = properties.get(SYSTEM_TEST_ID);
@@ -86,6 +91,7 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         }
     }
 
+    @Override
     public void redeploy(SystemTestStandaloneProperties deployProperties) {
         try {
             uploadJarsAndDockerImages();
@@ -94,7 +100,6 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
             deployProperties.save(propertiesFile);
             InvokeCdk.builder()
                     .jarsDirectory(parameters.getJarsDirectory())
-                    .version(SleeperVersion.getVersion())
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .build().invoke(SYSTEM_TEST_STANDALONE,
                             CdkCommand.deploySystemTestStandalone(propertiesFile));
@@ -107,9 +112,14 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
     }
 
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
+        InvokeCdk.builder()
+                .jarsDirectory(parameters.getJarsDirectory())
+                .runCommand(CommandUtils::runCommandLogOutput)
+                .build().invoke(ARTEFACTS,
+                        CdkCommand.deployArtefacts(parameters.getArtefactsDeploymentId(), List.of(SYSTEM_TEST_IMAGE.getImageName())));
         new SyncJars(s3, parameters.getJarsDirectory())
                 .sync(SyncJarsRequest.builder()
-                        .bucketName(parameters.buildJarsBucketName())
+                        .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(parameters.getArtefactsDeploymentId()))
                         .region(parameters.getRegion())
                         .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
                         .build());
@@ -122,9 +132,9 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                         .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
                         .commandRunner(CommandUtils::runCommandLogOutput)
                         .build(),
-                EcrRepositoryCreator.withEcrClient(ecr));
+                CheckVersionExistsInEcr.withEcrClient(ecr));
         dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()
-                .ecrPrefix(parameters.getSystemTestShortId())
+                .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(parameters.getArtefactsDeploymentId()))
                 .account(parameters.getAccount())
                 .region(parameters.getRegion())
                 .version(SleeperVersion.getVersion())

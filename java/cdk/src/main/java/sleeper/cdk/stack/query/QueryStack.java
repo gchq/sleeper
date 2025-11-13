@@ -21,7 +21,6 @@ import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -41,15 +40,14 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -60,7 +58,6 @@ import sleeper.core.util.EnvironmentUtils;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -88,15 +85,13 @@ public class QueryStack extends NestedStack {
     public QueryStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars,
-            Topic topic,
-            CoreStacks coreStacks,
-            QueryQueueStack queryQueueStack,
-            List<IMetric> errorMetrics) {
+            SleeperJarsInBucket jars,
+            SleeperCoreStacks coreStacks,
+            QueryQueueStack queryQueueStack) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String tableName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-tracking-table");
@@ -119,11 +114,11 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, queryTrackingTable.getTableName());
 
         queryExecutorLambda = setupQueryExecutorLambda(coreStacks, queryQueueStack, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
-        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, topic, lambdaCode, jarsBucket, queryTrackingTable, errorMetrics);
+        leafPartitionQueryLambda = setupLeafPartitionQueryQueueAndLambda(coreStacks, instanceProperties, lambdaCode, jarsBucket, queryTrackingTable);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private IFunction setupQueryExecutorLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode lambdaCode,
+    private IFunction setupQueryExecutorLambda(SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-executor");
@@ -162,9 +157,10 @@ public class QueryStack extends NestedStack {
         return lambda;
     }
 
-    private IFunction setupLeafPartitionQueryQueueAndLambda(CoreStacks coreStacks, InstanceProperties instanceProperties, Topic topic,
-            LambdaCode lambdaCode, IBucket jarsBucket, ITable queryTrackingTable, List<IMetric> errorMetrics) {
-        Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, topic, errorMetrics);
+    private IFunction setupLeafPartitionQueryQueueAndLambda(
+            SleeperCoreStacks coreStacks, InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
+            IBucket jarsBucket, ITable queryTrackingTable) {
+        Queue leafPartitionQueryQueue = setupLeafPartitionQueryQueue(instanceProperties, coreStacks);
         Queue queryResultsQueue = setupResultsQueue(instanceProperties);
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
@@ -215,15 +211,7 @@ public class QueryStack extends NestedStack {
         Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
     }
 
-    /***
-     * Creates the queue used for internal sub-queries against a specific leaf partition.
-     *
-     * @param  instanceProperties containing configuration details
-     * @param  topic              the SNS topic to notify of any dead letters
-     * @param  errorMetrics       the metrics to track dead letters
-     * @return                    the queue to be used for leaf partition queries
-     */
-    private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, Topic topic, List<IMetric> errorMetrics) {
+    private Queue setupLeafPartitionQueryQueue(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlLeafPartitionQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryDLQ");
         Queue leafPartitionQueryDlq = Queue.Builder
@@ -245,10 +233,7 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_ARN, leafPartitionQueryQueue.getQueueArn());
         instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL, leafPartitionQueryDlq.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_ARN, leafPartitionQueryDlq.getQueueArn());
-        createAlarmForDlq(this, "LeafPartitionQueryAlarm",
-                "Alarms if there are any messages on the dead letter queue for the leaf partition query queue",
-                leafPartitionQueryDlq, topic);
-        errorMetrics.add(Utils.createErrorMetric("Subquery Errors", leafPartitionQueryDlq, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "LeafPartitionQueryAlarm", "leaf partition queries", leafPartitionQueryDlq);
         CfnOutputProps leafPartitionQueryQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(leafPartitionQueryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + LEAF_PARTITION_QUERY_QUEUE_NAME)
@@ -302,7 +287,7 @@ public class QueryStack extends NestedStack {
         return resultsQueue;
     }
 
-    private IBucket setupResultsBucket(InstanceProperties instanceProperties, CoreStacks coreStacks, LambdaCode lambdaCode) {
+    private IBucket setupResultsBucket(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-results");
@@ -334,7 +319,7 @@ public class QueryStack extends NestedStack {
      * @param queryTrackingTable used to track a query
      * @param queue              the queue to allow the Lambda to send messages to
      */
-    private void setPermissionsForLambda(CoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
+    private void setPermissionsForLambda(SleeperCoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
             ITable queryTrackingTable, IQueue queue) {
         coreStacks.grantReadTablesAndData(lambda);
         jarsBucket.grantRead(lambda);
@@ -355,7 +340,7 @@ public class QueryStack extends NestedStack {
      * @param resultsQueue       the results queue to allow the Lambda to send result messages to
      * @param resultsBucket      the bucket that will contain the results
      */
-    private void setPermissionsForLambda(CoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
+    private void setPermissionsForLambda(SleeperCoreStacks coreStacks, IBucket jarsBucket, IFunction lambda,
             ITable queryTrackingTable, IQueue queue, IQueue resultsQueue, IBucket resultsBucket) {
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, queue);
         resultsBucket.grantReadWrite(lambda);

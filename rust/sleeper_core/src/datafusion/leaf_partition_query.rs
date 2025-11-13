@@ -26,12 +26,13 @@ use crate::{
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
-use datafusion::logical_expr::ident;
-use datafusion::{common::plan_err, logical_expr::Expr, physical_plan::displayable};
 use datafusion::{
+    common::plan_err,
     dataframe::DataFrame,
     error::DataFusionError,
-    execution::{config::SessionConfig, context::SessionContext},
+    execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
+    logical_expr::{Expr, ident},
+    physical_plan::displayable,
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -41,7 +42,7 @@ use std::{
 };
 
 /// All information needed for a Sleeper leaf partition query.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct LeafPartitionQueryConfig<'a> {
     /// Basic information
     pub common: CommonConfig<'a>,
@@ -70,16 +71,20 @@ pub struct LeafPartitionQuery<'a> {
     config: &'a LeafPartitionQueryConfig<'a>,
     /// Used to create object store implementations
     store_factory: &'a ObjectStoreFactory,
+    /// Runtime for this query
+    runtime: Arc<RuntimeEnv>,
 }
 
 impl<'a> LeafPartitionQuery<'a> {
     pub fn new(
         config: &'a LeafPartitionQueryConfig<'a>,
         store_factory: &'a ObjectStoreFactory,
+        runtime: Arc<RuntimeEnv>,
     ) -> LeafPartitionQuery<'a> {
         Self {
             config,
             store_factory,
+            runtime,
         }
     }
 
@@ -196,7 +201,10 @@ impl<'a> LeafPartitionQuery<'a> {
         let sf = ops
             .apply_config(SessionConfig::new(), self.store_factory)
             .await?;
-        let ctx = ops.configure_context(SessionContext::new_with_config(sf), self.store_factory)?;
+        let ctx = ops.configure_context(
+            SessionContext::new_with_config_rt(sf, self.runtime.clone()),
+            self.store_factory,
+        )?;
         let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
         frame = self.apply_query_regions(frame)?;
         frame = ops.apply_user_filters(frame)?;

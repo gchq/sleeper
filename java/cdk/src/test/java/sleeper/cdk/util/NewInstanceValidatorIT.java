@@ -17,35 +17,25 @@
 package sleeper.cdk.util;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.cdk.util.ValidatorTestHelper.setupTablesPropertiesFile;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 class NewInstanceValidatorIT extends LocalStackTestBase {
 
-    @TempDir
-    public Path temporaryFolder;
-
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @Test
-    void shouldNotThrowAnErrorWhenNoBucketsOrTablesExist() throws IOException {
-        // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table");
-
+    void shouldNotThrowAnErrorWhenNoBucketsExist() throws IOException {
         // When / Then
         assertThatCode(this::validate)
                 .doesNotThrowAnyException();
@@ -54,7 +44,6 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenDataBucketExists() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table");
         createBucket(instanceProperties.get(DATA_BUCKET));
 
         // When / Then
@@ -66,7 +55,6 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTheQueryResultsBucketExists() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table");
         createBucket(instanceProperties.get(QUERY_RESULTS_BUCKET));
 
         // When / Then
@@ -79,7 +67,6 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
         // Given
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        setupTablesPropertiesFile(temporaryFolder, "example-table");
 
         // When
         assertThatThrownBy(this::validate)
@@ -88,8 +75,6 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     }
 
     private void validate() throws IOException {
-        Path instancePropertiesPath = temporaryFolder.resolve("instance.properties");
-        Files.writeString(instancePropertiesPath, instanceProperties.saveAsString());
-        new NewInstanceValidator(s3Client, dynamoClient).validate(instanceProperties, instancePropertiesPath);
+        new NewInstanceValidator(s3Client, dynamoClient).validate(instanceProperties);
     }
 }

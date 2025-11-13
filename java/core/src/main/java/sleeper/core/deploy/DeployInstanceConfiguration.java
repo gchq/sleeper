@@ -55,6 +55,16 @@ public class DeployInstanceConfiguration {
     }
 
     /**
+     * Creates a configuration for an instance with no Sleeper tables.
+     *
+     * @param  instanceProperties the instance properties
+     * @return                    the configuration
+     */
+    public static DeployInstanceConfiguration withNoTables(InstanceProperties instanceProperties) {
+        return builder().instanceProperties(instanceProperties).tableProperties(List.of()).build();
+    }
+
+    /**
      * Creates a configuration for a new instance, setting tables from templates if not specified.
      *
      * @param  instancePropertiesPath     the path to the local configuration instance properties file

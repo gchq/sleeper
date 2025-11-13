@@ -56,6 +56,11 @@ class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
         return null;
     }
 
+    @Override
+    public InstanceProperty getDefaultProperty() {
+        return null;
+    }
+
     public String toString() {
         return propertyName;
     }

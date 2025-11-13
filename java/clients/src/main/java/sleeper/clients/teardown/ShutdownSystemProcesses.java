@@ -22,8 +22,6 @@ import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import sleeper.clients.deploy.PauseSystem;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.List;
-
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class ShutdownSystemProcesses {
@@ -41,7 +39,7 @@ public class ShutdownSystemProcesses {
 
     }
 
-    public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws InterruptedException {
+    public void shutdown(InstanceProperties instanceProperties) throws InterruptedException {
         LOGGER.info("Shutting down system processes for instance {}", instanceProperties.get(ID));
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);

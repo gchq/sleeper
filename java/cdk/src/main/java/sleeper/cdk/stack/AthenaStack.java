@@ -33,9 +33,8 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.s3.LifecycleRule;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -58,11 +57,11 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 public class AthenaStack extends NestedStack {
 
     public AthenaStack(
-            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String bucketName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "spill-bucket");
@@ -93,8 +92,8 @@ public class AthenaStack extends NestedStack {
     }
 
     private void createConnector(
-            String className, LambdaHandler handler, LogGroupRef logGroupRef, InstanceProperties instanceProperties, CoreStacks coreStacks,
-            LambdaCode lambdaCode, IBucket jarsBucket, IBucket spillBucket, IKey spillMasterKey, List<Policy> connectorPolicies) {
+            String className, LambdaHandler handler, LogGroupRef logGroupRef, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks,
+            SleeperLambdaCode lambdaCode, IBucket jarsBucket, IBucket spillBucket, IKey spillMasterKey, List<Policy> connectorPolicies) {
         if (!instanceProperties.getList(ATHENA_COMPOSITE_HANDLER_CLASSES).contains(className)) {
             return;
         }

@@ -25,6 +25,7 @@ use sleeper_core::{
     SleeperRegion,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
     run_compaction,
+    sleeper_context::SleeperContext,
 };
 use std::{collections::HashMap, io::Write};
 use url::Url;
@@ -165,7 +166,7 @@ async fn main() -> color_eyre::Result<()> {
         )?)
         .build()?;
 
-    let result = run_compaction(&details).await?;
+    let result = run_compaction(&details, &SleeperContext::default()).await?;
     info!(
         "Compaction read {} rows and wrote {} rows",
         result.rows_read.to_formatted_string(&Locale::en),

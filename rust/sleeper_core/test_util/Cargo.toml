@@ -26,9 +26,13 @@ publish = false
 
 [dependencies]
 arrow = { workspace = true }
-futures = { workspace = true }
+bytes = { workspace = true }
 color-eyre = { workspace = true }
 datafusion = { workspace = true }
-url = { workspace = true }
-tempfile = { workspace = true }
+futures = { workspace = true }
+objectstore_ext = { path = "../../objectstore_ext" }
+object_store = { workspace = true }
+rust_sketch = { path = "../../rust_sketch" }
 sleeper_core = { path = "../" }
+tempfile = { workspace = true }
+url = { workspace = true }
