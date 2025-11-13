@@ -72,14 +72,12 @@ docker buildx create --name sleeper --use
 set +e
 
 copyFolderForParallelRun() {
-    set -e
     echo "Making folder $1 for parallel build"
     pushd $REPO_PARENT_DIR
     sudo rm -rf $1
     mkdir $1
     sudo rsync -a --exclude=".*" sleeper/ $1
     popd
-    set +e
 }
 
 removeFolderAfterParallelRun() {
