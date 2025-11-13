@@ -66,9 +66,8 @@ SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 
 END_EXIT_CODE=0
 
-set +e
-
 docker buildx rm sleeper
+set +e
 docker buildx create --name sleeper --use
 
 copyFolderForParallelRun() {
