@@ -23,6 +23,9 @@ import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 
 import java.util.Map;
 
+/**
+ * Pause a CloudWatch rule.
+ */
 public class PauseScheduledRuleLambda {
     public static final Logger LOGGER = LoggerFactory.getLogger(PauseScheduledRuleLambda.class);
 
