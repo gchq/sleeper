@@ -63,18 +63,17 @@ mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
-set +e
 
 END_EXIT_CODE=0
 
 docker buildx rm sleeper
 docker buildx create --name sleeper --use
 
+set +e
+
 copyFolderForParallelRun() {
     set -e
     echo "Making folder $1 for parallel build"
-    #sudo apt-get update
-    #sudo apt-get install --yes rsync
     pushd $REPO_PARENT_DIR
     sudo rm -rf $1
     mkdir $1
@@ -153,20 +152,20 @@ runTestSuite(){
 
 if [ "$MAIN_SUITE_NAME" == "performance" ]; then
     echo "Running performance tests in parallel. Start time: [$(time_str)]"
-    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &
-    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite2" "$@" &
-    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite3" "$@" &
-    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}e1" "expensive1" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite1" "$@" &
-    runTestSuite 240 "${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite2" "$@" &
-    runTestSuite 300 "${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite3" "$@" &
-    runTestSuite 360 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
+    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &> "$OUTPUT_DIR/slow1-suite.log" &
+    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite2" "$@" &> "$OUTPUT_DIR/slow2-suite.log" &
+    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite3" "$@" &> "$OUTPUT_DIR/slow3-suite.log" &
+    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}e1" "expensive1" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite1" "$@" &> "$OUTPUT_DIR/expensive1-suite.log"  &
+    runTestSuite 240 "${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite2" "$@" &> "$OUTPUT_DIR/expensive2-suite.log"  &
+    runTestSuite 300 "${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite3" "$@" &> "$OUTPUT_DIR/expensive3-suite.log"  &
+    runTestSuite 360 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &> "$OUTPUT_DIR/quick-suite.log" &
     wait
 elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     echo "Running slow tests in parallel. Start time: [$(time_str)]"
-    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &
-    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite2" "$@" &
-    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite3" "$@" &
-    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &
+    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &> "$OUTPUT_DIR/slow1-suite.log" &
+    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite2" "$@" &> "$OUTPUT_DIR/slow2-suite.log" &
+    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite3" "$@" &> "$OUTPUT_DIR/slow3-suite.log" &
+    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &> "$OUTPUT_DIR/quick-suite.log"&
     wait
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
