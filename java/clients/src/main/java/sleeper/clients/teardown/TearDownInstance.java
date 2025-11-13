@@ -109,7 +109,7 @@ public class TearDownInstance {
         return instanceId + "-artefacts";
     }
 
-    public static void removeGeneratedDir(Path scriptsDir) throws IOException {
+    private static void removeGeneratedDir(Path scriptsDir) throws IOException {
         Path generatedDir = scriptsDir.resolve("generated");
         if (Files.isDirectory(generatedDir)) {
             LOGGER.info("Removing generated files");
