@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
 
 /**
@@ -139,6 +140,14 @@ public class Utils {
 
     public static RemovalPolicy removalPolicy(InstanceProperties properties) {
         if (properties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
+            return RemovalPolicy.RETAIN;
+        } else {
+            return RemovalPolicy.DESTROY;
+        }
+    }
+
+    public static RemovalPolicy logsRemovalPolicy(InstanceProperties properties) {
+        if (properties.getBoolean(RETAIN_LOGS_AFTER_DESTROY)) {
             return RemovalPolicy.RETAIN;
         } else {
             return RemovalPolicy.DESTROY;

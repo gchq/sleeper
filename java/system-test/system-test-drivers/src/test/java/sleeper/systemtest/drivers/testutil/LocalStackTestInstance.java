@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -58,6 +59,7 @@ public class LocalStackTestInstance {
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        properties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         properties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
 
         TableProperties tableProperties = new TableProperties(properties);
