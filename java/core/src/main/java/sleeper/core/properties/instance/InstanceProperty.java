@@ -27,6 +27,9 @@ import java.util.List;
  */
 public interface InstanceProperty extends SleeperProperty {
 
+    @Override
+    InstanceProperty getDefaultProperty();
+
     static List<InstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }

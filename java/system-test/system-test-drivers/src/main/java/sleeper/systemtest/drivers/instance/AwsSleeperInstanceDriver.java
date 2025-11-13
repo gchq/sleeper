@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Set;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.CREATE_FAILED;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.ROLLBACK_COMPLETE;
 
@@ -89,7 +88,6 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         LOGGER.info("Deploying instance: {}", instanceId);
         PopulateInstancePropertiesAws.builder(sts, regionProvider)
                 .instanceId(instanceId).vpcId(parameters.getVpcId()).subnetIds(parameters.getSubnetIds())
-                .extraInstanceProperties(instanceProperties -> instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                 .build().populate(deployConfig.getInstanceProperties());
         try {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())

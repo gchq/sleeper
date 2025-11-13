@@ -19,20 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.teardown.RemoveECRRepositories;
-import sleeper.clients.teardown.RemoveJarsBucket;
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.WaitForStackToDelete;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
-
-import java.io.IOException;
-import java.util.List;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class TearDownSystemTestDeployment {
     public static final Logger LOGGER = LoggerFactory.getLogger(TearDownSystemTestDeployment.class);
@@ -50,10 +41,17 @@ public class TearDownSystemTestDeployment {
     }
 
     public void deleteStack() {
-        String deploymentId = properties.get(SYSTEM_TEST_ID);
-        LOGGER.info("Deleting system test CloudFormation stack: {}", deploymentId);
+        deleteStack(properties.get(SYSTEM_TEST_ID));
+    }
+
+    public void deleteArtefactsStack() {
+        deleteStack(artefactsStackName());
+    }
+
+    private void deleteStack(String stackName) {
+        LOGGER.info("Deleting system test CloudFormation stack: {}", stackName);
         try {
-            clients.getCloudFormation().deleteStack(builder -> builder.stackName(deploymentId));
+            clients.getCloudFormation().deleteStack(builder -> builder.stackName(stackName));
         } catch (RuntimeException e) {
             LOGGER.warn("Failed deleting stack", e);
         }
@@ -63,12 +61,12 @@ public class TearDownSystemTestDeployment {
         WaitForStackToDelete.from(clients.getCloudFormation(), properties.get(SYSTEM_TEST_ID)).pollUntilFinished();
     }
 
-    public void cleanupAfterAllInstancesAndStackDeleted() throws InterruptedException, IOException {
-        LOGGER.info("Removing the Jars bucket and docker containers");
-        RemoveJarsBucket.remove(clients.getS3(), properties.get(SYSTEM_TEST_JARS_BUCKET));
-        RemoveECRRepositories.remove(clients.getEcr(),
-                PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(properties.get(SYSTEM_TEST_ID)),
-                List.of(properties.get(SYSTEM_TEST_REPO)));
+    public void waitForArtefactsStackToDelete() throws InterruptedException {
+        WaitForStackToDelete.from(clients.getCloudFormation(), artefactsStackName()).pollUntilFinished();
+    }
+
+    private String artefactsStackName() {
+        return properties.get(SYSTEM_TEST_ID) + "-artefacts";
     }
 
     private static SystemTestStandaloneProperties loadOrDefaultProperties(S3Client s3, String deploymentId) {
@@ -78,8 +76,6 @@ public class TearDownSystemTestDeployment {
             LOGGER.warn("Could not load system test properties: {}", e.getMessage());
             SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
             properties.set(SYSTEM_TEST_ID, deploymentId);
-            properties.set(SYSTEM_TEST_JARS_BUCKET, SystemTestParameters.buildJarsBucketName(deploymentId));
-            properties.set(SYSTEM_TEST_REPO, SystemTestParameters.buildSystemTestECRRepoName(deploymentId));
             return properties;
         }
     }

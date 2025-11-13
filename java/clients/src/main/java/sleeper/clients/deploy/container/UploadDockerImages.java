@@ -63,14 +63,12 @@ public class UploadDockerImages {
                 .build();
     }
 
-    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload, UploadDockerImagesCallbacks callbacks) throws IOException, InterruptedException {
+    public void upload(String repositoryPrefix, List<StackDockerImage> imagesToUpload) throws IOException, InterruptedException {
         if (imagesToUpload.isEmpty()) {
             LOGGER.info("No images need to be built and uploaded, skipping");
             return;
-        } else {
-            LOGGER.info("Building and uploading images: {}", imagesToUpload);
-            callbacks.beforeAll();
         }
+        LOGGER.info("Building and uploading images: {}", imagesToUpload);
 
         if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD
                 && createMultiplatformBuilder
@@ -80,22 +78,13 @@ public class UploadDockerImages {
         }
 
         for (StackDockerImage image : imagesToUpload) {
-            callbacks.beforeEach(image);
-            try {
-                String tag = buildTag(repositoryPrefix, image);
-                if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
-                    buildAndPushImage(tag, image);
-                } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
-                    pullAndPushImage(tag, image);
-                } else {
-                    throw new IllegalArgumentException("Unrecognised Docker image location: " + deployConfig.dockerImageLocation());
-                }
-            } catch (RuntimeException e) {
-                callbacks.onFail(image, e);
-                throw e;
-            } catch (Exception e) {
-                callbacks.onFail(image, e);
-                throw e;
+            String tag = buildTag(repositoryPrefix, image);
+            if (deployConfig.dockerImageLocation() == DockerImageLocation.LOCAL_BUILD) {
+                buildAndPushImage(tag, image);
+            } else if (deployConfig.dockerImageLocation() == DockerImageLocation.REPOSITORY) {
+                pullAndPushImage(tag, image);
+            } else {
+                throw new IllegalArgumentException("Unrecognised Docker image location: " + deployConfig.dockerImageLocation());
             }
         }
     }

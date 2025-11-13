@@ -69,6 +69,10 @@ public class DeployInstanceRequest {
         return extraDockerImages;
     }
 
+    public List<String> getExtraDockerImageNames() {
+        return extraDockerImages.stream().map(StackDockerImage::getImageName).toList();
+    }
+
     public static class Builder {
         private DeployInstanceConfiguration instanceConfig;
         private CdkCommand cdkCommand;

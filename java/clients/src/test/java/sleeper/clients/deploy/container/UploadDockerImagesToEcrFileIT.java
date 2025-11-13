@@ -73,10 +73,6 @@ public class UploadDockerImagesToEcrFileIT extends UploadDockerImagesToEcrTestBa
                 buildImageCommandWithArgs("-t", expectedTag2, lambdaImageDir.toString()),
                 pushImageCommand(expectedTag2));
 
-        assertThat(ecrClient.getRepositories())
-                .containsExactlyInAnyOrder(
-                        "test-instance/statestore-lambda",
-                        "test-instance/ingest-task-creator-lambda");
         assertThat(fileToContentUnder(dir)).isEqualTo(Map.of(
                 jarsDir.resolve("statestore.jar"), "statestore-jar-content",
                 jarsDir.resolve("ingest.jar"), "ingest-jar-content",
