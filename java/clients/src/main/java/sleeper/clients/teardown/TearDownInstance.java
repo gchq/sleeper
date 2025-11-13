@@ -55,6 +55,10 @@ public class TearDownInstance {
                 .tearDownWithDefaultClients();
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public void tearDown() throws IOException, InterruptedException {
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("Tear Down");
@@ -113,10 +117,6 @@ public class TearDownInstance {
         } else {
             LOGGER.info("Generated directory not found");
         }
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     private static String loadInstanceIdFromGeneratedDirectory(Path scriptsDir) {
