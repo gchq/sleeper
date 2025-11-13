@@ -17,12 +17,9 @@ package sleeper.clients.teardown;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.AwsScheduleRules;
 import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 
@@ -45,9 +42,8 @@ public class TearDownInstance {
     private TearDownInstance(Builder builder) {
         clients = Objects.requireNonNull(builder.clients, "clients must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
-        InstanceProperties instanceProperties = Optional.ofNullable(builder.instanceProperties)
-                .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
-        instanceId = instanceProperties.get(ID);
+        instanceId = Optional.ofNullable(builder.instanceId)
+                .orElseGet(() -> loadInstanceIdFromGeneratedDirectory(scriptsDir));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -123,30 +119,16 @@ public class TearDownInstance {
         return new Builder();
     }
 
-    private static InstanceProperties loadInstancePropertiesOrGenerateDefaults(S3Client s3, String instanceId, Path scriptsDir) {
-        if (instanceId == null) {
-            InstanceProperties instanceProperties = LoadLocalProperties
-                    .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
-            instanceId = instanceProperties.get(ID);
-        }
-        return loadInstancePropertiesOrGenerateDefaults(s3, instanceId);
-    }
-
-    public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(S3Client s3, String instanceId) {
-        LOGGER.info("Loading configuration for instance {}", instanceId);
-        try {
-            return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3, instanceId);
-        } catch (RuntimeException e) {
-            LOGGER.info("Failed to download configuration, using default properties");
-            return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);
-        }
+    private static String loadInstanceIdFromGeneratedDirectory(Path scriptsDir) {
+        InstanceProperties instanceProperties = LoadLocalProperties
+                .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
+        return instanceProperties.get(ID);
     }
 
     public static final class Builder {
         private TearDownClients clients;
         private Path scriptsDir;
         private String instanceId;
-        private InstanceProperties instanceProperties;
 
         private Builder() {
         }
@@ -163,11 +145,6 @@ public class TearDownInstance {
 
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
-            return this;
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
             return this;
         }
 
