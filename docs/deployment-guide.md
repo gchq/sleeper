@@ -50,33 +50,25 @@ configuration from the host.
 
 ## Deployment
 
-Sleeper is deployed using the AWS CDK. You can invoke the CDK to do this either using the automated scripts or a more
-manual approach.
+Sleeper is deployed using the AWS CDK. You can invoke the CDK to do this either using the automated scripts or by using
+the CDK directly.
 
 Either approach should be done from within an EC2 instance set up as described above, to avoid lengthy uploads of large
 jar files and Docker images.
 
-### Automated Deployment
+If you prefer to use the CDK CLI directly for deployment, or you want to include Sleeper in your own CDK app, see the
+guide on [deployment with the CDK](deployment/deploy-with-cdk.md) for more information.
 
-The automated deployment creates an instance of Sleeper either from your own configuration files, or from templates.
-This also pre-populates certain properties for you, e.g. from your AWS configuration, and handles uploading the
-necessary deployment artifacts to AWS.
+### Scripted deployment
 
-We have planned to improve this by adding support for deploying a published version of Sleeper. We also plan to extend
-support for declarative deployment with infrastructure as code, by simplifying the process of versioning an instance
-configuration, and by moving some steps into the CDK that are currently done separately. Please see the article
-on [potential deployment improvements](development/deployment-improvements.md).
-
-Please ensure Sleeper has been built successfully before using this. This guide assumes you are in a `sleeper builder`
-container in an EC2 deployed with `sleeper environment`.
-
-Properties that are set to "changeme" in the templates will be overwritten and should not be set manually during
-automated deployment.
+The scripts for deployment create an instance of Sleeper either from your own configuration files, or from templates.
+They also upload the necessary deployment artefacts to AWS. These artefacts must be available for deployment, either by
+building Sleeper locally or installing pre-published artefacts. See the [developer guide](developer-guide.md#building)
+for details.
 
 You can find the template files [here](../scripts/templates). It is recommended that you change these templates to
 configure Sleeper in the way that you want before you run the automated script. At the very least you will want to
-change the tags.template file. See the Configuration section below for further details. In that guide, ignore the
-properties that are set to "changeme" in the templates as they are overwritten by the automated deployment.
+change the tags.template file. See the Configuration section below for further details.
 
 If you deploy from the templates, it will create an instance with no tables:
 
@@ -109,7 +101,10 @@ ECR.
 The deployment scripts will create all of the required configuration files in a folder called `generated` in the scripts
 directory.
 
-### Manual Deployment
+### Deployment via CDK
+
+If you prefer to use the CDK CLI directly for deployment, or you want to include Sleeper in your own CDK app, see the
+[CDK deployment guide](deployment/deploy-with-cdk.md) for more information.
 
 For Sleeper to be deployed manually, some resources have to be uploaded to AWS first. The jar files need to be uploaded
 to an S3 bucket, and some Docker images need to be uploaded to an ECR repository.
@@ -204,7 +199,7 @@ This command should replace the `docker build` and `docker push` commands docume
 docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BASE_DIR/<image directory>
 ```
 
-#### Upload the jars to a bucket
+#### Upload artefacts to AWS
 
 We need to upload jars to a S3 bucket so that they can be used by various resources. The code below assumes you start
 in the project root directory, and you've already built the system with `scripts/build/buildForTest.sh`.
