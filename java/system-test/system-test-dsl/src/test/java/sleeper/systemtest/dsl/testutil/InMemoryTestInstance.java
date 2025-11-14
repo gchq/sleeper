@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
@@ -45,13 +45,13 @@ public class InMemoryTestInstance {
         InstanceProperties instanceProperties = createDslInstanceProperties();
         TableProperties tableProperties = createDslTableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "predefined-test-table");
-        return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+        return new SleeperInstanceConfiguration(instanceProperties, tableProperties);
     });
     public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", () -> {
         InstanceProperties instanceProperties = createDslInstanceProperties();
         TableProperties tableProperties = createDslTableProperties(instanceProperties);
         tableProperties.unset(TABLE_NAME);
-        return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+        return new SleeperInstanceConfiguration(instanceProperties, tableProperties);
     });
 
     private static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
@@ -67,7 +67,7 @@ public class InMemoryTestInstance {
     private static SystemTestInstanceConfiguration usingSystemTestDefaultsWithProperties(String identifier, Supplier<InstanceProperties> createInstanceProperties) {
         return usingSystemTestDefaults(identifier, () -> {
             InstanceProperties instanceProperties = createInstanceProperties.get();
-            return DeployInstanceConfiguration.builder()
+            return SleeperInstanceConfiguration.builder()
                     .instanceProperties(instanceProperties)
                     .tableProperties(createDslTableProperties(instanceProperties))
                     .build();

@@ -18,7 +18,7 @@ package sleeper.clients.deploy;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 
 public class DeployInstanceRequest {
 
-    private final DeployInstanceConfiguration instanceConfig;
+    private final SleeperInstanceConfiguration instanceConfig;
     private final CdkCommand cdkCommand;
     private final InvokeCdk.Type instanceType;
     private final List<StackDockerImage> extraDockerImages;
@@ -44,7 +44,7 @@ public class DeployInstanceRequest {
         return new Builder();
     }
 
-    private static InvokeCdk.Type inferInstanceType(DeployInstanceConfiguration instanceConfig) {
+    private static InvokeCdk.Type inferInstanceType(SleeperInstanceConfiguration instanceConfig) {
         InstanceProperties instanceProperties = instanceConfig.getInstanceProperties();
         if (instanceProperties.isAnyPropertySetStartingWith("sleeper.systemtest")) {
             return InvokeCdk.Type.SYSTEM_TEST;
@@ -53,7 +53,7 @@ public class DeployInstanceRequest {
         }
     }
 
-    public DeployInstanceConfiguration getInstanceConfig() {
+    public SleeperInstanceConfiguration getInstanceConfig() {
         return instanceConfig;
     }
 
@@ -74,12 +74,12 @@ public class DeployInstanceRequest {
     }
 
     public static class Builder {
-        private DeployInstanceConfiguration instanceConfig;
+        private SleeperInstanceConfiguration instanceConfig;
         private CdkCommand cdkCommand;
         private InvokeCdk.Type instanceType = InvokeCdk.Type.STANDARD;
         private List<StackDockerImage> extraDockerImages = List.of();
 
-        public Builder instanceConfig(DeployInstanceConfiguration instanceConfig) {
+        public Builder instanceConfig(SleeperInstanceConfiguration instanceConfig) {
             this.instanceConfig = instanceConfig;
             return this;
         }

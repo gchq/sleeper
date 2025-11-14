@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
@@ -29,7 +29,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BU
 
 public class SystemTestInstanceConfiguration {
     private final String shortName;
-    private final Supplier<DeployInstanceConfiguration> deployConfig;
+    private final Supplier<SleeperInstanceConfiguration> deployConfig;
     private final boolean useSystemTestIngestSourceBucket;
     private final Set<SleeperScheduleRule> disableSchedules;
 
@@ -49,19 +49,19 @@ public class SystemTestInstanceConfiguration {
     }
 
     public static SystemTestInstanceConfiguration usingSystemTestDefaults(
-            String shortName, Supplier<DeployInstanceConfiguration> deployConfig) {
+            String shortName, Supplier<SleeperInstanceConfiguration> deployConfig) {
         return builder().shortName(shortName).deployConfig(deployConfig).build();
     }
 
     public static SystemTestInstanceConfiguration noSourceBucket(
-            String shortName, Supplier<DeployInstanceConfiguration> deployConfig) {
+            String shortName, Supplier<SleeperInstanceConfiguration> deployConfig) {
         return builder().shortName(shortName).deployConfig(deployConfig)
                 .useSystemTestIngestSourceBucket(false).build();
     }
 
-    public DeployInstanceConfiguration buildDeployConfig(
+    public SleeperInstanceConfiguration buildDeployConfig(
             SystemTestParameters parameters, SystemTestStandaloneProperties systemTestProperties) {
-        DeployInstanceConfiguration configuration = buildDeployConfig(parameters);
+        SleeperInstanceConfiguration configuration = buildDeployConfig(parameters);
         InstanceProperties properties = configuration.getInstanceProperties();
         if (shouldUseSystemTestIngestSourceBucket()) {
             properties.set(INGEST_SOURCE_BUCKET, systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
@@ -69,8 +69,8 @@ public class SystemTestInstanceConfiguration {
         return configuration;
     }
 
-    public DeployInstanceConfiguration buildDeployConfig(SystemTestParameters parameters) {
-        DeployInstanceConfiguration configuration = deployConfig.get();
+    public SleeperInstanceConfiguration buildDeployConfig(SystemTestParameters parameters) {
+        SleeperInstanceConfiguration configuration = deployConfig.get();
         parameters.setRequiredProperties(configuration);
         return configuration;
     }
@@ -88,7 +88,7 @@ public class SystemTestInstanceConfiguration {
     }
 
     public static final class Builder {
-        private Supplier<DeployInstanceConfiguration> deployConfig;
+        private Supplier<SleeperInstanceConfiguration> deployConfig;
         private boolean useSystemTestIngestSourceBucket = true;
         private Set<SleeperScheduleRule> disableSchedules = Set.of();
         private String shortName;
@@ -101,7 +101,7 @@ public class SystemTestInstanceConfiguration {
             return this;
         }
 
-        public Builder deployConfig(Supplier<DeployInstanceConfiguration> deployConfig) {
+        public Builder deployConfig(Supplier<SleeperInstanceConfiguration> deployConfig) {
             this.deployConfig = deployConfig;
             return this;
         }

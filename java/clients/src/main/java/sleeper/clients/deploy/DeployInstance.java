@@ -33,8 +33,8 @@ import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 
@@ -84,7 +84,7 @@ public class DeployInstance {
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
 
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
             PopulateInstancePropertiesAws.builder(stsClient, regionProvider)
                     .instanceId(instanceId)
                     .vpcId(vpcId)
@@ -117,7 +117,7 @@ public class DeployInstance {
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
 
-        DeployInstanceConfiguration instanceConfig = request.getInstanceConfig();
+        SleeperInstanceConfiguration instanceConfig = request.getInstanceConfig();
         InstanceProperties instanceProperties = instanceConfig.getInstanceProperties();
         LOGGER.info("instanceId: {}", instanceProperties.get(ID));
         LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
@@ -137,7 +137,7 @@ public class DeployInstance {
     }
 
     public interface WriteLocalProperties {
-        Path write(DeployInstanceConfiguration instanceConfig) throws IOException;
+        Path write(SleeperInstanceConfiguration instanceConfig) throws IOException;
 
         static WriteLocalProperties underScriptsDirectory(Path scriptsDirectory) {
             return toDirectory(scriptsDirectory.resolve("generated"));
