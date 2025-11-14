@@ -141,10 +141,8 @@ at `$HOME/.local/bin/sleeper`, and manually overwrite it with the contents of `.
 ### Publishing artefacts
 
 Tools are available to publish built artefacts to shared repositories, and to install them locally to avoid the need to
-build Sleeper yourself. We do not currently publish artefacts publicly. See the following guide for how to set this up
-yourself:
-
-[Publishing artefacts](development/publishing.md)
+build Sleeper yourself. We do not currently publish artefacts publicly.
+See [publishing artefacts](development/publishing.md) for how to set this up yourself.
 
 ## Using the codebase
 
