@@ -68,7 +68,7 @@ public class UploadArtefacts {
                         "deployment.\n" +
                         "\n" +
                         "--properties, -p\n" +
-                        "An instance.properties file to read configuration from. The artefacts deployment ID will be " +
+                        "An instance properties file to read configuration from. The artefacts deployment ID will be " +
                         "read from this file, defaulting to the instance ID. Docker images that are not required to " +
                         "deploy this instance will not be uploaded.\n" +
                         "\n" +
