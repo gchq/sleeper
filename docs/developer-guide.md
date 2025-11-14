@@ -219,7 +219,9 @@ The `setDeployFromRemoteDocker.sh` script can be used like this:
 ./scripts/deploy/setDeployFromRemoteDocker.sh my.registry.com/path
 ```
 
-The path in your registry must be the prefix you used to publish the images.
+The argument to the script must be the prefix you used to publish the images. This script will create a configuration
+file under the templates directory that will adjust the way Docker images are pushed to AWS ECR during deployment, to
+pull them from your repository instead of building them locally.
 
 ## Using the codebase
 
