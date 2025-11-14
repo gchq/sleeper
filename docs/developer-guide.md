@@ -120,6 +120,8 @@ You can disable the building of the Rust modules by passing `-DskipRust` as an a
 passed in any Maven build. This can speed up the build if you don't need the DataFusion data engine or you've already
 had a previous build that included Rust.
 
+When running Maven directly, you can pass `-Pquick` to skip tests and linting.
+
 ### Sleeper CLI
 
 To build the Sleeper CLI, you can run this script:
