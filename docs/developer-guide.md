@@ -116,6 +116,10 @@ work. Starting from the root of the Git repository:
 ./scripts/build/buildForTest.sh
 ```
 
+You can disable the building of the Rust modules by passing `-DskipRust` as an argument to that script. This can also be
+passed in any Maven build. This can speed up the build if you don't need the DataFusion data engine or you've already
+had a previous build that included Rust.
+
 ### Sleeper CLI
 
 To build the Sleeper CLI, you can run this script:
@@ -131,26 +135,6 @@ and put it on the system path. Then `sleeper ...` commands will work as though y
 If you have the CLI installed already it will be replaced with the version that is built. If the `runInDocker.sh` script
 is different in the version you installed before, it will not be replaced. You can find it
 at `$HOME/.local/bin/sleeper`, and manually overwrite it with the contents of `./scripts/cli/runInDocker.sh`.
-
-### Java
-
-To build the Java code only, without installing it for the scripts:
-
-```bash
-cd java
-mvn clean install -Pquick
-```
-
-Removing the '-Pquick' option will cause the unit and integration tests to run.
-
-### Disabling Rust component
-
-You can disable the building of the Rust modules with:
-
-```bash
-cd java
-mvn clean install -Pquick -DskipRust=true
-```
 
 ### Publishing artefacts
 
