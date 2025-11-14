@@ -28,6 +28,8 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
+import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
@@ -57,7 +60,8 @@ public class UploadArtefacts {
                 .options(List.of(
                         CommandOption.shortOption('p', "properties"),
                         CommandOption.shortOption('i', "id"),
-                        CommandOption.longFlag("create-builder")))
+                        CommandOption.longFlag("create-builder"),
+                        CommandOption.longFlag("create-deployment")))
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                         "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
@@ -78,7 +82,11 @@ public class UploadArtefacts {
                         "--create-builder\n" +
                         "By default, a Docker builder will be created suitable for multiplatform builds, with " +
                         "\"docker buildx create --name sleeper --use\". If you set up a suitable builder yourself " +
-                        "instead, you can use --create-builder=false to turn off this behaviour.")
+                        "instead, you can use --create-builder=false to turn off this behaviour.\n" +
+                        "\n" +
+                        "--create-deployment\n" +
+                        "By default, we assume you have deployed an artefacts deployment separately. If you set this " +
+                        "flag, this tool will deploy a new artefacts CDK deployment for you.")
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
@@ -88,16 +96,20 @@ public class UploadArtefacts {
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
-                arguments.isFlagSet("create-builder")));
+                arguments.isFlagSet("create-builder"),
+                arguments.isFlagSet("create-deployment")));
 
+        String deploymentId;
         String jarsBucket;
         String ecrPrefix;
         List<StackDockerImage> images;
         if (args.instanceProperties() != null) {
+            deploymentId = args.instanceProperties().get(ARTEFACTS_DEPLOYMENT_ID);
             jarsBucket = args.instanceProperties().get(JARS_BUCKET);
             ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
             images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties());
         } else {
+            deploymentId = args.deploymentId();
             jarsBucket = SleeperArtefactsLocation.getDefaultJarsBucketName(args.deploymentId());
             ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
             images = DockerImageConfiguration.getDefault().getAllImagesToUpload();
@@ -117,6 +129,11 @@ public class UploadArtefacts {
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
                     CheckVersionExistsInEcr.withEcrClient(ecrClient));
+
+            if (args.createDeployment()) {
+                InvokeCdk.fromScriptsDirectory(args.scriptsDir())
+                        .invoke(InvokeCdk.Type.ARTEFACTS, CdkCommand.deployArtefacts(deploymentId, List.of()));
+            }
             syncJars.sync(SyncJarsRequest.builder()
                     .bucketName(jarsBucket)
                     .region(region)
@@ -129,7 +146,9 @@ public class UploadArtefacts {
         }
     }
 
-    public record Arguments(Path scriptsDir, InstanceProperties instanceProperties, String deploymentId, boolean createMultiplatformBuilder) {
+    public record Arguments(
+            Path scriptsDir, InstanceProperties instanceProperties, String deploymentId,
+            boolean createMultiplatformBuilder, boolean createDeployment) {
 
         public Arguments {
             if (instanceProperties == null && deploymentId == null) {
