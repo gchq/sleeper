@@ -12,7 +12,7 @@ This will build a single Docker image, and can be used to prepare for execution 
 ```
 
 The first parameter is the name of the image, as listed in the documentation
-of [Docker images](deployment/images-to-upload.md). The second parameter is the tag, usually "test" for an automated
+of [Docker images](../deployment/images-to-upload.md). The second parameter is the tag, usually "test" for an automated
 Docker image test.
 
 #### `checkNotices.sh`
@@ -66,11 +66,11 @@ grouping, etc.
 
 #### `publishDocker.sh`
 
-Publishes Docker images to a remote repository, see [publishing artefacts](development/publishing.md).
+Publishes Docker images to a remote repository, see [publishing artefacts](publishing.md).
 
 #### `publishMaven.sh`
 
-Publishes Maven artifacts to a remote repository, see [publishing artefacts](development/publishing.md).
+Publishes Maven artifacts to a remote repository, see [publishing artefacts](publishing.md).
 
 #### `showInternalDependencies.sh`
 
@@ -79,7 +79,8 @@ modules relate to one another.
 
 #### `updateVersionNumber.sh`
 
-This is used during the release process to update the version number across the project (see below).
+This is used during the release process to update the version number across the project, see
+the [release process guide](release-process.md).
 
 #### `validateProjectChunks.sh`
 
