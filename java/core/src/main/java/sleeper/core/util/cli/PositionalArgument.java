@@ -18,13 +18,12 @@ package sleeper.core.util.cli;
 /**
  * A positional argument that must be set on the command line. Used with {@link CommandArguments}.
  *
- * @param name             the name of the argument, used to retrieve it after parsing
- * @param usageDescription a brief description of the argument for use in a usage message,
- *                         e.g. if it's "description" the message might be "Usage: command &lt;description&gt;"
- * @param showUsage        whether or not to include this argument in the usage message (usually only excluded if it is
- *                         to be passed by the system instead of the user)
+ * @param name      the name of the argument, used to retrieve it after parsing, and for use in a usage message,
+ *                  e.g. if it's "arg" the message might be "Usage: command &lt;arg&gt;"
+ * @param showUsage whether or not to include this argument in the usage message (usually only excluded if it is
+ *                  to be passed by the system instead of the user)
  */
-public record PositionalArgument(String name, String usageDescription, boolean showUsage) {
+public record PositionalArgument(String name, boolean showUsage) {
 
     /**
      * Creates a positional argument where its name is the same as its description in the usage message.
@@ -33,19 +32,7 @@ public record PositionalArgument(String name, String usageDescription, boolean s
      * @return      the argument
      */
     public static PositionalArgument create(String name) {
-        return new PositionalArgument(name, name, true);
-    }
-
-    /**
-     * Creates a positional argument with a different description in the usage message.
-     *
-     * @param  name        the name to retrieve the argument after parsing
-     * @param  description a brief description of the argument for use in a usage message,
-     *                     e.g. if it's "description" the message might be "Usage: command &lt;description&gt;"
-     * @return             the argument
-     */
-    public static PositionalArgument createWithUsageDescription(String name, String description) {
-        return new PositionalArgument(name, name, true);
+        return new PositionalArgument(name, true);
     }
 
     /**
@@ -56,7 +43,7 @@ public record PositionalArgument(String name, String usageDescription, boolean s
      * @return      the argument
      */
     public static PositionalArgument systemArgument(String name) {
-        return new PositionalArgument(name, name, false);
+        return new PositionalArgument(name, false);
     }
 
 }

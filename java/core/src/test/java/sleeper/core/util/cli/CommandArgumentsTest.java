@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class CommandArgumentsTest {
 
     List<String> positionalArguments;
+    Set<String> systemArguments;
     List<CommandOption> options;
     String helpSummary;
 
@@ -278,6 +280,47 @@ public class CommandArgumentsTest {
     }
 
     @Nested
+    @DisplayName("System arguments")
+    class SystemArguments {
+
+        @Test
+        void shouldReadSystemArgument() {
+            // Given
+            setPositionalArguments("a");
+            setSystemArguments("a");
+
+            // When
+            CommandArguments arguments = parse("system");
+
+            // Then
+            assertThat(arguments.getString("a")).isEqualTo("system");
+        }
+
+        @Test
+        void shouldExcludeSystemArgumentFromUsage() {
+            // Given
+            setPositionalArguments("system", "main");
+            setSystemArguments("system");
+
+            // When / Then
+            assertThat(usageMessage()).isEqualTo("""
+                    Usage: <main>
+                    Available options: --help""");
+        }
+
+        @Test
+        void shouldShowUsageWhenOnlyArgumentIsSystemArgument() {
+            // Given
+            setPositionalArguments("system");
+            setSystemArguments("system");
+
+            // When / Then
+            assertThat(usageMessage()).isEqualTo("""
+                    Available options: --help""");
+        }
+    }
+
+    @Nested
     @DisplayName("Option with arguments")
     class OptionWithArgs {
 
@@ -521,6 +564,10 @@ public class CommandArgumentsTest {
         positionalArguments = List.of(names);
     }
 
+    private void setSystemArguments(String... names) {
+        systemArguments = Set.of(names);
+    }
+
     private void setOptions(CommandOption... options) {
         this.options = List.of(options);
     }
@@ -544,6 +591,7 @@ public class CommandArgumentsTest {
     private CommandLineUsage usage() {
         return CommandLineUsage.builder()
                 .positionalArguments(positionalArguments)
+                .systemArguments(systemArguments)
                 .options(options)
                 .helpSummary(helpSummary)
                 .build();
