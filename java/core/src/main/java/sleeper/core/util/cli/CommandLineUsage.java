@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * A model of arguments and options for the command line.
+ * A model of arguments and options for the command line. Used with {@link CommandArguments}.
  */
 public class CommandLineUsage {
 
