@@ -100,7 +100,13 @@ public class UploadDockerImages {
         if (image.isMultiplatform()) {
             commandRunner.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag, "--push", dockerfileDirectory.toString());
         } else {
-            commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
+            if (image.getLambdaJar().isPresent()) {
+                // At time of writing AWS Lambda does not support images with provenance enabled.
+                // See https://docs.aws.amazon.com/lambda/latest/dg/java-image.html
+                commandRunner.runOrThrow("docker", "build", "--provenance=false", "-t", tag, dockerfileDirectory.toString());
+            } else {
+                commandRunner.runOrThrow("docker", "build", "-t", tag, dockerfileDirectory.toString());
+            }
             commandRunner.runOrThrow("docker", "push", tag);
         }
     }

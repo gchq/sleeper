@@ -17,31 +17,27 @@ package sleeper.systemtest.drivers.cdk;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.teardown.TearDownClients;
 import sleeper.clients.teardown.WaitForStackToDelete;
-import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
-
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 
 public class TearDownSystemTestDeployment {
     public static final Logger LOGGER = LoggerFactory.getLogger(TearDownSystemTestDeployment.class);
 
     private final TearDownClients clients;
-    private final SystemTestStandaloneProperties properties;
+    private final String deploymentId;
 
-    private TearDownSystemTestDeployment(TearDownClients clients, SystemTestStandaloneProperties properties) {
+    private TearDownSystemTestDeployment(TearDownClients clients, String deploymentId) {
         this.clients = clients;
-        this.properties = properties;
+        this.deploymentId = deploymentId;
     }
 
     public static TearDownSystemTestDeployment fromDeploymentId(TearDownClients clients, String deploymentId) {
-        return new TearDownSystemTestDeployment(clients, loadOrDefaultProperties(clients.getS3(), deploymentId));
+        return new TearDownSystemTestDeployment(clients, deploymentId);
     }
 
     public void deleteStack() {
-        deleteStack(properties.get(SYSTEM_TEST_ID));
+        deleteStack(deploymentId);
     }
 
     public void deleteArtefactsStack() {
@@ -58,7 +54,7 @@ public class TearDownSystemTestDeployment {
     }
 
     public void waitForStackToDelete() throws InterruptedException {
-        WaitForStackToDelete.from(clients.getCloudFormation(), properties.get(SYSTEM_TEST_ID)).pollUntilFinished();
+        WaitForStackToDelete.from(clients.getCloudFormation(), deploymentId).pollUntilFinished();
     }
 
     public void waitForArtefactsStackToDelete() throws InterruptedException {
@@ -66,17 +62,6 @@ public class TearDownSystemTestDeployment {
     }
 
     private String artefactsStackName() {
-        return properties.get(SYSTEM_TEST_ID) + "-artefacts";
-    }
-
-    private static SystemTestStandaloneProperties loadOrDefaultProperties(S3Client s3, String deploymentId) {
-        try {
-            return SystemTestStandaloneProperties.fromS3GivenDeploymentId(s3, deploymentId);
-        } catch (RuntimeException e) {
-            LOGGER.warn("Could not load system test properties: {}", e.getMessage());
-            SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-            properties.set(SYSTEM_TEST_ID, deploymentId);
-            return properties;
-        }
+        return deploymentId + "-artefacts";
     }
 }

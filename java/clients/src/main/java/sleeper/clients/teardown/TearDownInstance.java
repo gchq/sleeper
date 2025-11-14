@@ -17,11 +17,9 @@ package sleeper.clients.teardown;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.AwsScheduleRules;
 import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 
@@ -32,8 +30,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class TearDownInstance {
@@ -41,13 +37,13 @@ public class TearDownInstance {
 
     private final TearDownClients clients;
     private final Path scriptsDir;
-    private final InstanceProperties instanceProperties;
+    private final String instanceId;
 
     private TearDownInstance(Builder builder) {
         clients = Objects.requireNonNull(builder.clients, "clients must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
-        instanceProperties = Optional.ofNullable(builder.instanceProperties)
-                .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
+        instanceId = Optional.ofNullable(builder.instanceId)
+                .orElseGet(() -> loadInstanceIdFromGeneratedDirectory(scriptsDir));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -59,14 +55,16 @@ public class TearDownInstance {
                 .tearDownWithDefaultClients();
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public void tearDown() throws IOException, InterruptedException {
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("Tear Down");
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("scriptsDir: {}", scriptsDir);
-        LOGGER.info("{}: {}", ID.getPropertyName(), instanceProperties.get(ID));
-        LOGGER.info("{}: {}", CONFIG_BUCKET.getPropertyName(), instanceProperties.get(CONFIG_BUCKET));
-        LOGGER.info("{}: {}", QUERY_RESULTS_BUCKET.getPropertyName(), instanceProperties.get(QUERY_RESULTS_BUCKET));
+        LOGGER.info("{}: {}", ID.getPropertyName(), instanceId);
 
         shutdownSystemProcesses();
         deleteStack();
@@ -79,12 +77,11 @@ public class TearDownInstance {
     }
 
     public void shutdownSystemProcesses() throws InterruptedException {
-        new ShutdownSystemProcesses(clients)
-                .shutdown(instanceProperties);
+        new AwsScheduleRules(clients.getCloudWatch()).pauseInstance(instanceId);
     }
 
     public void deleteStack() {
-        deleteStack(instanceProperties.get(ID));
+        deleteStack(instanceId);
     }
 
     public void deleteArtefactsStack() throws InterruptedException {
@@ -101,7 +98,7 @@ public class TearDownInstance {
     }
 
     public void waitForStackToDelete() throws InterruptedException {
-        WaitForStackToDelete.from(clients.getCloudFormation(), instanceProperties.get(ID)).pollUntilFinished();
+        WaitForStackToDelete.from(clients.getCloudFormation(), instanceId).pollUntilFinished();
     }
 
     public void waitForArtefactsStackToDelete() throws InterruptedException {
@@ -109,10 +106,10 @@ public class TearDownInstance {
     }
 
     private String artefactsStackName() {
-        return instanceProperties.get(ID) + "-artefacts";
+        return instanceId + "-artefacts";
     }
 
-    public static void removeGeneratedDir(Path scriptsDir) throws IOException {
+    private static void removeGeneratedDir(Path scriptsDir) throws IOException {
         Path generatedDir = scriptsDir.resolve("generated");
         if (Files.isDirectory(generatedDir)) {
             LOGGER.info("Removing generated files");
@@ -122,34 +119,16 @@ public class TearDownInstance {
         }
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    private static InstanceProperties loadInstancePropertiesOrGenerateDefaults(S3Client s3, String instanceId, Path scriptsDir) {
-        if (instanceId == null) {
-            InstanceProperties instanceProperties = LoadLocalProperties
-                    .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
-            instanceId = instanceProperties.get(ID);
-        }
-        return loadInstancePropertiesOrGenerateDefaults(s3, instanceId);
-    }
-
-    public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(S3Client s3, String instanceId) {
-        LOGGER.info("Loading configuration for instance {}", instanceId);
-        try {
-            return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3, instanceId);
-        } catch (RuntimeException e) {
-            LOGGER.info("Failed to download configuration, using default properties");
-            return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);
-        }
+    private static String loadInstanceIdFromGeneratedDirectory(Path scriptsDir) {
+        InstanceProperties instanceProperties = LoadLocalProperties
+                .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
+        return instanceProperties.get(ID);
     }
 
     public static final class Builder {
         private TearDownClients clients;
         private Path scriptsDir;
         private String instanceId;
-        private InstanceProperties instanceProperties;
 
         private Builder() {
         }
@@ -166,11 +145,6 @@ public class TearDownInstance {
 
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
-            return this;
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
             return this;
         }
 

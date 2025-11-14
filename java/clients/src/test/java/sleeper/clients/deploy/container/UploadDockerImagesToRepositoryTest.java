@@ -104,13 +104,13 @@ public class UploadDockerImagesToRepositoryTest extends DockerImagesTestBase {
         String expectedBulkImportTag = "www.somedocker.com/prefix/bulk-import-starter-lambda:1.0.0";
         String expectedAthenaTag = "www.somedocker.com/prefix/athena-lambda:1.0.0";
         assertThat(commandsThatRan).containsExactly(
-                buildImageCommandWithArgs("-t", expectedStatestoreTag, "./docker/lambda"),
+                buildLambdaImageCommand(expectedStatestoreTag, "./docker/lambda"),
                 pushImageCommand(expectedStatestoreTag),
-                buildImageCommandWithArgs("-t", expectedIngestTaskTag, "./docker/lambda"),
+                buildLambdaImageCommand(expectedIngestTaskTag, "./docker/lambda"),
                 pushImageCommand(expectedIngestTaskTag),
-                buildImageCommandWithArgs("-t", expectedBulkImportTag, "./docker/lambda"),
+                buildLambdaImageCommand(expectedBulkImportTag, "./docker/lambda"),
                 pushImageCommand(expectedBulkImportTag),
-                buildImageCommandWithArgs("-t", expectedAthenaTag, "./docker/lambda"),
+                buildLambdaImageCommand(expectedAthenaTag, "./docker/lambda"),
                 pushImageCommand(expectedAthenaTag));
 
         assertThat(files).isEqualTo(Map.of(
