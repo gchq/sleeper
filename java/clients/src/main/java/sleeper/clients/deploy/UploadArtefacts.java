@@ -34,6 +34,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.model.SleeperArtefactsLocation;
 import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandArgumentsException;
 import sleeper.core.util.cli.CommandLineUsage;
 import sleeper.core.util.cli.CommandOption;
 
@@ -152,7 +153,7 @@ public class UploadArtefacts {
 
         public Arguments {
             if (instanceProperties == null && deploymentId == null) {
-                throw new IllegalArgumentException("Expected instance properties or artefacts deployment ID");
+                throw new CommandArgumentsException("Expected instance properties or artefacts deployment ID");
             }
         }
     }
