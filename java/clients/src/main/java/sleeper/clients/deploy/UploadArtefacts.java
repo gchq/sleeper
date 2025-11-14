@@ -52,11 +52,19 @@ public class UploadArtefacts {
                 .systemArguments(List.of("scripts directory"))
                 .options(List.of(
                         CommandOption.shortOption('p', "properties"),
-                        CommandOption.shortOption('i', "id")))
-                .helpSummary("Uploads jars and Docker images to AWS. If you set an instance.properties " +
-                        "file with --properties, Docker images that are not required to deploy that instance will " +
-                        "not be uploaded. If you set an instance ID or artefacts deployment ID with --id, all images " +
-                        "will be uploaded.")
+                        CommandOption.shortOption('i', "id"),
+                        CommandOption.longFlag("create-builder")))
+                .helpSummary("Uploads jars and Docker images to AWS.\n" +
+                        "\n" +
+                        "If you set an instance.properties file with --properties, Docker images that are not " +
+                        "required to deploy that instance will not be uploaded.\n" +
+                        "\n" +
+                        "If you set an instance ID or artefacts deployment ID with --id, all images will be " +
+                        "uploaded.\n" +
+                        "\n" +
+                        "By default, a Docker builder will be created suitable for multiplatform builds, with " +
+                        "\"docker buildx create --name sleeper --use\". If you set up a suitable builder yourself " +
+                        "instead, you can use --create-builder=false to turn off this behaviour.")
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
@@ -65,14 +73,19 @@ public class UploadArtefacts {
                         .map(LoadLocalProperties::loadInstanceProperties)
                         .orElse(null),
                 arguments.getOptionalString("id")
-                        .orElse(null)));
+                        .orElse(null),
+                arguments.isFlagSet("create-builder")));
 
         try (S3Client s3Client = S3Client.create();
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
             SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
-                    UploadDockerImages.fromScriptsDirectory(args.scriptsDir()),
+                    UploadDockerImages.builder()
+                            .scriptsDirectory(args.scriptsDir())
+                            .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
+                            .createMultiplatformBuilder(args.createMultiplatformBuilder())
+                            .build(),
                     CheckVersionExistsInEcr.withEcrClient(ecrClient));
 
             if (args.instanceProperties() != null) {
@@ -95,7 +108,7 @@ public class UploadArtefacts {
         }
     }
 
-    public record Arguments(Path scriptsDir, InstanceProperties instanceProperties, String deploymentId) {
+    public record Arguments(Path scriptsDir, InstanceProperties instanceProperties, String deploymentId, boolean createMultiplatformBuilder) {
 
         public Arguments {
             if (instanceProperties == null && deploymentId == null) {
