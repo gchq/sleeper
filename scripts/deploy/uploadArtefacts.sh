@@ -16,13 +16,6 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 <instance.properties file>"
-  exit 1
-fi
-
-PROPERTIES_FILE=$1
-
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
 TEMPLATES_DIR=${SCRIPTS_DIR}/templates
@@ -30,4 +23,4 @@ JARS_DIR=${SCRIPTS_DIR}/jars
 
 VERSION=$(cat "${TEMPLATES_DIR}/version.txt")
 
-java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.UploadArtefacts "${SCRIPTS_DIR}" "${PROPERTIES_FILE}"
+java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.UploadArtefacts "${SCRIPTS_DIR}" "$@"

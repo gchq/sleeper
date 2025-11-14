@@ -15,10 +15,13 @@
  */
 package sleeper.clients.deploy;
 
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
+import sleeper.clients.deploy.container.DockerImageConfiguration;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -26,9 +29,14 @@ import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
+import sleeper.core.properties.model.SleeperArtefactsLocation;
+import sleeper.core.util.cli.CommandArguments;
+import sleeper.core.util.cli.CommandLineUsage;
+import sleeper.core.util.cli.CommandOption;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Uploads jars and Docker images to AWS. The S3 jars bucket and the ECR repositories must already have been created,
@@ -39,23 +47,60 @@ public class UploadArtefacts {
     private UploadArtefacts() {
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <scripts directory> <instance.properties file>");
-        }
-
-        Path scriptsDir = Path.of(args[0]);
-        Path propertiesFile = Path.of(args[1]);
-        InstanceProperties instanceProperties = LoadLocalProperties.loadInstanceProperties(propertiesFile);
+    public static void main(String[] rawArgs) throws IOException, InterruptedException {
+        CommandLineUsage usage = CommandLineUsage.builder()
+                .systemArguments(List.of("scripts directory"))
+                .options(List.of(
+                        CommandOption.shortOption('p', "properties"),
+                        CommandOption.shortOption('i', "id")))
+                .helpSummary("Uploads jars and Docker images to AWS. If you set an instance.properties " +
+                        "file with --properties, Docker images that are not required to deploy that instance will " +
+                        "not be uploaded. If you set an instance ID or artefacts deployment ID with --id, all images " +
+                        "will be uploaded.")
+                .build();
+        Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
+                Path.of(arguments.getString("scripts directory")),
+                arguments.getOptionalString("properties")
+                        .map(Path::of)
+                        .map(LoadLocalProperties::loadInstanceProperties)
+                        .orElse(null),
+                arguments.getOptionalString("id")
+                        .orElse(null)));
 
         try (S3Client s3Client = S3Client.create();
-                EcrClient ecrClient = EcrClient.create()) {
-            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, scriptsDir);
+                EcrClient ecrClient = EcrClient.create();
+                StsClient stsClient = StsClient.create()) {
+            SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
-                    UploadDockerImages.fromScriptsDirectory(scriptsDir),
+                    UploadDockerImages.fromScriptsDirectory(args.scriptsDir()),
                     CheckVersionExistsInEcr.withEcrClient(ecrClient));
-            syncJars.sync(SyncJarsRequest.from(instanceProperties));
-            uploadImages.upload(UploadDockerImagesToEcrRequest.forDeployment(instanceProperties));
+
+            if (args.instanceProperties() != null) {
+                syncJars.sync(SyncJarsRequest.from(args.instanceProperties()));
+                uploadImages.upload(UploadDockerImagesToEcrRequest.forDeployment(args.instanceProperties()));
+            } else {
+                String account = stsClient.getCallerIdentity().account();
+                String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
+                syncJars.sync(SyncJarsRequest.builder()
+                        .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(args.deploymentId()))
+                        .region(region)
+                        .build());
+                uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
+                        .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId()))
+                        .account(account)
+                        .region(region)
+                        .images(DockerImageConfiguration.getDefault().getAllImagesToUpload())
+                        .build());
+            }
+        }
+    }
+
+    public record Arguments(Path scriptsDir, InstanceProperties instanceProperties, String deploymentId) {
+
+        public Arguments {
+            if (instanceProperties == null && deploymentId == null) {
+                throw new IllegalArgumentException("Expected instance properties or artefacts deployment ID");
+            }
         }
     }
 

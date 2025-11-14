@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class CommandArgumentsTest {
 
     List<String> positionalArguments;
-    Set<String> systemArguments;
+    List<String> systemArguments;
     List<CommandOption> options;
     String helpSummary;
 
@@ -315,8 +314,32 @@ public class CommandArgumentsTest {
             setSystemArguments("system");
 
             // When / Then
-            assertThat(usageMessage()).isEqualTo("""
-                    Available options: --help""");
+            assertThat(usageMessage()).isEqualTo("Available options: --help");
+        }
+
+        @Test
+        void shouldAllowSettingOnlySystemArguments() {
+            // Given
+            setSystemArguments("system");
+
+            // When
+            CommandArguments arguments = parse("value");
+
+            // Then
+            assertThat(arguments.getString("system")).isEqualTo("value");
+            assertThat(usageMessage()).isEqualTo("Available options: --help");
+        }
+
+        @Test
+        void shouldFailWhenSystemArgumentIsNotSpecifiedInPositionalArguments() {
+            // Given
+            setPositionalArguments("a", "b");
+            setSystemArguments("c");
+
+            // When / Then
+            assertThatThrownBy(() -> usage())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("System arguments should be included as positional arguments: [c]");
         }
     }
 
@@ -565,7 +588,7 @@ public class CommandArgumentsTest {
     }
 
     private void setSystemArguments(String... names) {
-        systemArguments = Set.of(names);
+        systemArguments = List.of(names);
     }
 
     private void setOptions(CommandOption... options) {

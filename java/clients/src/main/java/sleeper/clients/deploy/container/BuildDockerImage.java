@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Set;
 
 import static java.util.stream.Collectors.joining;
 
@@ -43,7 +42,7 @@ public class BuildDockerImage {
     public static void main(String[] rawArgs) throws IOException, InterruptedException {
         CommandLineUsage usage = CommandLineUsage.builder()
                 .positionalArguments(List.of("scripts directory", "image name", "tag"))
-                .systemArguments(Set.of("scripts directory"))
+                .systemArguments(List.of("scripts directory"))
                 .options(List.of(CommandOption.longFlag("lambda")))
                 .helpSummary("Available Docker deployment image names: " +
                         DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +

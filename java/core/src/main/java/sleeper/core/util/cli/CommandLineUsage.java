@@ -16,6 +16,7 @@
 package sleeper.core.util.cli;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,15 +38,7 @@ public class CommandLineUsage {
     private final Map<Character, CommandOption> optionByShortName;
 
     private CommandLineUsage(Builder builder) {
-        List<String> positionalNames = Optional.ofNullable(builder.positionalArguments).orElseGet(List::of);
-        Set<String> systemNames = Optional.ofNullable(builder.systemArguments).orElseGet(Set::of);
-        positionalArguments = positionalNames.stream().map(name -> {
-            if (systemNames.contains(name)) {
-                return PositionalArgument.systemArgument(name);
-            } else {
-                return PositionalArgument.create(name);
-            }
-        }).toList();
+        positionalArguments = builder.positionalArguments();
         helpSummary = builder.helpSummary;
         Optional.ofNullable(builder.options).ifPresent(options::addAll);
         optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
@@ -147,7 +140,7 @@ public class CommandLineUsage {
      */
     public static class Builder {
         private List<String> positionalArguments;
-        private Set<String> systemArguments;
+        private List<String> systemArguments;
         private String helpSummary;
         private List<CommandOption> options;
 
@@ -175,7 +168,7 @@ public class CommandLineUsage {
          * @param  systemArguments the names of the system arguments
          * @return                 this builder
          */
-        public Builder systemArguments(Set<String> systemArguments) {
+        public Builder systemArguments(List<String> systemArguments) {
             this.systemArguments = systemArguments;
             return this;
         }
@@ -206,6 +199,27 @@ public class CommandLineUsage {
 
         public CommandLineUsage build() {
             return new CommandLineUsage(this);
+        }
+
+        private List<PositionalArgument> positionalArguments() {
+            List<String> positionalNames = Optional.ofNullable(positionalArguments).orElseGet(List::of);
+            List<String> allSystemNames = Optional.ofNullable(systemArguments).orElseGet(List::of);
+            if (positionalNames.isEmpty()) {
+                return allSystemNames.stream().map(PositionalArgument::systemArgument).toList();
+            } else {
+                Set<String> systemNames = new HashSet<>(allSystemNames);
+                List<PositionalArgument> arguments = positionalNames.stream().map(name -> {
+                    if (systemNames.remove(name)) {
+                        return PositionalArgument.systemArgument(name);
+                    } else {
+                        return PositionalArgument.create(name);
+                    }
+                }).toList();
+                if (!systemNames.isEmpty()) {
+                    throw new IllegalArgumentException("System arguments should be included as positional arguments: " + systemNames);
+                }
+                return arguments;
+            }
         }
 
     }
