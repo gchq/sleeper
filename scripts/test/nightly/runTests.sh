@@ -115,7 +115,7 @@ runMavenSystemTests() {
 
     # Generate site HTML
     pushd "$NEW_MAVEN_DIR"
-    echo "Generate site HTML for $SHORT_ID"
+    echo "Generating site HTML for $SHORT_ID"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
