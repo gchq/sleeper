@@ -27,6 +27,9 @@ import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.cdk.stack.core.SleeperInstanceRoles;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks.
  * <p>
@@ -75,6 +78,8 @@ public class SleeperInstance {
      */
     public static void createAsRootStack(Construct scope, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
         Stack stack = new Stack(scope, id, stackProps);
+        sleeperProps.getInstanceProperties().set(ACCOUNT, stack.getAccount());
+        sleeperProps.getInstanceProperties().set(REGION, stack.getRegion());
         addNestedStacks(stack, sleeperProps);
     }
 

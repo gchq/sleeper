@@ -63,6 +63,16 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
+    //AWS Config
+    CdkDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
+            .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
+            .description("The AWS region to deploy to.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     // Data
     CdkDefinedInstanceProperty DATA_BUCKET = Index.propertyBuilder("sleeper.data.bucket")
             .description("The S3 bucket name used to store table data.")
@@ -763,16 +773,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyBuilder("sleeper.bulk.import.eks.k8s.endpoint")
             .description("The endpoint of the bulk import cluster using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .build();
-
-    //To move to better location
-    CdkDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
-            .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
-    CdkDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
-            .description("The AWS region to deploy to.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     @Override
