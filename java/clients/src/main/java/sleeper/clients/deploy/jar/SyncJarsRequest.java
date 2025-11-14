@@ -21,8 +21,8 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Predicate;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class SyncJarsRequest {
 

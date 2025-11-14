@@ -23,9 +23,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
  * A deployment of a Sleeper component that is deployed with Docker. Can be used to derive the Docker image names and

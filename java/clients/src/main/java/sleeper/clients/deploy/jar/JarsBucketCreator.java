@@ -24,8 +24,8 @@ import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
  * A tool to create a jars bucket that matches how it is created by the CDK. Usually only used for testing.

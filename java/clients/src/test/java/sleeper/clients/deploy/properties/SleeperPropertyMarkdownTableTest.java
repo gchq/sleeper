@@ -36,7 +36,7 @@ public class SleeperPropertyMarkdownTableTest {
     void shouldWriteTable() throws IOException {
         // Given
         TableWriter writer = SleeperPropertyMarkdownTable.createTableWriterForUserDefinedProperties(List.of(
-                CommonProperty.REGION,
+                CdkDefinedInstanceProperty.REGION,
                 CommonProperty.FILE_SYSTEM));
 
         // When
