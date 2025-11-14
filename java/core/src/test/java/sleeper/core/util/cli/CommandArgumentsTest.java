@@ -132,6 +132,30 @@ public class CommandArgumentsTest {
         }
 
         @Test
+        void shouldReadFlagIsUnsetDefaultingToTrue() {
+            assertThat(parse().isFlagSetWithDefault("flag", true))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsUnsetDefaultingToFalse() {
+            assertThat(parse().isFlagSetWithDefault("flag", false))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldReadFlagIsSetDefaultingToFalse() {
+            assertThat(parse("--flag").isFlagSetWithDefault("flag", false))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsSetToFalseDefaultingToTrue() {
+            assertThat(parse("--flag=false").isFlagSetWithDefault("flag", true))
+                    .isFalse();
+        }
+
+        @Test
         void shouldReadBeforePositionalArg() {
             // Given
             setPositionalArguments("positional");

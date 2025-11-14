@@ -97,8 +97,8 @@ public class UploadArtefacts {
                         .orElse(null),
                 arguments.getOptionalString("id")
                         .orElse(null),
-                arguments.isFlagSet("create-builder"),
-                arguments.isFlagSet("create-deployment")));
+                arguments.isFlagSetWithDefault("create-builder", true),
+                arguments.isFlagSetWithDefault("create-deployment", false)));
 
         String deploymentId;
         String jarsBucket;
