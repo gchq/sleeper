@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.DockerImageConfiguration;
+import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -37,6 +38,9 @@ import sleeper.core.util.cli.CommandOption;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 /**
  * Uploads jars and Docker images to AWS. The S3 jars bucket and the ECR repositories must already have been created,
@@ -54,14 +58,17 @@ public class UploadArtefacts {
                         CommandOption.shortOption('p', "properties"),
                         CommandOption.shortOption('i', "id"),
                         CommandOption.longFlag("create-builder")))
-                .helpSummary("Uploads jars and Docker images to AWS.\n" +
+                .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
+                        "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
-                        "If you set an instance.properties file with --properties, Docker images that are not " +
-                        "required to deploy that instance will not be uploaded.\n" +
+                        "--properties, -p\n" +
+                        "An instance.properties file to read configuration from. Docker images that " +
+                        "are not required to deploy this instance will not be uploaded.\n" +
                         "\n" +
-                        "If you set an instance ID or artefacts deployment ID with --id, all images will be " +
-                        "uploaded.\n" +
+                        "--id, -i\n" +
+                        "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
                         "\n" +
+                        "--create-builder\n" +
                         "By default, a Docker builder will be created suitable for multiplatform builds, with " +
                         "\"docker buildx create --name sleeper --use\". If you set up a suitable builder yourself " +
                         "instead, you can use --create-builder=false to turn off this behaviour.")
@@ -76,9 +83,25 @@ public class UploadArtefacts {
                         .orElse(null),
                 arguments.isFlagSet("create-builder")));
 
+        String jarsBucket;
+        String ecrPrefix;
+        List<StackDockerImage> images;
+        if (args.instanceProperties() != null) {
+            jarsBucket = args.instanceProperties().get(JARS_BUCKET);
+            ecrPrefix = args.instanceProperties().get(ECR_REPOSITORY_PREFIX);
+            images = DockerImageConfiguration.getDefault().getImagesToUpload(args.instanceProperties());
+        } else {
+            jarsBucket = SleeperArtefactsLocation.getDefaultJarsBucketName(args.deploymentId());
+            ecrPrefix = SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId());
+            images = DockerImageConfiguration.getDefault().getAllImagesToUpload();
+        }
+
         try (S3Client s3Client = S3Client.create();
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
+
+            String account = stsClient.getCallerIdentity().account();
+            String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
             SyncJars syncJars = SyncJars.fromScriptsDirectory(s3Client, args.scriptsDir());
             UploadDockerImagesToEcr uploadImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.builder()
@@ -87,24 +110,15 @@ public class UploadArtefacts {
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
                     CheckVersionExistsInEcr.withEcrClient(ecrClient));
-
-            if (args.instanceProperties() != null) {
-                syncJars.sync(SyncJarsRequest.from(args.instanceProperties()));
-                uploadImages.upload(UploadDockerImagesToEcrRequest.forDeployment(args.instanceProperties()));
-            } else {
-                String account = stsClient.getCallerIdentity().account();
-                String region = DefaultAwsRegionProviderChain.builder().build().getRegion().id();
-                syncJars.sync(SyncJarsRequest.builder()
-                        .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(args.deploymentId()))
-                        .region(region)
-                        .build());
-                uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
-                        .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(args.deploymentId()))
-                        .account(account)
-                        .region(region)
-                        .images(DockerImageConfiguration.getDefault().getAllImagesToUpload())
-                        .build());
-            }
+            syncJars.sync(SyncJarsRequest.builder()
+                    .bucketName(jarsBucket)
+                    .region(region)
+                    .build());
+            uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
+                    .ecrPrefix(ecrPrefix)
+                    .account(account).region(region)
+                    .images(images)
+                    .build());
         }
     }
 
