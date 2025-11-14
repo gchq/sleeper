@@ -164,7 +164,7 @@ deployment repository it will publish the files to the local file system at `/tm
 Here's an example of running this script:
 
 ```bash
-scripts/dev/publishMaven.sh -DaltDeploymentRepository=my-repo-id::https://my.repository.com/path
+./scripts/dev/publishMaven.sh -DaltDeploymentRepository=my-repo-id::https://my.repository.com/path
 ```
 
 Your Maven settings file will need to have this repository declared, with a matching ID and any necessary
@@ -176,13 +176,18 @@ the local file system.
 ### Publishing Docker images
 
 There is a script [`scripts/dev/publishDocker.sh`](/scripts/dev/publishDocker.sh) to publish the Docker images to a
-repository.
+repository. It can be used like this:
 
-It takes in two arguments:
-*   The repository prefix path.
-*   An optional boolean for whether to create a new Docker builder.
+```bash
+./scripts/dev/publishDocker.sh my.registry.com/path
+```
 
-By default a Docker builder will be created that is capable of publishing multiplatform images, like this:
+The first argument is the prefix that will begin each Docker image name. It should include the hostname and any path
+that you want to be used before the path component for each image. In this example images will be pushed like
+`my.registry.com/path/ingest`, `my.registry.com/path/query-lambda`.
+
+You can pass an optional second argument for whether to create a new Docker builder. By default a Docker builder will be
+created that is capable of publishing multiplatform images, like this:
 
 ```bash
 docker buildx create --name sleeper --use
