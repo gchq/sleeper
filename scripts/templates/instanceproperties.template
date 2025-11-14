@@ -27,12 +27,6 @@ sleeper.jars.bucket=changeme
 # ECR repository names are generated in the format `<prefix>/<image name>`.
 sleeper.ecr.repository.prefix=changeme
 
-# The AWS account number. This is the AWS account that the instance will be deployed to.
-sleeper.account=changeme
-
-# The AWS region to deploy to.
-sleeper.region=changeme
-
 # The id of the VPC to deploy to.
 sleeper.vpc=changeme
 
