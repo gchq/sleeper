@@ -28,9 +28,9 @@ import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.REGION;

@@ -33,7 +33,7 @@ import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;

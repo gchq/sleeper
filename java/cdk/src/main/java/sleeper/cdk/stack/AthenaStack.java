@@ -50,7 +50,7 @@ import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_H
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.AthenaProperty.ATHENA_SPILL_MASTER_KEY_ARN;
 import static sleeper.core.properties.instance.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")

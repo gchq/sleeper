@@ -115,11 +115,6 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .build();
-    UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
-            .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
-            .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .editable(false).build();
     UserDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
             .description("The AWS region to deploy to.")
             .validationPredicate(Objects::nonNull)
