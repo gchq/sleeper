@@ -79,9 +79,8 @@ This test module contains several JUnit test suites:
 - SlowSystemTestSuite1-n
 - ExpensiveSystemTestSuite1-n
 
-Tests that are tagged as Slow(1-n) or Expensive(1-n) will not be included in the quick suite. The quick suite is intended to run
-in around 40 minutes. The nightly functional suite includes tests tagged as Slow, and will take a bit longer. The
-nightly performance suite includes all tests, including ones tagged as Expensive. The performance tests work with a
+Tests that are tagged as Slow(1-n) or Expensive(1-n) will not be included in the quick suite. The quick suite is intended to run in around 40 minutes. The nightly functional run includes tests tagged as Slow, and will take a bit longer. The
+nightly performance run includes all tests, including ones tagged as Expensive. The performance tests work with a
 larger bulk of data. They take time to run and can be costly to run frequently.
 When adding a new Slow or Expensive System test add either the Slow1-n or Expensive1-n tag.
 
