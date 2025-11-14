@@ -61,9 +61,16 @@ public class UploadArtefacts {
                 .helpSummary("Uploads jars and Docker images to AWS. You must set either an instance properties file " +
                         "or an artefacts deployment ID to upload to.\n" +
                         "\n" +
+                        "This works against an artefacts CDK deployment that must already exist in the same AWS " +
+                        "account that you want to deploy Sleeper to. If you use the scripts for deployment you will " +
+                        "not need this, as this is done as part of \"deploy.sh\". If you prefer to use the artefacts " +
+                        "CDK app directly, you can then use this tool to upload the needed artefacts to that " +
+                        "deployment.\n" +
+                        "\n" +
                         "--properties, -p\n" +
-                        "An instance.properties file to read configuration from. Docker images that " +
-                        "are not required to deploy this instance will not be uploaded.\n" +
+                        "An instance.properties file to read configuration from. The artefacts deployment ID will be " +
+                        "read from this file, defaulting to the instance ID. Docker images that are not required to " +
+                        "deploy this instance will not be uploaded.\n" +
                         "\n" +
                         "--id, -i\n" +
                         "An artefacts deployment ID to upload to. All Docker images will be uploaded.\n" +
