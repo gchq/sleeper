@@ -19,21 +19,16 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.IGrantable;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.List;
-
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 
@@ -49,23 +44,20 @@ public class QueryQueueStack extends NestedStack {
     public QueryQueueStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            Topic topic,
-            CoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            SleeperCoreStacks coreStacks) {
         super(scope, id);
-        queryQueue = setupQueryQueue(instanceProperties, topic, coreStacks, errorMetrics);
+        queryQueue = setupQueryQueue(instanceProperties, coreStacks);
     }
 
     /***
      * Creates the queue used for queries.
      *
      * @param  instanceProperties containing configuration details
-     * @param  topic              the SNS topic to notify of any dead letters
      * @param  coreStacks         a reference to the core stacks, used for grants
-     * @param  errorMetrics       the metrics to track dead letters
+     *
      * @return                    the queue to be used for queries
      */
-    private Queue setupQueryQueue(InstanceProperties instanceProperties, Topic topic, CoreStacks coreStacks, List<IMetric> errorMetrics) {
+    private Queue setupQueryQueue(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "QueryDLQ");
         Queue queryDlq = Queue.Builder
@@ -89,10 +81,7 @@ public class QueryQueueStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queryQueue.getQueueArn());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queryDlq.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queryDlq.getQueueArn());
-        createAlarmForDlq(this, "QueryAlarm",
-                "Alarms if there are any messages on the dead letter queue for the query queue",
-                queryDlq, topic);
-        errorMetrics.add(Utils.createErrorMetric("Query Errors", queryDlq, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "QueryAlarm", "queries", queryDlq);
         CfnOutputProps queryQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(queryQueue.getQueueName())
                 .exportName(instanceProperties.get(ID) + "-" + QUERY_QUEUE_NAME)

@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.model.IngestQueue.STANDARD_INGEST;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.QUEUE;
@@ -48,6 +49,8 @@ public class SetupInstanceST {
     void shouldConnectToInstance(SleeperDsl sleeper) {
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
+        assertThat(sleeper.instanceProperties().getBoolean(RETAIN_LOGS_AFTER_DESTROY))
+                .isTrue();
     }
 
     @Test

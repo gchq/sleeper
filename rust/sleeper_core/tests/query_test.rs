@@ -17,7 +17,7 @@
 use color_eyre::eyre::{Error, bail};
 use sleeper_core::{
     CommonConfigBuilder, CompletedOutput, LeafPartitionQueryConfig, OutputType,
-    SleeperParquetOptions, SleeperRegion, run_query,
+    SleeperParquetOptions, SleeperRegion, run_query, sleeper_context::SleeperContext,
 };
 use tempfile::tempdir;
 use test_util::*;
@@ -48,7 +48,7 @@ async fn should_return_subset_results_with_query_subset_of_partition() -> Result
     };
 
     // When
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
 
     // Then
     let CompletedOutput::ArrowRecordBatch(stream) = result else {
@@ -89,7 +89,7 @@ async fn should_return_subset_results_with_query_subset_of_partition_unsorted_in
     };
 
     // When
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
 
     // Then
     let CompletedOutput::ArrowRecordBatch(stream) = result else {
@@ -130,7 +130,7 @@ async fn should_return_subset_results_with_overlapping_query_and_partition_range
     };
 
     // When
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
 
     // Then
     let CompletedOutput::ArrowRecordBatch(stream) = result else {
@@ -171,7 +171,7 @@ async fn should_return_zero_results_with_non_overlapping_query_and_partition_ran
     };
 
     // When
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
 
     // Then
     let CompletedOutput::ArrowRecordBatch(stream) = result else {
@@ -214,7 +214,7 @@ async fn should_return_results_from_two_overlapping_query_ranges() -> Result<(),
     };
 
     // When
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
 
     // Then
     let CompletedOutput::ArrowRecordBatch(stream) = result else {
@@ -257,7 +257,7 @@ async fn should_return_results_from_two_non_overlapping_query_ranges() -> Result
     };
 
     // When
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
 
     // Then
     let CompletedOutput::ArrowRecordBatch(stream) = result else {
@@ -297,7 +297,7 @@ async fn should_error_with_no_query_ranges() -> Result<(), Error> {
     };
 
     // Then
-    let Err(result) = run_query(&query_config).await else {
+    let Err(result) = run_query(&query_config, &SleeperContext::default()).await else {
         bail!("Expected an error type here");
     };
 
@@ -340,7 +340,7 @@ async fn should_return_results_as_file_with_sketch() -> Result<(), Error> {
     };
 
     // When
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
 
     // Then
     let CompletedOutput::File(row_counts) = result else {
@@ -386,7 +386,7 @@ async fn should_return_results_as_file_without_sketch() -> Result<(), Error> {
     };
 
     // When
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
 
     // Then
     let CompletedOutput::File(row_counts) = result else {

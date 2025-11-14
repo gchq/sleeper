@@ -41,7 +41,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -73,7 +73,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     public CommonEmrBulkImportStack(
             Construct scope, String id, InstanceProperties instanceProperties,
-            CoreStacks coreStacks, BulkImportBucketStack importBucketStack) {
+            SleeperCoreStacks coreStacks, BulkImportBucketStack importBucketStack) {
         super(scope, id);
         IKey ebsKey = createEbsEncryptionKey(this, instanceProperties);
         ec2Role = createEc2Role(this, instanceProperties,
@@ -84,7 +84,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     private static IRole createEc2Role(
             Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
-            CoreStacks coreStacks, IKey ebsKey) {
+            SleeperCoreStacks coreStacks, IKey ebsKey) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.

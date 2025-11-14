@@ -18,7 +18,6 @@ package sleeper.cdk.stack.ingest;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -31,15 +30,14 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.IQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -52,9 +50,7 @@ import sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.removalPolicy;
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS;
@@ -74,15 +70,12 @@ public class IngestBatcherStack extends NestedStack {
     private final IQueue submitQueue;
 
     public IngestBatcherStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            BuiltJars jars,
-            Topic topic,
-            CoreStacks coreStacks,
-            IngestStacks ingestStacks,
-            List<IMetric> errorMetrics) {
+            Construct scope, String id,
+            SleeperInstanceProps props,
+            SleeperCoreStacks coreStacks,
+            IngestStacks ingestStacks) {
         super(scope, id);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
         String instanceId = Utils.cleanInstanceId(instanceProperties);
 
         // Queue to submit files to the batcher
@@ -105,10 +98,8 @@ public class IngestBatcherStack extends NestedStack {
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_URL, submitDLQ.getQueueUrl());
         instanceProperties.set(INGEST_BATCHER_SUBMIT_DLQ_ARN, submitDLQ.getQueueArn());
 
-        createAlarmForDlq(this, "IngestBatcherAlarm",
-                "Alarms if there are any messages on the dead letter queue for the ingest batcher queue",
-                submitDLQ, topic);
-        errorMetrics.add(Utils.createErrorMetric("Ingest Batcher Errors", submitDLQ, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "IngestBatcherAlarm", "ingest batcher submission", submitDLQ);
+
         // DynamoDB table to track submitted files
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
         Table ingestRequestsTable = Table.Builder
@@ -131,8 +122,8 @@ public class IngestBatcherStack extends NestedStack {
                 .build();
 
         // Lambdas to receive submitted files and create batches
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         String submitterName = String.join("-", "sleeper", instanceId, "ingest-batcher-submit-files");
         String jobCreatorName = String.join("-", "sleeper", instanceId, "ingest-batcher-create-jobs");
@@ -178,7 +169,7 @@ public class IngestBatcherStack extends NestedStack {
                 .create(this, "IngestBatcherJobCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.getDescription())
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(jobCreatorLambda)))
                 .build();

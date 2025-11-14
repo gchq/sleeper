@@ -29,7 +29,7 @@ use datafusion::{
     common::plan_err,
     dataframe::DataFrame,
     error::DataFusionError,
-    execution::{config::SessionConfig, context::SessionContext},
+    execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
     physical_expr::LexOrdering,
     physical_plan::displayable,
 };
@@ -57,6 +57,7 @@ pub struct CompactionResult {
 pub async fn compact(
     store_factory: &ObjectStoreFactory,
     config: &CommonConfig<'_>,
+    runtime: Arc<RuntimeEnv>,
 ) -> Result<CompactionResult, DataFusionError> {
     let ops = SleeperOperations::new(config);
     info!("DataFusion compaction: {ops}");
@@ -73,7 +74,7 @@ pub async fn compact(
 
     // Make compaction DataFrame
     let completer = config.output().finisher(&ops);
-    let (sketcher, frame) = build_compaction_dataframe(&ops, store_factory).await?;
+    let (sketcher, frame) = build_compaction_dataframe(&ops, store_factory, runtime).await?;
 
     let (sort_ordering, frame) = add_completion_stage(&ops, completer.as_ref(), frame)?;
 
@@ -102,11 +103,15 @@ pub async fn compact(
 async fn build_compaction_dataframe<'a>(
     ops: &'a SleeperOperations<'a>,
     store_factory: &ObjectStoreFactory,
+    runtime: Arc<RuntimeEnv>,
 ) -> Result<(Sketcher<'a>, DataFrame), DataFusionError> {
     let sf = ops
         .apply_config(SessionConfig::new(), store_factory)
         .await?;
-    let ctx = ops.configure_context(SessionContext::new_with_config(sf), store_factory)?;
+    let ctx = ops.configure_context(
+        SessionContext::new_with_config_rt(sf, runtime),
+        store_factory,
+    )?;
     let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
     frame = ops.apply_user_filters(frame)?;
     frame = ops.apply_general_sort(frame)?;

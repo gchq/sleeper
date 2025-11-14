@@ -20,7 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -41,14 +40,13 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -61,8 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_ARN;
@@ -90,20 +86,18 @@ public class IngestStack extends NestedStack {
     public static final String INGEST_CLUSTER_NAME = "IngestClusterName";
     public static final String INGEST_CONTAINER_ROLE_ARN = "IngestContainerRoleARN";
 
+    private final SleeperInstanceProps props;
+    private final InstanceProperties instanceProperties;
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
-    private final InstanceProperties instanceProperties;
 
     public IngestStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            BuiltJars jars,
-            Topic topic,
-            CoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            Construct scope, String id,
+            SleeperInstanceProps props,
+            SleeperCoreStacks coreStacks) {
         super(scope, id);
-        this.instanceProperties = instanceProperties;
+        this.props = props;
+        this.instanceProperties = props.getInstanceProperties();
         // The ingest stack consists of the following components:
         //  - An SQS queue for the ingest jobs.
         //  - An ECS cluster, task definition, etc., for ingest jobs.
@@ -112,11 +106,11 @@ public class IngestStack extends NestedStack {
         //      then it creates more tasks).
         //  - A lambda that stops task when a delete cluster event is triggered.
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         // SQS queue for ingest jobs
-        sqsQueueForIngestJobs(coreStacks, topic, errorMetrics);
+        sqsQueueForIngestJobs(coreStacks);
 
         // ECS cluster for ingest tasks
         ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
@@ -127,7 +121,7 @@ public class IngestStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private Queue sqsQueueForIngestJobs(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForIngestJobs(SleeperCoreStacks coreStacks) {
         // Create queue for ingest job definitions
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String dlQueueName = String.join("-", "sleeper", instanceId, "IngestJobDLQ");
@@ -153,12 +147,7 @@ public class IngestStack extends NestedStack {
         instanceProperties.set(INGEST_JOB_DLQ_ARN, ingestJobDeadLetterQueue.getQueue().getQueueArn());
         ingestJobQueue.grantSendMessages(coreStacks.getIngestByQueuePolicyForGrants());
         ingestJobQueue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
-
-        // Add alarm to send message to SNS if there are any messages on the dead letter queue
-        createAlarmForDlq(this, "IngestAlarm",
-                "Alarms if there are any messages on the dead letter queue for the ingest queue",
-                ingestDLQ, topic);
-        errorMetrics.add(Utils.createErrorMetric("Ingest Errors", ingestDLQ, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "IngestAlarm", "ingest jobs", ingestDLQ);
 
         CfnOutputProps ingestJobQueueProps = new CfnOutputProps.Builder()
                 .value(ingestJobQueue.getQueueUrl())
@@ -182,9 +171,9 @@ public class IngestStack extends NestedStack {
 
     private Cluster ecsClusterForIngestTasks(
             IBucket jarsBucket,
-            CoreStacks coreStacks,
+            SleeperCoreStacks coreStacks,
             Queue ingestJobQueue,
-            LambdaCode lambdaCode) {
+            SleeperLambdaCode lambdaCode) {
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -245,7 +234,7 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, LambdaCode lambdaCode) {
+    private void lambdaToCreateIngestTasks(SleeperCoreStacks coreStacks, Queue ingestJobQueue, SleeperLambdaCode lambdaCode) {
 
         // Run tasks function
         String functionName = String.join("-", "sleeper",
@@ -283,7 +272,7 @@ public class IngestStack extends NestedStack {
                 .create(this, "IngestTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.INGEST_TASK_CREATION.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.INGEST_TASK_CREATION.getDescription())
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(handler)))
                 .build();

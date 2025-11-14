@@ -128,6 +128,7 @@ public class SystemTestClusterStack extends NestedStack {
                         .logGroup(LogGroup.Builder.create(this, "SystemTestTasks")
                                 .logGroupName(logGroupName)
                                 .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                                .removalPolicy(Utils.logsRemovalPolicy(instanceProperties))
                                 .build())
                         .build()))
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

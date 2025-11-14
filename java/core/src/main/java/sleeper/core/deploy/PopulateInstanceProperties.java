@@ -21,19 +21,14 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
-import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -71,7 +66,7 @@ public class PopulateInstanceProperties {
      * @return            the populated properties
      */
     public InstanceProperties populate(InstanceProperties properties) {
-        populateDefaultsFromInstanceId(properties, instanceId);
+        properties.set(ID, instanceId);
         Properties tagsProperties = properties.getTagsProperties();
         tagsProperties.setProperty("InstanceID", instanceId);
         properties.loadTags(tagsProperties);
@@ -95,35 +90,6 @@ public class PopulateInstanceProperties {
                 instanceProperties.set(property, value);
             }
         }
-    }
-
-    /**
-     * Generates instance properties when tearing down an instance without the properties.
-     *
-     * @param  instanceId the instance ID
-     * @return            the dummy populated properties
-     */
-    public static InstanceProperties generateTearDownDefaultsFromInstanceId(String instanceId) {
-        InstanceProperties instanceProperties = populateDefaultsFromInstanceId(new InstanceProperties(), instanceId);
-        instanceProperties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
-        instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
-        instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
-        SleeperScheduleRule.getDefaultRules(instanceId)
-                .forEach(rule -> instanceProperties.set(rule.getProperty(), rule.getRuleName()));
-        return instanceProperties;
-    }
-
-    /**
-     * Sets instance properties when deploying a new instance against LocalStack.
-     *
-     * @param  properties the properties specified by the user
-     * @param  instanceId the Sleeper instance ID
-     * @return            the populated properties
-     */
-    public static InstanceProperties populateDefaultsFromInstanceId(InstanceProperties properties, String instanceId) {
-        properties.set(ID, instanceId);
-        properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
-        return properties;
     }
 
     /**

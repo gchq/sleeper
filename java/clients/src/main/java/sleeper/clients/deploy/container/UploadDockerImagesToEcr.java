@@ -18,11 +18,12 @@ package sleeper.clients.deploy.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.container.EcrRepositoryCreator.Client;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static sleeper.clients.util.command.Command.command;
+import static sleeper.clients.util.command.CommandPipeline.pipeline;
 
 /**
  * Uploads Docker images to individual AWS ECR repositories. Authenticates with AWS ECR, creates ECR repositories, and
@@ -32,11 +33,11 @@ public class UploadDockerImagesToEcr {
     public static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImagesToEcr.class);
 
     private final UploadDockerImages uploader;
-    private final EcrRepositoryCreator.Client ecrClient;
+    private final CheckVersionExistsInEcr repositoryChecker;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, Client ecrClient) {
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckVersionExistsInEcr repositoryChecker) {
         this.uploader = uploader;
-        this.ecrClient = ecrClient;
+        this.repositoryChecker = repositoryChecker;
     }
 
     public void upload(UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
@@ -46,14 +47,18 @@ public class UploadDockerImagesToEcr {
                 .filter(image -> imageDoesNotExistInRepositoryWithVersion(image, request))
                 .collect(Collectors.toUnmodifiableList());
         String repositoryPrefix = request.getRepositoryHost() + "/" + request.getEcrPrefix();
-        UploadDockerImagesToEcrCallbacks callbacks = new UploadDockerImagesToEcrCallbacks(uploader.getCommandRunner(), ecrClient, request);
-        uploader.upload(repositoryPrefix, imagesToUpload, callbacks);
+        if (!imagesToUpload.isEmpty()) {
+            uploader.getCommandRunner().runOrThrow(pipeline(
+                    command("aws", "ecr", "get-login-password", "--region", request.getRegion()),
+                    command("docker", "login", "--username", "AWS", "--password-stdin", request.getRepositoryHost())));
+        }
+        uploader.upload(repositoryPrefix, imagesToUpload);
     }
 
     private boolean imageDoesNotExistInRepositoryWithVersion(
             StackDockerImage stackDockerImage, UploadDockerImagesToEcrRequest request) {
         String imagePath = request.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        if (ecrClient.versionExistsInRepository(imagePath, uploader.getVersion())) {
+        if (repositoryChecker.versionExistsInRepository(imagePath, uploader.getVersion())) {
             LOGGER.info("Stack image {} already exists in ECR with version {}",
                     stackDockerImage.getImageName(), uploader.getVersion());
             return false;

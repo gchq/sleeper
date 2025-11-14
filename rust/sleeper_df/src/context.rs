@@ -16,6 +16,7 @@
  */
 #[cfg(doc)]
 use crate::native_query_stream;
+use sleeper_core::sleeper_context::SleeperContext;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -45,15 +46,20 @@ fn make_runtime() -> Runtime {
 /// consumer simply treats it as a meangingless handle.
 #[allow(non_camel_case_types)]
 pub struct FFIContext {
-    /// Shared pointer to a runtime.
+    /// Shared pointer to a runtime
     pub rt: Arc<Runtime>,
+    /// Shared pointer to the Sleeper context
+    pub sleeper_context: Arc<SleeperContext>,
 }
 
 impl FFIContext {
     /// Create a new context object for enabling
     /// FFI to work.
     pub fn new(rt: Runtime) -> Self {
-        Self { rt: Arc::new(rt) }
+        Self {
+            rt: Arc::new(rt),
+            sleeper_context: Arc::new(SleeperContext::default()),
+        }
     }
 }
 
@@ -145,6 +151,7 @@ mod tests {
         // Given
         let ptr = create_context();
 
+        // Then
         assert!(!ptr.is_null());
     }
 }

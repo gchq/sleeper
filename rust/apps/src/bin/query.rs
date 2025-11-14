@@ -25,6 +25,7 @@ use sleeper_core::{
     PartitionBound, SleeperRegion,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
     run_query,
+    sleeper_context::SleeperContext,
 };
 use std::{collections::HashMap, io::Write};
 use url::Url;
@@ -177,7 +178,7 @@ async fn main() -> color_eyre::Result<()> {
         explain_plans: true,
     };
 
-    let result = run_query(&query_config).await?;
+    let result = run_query(&query_config, &SleeperContext::default()).await?;
     let CompletedOutput::ArrowRecordBatch(mut stream) = result else {
         bail!("Expected ArrowRecordBatch output");
     };

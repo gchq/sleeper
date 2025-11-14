@@ -65,6 +65,11 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     }
 
     @Override
+    public InstanceProperty getDefaultProperty() {
+        return null;
+    }
+
+    @Override
     public Predicate<String> getValidationPredicate() {
         return validationPredicate;
     }

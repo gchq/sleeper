@@ -24,7 +24,7 @@ import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
 import software.amazon.awscdk.services.ecs.RuntimePlatform;
 
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.ContainerConstants;
@@ -40,10 +40,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_E
 public class BulkExportOnFargateResources {
     private final InstanceProperties instanceProperties;
     private final Stack stack;
-    private final CoreStacks coreStacks;
+    private final SleeperCoreStacks coreStacks;
 
     public BulkExportOnFargateResources(
-            InstanceProperties instanceProperties, Stack stack, CoreStacks coreStacks) {
+            InstanceProperties instanceProperties, Stack stack, SleeperCoreStacks coreStacks) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
         this.coreStacks = coreStacks;

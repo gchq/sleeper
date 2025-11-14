@@ -12,8 +12,20 @@
 # globally unique as it will be used to name AWS resources such as S3 buckets.
 sleeper.id=changeme
 
-# The S3 bucket containing the jar files of the Sleeper components.
+# The ID of the artefacts deployment to use to deploy the Sleeper instance. By default we assume an
+# artefacts deployment with the same ID as the Sleeper instance. This property is used to compute the
+# default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.
+sleeper.artefacts.deployment=changeme
+
+# The S3 bucket containing the jar files of the Sleeper components. If unset, a default name is
+# computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it is not.
 sleeper.jars.bucket=changeme
+
+# If set, this property will be used as a prefix for the names of ECR repositories. If unset, a
+# default prefix is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
+# is not.
+# ECR repository names are generated in the format `<prefix>/<image name>`.
+sleeper.ecr.repository.prefix=changeme
 
 # The AWS account number. This is the AWS account that the instance will be deployed to.
 sleeper.account=changeme
@@ -36,8 +48,8 @@ sleeper.subnets=changeme
 ## The following instance properties are commonly used throughout Sleeper.
 
 # A comma-separated list of the jars containing application specific iterator code. These jars are
-# assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that bucket contains two iterator
-# jars called iterator1.jar and iterator2.jar then the property should be
+# assumed to be in the bucket given by `sleeper.jars.bucket`. For example, if that bucket contains two
+# iterator jars called iterator1.jar and iterator2.jar then the property should be
 # 'sleeper.userjars=iterator1.jar,iterator2.jar'.
 # sleeper.userjars=
 
@@ -49,6 +61,9 @@ sleeper.stack.tag.name=DeploymentStack
 # Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., when the
 # instance is destroyed.
 sleeper.retain.infra.after.destroy=true
+
+# Whether to keep the sleeper log groups when the instance is destroyed.
+sleeper.retain.logs.after.destroy=true
 
 # The optional stacks to deploy. Not case sensitive.
 # Valid values: [IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrBulkImportStack,
@@ -110,12 +125,6 @@ sleeper.task.runner.timeout.seconds=900
 # If true, properties will be reloaded every time a long running job is started or a lambda is run.
 # This will mainly be used in test scenarios to ensure properties are up to date.
 sleeper.properties.force.reload=false
-
-# If set, this property will be used as a prefix for the names of ECR repositories. If unset, then the
-# instance ID will be used to determine the names instead.
-# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
-# the ability to use this in the CDK in the future.
-# sleeper.ecr.repository.prefix=
 
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
 # sleeper.ecs.security.groups=

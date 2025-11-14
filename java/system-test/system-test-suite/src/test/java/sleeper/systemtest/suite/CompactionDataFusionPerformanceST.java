@@ -80,8 +80,9 @@ public class CompactionDataFusionPerformanceST {
                 .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                         .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRowsPerSecondInRange(2_900_000, 4_500_000),
+                .matches(stats -> stats.isAllFinishedOneRunEach(10),
+                        "compactions finished with one run each")
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_900_000, 4_500_000),
                         "meets expected performance");
     }
 }

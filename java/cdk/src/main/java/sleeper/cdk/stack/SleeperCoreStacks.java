@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.cdk.stack.core;
+package sleeper.cdk.stack;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
@@ -24,20 +27,46 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.IBucket;
+import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.IQueue;
+import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
+import sleeper.cdk.stack.core.ConfigBucketStack;
+import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
+import sleeper.cdk.stack.core.SleeperInstanceRoles;
+import sleeper.cdk.stack.core.StateStoreCommitterStack;
+import sleeper.cdk.stack.core.StateStoreStacks;
+import sleeper.cdk.stack.core.TableDataStack;
+import sleeper.cdk.stack.core.TableIndexStack;
+import sleeper.cdk.stack.core.TopicStack;
+import sleeper.cdk.stack.core.TransactionLogSnapshotStack;
+import sleeper.cdk.stack.core.TransactionLogStateStoreStack;
+import sleeper.cdk.stack.core.TransactionLogTransactionStack;
+import sleeper.cdk.stack.core.VpcCheckStack;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
+import sleeper.cdk.util.TrackDeadLetters;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import javax.annotation.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
-public class CoreStacks {
+import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
+
+public class SleeperCoreStacks {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCoreStacks.class);
 
     private final LoggingStack loggingStack;
+    private final TrackDeadLetters deadLetters;
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
     private final ManagedPoliciesStack policiesStack;
@@ -46,17 +75,22 @@ public class CoreStacks {
     private final StateStoreCommitterStack stateStoreCommitterStack;
     private final IngestTrackerResources ingestTracker;
     private final CompactionTrackerResources compactionTracker;
-    private final AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack;
-    private final AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack;
+    private final AutoDeleteS3ObjectsStack autoDeleteS3Stack;
+    private final AutoStopEcsClusterTasksStack autoStopEcsStack;
+    private SleeperInstanceRoles roles;
 
-    public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
+    private SleeperCoreStacks(
+            LoggingStack loggingStack, TrackDeadLetters deadLetters,
+            ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker,
-            AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack,
-            AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
+            AutoDeleteS3ObjectsStack autoDeleteS3Stack,
+            AutoStopEcsClusterTasksStack autoStopEcsStack) {
         this.loggingStack = loggingStack;
+        this.deadLetters = deadLetters;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
         this.policiesStack = policiesStack;
@@ -65,8 +99,76 @@ public class CoreStacks {
         this.stateStoreCommitterStack = stateStoreCommitterStack;
         this.ingestTracker = ingestTracker;
         this.compactionTracker = compactionTracker;
-        this.autoDeleteS3ObjectsStack = autoDeleteS3ObjectsStack;
-        this.autoStopEcsClusterTasksStack = autoStopEcsClusterTasksStack;
+        this.autoDeleteS3Stack = autoDeleteS3Stack;
+        this.autoStopEcsStack = autoStopEcsStack;
+    }
+
+    public static SleeperCoreStacks create(Construct scope, SleeperInstanceProps props) {
+        LoggingStack loggingStack = new LoggingStack(scope, "Logging", props.getInstanceProperties());
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
+        return create(scope, props, loggingStack, autoDeleteS3Stack);
+    }
+
+    public static SleeperCoreStacks create(
+            Construct scope, SleeperInstanceProps props, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        SleeperJarsInBucket jars = props.getJars();
+        if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
+            new VpcCheckStack(scope, "Vpc", instanceProperties, jars, loggingStack);
+        } else {
+            LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
+                    + "in very significant NAT charges.");
+        }
+        TrackDeadLetters deadLetters = new TrackDeadLetters(instanceProperties,
+                new TopicStack(scope, "Topic", instanceProperties));
+
+        // Custom resource providers
+        AutoStopEcsClusterTasksStack autoStopEcsStack = new AutoStopEcsClusterTasksStack(scope, "AutoStopEcsClusterTasks", instanceProperties, jars, loggingStack);
+        ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(scope, "Policies", instanceProperties);
+
+        // Stacks for tables
+        TableDataStack dataStack = new TableDataStack(scope, "TableData", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
+        TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
+                scope, "TransactionLogStateStore", instanceProperties, dataStack);
+        StateStoreStacks stateStoreStacks = new StateStoreStacks(transactionLogStateStoreStack, policiesStack);
+        IngestTrackerResources ingestTracker = IngestTrackerResources.from(
+                scope, "IngestTracker", instanceProperties, policiesStack);
+        CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
+                scope, "CompactionTracker", instanceProperties, policiesStack);
+        ConfigBucketStack configBucketStack = new ConfigBucketStack(scope, "Configuration", instanceProperties, loggingStack, policiesStack, autoDeleteS3Stack, jars);
+        TableIndexStack tableIndexStack = new TableIndexStack(scope, "TableIndex", instanceProperties, policiesStack);
+        StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(scope, "StateStoreCommitter",
+                instanceProperties, jars,
+                loggingStack, configBucketStack, tableIndexStack,
+                stateStoreStacks, ingestTracker, compactionTracker,
+                policiesStack, deadLetters);
+
+        SleeperCoreStacks stacks = new SleeperCoreStacks(loggingStack, deadLetters,
+                configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
+                stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3Stack, autoStopEcsStack);
+
+        // Table state store maintenance
+        new TransactionLogSnapshotStack(scope, "TransactionLogSnapshot",
+                props, stacks, transactionLogStateStoreStack, deadLetters);
+        new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
+                props, stacks, transactionLogStateStoreStack, deadLetters);
+        return stacks;
+    }
+
+    public Topic getAlertsTopic() {
+        return deadLetters.getTopic();
+    }
+
+    public void alarmOnDeadLetters(Construct scope, String id, String description, Queue dlq) {
+        deadLetters.alarmOnDeadLetters(scope, id, description, dlq);
+    }
+
+    public List<IMetric> getErrorMetrics() {
+        return deadLetters.getErrorMetrics();
+    }
+
+    public LoggingStack getLoggingStack() {
+        return loggingStack;
     }
 
     public ILogGroup getLogGroup(LogGroupRef logGroupRef) {
@@ -109,11 +211,15 @@ public class CoreStacks {
     }
 
     public void addAutoDeleteS3Objects(Construct scope, IBucket bucket) {
-        autoDeleteS3ObjectsStack.addAutoDeleteS3Objects(scope, bucket);
+        autoDeleteS3Stack.addAutoDeleteS3Objects(scope, bucket);
     }
 
     public void addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
-        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(scope, cluster);
+        autoStopEcsStack.addAutoStopEcsClusterTasks(scope, cluster);
+    }
+
+    public AutoStopEcsClusterTasksStack getAutoStopEcsStack() {
+        return autoStopEcsStack;
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
@@ -176,6 +282,7 @@ public class CoreStacks {
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
+    // Needed to write transaction body to S3
     public void grantSendStateStoreCommits(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
@@ -227,5 +334,13 @@ public class CoreStacks {
 
     public IGrantable getPurgeQueuesPolicyForGrants() {
         return policiesStack.getPurgeQueuesPolicyForGrants();
+    }
+
+    public void createRoles() {
+        roles = policiesStack.createRoles();
+    }
+
+    public SleeperInstanceRoles getRoles() {
+        return roles;
     }
 }
