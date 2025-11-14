@@ -765,6 +765,16 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 
+    //To move to better location
+    CdkDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
+            .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
+            .description("The AWS region to deploy to.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     @Override
     default boolean isSetByCdk() {
         return true;
