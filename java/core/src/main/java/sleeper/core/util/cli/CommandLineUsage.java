@@ -162,8 +162,8 @@ public class CommandLineUsage {
 
         /**
          * Sets which arguments are system arguments. These arguments will be passed by the system instead of the user,
-         * and will not appear in the usage message. These must also be specified in {@link #positionalArguments()}, to
-         * set where they will be passed in order.
+         * and will not appear in the usage message. If you use {@link #positionalArguments(List)}, the system arguments
+         * must be included there to set where they will be passed in order.
          *
          * @param  systemArguments the names of the system arguments
          * @return                 this builder
