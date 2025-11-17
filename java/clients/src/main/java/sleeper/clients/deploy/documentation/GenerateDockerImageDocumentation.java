@@ -27,7 +27,6 @@ import sleeper.core.deploy.LambdaJar;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -88,16 +87,18 @@ public class GenerateDockerImageDocumentation {
     }
 
     private static String getResourceAsString(String path) throws IOException {
-        try (Reader reader = new InputStreamReader(GenerateDockerImageDocumentation.class.getClassLoader().getResourceAsStream(path))) {
+        try (Reader reader = new InputStreamReader(
+                GenerateDockerImageDocumentation.class.getClassLoader().getResourceAsStream(path),
+                StandardCharsets.UTF_8)) {
             return CharStreams.toString(reader);
         }
     }
 
     private static String tableToString(TableWriter tableWriter) {
-        OutputStream outputStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
         tableWriter.write(printStream);
         printStream.flush();
-        return outputStream.toString();
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 }
