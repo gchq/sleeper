@@ -3,8 +3,7 @@ Deployment with the CDK
 
 Sleeper is deployed with the AWS Cloud Development Kit (CDK). This can be done either with scripts as described in
 the [deployment guide](../deployment-guide.md#scripted-deployment), or by using the CDK directly. This document covers
-deployment using the CDK CLI directly. This requires configuration files to deploy in the structure described
-in [Sleeper instance configuration](./instance-configuration.md).
+deployment using the CDK CLI directly.
 
 ### Uploading artefacts to AWS
 
@@ -21,6 +20,9 @@ Java classes `SyncJars` and `UploadDockerImagesToEcr`, or implement your own way
 As part of `scripts/build/build.sh`, the jars are built and output to `scripts/jars`, and the Docker builds are prepared
 in separate directories for each Docker image under `scripts/docker`. You can also use
 our [publishing tools](../development/publishing.md) to prepare the artefacts.
+
+It's important to upload artefacts from within AWS to avoid lengthy uploads into AWS. Usually this is done from an EC2
+instance.
 
 Here are some example commands to deploy the artefacts into repositories managed by the CDK (run from the root of the
 Sleeper repository):
@@ -70,11 +72,15 @@ SleeperInstance.createAsNestedStack(stack, "MyInstance",
                 .build());
 ```
 
-### Deploy with the CDK
+### Using the CDK CLI
 
 To deploy a Sleeper instance to AWS with the CDK, you need an [instance configuration](instance-configuration.md) and
-a [suitable environment](environment-setup.md). When those are ready, you can run the following commands, usually from
-an EC2 instance:
+a [suitable environment](environment-setup.md). The artefacts will need to be uploaded as described in the section
+above. You can either use the instance ID as the deployment ID for the artefacts, or you can point to your artefacts
+deployment with the instance property `sleeper.artefacts.deployment`.
+
+You can use the same CDK apps used by the automated scripts, or your own CDK configuration. We'll give examples with the
+CDK apps used by the automated scripts. The following commands will deploy a Sleeper instance:
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
