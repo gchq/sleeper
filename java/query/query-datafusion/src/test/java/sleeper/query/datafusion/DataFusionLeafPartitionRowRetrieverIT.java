@@ -135,8 +135,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         List<Row> rows = makeRows();
 
         public static final int ROW_COUNT = 10_00;
-        public static final int TASK_COUNT = 70;
-        public static final int QUERY_COUNT = 30;
+        public static final int TASK_COUNT = 60;
+        public static final int QUERY_COUNT = 40;
 
         private List<Row> makeRows() {
             List<Row> rows = new ArrayList<>();
@@ -164,7 +164,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                         FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.getInstance());) {
 
                     Query query = queryWithRegionConfig(new Region(rangeFactory().createRange(
-                            "key", 1L, true, 100L, true)),
+                            "key", 1L, true, 10L, true)),
                             QueryProcessingConfig.none());
 
                     LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
