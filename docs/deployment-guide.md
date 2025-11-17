@@ -93,17 +93,14 @@ Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subn
 #### From configuration files
 
 You can create your own configuration for a Sleeper instance, including tables, and deploy that. See
-the [configuration documentation](deployment/instance-configuration.md) for more details:
+the [configuration documentation](deployment/instance-configuration.md) for more details. These commands use the basic
+example as a starting point:
 
 ```bash
-cd scripts
-mkdir my-instance
-cp templates/instanceproperties.template my-instance/instance.properties
-cp templates/tags.template my-instance/tags.properties
-cp templates/tableproperties.template my-instance/tables/my-table/table.properties
-cp templates/schema.template my-instance/tables/my-table/schema.json
-# Edit configuration files as above
-./deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
+mkdir scripts/my-instance
+cp example/basic/* scripts/my-instance/
+# Edit all configuration files in the new directory to set your own values
+./scripts/deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
 ```
 
 #### Declarative deployment
