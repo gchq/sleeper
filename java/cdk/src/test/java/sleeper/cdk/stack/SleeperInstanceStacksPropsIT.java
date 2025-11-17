@@ -36,9 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.SleeperVersion.getVersion;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
@@ -197,8 +195,6 @@ class SleeperInstanceStacksPropsIT {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(JARS_BUCKET, "test-bucket");
-        instanceProperties.set(ACCOUNT, "test-account");
-        instanceProperties.set(REGION, "test-region");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         return instanceProperties;
