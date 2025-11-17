@@ -58,7 +58,7 @@ public class PauseScheduledRuleStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "pause-scheduled-rules");
 
-        lambda = lambdaCode.buildFunction(this, LambdaHandler.PAUSE_SCHEDULED_RULES, "Lambda", builder -> builder
+        lambda = lambdaCode.buildFunction(this, LambdaHandler.PAUSE_SCHEDULED_RULE, "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(EnvironmentUtils.createDefaultEnvironmentNoConfigBucket(instanceProperties))

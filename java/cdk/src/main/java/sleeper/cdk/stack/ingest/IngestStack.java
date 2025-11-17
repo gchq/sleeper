@@ -18,6 +18,7 @@ package sleeper.cdk.stack.ingest;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
+import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -90,6 +91,7 @@ public class IngestStack extends NestedStack {
     private final InstanceProperties instanceProperties;
     private Queue ingestJobQueue;
     private Queue ingestDLQ;
+    private CustomResource customResource;
 
     public IngestStack(
             Construct scope, String id,
@@ -229,7 +231,7 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
-        coreStacks.addAutoStopEcsClusterTasks(this, cluster);
+        customResource = coreStacks.addAutoStopEcsClusterTasks(this, cluster);
 
         return cluster;
     }
@@ -248,6 +250,8 @@ public class IngestStack extends NestedStack {
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.INGEST_CREATE_TASKS)));
+
+        customResource.getNode().addDependency(handler);
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);
