@@ -56,8 +56,10 @@ the CDK directly.
 Either approach should be done from within an EC2 instance set up as described above, to avoid lengthy uploads of large
 jar files and Docker images.
 
-If you prefer to use the CDK CLI directly for deployment, or you want to include Sleeper in your own CDK app, see the
-guide on [deployment with the CDK](deployment/deploy-with-cdk.md) for more information.
+### Using the CDK directly
+
+If you prefer to use the CDK CLI directly for deployment, or you want to include Sleeper in your own CDK app, see
+[Deployment with the CDK](deployment/deploy-with-cdk.md) for more information.
 
 ### Scripted deployment
 
@@ -121,10 +123,15 @@ that have changed, update all the docker images, and perform a `cdk deploy`.
 ./scripts/deploy/deployExisting.sh <instance-id>
 ```
 
-### Deployment via CDK
+## Interacting with / editing an instance
 
-If you prefer to use the CDK CLI directly for deployment, or you want to include Sleeper in your own CDK app, see the
-[CDK deployment guide](deployment/deploy-with-cdk.md) for more information.
+There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to adjust an
+existing instance.
+
+See the [usage guide](usage-guide.md) for information on how to interact with the instance. The admin client described
+there can be used to adjust the configuration of an instance by setting instance properties.
+
+See the [tables documentation](usage/tables.md#addedit-a-table) for how to add/edit Sleeper tables.
 
 ### Tear down
 
@@ -137,16 +144,6 @@ project root directory, you can run:
 
 If you have deployed multiple instances or you do not have the same `generated` folder that was created when it was
 deployed, you can pass the instance ID as an argument to this script.
-
-## Interacting with / editing an instance
-
-There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to adjust an
-existing instance.
-
-See the [usage guide](usage-guide.md) for information on how to interact with the instance. The admin client described
-there can be used to adjust the configuration of an instance by setting instance properties.
-
-See the [tables documentation](usage/tables.md#addedit-a-table) for how to add/edit Sleeper tables.
 
 ### Pausing and restarting the system
 
