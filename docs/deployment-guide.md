@@ -105,7 +105,8 @@ cp example/basic/* scripts/my-instance/
 
 #### Declarative deployment
 
-We have a version of this script that will either create or update an instance based on your configuration:
+We have a version of this script that will either create or update an instance, applying your configuration
+declaratively:
 
 ```bash
 ./scripts/deploy/deploy.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
