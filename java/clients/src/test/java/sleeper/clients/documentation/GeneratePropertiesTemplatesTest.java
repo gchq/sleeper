@@ -42,8 +42,6 @@ import java.util.stream.Stream;
 import static java.util.regex.Pattern.DOTALL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -66,8 +64,6 @@ class GeneratePropertiesTemplatesTest {
         public Stream<Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
                     Arguments.of(ID, "full-example"),
-                    Arguments.of(ACCOUNT, "1234567890"),
-                    Arguments.of(REGION, "eu-west-2"),
                     Arguments.of(VPC_ID, "1234567890"),
                     Arguments.of(SUBNETS, "subnet-abcdefgh"));
         }
