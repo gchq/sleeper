@@ -176,7 +176,6 @@ pub unsafe extern "C" fn destroy_context(ctx: *mut FFIContext) {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn clone_context(ctx: *mut FFIContext) -> *mut FFIContext {
     if let Some(ctx_ref) = unsafe { ctx.as_mut() } {
-        // Clones pointers so both contexts share the underlying Tokio runtime
         let clone_context = Box::new(ctx_ref.clone());
         // Rust gives up ownership at this point
         Box::into_raw(clone_context)
