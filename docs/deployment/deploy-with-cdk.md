@@ -21,7 +21,7 @@ As part of `scripts/build/build.sh`, the jars are built and output to `scripts/j
 in separate directories for each Docker image under `scripts/docker`. You can also use
 our [publishing tools](../development/publishing.md) to prepare the artefacts.
 
-Details of Docker images to be uploaded can be found [here](/docs/deployment/images-to-upload.md).
+Details of Docker images to be uploaded can be found [here](/docs/deployment/docker-images.md).
 
 Here are some example commands to deploy the artefacts into repositories managed by the CDK (run from the root of the
 Sleeper repository):

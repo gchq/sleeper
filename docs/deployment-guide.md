@@ -109,7 +109,7 @@ If you prefer to use the CDK CLI directly for deployment, or you want to include
 For Sleeper to be deployed manually, some resources have to be uploaded to AWS first. The jar files need to be uploaded
 to an S3 bucket, and some Docker images need to be uploaded to an ECR repository.
 
-Details of images to be uploaded can be found [here](/docs/deployment/images-to-upload.md).
+Details of images to be uploaded can be found [here](/docs/deployment/docker-images.md).
 
 #### Upload the Docker images to ECR
 

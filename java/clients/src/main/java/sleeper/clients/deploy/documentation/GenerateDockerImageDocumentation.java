@@ -41,8 +41,8 @@ public class GenerateDockerImageDocumentation {
     }
 
     public static void main(String[] args) throws IOException {
-        Path path = Path.of(args[0]).resolve("docs/deployment/images-to-upload.md");
-        String template = getResourceAsString("images-to-upload.template.md");
+        Path path = Path.of(args[0]).resolve("docs/deployment/docker-images.md");
+        String template = getResourceAsString("docker-images.template.md");
         String dockerDeploymentTable = tableToString(createDockerDeploymentTableWriter(DockerDeployment.all()));
         String lambdaTable = tableToString(createLambdaJarTableWriter(LambdaJar.all()));
         String output = template
