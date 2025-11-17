@@ -41,7 +41,8 @@ and then run the Docker build for that directory. This results in a separate Doc
 * Filename - This is the name of the jar file that's output by the build in `scripts/jars`. It includes the version
   number you've built, which we've included as a placeholder here.
 * Image name - This is the name of the Docker image that's built, and the name of the repository it's uploaded to.
-* Always Docker deploy - This means that that lambda will always be deployed with Docker, usually because the jar is too large to deploy directly.
+* Always Docker deploy - This means that that lambda will always be deployed with Docker, usually because the jar is too
+  large to deploy directly.
 
 | Filename                                            | Image Name                        | Always Docker deploy |
 |-----------------------------------------------------|-----------------------------------|----------------------|
@@ -61,3 +62,72 @@ and then run the Docker build for that directory. This results in a separate Doc
 | metrics-`<version-number>`.jar                      | metrics-lambda                    | false                |
 | statestore-lambda-`<version-number>`.jar            | statestore-lambda                 | false                |
 
+
+## Building and pushing
+
+We'll look at some examples of how to build and push these images. We'll start by creating some environment variables
+for convenience:
+
+```bash
+INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
+ACCOUNT=<your-account-id>
+REGION=eu-west-2
+DOCKER_REGISTRY=$ACCOUNT.dkr.ecr.$REGION.amazonaws.com
+REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
+SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
+VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
+```
+
+Then log into ECR:
+
+```bash
+aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+```
+
+The value of the REPO_PREFIX environment variable could later be used as the value of the instance
+property [`sleeper.ecr.repository.prefix`](../usage/properties/instance/user/common.md).
+
+### Docker deployments
+
+Here's an example of commands to build and push a non-multiplatform image from the `scripts/docker` directory:
+
+```bash
+TAG=$REPO_PREFIX/ingest:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/ingest
+docker build -t $TAG $SCRIPTS_DIR/docker/ingest
+docker push $TAG
+```
+
+### Multiplatform images
+
+For a multiplatform image, e.g. to run on AWS Graviton on the ARM64 architecture, we need a Docker builder suitable for
+this.
+
+These commands will create or recreate a builder:
+
+```bash
+docker buildx rm sleeper || true
+docker buildx create --name sleeper --use
+```
+
+This also requires a slightly different command to build and push. This must be done as a single command as the builder
+does not automatically add the image to the Docker Engine image store:
+
+```bash
+TAG=$REPO_PREFIX/ingest:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/compaction-job-execution
+docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $SCRIPTS_DIR/docker/compaction-job-execution
+```
+
+### Lambdas
+
+For a lambda the jar must be copied into the build directory before the build. Provenance must also be disabled for the
+image to be supported by AWS Lambda. Here's an example:
+
+```bash
+TAG=$REPO_PREFIX/query-lambda:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/query-lambda
+cp $SCRIPTS_DIR/jars/query-$VERSION.jar $SCRIPTS_DIR/docker/lambda/lambda.jar
+docker build --provenance=false -t $TAG $SCRIPTS_DIR/docker/query-lambda
+docker push $TAG
+```

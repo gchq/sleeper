@@ -31,7 +31,8 @@ scripts and tools in the command line this gives you.
 ## Configuration
 
 Details of all Sleeper configuration properties are available here: [Properties](usage/property-master.md). These can be
-edited in the administration client detailed below, or set during deployment.
+edited in the administration client detailed below, or set during deployment. Also
+see [Sleeper instance configuration](deployment/instance-configuration.md).
 
 ## Operations on data
 

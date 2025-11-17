@@ -21,8 +21,6 @@ As part of `scripts/build/build.sh`, the jars are built and output to `scripts/j
 in separate directories for each Docker image under `scripts/docker`. You can also use
 our [publishing tools](../development/publishing.md) to prepare the artefacts.
 
-Details of Docker images to be uploaded can be found [here](/docs/deployment/docker-images.md).
-
 Here are some example commands to deploy the artefacts into repositories managed by the CDK (run from the root of the
 Sleeper repository):
 
@@ -30,6 +28,13 @@ Sleeper repository):
 cdk deploy -c id=my-deployment --app="java -cp ./scripts/jars/cdk-<version>.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ./scripts/deploy/uploadArtefacts.sh --id my-deployment
 ```
+
+If you prefer to implement this yourself, details of Docker images to be uploaded can be
+found [here](/docs/deployment/docker-images.md). That document includes details of how to build and push the images to
+ECR, as it is done by the automated scripts. You'll also need to create an S3 bucket for jars, and upload the contents
+of the `scripts/jars` directory to it. That directory is created during a build, or during installation of a published
+version. The jars S3 bucket needs to have versioning enabled so we can tie a CDK deployment to specific versions of each
+jar.
 
 ### Including Sleeper in your CDK app
 
@@ -62,4 +67,48 @@ SleeperInstance.createAsNestedStack(stack, "MyInstance",
         SleeperInstanceProps.builder(myInstanceConfig, s3Client, dynamoClient)
                 .deployPaused(false)
                 .build());
+```
+
+### Deploy with the CDK
+
+To deploy a Sleeper instance to AWS with the CDK, you need an [instance configuration](instance-configuration.md) and
+a [suitable environment](environment-setup.md). When those are ready, you can run the following commands, usually from
+an EC2 instance:
+
+```bash
+INSTANCE_PROPERTIES=/path/to/instance.properties
+SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
+VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
+cdk -a "java -cp $SCRIPTS_DIR$/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp" deploy -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true "*"
+```
+
+To avoid having to explicitly give approval for deploying all the stacks, you can add "--require-approval never" to the
+command.
+
+If you'd like to include data generation for system tests, use the system test CDK app instead.
+
+```bash
+INSTANCE_PROPERTIES=/path/to/instance.properties
+SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
+VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
+cdk -a "java -cp $SCRIPTS_DIR$/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp" deploy -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true "*"
+```
+
+#### Tear down
+
+If the artefacts and the Sleeper instance are each deployed in their own CDK app, with `SleeperArtefactsCdkApp` and
+`SleeperCdkApp`, you can tear down an instance of Sleeper either by deleting the CloudFormation stacks, or with the CDK
+CLI. You may need to delete the Sleeper instance before deleting the artefacts used to deploy it. Here's an example:
+
+```bash
+INSTANCE_PROPERTIES=/path/to/instance.properties
+ID=my-instance-id
+SCRIPTS_DIR=./scripts # From the root of the Sleeper Git repository
+VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
+
+cdk -a "java -cp $SCRIPTS_DIR/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" \
+destroy -c propertiesfile=${INSTANCE_PROPERTIES} -c validate=false "*"
+
+cdk -a "java -cp $SCRIPTS_DIR/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperArtefactsCdkApp" \
+destroy -c id=${ID} "*"
 ```
