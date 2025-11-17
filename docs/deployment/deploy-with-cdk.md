@@ -25,7 +25,7 @@ Here are some example commands to deploy the artefacts into repositories managed
 Sleeper repository):
 
 ```bash
-cdk deploy -c id=my-deployment --app="java -cp ./scripts/jars/cdk-<version>.jar sleeper.cdk.SleeperArtefactsCdkApp"
+cdk deploy --all -c id=my-deployment -a "java -cp ./scripts/jars/cdk-<version>.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ./scripts/deploy/uploadArtefacts.sh --id my-deployment
 ```
 
@@ -79,7 +79,7 @@ an EC2 instance:
 INSTANCE_PROPERTIES=/path/to/instance.properties
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk -a "java -cp $SCRIPTS_DIR$/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp" deploy -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true "*"
+cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true -a "java -cp $SCRIPTS_DIR$/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks, you can add "--require-approval never" to the
@@ -91,7 +91,7 @@ If you'd like to include data generation for system tests, use the system test C
 INSTANCE_PROPERTIES=/path/to/instance.properties
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk -a "java -cp $SCRIPTS_DIR$/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp" deploy -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true "*"
+cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true -a "java -cp $SCRIPTS_DIR$/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp"
 ```
 
 #### Tear down
@@ -106,9 +106,6 @@ ID=my-instance-id
 SCRIPTS_DIR=./scripts # From the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 
-cdk -a "java -cp $SCRIPTS_DIR/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" \
-destroy -c propertiesfile=${INSTANCE_PROPERTIES} -c validate=false "*"
-
-cdk -a "java -cp $SCRIPTS_DIR/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperArtefactsCdkApp" \
-destroy -c id=${ID} "*"
+cdk destroy --all -c propertiesfile=$INSTANCE_PROPERTIES -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp"
+cdk destroy --all -c id=$ID -a "java -cp $SCRIPTS_DIR/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ```
