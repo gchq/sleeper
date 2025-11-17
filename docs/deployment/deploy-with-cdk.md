@@ -79,7 +79,7 @@ an EC2 instance:
 INSTANCE_PROPERTIES=/path/to/instance.properties
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true -a "java -cp $SCRIPTS_DIR$/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks, you can add "--require-approval never" to the
@@ -91,7 +91,7 @@ If you'd like to include data generation for system tests, use the system test C
 INSTANCE_PROPERTIES=/path/to/instance.properties
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true -a "java -cp $SCRIPTS_DIR$/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp"
+cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp"
 ```
 
 #### Tear down
