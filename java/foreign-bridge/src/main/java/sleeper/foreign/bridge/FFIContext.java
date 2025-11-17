@@ -57,13 +57,37 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * load it into the JVM. It will then establish the Rust side of the context
      * to enable queries to be executed.
      *
-     * @param functions the native function interface
+     * @param functions            the native function interface
+     * @param NullPointerException if any parameter is null
      */
     public FFIContext(T functions) {
-        this.functions = Objects.requireNonNull(functions, "functions must not be null");
-        // Create Java interface to FFI lib
+        // Create Java interface to FFI library
         // Make FFI call to establish foreign context
-        this.context = Objects.requireNonNull(functions.create_context(), "context must not be null");
+        this(Objects.requireNonNull(functions, "functions must not be null"),
+                Objects.requireNonNull(functions.create_context(), "context must not be null"));
+    }
+
+    private FFIContext(T functions, Pointer context) {
+        this.functions = functions;
+        this.context = context;
+    }
+
+    /**
+     * Clones a context from an existing instance.
+     *
+     * This is useful for cloning a FFI context instance for use on another thread.
+     *
+     * @param  <T>                   the interface type of the functions to be called in this context
+     * @param  functions             the native function interface
+     * @param  context               the existing context to clone
+     * @return                       a new context
+     * @throws NullPointerException  if any parameter is null
+     * @throws IllegalStateException if <code>context</code> has already been closed
+     */
+    public static <T extends ForeignFunctions> FFIContext<T> cloneContextFrom(T functions, FFIContext<T> context) {
+        context.checkClosed();
+        return new FFIContext<T>(Objects.requireNonNull(functions, "functions must not be null"),
+                context.functions.clone_context(context.context));
     }
 
     /**
