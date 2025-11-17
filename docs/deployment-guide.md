@@ -121,7 +121,7 @@ that have changed, update all the docker images, and perform a `cdk deploy`.
 ./scripts/deploy/deployExisting.sh <instance-id>
 ```
 
-## Interacting with / editing an instance
+## Interacting with and editing an instance
 
 There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to adjust an
 existing instance.
@@ -130,18 +130,6 @@ See the [usage guide](usage-guide.md) for information on how to interact with th
 there can be used to adjust the configuration of an instance by setting instance properties.
 
 See the [tables documentation](usage/tables.md#addedit-a-table) for how to add/edit Sleeper tables.
-
-### Tear down
-
-If you deployed Sleeper with the scripts or the Sleeper CDK apps, and you still have the `generated` folder in the
-project root directory, you can run:
-
-```bash
-./scripts/deploy/tearDown.sh
-```
-
-If you have deployed multiple instances or you do not have the same `generated` folder that was created when it was
-deployed, you can pass the instance ID as an argument to this script.
 
 ### Pausing and restarting the system
 
@@ -159,3 +147,18 @@ it is paused.
 # Restart the System
 ./scripts/utility/restartSystem.sh ${INSTANCE_ID}
 ```
+
+### Tear down
+
+If you deployed Sleeper with the scripts or the Sleeper CDK apps, and you still have the `generated` folder in the
+project root directory, you can run:
+
+```bash
+./scripts/deploy/tearDown.sh
+```
+
+If you have deployed multiple instances or you do not have the same `generated` folder that was created when it was
+deployed, you can pass the instance ID as an argument to this script.
+
+You can also delete the CloudFormation stacks that were deployed by the CDK directly, as described
+in [Deployment with the CDK](deployment/deploy-with-cdk.md#tear-down).
