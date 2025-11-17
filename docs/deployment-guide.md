@@ -112,7 +112,7 @@ We have a version of this script that will either create or update an instance b
 ./scripts/deploy/deploy.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
 ```
 
-#### Update Existing Instance
+#### Update existing instance
 
 The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars
 that have changed, update all the docker images, and perform a `cdk deploy`.
@@ -148,7 +148,7 @@ there can be used to adjust the configuration of an instance by setting instance
 
 See the [tables documentation](usage/tables.md#addedit-a-table) for how to add/edit Sleeper tables.
 
-### Pausing and Restarting the System
+### Pausing and restarting the system
 
 If there is no ingest in progress, and all compactions have completed, then Sleeper will go to sleep, i.e. the only
 significant ongoing charges are for data storage. However, there are several lambda functions that are scheduled to
