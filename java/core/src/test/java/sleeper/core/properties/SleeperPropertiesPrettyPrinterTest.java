@@ -102,7 +102,7 @@ class SleeperPropertiesPrettyPrinterTest {
             String output = printEmptyInstanceProperties();
 
             // Then
-            assertThat(output.indexOf("sleeper.account"))
+            assertThat(output.indexOf("sleeper.endpoint.url"))
                     .isLessThan(output.indexOf("sleeper.log.retention.days"))
                     .isLessThan(output.indexOf("sleeper.vpc"));
             assertThat(output.indexOf("sleeper.ingest"))
@@ -118,6 +118,7 @@ class SleeperPropertiesPrettyPrinterTest {
             // When / Then
             assertThat(printInstanceProperties("sleeper.account=1234567890"))
                     .contains("# The AWS account number. This is the AWS account that the instance will be deployed to.\n" +
+                            "# (this property is system-defined and may not be edited)\n" +
                             "sleeper.account=1234567890\n");
         }
 
