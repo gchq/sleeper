@@ -106,6 +106,6 @@ ID=my-instance-id
 SCRIPTS_DIR=./scripts # From the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 
-cdk destroy --all -c propertiesfile=$INSTANCE_PROPERTIES -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp"
-cdk destroy --all -c id=$ID -a "java -cp $SCRIPTS_DIR/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperArtefactsCdkApp"
+cdk destroy --all -c propertiesfile=$INSTANCE_PROPERTIES -c validate=false -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk destroy --all -c id=$ID -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ```
