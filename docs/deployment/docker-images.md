@@ -65,8 +65,11 @@ and then run the Docker build for that directory. This results in a separate Doc
 
 ## Building and pushing
 
-We'll look at some examples of how to build and push these images. We'll start by creating some environment variables
-for convenience:
+See the [deployment guide](../deployment-guide.md) and [deployment with the CDK](./deploy-with-cdk.md) for information
+on available scripts and code to automate building of these images. This is done automatically in any of the deployment
+scripts. We'll look at some examples of how to match the behaviour of those scripts.
+
+We'll start by creating some environment variables for convenience:
 
 ```bash
 INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
