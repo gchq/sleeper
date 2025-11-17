@@ -3,7 +3,8 @@ Deployment with the CDK
 
 Sleeper is deployed with the AWS Cloud Development Kit (CDK). This can be done either with scripts as described in
 the [deployment guide](../deployment-guide.md#scripted-deployment), or by using the CDK directly. This document covers
-deployment using the CDK CLI directly.
+deployment using the CDK CLI directly. This requires configuration files to deploy in the structure described
+in [Sleeper instance configuration](./instance-configuration.md).
 
 ### Uploading artefacts to AWS
 
