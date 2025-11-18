@@ -8,7 +8,7 @@ The easiest way to build and deploy these images is with our automated scripts. 
 the [deployment guide](../deployment-guide.md) and [deployment with the CDK](./deploy-with-cdk.md) for more information.
 The information below may be useful if you prefer to replicate this yourself.
 
-## Docker Deployment Images
+## Docker deployment images
 
 A build of Sleeper outputs several directories under `scripts/docker`. Each is the directory to build a Docker image,
 with a Dockerfile. Some of these are used for parts of Sleeper that are always deployed from Docker images, and those
@@ -29,7 +29,7 @@ are listed here.
 | bulk-export-task-execution | BulkExportStack    | false         |
 
 
-## Lambda Deployment Images
+## Lambda images
 
 Most lambdas are usually deployed from a jar in the jars bucket. Some need to be deployed as a Docker container, as
 there's a limit on the size of a jar that can be deployed as a lambda. We also have an option to deploy all lambdas as
