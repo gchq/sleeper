@@ -97,10 +97,11 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
     /**
      * Adds a custom resource to stop tasks in an ECS cluster.
      *
-     * @param scope   the stack to add the custom resource to
-     * @param cluster the ECS cluster
+     * @param  scope   the stack to add the custom resource to
+     * @param  cluster the ECS cluster
+     * @return         the custom resource that will stop tasks when it is deleted
      */
-    public void addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
+    public CustomResource addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
 
         String id = cluster.getNode().getId() + "-AutoStop";
 
@@ -112,6 +113,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
 
         customResource.getNode().addDependency(cluster);
 
+        return customResource;
     }
 
 }
