@@ -49,16 +49,15 @@ public class SleeperArtefacts {
     /**
      * Declares a Sleeper artefacts deployment as a nested stack.
      *
-     * @param  scope          the scope to add the instance to, usually a Stack or NestedStack
-     * @param  id             the nested stack ID
-     * @param  stackProps     configuration of the nested stack
-     * @param  deploymentId   the artefacts deployment ID
-     * @param  extraEcrImages additional images requiring ECR repositories (usually an empty list)
-     * @return                a reference to interact with constructs in the Sleeper instance
+     * @param scope          the scope to add the instance to, usually a Stack or NestedStack
+     * @param id             the nested stack ID
+     * @param stackProps     configuration of the nested stack
+     * @param deploymentId   the artefacts deployment ID
+     * @param extraEcrImages additional images requiring ECR repositories (usually an empty list)
      */
-    public static SleeperArtefacts createAsNestedStack(Construct scope, String id, NestedStackProps stackProps, String deploymentId, List<String> extraEcrImages) {
+    public static void createAsNestedStack(Construct scope, String id, NestedStackProps stackProps, String deploymentId, List<String> extraEcrImages) {
         NestedStack stack = new NestedStack(scope, id, stackProps);
-        return create(stack, deploymentId, extraEcrImages);
+        create(stack, deploymentId, extraEcrImages);
     }
 
     /**
@@ -75,7 +74,7 @@ public class SleeperArtefacts {
         create(stack, deploymentId, extraEcrImages);
     }
 
-    private static SleeperArtefacts create(Construct scope, String deploymentId, List<String> extraEcrImages) {
+    private static void create(Construct scope, String deploymentId, List<String> extraEcrImages) {
         Bucket.Builder.create(scope, "JarsBucket")
                 .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -110,8 +109,6 @@ public class SleeperArtefacts {
         for (String imageName : extraEcrImages) {
             createRepository(scope, deploymentId, imageName);
         }
-
-        return new SleeperArtefacts();
     }
 
     private static Repository createRepository(Construct scope, String deploymentId, String imageName) {
