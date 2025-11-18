@@ -252,7 +252,7 @@
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.1</shade.plugin.version>
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
-        <jar.plugin.version>3.4.2</jar.plugin.version>
+        <jar.plugin.version>3.5.0</jar.plugin.version>
         <compiler.plugin.version>3.14.1</compiler.plugin.version>
         <enforcer.plugin.version>3.6.2</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
