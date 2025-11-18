@@ -67,7 +67,8 @@ tables/table-2/splits.txt
 Please ensure you predefine split points for each table. The `splits.txt` file sets the starting split points for
 partitions when the table is created. These are the boundaries where one partition ends and another begins.
 If you do not set split points, the table will be initialised with a single root partition. Note that pre-splitting a
-table is important for any large-scale use of Sleeper, and is essential for running bulk import jobs.
+table is important for any large-scale use of Sleeper, and is essential for running bulk import jobs. Also see
+the [tables documentation](../usage/tables.md#pre-split-partitions) for details.
 
 Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false when deploying then however you
 choose to tear down Sleeper later on you will also need to destroy some further S3 buckets and DynamoDB tables manually.
