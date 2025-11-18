@@ -23,7 +23,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 
 import java.util.Objects;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -67,9 +66,6 @@ public class PopulateInstanceProperties {
      */
     public InstanceProperties populate(InstanceProperties properties) {
         properties.set(ID, instanceId);
-        Properties tagsProperties = properties.getTagsProperties();
-        tagsProperties.setProperty("InstanceID", instanceId);
-        properties.loadTags(tagsProperties);
         properties.set(ACCOUNT, accountSupplier.get());
         properties.set(REGION, regionIdSupplier.get());
         properties.set(VPC_ID, vpcId);
