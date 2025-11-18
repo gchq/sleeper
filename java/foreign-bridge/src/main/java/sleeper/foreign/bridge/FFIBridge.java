@@ -29,10 +29,8 @@ import java.util.Map;
 
 /**
  * Provides low-level bridge functionality for calling foreign code.
- *
- * @see FFIBridge#createForeignInterface(Class)
  */
-public class FFIBridge {
+class FFIBridge {
     /**
      * Native library extraction object. This can extract native libraries from the classpath and
      * unpack them to a temporary directory.
@@ -94,6 +92,8 @@ public class FFIBridge {
      *
      * Upon successful load, the library name and extracted path are cached.
      *
+     * This should be called from inside a synchronised context.
+     *
      * @param  <T>                  the type of the interface to the native code
      * @param  clazz                the class of the interface to the native code
      * @param  libName              the library name to extract without platform prefixes
@@ -134,6 +134,8 @@ public class FFIBridge {
      *
      * If the requested library has already been successfully loaded and linked, then
      * the cached entry will be used. Otherwise, the library will be extracted from the classpath.
+     *
+     * This should be called from inside a synchronised context.
      *
      * @param  <T>                  the type of the interface to the native code
      * @param  clazz                the class of the interface to the native code

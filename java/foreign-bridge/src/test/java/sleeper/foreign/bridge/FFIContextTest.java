@@ -38,6 +38,11 @@ public class FFIContextTest {
 
             }
 
+            @Override
+            public Pointer clone_context(Pointer ctx) {
+                throw new UnsupportedOperationException("Unimplemented method 'clone_context'");
+            }
+
         });
 
         // When - Then

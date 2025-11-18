@@ -17,6 +17,7 @@ package sleeper.foreign.bridge;
 
 import jnr.ffi.Pointer;
 
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -55,39 +56,37 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      *
      * This will attempt to extract the native library from the JAR file and
      * load it into the JVM. It will then establish the Rust side of the context
-     * to enable queries to be executed.
+     * to enable FFI calls to be executed.
      *
-     * @param functions            the native function interface
-     * @param NullPointerException if any parameter is null
+     * @param  functionClass        the native function interface type
+     * @param  NullPointerException if any parameter is null
+     * @throws IOException          if the native library couldn't be loaded
      */
-    public FFIContext(T functions) {
-        // Create Java interface to FFI library
-        // Make FFI call to establish foreign context
-        this(Objects.requireNonNull(functions, "functions must not be null"),
-                Objects.requireNonNull(functions.create_context(), "context must not be null"));
-    }
-
-    private FFIContext(T functions, Pointer context) {
-        this.functions = functions;
-        this.context = context;
+    public FFIContext(Class<T> functionClass) throws IOException {
+        this.functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass must not be null"));
+        this.context = Objects.requireNonNull(functions.create_context(), "FFI create_context returned null");
     }
 
     /**
-     * Clones a context from an existing instance.
+     * Clones this context from an existing one.
      *
-     * This is useful for cloning a FFI context instance for use on another thread.
+     * This is useful for creating a new context instance from an existing one to use on a new thread.
      *
-     * @param  <T>                   the interface type of the functions to be called in this context
-     * @param  functions             the native function interface
-     * @param  context               the existing context to clone
-     * @return                       a new context
-     * @throws NullPointerException  if any parameter is null
-     * @throws IllegalStateException if <code>context</code> has already been closed
+     * @param  functionClass         the native function interface type
+     * @param  original              the context to clone
+     * @throws IOException           if the native library couldn't be loaded
+     * @throws IllegalStateException if the original context has already been closed
      */
-    public static <T extends ForeignFunctions> FFIContext<T> cloneContextFrom(T functions, FFIContext<T> context) {
-        context.checkClosed();
-        return new FFIContext<T>(Objects.requireNonNull(functions, "functions must not be null"),
-                context.functions.clone_context(context.context));
+    public FFIContext(Class<T> functionClass, FFIContext<T> original) throws IOException {
+        original.checkClosed();
+        this.functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass must not be null"));
+        this.context = Objects.requireNonNull(functions.clone_context(original.context), "FFI clone_context returned null");
+    }
+
+    /** Internal test constructor. */
+    FFIContext(T functions) {
+        this.functions = functions;
+        this.context = functions.create_context();
     }
 
     /**
