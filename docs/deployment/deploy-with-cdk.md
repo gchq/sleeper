@@ -39,8 +39,9 @@ Here's an example with a CDK command to create an artefacts deployment, and a ca
 to that deployment:
 
 ```bash
-cdk deploy --all -c id=my-deployment -a "java -cp ./scripts/jars/cdk-<version>.jar sleeper.cdk.SleeperArtefactsCdkApp"
-./scripts/deploy/uploadArtefacts.sh --id my-deployment
+DEPLOYMENT_ID=my-deployment
+cdk deploy --all -c id=$DEPLOYMENT_ID -a "java -cp ./scripts/jars/cdk-<version>.jar sleeper.cdk.SleeperArtefactsCdkApp"
+./scripts/deploy/uploadArtefacts.sh --id $DEPLOYMENT_ID
 ```
 
 #### Direct upload
