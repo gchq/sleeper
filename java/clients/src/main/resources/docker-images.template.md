@@ -1,7 +1,7 @@
 Docker images deployed in Sleeper
 =================================
 
-A deployment of Sleeper can include elements that run in Docker containers. This document lists the Docker images that
+A deployment of Sleeper includes components that run in Docker containers. This document lists the Docker images that
 are used in Sleeper, how to build them, and how to make them available for deployment.
 
 The easiest way to build and deploy these images is with our automated scripts. See
