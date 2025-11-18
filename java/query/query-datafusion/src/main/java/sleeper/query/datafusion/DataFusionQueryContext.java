@@ -26,7 +26,8 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import java.util.function.Supplier;
 
 /**
- * A wrapper for the DataFusion FFI context. Allows for fallback if DataFusion could not be loaded.
+ * A wrapper for the DataFusion FFI context. Allows for delayed failure if DataFusion could not be loaded, in case you
+ * only want to use the Java data engine.
  */
 public class DataFusionQueryContext implements AutoCloseable {
 
@@ -66,7 +67,8 @@ public class DataFusionQueryContext implements AutoCloseable {
 
     /**
      * Creates a DataFusion row retriever provider for use in queries. If the DataFusion functions could not be loaded,
-     * the returned row retriever will fail if it is used.
+     * the returned row retriever will fail if it is used. This is usually wrapped with an engine selector to allow
+     * switching between different data engines.
      *
      * @param  awsConfig a constructor for the AWS configuration
      * @return           the row retriever provider
