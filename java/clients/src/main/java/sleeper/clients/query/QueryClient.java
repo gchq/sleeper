@@ -52,6 +52,7 @@ import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -121,7 +122,7 @@ public class QueryClient extends QueryCommandLineClient {
         return cachedQueryExecutors.get(query.getTableName()).execute(query);
     }
 
-    public static void main(String[] args) throws ObjectFactoryException, InterruptedException {
+    public static void main(String[] args) throws ObjectFactoryException, InterruptedException, IOException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
@@ -131,7 +132,7 @@ public class QueryClient extends QueryCommandLineClient {
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
                 BufferAllocator allocator = new RootAllocator();
-                FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.getInstance())) {
+                FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.class)) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new QueryClient(
                     instanceProperties,
