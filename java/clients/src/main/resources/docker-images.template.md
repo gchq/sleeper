@@ -25,12 +25,14 @@ are listed here.
 
 ## Lambda Deployment Images
 
-These are all used with the Docker build directory that's output during a build of Sleeper at `scripts/docker/lambda`.
-Most lambdas are usually deployed from a jar in the jars bucket, but some need to be deployed as a Docker container, and
-we have the option to deploy all lambdas as Docker containers as well.
+Most lambdas are usually deployed from a jar in the jars bucket. Some need to be deployed as a Docker container, as
+there's a limit on the size of a jar that can be deployed as a lambda. We also have an option to deploy all lambdas as
+Docker containers as well.
 
-To build a Docker image for a lambda, we copy its jar file from `scripts/jars` to `scripts/docker/lambda/lambda.jar`,
-and then run the Docker build for that directory. This results in a separate Docker image for each lambda jar.
+All lambda Docker images are built from the Docker build directory that's output during a build of Sleeper
+at `scripts/docker/lambda`. To build a Docker image for a lambda, we copy its jar file from `scripts/jars`
+to `scripts/docker/lambda/lambda.jar`, and then run the Docker build for that directory. This results in a separate
+Docker image for each lambda jar.
 
 * Filename - This is the name of the jar file that's output by the build in `scripts/jars`. It includes the version
   number you've built, which we've included as a placeholder here.
