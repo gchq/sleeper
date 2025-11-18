@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.stack;
+package sleeper.cdk;
 
-import software.amazon.awscdk.App;
+import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.NestedStackProps;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -27,6 +28,7 @@ import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketAccessControl;
 import software.amazon.awscdk.services.s3.BucketEncryption;
+import software.constructs.Construct;
 
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
@@ -35,16 +37,46 @@ import sleeper.core.properties.model.SleeperArtefactsLocation;
 import java.util.List;
 
 /**
- * A CDK stack to deploy AWS resources that will hold artefacts used to deploy Sleeper. This should be deployed
- * separately before deploying a Sleeper instance. The artefacts need to be uploaded as a separate step after deploying
- * this stack, but before deploying a Sleeper instance that requires those artefacts.
+ * AWS resources that will hold artefacts used to deploy Sleeper. This should be deployed separately before deploying a
+ * Sleeper instance. The artefacts need to be uploaded as a separate step after deploying this, but before deploying a
+ * Sleeper instance that requires those artefacts.
  */
-public class SleeperArtefactsStack extends Stack {
+public class SleeperArtefacts {
 
-    public SleeperArtefactsStack(App app, String stackId, StackProps props, String deploymentId, List<String> extraEcrImages) {
-        super(app, stackId, props);
+    private SleeperArtefacts() {
+    }
 
-        Bucket.Builder.create(this, "JarsBucket")
+    /**
+     * Declares a Sleeper artefacts deployment as a nested stack.
+     *
+     * @param  scope          the scope to add the instance to, usually a Stack or NestedStack
+     * @param  id             the nested stack ID
+     * @param  stackProps     configuration of the nested stack
+     * @param  deploymentId   the artefacts deployment ID
+     * @param  extraEcrImages additional images requiring ECR repositories (usually an empty list)
+     * @return                a reference to interact with constructs in the Sleeper instance
+     */
+    public static SleeperArtefacts createAsNestedStack(Construct scope, String id, NestedStackProps stackProps, String deploymentId, List<String> extraEcrImages) {
+        NestedStack stack = new NestedStack(scope, id, stackProps);
+        return create(stack, deploymentId, extraEcrImages);
+    }
+
+    /**
+     * Declares a Sleeper artefacts deployment as a root level stack.
+     *
+     * @param scope          the scope to add the instance to, usually an App or Stage
+     * @param id             the stack ID
+     * @param stackProps     configuration of the stack
+     * @param deploymentId   the artefacts deployment ID
+     * @param extraEcrImages additional images requiring ECR repositories (usually an empty list)
+     */
+    public static void createAsRootStack(Construct scope, String id, StackProps stackProps, String deploymentId, List<String> extraEcrImages) {
+        Stack stack = new Stack(scope, id, stackProps);
+        create(stack, deploymentId, extraEcrImages);
+    }
+
+    private static SleeperArtefacts create(Construct scope, String deploymentId, List<String> extraEcrImages) {
+        Bucket.Builder.create(scope, "JarsBucket")
                 .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(deploymentId))
                 .encryption(BucketEncryption.S3_MANAGED)
                 .accessControl(BucketAccessControl.PRIVATE)
@@ -60,11 +92,11 @@ public class SleeperArtefactsStack extends Stack {
                 .build();
 
         for (LambdaJar jar : LambdaJar.all()) {
-            createRepository(deploymentId, jar.getImageName());
+            createRepository(scope, deploymentId, jar.getImageName());
         }
 
         for (DockerDeployment deployment : DockerDeployment.all()) {
-            Repository repository = createRepository(deploymentId, deployment.getDeploymentName());
+            Repository repository = createRepository(scope, deploymentId, deployment.getDeploymentName());
 
             if (deployment.isCreateEmrServerlessPolicy()) {
                 repository.addToResourcePolicy(PolicyStatement.Builder.create()
@@ -76,12 +108,14 @@ public class SleeperArtefactsStack extends Stack {
         }
 
         for (String imageName : extraEcrImages) {
-            createRepository(deploymentId, imageName);
+            createRepository(scope, deploymentId, imageName);
         }
+
+        return new SleeperArtefacts();
     }
 
-    private Repository createRepository(String deploymentId, String imageName) {
-        return Repository.Builder.create(this, "Repository-" + imageName)
+    private static Repository createRepository(Construct scope, String deploymentId, String imageName) {
+        return Repository.Builder.create(scope, "Repository-" + imageName)
                 .repositoryName(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(deploymentId) + "/" + imageName)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .emptyOnDelete(true)

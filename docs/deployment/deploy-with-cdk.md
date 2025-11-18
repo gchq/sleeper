@@ -7,10 +7,11 @@ deployment using the CDK CLI directly.
 
 ### Uploading artefacts to AWS
 
-Some jars and Docker images must be uploaded to AWS before you can deploy an instance of Sleeper. We have a CDK nested
-stack `SleeperArtefactsStack` which creates an S3 bucket and ECR repositories to hold these artefacts, but does not
-upload the artefacts. You can use our tools to upload the artefacts as a separate step, or implement your own way to do
-this that may be specific to your Maven and Docker repositories.
+Some jars and Docker images must be uploaded to AWS before you can deploy an instance of Sleeper. We have a CDK app
+`SleeperArtefactsCdkApp` which creates an S3 bucket and ECR repositories to hold these artefacts, but does not
+upload the artefacts. You can also include this in your own CDK app with `SleeperArtefacts`. You can use our tools to
+upload the artefacts as a separate step, or implement your own way to do this that may be specific to your Maven and
+Docker repositories.
 
 The scripted deployment uploads the jars from the local `scripts/jars` directory within the Git repository. The Docker
 images are either built from the local `scripts/docker` directory or pulled from a remote repository if that is
@@ -24,20 +25,36 @@ our [publishing tools](../development/publishing.md) to prepare the artefacts.
 It's important to upload artefacts from within AWS to avoid lengthy uploads into AWS. Usually this is done from an EC2
 instance.
 
-Here are some example commands to deploy the artefacts into repositories managed by the CDK (run from the root of the
-Sleeper repository):
+#### `uploadArtefacts.sh`
+
+This script can upload artefacts to an existing CDK deployment. You can either pass in the deployment ID that you used
+for the CDK deployment, or pass in an instance properties file for an instance that is configured to use that artefacts
+deployment. In the latter case, Docker images will only be uploaded if they are required with your instance
+configuration. Run `uploadArtefacts.sh --help` for details.
+
+By default, the artefacts deployment ID should match the instance ID. Alternatively, you can set the deployment ID in
+the instance property [`sleeper.artefacts.deployment`](../usage/properties/instance/user/common.md).
+
+Here's an example with a CDK command to create an artefacts deployment, and a call to the script to upload all artefacts
+to that deployment:
 
 ```bash
 cdk deploy --all -c id=my-deployment -a "java -cp ./scripts/jars/cdk-<version>.jar sleeper.cdk.SleeperArtefactsCdkApp"
 ./scripts/deploy/uploadArtefacts.sh --id my-deployment
 ```
 
+#### Direct upload
+
 If you prefer to implement this yourself, details of Docker images to be uploaded can be
 found [here](/docs/deployment/docker-images.md). That document includes details of how to build and push the images to
-ECR, as it is done by the automated scripts. You'll also need to create an S3 bucket for jars, and upload the contents
-of the `scripts/jars` directory to it. That directory is created during a build, or during installation of a published
-version. The jars S3 bucket needs to have versioning enabled so we can tie a CDK deployment to specific versions of each
-jar.
+ECR, as it is done by the automated scripts.
+
+You'll also need to create an S3 bucket for jars, and upload the contents of the `scripts/jars` directory to it. That
+directory is created during a build, or during installation of a published version. The jars S3 bucket needs to have
+versioning enabled so we can tie a CDK deployment to specific versions of each jar.
+
+When not using an artefacts CDK deployment, you can set the instance properties `sleeper.jars.bucket`
+and `sleeper.ecr.repository.prefix` instead of `sleeper.artefacts.deployment`.
 
 ### Including Sleeper in your CDK app
 
