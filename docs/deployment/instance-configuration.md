@@ -42,6 +42,13 @@ tables.
 Each table will also need a `schema.json` file next to the `table.properties` file.
 See [create a schema](../usage/schema.md) for how to create a schema.
 
+The `splits.txt` file defines initial split points for the table's partition tree.
+See [tables](../usage/tables.md#pre-split-partitions) for how to create this.
+
+At time of writing, the `splits.txt` file needs to be referenced from the `table.properties` file in
+the `sleeper.table.splits.file` property, as an absolute path. This will change in a future version of Sleeper. See
+issue https://github.com/gchq/sleeper/issues/583.
+
 Here's a full example with two tables:
 
 ```
@@ -57,14 +64,10 @@ tables/table-2/splits.txt
 
 ### Configuring an instance
 
-Please ensure you predefine split points for each table. If you create a `splits.txt` file, this sets the starting split
-points for partitions when the table is created. These are the boundaries where one partition ends and another begins.
+Please ensure you predefine split points for each table. The `splits.txt` file sets the starting split points for
+partitions when the table is created. These are the boundaries where one partition ends and another begins.
 If you do not set split points, the table will be initialised with a single root partition. Note that pre-splitting a
 table is important for any large-scale use of Sleeper, and is essential for running bulk import jobs.
-See [tables](../usage/tables.md#pre-split-partitions) for more information on how to create this file.
-
-At time of writing, the `splits.txt` file needs to be referenced from the `table.properties` file in
-the `sleeper.table.splits.file` property, as an absolute path. This will change in a future version of Sleeper.
 
 Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false when deploying then however you
 choose to tear down Sleeper later on you will also need to destroy some further S3 buckets and DynamoDB tables manually.
