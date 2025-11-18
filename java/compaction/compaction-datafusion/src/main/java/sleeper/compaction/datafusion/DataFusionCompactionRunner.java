@@ -65,23 +65,24 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionCompactionFunctions.INSTANCE);
+        try (FFIContext<DataFusionCompactionFunctions> context = new FFIContext<>(DataFusionCompactionFunctions.class)) {
+            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
 
-        FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+            FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+            RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
-        RowsProcessed result = invokeDataFusion(job, params, runtime);
-
-        if (result.getRowsWritten() < 1) {
-            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                    new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
-                // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
-                // See the test should_merge_empty_files in compaction_test.rs
+            if (result.getRowsWritten() < 1) {
+                try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                        new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
+                    // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
+                    // See the test should_merge_empty_files in compaction_test.rs
+                }
             }
-        }
 
-        LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
-                LocalDateTime.now());
-        return result;
+            LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
+                    LocalDateTime.now());
+            return result;
+        }
     }
 
     /**
@@ -136,21 +137,21 @@ public class DataFusionCompactionRunner implements CompactionRunner {
      * @param  job              the compaction job
      * @param  compactionParams the compaction input parameters
      * @param  runtime          the JNR FFI runtime object
+     * @param  context          the open context for FFI calls
      * @return                  rows read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    private static RowsProcessed invokeDataFusion(CompactionJob job,
-            FFICommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+    private static RowsProcessed invokeDataFusion(CompactionJob job, FFICommonConfig compactionParams,
+            jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
-        try (FFIContext<DataFusionCompactionFunctions> context = new FFIContext<>(DataFusionCompactionFunctions.INSTANCE)) {
-            int result = context.getFunctions().compact(context, compactionParams, compactionData);
-            // Check result
-            if (result != 0) {
-                LOGGER.error("DataFusion compaction failed, return code: {}", result);
-                throw new IOException("DataFusion compaction failed with return code " + result);
-            }
+
+        int result = context.getFunctions().compact(context, compactionParams, compactionData);
+        // Check result
+        if (result != 0) {
+            LOGGER.error("DataFusion compaction failed, return code: {}", result);
+            throw new IOException("DataFusion compaction failed with return code " + result);
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();

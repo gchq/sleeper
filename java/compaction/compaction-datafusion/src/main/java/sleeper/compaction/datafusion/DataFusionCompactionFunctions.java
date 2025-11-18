@@ -29,8 +29,6 @@ import sleeper.foreign.datafusion.FFICommonConfig;
  */
 public interface DataFusionCompactionFunctions extends ForeignFunctions {
 
-    DataFusionCompactionFunctions INSTANCE = DataFusionCompactionFunctionsImpl.create();
-
     /**
      * Invokes a native compaction.
      *
