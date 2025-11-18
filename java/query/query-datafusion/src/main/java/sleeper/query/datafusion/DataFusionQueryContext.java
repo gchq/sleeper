@@ -43,7 +43,7 @@ public class DataFusionQueryContext implements AutoCloseable {
     /**
      * Creates the DataFusion FFI context and Arrow allocator if the DataFusion functions were loaded. The FFI context
      * and Arrow allocator will be closed when the query context is closed. If the DataFusion functions were not loaded,
-     * this allows falling back to the Java implementation.
+     * this avoids immediate failure in case you only want to use the Java data engine.
      *
      * @param  allocator a constructor for the Arrow allocator
      * @return           the context
@@ -55,7 +55,8 @@ public class DataFusionQueryContext implements AutoCloseable {
     }
 
     /**
-     * Creates a context where no DataFusion functions are used. Will always fall back to the Java implementation.
+     * Creates a context where no DataFusion functions are used. Supports cases where an instance of this class is
+     * required but we will always use the Java data engine.
      *
      * @return the context
      */
