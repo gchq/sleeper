@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.suites.parallel;
+package sleeper.systemtest.suite.suites;
 
 import org.junit.platform.suite.api.IncludeTags;
 
 import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
 @SystemTestSuite
-@IncludeTags("slow1")
-public class SlowSystemTestSuite1 {
+@IncludeTags("expensive1")
+public class ExpensiveSystemTestSuite1 {
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.suites.parallel;
+package sleeper.systemtest.suite.suites;
 
 import org.junit.platform.suite.api.IncludeTags;
 

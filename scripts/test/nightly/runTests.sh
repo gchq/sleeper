@@ -41,16 +41,16 @@ if [ "$MAIN_SUITE_NAME" == "performance" ] || [ "$MAIN_SUITE_NAME" == "functiona
   shift
 elif [ "$1" == "--main" ]; then
   MAIN_SUITE_NAME=custom
-  MAIN_SUITE_PARAMS=("$2")
+  SUITE_PARAMS=("$2")
   shift 2
 else
   MAIN_SUITE_NAME=custom
-  MAIN_SUITE_PARAMS=("$@")
+  SUITE_PARAMS=("$@")
 fi
 
 echo "DEPLOY_ID=$DEPLOY_ID"
 echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
-echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
+echo "SUITE_PARAMS=(${SUITE_PARAMS[*]})"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
@@ -168,7 +168,7 @@ elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &> "$OUTPUT_DIR/quick.suite.log" &
     wait
 else
-    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${SUITE_PARAMS[@]}"
 fi
 
 echo "[$(time_str)] Uploading test output"
