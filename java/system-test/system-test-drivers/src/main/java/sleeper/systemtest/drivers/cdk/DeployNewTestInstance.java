@@ -65,8 +65,7 @@ public class DeployNewTestInstance {
             Path splitPointsFileForTemplate = optionalArgument(args, 6).map(Path::of).orElse(null);
             DeployNewInstance.builder().scriptsDirectory(scriptsDirectory)
                     .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingTables(
-                            propertiesFile, populateInstanceProperties,
-                            templates(scriptsDirectory, splitPointsFileForTemplate)))
+                            propertiesFile, templates(scriptsDirectory, splitPointsFileForTemplate)))
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdk.Type.SYSTEM_TEST)
