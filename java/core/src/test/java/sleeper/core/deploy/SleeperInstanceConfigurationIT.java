@@ -206,7 +206,7 @@ public class SleeperInstanceConfigurationIT {
             Files.writeString(
                     propertiesDir.resolve("table.properties"),
                     "sleeper.table.name=some-table");
-            SleeperInstanceConfiguration fromTemplates = SleeperInstanceConfiguration.builder()
+            SleeperInstanceConfigurationFromTemplates fromTemplates = SleeperInstanceConfigurationFromTemplates.builder()
                     .templatesDir(templatesDir)
                     .tableNameForTemplate("template-table").build();
 
@@ -229,7 +229,7 @@ public class SleeperInstanceConfigurationIT {
             Path instancePropertiesPath = Files.writeString(
                     propertiesDir.resolve("instance.properties"),
                     "sleeper.filesystem=test://");
-            SleeperInstanceConfiguration fromTemplates = SleeperInstanceConfiguration.builder()
+            SleeperInstanceConfigurationFromTemplates fromTemplates = SleeperInstanceConfigurationFromTemplates.builder()
                     .templatesDir(templatesDir)
                     .tableNameForTemplate("template-table").build();
 
