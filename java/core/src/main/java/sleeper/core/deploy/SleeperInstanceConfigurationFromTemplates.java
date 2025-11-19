@@ -33,12 +33,12 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 /**
  * Settings to create a configuration for a Sleeper instance from templates.
  */
-public class DeployInstanceConfigurationFromTemplates {
+public class SleeperInstanceConfigurationFromTemplates {
     private final Path templatesDir;
     private final String tableNameForTemplate;
     private final Path splitPointsFileForTemplate;
 
-    private DeployInstanceConfigurationFromTemplates(Builder builder) {
+    private SleeperInstanceConfigurationFromTemplates(Builder builder) {
         templatesDir = builder.templatesDir;
         tableNameForTemplate = builder.tableNameForTemplate;
         splitPointsFileForTemplate = builder.splitPointsFileForTemplate;
@@ -53,9 +53,9 @@ public class DeployInstanceConfigurationFromTemplates {
      *
      * @return the configuration
      */
-    public DeployInstanceConfiguration load() {
+    public SleeperInstanceConfiguration load() {
         InstanceProperties instanceProperties = loadInstanceProperties(templatesDir);
-        return DeployInstanceConfiguration.builder()
+        return SleeperInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(loadTableProperties(instanceProperties))
                 .build();
@@ -152,8 +152,8 @@ public class DeployInstanceConfigurationFromTemplates {
             return this;
         }
 
-        public DeployInstanceConfigurationFromTemplates build() {
-            return new DeployInstanceConfigurationFromTemplates(this);
+        public SleeperInstanceConfigurationFromTemplates build() {
+            return new SleeperInstanceConfigurationFromTemplates(this);
         }
     }
 }

@@ -26,9 +26,9 @@ import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.core.deploy.DeployInstanceConfiguration;
-import sleeper.core.deploy.DeployInstanceConfigurationFromTemplates;
 import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfigurationFromTemplates;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -64,7 +64,7 @@ public class DeployNewTestInstance {
             boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
             Path splitPointsFileForTemplate = optionalArgument(args, 6).map(Path::of).orElse(null);
             DeployNewInstance.builder().scriptsDirectory(scriptsDirectory)
-                    .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingTables(
+                    .deployInstanceConfiguration(SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
                             propertiesFile, populateInstanceProperties,
                             templates(scriptsDirectory, splitPointsFileForTemplate)))
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
@@ -74,8 +74,8 @@ public class DeployNewTestInstance {
         }
     }
 
-    private static DeployInstanceConfigurationFromTemplates templates(Path scriptsDir, Path splitPointsFileForTemplate) {
-        return DeployInstanceConfigurationFromTemplates.builder()
+    private static SleeperInstanceConfigurationFromTemplates templates(Path scriptsDir, Path splitPointsFileForTemplate) {
+        return SleeperInstanceConfigurationFromTemplates.builder()
                 .templatesDir(scriptsDir.resolve("templates"))
                 .tableNameForTemplate("system-test")
                 .splitPointsFileForTemplate(splitPointsFileForTemplate)

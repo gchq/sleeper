@@ -16,14 +16,11 @@
 set -e
 unset CDPATH
 
-if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <repository url> <m2 settings server ID>"
-  exit 1
-fi
-echo "Ensure you've ran the scripts/build/build.sh script before running this or it will fail to find the jars."
+SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd "../" && pwd)
 
-SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
-JARS_DIR="${SCRIPTS_DIR}/jars/"
-VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+TEMPLATES_DIR=${SCRIPTS_DIR}/templates
+JARS_DIR=${SCRIPTS_DIR}/jars
 
-java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.jar.PublishJarsToRepo "${JARS_DIR}" "$@"
+VERSION=$(cat "${TEMPLATES_DIR}/version.txt")
+
+java -cp "${JARS_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.deploy.UploadArtefacts "${SCRIPTS_DIR}" "$@"

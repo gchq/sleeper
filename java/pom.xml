@@ -112,7 +112,7 @@
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
         <xz.version>1.10</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
-        <okhttp3.version>5.3.0</okhttp3.version>
+        <okhttp3.version>5.3.2</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
@@ -122,7 +122,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
         -->
-        <okio.version>3.16.2</okio.version>
+        <okio.version>3.16.4</okio.version>
         <!--
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
@@ -131,7 +131,7 @@
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.21</logback.version>
-        <aws-java-sdk-v2.version>2.38.6</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.38.9</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -150,7 +150,7 @@
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.8.7</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.7.0</aws-lambda-powertools.version>
-        <commons-lang3.version>3.19.0</commons-lang3.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.20.0</commons-codec.version>
         <commons-io.version>2.21.0</commons-io.version>
         <commons-configuration.version>2.12.0</commons-configuration.version>
@@ -186,7 +186,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.44.0</google.errorprone.version>
-        <cdk.version>2.224.0</cdk.version>
+        <cdk.version>2.225.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.3</constructs.version>
         <jsii.version>1.119.0</jsii.version>
@@ -224,14 +224,14 @@
         <junit.version>6.0.1</junit.version>
         <mockito.version>5.20.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <wiremock.version>3.13.1</wiremock.version>
+        <wiremock.version>3.13.2</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
         <assertj.version>3.27.6</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>25.7.0</approvaltests.version>
         <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
-        <jsonunit.version>5.0.0</jsonunit.version>
+        <jsonunit.version>5.1.0</jsonunit.version>
         <checkstyle.version>12.1.2</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
@@ -252,7 +252,7 @@
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.1</shade.plugin.version>
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
-        <jar.plugin.version>3.4.2</jar.plugin.version>
+        <jar.plugin.version>3.5.0</jar.plugin.version>
         <compiler.plugin.version>3.14.1</compiler.plugin.version>
         <enforcer.plugin.version>3.6.2</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>

@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class CommandArgumentsTest {
 
     List<String> positionalArguments;
+    List<String> systemArguments;
     List<CommandOption> options;
     String helpSummary;
 
@@ -128,6 +129,30 @@ public class CommandArgumentsTest {
         @Test
         void shouldReadFlagIsSetToFalseIgnoringCase() {
             assertThat(parse("--flag=fAlSe").isFlagSet("flag")).isFalse();
+        }
+
+        @Test
+        void shouldReadFlagIsUnsetDefaultingToTrue() {
+            assertThat(parse().isFlagSetWithDefault("flag", true))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsUnsetDefaultingToFalse() {
+            assertThat(parse().isFlagSetWithDefault("flag", false))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldReadFlagIsSetDefaultingToFalse() {
+            assertThat(parse("--flag").isFlagSetWithDefault("flag", false))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldReadFlagIsSetToFalseDefaultingToTrue() {
+            assertThat(parse("--flag=false").isFlagSetWithDefault("flag", true))
+                    .isFalse();
         }
 
         @Test
@@ -274,6 +299,71 @@ public class CommandArgumentsTest {
             assertThatThrownBy(() -> parse("-"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Incomplete flag option: -");
+        }
+    }
+
+    @Nested
+    @DisplayName("System arguments")
+    class SystemArguments {
+
+        @Test
+        void shouldReadSystemArgument() {
+            // Given
+            setPositionalArguments("a");
+            setSystemArguments("a");
+
+            // When
+            CommandArguments arguments = parse("system");
+
+            // Then
+            assertThat(arguments.getString("a")).isEqualTo("system");
+        }
+
+        @Test
+        void shouldExcludeSystemArgumentFromUsage() {
+            // Given
+            setPositionalArguments("system", "main");
+            setSystemArguments("system");
+
+            // When / Then
+            assertThat(usageMessage()).isEqualTo("""
+                    Usage: <main>
+                    Available options: --help""");
+        }
+
+        @Test
+        void shouldShowUsageWhenOnlyArgumentIsSystemArgument() {
+            // Given
+            setPositionalArguments("system");
+            setSystemArguments("system");
+
+            // When / Then
+            assertThat(usageMessage()).isEqualTo("Available options: --help");
+        }
+
+        @Test
+        void shouldAllowSettingOnlySystemArguments() {
+            // Given
+            setSystemArguments("system");
+
+            // When
+            CommandArguments arguments = parse("value");
+
+            // Then
+            assertThat(arguments.getString("system")).isEqualTo("value");
+            assertThat(usageMessage()).isEqualTo("Available options: --help");
+        }
+
+        @Test
+        void shouldFailWhenSystemArgumentIsNotSpecifiedInPositionalArguments() {
+            // Given
+            setPositionalArguments("a", "b");
+            setSystemArguments("c");
+
+            // When / Then
+            assertThatThrownBy(() -> usage())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("System arguments should be included as positional arguments: [c]");
         }
     }
 
@@ -521,6 +611,10 @@ public class CommandArgumentsTest {
         positionalArguments = List.of(names);
     }
 
+    private void setSystemArguments(String... names) {
+        systemArguments = List.of(names);
+    }
+
     private void setOptions(CommandOption... options) {
         this.options = List.of(options);
     }
@@ -544,6 +638,7 @@ public class CommandArgumentsTest {
     private CommandLineUsage usage() {
         return CommandLineUsage.builder()
                 .positionalArguments(positionalArguments)
+                .systemArguments(systemArguments)
                 .options(options)
                 .helpSummary(helpSummary)
                 .build();
