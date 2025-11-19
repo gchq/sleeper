@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
@@ -51,7 +51,7 @@ public class InMemorySleeperInstanceDriver implements SleeperInstanceDriver {
     }
 
     @Override
-    public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
+    public boolean deployInstanceIfNotPresent(String instanceId, SleeperInstanceConfiguration deployConfig) {
         if (instancePropertiesById.containsKey(instanceId)) {
             return false;
         }

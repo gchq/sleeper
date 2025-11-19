@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.local.LoadLocalProperties;
@@ -163,7 +163,7 @@ public class SystemTestParameters {
         return tableProperties;
     }
 
-    public void setRequiredProperties(DeployInstanceConfiguration deployConfig) {
+    public void setRequiredProperties(SleeperInstanceConfiguration deployConfig) {
         InstanceProperties properties = deployConfig.getInstanceProperties();
         properties.set(ARTEFACTS_DEPLOYMENT_ID, getArtefactsDeploymentId());
         if (standalonePropertiesTemplate.isSet(SYSTEM_TEST_ECS_SECURITY_GROUPS)) {

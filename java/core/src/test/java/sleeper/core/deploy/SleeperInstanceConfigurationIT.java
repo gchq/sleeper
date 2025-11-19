@@ -41,7 +41,7 @@ import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
-public class DeployInstanceConfigurationIT {
+public class SleeperInstanceConfigurationIT {
     @TempDir
     private Path templatesDir;
     @TempDir
@@ -57,7 +57,7 @@ public class DeployInstanceConfigurationIT {
             writeTemplates();
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = fromTemplatesDirWithTable("set-table");
+            SleeperInstanceConfiguration instanceConfiguration = fromTemplatesDirWithTable("set-table");
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
@@ -68,7 +68,7 @@ public class DeployInstanceConfigurationIT {
             expectedTableProperties.setNumber(ROW_GROUP_SIZE, 123);
             expectedTableProperties.setSchema(createSchemaWithKey("template-key"));
             assertThat(instanceConfiguration)
-                    .isEqualTo(DeployInstanceConfiguration.builder()
+                    .isEqualTo(SleeperInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
                             .tableProperties(List.of(expectedTableProperties))
                             .build());
@@ -81,7 +81,7 @@ public class DeployInstanceConfigurationIT {
             Path splitPointsFile = Files.writeString(propertiesDir.resolve("splits.txt"), "abc\ndef");
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = fromTemplatesDirWithTableAndSplits("test-table", splitPointsFile);
+            SleeperInstanceConfiguration instanceConfiguration = fromTemplatesDirWithTableAndSplits("test-table", splitPointsFile);
 
             // Then
             assertThat(instanceConfiguration.getTableProperties())
@@ -114,7 +114,7 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(propertiesDir.resolve("schema.json"), new SchemaSerDe().toJson(createSchemaWithKey("key")));
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromLocalConfiguration(
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(
                     propertiesDir.resolve("instance.properties"));
 
             // Then
@@ -125,7 +125,7 @@ public class DeployInstanceConfigurationIT {
             expectedTableProperties.set(TABLE_NAME, "test-table");
             expectedTableProperties.setSchema(createSchemaWithKey("key"));
             assertThat(instanceConfiguration)
-                    .isEqualTo(DeployInstanceConfiguration.builder()
+                    .isEqualTo(SleeperInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
                             .tableProperties(expectedTableProperties)
                             .build());
@@ -137,14 +137,14 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(propertiesDir.resolve("instance.properties"), "sleeper.id=test-instance");
 
             // When
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromLocalConfiguration(
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(
                     propertiesDir.resolve("instance.properties"));
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(ID, "test-instance");
             assertThat(instanceConfiguration)
-                    .isEqualTo(DeployInstanceConfiguration.builder()
+                    .isEqualTo(SleeperInstanceConfiguration.builder()
                             .instanceProperties(expectedInstanceProperties)
                             .tableProperties(List.of())
                             .build());
@@ -164,13 +164,13 @@ public class DeployInstanceConfigurationIT {
                     "sleeper.filesystem=test://");
 
             // When
-            DeployInstanceConfiguration config = DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
+            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
                     instancePropertiesPath, templatesDir);
 
             // Then
             InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(FILE_SYSTEM, "test://");
-            assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, List.of()));
+            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, List.of()));
         }
 
         @Test
@@ -178,7 +178,7 @@ public class DeployInstanceConfigurationIT {
             // Given
             writeTemplates();
             // When
-            DeployInstanceConfiguration config = DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
+            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
                     null, templatesDir);
 
             // Then
@@ -188,7 +188,7 @@ public class DeployInstanceConfigurationIT {
             tags.put("Project", "TemplateProject");
             expectedInstanceProperties.setTags(tags);
             expectedInstanceProperties.set(FILE_SYSTEM, "test://");
-            assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, List.of()));
+            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, List.of()));
         }
     }
 
@@ -206,12 +206,12 @@ public class DeployInstanceConfigurationIT {
             Files.writeString(
                     propertiesDir.resolve("table.properties"),
                     "sleeper.table.name=some-table");
-            DeployInstanceConfigurationFromTemplates fromTemplates = DeployInstanceConfigurationFromTemplates.builder()
+            SleeperInstanceConfiguration fromTemplates = SleeperInstanceConfiguration.builder()
                     .templatesDir(templatesDir)
                     .tableNameForTemplate("template-table").build();
 
             // When
-            DeployInstanceConfiguration config = DeployInstanceConfiguration.forNewInstanceDefaultingTables(
+            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
                     instancePropertiesPath, fromTemplates);
 
             // Then
@@ -219,7 +219,7 @@ public class DeployInstanceConfigurationIT {
             expectedInstanceProperties.set(FILE_SYSTEM, "test://");
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "some-table");
-            assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
+            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
         }
 
         @Test
@@ -229,12 +229,12 @@ public class DeployInstanceConfigurationIT {
             Path instancePropertiesPath = Files.writeString(
                     propertiesDir.resolve("instance.properties"),
                     "sleeper.filesystem=test://");
-            DeployInstanceConfigurationFromTemplates fromTemplates = DeployInstanceConfigurationFromTemplates.builder()
+            SleeperInstanceConfiguration fromTemplates = SleeperInstanceConfiguration.builder()
                     .templatesDir(templatesDir)
                     .tableNameForTemplate("template-table").build();
 
             // When
-            DeployInstanceConfiguration config = DeployInstanceConfiguration.forNewInstanceDefaultingTables(
+            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
                     instancePropertiesPath, fromTemplates);
 
             // Then
@@ -244,7 +244,7 @@ public class DeployInstanceConfigurationIT {
             expectedTableProperties.set(TABLE_NAME, "template-table");
             expectedTableProperties.setNumber(ROW_GROUP_SIZE, 123);
             expectedTableProperties.setSchema(createSchemaWithKey("template-key"));
-            assertThat(config).isEqualTo(new DeployInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
+            assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, expectedTableProperties));
         }
     }
 
@@ -256,15 +256,15 @@ public class DeployInstanceConfigurationIT {
         Files.writeString(templatesDir.resolve("schema.template"), new SchemaSerDe().toJson(createSchemaWithKey("template-key")));
     }
 
-    private DeployInstanceConfiguration fromTemplatesDirWithTable(String tableName) {
-        return DeployInstanceConfigurationFromTemplates.builder()
+    private SleeperInstanceConfiguration fromTemplatesDirWithTable(String tableName) {
+        return SleeperInstanceConfigurationFromTemplates.builder()
                 .templatesDir(templatesDir)
                 .tableNameForTemplate(tableName)
                 .build().load();
     }
 
-    private DeployInstanceConfiguration fromTemplatesDirWithTableAndSplits(String tableName, Path splitPointsFile) {
-        return DeployInstanceConfigurationFromTemplates.builder()
+    private SleeperInstanceConfiguration fromTemplatesDirWithTableAndSplits(String tableName, Path splitPointsFile) {
+        return SleeperInstanceConfigurationFromTemplates.builder()
                 .templatesDir(templatesDir)
                 .tableNameForTemplate(tableName)
                 .splitPointsFileForTemplate(splitPointsFile)

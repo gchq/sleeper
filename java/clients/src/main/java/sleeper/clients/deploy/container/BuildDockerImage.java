@@ -42,6 +42,7 @@ public class BuildDockerImage {
     public static void main(String[] rawArgs) throws IOException, InterruptedException {
         CommandLineUsage usage = CommandLineUsage.builder()
                 .positionalArguments(List.of("scripts directory", "image name", "tag"))
+                .systemArguments(List.of("scripts directory"))
                 .options(List.of(CommandOption.longFlag("lambda")))
                 .helpSummary("Available Docker deployment image names: " +
                         DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
