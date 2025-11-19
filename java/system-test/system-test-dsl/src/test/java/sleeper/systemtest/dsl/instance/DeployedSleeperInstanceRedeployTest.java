@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.testutil.InMemoryTestInstance;
@@ -131,7 +131,7 @@ public class DeployedSleeperInstanceRedeployTest {
                 .populate(properties);
     }
 
-    private DeployInstanceConfiguration buildDeployConfig() {
+    private SleeperInstanceConfiguration buildDeployConfig() {
         return instanceConfig.buildDeployConfig(UNIT_TEST_PARAMETERS, systemTestProperties);
     }
 

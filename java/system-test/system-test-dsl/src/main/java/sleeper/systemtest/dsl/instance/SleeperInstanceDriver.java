@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
@@ -28,7 +28,7 @@ public interface SleeperInstanceDriver {
 
     void saveInstanceProperties(InstanceProperties instanceProperties);
 
-    boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig);
+    boolean deployInstanceIfNotPresent(String instanceId, SleeperInstanceConfiguration deployConfig);
 
     void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties);
 

@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
@@ -38,12 +38,12 @@ import static sleeper.core.properties.instance.CommonProperty.TAGS;
 public final class DeployedSleeperInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployedSleeperInstance.class);
 
-    private final DeployInstanceConfiguration configuration;
+    private final SleeperInstanceConfiguration configuration;
     private final InstanceProperties instanceProperties;
     private final SystemTestDrivers instanceAdminDrivers;
 
     private DeployedSleeperInstance(
-            DeployInstanceConfiguration configuration, InstanceProperties instanceProperties,
+            SleeperInstanceConfiguration configuration, InstanceProperties instanceProperties,
             SystemTestDrivers instanceAdminDrivers) {
         this.configuration = configuration;
         this.instanceProperties = instanceProperties;
@@ -54,7 +54,7 @@ public final class DeployedSleeperInstance {
             String instanceId, SystemTestInstanceConfiguration configuration,
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
             SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver, ScheduleRulesDriver schedulesDriver) {
-        DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest.getProperties());
+        SleeperInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest.getProperties());
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, deployConfig);
 
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -121,7 +121,7 @@ public final class DeployedSleeperInstance {
         return redeployNeeded;
     }
 
-    public static boolean isRedeployDueToPropertyChange(DeployInstanceConfiguration deployConfig, InstanceProperties existingProperties) {
+    public static boolean isRedeployDueToPropertyChange(SleeperInstanceConfiguration deployConfig, InstanceProperties existingProperties) {
         InstanceProperties deployProperties = deployConfig.getInstanceProperties();
         boolean redeployNeeded = false;
         for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.getAll()) {

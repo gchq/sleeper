@@ -37,8 +37,8 @@ import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.statestore.StateStoreFactory;
@@ -56,7 +56,7 @@ public class DeployNewInstance {
     private final DynamoDbClient dynamoClient;
     private final EcrClient ecrClient;
     private final Path scriptsDirectory;
-    private final DeployInstanceConfiguration deployInstanceConfiguration;
+    private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final List<StackDockerImage> extraDockerImages;
     private final InvokeCdk.Type instanceType;
     private final CommandPipelineRunner runCommand;
@@ -97,7 +97,7 @@ public class DeployNewInstance {
             Path instancePropertiesFile = optionalArgument(args, 4).map(Path::of).orElse(null);
             boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
             builder().scriptsDirectory(scriptsDirectory)
-                    .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
+                    .deployInstanceConfiguration(SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
                             instancePropertiesFile, populateInstanceProperties, scriptsDirectory.resolve("templates")))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdk.Type.STANDARD)
@@ -146,7 +146,7 @@ public class DeployNewInstance {
         private DynamoDbClient dynamoClient;
         private EcrClient ecrClient;
         private Path scriptsDirectory;
-        private DeployInstanceConfiguration deployInstanceConfiguration;
+        private SleeperInstanceConfiguration deployInstanceConfiguration;
         private List<StackDockerImage> extraDockerImages = List.of();
         private InvokeCdk.Type instanceType;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
@@ -176,7 +176,7 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder deployInstanceConfiguration(DeployInstanceConfiguration deployInstanceConfiguration) {
+        public Builder deployInstanceConfiguration(SleeperInstanceConfiguration deployInstanceConfiguration) {
             this.deployInstanceConfiguration = deployInstanceConfiguration;
             return this;
         }

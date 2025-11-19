@@ -33,6 +33,8 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
+import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.datafusion.DataFusionQueryContext;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
@@ -74,13 +76,14 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableHadoopConfigurationProvider hadoopProvider = TableHadoopConfigurationProvider.withCache(
                 TableHadoopConfigurationProvider.forQueryLambdas(instanceProperties));
+        LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(
+                Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)), hadoopProvider);
+        LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionContext.createDataFusionProvider(DataFusionAwsConfig::getDefault);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider).hadoopProvider(hadoopProvider)
-                .rowRetrieverProvider(dataFusionContext.createQueryEngineSelectorWithFallback(awsConfig,
-                        new LeafPartitionRowRetrieverImpl.Provider(
-                                Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)), hadoopProvider)))
+                .rowRetrieverProvider(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider))
                 .build();
     }
 

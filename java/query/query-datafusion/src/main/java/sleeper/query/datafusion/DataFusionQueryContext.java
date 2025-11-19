@@ -22,12 +22,12 @@ import org.slf4j.LoggerFactory;
 import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
-import sleeper.query.core.rowretrieval.QueryEngineSelector;
 
 import java.util.function.Supplier;
 
 /**
- * A wrapper for the DataFusion FFI context. Allows for fallback if DataFusion could not be loaded.
+ * A wrapper for the DataFusion FFI context. Allows for delayed failure if DataFusion could not be loaded, in case you
+ * only want to use the Java data engine.
  */
 public class DataFusionQueryContext implements AutoCloseable {
 
@@ -44,7 +44,7 @@ public class DataFusionQueryContext implements AutoCloseable {
     /**
      * Creates the DataFusion FFI context and Arrow allocator if the DataFusion functions were loaded. The FFI context
      * and Arrow allocator will be closed when the query context is closed. If the DataFusion functions were not loaded,
-     * this allows falling back to the Java implementation.
+     * this avoids immediate failure in case you only want to use the Java data engine.
      *
      * @param  allocator a constructor for the Arrow allocator
      * @return           the context
@@ -56,7 +56,8 @@ public class DataFusionQueryContext implements AutoCloseable {
     }
 
     /**
-     * Creates a context where no DataFusion functions are used. Will always fall back to the Java implementation.
+     * Creates a context where no DataFusion functions are used. Supports cases where an instance of this class is
+     * required but we will always use the Java data engine.
      *
      * @return the context
      */
@@ -65,26 +66,9 @@ public class DataFusionQueryContext implements AutoCloseable {
     }
 
     /**
-     * Creates a row retriever provider for use in queries, using the Java or DataFusion implementation depending on
-     * configuration. If the DataFusion functions could not be loaded, the Java implementation will always be used.
-     *
-     * @param  awsConfig    a constructor for the AWS configuration
-     * @param  javaProvider the Java implementation
-     * @return              the row retriever provider
-     */
-    public LeafPartitionRowRetrieverProvider createQueryEngineSelectorWithFallback(Supplier<DataFusionAwsConfig> awsConfig, LeafPartitionRowRetrieverProvider javaProvider) {
-        if (context == null) {
-            LOGGER.warn("Falling back to Java row retriever as DataFusion was not loaded");
-            return javaProvider;
-        } else {
-            return QueryEngineSelector.javaAndDataFusion(javaProvider,
-                    new DataFusionLeafPartitionRowRetriever.Provider(awsConfig.get(), allocator, context));
-        }
-    }
-
-    /**
      * Creates a DataFusion row retriever provider for use in queries. If the DataFusion functions could not be loaded,
-     * the returned row retriever will fail if it is used.
+     * the returned row retriever will fail if it is used. This is usually wrapped with an engine selector to allow
+     * switching between different data engines.
      *
      * @param  awsConfig a constructor for the AWS configuration
      * @return           the row retriever provider

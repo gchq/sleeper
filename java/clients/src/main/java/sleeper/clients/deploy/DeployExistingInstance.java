@@ -32,7 +32,7 @@ import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
@@ -106,7 +106,7 @@ public class DeployExistingInstance {
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
         deployInstance.deploy(DeployInstanceRequest.builder()
-                .instanceConfig(DeployInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
+                .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
                 .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
                 .inferInstanceType()
                 .build());
