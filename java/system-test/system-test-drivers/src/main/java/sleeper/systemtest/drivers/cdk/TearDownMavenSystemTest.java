@@ -63,7 +63,6 @@ public class TearDownMavenSystemTest {
         List<TearDownInstance> tearDownAllInstances = Stream.concat(tearDownMavenInstances.stream(), tearDownStandaloneInstances.stream()).collect(toUnmodifiableList());
 
         for (TearDownInstance instance : tearDownAllInstances) {
-            instance.shutdownSystemProcesses();
             instance.deleteStack();
         }
         for (TearDownInstance instance : tearDownMavenInstances) {
