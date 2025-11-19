@@ -16,11 +16,11 @@
 
 package sleeper.systemtest.suite.suites;
 
-import org.junit.platform.suite.api.ExcludeTags;
+import org.junit.platform.suite.api.IncludeTags;
 
 import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
 @SystemTestSuite
-@ExcludeTags("expensive")
-public class NightlyFunctionalSystemTestSuite {
+@IncludeTags("expensive3")
+public class ExpensiveSystemTestSuite3 {
 }

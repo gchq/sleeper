@@ -53,6 +53,7 @@ public class DeployExistingInstance {
     private final EcrClient ecr;
     private final boolean deployPaused;
     private final CommandPipelineRunner runCommand;
+    private final boolean createMultiPlatformBuilder;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
@@ -62,6 +63,7 @@ public class DeployExistingInstance {
         ecr = builder.ecr;
         deployPaused = builder.deployPaused;
         runCommand = builder.runCommand;
+        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
 
     public static Builder builder() {
@@ -97,6 +99,7 @@ public class DeployExistingInstance {
                                 .scriptsDirectory(scriptsDirectory)
                                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                                 .commandRunner(runCommand)
+                                .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
                         CheckVersionExistsInEcr.withEcrClient(ecr)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
@@ -120,6 +123,7 @@ public class DeployExistingInstance {
         private EcrClient ecr;
         private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
+        private boolean createMultiPlatformBuilder = true;
 
         private Builder() {
         }
@@ -161,6 +165,11 @@ public class DeployExistingInstance {
 
         public Builder runCommand(CommandPipelineRunner runCommand) {
             this.runCommand = runCommand;
+            return this;
+        }
+
+        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
+            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
             return this;
         }
 

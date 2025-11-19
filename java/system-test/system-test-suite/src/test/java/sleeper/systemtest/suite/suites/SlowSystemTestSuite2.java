@@ -16,8 +16,11 @@
 
 package sleeper.systemtest.suite.suites;
 
+import org.junit.platform.suite.api.IncludeTags;
+
 import sleeper.systemtest.suite.testutil.SystemTestSuite;
 
 @SystemTestSuite
-public class NightlyPerformanceSystemTestSuite {
+@IncludeTags("slow2")
+public class SlowSystemTestSuite2 {
 }
