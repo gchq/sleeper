@@ -97,11 +97,11 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
     /**
      * Adds a custom resource to stop tasks in an ECS cluster.
      *
-     * @param  scope   the stack to add the custom resource to
-     * @param  cluster the ECS cluster
-     * @return         the custom resource that will stop tasks when it is deleted
+     * @param scope       the stack to add the custom resource to
+     * @param cluster     the ECS cluster
+     * @param taskCreator the lambda function that starts tasks in the cluster
      */
-    public CustomResource addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
+    public void addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(Construct scope, ICluster cluster, IFunction taskCreator) {
 
         String id = cluster.getNode().getId() + "-AutoStop";
 
@@ -111,9 +111,12 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 .serviceToken(provider.getServiceToken())
                 .build();
 
+        // This dependency means that ECS tasks will be stopped before the cluster is deleted.
         customResource.getNode().addDependency(cluster);
 
-        return customResource;
+        // This dependency means that during teardown the task creator lambda will be deleted before ECS tasks are stopped.
+        // This is important otherwise more tasks may be created as they are being stopped.
+        taskCreator.getNode().addDependency(customResource);
     }
 
 }
