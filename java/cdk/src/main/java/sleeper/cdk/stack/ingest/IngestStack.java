@@ -109,14 +109,10 @@ public class IngestStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
         SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
-        // SQS queue for ingest jobs
-        sqsQueueForIngestJobs(coreStacks);
-
-        // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
-
-        // Lambda to create ingest tasks
-        lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
+        ingestJobQueue = sqsQueueForIngestJobs(coreStacks);
+        Cluster cluster = ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue, lambdaCode);
+        IFunction taskCreator = lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, lambdaCode);
+        coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(this, cluster, taskCreator);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -135,7 +131,7 @@ public class IngestStack extends NestedStack {
                 .queue(ingestDLQ)
                 .build();
         String queueName = String.join("-", "sleeper", instanceId, "IngestJobQ");
-        ingestJobQueue = Queue.Builder
+        Queue ingestJobQueue = Queue.Builder
                 .create(this, "IngestJobQueue")
                 .queueName(queueName)
                 .deadLetterQueue(ingestJobDeadLetterQueue)
@@ -229,12 +225,10 @@ public class IngestStack extends NestedStack {
                 .build();
         new CfnOutput(this, INGEST_CONTAINER_ROLE_ARN, ingestRoleARNProps);
 
-        coreStacks.addAutoStopEcsClusterTasks(this, cluster);
-
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(SleeperCoreStacks coreStacks, Queue ingestJobQueue, SleeperLambdaCode lambdaCode) {
+    private IFunction lambdaToCreateIngestTasks(SleeperCoreStacks coreStacks, Queue ingestJobQueue, SleeperLambdaCode lambdaCode) {
 
         // Run tasks function
         String functionName = String.join("-", "sleeper",
@@ -278,6 +272,8 @@ public class IngestStack extends NestedStack {
                 .build();
         instanceProperties.set(INGEST_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(INGEST_CLOUDWATCH_RULE, rule.getRuleName());
+
+        return handler;
     }
 
     public Queue getIngestJobQueue() {
