@@ -79,11 +79,10 @@ This test module contains several JUnit test suites:
 - SlowSystemTestSuite1-n
 - ExpensiveSystemTestSuite1-n
 
-The test runs have been broken down into a number of test suites that each run in parallel. This is to speed up the time
-it takes for the nightly system tests to complete. Each suite (Quick, Slow1-n, Expensive1-n) begins by creating a copy
-of the sleeper project and then running specific system tests inside that copy. Results are then collated once all suites
-have finished, then uploaded to an s3 bucket. The suite's sleeper instances are isolated from one another so that they
-can run in parallel.
+The nightly test runs have been broken down into a number of test suites that each run in parallel.
+This is to speed up the time it takes for the nightly system tests to complete. Each suite (Quick, Slow1-n, Expensive1-n) begins by creating a copy of the Sleeper project and then running specific system tests inside that copy. Results are then collated once all suites have finished, then uploaded to an s3 bucket. The suite's Sleeper instances are isolated from one another so that they can run in parallel.
+
+For more information about the nightly system tests see [here](../../scripts/test/nightly/README.md).
 
 Tests that are tagged as Slow(1-n) or Expensive(1-n) will not be included in the quick suite. The quick suite is intended
 to run in around 40 minutes. The nightly functional run includes tests tagged as Slow, and will take a bit longer. The
@@ -135,14 +134,14 @@ After the tests, the instances will remain deployed. If you run again with the s
 be used. Usually they will not be redeployed, but if configuration has changed which requires it, they will be updated
 automatically. If you've rebuilt the system, this will not automatically cause redeployment.
 
-You can force redeployment by setting the Maven property `sleeper.system.test.force.redeploy` to redeploy the system
-test stack, and `sleeper.system.test.instances.force.redeploy` to redeploy Sleeper instances used in the tests you run.
+You can force redeployment by setting the Maven property `Sleeper.system.test.force.redeploy` to redeploy the system
+test stack, and `Sleeper.system.test.instances.force.redeploy` to redeploy Sleeper instances used in the tests you run.
 You can add Maven arguments to a system test script like this:
 
 ```bash
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> \
-  -Dsleeper.system.test.force.redeploy=true \
-  -Dsleeper.system.test.instances.force.redeploy=true
+  -DSleeper.system.test.force.redeploy=true \
+  -DSleeper.system.test.instances.force.redeploy=true
 ```
 
 ### Tear down
@@ -169,7 +168,7 @@ non-performance tests, the system test stack is still deployed, but the system t
 When you use `performanceTest.sh` this will enable the system test cluster. Note that this does not come with any
 additional costs, as data generation is done in AWS Fargate in tasks started for the specific test. You can also enable
 the system test cluster by adding a Maven argument to one of the other scripts like
-`-Dsleeper.system.test.cluster.enabled=true`.
+`-DSleeper.system.test.cluster.enabled=true`.
 
 If you enable the system test cluster when you previously deployed with the same short ID without the cluster, this
 will also redeploy all Sleeper instances that you test against, to give the system test cluster access to them.
@@ -186,8 +185,8 @@ the test suite will write reports in separate files. Here are some examples:
 ```bash
 # Set an output directory for reports
 ./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> IngestPerformanceST \
-  -Dsleeper.system.test.output.dir=/tmp/sleeper/output
-less /tmp/sleeper/output/IngestPerformanceST.shouldMeetIngestPerformanceStandardsAcrossManyPartitions.report.log
+  -DSleeper.system.test.output.dir=/tmp/Sleeper/output
+less /tmp/Sleeper/output/IngestPerformanceST.shouldMeetIngestPerformanceStandardsAcrossManyPartitions.report.log
 
 # Redirect output to a file
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> &> test.log &
