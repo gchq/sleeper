@@ -25,7 +25,7 @@ import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.MismatchedVersionException;
 import sleeper.cdk.util.NewInstanceValidator;
 import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -56,6 +56,19 @@ public class SleeperInstanceProps {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates a builder with default settings to deploy an instance.
+     *
+     * @param  configuration the configuration of the instance to deploy
+     * @param  s3Client      the S3 client, to scan for jars to deploy and validate the current state
+     * @param  dynamoClient  the DynamoDB client, to validate the current state
+     * @return               the builder
+     */
+    public static Builder builder(SleeperInstanceConfiguration configuration, S3Client s3Client, DynamoDbClient dynamoClient) {
+        return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
+                .tableProperties(configuration.getTableProperties());
     }
 
     /**
@@ -97,7 +110,7 @@ public class SleeperInstanceProps {
      */
     public static SleeperInstanceProps fromContext(CdkContext context, S3Client s3Client, DynamoDbClient dynamoClient) {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
-        DeployInstanceConfiguration configuration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+        SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
                 .tableProperties(configuration.getTableProperties())
                 .validateProperties(context.getBooleanOrDefault("validate", true))

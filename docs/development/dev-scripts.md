@@ -12,7 +12,7 @@ This will build a single Docker image, and can be used to prepare for execution 
 ```
 
 The first parameter is the name of the image, as listed in the documentation
-of [Docker images](../deployment/images-to-upload.md). The second parameter is the tag, usually "test" for an automated
+of [Docker images](../deployment/docker-images.md). The second parameter is the tag, usually "test" for an automated
 Docker image test.
 
 #### `checkNotices.sh`

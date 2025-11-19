@@ -17,7 +17,7 @@
 package sleeper.systemtest.suite.fixtures;
 
 import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.model.EmrInstanceArchitecture;
@@ -153,14 +153,14 @@ public class SystemTestInstance {
         return properties;
     }
 
-    private static DeployInstanceConfiguration createMainConfiguration() {
+    private static SleeperInstanceConfiguration createMainConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnumList(OPTIONAL_STACKS, OptionalStack.SYSTEM_TEST_STACKS);
         setSystemTestTags(properties, "main", "Sleeper Maven system test main instance");
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createIngestPerformanceConfiguration() {
+    private static SleeperInstanceConfiguration createIngestPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
@@ -177,7 +177,7 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createCompactionPerformanceConfiguration() {
+    private static SleeperInstanceConfiguration createCompactionPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnumList(OPTIONAL_STACKS,
                 // Enable GC to reduce the number of files needing deletion during teardown
@@ -194,7 +194,7 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createCompactionPerformanceOnDataFusionConfiguration() {
+    private static SleeperInstanceConfiguration createCompactionPerformanceOnDataFusionConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnumList(OPTIONAL_STACKS,
                 // Enable GC to reduce the number of files needing deletion during teardown
@@ -211,14 +211,14 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createCompactionCreationConfiguration() {
+    private static SleeperInstanceConfiguration createCompactionCreationConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         setSystemTestTags(properties, "compactionCreation", "Sleeper Maven system test compaction creation");
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createBulkImportPerformanceConfiguration() {
+    private static SleeperInstanceConfiguration createBulkImportPerformanceConfiguration() {
         InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.EmrBulkImportStack);
         properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
@@ -226,21 +226,21 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createBulkImportOnEksConfiguration() {
+    private static SleeperInstanceConfiguration createBulkImportOnEksConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setList(OPTIONAL_STACKS, List.of());
         setSystemTestTags(properties, "bulkImportOnEks", "Sleeper Maven system test bulk import on EKS");
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createBulkImportOnPersistentEmrConfiguration() {
+    private static SleeperInstanceConfiguration createBulkImportOnPersistentEmrConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setList(OPTIONAL_STACKS, List.of());
         setSystemTestTags(properties, "bulkImportOnPersistentEmr", "Sleeper Maven system test bulk import on persistent EMR cluster");
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createCompactionOnEC2Configuration() {
+    private static SleeperInstanceConfiguration createCompactionOnEC2Configuration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
@@ -248,7 +248,7 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createCompactionInParallelConfiguration() {
+    private static SleeperInstanceConfiguration createCompactionInParallelConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnumList(OPTIONAL_STACKS,
                 // Enable GC to reduce the number of files needing deletion during teardown
@@ -259,21 +259,21 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createStateStoreCommitterThroughputConfiguration() {
+    private static SleeperInstanceConfiguration createStateStoreCommitterThroughputConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setList(OPTIONAL_STACKS, List.of());
         setSystemTestTags(properties, "stateStoreCommitterThroughput", "Sleeper Maven system test state store committer throughput");
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createReenableOptionalStacksConfiguration() {
+    private static SleeperInstanceConfiguration createReenableOptionalStacksConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setList(OPTIONAL_STACKS, List.of());
         setSystemTestTags(properties, "reenableOptionalStacks", "Sleeper Maven system test reenable optional stacks");
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createOptionalFeaturesDisabledConfiguration() {
+    private static SleeperInstanceConfiguration createOptionalFeaturesDisabledConfiguration() {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnumList(OPTIONAL_STACKS, List.of(IngestStack, CompactionStack, GarbageCollectorStack,
                 EmrBulkImportStack, EmrServerlessBulkImportStack, IngestBatcherStack));
@@ -283,11 +283,11 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createInstanceConfiguration(InstanceProperties instanceProperties) {
+    private static SleeperInstanceConfiguration createInstanceConfiguration(InstanceProperties instanceProperties) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
         tableProperties.set(TABLE_NAME, "system-test");
-        return DeployInstanceConfiguration.builder()
+        return SleeperInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties)
                 .build();

@@ -24,7 +24,7 @@ import sleeper.clients.deploy.localstack.DeployDockerInstance;
 import sleeper.clients.util.BucketUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -59,7 +59,7 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     }
 
     @Override
-    public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
+    public boolean deployInstanceIfNotPresent(String instanceId, SleeperInstanceConfiguration deployConfig) {
         if (BucketUtils.doesBucketExist(clients.getS3(), InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
             return false;
         }
