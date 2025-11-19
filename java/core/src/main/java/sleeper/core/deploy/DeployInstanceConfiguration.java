@@ -73,9 +73,8 @@ public class DeployInstanceConfiguration {
      * @return                            the instance configuration
      */
     public static DeployInstanceConfiguration forNewInstanceDefaultingTables(
-            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
-            DeployInstanceConfigurationFromTemplates fromTemplates) {
-        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath, populateInstanceProperties);
+            Path instancePropertiesPath, DeployInstanceConfigurationFromTemplates fromTemplates) {
+        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
         if (configuration.getTableProperties().isEmpty()) {
             configuration = configuration.withTableProperties(instanceProperties -> List.of(
                     fromTemplates.loadTableProperties(instanceProperties)));
@@ -94,13 +93,11 @@ public class DeployInstanceConfiguration {
      * @return                            the instance configuration
      */
     public static DeployInstanceConfiguration forNewInstanceDefaultingInstance(
-            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
-            Path templatesDir) {
+            Path instancePropertiesPath, Path templatesDir) {
         if (instancePropertiesPath != null) {
-            return fromLocalConfiguration(instancePropertiesPath, populateInstanceProperties);
+            return fromLocalConfiguration(instancePropertiesPath);
         } else {
             InstanceProperties instanceProperties = DeployInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir);
-            populateInstanceProperties.populate(instanceProperties);
             return new DeployInstanceConfiguration(instanceProperties, List.of());
         }
     }
@@ -119,13 +116,6 @@ public class DeployInstanceConfiguration {
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
-    }
-
-    private static DeployInstanceConfiguration fromLocalConfiguration(
-            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties) {
-        DeployInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
-        populateInstanceProperties.populate(configuration.getInstanceProperties());
-        return configuration;
     }
 
     /**
