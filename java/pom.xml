@@ -1402,11 +1402,6 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-guava</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-joda</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
@@ -1730,6 +1725,7 @@
                             <excludes>
                                 <exclude>*log4j*:*log4j*</exclude>
                                 <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                <exclude>com.fasterxml.jackson.datatype:jackson-datatype-guava</exclude>
                             </excludes>
                             <includes>
                                 <include>org.apache.logging.log4j:*</include>
