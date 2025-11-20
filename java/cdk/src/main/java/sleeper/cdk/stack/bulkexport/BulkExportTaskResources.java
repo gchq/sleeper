@@ -82,11 +82,12 @@ public class BulkExportTaskResources {
         this.props = props;
         this.instanceProperties = props.getInstanceProperties();
         this.jobsQueue = jobsQueue;
-        ecsClusterForBulkExportTasks(coreStacks, jarsBucket, resultsBucket);
-        lambdaToCreateTasks(coreStacks, lambdaCode);
+        Cluster cluster = ecsClusterForBulkExportTasks(coreStacks, jarsBucket, resultsBucket);
+        IFunction taskCreator = lambdaToCreateTasks(coreStacks, lambdaCode);
+        coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
     }
 
-    private void lambdaToCreateTasks(SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
+    private IFunction lambdaToCreateTasks(SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
                 instanceId, "bulk-export-tasks-creator");
@@ -128,9 +129,11 @@ public class BulkExportTaskResources {
                 .build();
         instanceProperties.set(BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+
+        return handler;
     }
 
-    private void ecsClusterForBulkExportTasks(
+    private Cluster ecsClusterForBulkExportTasks(
             SleeperCoreStacks coreStacks, IBucket jarsBucket, IBucket resultsBucket) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -167,8 +170,7 @@ public class BulkExportTaskResources {
                 .build();
         new CfnOutput(stack, BULK_EXPORT_CLUSTER_NAME, bulkExportClusterProps);
 
-        coreStacks.addAutoStopEcsClusterTasks(stack, cluster);
-
+        return cluster;
     }
 
     private static PolicyStatement runTasksPolicyStatement() {

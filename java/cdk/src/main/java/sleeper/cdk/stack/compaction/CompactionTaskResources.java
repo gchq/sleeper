@@ -96,15 +96,15 @@ public class CompactionTaskResources {
         this.props = props;
         this.instanceProperties = props.getInstanceProperties();
 
-        ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, jobResources);
-        lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
+        Cluster cluster = ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, jobResources);
+        IFunction taskCreator = lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
+        coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
 
         // Allow running compaction tasks
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(runTasksPolicyStatement());
-
     }
 
-    private void ecsClusterForCompactionTasks(SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperLambdaCode taskCreatorJar, CompactionJobResources jobResources) {
+    private Cluster ecsClusterForCompactionTasks(SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperLambdaCode taskCreatorJar, CompactionJobResources jobResources) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -152,11 +152,11 @@ public class CompactionTaskResources {
                 .build();
         new CfnOutput(stack, COMPACTION_CLUSTER_NAME, compactionClusterProps);
 
-        coreStacks.addAutoStopEcsClusterTasks(stack, cluster);
+        return cluster;
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void lambdaToCreateCompactionTasks(
+    private IFunction lambdaToCreateCompactionTasks(
             SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode, Queue compactionJobsQueue) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-tasks-creator");
@@ -196,6 +196,8 @@ public class CompactionTaskResources {
                 .build();
         instanceProperties.set(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+
+        return handler;
     }
 
     private static PolicyStatement runTasksPolicyStatement() {
