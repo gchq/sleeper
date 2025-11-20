@@ -29,6 +29,7 @@ import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.bridge.FFIContextProvider;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -37,7 +38,9 @@ import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.DATAFUSION_S3_READAHEAD_ENABLED;
@@ -61,31 +64,22 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * @throws IOException if the FFI library can't be loaded
      */
     public DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig awsConfig, BufferAllocator allocator) throws IOException {
-        this(awsConfig, allocator, new FFIContext<>(DataFusionQueryFunctions.class));
-    }
-
-    private DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext<DataFusionQueryFunctions> context) {
-        this.awsConfig = awsConfig;
-        this.allocator = allocator;
-        this.context = context;
+        this(awsConfig, allocator, () -> new FFIContext<>(DataFusionQueryFunctions.class));
     }
 
     /**
-     * Creates a row retriever with a cloned context.
+     * Creates a new DataFusion query executor with an FFI context from the given provider.
      *
-     * This is useful for creating a new {@link LeafPartitionRowRetriever} with a cloned context for use on a different
-     * thread.
-     *
-     * @param  other                 the row retriever to copy the context from
-     * @param  awsConfig             AWS configuration
-     * @param  allocator             Arrow buffer allocator to use
-     * @return                       thw new row retriever
-     * @throws IOException           if the FFI library can't be loaded
-     * @throws IllegalStateException if the other row retriever has already been closed
+     * @param  awsConfig       AWS configuration
+     * @param  allocator       Arrow buffer allocator to use
+     * @param  contextProvider provider function for the FFI context
+     * @throws IOException     if the FFI library can't be loaded
      */
-    public DataFusionLeafPartitionRowRetriever copyContextFrom(DataFusionLeafPartitionRowRetriever other,
-            DataFusionAwsConfig awsConfig, BufferAllocator allocator) throws IOException, IllegalStateException {
-        return new DataFusionLeafPartitionRowRetriever(awsConfig, allocator, new FFIContext<>(DataFusionQueryFunctions.class, other.context));
+    public DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig awsConfig, BufferAllocator allocator,
+            FFIContextProvider<DataFusionQueryFunctions> contextProvider) throws IOException {
+        this.awsConfig = awsConfig;
+        this.allocator = allocator;
+        this.context = contextProvider.getFFIContext();
     }
 
     /**
@@ -93,7 +87,8 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      */
     @Override
     public void close() {
-        context.close();
+        try (context) {
+        }
     }
 
     @Override
@@ -206,19 +201,23 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      * A provider to create instances of this class.
      */
     public static class Provider implements LeafPartitionRowRetrieverProvider {
-        private final DataFusionAwsConfig awsConfig;
-        private final BufferAllocator allocator;
-        private final FFIContext<DataFusionQueryFunctions> context;
+        private final Supplier<DataFusionAwsConfig> awsConfig;
+        private final Supplier<BufferAllocator> allocator;
+        private final FFIContextProvider<DataFusionQueryFunctions> contextProvider;
 
-        public Provider(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext<DataFusionQueryFunctions> context) {
+        public Provider(Supplier<DataFusionAwsConfig> awsConfig, Supplier<BufferAllocator> allocator, FFIContextProvider<DataFusionQueryFunctions> contextProvider) {
             this.awsConfig = awsConfig;
             this.allocator = allocator;
-            this.context = context;
+            this.contextProvider = contextProvider;
         }
 
         @Override
         public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
-            return new DataFusionLeafPartitionRowRetriever(awsConfig, allocator, context);
+            try {
+                return new DataFusionLeafPartitionRowRetriever(awsConfig.get(), allocator.get(), contextProvider);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }

@@ -47,7 +47,9 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.example.iterator.SecurityFilteringIterator;
+import sleeper.foreign.bridge.CloningContextProvider;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.bridge.FFIContextProvider;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.Query;
@@ -90,7 +92,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class DataFusionLeafPartitionRowRetrieverIT {
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
-    private static final FFIContext<DataFusionQueryFunctions> FFI_CONTEXT = new FFIContext<>(DataFusionQueryFunctions.getInstance());
+    private static final FFIContextProvider<DataFusionQueryFunctions> CONTEXT_PROVIDER = () -> new FFIContext<>(DataFusionQueryFunctions.class);
 
     @TempDir
     public Path tempDir;
@@ -110,7 +112,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     @AfterAll
     static void afterAll() {
         // Closes resources
-        try (FFI_CONTEXT; ALLOCATOR) {
+        try (ALLOCATOR) {
         }
     }
 
@@ -119,7 +121,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         // Given
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                 // DataFusion spends time trying to auth with AWS unless you override it
-                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, FFI_CONTEXT);
+                () -> DataFusionAwsConfig.overrideEndpoint("dummy"), () -> ALLOCATOR, CONTEXT_PROVIDER);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
 
         // When
@@ -157,28 +159,31 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldExecuteQueriesInParallel() throws Exception {
             //Given
+            CloningContextProvider<DataFusionQueryFunctions> contextProvider = new CloningContextProvider<>(DataFusionQueryFunctions.class);
+
             ExecutorService es = Executors.newFixedThreadPool(TASK_COUNT);
+
             Callable<Void> task = () -> {
                 // Ensure resources are all local to thread
-                try (BufferAllocator allocator = new RootAllocator();
-                        FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.getInstance());) {
+                try (BufferAllocator allocator = new RootAllocator()) {
+                    LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
+                            // DataFusion spends time trying to auth with AWS unless you override it
+                            () -> DataFusionAwsConfig.overrideEndpoint("dummy"), () -> allocator, contextProvider);
 
                     Query query = queryWithRegionConfig(new Region(rangeFactory().createRange(
                             "key", 1L, true, 10L, true)),
                             QueryProcessingConfig.none());
 
-                    LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
-                            // DataFusion spends time trying to auth with AWS unless you override it
-                            DataFusionAwsConfig.overrideEndpoint("dummy"), allocator, ffiContext);
                     LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-                    QueryExecutor queryExec = new QueryExecutor(
+                    try (QueryExecutor queryExec = new QueryExecutor(
                             QueryPlanner.initialiseNow(tableProperties, stateStore),
-                            new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
+                            new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever))) {
 
-                    for (int i = 0; i < QUERY_COUNT; i++) {
-                        CloseableIterator<Row> results = queryExec.execute(query);
-                        results.forEachRemaining(row -> {
-                        });
+                        for (int i = 0; i < QUERY_COUNT; i++) {
+                            CloseableIterator<Row> results = queryExec.execute(query);
+                            results.forEachRemaining(row -> {
+                            });
+                        }
                     }
                 }
                 return null;
@@ -1292,7 +1297,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
     private List<Row> execute(Query query) throws Exception {
         List<Row> rows = new ArrayList<>();
-        try (CloseableIterator<Row> results = initQueryExecutor().execute(query)) {
+        try (QueryExecutor executor = initQueryExecutor(); CloseableIterator<Row> results = executor.execute(query)) {
             results.forEachRemaining(rows::add);
         }
         return rows;
@@ -1301,7 +1306,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     private QueryExecutor initQueryExecutor() {
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                 // DataFusion spends time trying to auth with AWS unless you override it
-                DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR, FFI_CONTEXT);
+                () -> DataFusionAwsConfig.overrideEndpoint("dummy"), () -> ALLOCATOR, CONTEXT_PROVIDER);
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
         return new QueryExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),

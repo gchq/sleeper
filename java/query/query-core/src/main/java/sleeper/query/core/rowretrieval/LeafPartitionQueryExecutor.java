@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  * and applies compaction-time and query-time iterators.
  *
  */
-public class LeafPartitionQueryExecutor {
+public class LeafPartitionQueryExecutor implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryExecutor.class);
 
     private final ObjectFactory objectFactory;
@@ -136,5 +136,11 @@ public class LeafPartitionQueryExecutor {
             IteratorConfig iteratorConfig, boolean applyFilterAggregations) throws IteratorCreationException {
         return new IteratorFactory(objectFactory)
                 .getIterator(iteratorConfig, schema, applyFilterAggregations);
+    }
+
+    @Override
+    public void close() throws Exception {
+        try (retriever) {
+        }
     }
 }

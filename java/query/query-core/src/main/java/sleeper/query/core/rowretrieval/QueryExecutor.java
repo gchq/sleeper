@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  * Runs queries against a Sleeper table by querying the state store and data files directly. An instance of this class
  * cannot be used concurrently in multiple threads, due to how partitions are cached.
  */
-public class QueryExecutor {
+public class QueryExecutor implements AutoCloseable {
 
     private final QueryPlanner queryPlanner;
     private final LeafPartitionQueryExecutor leafQueryExecutor;
@@ -86,6 +86,12 @@ public class QueryExecutor {
             });
         }
         return iterators;
+    }
+
+    @Override
+    public void close() throws Exception {
+        try (leafQueryExecutor) {
+        }
     }
 
 }

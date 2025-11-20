@@ -131,8 +131,7 @@ public class QueryClient extends QueryCommandLineClient {
         ExecutorService executorService = Executors.newFixedThreadPool(30);
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                BufferAllocator allocator = new RootAllocator();
-                FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.class)) {
+                BufferAllocator allocator = new RootAllocator()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new QueryClient(
                     instanceProperties,
@@ -143,7 +142,8 @@ public class QueryClient extends QueryCommandLineClient {
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
                     QueryEngineSelector.javaAndDataFusion(
                             new LeafPartitionRowRetrieverImpl.Provider(executorService, TableHadoopConfigurationProvider.forClient(instanceProperties)),
-                            new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, ffiContext)))
+                            new DataFusionLeafPartitionRowRetriever.Provider(() -> DataFusionAwsConfig.getDefault(), () -> allocator,
+                                    () -> new FFIContext<>(DataFusionQueryFunctions.class))))
                     .run();
         } finally {
             executorService.shutdown();

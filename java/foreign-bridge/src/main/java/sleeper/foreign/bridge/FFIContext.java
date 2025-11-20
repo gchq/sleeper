@@ -53,7 +53,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * Pointer to the Rust side of the FFI layer. If this is null, it means the
      * context has been closed.
      */
-    private Pointer context;
+    private volatile Pointer context;
 
     /**
      * Initialises the FFI library and context for calling functions.
