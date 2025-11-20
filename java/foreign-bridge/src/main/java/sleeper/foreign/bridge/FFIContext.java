@@ -40,6 +40,10 @@ import java.util.Objects;
  */
 public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
+     * The class type for the FFI interface.
+     */
+    private final Class<T> ffiClass;
+    /**
      * FFI call interface. Calling any function on this object will
      * result in an FFI call.
      */
@@ -63,7 +67,8 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * @throws IOException          if the native library couldn't be loaded
      */
     public FFIContext(Class<T> functionClass) throws IOException {
-        this.functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass must not be null"));
+        this.ffiClass = Objects.requireNonNull(functionClass, "functionClass must not be null");
+        this.functions = FFIBridge.createForeignInterface(functionClass);
         this.context = Objects.requireNonNull(functions.create_context(), "FFI create_context returned null");
     }
 
@@ -72,20 +77,21 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      *
      * This is useful for creating a new context instance from an existing one to use on a new thread.
      *
-     * @param  functionClass         the native function interface type
      * @param  original              the context to clone
      * @throws IOException           if the native library couldn't be loaded
      * @throws IllegalStateException if the original context has already been closed
      */
-    public FFIContext(Class<T> functionClass, FFIContext<T> original) throws IOException {
+    public FFIContext(FFIContext<T> original) throws IOException {
         original.checkClosed();
-        this.functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass must not be null"));
+        this.ffiClass = original.ffiClass;
+        this.functions = FFIBridge.createForeignInterface(ffiClass);
         this.context = Objects.requireNonNull(functions.clone_context(original.context), "FFI clone_context returned null");
     }
 
     /** Internal test constructor. */
-    FFIContext(T functions) {
-        this.functions = functions;
+    FFIContext(Class<T> functionClass, T functions) {
+        this.ffiClass = Objects.requireNonNull(functionClass, "functionClass");
+        this.functions = Objects.requireNonNull(functions, "functions");
         this.context = functions.create_context();
     }
 
