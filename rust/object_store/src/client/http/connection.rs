@@ -24,6 +24,7 @@ use http_body_util::BodyExt;
 use std::error::Error;
 use std::sync::Arc;
 use tokio::runtime::Handle;
+use tracing::error;
 
 /// An HTTP protocol error
 ///
@@ -84,6 +85,8 @@ impl HttpError {
     }
 
     pub(crate) fn reqwest(e: reqwest::Error) -> Self {
+        error!("Captured reqwest error {e:?}");
+        error!("BT: {}", std::backtrace::Backtrace::force_capture());
         #[cfg(not(target_arch = "wasm32"))]
         let is_connect = || e.is_connect();
         #[cfg(target_arch = "wasm32")]
@@ -125,6 +128,7 @@ impl HttpError {
                 break;
             }
         }
+
         Self {
             kind,
             // We strip URL as it will be included by RetryError if not sensitive
@@ -211,6 +215,7 @@ impl HttpClient {
 #[cfg(not(target_arch = "wasm32"))]
 impl HttpService for reqwest::Client {
     async fn call(&self, req: HttpRequest) -> Result<HttpResponse, HttpError> {
+        let cloned_req = req.clone();
         let (parts, body) = req.into_parts();
 
         let url = parts.uri.to_string().parse().unwrap();
@@ -218,7 +223,14 @@ impl HttpService for reqwest::Client {
         *req.headers_mut() = parts.headers;
         *req.body_mut() = Some(body.into_reqwest());
 
-        let r = self.execute(req).await.map_err(HttpError::reqwest)?;
+        let r = self.execute(req).await.map_err(HttpError::reqwest);
+        if r.is_err() {
+            let err = r.as_ref().unwrap_err();
+            error!("Object_store reqwest error:\nRequest: {cloned_req:?}\n\nError: {err:?}");
+            error!("BT: {}", std::backtrace::Backtrace::force_capture());
+        }
+
+        let r = r?;
         let res: http::Response<reqwest::Body> = r.into();
         let (parts, body) = res.into_parts();
 

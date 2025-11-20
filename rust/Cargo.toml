@@ -66,6 +66,7 @@ tracing-subscriber = { version = "0.3.20" }
 
 [patch.crates-io]
 object_store = { path = "./object_store" }
+reqwest = { path = "./reqwest" }
 
 [workspace.metadata.datasketches]
 git_repository_tag = "5.2.0"
