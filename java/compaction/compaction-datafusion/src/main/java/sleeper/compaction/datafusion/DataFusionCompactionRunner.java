@@ -32,6 +32,7 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.bridge.FFIContextProvider;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -57,15 +58,22 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     private final DataFusionAwsConfig awsConfig;
     private final Configuration hadoopConf;
+    private final FFIContextProvider<DataFusionCompactionFunctions> contextProvider;
 
     public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
+        this(awsConfig, hadoopConf, () -> new FFIContext<>(DataFusionCompactionFunctions.class));
+    }
+
+    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf,
+            FFIContextProvider<DataFusionCompactionFunctions> contextProvider) {
         this.awsConfig = awsConfig;
         this.hadoopConf = hadoopConf;
+        this.contextProvider = contextProvider;
     }
 
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
-        try (FFIContext<DataFusionCompactionFunctions> context = new FFIContext<>(DataFusionCompactionFunctions.class)) {
+        try (FFIContext<DataFusionCompactionFunctions> context = contextProvider.getFFIContext()) {
             jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
 
             FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);

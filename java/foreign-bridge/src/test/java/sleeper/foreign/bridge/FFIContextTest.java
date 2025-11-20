@@ -26,7 +26,7 @@ public class FFIContextTest {
     @Test
     void shouldClose() {
         // Given
-        FFIContext<ForeignFunctions> context = new FFIContext<>(new ForeignFunctions() {
+        FFIContext<ForeignFunctions> context = new FFIContext<>(ForeignFunctions.class, new ForeignFunctions() {
 
             @Override
             public Pointer create_context() {
