@@ -60,6 +60,7 @@ public class DeployNewInstance {
     private final InvokeCdk.Type instanceType;
     private final CommandPipelineRunner runCommand;
     private final boolean deployPaused;
+    private final boolean createMultiPlatformBuilder;
 
     private DeployNewInstance(Builder builder) {
         s3Client = builder.s3Client;
@@ -71,6 +72,7 @@ public class DeployNewInstance {
         instanceType = builder.instanceType;
         runCommand = builder.runCommand;
         deployPaused = builder.deployPaused;
+        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
 
     public static Builder builder() {
@@ -111,7 +113,6 @@ public class DeployNewInstance {
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
         deployInstanceConfiguration.validate();
-
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                 new UploadDockerImagesToEcr(
@@ -119,6 +120,7 @@ public class DeployNewInstance {
                                 .scriptsDirectory(scriptsDirectory)
                                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                                 .commandRunner(runCommand)
+                                .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
                         CheckVersionExistsInEcr.withEcrClient(ecrClient)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
@@ -152,6 +154,7 @@ public class DeployNewInstance {
         private InvokeCdk.Type instanceType;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean deployPaused;
+        private boolean createMultiPlatformBuilder = true;
 
         private Builder() {
         }
@@ -198,6 +201,11 @@ public class DeployNewInstance {
 
         public Builder deployPaused(boolean deployPaused) {
             this.deployPaused = deployPaused;
+            return this;
+        }
+
+        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
+            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
             return this;
         }
 

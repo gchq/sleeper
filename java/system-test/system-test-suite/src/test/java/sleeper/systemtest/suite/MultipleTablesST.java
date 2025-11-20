@@ -24,8 +24,8 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Slow3;
 
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -45,7 +45,8 @@ import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.table
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
-@Slow // Slow because compactions run for 200 tables in one task
+// Slow because compactions run for 200 tables in one task
+@Slow3
 public class MultipleTablesST {
     private final Schema schema = SystemTestSchema.DEFAULT_SCHEMA;
     private static final int NUMBER_OF_TABLES = 200;

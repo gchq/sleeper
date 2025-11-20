@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
     jq \
     uuid-runtime \
     sudo \
+    rsync \
     # Rust build time dependencies
     build-essential pkg-config libssl-dev \
     # Clang installation dependencies

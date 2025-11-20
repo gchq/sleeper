@@ -110,7 +110,7 @@
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
         <dnsjava.version>3.6.3</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
-        <xz.version>1.10</xz.version>
+        <xz.version>1.11</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
         <okhttp3.version>5.3.2</okhttp3.version>
         <!--
@@ -131,7 +131,7 @@
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.21</logback.version>
-        <aws-java-sdk-v2.version>2.38.9</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.39.0</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -241,6 +241,7 @@
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <sleeper.system.test.force.statestore.classname />
+        <sleeper.system.test.create.multi.platform.builder>true</sleeper.system.test.create.multi.platform.builder>
         <sleeper.system.test.standalone.properties.template />
         <sleeper.system.test.instance.properties.overrides />
         <!-- Maven plugins -->
@@ -1943,6 +1944,10 @@
                             <property>
                                 <name>sleeper.system.test.force.statestore.classname</name>
                                 <value>${sleeper.system.test.force.statestore.classname}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.create.multi.platform.builder</name>
+                                <value>${sleeper.system.test.create.multi.platform.builder}</value>
                             </property>
                             <property>
                                 <name>sleeper.system.test.standalone.properties.template</name>

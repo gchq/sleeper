@@ -76,13 +76,27 @@ of that class, and look at the tests in that module for examples.
 
 This test module contains several JUnit test suites:
 - QuickSystemTestSuite (the default)
-- NightlyFunctionalSystemTestSuite
-- NightlyPerformanceSystemTestSuite
+- SlowSystemTestSuite1-n
+- ExpensiveSystemTestSuite1-n
 
-Tests that are tagged as Slow or Expensive will not be included in the quick suite. The quick suite is intended to run
-in around 40 minutes. The nightly functional suite includes tests tagged as Slow, and will take a bit longer. The
-nightly performance suite includes all tests, including ones tagged as Expensive. The performance tests work with a
+The nightly test runs have been broken down into a number of test suites that each run in parallel.
+This is to speed up the time it takes for the nightly system tests to complete. Each suite (Quick, Slow1-n, Expensive1-n)
+begins by creating a copy of the Sleeper project and then running specific system tests inside that copy. Results are then
+collated once all suites have finished, then uploaded to an s3 bucket. The suite's Sleeper instances are isolated from one
+another so that they can run in parallel.
+
+For more information about the nightly system tests see [here](../../scripts/test/nightly/README.md).
+
+Tests that are tagged as Slow(1-n) or Expensive(1-n) will not be included in the quick suite. The quick suite is intended
+to run in around 40 minutes. The nightly functional run includes tests tagged as Slow, and will take a bit longer. The
+nightly performance run includes all tests, including ones tagged as Expensive. The performance tests work with a
 larger bulk of data. They take time to run and can be costly to run frequently.
+When adding a new Slow or Expensive System test add either the Slow1-n or Expensive1-n tag.
+
+### Current Slow and Expensive test suites
+The current system tests running in each suite can be seen in [system-test-suites](system-test-suites.md).
+
+When adding new slow or expensive system tests ensure this documentation is updated.
 
 ### Running tests
 

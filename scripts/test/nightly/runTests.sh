@@ -34,25 +34,23 @@ VPC=$2
 SUBNETS=$3
 RESULTS_BUCKET=$4
 MAIN_SUITE_NAME=$5
+SUITE_PARAMS=("-Dsleeper.system.test.cluster.enabled=true" "-DskipRust" "-Dsleeper.system.test.create.multi.platform.builder=false")
+
 shift 4
-if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+if [ "$MAIN_SUITE_NAME" == "performance" ] || [ "$MAIN_SUITE_NAME" == "functional" ]; then
   shift
-  MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyPerformanceSystemTestSuite "$@")
-elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
-  shift
-  MAIN_SUITE_PARAMS=(-Dsleeper.system.test.cluster.enabled=true -DrunIT=NightlyFunctionalSystemTestSuite "$@")
 elif [ "$1" == "--main" ]; then
   MAIN_SUITE_NAME=custom
-  MAIN_SUITE_PARAMS=("$2")
+  SUITE_PARAMS=("$2")
   shift 2
 else
   MAIN_SUITE_NAME=custom
-  MAIN_SUITE_PARAMS=("$@")
+  SUITE_PARAMS=("$@")
 fi
 
 echo "DEPLOY_ID=$DEPLOY_ID"
 echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
-echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
+echo "SUITE_PARAMS=(${SUITE_PARAMS[*]})"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
@@ -65,11 +63,35 @@ mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
+
 set +e
 
 END_EXIT_CODE=0
 
+docker buildx rm sleeper
+set -e
+docker buildx create --name sleeper --use
+set +e
+
+copyFolderForParallelRun() {
+    echo "Making folder $1 for parallel build"
+    pushd $REPO_PARENT_DIR
+    sudo rm -rf $1
+    mkdir $1
+    sudo rsync -a --exclude=".*" sleeper/ $1
+    popd
+}
+
+removeFolderAfterParallelRun() {
+    echo "Removing folder $1"
+    pushd $REPO_PARENT_DIR
+    sudo rm -rf $1
+    popd
+}
+
 runMavenSystemTests() {
+    # Setup
+    NEW_MAVEN_DIR=$(cd ../../java && pwd)
     SHORT_ID=$1
     TEST_NAME=$2
     shift 2
@@ -77,19 +99,23 @@ runMavenSystemTests() {
     EXTRA_MAVEN_PARAMS=("$@")
     TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
     mkdir "$TEST_OUTPUT_DIR"
-    pushd "$MAVEN_DIR"
-    mvn clean
-    popd
+    echo "Made output directory: $TEST_OUTPUT_DIR for SHORT_ID: $SHORT_ID"
+
+    # Run tests
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "${EXTRA_MAVEN_PARAMS[@]}" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     RUN_TESTS_EXIT_CODE=$?
+    echo "Exit code for $SHORT_ID is $RUN_TESTS_EXIT_CODE"
     if [ $RUN_TESTS_EXIT_CODE -ne 0 ]; then
       END_EXIT_CODE=$RUN_TESTS_EXIT_CODE
       TEST_EXIT_CODE=$RUN_TESTS_EXIT_CODE
     fi
-    pushd "$MAVEN_DIR"
+
+    # Generate site HTML
+    pushd "$NEW_MAVEN_DIR"
+    echo "Generating site HTML for $SHORT_ID"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
@@ -98,6 +124,8 @@ runMavenSystemTests() {
     zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
     popd
     rm -rf "$TEST_OUTPUT_DIR/site"
+
+    # Tear down instances used for tests
     SHORT_INSTANCE_NAMES=$(read_short_instance_names_from_instance_ids "$SHORT_ID" "$TEST_OUTPUT_DIR/instanceIds.txt")
     ./maven/tearDown.sh "$SHORT_ID" "$SHORT_INSTANCE_NAMES" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     TEARDOWN_EXIT_CODE=$?
@@ -108,7 +136,40 @@ runMavenSystemTests() {
     echo -n "$TEST_EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
 }
 
-runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
+runTestSuite(){
+    SUITE=$3
+    copyFolderForParallelRun "$SUITE"
+    # Wait short time to not have clashes with other process deploying
+    sleep $1
+    shift 1
+    echo "[$(time_str)] Starting test suite: $SUITE"
+    pushd "$REPO_PARENT_DIR/$SUITE/scripts/test" #Move into isolated repo copy
+    runMavenSystemTests "$@"
+    popd
+    echo "[$(time_str)] Finished test suite: $SUITE"
+    removeFolderAfterParallelRun "$SUITE"
+}
+
+if [ "$MAIN_SUITE_NAME" == "performance" ]; then
+    echo "Running performance tests in parallel. Start time: [$(time_str)]"
+    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &> "$OUTPUT_DIR/slow1.suite.log" &
+    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite2" "$@" &> "$OUTPUT_DIR/slow2.suite.log" &
+    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite3" "$@" &> "$OUTPUT_DIR/slow3.suite.log" &
+    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}e1" "expensive1" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite1" "$@" &> "$OUTPUT_DIR/expensive1.suite.log"  &
+    runTestSuite 240 "${DEPLOY_ID}${START_TIME_SHORT}e2" "expensive2" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite2" "$@" &> "$OUTPUT_DIR/expensive2.suite.log"  &
+    runTestSuite 300 "${DEPLOY_ID}${START_TIME_SHORT}e3" "expensive3" "${SUITE_PARAMS[@]}" "-DrunIT=ExpensiveSystemTestSuite3" "$@" &> "$OUTPUT_DIR/expensive3.suite.log"  &
+    runTestSuite 360 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &> "$OUTPUT_DIR/quick.suite.log" &
+    wait
+elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
+    echo "Running slow tests in parallel. Start time: [$(time_str)]"
+    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &> "$OUTPUT_DIR/slow1.suite.log" &
+    runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite2" "$@" &> "$OUTPUT_DIR/slow2.suite.log" &
+    runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite3" "$@" &> "$OUTPUT_DIR/slow3.suite.log" &
+    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &> "$OUTPUT_DIR/quick.suite.log" &
+    wait
+else
+    runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${SUITE_PARAMS[@]}"
+fi
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
