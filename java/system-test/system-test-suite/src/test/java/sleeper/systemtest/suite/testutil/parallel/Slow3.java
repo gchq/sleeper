@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.systemtest.suite.testutil.parallel;
 
 import org.junit.jupiter.api.Tag;
 
@@ -23,8 +23,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Tag("expensive")
+@Tag("slow3")
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Expensive {
+@Slow
+public @interface Slow3 {
 }

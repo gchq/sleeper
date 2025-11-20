@@ -58,7 +58,7 @@ public class BuildEC2Deployment {
                 .vpc(vpc)
                 .securityGroup(createSecurityGroup(scope))
                 .machineImage(image.machineImage())
-                .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.LARGE))
+                .instanceType(InstanceType.of(InstanceClass.T3, InstanceSize.XLARGE2))
                 .vpcSubnets(SubnetSelection.builder().subnetType(SubnetType.PRIVATE_WITH_EGRESS).build())
                 .userData(UserData.custom(LoadUserDataUtil.userData(params)))
                 .userDataCausesReplacement(true)

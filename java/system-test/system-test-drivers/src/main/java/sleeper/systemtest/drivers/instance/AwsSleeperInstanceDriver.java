@@ -94,6 +94,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .deployInstanceConfiguration(deployConfig)
                     .instanceType(InvokeCdk.Type.STANDARD)
                     .runCommand(CommandUtils::runCommandLogOutput)
+                    .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .deployWithClients(s3, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -128,6 +129,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
                     .runCommand(CommandUtils::runCommandLogOutput)
+                    .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .build().update();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
