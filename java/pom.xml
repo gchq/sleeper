@@ -110,7 +110,7 @@
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
         <dnsjava.version>3.6.3</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
-        <xz.version>1.10</xz.version>
+        <xz.version>1.11</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
         <okhttp3.version>5.3.2</okhttp3.version>
         <!--
