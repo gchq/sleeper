@@ -321,6 +321,7 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
+            expr_fields: &[],
             return_field: Arc::new(Field::new("", DataType::Int64, false)),
             schema: &Schema::empty(),
             ignore_nulls: true,
@@ -344,6 +345,7 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
+            expr_fields: &[],
             return_field: Arc::new(Field::new(
                 "",
                 DataType::Map(Arc::new(Field::new("test", DataType::Binary, false)), true),
@@ -371,6 +373,7 @@ mod tests {
         let args = AccumulatorArgs {
             name: "test",
             exprs: &[],
+            expr_fields: &[],
             return_field: Arc::new(Field::new(
                 "",
                 DataType::Map(
@@ -479,6 +482,7 @@ mod tests {
             name: "test",
             is_distinct: false,
             exprs: &[],
+            expr_fields: &[],
         }
     }
 

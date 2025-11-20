@@ -21,7 +21,6 @@ use crate::{
     CommonConfig,
     datafusion::{
         filter_aggregation_config::validate_aggregations,
-        fix_filter::fix_filter_exprs,
         output::Completer,
         sketch::Sketcher,
         unalias::unalias_view_projection_columns,
@@ -55,7 +54,6 @@ mod cast_udf;
 mod compact;
 mod config;
 mod filter_aggregation_config;
-mod fix_filter;
 mod leaf_partition_query;
 mod metrics;
 pub mod output;
@@ -306,11 +304,10 @@ impl<'a> SleeperOperations<'a> {
         // plan so that we have a place to fix the optimised logical plan due to <https://github.com/apache/datafusion/issues/18214>.
         let (state, logical_plan) = frame.into_parts();
         let optimised_plan = state.optimize(&logical_plan)?;
-        let fixed_plan = fix_filter_exprs(optimised_plan, &logical_plan, &state)?;
         // Consume frame and generate initial physical plan
         let mut physical_plan = state
             .query_planner()
-            .create_physical_plan(&fixed_plan, &state)
+            .create_physical_plan(&optimised_plan, &state)
             .await?;
         if let Some(order) = sort_ordering {
             // Unalias field names if this is going to be Arrow output
