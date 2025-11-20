@@ -22,6 +22,8 @@ import java.io.IOException;
  *
  * Permits different creation strategies to be injected into classes
  * making FFI calls.
+ *
+ * @param <T> the FFI interface class type
  */
 @FunctionalInterface
 public interface FFIContextProvider<T extends ForeignFunctions> {

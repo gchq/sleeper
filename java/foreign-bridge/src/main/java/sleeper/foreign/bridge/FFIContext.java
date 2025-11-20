@@ -63,7 +63,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * to enable FFI calls to be executed.
      *
      * @param  functionClass        the native function interface type
-     * @param  NullPointerException if any parameter is null
+     * @throws NullPointerException if any parameter is null
      * @throws IOException          if the native library couldn't be loaded
      */
     public FFIContext(Class<T> functionClass) throws IOException {
@@ -88,7 +88,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
         this.context = Objects.requireNonNull(functions.clone_context(original.context), "FFI clone_context returned null");
     }
 
-    /** Internal test constructor. */
+    /* Internal test constructor. */
     FFIContext(Class<T> functionClass, T functions) {
         this.ffiClass = Objects.requireNonNull(functionClass, "functionClass");
         this.functions = Objects.requireNonNull(functions, "functions");

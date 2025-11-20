@@ -20,6 +20,8 @@ import java.util.Objects;
 
 /**
  * An FFI context provider that clones the last context if available it is not closed.
+ *
+ * @param <T> the FFI interface class type
  */
 public class CloningContextProvider<T extends ForeignFunctions> implements FFIContextProvider<T> {
     /**

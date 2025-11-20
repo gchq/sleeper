@@ -58,6 +58,6 @@ public interface LeafPartitionRowRetriever extends AutoCloseable {
     }
 
     @Override
-    default public void close() {
+    default void close() {
     }
 }
