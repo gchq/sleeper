@@ -18,7 +18,6 @@ package sleeper.clients.teardown;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.AwsScheduleRules;
 import sleeper.clients.util.ClientUtils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
@@ -66,7 +65,6 @@ public class TearDownInstance {
         LOGGER.info("scriptsDir: {}", scriptsDir);
         LOGGER.info("{}: {}", ID.getPropertyName(), instanceId);
 
-        shutdownSystemProcesses();
         deleteStack();
         waitForStackToDelete();
         deleteArtefactsStack();
@@ -74,10 +72,6 @@ public class TearDownInstance {
         removeGeneratedDir(scriptsDir);
 
         LOGGER.info("Finished tear down");
-    }
-
-    public void shutdownSystemProcesses() throws InterruptedException {
-        new AwsScheduleRules(clients.getCloudWatch()).pauseInstance(instanceId);
     }
 
     public void deleteStack() {
