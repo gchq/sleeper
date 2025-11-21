@@ -42,6 +42,10 @@ class Range:
             return Range(min=value[0], min_inclusive=value[1], max=value[2], max_inclusive=value[3])
         raise ValueError("Expected a tuple of length 2 or 4")
 
+    @staticmethod
+    def from_dict(value, min_inclusive=True, max_inclusive=True):
+        return Range(value["min"], min_inclusive, value["max"], max_inclusive)
+
     def to_dict(self):
         return {"min": self.min, "minInclusive": self.min_inclusive, "max": self.max, "maxInclusive": self.max_inclusive}
 
@@ -70,6 +74,10 @@ class Region:
     @staticmethod
     def from_field_to_tuple(field_to_tuple: dict, strings_base64_encoded: bool = False):
         return Region(row_key_field_to_range={field: Range.from_tuple(value) for field, value in field_to_tuple.items()}, strings_base64_encoded=strings_base64_encoded)
+
+    @staticmethod
+    def from_field_to_dict(field_to_dict: dict, min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False):
+        return Region(row_key_field_to_range={field: Range.from_dict(value, min_inclusive, max_inclusive) for field, value in field_to_dict.items()}, strings_base64_encoded=strings_base64_encoded)
 
     def to_dict(self):
         out = {field: range.to_dict() for field, range in self.row_key_field_to_range.items()}

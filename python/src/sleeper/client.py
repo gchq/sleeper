@@ -36,7 +36,7 @@ from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestC
 from sleeper.properties.config_bucket import load_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
 from sleeper.query import Query, Region
-from sleeper.web_socket_query import WebSocketQuery, WebSocketQueryProcessor
+from sleeper.web_socket_query import WebSocketQueryProcessor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -197,7 +197,7 @@ class SleeperClient:
         return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
 
     async def web_socket_range_key_query(
-        self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
+        self, table_name: str, keys: list, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
     ) -> list:
         """
         Asynchronously performs web socket queries on a Sleeper table for rows where the key is within specified ranges.
@@ -215,24 +215,8 @@ class SleeperClient:
 
         :return: A list containing all retrieved rows matching the specified key ranges.
         """
-        results = []
-        for query in keys:
-            for key in query.keys():
-                min_value = query.get(key).get("min")
-                max_value = query.get(key).get("max")
-                query = WebSocketQuery(
-                    table_name=table_name,
-                    query_id=query_id,
-                    key=key,
-                    max_value=max_value,
-                    min_value=min_value,
-                    max_inclusive=max_inclusive,
-                    min_inclusive=min_inclusive,
-                    strings_base64_encoded=strings_base64_encoded,
-                )
-                logger.debug(f"Web Socket Query {query.to_json()}")
-                results.extend(await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query))
-        return results
+        query = Query(query_id, table_name, [Region.from_field_to_dict(region, min_inclusive, max_inclusive, strings_base64_encoded) for region in keys])
+        return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """
