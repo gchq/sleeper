@@ -35,6 +35,7 @@ from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitReque
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
 from sleeper.properties.config_bucket import load_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.query import Query, Region
 from sleeper.web_socket_query import WebSocketQuery, WebSocketQueryProcessor
 
 logger = logging.getLogger(__name__)
@@ -308,62 +309,20 @@ class SleeperClient:
 
         :return: list of the result rows
         """
-        if query_id is None:
-            query_id = str(uuid.uuid4())
-        json_regions_list = []
-        if not isinstance(regions, list):
-            raise Exception("Regions must be a list")
-        if len(regions) == 0:
-            raise Exception("Must provide at least one region")
-        for region in regions:
-            if not isinstance(region, dict):
-                raise Exception("Each region must be a dict mapping row-key field name to range")
-            if len(region) == 0:
-                raise Exception("Region must not be empty")
-            json_region = {}
-            for field_name in region:
-                range_as_tuple = region[field_name]
-                if not len(range_as_tuple) == 2 and not len(range_as_tuple) == 4:
-                    raise Exception("Each range must be of length 2 (min, max) or 4 (min, minInclusive, max, maxInclusive)")
-                if len(range_as_tuple) == 2:
-                    min = range_as_tuple[0]
-                    max = range_as_tuple[1]
-                    min_inclusive = True
-                    max_inclusive = False
-                else:
-                    min = range_as_tuple[0]
-                    # TODO Check type
-                    min_inclusive = range_as_tuple[1]
-                    max = range_as_tuple[2]
-                    max_inclusive = range_as_tuple[3]
-                json_range = {
-                    "min": min,
-                    "minInclusive": min_inclusive,
-                    "max": max,
-                    "maxInclusive": max_inclusive,
-                }
-                json_region[field_name] = json_range
-                json_region["stringsBase64Encoded"] = False
-            json_regions_list.append(json_region)
+        return self.query_by_sqs(Query(query_id=query_id, table_name=table_name, regions=[Region.from_field_to_tuple(region) for region in regions]))
 
-        query_message = {
-            "queryId": query_id,
-            "tableName": table_name,
-            "type": "Query",
-            "regions": json_regions_list,
-        }
+    def query_by_sqs(self, query: Query):
+        message = query.to_dict()
+        logger.debug(message)
+        message_json = json.dumps(message)
 
-        logger.debug(query_message)
-
-        # Convert query message to json and send to query queue
-        query_message_json = json.dumps(query_message)
         query_queue_name = queue_name_from_url(self._instance_properties.get(QueryCdkProperty.QUERY_QUEUE_URL))
         query_queue_sqs = self._sqs_resource.get_queue_by_name(QueueName=query_queue_name)
-        query_queue_sqs.send_message(MessageBody=query_message_json)
+        query_queue_sqs.send_message(MessageBody=message_json)
 
-        logger.debug(f"Submitted query with id {query_id}")
+        logger.debug(f"Submitted query with id {query.query_id}")
 
-        located_rows = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo_resource, self._deserialiser, query_id)
+        located_rows = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo_resource, self._deserialiser, query.query_id)
         return located_rows
 
     @contextmanager
