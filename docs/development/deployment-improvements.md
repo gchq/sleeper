@@ -24,7 +24,8 @@ We'll also look at other potential improvements, including to creation and confi
 This script must be run before any of the other scripts can be used. This builds the code, and outputs artefacts to the
 `scripts/jars` and `scripts/docker` directories.
 
-This is one of two supported ways to prepare to run the other scripts locally.
+This is one of two supported ways to prepare to run the other scripts locally, alongside published artefacts described
+below.
 
 ## Published artefacts
 
