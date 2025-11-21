@@ -106,7 +106,7 @@
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.1</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
-        <kerby.version>2.1.0</kerby.version>
+        <kerby.version>2.1.1</kerby.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
         <dnsjava.version>3.6.3</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
