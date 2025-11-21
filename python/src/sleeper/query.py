@@ -14,6 +14,7 @@
 
 import json
 import uuid
+from itertools import chain
 
 
 class Range:
@@ -61,6 +62,10 @@ class Region:
     @staticmethod
     def from_field_to_exact_value(field_to_value: dict, strings_base64_encoded: bool = False):
         return Region(row_key_field_to_range={field: Range.exact_value(value) for field, value in field_to_value.items()}, strings_base64_encoded=strings_base64_encoded)
+
+    @staticmethod
+    def list_from_field_to_exact_values(field_to_values: dict, strings_base64_encoded: bool = False):
+        return list(chain.from_iterable(map(lambda item: map(lambda value: Region.exact_value(item[0], value, strings_base64_encoded), item[1]), field_to_values.items())))
 
     @staticmethod
     def from_field_to_tuple(field_to_tuple: dict, strings_base64_encoded: bool = False):

@@ -17,7 +17,6 @@ import tempfile
 import time
 import uuid
 from contextlib import contextmanager
-from itertools import chain
 from typing import Dict, List
 
 import boto3
@@ -256,7 +255,7 @@ class SleeperClient:
         :return: list of result rows
         """
         if isinstance(keys, dict):
-            regions = list(chain.from_iterable(map(lambda item: map(lambda value: Region.exact_value(item[0], value), item[1]), keys.items())))
+            regions = Region.list_from_field_to_exact_values(keys)
         elif isinstance(keys, list):
             regions = [Region.from_field_to_exact_value(region) for region in keys]
         else:
