@@ -32,12 +32,12 @@ import sleeper.core.tracker.job.run.RowsProcessed;
 import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.FFISleeperRegion;
 import sleeper.foreign.bridge.FFIContext;
-import sleeper.foreign.bridge.FFIContextProvider;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
@@ -58,39 +58,36 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     private final DataFusionAwsConfig awsConfig;
     private final Configuration hadoopConf;
-    private final FFIContextProvider<DataFusionCompactionFunctions> contextProvider;
+    private final FFIContext<DataFusionCompactionFunctions> context;
 
     public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
-        this(awsConfig, hadoopConf, () -> new FFIContext<>(DataFusionCompactionFunctions.class));
-    }
-
-    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf,
-            FFIContextProvider<DataFusionCompactionFunctions> contextProvider) {
-        this.awsConfig = awsConfig;
-        this.hadoopConf = hadoopConf;
-        this.contextProvider = contextProvider;
+        try {
+            this.awsConfig = awsConfig;
+            this.hadoopConf = hadoopConf;
+            this.context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
-        try (FFIContext<DataFusionCompactionFunctions> context = contextProvider.getFFIContext()) {
-            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
 
-            FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
-            RowsProcessed result = invokeDataFusion(job, params, runtime, context);
+        FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
+        RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
-            if (result.getRowsWritten() < 1) {
-                try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                        new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
-                    // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
-                    // See the test should_merge_empty_files in compaction_test.rs
-                }
+        if (result.getRowsWritten() < 1) {
+            try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                    new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
+                // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
+                // See the test should_merge_empty_files in compaction_test.rs
             }
-
-            LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
-                    LocalDateTime.now());
-            return result;
         }
+
+        LOGGER.info("Compaction job {}: compaction finished at {}", job.getId(),
+                LocalDateTime.now());
+        return result;
     }
 
     /**
@@ -169,5 +166,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
+    }
+
+    @Override
+    public void close() throws Exception {
+        try (context) {
+        }
     }
 }

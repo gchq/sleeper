@@ -91,8 +91,9 @@ public class CompactionRunnerTestBase {
 
     protected void runTask(CompactionJob job, Configuration hadoopConf) throws Exception {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), hadoopConf, createSketchesStore());
-        CompactionRunner runner = selector.createCompactor(job, tableProperties);
-        compactionTaskTestHelper().runTask(runner, List.of(job));
+        try (CompactionRunner runner = selector.createCompactor(job, tableProperties)) {
+            compactionTaskTestHelper().runTask(runner, List.of(job));
+        }
     }
 
     protected FileReference outputFileReference(CompactionJob job, long numberOfRows) {

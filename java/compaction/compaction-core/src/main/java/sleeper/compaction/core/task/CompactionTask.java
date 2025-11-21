@@ -224,13 +224,14 @@ public class CompactionTask {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobTracker.jobStarted(job.startedEventBuilder(jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-        CompactionRunner compactor = selector.createCompactor(job, tableProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        Partition partition = stateStore.getPartition(job.getPartitionId());
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition.getRegion());
-        Instant jobFinishTime = timeSupplier.get();
-        JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
-        return summary;
+        try (CompactionRunner compactor = selector.createCompactor(job, tableProperties)) {
+            StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            Partition partition = stateStore.getPartition(job.getPartitionId());
+            RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, partition.getRegion());
+            Instant jobFinishTime = timeSupplier.get();
+            JobRunSummary summary = new JobRunSummary(rowsProcessed, jobStartTime, jobFinishTime);
+            return summary;
+        }
     }
 
     private void logMetrics(CompactionJob job, JobRunSummary summary) {

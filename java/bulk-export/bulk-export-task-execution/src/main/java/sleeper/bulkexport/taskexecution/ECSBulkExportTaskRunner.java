@@ -170,13 +170,13 @@ public class ECSBulkExportTaskRunner {
         LOGGER.debug("Compaction job details: {}", job);
 
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
-        CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties);
-
-        RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, bulkExportLeafPartitionQuery.getPartitionRegion());
-        LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
-                bulkExportLeafPartitionQuery.getTableId(),
-                bulkExportLeafPartitionQuery.getLeafPartitionId(),
-                rowsProcessed.getRowsRead(),
-                rowsProcessed.getRowsWritten());
+        try (CompactionRunner compactor = compactionSelector.createCompactor(job, tableProperties)) {
+            RowsProcessed rowsProcessed = compactor.compact(job, tableProperties, bulkExportLeafPartitionQuery.getPartitionRegion());
+            LOGGER.info("Compaction completed for table ID: {}, partition ID: {}. Rows read: {}, rows written: {}",
+                    bulkExportLeafPartitionQuery.getTableId(),
+                    bulkExportLeafPartitionQuery.getLeafPartitionId(),
+                    rowsProcessed.getRowsRead(),
+                    rowsProcessed.getRowsWritten());
+        }
     }
 }
