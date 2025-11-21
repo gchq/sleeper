@@ -1,5 +1,4 @@
 import json
-from unittest.mock import ANY, call
 
 import pytest
 from mypy_boto3_sqs.service_resource import Queue
@@ -13,17 +12,6 @@ from sleeper.web_socket_query import WebSocketQuery
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
-
-
-class MatchesQueryJson:
-    def __init__(self, expected_json: str):
-        self.expected_json = expected_json
-
-    def __eq__(self, other) -> bool:
-        try:
-            return other.to_json() == self.expected_json
-        except Exception:
-            return False
 
 
 def should_send_exact_query_by_dict_with_client(sleeper_client: SleeperClient, query_queue_resource: Queue, mocker: MockerFixture):
@@ -142,10 +130,10 @@ async def should_send_exact_query_with_client_via_web_socket(sleeper_client: Sle
     # We don't care about the results for this test as they are mocked.
     await sleeper_client.web_socket_exact_key_query(table_name=table_name, keys=keys, query_id=query_id)
 
-    expected_query = WebSocketQuery(table_name=table_name, query_id=query_id, key="key", max_value="my_key", min_value="my_key", strings_base64_encoded=False).to_json()
+    expected_query = WebSocketQuery(table_name=table_name, query_id=query_id, key="key", max_value="my_key", min_value="my_key", strings_base64_encoded=False)
 
     # Then
-    assert mock_process.call_args_list == [call(ANY, MatchesQueryJson(expected_query))]
+    assert list(map(lambda call: call.args[1].to_dict(), mock_process.call_args_list)) == [expected_query.to_dict()]
 
 
 @pytest.mark.asyncio
@@ -161,10 +149,10 @@ async def should_send_range_query_with_client_via_web_socket(sleeper_client: Sle
     # We don't care about the results for this test as they are mocked.
     await sleeper_client.web_socket_range_key_query(table_name=table_name, keys=keys, query_id=query_id)
 
-    expected_query = WebSocketQuery(table_name=table_name, query_id=query_id, key="key", max_value="z", min_value="a", strings_base64_encoded=False).to_json()
+    expected_query = WebSocketQuery(table_name=table_name, query_id=query_id, key="key", max_value="z", min_value="a", strings_base64_encoded=False)
 
     # Then
-    assert mock_process.call_args_list == [call(ANY, MatchesQueryJson(expected_query))]
+    assert list(map(lambda call: call.args[1].to_dict(), mock_process.call_args_list)) == [expected_query.to_dict()]
 
 
 @pytest.fixture

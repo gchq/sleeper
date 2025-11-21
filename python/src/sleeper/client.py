@@ -193,13 +193,8 @@ class SleeperClient:
 
         :return: A list containing all retrieved rows matching the specified keys and values.
         """
-        results = []
-        for key in keys.keys():
-            for value in keys.get(key):
-                query = WebSocketQuery(table_name=table_name, query_id=query_id, key=key, max_value=value, min_value=value, strings_base64_encoded=strings_base64_encoded)
-                logger.debug(f"Web Socket Query {query.to_json()}")
-                results.extend(await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query))
-        return results
+        query = Query(query_id, table_name, Region.list_from_field_to_exact_values(keys, strings_base64_encoded))
+        return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
 
     async def web_socket_range_key_query(
         self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False

@@ -90,7 +90,9 @@ class Query:
         self.regions = regions
 
     def to_dict(self):
-        return {"tableName": self.table_name, "queryId": self.query_id, "type": "Query", "regions": [region.to_dict() for region in self.regions]}
+        regions = [region.to_dict() for region in self.regions]
+        value = {"tableName": self.table_name, "queryId": self.query_id, "type": "Query", "regions": regions}
+        return value
 
     def to_json(self):
         return json.dumps(self.to_dict())

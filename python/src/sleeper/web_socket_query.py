@@ -95,7 +95,7 @@ class WebSocketQuery:
         self.max_inclusive = max_inclusive
         self.strings_base64_encoded = strings_base64_encoded
 
-    def to_json(self):
+    def to_dict(self):
         """
         Converts the Query object into a JSON-formatted string suitable for sending over WebSocket.
 
@@ -113,14 +113,15 @@ class WebSocketQuery:
                 "stringsBase64Encoded": self.strings_base64_encoded,
             }
         ]
-        obj = {
+        return {
             "queryId": self.query_id,
             "type": "Query",
             "tableName": self.table_name,
             "regions": regions,
-            "resultsPublisherConfig": {},
         }
-        return json.dumps(obj)
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
 
 class WebSocketQueryProcessor:
