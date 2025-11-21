@@ -40,7 +40,7 @@ public class OptionalStackTest {
         InstanceProperties properties = new InstanceProperties();
         assertThat(properties.get(OPTIONAL_STACKS))
                 .isEqualTo("IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack," +
-                        "QueryStack,AthenaStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack," +
+                        "QueryStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack," +
                         "DashboardStack,TableMetricsStack");
     }
 
