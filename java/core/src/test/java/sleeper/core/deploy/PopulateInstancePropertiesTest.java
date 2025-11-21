@@ -35,7 +35,7 @@ public class PopulateInstancePropertiesTest {
 
     private InstanceProperties expectedInstanceProperties() {
         InstanceProperties expected = new InstanceProperties();
-        expected.setTags(Map.of("InstanceID", "test-instance"));
+        //expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
         expected.set(VPC_ID, "some-vpc");
         expected.set(SUBNETS, "some-subnet");

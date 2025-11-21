@@ -17,8 +17,6 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.regions.providers.AwsRegionProvider;
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -29,7 +27,6 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
-import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
@@ -79,17 +76,14 @@ public class DeployInstance {
         Set<String> options = Stream.of(args).skip(5).map(String::toLowerCase).collect(toUnmodifiableSet());
         boolean deployPaused = options.contains("--deploy-paused");
 
-        AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         try (S3Client s3Client = S3Client.create();
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
 
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
-            PopulateInstancePropertiesAws.builder(stsClient, regionProvider)
-                    .instanceId(instanceId)
-                    .vpcId(vpcId)
-                    .subnetIds(subnetIds)
-                    .build().populate(instanceConfiguration.getInstanceProperties());
+            instanceConfiguration.getInstanceProperties().set(ID, instanceId);
+            instanceConfiguration.getInstanceProperties().set(VPC_ID, vpcId);
+            instanceConfiguration.getInstanceProperties().set(SUBNETS, subnetIds);
             PopulateInstanceProperties.setFromEnvironmentVariables(instanceConfiguration.getInstanceProperties());
             instanceConfiguration.validate();
 
