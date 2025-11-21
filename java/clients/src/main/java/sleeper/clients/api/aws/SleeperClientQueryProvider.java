@@ -15,18 +15,17 @@
  */
 package sleeper.clients.api.aws;
 
+import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseable;
 import sleeper.clients.util.UncheckedAutoCloseables;
-import sleeper.foreign.bridge.CloningContextProvider;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
-import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
 import java.util.List;
@@ -67,12 +66,13 @@ public interface SleeperClientQueryProvider {
     static SleeperClientQueryProvider withThreadPoolForEachClient(int threadPoolSize) {
         return hadoopProvider -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
+            BufferAllocator allocator = new RootAllocator();
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig::getDefault, RootAllocator::new,
-                    new CloningContextProvider<>(DataFusionQueryFunctions.class));
+            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator);
             return ShutdownWrapper.shutdown(
                     QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider),
                     new UncheckedAutoCloseables(List.of(
+                            allocator::close,
                             executorService::shutdown)));
         };
     }
@@ -89,6 +89,7 @@ public interface SleeperClientQueryProvider {
 
     class PersistentThreadPool implements SleeperClientQueryProvider, UncheckedAutoCloseable {
         private final ExecutorService executorService;
+        private final BufferAllocator allocator = new RootAllocator();
 
         private PersistentThreadPool(ExecutorService executorService) {
             this.executorService = executorService;
@@ -97,13 +98,13 @@ public interface SleeperClientQueryProvider {
         @Override
         public ShutdownWrapper<LeafPartitionRowRetrieverProvider> getRowRetrieverProvider(TableHadoopConfigurationProvider hadoopProvider) {
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
-            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig::getDefault, RootAllocator::new,
-                    new CloningContextProvider<>(DataFusionQueryFunctions.class));
+            LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator);
             return ShutdownWrapper.noShutdown(QueryEngineSelector.javaAndDataFusion(javaProvider, dataFusionProvider));
         }
 
         @Override
         public void close() {
+            allocator.close();
             executorService.shutdown();
         }
     }

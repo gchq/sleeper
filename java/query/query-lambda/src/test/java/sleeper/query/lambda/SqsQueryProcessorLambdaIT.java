@@ -53,7 +53,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.LocalStackTestBase;
@@ -67,7 +66,6 @@ import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
-import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketOutput;
@@ -146,8 +144,7 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(
                 s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET),
-                new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig::getDefault, RootAllocator::new,
-                        () -> new FFIContext<>(DataFusionQueryFunctions.class)));
+                new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), new RootAllocator()));
     }
 
     @Test

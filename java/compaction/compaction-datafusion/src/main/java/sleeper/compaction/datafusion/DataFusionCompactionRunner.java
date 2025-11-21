@@ -169,7 +169,7 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         try (context) {
         }
     }
