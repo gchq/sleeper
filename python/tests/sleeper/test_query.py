@@ -8,7 +8,7 @@ from sleeper.client import SleeperClient
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
 from sleeper.properties.config_bucket import save_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
-from sleeper.web_socket_query import WebSocketQuery
+from sleeper.query import Query, Range, Region
 from tests.sleeper.localstack import LocalStack
 from tests.sleeper.localstack_sleeper_client import LocalStackSleeperClient
 from tests.sleeper.properties.instance_properties_helper import create_test_instance_properties
@@ -130,9 +130,8 @@ async def should_send_exact_query_with_client_via_web_socket(sleeper_client: Sle
     # We don't care about the results for this test as they are mocked.
     await sleeper_client.web_socket_exact_key_query(table_name=table_name, keys=keys, query_id=query_id)
 
-    expected_query = WebSocketQuery(table_name=table_name, query_id=query_id, key="key", max_value="my_key", min_value="my_key", strings_base64_encoded=False)
-
     # Then
+    expected_query = Query(table_name=table_name, query_id=query_id, regions=[Region(row_key_field_to_range={"key": Range.exact_value("my_key")})])
     assert list(map(lambda call: call.args[1].to_dict(), mock_process.call_args_list)) == [expected_query.to_dict()]
 
 
@@ -149,9 +148,9 @@ async def should_send_range_query_with_client_via_web_socket(sleeper_client: Sle
     # We don't care about the results for this test as they are mocked.
     await sleeper_client.web_socket_range_key_query(table_name=table_name, keys=keys, query_id=query_id)
 
-    expected_query = WebSocketQuery(table_name=table_name, query_id=query_id, key="key", max_value="z", min_value="a", strings_base64_encoded=False)
-
     # Then
+    expected_region = Region(row_key_field_to_range={"key": Range(min="a", max="z", min_inclusive=True, max_inclusive=True)})
+    expected_query = Query(table_name=table_name, query_id=query_id, regions=[expected_region])
     assert list(map(lambda call: call.args[1].to_dict(), mock_process.call_args_list)) == [expected_query.to_dict()]
 
 

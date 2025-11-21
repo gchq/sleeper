@@ -27,6 +27,7 @@ import websockets
 
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, QueryCdkProperty
 from sleeper.properties.instance_properties import InstanceProperties
+from sleeper.query import Query
 
 logger = logging.getLogger(__name__)
 
@@ -46,82 +47,6 @@ class MessageType(Enum):
     ERROR = "error"
     SUBQUERIES = "subqueries"
     ROWS = "rows"
-
-
-class WebSocketQuery:
-    """
-    Represents a Sleeper query with specific parameters, capable of serializing itself into JSON for WebSocket communication.
-
-    Attributes:
-        query_id (str): Unique identifier for the query instance.
-        table_name (str): Name of the database table to query.
-        key (str): The key or column to filter on.
-        min_value (str): The minimum value for the query region.
-        max_value (str): The maximum value for the query region.
-        min_inclusive (bool): Whether the minimum bound is inclusive.
-        max_inclusive (bool): Whether the maximum bound is inclusive.
-        strings_base64_encoded (bool): Whether string values in Sleeper are base64 encoded.
-    """
-
-    def __init__(
-        self,
-        query_id: str,
-        table_name: str,
-        key: str,
-        min_value: str,
-        max_value: str,
-        min_inclusive: bool = True,
-        max_inclusive: bool = True,
-        strings_base64_encoded: bool = False,
-    ):
-        """
-        Initializes a new Query object with specified parameters.
-
-        Args:
-            table_name (str): The name of the database table to query.
-            key (str): The key or column to filter on.
-            min_value (str): The minimum value for the query region.
-            max_value (str): The maximum value for the query region.
-            min_inclusive (bool): Whether the minimum bound is inclusive.
-            max_inclusive (bool): Whether the maximum bound is inclusive.
-            strings_base64_encoded (bool): Whether strings in Sleeper are encoded in base64.
-        """
-        self.query_id = query_id
-        self.table_name = table_name
-        self.key = key
-        self.min_value = min_value
-        self.max_value = max_value
-        self.min_inclusive = min_inclusive
-        self.max_inclusive = max_inclusive
-        self.strings_base64_encoded = strings_base64_encoded
-
-    def to_dict(self):
-        """
-        Converts the Query object into a JSON-formatted string suitable for sending over WebSocket.
-
-        Returns:
-            str: JSON representation of the query object.
-        """
-        regions = [
-            {
-                "key": {
-                    "min": self.min_value,
-                    "minInclusive": self.min_inclusive,
-                    "max": self.max_value,
-                    "maxInclusive": self.max_inclusive,
-                },
-                "stringsBase64Encoded": self.strings_base64_encoded,
-            }
-        ]
-        return {
-            "queryId": self.query_id,
-            "type": "Query",
-            "tableName": self.table_name,
-            "regions": regions,
-        }
-
-    def to_json(self):
-        return json.dumps(self.to_dict())
 
 
 class WebSocketQueryProcessor:
@@ -215,7 +140,7 @@ class WebSocketQueryProcessor:
 
         return headers
 
-    async def process_query(self, query: WebSocketQuery) -> dict:
+    async def process_query(self, query: Query) -> dict:
         """
         Asynchronously processes a query over a WebSocket connection.
 
@@ -230,8 +155,9 @@ class WebSocketQueryProcessor:
         headers = self._get_websocket_auth_header()
         logger.debug(f"Websocket URL: {self.endpoint}")
         async with websockets.connect(self.endpoint, additional_headers=headers) as websocket:
-            logger.debug(f"Sending message: {query.to_json()}")
-            await websocket.send(query.to_json())
+            query_json = query.to_json()
+            logger.debug(f"Sending message: {query_json}")
+            await websocket.send(query_json)
             total_results = 0
             results = []
 
