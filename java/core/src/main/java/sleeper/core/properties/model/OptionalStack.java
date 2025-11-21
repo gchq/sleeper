@@ -98,7 +98,7 @@ public enum OptionalStack {
 
     public static final List<OptionalStack> DEFAULT_STACKS = List.of(
             IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrStudioStack,
-            QueryStack, AthenaStack, CompactionStack, GarbageCollectorStack, PartitionSplittingStack,
+            QueryStack, CompactionStack, GarbageCollectorStack, PartitionSplittingStack,
             DashboardStack, TableMetricsStack);
 
     /**
