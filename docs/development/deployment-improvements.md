@@ -42,7 +42,8 @@ repository during deployment.
 
 That installation process brings more artefacts locally than we usually need to. For most scripts, we just use the
 clients jar, and for deployment we just use the CDK jar. We also don't necessarily need to pull the Docker images
-locally during deployment, as that could potentially be done in CloudFormation.
+locally during deployment, as that could potentially be done in CloudFormation. See the section below on deployment for
+further details.
 
 This relates to plans for the CLI, as we consider a unified CLI to replace the scripts. We may adjust the entrypoint for
 operations currently implemented as scripts, in https://github.com/gchq/sleeper/issues/1328. To reduce the number of
