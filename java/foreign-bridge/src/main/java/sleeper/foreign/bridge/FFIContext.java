@@ -50,7 +50,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      */
     private Pointer context;
     /** Class lock for synchronization. */
-    private final static Object CONTEXT_LOCK = new Object();
+    private static final Object CONTEXT_LOCK = new Object();
     /** Last created context. */
     private static FFIContext<?> lastContext = null;
 
