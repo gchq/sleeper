@@ -56,6 +56,8 @@ class Region:
             raise TypeError("row_key_field_to_range must be a dictionary")
         if len(row_key_field_to_range) == 0:
             raise ValueError("Must provide at least one range")
+        if not isinstance(strings_base64_encoded, bool):
+            raise TypeError("strings_base64_encoded must be a bool")
         self.row_key_field_to_range = row_key_field_to_range
         self.strings_base64_encoded = strings_base64_encoded
 
@@ -89,6 +91,8 @@ class Query:
     def __init__(self, query_id: str = None, table_name: str = None, regions: list[Region] = None):
         if query_id is None:
             query_id = str(uuid.uuid4())
+        elif not isinstance(query_id, str):
+            raise TypeError("query_id must be a string")
         if not isinstance(table_name, str):
             raise TypeError("table_name must be a string")
         if not isinstance(regions, list):
