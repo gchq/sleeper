@@ -22,7 +22,7 @@ def should_build_exact_query_dict():
     # Then
     assert query.to_dict() == {
         "queryId": "my-query",
-        "regions": [{"key": {"max": "value", "maxInclusive": True, "min": "value", "minInclusive": True}, "stringsBase64Encoded": False}],
+        "regions": [{"key": {"min": "value", "minInclusive": True, "max": "value", "maxInclusive": True}, "stringsBase64Encoded": False}],
         "tableName": "my-table",
         "type": "Query",
     }
@@ -35,7 +35,19 @@ def should_build_range_query_dict():
     # Then
     assert query.to_dict() == {
         "queryId": "my-query",
-        "regions": [{"key": {"max": "max-value", "maxInclusive": False, "min": "min-value", "minInclusive": True}, "stringsBase64Encoded": False}],
+        "regions": [{"key": {"min": "min-value", "minInclusive": True, "max": "max-value", "maxInclusive": False}, "stringsBase64Encoded": False}],
         "tableName": "my-table",
         "type": "Query",
+    }
+
+
+def should_read_region_from_field_to_dict():
+    # When
+    region = Region.from_field_to_dict({"number": {"min": 2, "max": 4}, "string": {"min": "a", "max": "c"}})
+
+    # Then
+    assert region.to_dict() == {
+        "number": {"min": 2, "minInclusive": True, "max": 4, "maxInclusive": True},
+        "string": {"min": "a", "minInclusive": True, "max": "c", "maxInclusive": True},
+        "stringsBase64Encoded": False,
     }
