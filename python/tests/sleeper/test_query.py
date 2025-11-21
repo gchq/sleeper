@@ -15,7 +15,7 @@
 from sleeper.query import Query, Range, Region
 
 
-def should_build_exact_query_dict():
+def should_build_exact_query():
     # When
     query = Query(query_id="my-query", table_name="my-table", regions=[Region.exact_value("key", "value")])
 
@@ -28,7 +28,7 @@ def should_build_exact_query_dict():
     }
 
 
-def should_build_range_query_dict():
+def should_build_range_query():
     # When
     query = Query(query_id="my-query", table_name="my-table", regions=[Region(row_key_field_to_range={"key": Range(min="min-value", max="max-value")})])
 
@@ -38,6 +38,18 @@ def should_build_range_query_dict():
         "regions": [{"key": {"min": "min-value", "minInclusive": True, "max": "max-value", "maxInclusive": False}, "stringsBase64Encoded": False}],
         "tableName": "my-table",
         "type": "Query",
+    }
+
+
+def should_read_exact_region_from_dict():
+    # When
+    region = Region.from_field_to_exact_value({"number": 123, "string": "abc"})
+
+    # Then
+    assert region.to_dict() == {
+        "number": {"min": 123, "minInclusive": True, "max": 123, "maxInclusive": True},
+        "string": {"min": "abc", "minInclusive": True, "max": "abc", "maxInclusive": True},
+        "stringsBase64Encoded": False,
     }
 
 
