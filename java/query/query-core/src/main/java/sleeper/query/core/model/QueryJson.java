@@ -113,6 +113,9 @@ class QueryJson {
     }
 
     private Query toParentQuery(RegionSerDe regionSerDe) {
+        if (queryId == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "queryId field must be provided");
+        }
         return Query.builder()
                 .tableName(tableName)
                 .queryId(queryId)
