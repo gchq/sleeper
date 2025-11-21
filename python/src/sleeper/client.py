@@ -181,9 +181,7 @@ class SleeperClient:
     async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False) -> list:
         """
         Asynchronously performs a web socket query on a Sleeper table for rows where the key matches a given list of query keys.
-        For each key in the provided keys dictionary, and for each value associated with that key,
-        constructs a WebSocketQuery. Executes each query asynchronously
-        using the WebSocketQueryProcessor and aggregates all results into a single list.
+        The results are aggregated into a single list.
 
         :param table_name: The name of the table to query.
         :param keys: A dictionary where each key is a column name and each value is a list of values to query for.
@@ -194,16 +192,14 @@ class SleeperClient:
         :return: A list containing all retrieved rows matching the specified keys and values.
         """
         query = Query(query_id, table_name, Region.list_from_field_to_exact_values(keys, strings_base64_encoded))
-        return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
+        return await self.query_by_web_socket(query)
 
     async def web_socket_range_key_query(
         self, table_name: str, keys: list, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
     ) -> list:
         """
-        Asynchronously performs web socket queries on a Sleeper table for rows where the key is within specified ranges.
-        This method iterates over a list of query dictionaries, each containing keys with associated 'min' and 'max' values.
-        For each key and range, it constructs a WebSocketQuery with the specified range bounds and executes the query asynchronously.
-        The results from all queries are aggregated into a single list.
+        Asynchronously performs a web socket query on a Sleeper table for rows where the key is within specified ranges.
+        The results are aggregated into a single list.
 
         :param table_name: The name of the table to query.
         :param keys: A list of dictionaries, each mapping a key to a range dict with 'min' and 'max' keys.
@@ -216,7 +212,7 @@ class SleeperClient:
         :return: A list containing all retrieved rows matching the specified key ranges.
         """
         query = Query(query_id, table_name, [Region.from_field_to_dict(region, min_inclusive, max_inclusive, strings_base64_encoded) for region in keys])
-        return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
+        return await self.query_by_web_socket(query)
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """
@@ -290,6 +286,17 @@ class SleeperClient:
 
         located_rows = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo_resource, self._deserialiser, query.query_id)
         return located_rows
+
+    async def query_by_web_socket(self, query: Query):
+        """
+        Asynchronously queries a Sleeper table over a web socket for rows where the key is within specified ranges.
+        The results are aggregated into a single list.
+
+        :param query: the query
+
+        :return: list of the result rows
+        """
+        return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
 
     @contextmanager
     def create_batch_writer(self, table_name: str, job_id: str = None):
