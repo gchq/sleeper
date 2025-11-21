@@ -25,6 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertyGroup;
+import sleeper.core.properties.testutils.InstancePropertiesTestHelper;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -34,7 +35,6 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
-import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
@@ -61,7 +61,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldInvokeNanoOnInstancePropertiesFile() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = InstancePropertiesTestHelper.createTestInstanceProperties();
 
             // When / Then
             assertThat(helper.openInstancePropertiesGetCommandRun(properties))
@@ -71,7 +71,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldWriteInstancePropertiesFile() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = InstancePropertiesTestHelper.createTestInstanceProperties();
 
             // When / Then
             assertThat(helper.openInstancePropertiesGetPropertiesWritten(properties))
@@ -81,9 +81,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldGetDiffAfterPropertiesChanged() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = InstancePropertiesTestHelper.createTestInstanceProperties();
             before.set(INGEST_SOURCE_BUCKET, "bucket-before");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = InstancePropertiesTestHelper.createTestInstanceProperties();
             after.set(INGEST_SOURCE_BUCKET, "bucket-after");
 
             // When / Then
@@ -95,8 +95,8 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldRetrievePropertiesAfterChange() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties before = InstancePropertiesTestHelper.createTestInstanceProperties();
+            InstanceProperties after = InstancePropertiesTestHelper.createTestInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
@@ -109,7 +109,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = InstancePropertiesTestHelper.createTestInstanceProperties();
 
             // When
             String tempFileString = Files.readString(helper.openInstancePropertiesGetPathToFile(properties));
@@ -164,7 +164,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldWriteSingleInstancePropertyGroupToFile() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = InstancePropertiesTestHelper.createTestInstanceProperties();
             properties.set(LOGGING_LEVEL, "ERROR");
 
             // When / Then
@@ -176,7 +176,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = InstancePropertiesTestHelper.createTestInstanceProperties();
             properties.set(LOGGING_LEVEL, "ERROR");
 
             // When
@@ -193,9 +193,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldCreateUpdateRequestWithInstanceProperties() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = InstancePropertiesTestHelper.createTestInstanceProperties();
             before.set(LOGGING_LEVEL, "ERROR");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = InstancePropertiesTestHelper.createTestInstanceProperties();
             after.set(LOGGING_LEVEL, "INFO");
 
             // When
@@ -231,9 +231,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUnsetPropertyWhenRemovedInEditor() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = InstancePropertiesTestHelper.createTestInstanceProperties();
             before.set(LOGGING_LEVEL, "ERROR");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = InstancePropertiesTestHelper.createTestInstanceProperties();
             after.unset(LOGGING_LEVEL);
 
             // When
@@ -250,7 +250,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldNotShowUnknownProperties() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = InstancePropertiesTestHelper.createTestInstanceProperties();
             properties.getProperties().setProperty("unknown.property", "some-value");
 
             // When
@@ -261,9 +261,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUpdateAnUnknownProperty() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = InstancePropertiesTestHelper.createTestInstanceProperties();
             before.getProperties().setProperty("unknown.property", "value-before");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = InstancePropertiesTestHelper.createTestInstanceProperties();
             after.getProperties().setProperty("unknown.property", "value-after");
 
             // When
@@ -280,9 +280,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUpdateAPropertyOutsideTheSpecifiedGroup() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = InstancePropertiesTestHelper.createTestInstanceProperties();
             before.set(INGEST_SOURCE_BUCKET, "bucket-before");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = InstancePropertiesTestHelper.createTestInstanceProperties();
             after.set(INGEST_SOURCE_BUCKET, "bucket-after");
 
             // When
@@ -299,9 +299,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldLeaveUnknownPropertyUnchangedWhenEditingAnotherProperty() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = InstancePropertiesTestHelper.createTestInstanceProperties();
             before.getProperties().setProperty("unknown.property", "test-value");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = InstancePropertiesTestHelper.createTestInstanceProperties();
             after.getProperties().setProperty("unknown.property", "test-value");
             after.set(LOGGING_LEVEL, "TRACE");
 

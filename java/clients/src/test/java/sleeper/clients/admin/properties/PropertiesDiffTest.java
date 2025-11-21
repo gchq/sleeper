@@ -33,7 +33,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.newValue;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueDeleted;
-import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -238,9 +237,9 @@ public class PropertiesDiffTest {
         }
 
         private PropertiesDiff generateSingleDiff(InstanceProperty property, String oldValue, String newValue) {
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = InstancePropertiesTestHelper.createTestInstanceProperties();
             before.set(property, oldValue);
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = InstancePropertiesTestHelper.createTestInstanceProperties();
             after.set(property, newValue);
             return new PropertiesDiff(before, after);
         }
