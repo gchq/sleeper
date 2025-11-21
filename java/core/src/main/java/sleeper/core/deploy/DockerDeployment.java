@@ -21,12 +21,10 @@ import sleeper.core.properties.model.OptionalStack;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
@@ -136,17 +134,7 @@ public class DockerDeployment {
      * @return                    the ECR repository name
      */
     public String getEcrRepositoryName(InstanceProperties instanceProperties) {
-        return getEcrRepositoryPrefix(instanceProperties) + "/" + deploymentName;
-    }
-
-    /**
-     * Retrieves the prefix of ECR repository names for a Sleeper instance.
-     *
-     * @param  properties the instance properties
-     * @return            the ECR repository name prefix
-     */
-    public static String getEcrRepositoryPrefix(InstanceProperties properties) {
-        return Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElseGet(() -> properties.get(ID));
+        return instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + deploymentName;
     }
 
     /**

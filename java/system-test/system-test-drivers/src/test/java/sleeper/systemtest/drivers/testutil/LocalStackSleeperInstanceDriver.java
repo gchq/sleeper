@@ -24,12 +24,11 @@ import sleeper.clients.deploy.localstack.DeployDockerInstance;
 import sleeper.clients.util.BucketUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.SleeperVersion;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import java.util.List;
 import java.util.Map;
@@ -37,16 +36,13 @@ import java.util.Map;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalStackSleeperInstanceDriver.class);
 
-    private final SystemTestParameters parameters;
     private final SystemTestClients clients;
 
-    public LocalStackSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
-        this.parameters = parameters;
+    public LocalStackSleeperInstanceDriver(SystemTestClients clients) {
         this.clients = clients;
     }
 
@@ -63,14 +59,13 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
     }
 
     @Override
-    public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
+    public boolean deployInstanceIfNotPresent(String instanceId, SleeperInstanceConfiguration deployConfig) {
         if (BucketUtils.doesBucketExist(clients.getS3(), InstanceProperties.getConfigBucketFromInstanceId(instanceId))) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
         InstanceProperties instanceProperties = deployConfig.getInstanceProperties();
         instanceProperties.set(ID, instanceId);
-        instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName());
         instanceProperties.set(VERSION, SleeperVersion.getVersion());
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createStateStoreCommitterQueue(instanceId).queueUrl());
         DeployDockerInstance.builder()

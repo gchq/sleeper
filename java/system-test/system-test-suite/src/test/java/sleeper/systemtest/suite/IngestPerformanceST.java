@@ -23,8 +23,8 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive3;
 
 import java.time.Duration;
 
@@ -36,7 +36,8 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFOR
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to ingest this many rows on fairly large ECS instances.
+// Expensive because it takes a long time to ingest this many rows on fairly large ECS instances.
+@Expensive3
 public class IngestPerformanceST {
 
     @BeforeEach
@@ -63,8 +64,9 @@ public class IngestPerformanceST {
                 .matches(files -> numberOfRowsIn(files) == 440_000_000,
                         "contain 440 million rows");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(11)
-                        && stats.isAverageRunRowsPerSecondInRange(150_000, 250_000),
+                .matches(stats -> stats.isAllFinishedOneRunEach(11),
+                        "jobs finished with one run each")
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(150_000, 250_000),
                         "meets expected performance");
     }
 }

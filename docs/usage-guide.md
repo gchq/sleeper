@@ -31,7 +31,8 @@ scripts and tools in the command line this gives you.
 ## Configuration
 
 Details of all Sleeper configuration properties are available here: [Properties](usage/property-master.md). These can be
-edited in the administration client detailed below, or set during deployment.
+edited in the administration client detailed below, or set during deployment. Also
+see [Sleeper instance configuration](deployment/instance-configuration.md).
 
 ## Operations on data
 
@@ -102,3 +103,8 @@ See the [Python API documentation](usage/python-api.md) for details of the Pytho
 
 Experimental integrations are available to interact with Sleeper
 via [Athena](usage/data-retrieval.md#use-athena-to-perform-sql-analytics-and-queries) and [Trino](usage/trino.md).
+
+## Fine-grained security
+
+[Fine-grained security](usage/fine-grained-security.md) contains information on implementing fine-grained security
+in an app with data held in Sleeper.

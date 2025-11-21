@@ -26,8 +26,8 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive1;
 
 import java.time.Duration;
 import java.util.Map;
@@ -41,7 +41,8 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
+// Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
+@Expensive1
 public class CompactionDataFusionPerformanceST {
 
     @BeforeEach
@@ -79,8 +80,9 @@ public class CompactionDataFusionPerformanceST {
                 .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                         .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRowsPerSecondInRange(2_900_000, 4_500_000),
+                .matches(stats -> stats.isAllFinishedOneRunEach(10),
+                        "compactions finished with one run each")
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_900_000, 4_500_000),
                         "meets expected performance");
     }
 }

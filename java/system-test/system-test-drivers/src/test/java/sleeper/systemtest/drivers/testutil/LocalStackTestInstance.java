@@ -15,7 +15,7 @@
  */
 package sleeper.systemtest.drivers.testutil;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -41,30 +42,31 @@ public class LocalStackTestInstance {
     public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", LocalStackTestInstance::buildPredefinedTableConfiguration);
     public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", LocalStackTestInstance::buildPredefinedTableConfigurationNoName);
 
-    private static DeployInstanceConfiguration buildMainConfiguration() {
+    private static SleeperInstanceConfiguration buildMainConfiguration() {
         return buildConfigurationWithTableProperties(properties -> properties.set(TABLE_NAME, "system-test"));
     }
 
-    private static DeployInstanceConfiguration buildPredefinedTableConfiguration() {
+    private static SleeperInstanceConfiguration buildPredefinedTableConfiguration() {
         return buildConfigurationWithTableProperties(properties -> properties.set(TABLE_NAME, "predefined-test-table"));
     }
 
-    private static DeployInstanceConfiguration buildPredefinedTableConfigurationNoName() {
+    private static SleeperInstanceConfiguration buildPredefinedTableConfigurationNoName() {
         return buildConfigurationWithTableProperties(properties -> properties.unset(TABLE_NAME));
     }
 
-    private static DeployInstanceConfiguration buildConfigurationWithTableProperties(Consumer<TableProperties> setTableProperties) {
+    private static SleeperInstanceConfiguration buildConfigurationWithTableProperties(Consumer<TableProperties> setTableProperties) {
         InstanceProperties properties = new InstanceProperties();
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
         properties.set(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS, "true");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        properties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         properties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(DEFAULT_SCHEMA);
         setTableProperties.accept(tableProperties);
 
-        return DeployInstanceConfiguration.builder()
+        return SleeperInstanceConfiguration.builder()
                 .instanceProperties(properties)
                 .tableProperties(tableProperties)
                 .build();

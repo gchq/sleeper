@@ -40,8 +40,9 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -55,7 +56,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
@@ -70,21 +70,24 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 public class BulkExportTaskResources {
     private static final String BULK_EXPORT_CLUSTER_NAME = "BulkExportClusterName";
 
-    private final InstanceProperties instanceProperties;
     private final Stack stack;
+    private final SleeperInstanceProps props;
+    private final InstanceProperties instanceProperties;
     private final Queue jobsQueue;
 
-    public BulkExportTaskResources(Stack stack, CoreStacks coreStacks, InstanceProperties instanceProperties,
-            LambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue, IBucket resultsBucket) {
-        this.instanceProperties = instanceProperties;
+    public BulkExportTaskResources(
+            Stack stack, SleeperInstanceProps props, SleeperCoreStacks coreStacks,
+            SleeperLambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue, IBucket resultsBucket) {
         this.stack = stack;
+        this.props = props;
+        this.instanceProperties = props.getInstanceProperties();
         this.jobsQueue = jobsQueue;
-        ecsClusterForBulkExportTasks(coreStacks, jarsBucket, lambdaCode, resultsBucket);
-        lambdaToCreateTasks(coreStacks, lambdaCode, instanceProperties);
+        Cluster cluster = ecsClusterForBulkExportTasks(coreStacks, jarsBucket, resultsBucket);
+        IFunction taskCreator = lambdaToCreateTasks(coreStacks, lambdaCode);
+        coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
     }
 
-    private void lambdaToCreateTasks(
-            CoreStacks coreStacks, LambdaCode lambdaCode, InstanceProperties instanceProperties) {
+    private IFunction lambdaToCreateTasks(SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
                 instanceId, "bulk-export-tasks-creator");
@@ -119,17 +122,19 @@ public class BulkExportTaskResources {
                 .create(stack, "BulkExportTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.BULK_EXPORT_TASK_CREATION.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.BULK_EXPORT_TASK_CREATION.getDescription())
-                .enabled(!shouldDeployPaused(stack))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule
                         .rate(Duration.minutes(instanceProperties.getInt(BULK_EXPORT_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
         instanceProperties.set(BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+
+        return handler;
     }
 
-    private void ecsClusterForBulkExportTasks(CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar,
-            IBucket resultsBucket) {
+    private Cluster ecsClusterForBulkExportTasks(
+            SleeperCoreStacks coreStacks, IBucket jarsBucket, IBucket resultsBucket) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -165,8 +170,7 @@ public class BulkExportTaskResources {
                 .build();
         new CfnOutput(stack, BULK_EXPORT_CLUSTER_NAME, bulkExportClusterProps);
 
-        coreStacks.addAutoStopEcsClusterTasks(stack, cluster);
-
+        return cluster;
     }
 
     private static PolicyStatement runTasksPolicyStatement() {

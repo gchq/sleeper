@@ -28,7 +28,6 @@ import sleeper.clients.deploy.localstack.stack.TableDockerStack;
 import sleeper.clients.table.AddTable;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 import sleeper.core.properties.model.OptionalStack;
@@ -96,7 +95,7 @@ public class DeployDockerInstance {
     }
 
     public void deploy(InstanceProperties instanceProperties, String instanceId) {
-        PopulateInstanceProperties.populateDefaultsFromInstanceId(instanceProperties, instanceId);
+        instanceProperties.set(ID, instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
         extraTableProperties.accept(tableProperties);
         deploy(instanceProperties, List.of(tableProperties));

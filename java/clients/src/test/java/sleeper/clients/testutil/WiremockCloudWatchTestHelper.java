@@ -36,6 +36,7 @@ public class WiremockCloudWatchTestHelper {
     }
 
     public static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
+    public static final StringValuePattern MATCHING_ENABLE_RULE_OPERATION = matching("^AWSEvents\\.EnableRule$");
 
     public static MappingBuilder disableRuleRequest() {
         return post("/")
@@ -45,6 +46,17 @@ public class WiremockCloudWatchTestHelper {
     public static RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
+                .withRequestBody(matchingJsonPath("$.Name", equalTo(ruleName)));
+    }
+
+    public static MappingBuilder enableRuleRequest() {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_ENABLE_RULE_OPERATION);
+    }
+
+    public static RequestPatternBuilder enableRuleRequestedFor(String ruleName) {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(OPERATION_HEADER, MATCHING_ENABLE_RULE_OPERATION)
                 .withRequestBody(matchingJsonPath("$.Name", equalTo(ruleName)));
     }
 

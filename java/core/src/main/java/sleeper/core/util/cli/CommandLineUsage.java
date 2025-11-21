@@ -16,27 +16,29 @@
 package sleeper.core.util.cli;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * A model of arguments and options for the command line.
+ * A model of arguments and options for the command line. Used with {@link CommandArguments}.
  */
 public class CommandLineUsage {
 
-    private final List<String> positionalArguments;
+    private final List<PositionalArgument> positionalArguments;
     private final String helpSummary;
     private final List<CommandOption> options = new ArrayList<>(List.of(CommandOption.longFlag("help")));
     private final Map<String, CommandOption> optionByLongName;
     private final Map<Character, CommandOption> optionByShortName;
 
     private CommandLineUsage(Builder builder) {
-        positionalArguments = Optional.ofNullable(builder.positionalArguments).orElseGet(List::of);
+        positionalArguments = builder.positionalArguments();
         helpSummary = builder.helpSummary;
         Optional.ofNullable(builder.options).ifPresent(options::addAll);
         optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
@@ -83,7 +85,7 @@ public class CommandLineUsage {
      * @return       the name of the argument
      */
     public String getPositionalArgName(int index) {
-        return positionalArguments.get(index);
+        return positionalArguments.get(index).name();
     }
 
     /**
@@ -102,9 +104,13 @@ public class CommandLineUsage {
      */
     public String createUsageMessage() {
         List<String> parts = new ArrayList<>();
-        if (!positionalArguments.isEmpty()) {
+        List<String> positionalNames = positionalArguments.stream()
+                .filter(PositionalArgument::showUsage)
+                .map(PositionalArgument::name)
+                .toList();
+        if (!positionalNames.isEmpty()) {
             parts.add("Usage: " +
-                    positionalArguments.stream()
+                    positionalNames.stream()
                             .map(name -> "<" + name + ">")
                             .collect(joining(" ")));
         }
@@ -134,6 +140,7 @@ public class CommandLineUsage {
      */
     public static class Builder {
         private List<String> positionalArguments;
+        private List<String> systemArguments;
         private String helpSummary;
         private List<CommandOption> options;
 
@@ -150,6 +157,19 @@ public class CommandLineUsage {
          */
         public Builder positionalArguments(List<String> positionalArguments) {
             this.positionalArguments = positionalArguments;
+            return this;
+        }
+
+        /**
+         * Sets which arguments are system arguments. These arguments will be passed by the system instead of the user,
+         * and will not appear in the usage message. If you use {@link #positionalArguments(List)}, the system arguments
+         * must be included there to set where they will be passed in order.
+         *
+         * @param  systemArguments the names of the system arguments
+         * @return                 this builder
+         */
+        public Builder systemArguments(List<String> systemArguments) {
+            this.systemArguments = systemArguments;
             return this;
         }
 
@@ -179,6 +199,27 @@ public class CommandLineUsage {
 
         public CommandLineUsage build() {
             return new CommandLineUsage(this);
+        }
+
+        private List<PositionalArgument> positionalArguments() {
+            List<String> positionalNames = Optional.ofNullable(positionalArguments).orElseGet(List::of);
+            List<String> allSystemNames = Optional.ofNullable(systemArguments).orElseGet(List::of);
+            if (positionalNames.isEmpty()) {
+                return allSystemNames.stream().map(PositionalArgument::systemArgument).toList();
+            } else {
+                Set<String> systemNames = new HashSet<>(allSystemNames);
+                List<PositionalArgument> arguments = positionalNames.stream().map(name -> {
+                    if (systemNames.remove(name)) {
+                        return PositionalArgument.systemArgument(name);
+                    } else {
+                        return PositionalArgument.create(name);
+                    }
+                }).toList();
+                if (!systemNames.isEmpty()) {
+                    throw new IllegalArgumentException("System arguments should be included as positional arguments: " + systemNames);
+                }
+                return arguments;
+            }
         }
 
     }

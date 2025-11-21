@@ -17,44 +17,32 @@ package sleeper.clients.teardown;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class TearDownInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownInstance.class);
 
     private final TearDownClients clients;
     private final Path scriptsDir;
-    private final Function<InstanceProperties, List<String>> getExtraEcsClusters;
-    private final Function<InstanceProperties, List<String>> getExtraEcrRepositories;
-    private final InstanceProperties instanceProperties;
+    private final String instanceId;
 
     private TearDownInstance(Builder builder) {
         clients = Objects.requireNonNull(builder.clients, "clients must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
-        getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
-        getExtraEcrRepositories = Objects.requireNonNull(builder.getExtraEcrRepositories, "getExtraEcrRepositories must not be null");
-        instanceProperties = Optional.ofNullable(builder.instanceProperties)
-                .orElseGet(() -> loadInstancePropertiesOrGenerateDefaults(clients.getS3(), builder.instanceId, scriptsDir));
+        instanceId = Optional.ofNullable(builder.instanceId)
+                .orElseGet(() -> loadInstanceIdFromGeneratedDirectory(scriptsDir));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -66,50 +54,56 @@ public class TearDownInstance {
                 .tearDownWithDefaultClients();
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public void tearDown() throws IOException, InterruptedException {
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("Tear Down");
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("scriptsDir: {}", scriptsDir);
-        LOGGER.info("{}: {}", ID.getPropertyName(), instanceProperties.get(ID));
-        LOGGER.info("{}: {}", CONFIG_BUCKET.getPropertyName(), instanceProperties.get(CONFIG_BUCKET));
-        LOGGER.info("{}: {}", QUERY_RESULTS_BUCKET.getPropertyName(), instanceProperties.get(QUERY_RESULTS_BUCKET));
+        LOGGER.info("{}: {}", ID.getPropertyName(), instanceId);
 
-        shutdownSystemProcesses();
         deleteStack();
         waitForStackToDelete();
-        cleanupAfterStackDeleted();
+        deleteArtefactsStack();
+        waitForArtefactsStackToDelete();
         removeGeneratedDir(scriptsDir);
 
         LOGGER.info("Finished tear down");
     }
 
     public void deleteStack() {
-        String instanceId = instanceProperties.get(ID);
-        LOGGER.info("Deleting instance CloudFormation stack: {}", instanceId);
+        deleteStack(instanceId);
+    }
+
+    public void deleteArtefactsStack() throws InterruptedException {
+        deleteStack(artefactsStackName());
+    }
+
+    private void deleteStack(String stackName) {
+        LOGGER.info("Deleting instance CloudFormation stack: {}", stackName);
         try {
-            clients.getCloudFormation().deleteStack(builder -> builder.stackName(instanceId));
+            clients.getCloudFormation().deleteStack(builder -> builder.stackName(stackName));
         } catch (RuntimeException e) {
             LOGGER.warn("Failed deleting stack", e);
         }
     }
 
     public void waitForStackToDelete() throws InterruptedException {
-        WaitForStackToDelete.from(clients.getCloudFormation(), instanceProperties.get(ID)).pollUntilFinished();
+        WaitForStackToDelete.from(clients.getCloudFormation(), instanceId).pollUntilFinished();
     }
 
-    public void shutdownSystemProcesses() throws InterruptedException {
-        new ShutdownSystemProcesses(clients)
-                .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
+    public void waitForArtefactsStackToDelete() throws InterruptedException {
+        WaitForStackToDelete.from(clients.getCloudFormation(), artefactsStackName()).pollUntilFinished();
     }
 
-    public void cleanupAfterStackDeleted() throws InterruptedException {
-        LOGGER.info("Removing the jars bucket and docker containers");
-        RemoveJarsBucket.remove(clients.getS3(), instanceProperties.get(JARS_BUCKET));
-        RemoveECRRepositories.remove(clients.getEcr(), instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
+    private String artefactsStackName() {
+        return instanceId + "-artefacts";
     }
 
-    public static void removeGeneratedDir(Path scriptsDir) throws IOException {
+    private static void removeGeneratedDir(Path scriptsDir) throws IOException {
         Path generatedDir = scriptsDir.resolve("generated");
         if (Files.isDirectory(generatedDir)) {
             LOGGER.info("Removing generated files");
@@ -119,36 +113,16 @@ public class TearDownInstance {
         }
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    private static InstanceProperties loadInstancePropertiesOrGenerateDefaults(S3Client s3, String instanceId, Path scriptsDir) {
-        if (instanceId == null) {
-            InstanceProperties instanceProperties = LoadLocalProperties
-                    .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
-            instanceId = instanceProperties.get(ID);
-        }
-        return loadInstancePropertiesOrGenerateDefaults(s3, instanceId);
-    }
-
-    public static InstanceProperties loadInstancePropertiesOrGenerateDefaults(S3Client s3, String instanceId) {
-        LOGGER.info("Loading configuration for instance {}", instanceId);
-        try {
-            return S3InstanceProperties.loadGivenInstanceIdNoValidation(s3, instanceId);
-        } catch (RuntimeException e) {
-            LOGGER.info("Failed to download configuration, using default properties");
-            return PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(instanceId);
-        }
+    private static String loadInstanceIdFromGeneratedDirectory(Path scriptsDir) {
+        InstanceProperties instanceProperties = LoadLocalProperties
+                .loadInstancePropertiesNoValidationFromDirectory(scriptsDir.resolve("generated"));
+        return instanceProperties.get(ID);
     }
 
     public static final class Builder {
         private TearDownClients clients;
         private Path scriptsDir;
         private String instanceId;
-        private InstanceProperties instanceProperties;
-        private Function<InstanceProperties, List<String>> getExtraEcsClusters = properties -> List.of();
-        private Function<InstanceProperties, List<String>> getExtraEcrRepositories = properties -> List.of();
 
         private Builder() {
         }
@@ -165,21 +139,6 @@ public class TearDownInstance {
 
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
-            return this;
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public Builder getExtraEcsClusters(Function<InstanceProperties, List<String>> getExtraEcsClusters) {
-            this.getExtraEcsClusters = getExtraEcsClusters;
-            return this;
-        }
-
-        public Builder getExtraEcrRepositories(Function<InstanceProperties, List<String>> getExtraEcrRepositories) {
-            this.getExtraEcrRepositories = getExtraEcrRepositories;
             return this;
         }
 

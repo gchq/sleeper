@@ -43,6 +43,9 @@ sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,Ingest
 # Whether to keep the sleeper table bucket, Dynamo tables related to tables and query results bucket or not.
 sleeper.retain.infra.after.destroy=false
 
+# Whether to keep the sleeper log grops or not.
+sleeper.retain.logs.after.destroy=true
+
 # How often partition splitting should happen
 # This has been reduced to 2 minutes for testing purposes
 sleeper.partition.splitting.period.minutes=2

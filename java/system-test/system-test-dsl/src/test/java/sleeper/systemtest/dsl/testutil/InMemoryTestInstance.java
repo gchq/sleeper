@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
@@ -27,6 +27,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -44,13 +45,13 @@ public class InMemoryTestInstance {
         InstanceProperties instanceProperties = createDslInstanceProperties();
         TableProperties tableProperties = createDslTableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "predefined-test-table");
-        return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+        return new SleeperInstanceConfiguration(instanceProperties, tableProperties);
     });
     public static final SystemTestInstanceConfiguration PREDEFINED_TABLE_NO_NAME = usingSystemTestDefaults("prdtnn", () -> {
         InstanceProperties instanceProperties = createDslInstanceProperties();
         TableProperties tableProperties = createDslTableProperties(instanceProperties);
         tableProperties.unset(TABLE_NAME);
-        return new DeployInstanceConfiguration(instanceProperties, tableProperties);
+        return new SleeperInstanceConfiguration(instanceProperties, tableProperties);
     });
 
     private static SystemTestInstanceConfiguration withDefaultProperties(String identifier) {
@@ -66,7 +67,7 @@ public class InMemoryTestInstance {
     private static SystemTestInstanceConfiguration usingSystemTestDefaultsWithProperties(String identifier, Supplier<InstanceProperties> createInstanceProperties) {
         return usingSystemTestDefaults(identifier, () -> {
             InstanceProperties instanceProperties = createInstanceProperties.get();
-            return DeployInstanceConfiguration.builder()
+            return SleeperInstanceConfiguration.builder()
                     .instanceProperties(instanceProperties)
                     .tableProperties(createDslTableProperties(instanceProperties))
                     .build();
@@ -76,6 +77,7 @@ public class InMemoryTestInstance {
     public static InstanceProperties createDslInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        instanceProperties.set(RETAIN_LOGS_AFTER_DESTROY, "true");
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "in-memory-ingest-job-queue-url");

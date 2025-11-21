@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
@@ -33,8 +33,8 @@ import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.SaveLocalProperties;
 
@@ -45,6 +45,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
+import static sleeper.clients.util.cdk.InvokeCdk.Type.ARTEFACTS;
+import static sleeper.core.properties.instance.CommonProperty.ARTEFACTS_DEPLOYMENT_ID;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -82,7 +84,7 @@ public class DeployInstance {
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
 
-            DeployInstanceConfiguration instanceConfiguration = DeployInstanceConfiguration.fromLocalConfiguration(propertiesFile);
+            SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
             PopulateInstancePropertiesAws.builder(stsClient, regionProvider)
                     .instanceId(instanceId)
                     .vpcId(vpcId)
@@ -95,7 +97,7 @@ public class DeployInstance {
                     SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                     new UploadDockerImagesToEcr(
                             UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
-                            EcrRepositoryCreator.withEcrClient(ecrClient)),
+                            CheckVersionExistsInEcr.withEcrClient(ecrClient)),
                     WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                     InvokeCdk.fromScriptsDirectory(scriptsDirectory));
 
@@ -115,11 +117,14 @@ public class DeployInstance {
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
 
-        DeployInstanceConfiguration instanceConfig = request.getInstanceConfig();
+        SleeperInstanceConfiguration instanceConfig = request.getInstanceConfig();
         InstanceProperties instanceProperties = instanceConfig.getInstanceProperties();
         LOGGER.info("instanceId: {}", instanceProperties.get(ID));
         LOGGER.info("vpcId: {}", instanceProperties.get(VPC_ID));
         LOGGER.info("subnetIds: {}", instanceProperties.get(SUBNETS));
+        if (!instanceProperties.isSet(ARTEFACTS_DEPLOYMENT_ID)) {
+            invokeCdk.invoke(ARTEFACTS, CdkCommand.deployArtefacts(instanceProperties.get(ID), request.getExtraDockerImageNames()));
+        }
         syncJars.sync(SyncJarsRequest.from(instanceProperties));
         dockerImageUploader.upload(
                 UploadDockerImagesToEcrRequest.forDeployment(instanceProperties)
@@ -132,7 +137,7 @@ public class DeployInstance {
     }
 
     public interface WriteLocalProperties {
-        Path write(DeployInstanceConfiguration instanceConfig) throws IOException;
+        Path write(SleeperInstanceConfiguration instanceConfig) throws IOException;
 
         static WriteLocalProperties underScriptsDirectory(Path scriptsDirectory) {
             return toDirectory(scriptsDirectory.resolve("generated"));

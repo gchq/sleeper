@@ -58,6 +58,7 @@ public class LoggingStack extends NestedStack {
         return LogGroup.Builder.create(scope, ref.shortName)
                 .logGroupName(ref.prefix + String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), ref.shortName))
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .removalPolicy(Utils.logsRemovalPolicy(instanceProperties))
                 .build();
     }
 

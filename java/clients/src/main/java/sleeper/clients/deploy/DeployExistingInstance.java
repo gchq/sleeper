@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
@@ -32,7 +32,7 @@ import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
@@ -53,6 +53,7 @@ public class DeployExistingInstance {
     private final EcrClient ecr;
     private final boolean deployPaused;
     private final CommandPipelineRunner runCommand;
+    private final boolean createMultiPlatformBuilder;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
@@ -62,6 +63,7 @@ public class DeployExistingInstance {
         ecr = builder.ecr;
         deployPaused = builder.deployPaused;
         runCommand = builder.runCommand;
+        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
 
     public static Builder builder() {
@@ -97,13 +99,14 @@ public class DeployExistingInstance {
                                 .scriptsDirectory(scriptsDirectory)
                                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                                 .commandRunner(runCommand)
+                                .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        EcrRepositoryCreator.withEcrClient(ecr)),
+                        CheckVersionExistsInEcr.withEcrClient(ecr)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
         deployInstance.deploy(DeployInstanceRequest.builder()
-                .instanceConfig(DeployInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
+                .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
                 .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
                 .inferInstanceType()
                 .build());
@@ -120,6 +123,7 @@ public class DeployExistingInstance {
         private EcrClient ecr;
         private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
+        private boolean createMultiPlatformBuilder = true;
 
         private Builder() {
         }
@@ -161,6 +165,11 @@ public class DeployExistingInstance {
 
         public Builder runCommand(CommandPipelineRunner runCommand) {
             this.runCommand = runCommand;
+            return this;
+        }
+
+        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
+            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
             return this;
         }
 

@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
@@ -37,8 +37,8 @@ import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.statestore.StateStoreFactory;
@@ -56,11 +56,12 @@ public class DeployNewInstance {
     private final DynamoDbClient dynamoClient;
     private final EcrClient ecrClient;
     private final Path scriptsDirectory;
-    private final DeployInstanceConfiguration deployInstanceConfiguration;
+    private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final List<StackDockerImage> extraDockerImages;
     private final InvokeCdk.Type instanceType;
     private final CommandPipelineRunner runCommand;
     private final boolean deployPaused;
+    private final boolean createMultiPlatformBuilder;
 
     private DeployNewInstance(Builder builder) {
         s3Client = builder.s3Client;
@@ -72,6 +73,7 @@ public class DeployNewInstance {
         instanceType = builder.instanceType;
         runCommand = builder.runCommand;
         deployPaused = builder.deployPaused;
+        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
 
     public static Builder builder() {
@@ -95,7 +97,7 @@ public class DeployNewInstance {
             Path instancePropertiesFile = optionalArgument(args, 4).map(Path::of).orElse(null);
             boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
             builder().scriptsDirectory(scriptsDirectory)
-                    .deployInstanceConfiguration(DeployInstanceConfiguration.forNewInstanceDefaultingInstance(
+                    .deployInstanceConfiguration(SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
                             instancePropertiesFile, populateInstanceProperties, scriptsDirectory.resolve("templates")))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdk.Type.STANDARD)
@@ -108,7 +110,6 @@ public class DeployNewInstance {
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
         deployInstanceConfiguration.validate();
-
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                 new UploadDockerImagesToEcr(
@@ -116,8 +117,9 @@ public class DeployNewInstance {
                                 .scriptsDirectory(scriptsDirectory)
                                 .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
                                 .commandRunner(runCommand)
+                                .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        EcrRepositoryCreator.withEcrClient(ecrClient)),
+                        CheckVersionExistsInEcr.withEcrClient(ecrClient)),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
@@ -144,11 +146,12 @@ public class DeployNewInstance {
         private DynamoDbClient dynamoClient;
         private EcrClient ecrClient;
         private Path scriptsDirectory;
-        private DeployInstanceConfiguration deployInstanceConfiguration;
+        private SleeperInstanceConfiguration deployInstanceConfiguration;
         private List<StackDockerImage> extraDockerImages = List.of();
         private InvokeCdk.Type instanceType;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean deployPaused;
+        private boolean createMultiPlatformBuilder = true;
 
         private Builder() {
         }
@@ -173,7 +176,7 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder deployInstanceConfiguration(DeployInstanceConfiguration deployInstanceConfiguration) {
+        public Builder deployInstanceConfiguration(SleeperInstanceConfiguration deployInstanceConfiguration) {
             this.deployInstanceConfiguration = deployInstanceConfiguration;
             return this;
         }
@@ -195,6 +198,11 @@ public class DeployNewInstance {
 
         public Builder deployPaused(boolean deployPaused) {
             this.deployPaused = deployPaused;
+            return this;
+        }
+
+        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
+            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
             return this;
         }
 

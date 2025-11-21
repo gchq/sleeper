@@ -16,10 +16,8 @@
 package sleeper.core.util.cli;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -28,11 +26,11 @@ import java.util.function.Function;
 public class CommandArguments {
 
     private final Map<String, String> argByName;
-    private final Set<String> optionsSet;
+    private final Map<String, Boolean> flags;
 
     public CommandArguments(Builder builder) {
         argByName = builder.argByName;
-        optionsSet = builder.optionsSet;
+        flags = builder.flagByName;
     }
 
     /**
@@ -123,13 +121,24 @@ public class CommandArguments {
     }
 
     /**
-     * Checks whether a flag was set.
+     * Checks whether a flag was set. Returns its value if it was set, otherwise returns false.
      *
      * @param  name the name of the flag
-     * @return      true if the flag was set
+     * @return      the value if the flag was set, otherwise false
      */
     public boolean isFlagSet(String name) {
-        return optionsSet.contains(name);
+        return isFlagSetWithDefault(name, false);
+    }
+
+    /**
+     * Checks whether a flag was set. Returns its value if it was set, otherwise returns a default.
+     *
+     * @param  name         the name of the flag
+     * @param  defaultValue the default value
+     * @return              the value if the flag was set, otherwise the default
+     */
+    public boolean isFlagSetWithDefault(String name, boolean defaultValue) {
+        return flags.getOrDefault(name, defaultValue);
     }
 
     private static int readInteger(String name, String string) {
@@ -163,7 +172,7 @@ public class CommandArguments {
      */
     public static class Builder {
         private Map<String, String> argByName = new LinkedHashMap<>();
-        private Set<String> optionsSet = new LinkedHashSet<>();
+        private Map<String, Boolean> flagByName = new LinkedHashMap<>();
 
         /**
          * Sets an argument.
@@ -185,16 +194,9 @@ public class CommandArguments {
          * @return        this builder
          */
         public Builder flag(CommandOption option, boolean isSet) {
-            if (isSet) {
-                optionsSet.add(option.longName());
-                if (option.shortName() != null) {
-                    optionsSet.add("" + option.shortName());
-                }
-            } else {
-                optionsSet.remove(option.longName());
-                if (option.shortName() != null) {
-                    optionsSet.remove("" + option.shortName());
-                }
+            flagByName.put(option.longName(), isSet);
+            if (option.shortName() != null) {
+                flagByName.put("" + option.shortName(), isSet);
             }
             return this;
         }

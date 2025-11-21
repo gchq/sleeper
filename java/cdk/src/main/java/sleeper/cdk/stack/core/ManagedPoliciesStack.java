@@ -75,10 +75,11 @@ public class ManagedPoliciesStack extends NestedStack {
         }
     }
 
-    public void createRoles() {
-        createAdminRole();
-        createIngestByQueueRole();
-        createDirectIngestRole();
+    public SleeperInstanceRoles createRoles() {
+        return new SleeperInstanceRoles(
+                createAdminRole(),
+                createIngestByQueueRole(),
+                createDirectIngestRole());
     }
 
     public ManagedPolicy getDirectIngestPolicyForGrants() {
@@ -150,16 +151,17 @@ public class ManagedPoliciesStack extends NestedStack {
                 .collect(Collectors.toList());
     }
 
-    private void createAdminRole() {
-        Role adminRole = Role.Builder.create(this, "AdminRole")
+    private Role createAdminRole() {
+        Role role = Role.Builder.create(this, "AdminRole")
                 .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-admin-" + Utils.cleanInstanceId(instanceProperties))
                 .build();
 
-        instanceAdminPolicies().forEach(policy -> policy.attachToRole(adminRole));
-        adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+        instanceAdminPolicies().forEach(policy -> policy.attachToRole(role));
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
-        instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
+        instanceProperties.set(ADMIN_ROLE_ARN, role.getRoleArn());
+        return role;
     }
 
     private Stream<ManagedPolicy> instanceAdminPolicies() {
@@ -170,21 +172,23 @@ public class ManagedPoliciesStack extends NestedStack {
                 .filter(policy -> policy != null);
     }
 
-    private void createIngestByQueueRole() {
-        Role ingestRole = Role.Builder.create(this, "IngestByQueueRole")
+    private Role createIngestByQueueRole() {
+        Role role = Role.Builder.create(this, "IngestByQueueRole")
                 .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-ingest-by-queue-" + Utils.cleanInstanceId(instanceProperties))
                 .build();
-        ingestByQueuePolicy.attachToRole(ingestRole);
-        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, ingestRole.getRoleArn());
+        ingestByQueuePolicy.attachToRole(role);
+        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, role.getRoleArn());
+        return role;
     }
 
-    private void createDirectIngestRole() {
-        Role ingestRole = Role.Builder.create(this, "DirectIngestRole")
+    private Role createDirectIngestRole() {
+        Role role = Role.Builder.create(this, "DirectIngestRole")
                 .assumedBy(new AccountRootPrincipal())
                 .roleName("sleeper-ingest-direct-" + Utils.cleanInstanceId(instanceProperties))
                 .build();
-        directIngestPolicy.attachToRole(ingestRole);
-        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, ingestRole.getRoleArn());
+        directIngestPolicy.attachToRole(role);
+        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, role.getRoleArn());
+        return role;
     }
 }

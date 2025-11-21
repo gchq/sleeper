@@ -23,8 +23,8 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive2;
 
 import java.time.Duration;
 
@@ -36,7 +36,8 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_P
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRowsIn;
 
 @SystemTest
-@Expensive // Expensive because it takes a lot of very costly EMR instances to import this many rows.
+// Expensive because it takes a lot of very costly EMR instances to import this many rows.
+@Expensive2
 public class EmrBulkImportPerformanceST {
 
     @BeforeEach
@@ -64,8 +65,9 @@ public class EmrBulkImportPerformanceST {
                 .matches(files -> numberOfRowsIn(files) == 5_000_000_000L,
                         "contain 5 billion rows");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(5)
-                        && stats.isAverageRunRowsPerSecondInRange(3_500_000, 5_000_000),
+                .matches(stats -> stats.isAllFinishedOneRunEach(5),
+                        "jobs finished with one run each")
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_500_000, 5_000_000),
                         "meets expected performance");
     }
 }

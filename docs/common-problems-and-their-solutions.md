@@ -59,19 +59,19 @@ heap space") then this is likely due to the tasks not being able to store the sp
 Try reducing the number of rows that will be held in memory. When reducing this parameter it is a good idea to also
 reduce the number of rows held on the local disk.
 
+## Sleeper instance re-creation failures
 
-## I created an instance, destroyed it and then recreating it failed
+If you attempt to re-create a Sleeper instance using the same instance ID, but resources have been retained from the previous deployment, the deployment will fail.
 
-If you create an instance and destroy it then some remnants of the previous instance will still be present. Usually this
-should be log groups containing logs of the previous instance.
+The core issue is that the new deployment will attempt to create resources (like S3 buckets or log groups) that still exist from the previous instance, resulting in a "resource already exists" error.
 
-The CDK deployment process can also be configured to not delete the buckets for the tables, or the bucket for the
-results of queries. This is set in the `sleeper.retain.infra.after.destroy` instance property. It may also be because
-the `cdk destroy` command partially failed due to there being some tasks running on ECS or EMR clusters. In this case
-the cluster cannot be destroyed until the tasks are completed or terminated.
+To successfully recreate the instance with the same ID, you must manually ensure a complete cleanup of all remnant resources.
 
-If there are some remnants present, then attempting to deploy Sleeper again with the same instance id will fail as it
-will complain that some resources it needs to create already exist.
+### Configuration when destroying an instance
 
-If you want to recreate an instance with the same instance id as one that was previously deleted, then check
-that all resources with a name containing that instance id have been deleted.
+The CDK deployment process offers two configuration options that can be set prior to deployment, if you wish to delete the deployment and start again:
+
+- Data and Query Buckets: You can configure the deployment to delete the S3 buckets used for tables and query results. This is managed by setting the instance property `sleeper.retain.infra.after.destroy` to false.
+
+- CloudWatch Log Groups: Similarly, you can ensure that the associated log groups are deleted after the deployment is destroyed. This is controlled by settng the instance property `sleeper.retain.logs.after.destroy` to false.
+

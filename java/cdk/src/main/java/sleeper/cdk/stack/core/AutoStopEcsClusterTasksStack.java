@@ -28,8 +28,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -47,14 +47,14 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
     private IFunction lambda;
     private Provider provider;
 
-    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
+    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
             LoggingStack loggingStack) {
         super(scope, id);
         createLambda(instanceProperties, jars, loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS),
                 loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER));
     }
 
-    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
+    public AutoStopEcsClusterTasksStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars) {
         super(scope, id);
         ILogGroup logGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS, instanceProperties);
         ILogGroup providerLogGroup = LoggingStack.createLogGroup(this, LogGroupRef.AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER, instanceProperties);
@@ -62,11 +62,11 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // getRole is incorrectly labelled as nullable
-    private void createLambda(InstanceProperties instanceProperties, BuiltJars jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
+    private void createLambda(InstanceProperties instanceProperties, SleeperJarsInBucket jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "auto-stop-ecs-cluster-tasks");
@@ -97,10 +97,26 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
     /**
      * Adds a custom resource to stop tasks in an ECS cluster.
      *
-     * @param scope   the stack to add the custom resource to
-     * @param cluster the ECS cluster
+     * @param scope       the stack to add the custom resource to
+     * @param cluster     the ECS cluster
+     * @param taskCreator the lambda function that starts tasks in the cluster
      */
-    public void addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
+    public void addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(Construct scope, ICluster cluster, IFunction taskCreator) {
+        CustomResource customResource = addAutoStopEcsClusterTasks(scope, cluster);
+
+        // This dependency means that during teardown the task creator lambda will be deleted before ECS tasks are stopped.
+        // This is important otherwise more tasks may be created as they are being stopped.
+        taskCreator.getNode().addDependency(customResource);
+    }
+
+    /**
+     * Adds a custom resource to stop tasks in an ECS cluster.
+     *
+     * @param  scope   the stack to add the custom resource to
+     * @param  cluster the ECS cluster
+     * @return         the custom resource that will stop tasks when it is deleted
+     */
+    public CustomResource addAutoStopEcsClusterTasks(Construct scope, ICluster cluster) {
 
         String id = cluster.getNode().getId() + "-AutoStop";
 
@@ -110,8 +126,10 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
                 .serviceToken(provider.getServiceToken())
                 .build();
 
+        // This dependency means that ECS tasks will be stopped before the cluster is deleted.
         customResource.getNode().addDependency(cluster);
 
+        return customResource;
     }
 
 }

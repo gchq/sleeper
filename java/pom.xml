@@ -101,19 +101,19 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
-        <protobuf.version>4.33.0</protobuf.version>
+        <protobuf.version>4.33.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
         <nimbus-jose-jwt.version>10.6</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.1</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
-        <kerby.version>2.1.0</kerby.version>
+        <kerby.version>2.1.1</kerby.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. -->
         <dnsjava.version>3.6.3</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. -->
-        <xz.version>1.10</xz.version>
+        <xz.version>1.11</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. -->
-        <okhttp3.version>5.3.0</okhttp3.version>
+        <okhttp3.version>5.3.2</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict.
@@ -123,7 +123,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict within Spark, and with Trino.
         -->
-        <okio.version>3.16.2</okio.version>
+        <okio.version>3.16.4</okio.version>
         <!--
         Spark declares an old version of RoaringBitmap with vulnerabilities. We have upgraded the version
         ahead of the Spark version to address detected vulnerabilities.
@@ -132,7 +132,7 @@
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.21</logback.version>
-        <aws-java-sdk-v2.version>2.38.4</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.39.1</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -146,12 +146,12 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.39.4</aws-crt.version>
+        <aws-crt.version>0.40.0</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
         <aws-lambda-java-runtime-interface-client.version>2.8.7</aws-lambda-java-runtime-interface-client.version>
-        <aws-lambda-powertools.version>2.6.0</aws-lambda-powertools.version>
-        <commons-lang3.version>3.19.0</commons-lang3.version>
+        <aws-lambda-powertools.version>2.7.0</aws-lambda-powertools.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.20.0</commons-codec.version>
         <commons-io.version>2.21.0</commons-io.version>
         <commons-configuration.version>2.12.0</commons-configuration.version>
@@ -187,7 +187,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.44.0</google.errorprone.version>
-        <cdk.version>2.223.0</cdk.version>
+        <cdk.version>2.227.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.3</constructs.version>
         <jsii.version>1.119.0</jsii.version>
@@ -225,14 +225,14 @@
         <junit.version>6.0.1</junit.version>
         <mockito.version>5.20.0</mockito.version>
         <testcontainers.version>1.21.3</testcontainers.version>
-        <wiremock.version>3.13.1</wiremock.version>
+        <wiremock.version>3.13.2</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
         <assertj.version>3.27.6</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
         <approvaltests.version>25.7.0</approvaltests.version>
         <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
-        <jsonunit.version>5.0.0</jsonunit.version>
+        <jsonunit.version>5.1.0</jsonunit.version>
         <checkstyle.version>12.1.2</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
@@ -242,6 +242,7 @@
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <sleeper.system.test.force.statestore.classname />
+        <sleeper.system.test.create.multi.platform.builder>true</sleeper.system.test.create.multi.platform.builder>
         <sleeper.system.test.standalone.properties.template />
         <sleeper.system.test.instance.properties.overrides />
         <!-- Maven plugins -->
@@ -253,7 +254,7 @@
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.1</shade.plugin.version>
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
-        <jar.plugin.version>3.4.2</jar.plugin.version>
+        <jar.plugin.version>3.5.0</jar.plugin.version>
         <compiler.plugin.version>3.14.1</compiler.plugin.version>
         <enforcer.plugin.version>3.6.2</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
@@ -1148,6 +1149,29 @@
                 <artifactId>handlebars</artifactId>
                 <version>${handlebars.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.facebook.jcommon</groupId>
+                <artifactId>collections</artifactId>
+                <version>${facebook.collections.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.datatype</groupId>
+                        <artifactId>jackson-datatype-guava</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <!-- Apache commons -->
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -1944,6 +1968,10 @@
                             <property>
                                 <name>sleeper.system.test.force.statestore.classname</name>
                                 <value>${sleeper.system.test.force.statestore.classname}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.create.multi.platform.builder</name>
+                                <value>${sleeper.system.test.create.multi.platform.builder}</value>
                             </property>
                             <property>
                                 <name>sleeper.system.test.standalone.properties.template</name>

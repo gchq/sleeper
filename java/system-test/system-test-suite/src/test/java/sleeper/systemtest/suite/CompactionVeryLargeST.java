@@ -28,8 +28,8 @@ import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.DataFileDuplications;
-import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive1;
 
 import java.time.Duration;
 import java.util.Map;
@@ -44,7 +44,8 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
+// Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
+@Expensive1
 public class CompactionVeryLargeST {
 
     @BeforeEach
@@ -95,12 +96,14 @@ public class CompactionVeryLargeST {
                 .hasSize(10)
                 .extracting(FileReference::getNumberOfRows)
                 .allMatch(rows -> rows == 2_000_000_000L, "each file has 2 billion rows");
+        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
+                .matches(stats -> stats.isAllFinishedOneRunEach(10),
+                        "compactions finished with one run each")
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_000_000, 4_000_000),
+                        "meets expected performance");
         assertThat(files.getFilesWithReferences())
                 .first().satisfies(file -> assertThat(
                         SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                         .isEqualTo(SortedRowsCheck.sorted(2_000_000_000L)));
-        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(2_000_000, 4_000_000),
-                        "meets expected performance");
     }
 }

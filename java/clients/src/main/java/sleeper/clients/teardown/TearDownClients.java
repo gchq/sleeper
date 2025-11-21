@@ -18,35 +18,25 @@ package sleeper.clients.teardown;
 
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
-import software.amazon.awssdk.services.ecr.EcrClient;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import java.io.IOException;
 import java.util.Objects;
 
 public class TearDownClients {
 
-    private final S3Client s3;
     private final CloudWatchEventsClient cloudWatch;
-    private final EcrClient ecr;
     private final CloudFormationClient cloudFormation;
 
     private TearDownClients(Builder builder) {
-        s3 = Objects.requireNonNull(builder.s3, "s3v2 must not be null");
         cloudWatch = Objects.requireNonNull(builder.cloudWatch, "cloudWatch must not be null");
-        ecr = Objects.requireNonNull(builder.ecr, "ecr must not be null");
         cloudFormation = Objects.requireNonNull(builder.cloudFormation, "cloudFormation must not be null");
     }
 
     public static void withDefaults(TearDownOperation operation) throws IOException, InterruptedException {
-        try (S3Client s3Client = S3Client.create();
-                CloudWatchEventsClient cloudWatchClient = CloudWatchEventsClient.create();
-                EcrClient ecrClient = EcrClient.create();
+        try (CloudWatchEventsClient cloudWatchClient = CloudWatchEventsClient.create();
                 CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
             TearDownClients clients = builder()
-                    .s3(s3Client)
                     .cloudWatch(cloudWatchClient)
-                    .ecr(ecrClient)
                     .cloudFormation(cloudFormationClient)
                     .build();
             operation.tearDown(clients);
@@ -57,16 +47,8 @@ public class TearDownClients {
         return new Builder();
     }
 
-    public S3Client getS3() {
-        return s3;
-    }
-
     public CloudWatchEventsClient getCloudWatch() {
         return cloudWatch;
-    }
-
-    public EcrClient getEcr() {
-        return ecr;
     }
 
     public CloudFormationClient getCloudFormation() {
@@ -74,26 +56,14 @@ public class TearDownClients {
     }
 
     public static final class Builder {
-        private S3Client s3;
         private CloudWatchEventsClient cloudWatch;
-        private EcrClient ecr;
         private CloudFormationClient cloudFormation;
 
         private Builder() {
         }
 
-        public Builder s3(S3Client s3) {
-            this.s3 = s3;
-            return this;
-        }
-
         public Builder cloudWatch(CloudWatchEventsClient cloudWatch) {
             this.cloudWatch = cloudWatch;
-            return this;
-        }
-
-        public Builder ecr(EcrClient ecr) {
-            this.ecr = ecr;
             return this;
         }
 

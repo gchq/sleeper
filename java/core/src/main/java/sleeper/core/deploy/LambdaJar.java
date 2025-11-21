@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 
 /**
  * Definitions of jar files used to deploy lambda functions.
@@ -151,7 +152,7 @@ public class LambdaJar {
      * @return                    the ECR repository name
      */
     public String getEcrRepositoryName(InstanceProperties instanceProperties) {
-        return DockerDeployment.getEcrRepositoryPrefix(instanceProperties) + "/" + imageName;
+        return instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + imageName;
     }
 
     /**

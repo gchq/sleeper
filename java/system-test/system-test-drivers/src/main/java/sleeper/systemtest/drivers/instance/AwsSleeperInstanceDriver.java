@@ -33,7 +33,7 @@ import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Set;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.CREATE_FAILED;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.ROLLBACK_COMPLETE;
 
@@ -82,20 +81,20 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         S3InstanceProperties.saveToS3(s3, instanceProperties);
     }
 
-    public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
+    public boolean deployInstanceIfNotPresent(String instanceId, SleeperInstanceConfiguration deployConfig) {
         if (deployedStackIsPresent(instanceId)) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
         PopulateInstancePropertiesAws.builder(sts, regionProvider)
                 .instanceId(instanceId).vpcId(parameters.getVpcId()).subnetIds(parameters.getSubnetIds())
-                .extraInstanceProperties(instanceProperties -> instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                 .build().populate(deployConfig.getInstanceProperties());
         try {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
                     .instanceType(InvokeCdk.Type.STANDARD)
                     .runCommand(CommandUtils::runCommandLogOutput)
+                    .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .deployWithClients(s3, dynamoDB, ecr);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -130,6 +129,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
                     .runCommand(CommandUtils::runCommandLogOutput)
+                    .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .build().update();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
