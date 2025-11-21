@@ -51,3 +51,15 @@ def should_read_region_from_field_to_dict():
         "string": {"min": "a", "minInclusive": True, "max": "c", "maxInclusive": True},
         "stringsBase64Encoded": False,
     }
+
+
+def should_read_region_from_field_to_tuple():
+    # When
+    region = Region.from_field_to_tuple({"number": [2, 4], "string": ["a", False, "c", True]})
+
+    # Then
+    assert region.to_dict() == {
+        "number": {"min": 2, "minInclusive": True, "max": 4, "maxInclusive": False},
+        "string": {"min": "a", "minInclusive": False, "max": "c", "maxInclusive": True},
+        "stringsBase64Encoded": False,
+    }
