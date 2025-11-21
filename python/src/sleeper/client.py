@@ -17,6 +17,7 @@ import tempfile
 import time
 import uuid
 from contextlib import contextmanager
+from itertools import chain
 from typing import Dict, List
 
 import boto3
@@ -241,7 +242,7 @@ class SleeperClient:
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """
-        Query a Sleeper table for rows where the key matches a given list of query keys. This query is executed in
+        Query a Sleeper table for rows where the key values are equal to one of a given list. This query is executed in
         a lambda function and the results are written to S3. Once the query has finished the results are loaded from
         S3. This means that there can be significant latency before the results are returned. Note that the first query
         will be significantly slower than subsequent ones as the lambda needs to start up, unless the KeepLambdaWarm
@@ -254,45 +255,21 @@ class SleeperClient:
 
         :return: list of result rows
         """
-        if not isinstance(keys, list) and not isinstance(keys, dict):
+        if isinstance(keys, dict):
+            regions = list(chain.from_iterable(map(lambda item: map(lambda value: Region.exact_value(item[0], value), item[1]), keys.items())))
+        elif isinstance(keys, list):
+            regions = [Region.from_field_to_exact_value(region) for region in keys]
+        else:
             raise Exception(
                 "keys must be either (a) a single dict where the key is the row-key field name and the value is a list of values to query for"
                 + " or (b) a list of dicts where the key is a row-key field name and the value is the value to query for"
             )
-        if len(keys) == 0:
-            raise Exception("Must provide at least one key")
 
-        if isinstance(keys, dict):
-            if len(keys) != 1:
-                raise Exception("If keys is a dict, there must be only one entry, with key of the row-key field and the value a list of the values to query for")
-            for key in keys:
-                return self._exact_key_query_from_list_of_values(table_name, key, keys[key], query_id)
-
-        return self._exact_key_query_from_dicts(table_name, keys, query_id)
-
-    def _exact_key_query_from_list_of_values(self, table_name: str, row_key_field_name: str, values: list, query_id: str) -> list:
-        regions = []
-        for value in values:
-            region = {row_key_field_name: [value, True, value, True]}
-            regions.append(region)
-        return self.range_key_query(table_name, regions, query_id)
-
-    def _exact_key_query_from_dicts(self, table_name: str, keys: dict, query_id: str) -> list:
-        regions = []
-        for key in keys:
-            if not isinstance(key, dict):
-                raise Exception("Each key must be a dict mapping row-key field name to value")
-            if len(key) == 0:
-                raise Exception("Key must not be empty")
-            region = {}
-            for field_name in key:
-                region[field_name] = [key[field_name], True, key[field_name], True]
-            regions.append(region)
-        return self.range_key_query(table_name, regions, query_id)
+        return self.query_by_sqs(Query(query_id, table_name, regions))
 
     def range_key_query(self, table_name: str, regions: list, query_id: str = None) -> list:
         """
-        Query a Sleeper table for rows where the key is within one of the provided list of ranges. This query is
+        Query a Sleeper table for rows where the key values are within one of a list of regions. This query is
         executed in a lambda function and the results are written to S3. Once the query has finished the results are
         loaded from S3. This means that there can be significant latency before the results are returned. Note that the
         first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
@@ -312,6 +289,17 @@ class SleeperClient:
         return self.query_by_sqs(Query(query_id=query_id, table_name=table_name, regions=[Region.from_field_to_tuple(region) for region in regions]))
 
     def query_by_sqs(self, query: Query):
+        """
+        Query a Sleeper table for rows where the key values are within one of a list of regions. This query is
+        executed in a lambda function and the results are written to S3. Once the query has finished the results are
+        loaded from S3. This means that there can be significant latency before the results are returned. Note that the
+        first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
+        KeepLambdaWarm stack is deployed.
+
+        :param query: the query
+
+        :return: list of the result rows
+        """
         message = query.to_dict()
         logger.debug(message)
         message_json = json.dumps(message)

@@ -55,6 +55,10 @@ class Region:
         self.strings_base64_encoded = strings_base64_encoded
 
     @staticmethod
+    def exact_value(field: str, value, strings_base64_encoded: bool = False):
+        return Region(row_key_field_to_range={field: Range.exact_value(value)}, strings_base64_encoded=strings_base64_encoded)
+
+    @staticmethod
     def from_field_to_exact_value(field_to_value: dict, strings_base64_encoded: bool = False):
         return Region(row_key_field_to_range={field: Range.exact_value(value) for field, value in field_to_value.items()}, strings_base64_encoded=strings_base64_encoded)
 
