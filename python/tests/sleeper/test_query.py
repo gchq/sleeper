@@ -26,7 +26,7 @@ class MatchesQueryJson:
             return False
 
 
-def should_send_exact_query_with_client(sleeper_client: SleeperClient, query_queue_resource: Queue, mocker: MockerFixture):
+def should_send_exact_query_by_dict_with_client(sleeper_client: SleeperClient, query_queue_resource: Queue, mocker: MockerFixture):
     # Given
     table_name = "test-table"
     query_id = "test-query"
@@ -49,6 +49,46 @@ def should_send_exact_query_with_client(sleeper_client: SleeperClient, query_que
             "regions": [
                 {"key": {"min": "my_key", "minInclusive": True, "max": "my_key", "maxInclusive": True}, "stringsBase64Encoded": False},
                 {"key": {"min": "my_key2", "minInclusive": True, "max": "my_key2", "maxInclusive": True}, "stringsBase64Encoded": False},
+            ],
+        }
+    ]
+
+    messages = receive_messages(query_queue_resource)
+
+    assert messages == expected_message_json
+
+
+def should_send_exact_query_by_list_with_client(sleeper_client: SleeperClient, query_queue_resource: Queue, mocker: MockerFixture):
+    # Given
+    table_name = "test-table"
+    query_id = "test-query"
+    keys = [{"key1": "value1", "key2": "value2"}, {"key1": "valueA", "key2": "valueB"}]
+
+    mocked_results = ["mocked row 1", "mocked row 2"]
+    # Patch the _receive_messages function in the module sleeper.client as this is not tested in this case.
+    mocker.patch("sleeper.client._receive_messages", return_value=mocked_results)
+
+    # When
+    # We don't care about the results for this test as they are mocked.
+    sleeper_client.exact_key_query(table_name=table_name, keys=keys, query_id=query_id)
+
+    # Then
+    expected_message_json = [
+        {
+            "queryId": "test-query",
+            "tableName": "test-table",
+            "type": "Query",
+            "regions": [
+                {
+                    "key1": {"min": "value1", "minInclusive": True, "max": "value1", "maxInclusive": True},
+                    "key2": {"min": "value2", "minInclusive": True, "max": "value2", "maxInclusive": True},
+                    "stringsBase64Encoded": False,
+                },
+                {
+                    "key1": {"min": "valueA", "minInclusive": True, "max": "valueA", "maxInclusive": True},
+                    "key2": {"min": "valueB", "minInclusive": True, "max": "valueB", "maxInclusive": True},
+                    "stringsBase64Encoded": False,
+                },
             ],
         }
     ]
