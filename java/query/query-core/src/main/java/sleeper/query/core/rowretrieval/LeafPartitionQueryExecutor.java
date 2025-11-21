@@ -31,6 +31,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -139,7 +140,7 @@ public class LeafPartitionQueryExecutor implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         try (retriever) {
         }
     }

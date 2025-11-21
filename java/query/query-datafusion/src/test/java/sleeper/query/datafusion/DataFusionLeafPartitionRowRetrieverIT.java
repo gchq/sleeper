@@ -118,13 +118,13 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                 // DataFusion spends time trying to auth with AWS unless you override it
                 DataFusionAwsConfig.overrideEndpoint("dummy"), ALLOCATOR);
-        LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+        try (LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties)) {
+            // When
+            boolean supportsFiltersAndAggregations = rowRetriever.supportsFiltersAndAggregations();
 
-        // When
-        boolean supportsFiltersAndAggregations = rowRetriever.supportsFiltersAndAggregations();
-
-        // Then
-        assertThat(supportsFiltersAndAggregations).isTrue();
+            // Then
+            assertThat(supportsFiltersAndAggregations).isTrue();
+        }
     }
 
     @Nested
@@ -168,10 +168,10 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             "key", 1L, true, 10L, true)),
                             QueryProcessingConfig.none());
 
-                    LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
-                    try (QueryExecutor queryExec = new QueryExecutor(
-                            QueryPlanner.initialiseNow(tableProperties, stateStore),
-                            new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever))) {
+                    try (LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
+                            QueryExecutor queryExec = new QueryExecutor(
+                                    QueryPlanner.initialiseNow(tableProperties, stateStore),
+                                    new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever))) {
 
                         for (int i = 0; i < QUERY_COUNT; i++) {
                             CloseableIterator<Row> results = queryExec.execute(query);
