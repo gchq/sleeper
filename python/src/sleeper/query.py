@@ -22,9 +22,9 @@ class Range:
         if min is None:
             raise ValueError("min must be specified")
         if not isinstance(min_inclusive, bool):
-            raise Exception("min_inclusive must be a bool")
+            raise TypeError("min_inclusive must be a bool")
         if not isinstance(max_inclusive, bool):
-            raise Exception("max_inclusive must be a bool")
+            raise TypeError("max_inclusive must be a bool")
         self.min = min
         self.min_inclusive = min_inclusive
         self.max = max
@@ -53,9 +53,9 @@ class Range:
 class Region:
     def __init__(self, row_key_field_to_range: dict[str, Range] = None, strings_base64_encoded: bool = False):
         if not isinstance(row_key_field_to_range, dict):
-            raise ValueError("row_key_field_to_range must be a dictionary")
+            raise TypeError("row_key_field_to_range must be a dictionary")
         if len(row_key_field_to_range) == 0:
-            raise Exception("Must provide at least one range")
+            raise ValueError("Must provide at least one range")
         self.row_key_field_to_range = row_key_field_to_range
         self.strings_base64_encoded = strings_base64_encoded
 
@@ -89,10 +89,12 @@ class Query:
     def __init__(self, query_id: str = None, table_name: str = None, regions: list[Region] = None):
         if query_id is None:
             query_id = str(uuid.uuid4())
-        if table_name is None:
-            raise ValueError("table_name must be specified")
-        if regions is None:
-            raise ValueError("regions must be specified")
+        if not isinstance(table_name, str):
+            raise TypeError("table_name must be a string")
+        if not isinstance(regions, list):
+            raise TypeError("regions must be a list")
+        if len(regions) == 0:
+            raise ValueError("Must provide at least one region")
         self.query_id = query_id
         self.table_name = table_name
         self.regions = regions
