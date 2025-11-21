@@ -40,59 +40,65 @@ import java.util.Objects;
  */
 public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
-     * The class type for the FFI interface.
-     */
-    private final Class<T> ffiClass;
-    /**
      * FFI call interface. Calling any function on this object will
      * result in an FFI call.
      */
     private final T functions;
-
     /**
      * Pointer to the Rust side of the FFI layer. If this is null, it means the
      * context has been closed.
      */
-    private volatile Pointer context;
+    private Pointer context;
+    /** Class lock for synchronization. */
+    private final static Object CONTEXT_LOCK = new Object();
+    /** Last created context. */
+    private static FFIContext<?> lastContext = null;
 
     /**
      * Initialises the FFI library and context for calling functions.
      *
      * This will attempt to extract the native library from the JAR file and
      * load it into the JVM. It will then establish the Rust side of the context
-     * to enable FFI calls to be executed.
+     * to enable FFI calls to be executed. If possible a new context will be created from an
+     * existing one.
      *
-     * @param  functionClass        the native function interface type
-     * @throws NullPointerException if any parameter is null
-     * @throws IOException          if the native library couldn't be loaded
+     * This method is thread-safe.
+     *
+     * @param  functions   the FFI functions instance
+     * @param  context     the foreign context pointer
+     * @throws IOException if the native library couldn't be loaded
      */
-    public FFIContext(Class<T> functionClass) throws IOException {
-        this.ffiClass = Objects.requireNonNull(functionClass, "functionClass must not be null");
-        this.functions = FFIBridge.createForeignInterface(functionClass);
-        this.context = Objects.requireNonNull(functions.create_context(), "FFI create_context returned null");
+    FFIContext(T functions, Pointer context) throws IOException {
+        this.functions = functions;
+        this.context = context;
     }
 
     /**
-     * Clones this context from an existing one.
+     * Creates an FFI context.
      *
-     * This is useful for creating a new context instance from an existing one to use on a new thread.
+     * This will either create a new FFI context object on the foreign side, or clone from an existing one. An existing
+     * foreign context will only be used if it is still open.
      *
-     * @param  original              the context to clone
-     * @throws IOException           if the native library couldn't be loaded
-     * @throws IllegalStateException if the original context has already been closed
+     * This method is thread safe.
+     *
+     * @param  <T>           the interface type of the functions to be called in this context
+     * @param  functionClass class type for the FFI interface
+     * @return               a valid and open FFIContext for making FFI calls
+     * @throws IOException   if the native library couldn't be loaded
      */
-    public FFIContext(FFIContext<T> original) throws IOException {
-        original.checkClosed();
-        this.ffiClass = original.ffiClass;
-        this.functions = FFIBridge.createForeignInterface(ffiClass);
-        this.context = Objects.requireNonNull(functions.clone_context(original.context), "FFI clone_context returned null");
-    }
-
-    /* Internal test constructor. */
-    FFIContext(Class<T> functionClass, T functions) {
-        this.ffiClass = Objects.requireNonNull(functionClass, "functionClass");
-        this.functions = Objects.requireNonNull(functions, "functions");
-        this.context = functions.create_context();
+    public static <T extends ForeignFunctions> FFIContext<T> getFFIContext(Class<T> functionClass) throws IOException {
+        synchronized (CONTEXT_LOCK) {
+            T functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass"));
+            FFIContext<T> newContext;
+            if (lastContext != null && !lastContext.isClosed()) {
+                newContext = new FFIContext<>(functions, functions.clone_context(lastContext.context));
+                lastContext = newContext;
+            } else {
+                newContext = new FFIContext<>(functions, functions.create_context());
+                lastContext = newContext;
+            }
+            return newContext;
+        }
     }
 
     /**
@@ -107,10 +113,12 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      */
     @Override
     public void close() {
-        // if we have a pointer, then make FFI call to destroy resources
-        if (context != null) {
-            functions.destroy_context(context);
-            context = null;
+        synchronized (CONTEXT_LOCK) {
+            // if we have a pointer, then make FFI call to destroy resources
+            if (context != null) {
+                functions.destroy_context(context);
+                context = null;
+            }
         }
     }
 
@@ -120,7 +128,9 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * @return true if context is closed
      */
     public boolean isClosed() {
-        return context == null;
+        synchronized (CONTEXT_LOCK) {
+            return context == null;
+        }
     }
 
     /**
@@ -128,7 +138,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      *
      * @throws IllegalStateException if this context has been closed
      */
-    private void checkClosed() throws IllegalStateException {
+    private void checkOpen() throws IllegalStateException {
         if (isClosed()) {
             throw new IllegalStateException("FFIContext already closed");
         }
@@ -145,7 +155,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * @throws IllegalStateException if this context has already been closed
      */
     public Pointer getForeignContext() {
-        checkClosed();
+        checkOpen();
         return context;
     }
 }

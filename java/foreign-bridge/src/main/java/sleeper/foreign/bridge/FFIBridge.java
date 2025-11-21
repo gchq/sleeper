@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,8 +37,10 @@ class FFIBridge {
     private static final JniExtractor EXTRACTOR = NativeLoader.getJniExtractor();
     /**
      * Map for recording which native libraries have been extracted to which path.
+     *
+     * IMPORTANT: Access to this Map MUST be synchronized.
      */
-    private static final Map<String, File> EXTRACTED_NATIVE_LIBS = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String, File> EXTRACTED_NATIVE_LIBS = new HashMap<>();
 
     /** Paths in the JAR file where a native library may have been placed. */
     private static final String[] LIB_PATHS = {

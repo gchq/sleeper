@@ -19,14 +19,16 @@ import jnr.ffi.Pointer;
 import jnr.ffi.provider.jffi.ArrayMemoryIO;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FFIContextTest {
 
     @Test
-    void shouldClose() {
+    void shouldClose() throws IOException {
         // Given
-        FFIContext<ForeignFunctions> context = new FFIContext<>(ForeignFunctions.class, new ForeignFunctions() {
+        ForeignFunctions functions = new ForeignFunctions() {
 
             @Override
             public Pointer create_context() {
@@ -43,7 +45,8 @@ public class FFIContextTest {
                 throw new UnsupportedOperationException("Unimplemented method 'clone_context'");
             }
 
-        });
+        };
+        FFIContext<ForeignFunctions> context = new FFIContext<>(functions, functions.create_context());
 
         // When - Then
         assertThat(context.isClosed()).isFalse();
