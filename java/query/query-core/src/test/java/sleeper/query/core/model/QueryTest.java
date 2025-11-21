@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class QueryTest {
 
@@ -219,5 +220,20 @@ public class QueryTest {
         assertThat(test2).isFalse();
         assertThat(hashCode2).isEqualTo(hashCode1);
         assertThat(hashCode3).isNotEqualTo(hashCode1);
+    }
+
+    @Test
+    void shouldGenerateQueryIdIfMissing() {
+        // Given
+        Schema schema = createSchemaWithKey("key", new LongType());
+
+        // When
+        Query query = Query.builder()
+                .tableName("my-table")
+                .regions(List.of(Region.coveringAllValuesOfAllRowKeys(schema)))
+                .build();
+
+        // Then
+        assertThat(query.getQueryId()).isNotBlank();
     }
 }
