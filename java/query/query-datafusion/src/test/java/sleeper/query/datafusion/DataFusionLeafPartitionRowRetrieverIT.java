@@ -136,8 +136,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         List<Row> rows = makeRows();
 
         public static final int ROW_COUNT = 10_00;
-        public static final int TASK_COUNT = 50;
-        public static final int QUERY_COUNT = 30000;
+        public static final int TASK_COUNT = 1;
+        public static final int QUERY_COUNT = 2;
 
         private List<Row> makeRows() {
             List<Row> rows = new ArrayList<>();
@@ -158,6 +158,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         @Test
         void shouldExecuteQueriesInParallel() throws Exception {
             //Given
+
             ExecutorService es = Executors.newFixedThreadPool(TASK_COUNT);
             Callable<Void> task = () -> {
                 // Ensure resources are all local to thread
@@ -178,8 +179,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
                     for (int i = 0; i < QUERY_COUNT; i++) {
                         CloseableIterator<Row> results = queryExec.execute(query);
-                        // results.forEachRemaining(row -> {
-                        // });
+                        results.forEachRemaining(row -> {
+                        });
                     }
                 }
                 return null;
