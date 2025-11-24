@@ -116,10 +116,12 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyValueWithDescription() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.account=1234567890"))
-                    .contains("# The AWS account number. This is the AWS account that the instance will be deployed to.\n" +
-                            "# (this property is system-defined and may not be edited)\n" +
-                            "sleeper.account=1234567890\n");
+            assertThat(printInstanceProperties("sleeper.log.retention.days=30"))
+                    .contains("# The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are\n" +
+                            "# retained.\n" +
+                            "# See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html\n" +
+                            "# for valid options.\n" +
+                            "# Use -1 to indicate infinite retention.");
         }
 
         @Test
