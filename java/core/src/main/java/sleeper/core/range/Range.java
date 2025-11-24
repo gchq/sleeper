@@ -181,16 +181,17 @@ public class Range {
 
     @Override
     public int hashCode() {
+        Range canonicalisedThis = RangeCanonicaliser.canonicaliseRange(this);
         int hash = 5;
-        hash = 13 * hash + Objects.hashCode(this.field);
-        hash = 13 * hash + (this.minInclusive ? 1 : 0);
-        hash = 13 * hash + (this.maxInclusive ? 1 : 0);
+        hash = 13 * hash + Objects.hashCode(canonicalisedThis.field);
+        hash = 13 * hash + (canonicalisedThis.minInclusive ? 1 : 0);
+        hash = 13 * hash + (canonicalisedThis.maxInclusive ? 1 : 0);
         if (field.getType() instanceof ByteArrayType) {
-            hash = 13 * hash + Objects.hashCode(ByteArray.wrap((byte[]) this.min));
-            hash = 13 * hash + Objects.hashCode(ByteArray.wrap((byte[]) this.max));
+            hash = 13 * hash + Objects.hashCode(ByteArray.wrap((byte[]) canonicalisedThis.min));
+            hash = 13 * hash + Objects.hashCode(ByteArray.wrap((byte[]) canonicalisedThis.max));
         } else {
-            hash = 13 * hash + Objects.hashCode(this.min);
-            hash = 13 * hash + Objects.hashCode(this.max);
+            hash = 13 * hash + Objects.hashCode(canonicalisedThis.min);
+            hash = 13 * hash + Objects.hashCode(canonicalisedThis.max);
         }
         return hash;
     }
@@ -206,30 +207,31 @@ public class Range {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Range other = (Range) obj;
+        final Range other = RangeCanonicaliser.canonicaliseRange((Range) obj);
+        final Range canonicalisedThis = RangeCanonicaliser.canonicaliseRange(this);
 
         Object minTransformed;
         Object otherMinTransformed;
         Object maxTransformed;
         Object otherMaxTransformed;
         if (field.getType() instanceof ByteArrayType) {
-            minTransformed = ByteArray.wrap((byte[]) this.min);
+            minTransformed = ByteArray.wrap((byte[]) canonicalisedThis.min);
             otherMinTransformed = ByteArray.wrap((byte[]) other.min);
-            maxTransformed = ByteArray.wrap((byte[]) this.max);
+            maxTransformed = ByteArray.wrap((byte[]) canonicalisedThis.max);
             otherMaxTransformed = ByteArray.wrap((byte[]) other.max);
         } else {
-            minTransformed = this.min;
+            minTransformed = canonicalisedThis.min;
             otherMinTransformed = other.min;
-            maxTransformed = this.max;
+            maxTransformed = canonicalisedThis.max;
             otherMaxTransformed = other.max;
         }
-        if (this.minInclusive != other.minInclusive) {
+        if (canonicalisedThis.minInclusive != other.minInclusive) {
             return false;
         }
-        if (this.maxInclusive != other.maxInclusive) {
+        if (canonicalisedThis.maxInclusive != other.maxInclusive) {
             return false;
         }
-        if (!Objects.equals(this.field, other.field)) {
+        if (!Objects.equals(canonicalisedThis.field, other.field)) {
             return false;
         }
         if (!Objects.equals(minTransformed, otherMinTransformed)) {
