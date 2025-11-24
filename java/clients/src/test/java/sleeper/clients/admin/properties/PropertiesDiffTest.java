@@ -45,7 +45,7 @@ public class PropertiesDiffTest {
     @DisplayName("Compare instance properties")
     @Nested
     class CompareInstanceProperties {
-        String id = "test-id";
+        String id = "test-instance";
 
         @Test
         void shouldDetectNoChanges() {
