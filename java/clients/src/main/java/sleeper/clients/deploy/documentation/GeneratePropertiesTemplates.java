@@ -39,8 +39,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -68,8 +66,6 @@ public class GeneratePropertiesTemplates {
 
     private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
             ID, "basic-example",
-            ACCOUNT, "1234567890",
-            REGION, "eu-west-2",
             VPC_ID, "1234567890",
             SUBNETS, "subnet-abcdefgh");
 
