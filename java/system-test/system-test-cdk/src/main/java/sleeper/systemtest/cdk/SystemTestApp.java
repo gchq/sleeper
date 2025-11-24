@@ -91,8 +91,8 @@ public class SystemTestApp extends Stack {
 
             String id = instanceProperties.get(ID);
             Environment environment = Environment.builder()
-                    .account(instanceProperties.get(ACCOUNT))
-                    .region(instanceProperties.get(REGION))
+                    .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
+                    .region(System.getenv("CDK_DEFAULT_REGION"))
                     .build();
 
             new SystemTestApp(app, id, StackProps.builder()
