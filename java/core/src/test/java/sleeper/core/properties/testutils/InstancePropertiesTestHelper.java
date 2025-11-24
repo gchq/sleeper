@@ -82,7 +82,7 @@ public class InstancePropertiesTestHelper {
      * @return    the instance properties
      */
     public static InstanceProperties createTestInstancePropertiesWithId(String id) {
-        InstanceProperties instanceProperties = createSimpleTestInstanceProperties();
+        InstanceProperties instanceProperties = createSimpleTestInstanceProperties(id);
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
         instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
         instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
@@ -123,7 +123,7 @@ public class InstancePropertiesTestHelper {
      */
     public static InstanceProperties createSimpleTestInstanceProperties() {
         String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT).substring(0, 18);
-        return createTestInstancePropertiesWithId(id);
+        return createSimpleTestInstancePropertiesWithId(id);
     }
 
     /**
@@ -132,7 +132,7 @@ public class InstancePropertiesTestHelper {
      * @param  id the instance ID
      * @return    the instance properties
      */
-    public static InstanceProperties createSimpleTestInstanceProperties(String id) {
+    public static InstanceProperties createSimpleTestInstancePropertiesWithId(String id) {
         InstanceProperties properties = new InstanceProperties();
         properties.set(ID, id);
         properties.set(ACCOUNT, "test-account");
