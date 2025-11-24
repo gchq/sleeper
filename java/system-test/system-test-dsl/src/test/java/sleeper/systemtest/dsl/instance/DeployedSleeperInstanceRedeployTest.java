@@ -126,7 +126,7 @@ public class DeployedSleeperInstanceRedeployTest {
         // Replicate behaviour in DeployNewInstance
         properties.set(ACCOUNT, "test-account");
         properties.set(REGION, "test-region");
-        properties.set(ID, "test-instacne");
+        properties.set(ID, "test-instance");
         properties.set(VPC_ID, "test-vpc");
         properties.set(SUBNETS, "test-subnet");
 
