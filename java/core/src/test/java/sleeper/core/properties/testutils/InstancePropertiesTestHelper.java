@@ -82,17 +82,12 @@ public class InstancePropertiesTestHelper {
      * @return    the instance properties
      */
     public static InstanceProperties createTestInstancePropertiesWithId(String id) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, id);
+        InstanceProperties instanceProperties = createSimpleTestInstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
         instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
         instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results");
-        instanceProperties.set(ACCOUNT, "test-account");
-        instanceProperties.set(REGION, "test-region");
         instanceProperties.set(VERSION, "1.2.3");
-        instanceProperties.set(VPC_ID, "test-vpc");
-        instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, "sleeper-" + id + "-file-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, "sleeper-" + id + "-partition-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, "sleeper-" + id + "-transaction-log-all-snapshots");
@@ -118,6 +113,33 @@ public class InstancePropertiesTestHelper {
 
         instanceProperties.set(QUERY_WEBSOCKET_API_URL, "api-gateway-test");
         return instanceProperties;
+    }
+
+    /**
+     * Creates properties for a Sleeper instance. Generates a random instance ID and pre-populates minimal properties
+     * set during deployment.
+     *
+     * @return the instance properties
+     */
+    public static InstanceProperties createSimpleTestInstanceProperties() {
+        String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT).substring(0, 18);
+        return createTestInstancePropertiesWithId(id);
+    }
+
+    /**
+     * Creates properties for a Sleeper instance. Sets miminal properties for simpler testing parameters.
+     *
+     * @param  id the instance ID
+     * @return    the instance properties
+     */
+    public static InstanceProperties createSimpleTestInstanceProperties(String id) {
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(ID, id);
+        properties.set(ACCOUNT, "test-account");
+        properties.set(REGION, "test-region");
+        properties.set(VPC_ID, "test-vpc");
+        properties.set(SUBNETS, "test-subnet");
+        return properties;
     }
 
     /**
