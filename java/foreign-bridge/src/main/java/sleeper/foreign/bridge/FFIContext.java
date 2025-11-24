@@ -37,6 +37,9 @@ import java.util.Objects;
  * }
  * </pre>
  *
+ * Thread safety: This class is not thread safe! Do NOT attempt to re-use instances of this class across multiple
+ * threads without external synchronisation. A better strategy is to create new context objects for each thread.
+ *
  * @param <T> the interface type of the functions to be called in this context
  */
 public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {

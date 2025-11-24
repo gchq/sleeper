@@ -45,6 +45,10 @@ import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 
 /**
  * Implements a Sleeper row retriever based on Apache DataFusion using native code.
+ *
+ * Thread safety: This code is not thread safe. You should either use external synchronisation, or
+ * create a new instance of this class per thread. You should also create new Arrow allocators and FFI context
+ * objects per thread.
  */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
