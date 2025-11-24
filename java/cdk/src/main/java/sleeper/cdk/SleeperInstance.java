@@ -65,6 +65,8 @@ public class SleeperInstance {
      */
     public static SleeperInstance createAsNestedStack(Construct scope, String id, NestedStackProps stackProps, SleeperInstanceProps sleeperProps) {
         NestedStack stack = new NestedStack(scope, id, stackProps);
+        sleeperProps.getInstanceProperties().set(ACCOUNT, stack.getAccount());
+        sleeperProps.getInstanceProperties().set(REGION, stack.getRegion());
         return addNestedStacks(stack, sleeperProps);
     }
 
