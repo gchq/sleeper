@@ -21,19 +21,16 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class SyncJarsRequest {
 
     private final String bucketName;
-    private final String region;
     private final Predicate<Path> uploadFilter;
     private final boolean deleteOldJars;
 
     private SyncJarsRequest(Builder builder) {
         bucketName = Objects.requireNonNull(builder.bucketName, "bucketName must not be null");
-        region = Objects.requireNonNull(builder.region, "region must not be null");
         uploadFilter = Objects.requireNonNull(builder.uploadFilter, "uploadFilter must not be null");
         deleteOldJars = builder.deleteOldJars;
     }
@@ -50,10 +47,6 @@ public class SyncJarsRequest {
         return bucketName;
     }
 
-    public String getRegion() {
-        return region;
-    }
-
     public Predicate<Path> getUploadFilter() {
         return uploadFilter;
     }
@@ -64,17 +57,11 @@ public class SyncJarsRequest {
 
     public static class Builder {
         private String bucketName;
-        private String region;
         private Predicate<Path> uploadFilter = jar -> true;
         private boolean deleteOldJars = false;
 
         public Builder bucketName(String bucketName) {
             this.bucketName = bucketName;
-            return this;
-        }
-
-        public Builder region(String region) {
-            this.region = region;
             return this;
         }
 
@@ -89,8 +76,7 @@ public class SyncJarsRequest {
         }
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
-            return bucketName(instanceProperties.get(JARS_BUCKET))
-                    .region(instanceProperties.get(REGION));
+            return bucketName(instanceProperties.get(JARS_BUCKET));
         }
 
         public SyncJarsRequest build() {

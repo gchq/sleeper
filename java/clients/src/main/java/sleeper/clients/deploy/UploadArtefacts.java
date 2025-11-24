@@ -137,7 +137,6 @@ public class UploadArtefacts {
             }
             syncJars.sync(SyncJarsRequest.builder()
                     .bucketName(jarsBucket)
-                    .region(region)
                     .build());
             uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
                     .ecrPrefix(ecrPrefix)

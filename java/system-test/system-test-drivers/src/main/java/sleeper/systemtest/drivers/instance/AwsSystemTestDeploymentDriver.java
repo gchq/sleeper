@@ -120,7 +120,6 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         new SyncJars(s3, parameters.getJarsDirectory())
                 .sync(SyncJarsRequest.builder()
                         .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(parameters.getArtefactsDeploymentId()))
-                        .region(parameters.getRegion())
                         .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
                         .build());
         if (!parameters.isSystemTestClusterEnabled()) {
