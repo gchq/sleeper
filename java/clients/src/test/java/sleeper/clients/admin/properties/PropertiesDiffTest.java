@@ -27,7 +27,6 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.newValue;
@@ -46,7 +45,7 @@ public class PropertiesDiffTest {
     @DisplayName("Compare instance properties")
     @Nested
     class CompareInstanceProperties {
-        String id = UUID.randomUUID().toString();
+        String id = "test-id";
 
         @Test
         void shouldDetectNoChanges() {
