@@ -25,8 +25,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.Properties;
-
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
 /**
@@ -47,10 +45,6 @@ public class SleeperCdkApp {
             SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
             InstanceProperties instanceProperties = props.getInstanceProperties();
             String id = instanceProperties.get(ID);
-
-            Properties tagsProperties = instanceProperties.getTagsProperties();
-            tagsProperties.setProperty("InstanceID", id);
-            instanceProperties.loadTags(tagsProperties);
 
             Environment environment = Environment.builder()
                     .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
