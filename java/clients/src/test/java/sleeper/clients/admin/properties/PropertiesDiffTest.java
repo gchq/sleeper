@@ -35,11 +35,12 @@ import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueDel
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.core.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstanceProperties;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstancePropertiesWithId;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PropertiesDiffTest {
@@ -53,8 +54,8 @@ public class PropertiesDiffTest {
         void shouldDetectNoChanges() {
 
             // Given
-            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
-            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
 
             // When / Then
             assertThat(getChanges(before, after)).isEmpty();
@@ -63,9 +64,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "30");
-            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
 
             // When / Then
@@ -76,8 +77,8 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsNewlySet() {
             // Given
-            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
-            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
             after.set(INGEST_SOURCE_BUCKET, "some-bucket");
 
             // When / Then
@@ -88,9 +89,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsUnset() {
             // Given
-            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
             before.set(INGEST_SOURCE_BUCKET, "some-bucket");
-            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
 
             // When / Then
             assertThat(getChanges(before, after))
@@ -100,25 +101,25 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectDefaultedPropertyIsNewlySet() {
             // Given
-            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
-            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
-            after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
+            after.set(S3_UPLOAD_BLOCK_SIZE, "64M");
 
             // When / Then
             assertThat(getChanges(before, after))
-                    .containsExactly(newValue(MAXIMUM_CONNECTIONS_TO_S3, "50"));
+                    .containsExactly(newValue(S3_UPLOAD_BLOCK_SIZE, "64M"));
         }
 
         @Test
         void shouldDetectDefaultedPropertyIsUnset() {
             // Given
-            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
-            before.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
-            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
+            before.set(S3_UPLOAD_BLOCK_SIZE, "64M");
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
 
             // When / Then
             assertThat(getChanges(before, after))
-                    .containsExactly(valueDeleted(MAXIMUM_CONNECTIONS_TO_S3, "50"));
+                    .containsExactly(valueDeleted(S3_UPLOAD_BLOCK_SIZE, "64M"));
         }
     }
 
@@ -193,7 +194,7 @@ public class PropertiesDiffTest {
         }
 
         public static TableProperties generateCompareTestTableProperties() {
-            TableProperties tableProperties = new TableProperties(createSimpleTestInstanceProperties());
+            TableProperties tableProperties = new TableProperties(createTestInstanceProperties());
             tableProperties.set(TABLE_NAME, "test-table");
             tableProperties.setSchema(createSchemaWithKey("key"));
             return tableProperties;
@@ -247,9 +248,9 @@ public class PropertiesDiffTest {
         }
 
         private PropertiesDiff generateSingleDiff(InstanceProperty property, String oldValue, String newValue) {
-            InstanceProperties before = createSimpleTestInstancePropertiesWithId("simple-id");
+            InstanceProperties before = createTestInstancePropertiesWithId("simple-id");
             before.set(property, oldValue);
-            InstanceProperties after = createSimpleTestInstancePropertiesWithId("simple-id");
+            InstanceProperties after = createTestInstancePropertiesWithId("simple-id");
             after.set(property, newValue);
             return new PropertiesDiff(before, after);
         }
