@@ -30,9 +30,9 @@ import sleeper.clients.deploy.jar.SyncJarsRequest;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
@@ -84,7 +84,7 @@ public class DeployInstance {
             instanceConfiguration.getInstanceProperties().set(ID, instanceId);
             instanceConfiguration.getInstanceProperties().set(VPC_ID, vpcId);
             instanceConfiguration.getInstanceProperties().set(SUBNETS, subnetIds);
-            PopulateInstanceProperties.setFromEnvironmentVariables(instanceConfiguration.getInstanceProperties());
+            setFromEnvironmentVariables(instanceConfiguration.getInstanceProperties());
             instanceConfiguration.validate();
 
             DeployInstance deployInstance = new DeployInstance(
@@ -147,6 +147,15 @@ public class DeployInstance {
                         instanceConfig.getTableProperties().stream());
                 return directory.resolve("instance.properties");
             };
+        }
+    }
+
+    private static void setFromEnvironmentVariables(InstanceProperties instanceProperties) {
+        for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.getAll()) {
+            String value = System.getenv(property.toEnvironmentVariable());
+            if (value != null) {
+                instanceProperties.set(property, value);
+            }
         }
     }
 }
