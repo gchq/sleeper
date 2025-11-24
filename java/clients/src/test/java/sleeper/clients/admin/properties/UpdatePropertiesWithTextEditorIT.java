@@ -34,7 +34,6 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
-import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
@@ -42,6 +41,7 @@ import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEV
 import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.generateSimpleTestTableProperties;
 
 class UpdatePropertiesWithTextEditorIT {
 
@@ -128,9 +128,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUpdateTableProperties() throws Exception {
             // Given
-            TableProperties before = generateTestTableProperties();
+            TableProperties before = generateSimpleTestTableProperties();
             before.set(ROW_GROUP_SIZE, "123");
-            TableProperties after = generateTestTableProperties();
+            TableProperties after = generateSimpleTestTableProperties();
             after.set(ROW_GROUP_SIZE, "456");
 
             // When
@@ -145,8 +145,8 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldRetrieveTablePropertiesAfterChange() throws Exception {
             // Given
-            TableProperties before = generateTestTableProperties();
-            TableProperties after = generateTestTableProperties();
+            TableProperties before = generateSimpleTestTableProperties();
+            TableProperties after = generateSimpleTestTableProperties();
             after.set(ROW_GROUP_SIZE, "456");
 
             // When
@@ -212,9 +212,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldCreateUpdateRequestWithTableProperties() throws Exception {
             // Given
-            TableProperties before = generateTestTableProperties();
+            TableProperties before = generateSimpleTestTableProperties();
             before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
-            TableProperties after = generateTestTableProperties();
+            TableProperties after = generateSimpleTestTableProperties();
             after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
 
             // When

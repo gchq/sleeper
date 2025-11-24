@@ -33,13 +33,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.newValue;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueDeleted;
-import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstancePropertiesWithId;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.generateSimpleTestTableProperties;
 
 public class PropertiesDiffTest {
 
@@ -181,9 +181,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            TableProperties before = generateTestTableProperties();
+            TableProperties before = generateSimpleTestTableProperties();
             before.set(ITERATOR_CONFIG, "config-before");
-            TableProperties after = generateTestTableProperties();
+            TableProperties after = generateSimpleTestTableProperties();
             after.set(ITERATOR_CONFIG, "config-after");
 
             // When / Then
