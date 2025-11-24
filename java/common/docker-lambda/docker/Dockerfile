@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Lambda Runtime Interface Emulator
-RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.10/aws-lambda-rie && \
+RUN curl -fsSL -O https://github.com/aws/aws-lambda-runtime-interface-emulator/releases/download/v1.29/aws-lambda-rie && \
     mv ./aws-lambda-rie /usr/local/bin/ && \
     chmod +x /usr/local/bin/aws-lambda-rie
 
