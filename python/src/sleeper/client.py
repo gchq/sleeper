@@ -35,7 +35,8 @@ from sleeper.ingest_batcher import IngestBatcherSender, IngestBatcherSubmitReque
 from sleeper.properties.cdk_defined_properties import CommonCdkProperty, IngestCdkProperty, QueryCdkProperty, queue_name_from_url
 from sleeper.properties.config_bucket import load_instance_properties
 from sleeper.properties.instance_properties import InstanceProperties
-from sleeper.web_socket_query import WebSocketQuery, WebSocketQueryProcessor
+from sleeper.query import Query, Region
+from sleeper.web_socket_query import WebSocketQueryProcessor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -180,9 +181,7 @@ class SleeperClient:
     async def web_socket_exact_key_query(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), strings_base64_encoded: bool = False) -> list:
         """
         Asynchronously performs a web socket query on a Sleeper table for rows where the key matches a given list of query keys.
-        For each key in the provided keys dictionary, and for each value associated with that key,
-        constructs a WebSocketQuery. Executes each query asynchronously
-        using the WebSocketQueryProcessor and aggregates all results into a single list.
+        The results are aggregated into a single list.
 
         :param table_name: The name of the table to query.
         :param keys: A dictionary where each key is a column name and each value is a list of values to query for.
@@ -192,22 +191,15 @@ class SleeperClient:
 
         :return: A list containing all retrieved rows matching the specified keys and values.
         """
-        results = []
-        for key in keys.keys():
-            for value in keys.get(key):
-                query = WebSocketQuery(table_name=table_name, query_id=query_id, key=key, max_value=value, min_value=value, strings_base64_encoded=strings_base64_encoded)
-                logger.debug(f"Web Socket Query {query.to_json()}")
-                results.extend(await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query))
-        return results
+        query = Query(query_id, table_name, Region.list_from_field_to_exact_values(keys, strings_base64_encoded))
+        return await self.query_by_web_socket(query)
 
     async def web_socket_range_key_query(
-        self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
+        self, table_name: str, keys: list, query_id: str = str(uuid.uuid4()), min_inclusive: bool = True, max_inclusive: bool = True, strings_base64_encoded: bool = False
     ) -> list:
         """
-        Asynchronously performs web socket queries on a Sleeper table for rows where the key is within specified ranges.
-        This method iterates over a list of query dictionaries, each containing keys with associated 'min' and 'max' values.
-        For each key and range, it constructs a WebSocketQuery with the specified range bounds and executes the query asynchronously.
-        The results from all queries are aggregated into a single list.
+        Asynchronously performs a web socket query on a Sleeper table for rows where the key is within specified ranges.
+        The results are aggregated into a single list.
 
         :param table_name: The name of the table to query.
         :param keys: A list of dictionaries, each mapping a key to a range dict with 'min' and 'max' keys.
@@ -219,28 +211,12 @@ class SleeperClient:
 
         :return: A list containing all retrieved rows matching the specified key ranges.
         """
-        results = []
-        for query in keys:
-            for key in query.keys():
-                min_value = query.get(key).get("min")
-                max_value = query.get(key).get("max")
-                query = WebSocketQuery(
-                    table_name=table_name,
-                    query_id=query_id,
-                    key=key,
-                    max_value=max_value,
-                    min_value=min_value,
-                    max_inclusive=max_inclusive,
-                    min_inclusive=min_inclusive,
-                    strings_base64_encoded=strings_base64_encoded,
-                )
-                logger.debug(f"Web Socket Query {query.to_json()}")
-                results.extend(await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query))
-        return results
+        query = Query(query_id, table_name, [Region.from_field_to_dict(region, min_inclusive, max_inclusive, strings_base64_encoded) for region in keys])
+        return await self.query_by_web_socket(query)
 
     def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """
-        Query a Sleeper table for rows where the key matches a given list of query keys. This query is executed in
+        Query a Sleeper table for rows where the key values are equal to one of a given list. This query is executed in
         a lambda function and the results are written to S3. Once the query has finished the results are loaded from
         S3. This means that there can be significant latency before the results are returned. Note that the first query
         will be significantly slower than subsequent ones as the lambda needs to start up, unless the KeepLambdaWarm
@@ -253,45 +229,21 @@ class SleeperClient:
 
         :return: list of result rows
         """
-        if not isinstance(keys, list) and not isinstance(keys, dict):
+        if isinstance(keys, dict):
+            regions = Region.list_from_field_to_exact_values(keys)
+        elif isinstance(keys, list):
+            regions = [Region.from_field_to_exact_value(region) for region in keys]
+        else:
             raise Exception(
                 "keys must be either (a) a single dict where the key is the row-key field name and the value is a list of values to query for"
                 + " or (b) a list of dicts where the key is a row-key field name and the value is the value to query for"
             )
-        if len(keys) == 0:
-            raise Exception("Must provide at least one key")
 
-        if isinstance(keys, dict):
-            if len(keys) != 1:
-                raise Exception("If keys is a dict, there must be only one entry, with key of the row-key field and the value a list of the values to query for")
-            for key in keys:
-                return self._exact_key_query_from_list_of_values(table_name, key, keys[key], query_id)
-
-        return self._exact_key_query_from_dicts(table_name, keys, query_id)
-
-    def _exact_key_query_from_list_of_values(self, table_name: str, row_key_field_name: str, values: list, query_id: str) -> list:
-        regions = []
-        for value in values:
-            region = {row_key_field_name: [value, True, value, True]}
-            regions.append(region)
-        return self.range_key_query(table_name, regions, query_id)
-
-    def _exact_key_query_from_dicts(self, table_name: str, keys: dict, query_id: str) -> list:
-        regions = []
-        for key in keys:
-            if not isinstance(key, dict):
-                raise Exception("Each key must be a dict mapping row-key field name to value")
-            if len(key) == 0:
-                raise Exception("Key must not be empty")
-            region = {}
-            for field_name in key:
-                region[field_name] = [key[field_name], True, key[field_name], True]
-            regions.append(region)
-        return self.range_key_query(table_name, regions, query_id)
+        return self.query_by_sqs(Query(query_id, table_name, regions))
 
     def range_key_query(self, table_name: str, regions: list, query_id: str = None) -> list:
         """
-        Query a Sleeper table for rows where the key is within one of the provided list of ranges. This query is
+        Query a Sleeper table for rows where the key values are within one of a list of regions. This query is
         executed in a lambda function and the results are written to S3. Once the query has finished the results are
         loaded from S3. This means that there can be significant latency before the results are returned. Note that the
         first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
@@ -308,63 +260,43 @@ class SleeperClient:
 
         :return: list of the result rows
         """
-        if query_id is None:
-            query_id = str(uuid.uuid4())
-        json_regions_list = []
-        if not isinstance(regions, list):
-            raise Exception("Regions must be a list")
-        if len(regions) == 0:
-            raise Exception("Must provide at least one region")
-        for region in regions:
-            if not isinstance(region, dict):
-                raise Exception("Each region must be a dict mapping row-key field name to range")
-            if len(region) == 0:
-                raise Exception("Region must not be empty")
-            json_region = {}
-            for field_name in region:
-                range_as_tuple = region[field_name]
-                if not len(range_as_tuple) == 2 and not len(range_as_tuple) == 4:
-                    raise Exception("Each range must be of length 2 (min, max) or 4 (min, minInclusive, max, maxInclusive)")
-                if len(range_as_tuple) == 2:
-                    min = range_as_tuple[0]
-                    max = range_as_tuple[1]
-                    min_inclusive = True
-                    max_inclusive = False
-                else:
-                    min = range_as_tuple[0]
-                    # TODO Check type
-                    min_inclusive = range_as_tuple[1]
-                    max = range_as_tuple[2]
-                    max_inclusive = range_as_tuple[3]
-                json_range = {
-                    "min": min,
-                    "minInclusive": min_inclusive,
-                    "max": max,
-                    "maxInclusive": max_inclusive,
-                }
-                json_region[field_name] = json_range
-                json_region["stringsBase64Encoded"] = False
-            json_regions_list.append(json_region)
+        return self.query_by_sqs(Query(query_id=query_id, table_name=table_name, regions=[Region.from_field_to_tuple(region) for region in regions]))
 
-        query_message = {
-            "queryId": query_id,
-            "tableName": table_name,
-            "type": "Query",
-            "regions": json_regions_list,
-        }
+    def query_by_sqs(self, query: Query):
+        """
+        Query a Sleeper table for rows where the key values are within one of a list of regions. This query is
+        executed in a lambda function and the results are written to S3. Once the query has finished the results are
+        loaded from S3. This means that there can be significant latency before the results are returned. Note that the
+        first query will be significantly slower than subsequent ones as the lambda needs to start up, unless the
+        KeepLambdaWarm stack is deployed.
 
-        logger.debug(query_message)
+        :param query: the query
 
-        # Convert query message to json and send to query queue
-        query_message_json = json.dumps(query_message)
+        :return: list of the result rows
+        """
+        message = query.to_dict()
+        logger.debug(message)
+        message_json = json.dumps(message)
+
         query_queue_name = queue_name_from_url(self._instance_properties.get(QueryCdkProperty.QUERY_QUEUE_URL))
         query_queue_sqs = self._sqs_resource.get_queue_by_name(QueueName=query_queue_name)
-        query_queue_sqs.send_message(MessageBody=query_message_json)
+        query_queue_sqs.send_message(MessageBody=message_json)
 
-        logger.debug(f"Submitted query with id {query_id}")
+        logger.debug(f"Submitted query with id {query.query_id}")
 
-        located_rows = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo_resource, self._deserialiser, query_id)
+        located_rows = _receive_messages(self._instance_properties, self._s3_resource, self._s3_fs, self._dynamo_resource, self._deserialiser, query.query_id)
         return located_rows
+
+    async def query_by_web_socket(self, query: Query):
+        """
+        Asynchronously queries a Sleeper table over a web socket for rows where the key is within specified ranges.
+        The results are aggregated into a single list.
+
+        :param query: the query
+
+        :return: list of the result rows
+        """
+        return await WebSocketQueryProcessor(instance_properties=self._instance_properties).process_query(query)
 
     @contextmanager
     def create_batch_writer(self, table_name: str, job_id: str = None):

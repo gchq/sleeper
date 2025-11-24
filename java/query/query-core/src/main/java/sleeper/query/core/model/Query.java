@@ -21,6 +21,8 @@ import sleeper.core.range.Region;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * A request for rows with row keys that fall within one of a list of regions.
@@ -33,7 +35,7 @@ public class Query {
 
     private Query(Builder builder) {
         processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
-        queryId = requireNonNull(builder.queryId, builder, "queryId field must be provided");
+        queryId = Optional.ofNullable(builder.queryId).orElseGet(() -> UUID.randomUUID().toString());
         tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
         regions = requireNonNull(builder.regions, builder, "regions field must be provided");
     }
