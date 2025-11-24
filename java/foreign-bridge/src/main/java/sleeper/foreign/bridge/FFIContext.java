@@ -18,6 +18,7 @@ package sleeper.foreign.bridge;
 import jnr.ffi.Pointer;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 
 /**
@@ -49,10 +50,9 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * context has been closed.
      */
     private Pointer context;
-    /** Class lock for synchronization. */
+
     private static final Object CONTEXT_LOCK = new Object();
-    /** Last created context. */
-    private static FFIContext<?> lastContext = null;
+    private static FFIContext<?> rootContext = null;
 
     /**
      * Initialises the FFI library and context for calling functions.
@@ -76,28 +76,44 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
     /**
      * Creates an FFI context.
      *
-     * This will either create a new FFI context object on the foreign side, or clone from an existing one. An existing
-     * foreign context will only be used if it is still open.
+     * This will either create a new FFI context object on the foreign side, or clone from an existing "root" one. The
+     * root context is generally never closed.
      *
      * This method is thread safe.
      *
-     * @param  <T>           the interface type of the functions to be called in this context
-     * @param  functionClass class type for the FFI interface
-     * @return               a valid and open FFIContext for making FFI calls
-     * @throws IOException   if the native library couldn't be loaded
+     * @param  <T>                  the interface type of the functions to be called in this context
+     * @param  functionClass        class type for the FFI interface
+     * @return                      a valid and open FFIContext for making FFI calls
+     * @throws UncheckedIOException if the native library couldn't be loaded
+     * @see                         FFIContext#closeRootContext()
      */
-    public static <T extends ForeignFunctions> FFIContext<T> getFFIContext(Class<T> functionClass) throws IOException {
-        synchronized (CONTEXT_LOCK) {
-            T functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass"));
-            FFIContext<T> newContext;
-            if (lastContext != null && !lastContext.isClosed()) {
-                newContext = new FFIContext<>(functions, functions.clone_context(lastContext.context));
-                lastContext = newContext;
-            } else {
-                newContext = new FFIContext<>(functions, functions.create_context());
-                lastContext = newContext;
+    public static <T extends ForeignFunctions> FFIContext<T> getFFIContext(Class<T> functionClass) throws UncheckedIOException {
+        try {
+            synchronized (CONTEXT_LOCK) {
+                T functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass"));
+                if (rootContext == null) {
+                    rootContext = new FFIContext<>(functions, functions.create_context());
+                }
+                rootContext.checkOpen();
+                return new FFIContext<>(functions, rootContext.functions.clone_context(rootContext.context));
             }
-            return newContext;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Closes the root FFI context.
+     *
+     * Other FFI contexts created from this root context will remain open and valid. Once all contexts are closed,
+     * any foreign resources will be automatically released.
+     */
+    public static void closeRootContext() {
+        synchronized (CONTEXT_LOCK) {
+            if (rootContext != null && !rootContext.isClosed()) {
+                rootContext.close();
+                rootContext = null;
+            }
         }
     }
 
@@ -113,12 +129,10 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      */
     @Override
     public void close() {
-        synchronized (CONTEXT_LOCK) {
-            // if we have a pointer, then make FFI call to destroy resources
-            if (context != null) {
-                functions.destroy_context(context);
-                context = null;
-            }
+        // if we have a pointer, then make FFI call to destroy resources
+        if (context != null) {
+            functions.destroy_context(context);
+            context = null;
         }
     }
 
@@ -128,9 +142,7 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * @return true if context is closed
      */
     public boolean isClosed() {
-        synchronized (CONTEXT_LOCK) {
-            return context == null;
-        }
+        return context == null;
     }
 
     /**

@@ -37,7 +37,6 @@ import sleeper.foreign.datafusion.FFICommonConfig;
 import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 
 import static sleeper.core.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
@@ -60,14 +59,10 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private final Configuration hadoopConf;
     private final FFIContext<DataFusionCompactionFunctions> context;
 
-    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
-        try {
-            this.awsConfig = awsConfig;
-            this.hadoopConf = hadoopConf;
-            this.context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf, FFIContext<DataFusionCompactionFunctions> context) {
+        this.awsConfig = awsConfig;
+        this.hadoopConf = hadoopConf;
+        this.context = context;
     }
 
     @Override
@@ -166,11 +161,5 @@ public class DataFusionCompactionRunner implements CompactionRunner {
                 job.getId(), totalNumberOfRowsRead, rowsWritten);
 
         return new RowsProcessed(totalNumberOfRowsRead, rowsWritten);
-    }
-
-    @Override
-    public void close() throws IOException {
-        try (context) {
-        }
     }
 }

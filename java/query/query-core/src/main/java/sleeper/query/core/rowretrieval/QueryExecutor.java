@@ -23,7 +23,6 @@ import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +32,7 @@ import java.util.function.Supplier;
  * Runs queries against a Sleeper table by querying the state store and data files directly. An instance of this class
  * cannot be used concurrently in multiple threads, due to how partitions are cached.
  */
-public class QueryExecutor implements AutoCloseable {
+public class QueryExecutor {
 
     private final QueryPlanner queryPlanner;
     private final LeafPartitionQueryExecutor leafQueryExecutor;
@@ -88,11 +87,4 @@ public class QueryExecutor implements AutoCloseable {
         }
         return iterators;
     }
-
-    @Override
-    public void close() throws IOException {
-        try (leafQueryExecutor) {
-        }
-    }
-
 }

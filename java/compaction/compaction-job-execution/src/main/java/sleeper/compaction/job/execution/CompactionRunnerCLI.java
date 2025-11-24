@@ -113,10 +113,9 @@ public class CompactionRunnerCLI {
     public void runNTimes(CompactionJob job, int times) throws IOException, IteratorCreationException {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableId());
         Region region = regionSupplier.getPartitionRegion(tableProperties, job.getPartitionId());
-        try (CompactionRunner runner = runnerFactory.createCompactor(job, tableProperties)) {
-            for (int i = 0; i < times; i++) {
-                runner.compact(job, tableProperties, region);
-            }
+        CompactionRunner runner = runnerFactory.createCompactor(job, tableProperties);
+        for (int i = 0; i < times; i++) {
+            runner.compact(job, tableProperties, region);
         }
     }
 

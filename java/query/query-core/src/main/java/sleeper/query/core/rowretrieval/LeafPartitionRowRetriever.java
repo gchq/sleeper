@@ -25,7 +25,7 @@ import sleeper.query.core.model.LeafPartitionQuery;
  * Retrieves rows in the regions and files specified by a sub query.
  */
 @FunctionalInterface
-public interface LeafPartitionRowRetriever extends AutoCloseable {
+public interface LeafPartitionRowRetriever {
 
     /**
      * Retrieves all rows in the regions and files specified by a sub query.
@@ -55,9 +55,5 @@ public interface LeafPartitionRowRetriever extends AutoCloseable {
      */
     default boolean supportsFiltersAndAggregations() {
         return false;
-    }
-
-    @Override
-    default void close() {
     }
 }

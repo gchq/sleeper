@@ -31,7 +31,6 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +45,7 @@ import java.util.stream.Collectors;
  * and applies compaction-time and query-time iterators.
  *
  */
-public class LeafPartitionQueryExecutor implements AutoCloseable {
+public class LeafPartitionQueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryExecutor.class);
 
     private final ObjectFactory objectFactory;
@@ -137,11 +136,5 @@ public class LeafPartitionQueryExecutor implements AutoCloseable {
             IteratorConfig iteratorConfig, boolean applyFilterAggregations) throws IteratorCreationException {
         return new IteratorFactory(objectFactory)
                 .getIterator(iteratorConfig, schema, applyFilterAggregations);
-    }
-
-    @Override
-    public void close() throws IOException {
-        try (retriever) {
-        }
     }
 }

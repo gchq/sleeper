@@ -51,6 +51,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.row.ParquetReaderIterator;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -484,11 +485,13 @@ public class DataFusionCompactionRunnerIT {
     }
 
     private void runTask(CompactionJob job) throws Exception {
-        CompactionRunner runner = new DataFusionCompactionRunner(
-                // DataFusion spends time trying to auth with AWS unless you override it
-                DataFusionAwsConfig.overrideEndpoint("dummy"),
-                new Configuration());
-        compactionTaskTestHelper().runTask(runner, List.of(job));
+        try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
+            CompactionRunner runner = new DataFusionCompactionRunner(
+                    // DataFusion spends time trying to auth with AWS unless you override it
+                    DataFusionAwsConfig.overrideEndpoint("dummy"),
+                    new Configuration(), context);
+            compactionTaskTestHelper().runTask(runner, List.of(job));
+        }
     }
 
     private CompactionTaskTestHelper compactionTaskTestHelper() {

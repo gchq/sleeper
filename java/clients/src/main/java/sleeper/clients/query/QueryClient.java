@@ -37,6 +37,7 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
@@ -47,6 +48,7 @@ import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
@@ -64,7 +66,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
  * Allows a user to run a query from the command line. An instance of this class cannot be used concurrently in multiple
  * threads, due to how query executors and state store objects are cached. This may be changed in a future version.
  */
-public class QueryClient extends QueryCommandLineClient implements AutoCloseable {
+public class QueryClient extends QueryCommandLineClient {
 
     private final ObjectFactory objectFactory;
     private final StateStoreProvider stateStoreProvider;
@@ -129,9 +131,10 @@ public class QueryClient extends QueryCommandLineClient implements AutoCloseable
         ExecutorService executorService = Executors.newFixedThreadPool(30);
         try (S3Client s3Client = buildAwsV2Client(S3Client.builder());
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
-                BufferAllocator allocator = new RootAllocator()) {
+                BufferAllocator allocator = new RootAllocator();
+                FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            try (QueryClient client = new QueryClient(
+            QueryClient client = new QueryClient(
                     instanceProperties,
                     new DynamoDBTableIndex(instanceProperties, dynamoClient),
                     S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient),
@@ -140,23 +143,11 @@ public class QueryClient extends QueryCommandLineClient implements AutoCloseable
                     StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient),
                     QueryEngineSelector.javaAndDataFusion(
                             new LeafPartitionRowRetrieverImpl.Provider(executorService, TableHadoopConfigurationProvider.forClient(instanceProperties)),
-                            new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator)))) {
-                client.run();
-            }
+                            new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, context)));
+            client.run();
         } finally {
             executorService.shutdown();
 
         }
-    }
-
-    @Override
-    public void close() throws IOException {
-        cachedQueryExecutors.values().forEach(exec -> {
-            try {
-                exec.close();
-            } catch (Exception e) {
-                //ignore, doesn't matter
-            }
-        });
     }
 }

@@ -19,6 +19,8 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.core.properties.table.TableProperties;
 
+import java.io.IOException;
+
 /**
  * Interface for classes that implement logic for choosing which compaction method should be chosen.
  */
@@ -32,6 +34,7 @@ public interface CompactionRunnerFactory {
      * @param  job             the job
      * @param  tableProperties the Sleeper table properties
      * @return                 a compaction runner
+     * @throws IOException     if the compactor could not be created
      */
-    CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties);
+    CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) throws IOException;
 }

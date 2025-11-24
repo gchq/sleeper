@@ -20,7 +20,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import com.google.common.collect.Lists;
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -53,7 +52,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.row.ParquetReaderIterator;
@@ -62,10 +60,11 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
-import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketOutput;
@@ -144,7 +143,11 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(
                 s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET),
-                new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), new RootAllocator()));
+                new LeafPartitionRowRetrieverProvider() {
+                    public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
+                        throw new UnsupportedOperationException("DataFusion provider not usable here");
+                    }
+                });
     }
 
     @Test

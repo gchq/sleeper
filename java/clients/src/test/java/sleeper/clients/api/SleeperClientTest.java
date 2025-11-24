@@ -149,21 +149,20 @@ class SleeperClientTest {
         ingest("test-table", List.of(
                 new Row(Map.of("key", "A")),
                 new Row(Map.of("key", "B"))));
-        try (QueryExecutor queryExecutor = sleeperClient.getQueryExecutor("test-table")) {
+        QueryExecutor queryExecutor = sleeperClient.getQueryExecutor("test-table");
 
-            // When
-            List<Row> rows = new ArrayList<>();
-            try (CloseableIterator<Row> iterator = queryExecutor.execute(Query.builder()
-                    .tableName("test-table").queryId(UUID.randomUUID().toString())
-                    .regions(List.of(new Region(rangeFactory().createExactRange("key", "B"))))
-                    .build())) {
-                iterator.forEachRemaining(rows::add);
-            }
-
-            // Then
-            assertThat(rows).containsExactly(
-                    new Row(Map.of("key", "B")));
+        // When
+        List<Row> rows = new ArrayList<>();
+        try (CloseableIterator<Row> iterator = queryExecutor.execute(Query.builder()
+                .tableName("test-table").queryId(UUID.randomUUID().toString())
+                .regions(List.of(new Region(rangeFactory().createExactRange("key", "B"))))
+                .build())) {
+            iterator.forEachRemaining(rows::add);
         }
+
+        // Then
+        assertThat(rows).containsExactly(
+                new Row(Map.of("key", "B")));
     }
 
     @Test

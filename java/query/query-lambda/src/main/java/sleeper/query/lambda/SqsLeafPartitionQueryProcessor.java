@@ -87,17 +87,14 @@ public class SqsLeafPartitionQueryProcessor {
         try {
             TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
             queryTrackers.queryInProgress(leafPartitionQuery);
-            try (LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(
+            LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(
                     objectFactory, tableProperties,
-                    rowRetrieverProvider.getRowRetriever(tableProperties))) {
-                CloseableIterator<Row> results = leafPartitionQueryExecutor.getRows(leafPartitionQuery);
-                publishResults(results, query, tableProperties, queryTrackers);
-            }
+                    rowRetrieverProvider.getRowRetriever(tableProperties));
+            CloseableIterator<Row> results = leafPartitionQueryExecutor.getRows(leafPartitionQuery);
+            publishResults(results, query, tableProperties, queryTrackers);
         } catch (QueryException e) {
             LOGGER.error("Exception thrown executing leaf partition query {}", query.getQueryId(), e);
             query.reportFailed(queryTrackers, e);
-        } catch (IOException e) {
-            LOGGER.error("Exception closing leaf query executor", e);
         }
     }
 

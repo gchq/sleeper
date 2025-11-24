@@ -26,8 +26,7 @@ import java.io.IOException;
  * An implementation of compaction, to take a number of sorted input files and merge them into one fully sorted file.
  */
 @FunctionalInterface
-public interface CompactionRunner extends AutoCloseable {
-
+public interface CompactionRunner {
     /**
      * Compacts the input files of a compaction job into one output file.
      *
@@ -40,8 +39,4 @@ public interface CompactionRunner extends AutoCloseable {
      * @throws IteratorCreationException a problem creating any configured iterators
      */
     RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException, IteratorCreationException;
-
-    @Override
-    default void close() throws IOException {
-    }
 }

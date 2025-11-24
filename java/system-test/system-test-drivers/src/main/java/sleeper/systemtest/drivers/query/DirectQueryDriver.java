@@ -27,6 +27,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
@@ -36,6 +37,7 @@ import sleeper.query.core.rowretrieval.QueryEngineSelector;
 import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -43,8 +45,6 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterators;
@@ -58,6 +58,7 @@ public class DirectQueryDriver implements QueryDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(DirectQueryDriver.class);
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
+    private static final FFIContext<DataFusionQueryFunctions> CONTEXT = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
 
     private final SystemTestInstanceContext instance;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
@@ -66,7 +67,7 @@ public class DirectQueryDriver implements QueryDriver {
         this.instance = instance;
         this.rowRetrieverProvider = QueryEngineSelector.javaAndDataFusion(
                 new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE, clients.tableHadoopProvider(instance.getInstanceProperties())),
-                new DataFusionLeafPartitionRowRetriever.Provider(clients.createDataFusionAwsConfig(), ALLOCATOR));
+                new DataFusionLeafPartitionRowRetriever.Provider(clients.createDataFusionAwsConfig(), ALLOCATOR, CONTEXT));
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
@@ -77,12 +78,11 @@ public class DirectQueryDriver implements QueryDriver {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         PartitionTree tree = getPartitionTree(stateStore);
-        try (QueryExecutor queryExecutor = executor(tableProperties, stateStore, tree);
-                CloseableIterator<Row> rowIterator = queryExecutor.execute(query)) {
+        try {
+            QueryExecutor queryExecutor = executor(tableProperties, stateStore, tree);
+            CloseableIterator<Row> rowIterator = queryExecutor.execute(query);
             return stream(rowIterator)
                     .collect(Collectors.toUnmodifiableList());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         } catch (QueryException e) {
             throw new RuntimeException(e);
         }

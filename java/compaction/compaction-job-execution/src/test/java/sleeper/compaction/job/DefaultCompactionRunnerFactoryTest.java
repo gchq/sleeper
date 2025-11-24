@@ -32,6 +32,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.util.ObjectFactory;
 import sleeper.sketches.store.NoSketchesStore;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +49,7 @@ public class DefaultCompactionRunnerFactoryTest {
     TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new LongType()));
 
     @Test
-    void shouldSetDataFusionEngine() {
+    void shouldSetDataFusionEngine() throws IOException {
         // Given
         tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
 
@@ -57,7 +58,7 @@ public class DefaultCompactionRunnerFactoryTest {
     }
 
     @Test
-    void shouldSetJavaEngine() {
+    void shouldSetJavaEngine() throws IOException {
         // Given
         tableProperties.setEnum(DATA_ENGINE, DataEngine.JAVA);
 
@@ -66,7 +67,7 @@ public class DefaultCompactionRunnerFactoryTest {
     }
 
     @Test
-    void shouldForceJavaEngineWhenCustomTableIteratorIsSet() {
+    void shouldForceJavaEngineWhenCustomTableIteratorIsSet() throws IOException {
         // Given
         tableProperties.setEnum(DATA_ENGINE, DataEngine.DATAFUSION);
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
@@ -76,7 +77,7 @@ public class DefaultCompactionRunnerFactoryTest {
         assertThat(createRunner()).isInstanceOf(JavaCompactionRunner.class);
     }
 
-    private CompactionRunner createRunner() {
+    private CompactionRunner createRunner() throws IOException {
         return new DefaultCompactionRunnerFactory(ObjectFactory.noUserJars(), new Configuration(), new NoSketchesStore())
                 .createCompactor(exampleCompactionJob(), tableProperties);
     }
