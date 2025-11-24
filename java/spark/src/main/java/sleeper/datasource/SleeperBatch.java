@@ -93,8 +93,8 @@ public class SleeperBatch implements Batch {
 
     private List<Region> getMinimumRegionCoveringPushedFilters() {
         Schema schema = tableProperties.getSchema();
-        CreateRegionsFromPushedFilters createRegions = new CreateRegionsFromPushedFilters(schema, pushedFilters);
-        List<Region> minimumRegions = createRegions.getMinimumRegionCoveringPushedFilters();
+        CreateRegionsFromPushedFilters createRegions = new CreateRegionsFromPushedFilters(schema);//, pushedFilters);
+        List<Region> minimumRegions = createRegions.getMinimumRegionCoveringPushedFilters(pushedFilters);
         return minimumRegions;
     }
 

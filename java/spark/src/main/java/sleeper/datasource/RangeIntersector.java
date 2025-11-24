@@ -30,14 +30,14 @@ public class RangeIntersector {
             throw new IllegalArgumentException("Cannot intersect two ranges for different fields");
         }
 
+        if (!range1.doesRangeOverlap(range2)) {
+            System.out.println(range1 + " does not overlap " + range2);
+            return Optional.empty();
+        }
+
         // Min is inclusive, max is exclusive when in canonical form
         Range canonicalRange1 = RangeCanonicaliser.canonicaliseRange(range1);
         Range canonicalRange2 = RangeCanonicaliser.canonicaliseRange(range2);
-
-        if (!canonicalRange1.doesRangeOverlap(canonicalRange2)) {
-            System.out.println(canonicalRange1 + " does not overlap " + canonicalRange2);
-            return Optional.empty();
-        }
 
         Comparable canonicalRange1Min = validateComparable(range1.getField(), canonicalRange1.getMin(), "minimum value");
         Comparable canonicalRange2Min = validateComparable(range1.getField(), canonicalRange2.getMin(), "minimum value");

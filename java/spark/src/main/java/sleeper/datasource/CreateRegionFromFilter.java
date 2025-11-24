@@ -43,56 +43,38 @@ import java.util.stream.Collectors;
 public class CreateRegionFromFilter {
 
     public static Optional<List<Region>> createRegionsFromFilter(Filter filter, Schema schema) {
-        if (filter instanceof Or || filter instanceof In) {
-            if (filter instanceof Or) {
-                Or or = (Or) filter;
-                Filter left = or.left();
-                Filter right = or.right();
-                Optional<Region> leftRegion = createRegionFromFilter(left, schema);
-                Optional<Region> rightRegion = createRegionFromFilter(right, schema);
-                if (leftRegion.isEmpty() || rightRegion.isEmpty()) {
-                    return Optional.empty();
-                } else {
-                    return Optional.of(List.of(leftRegion.get(), rightRegion.get()));
-                }
-            } else {
-                In in = (In) filter;
-                List<Region> regions = new ArrayList<>();
-                Object[] values = in.values();
-                for (Object value : values) {
-                    Filter equalFilter = new EqualTo(in.attribute(), value);
-                    Optional<Region> optional = createRegionFromFilter(equalFilter, schema);
-                    if (optional.isPresent()) {
-                        regions.add(optional.get());
-                    }
-                }
-                if (regions.isEmpty()) {
-                    return Optional.empty();
-                } else {
-                    return Optional.of(regions);
-                }
+        if (filter instanceof Or) {
+            Or or = (Or) filter;
+            Region leftRegion = createRegionFromSimpleFilter(or.left(), schema);
+            Region rightRegion = createRegionFromSimpleFilter(or.right(), schema);
+            return Optional.of(List.of(leftRegion, rightRegion));
+        } else if (filter instanceof In) {
+            In in = (In) filter;
+            List<Region> regions = new ArrayList<>();
+            Object[] values = in.values();
+            for (Object value : values) {
+                Filter equalFilter = new EqualTo(in.attribute(), value);
+                Region optional = createRegionFromSimpleFilter(equalFilter, schema);
+                regions.add(optional);
             }
-        } else {
-            Optional<Region> optionalRegion = createRegionFromFilter(filter, schema);
-            if (optionalRegion.isEmpty()) {
+            if (regions.isEmpty()) {
                 return Optional.empty();
             } else {
-                return Optional.of(List.of(optionalRegion.get()));
+                return Optional.of(regions);
             }
+        } else {
+            Region optionalRegion = createRegionFromSimpleFilter(filter, schema);
+            return Optional.of(List.of(optionalRegion));
         }
     }
 
-    public static Optional<Region> createRegionFromFilter(Filter filter, Schema schema) {
+    public static Region createRegionFromSimpleFilter(Filter filter, Schema schema) {
         MutableRegion mutableRegion = new MutableRegion(schema);
         updateRegionWithFilter(mutableRegion, filter, new HashSet<>(schema.getRowKeyFieldNames()));
         Region region = mutableRegion.getRegion();
-        if (region.equals(Region.coveringAllValuesOfAllRowKeys(schema))) {
-            System.out.println("Created empty optional region for filter " + filter);
-            return Optional.empty();
-        }
         System.out.println("Entire region: " + Region.coveringAllValuesOfAllRowKeys(schema));
         System.out.println("Created region " + region + " for filter " + filter);
-        return Optional.of(region);
+        return region;
     }
 
     private static class MutableRegion {
@@ -174,7 +156,7 @@ public class CreateRegionFromFilter {
             mutableRange.maxInclusive = false;
             mutableRange.max = maxiumKey;
         } else if (filter instanceof LessThanOrEqual) {
-            String fieldName = ((LessThan) filter).attribute();
+            String fieldName = ((LessThanOrEqual) filter).attribute();
             if (!rowKeyFieldNames.contains(fieldName)) {
                 return;
             }

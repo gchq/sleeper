@@ -31,12 +31,11 @@ public class RegionIntersector {
         if (null == regions || regions.isEmpty()) {
             return Optional.empty();
         }
+        Optional<Region> intersectedRegion = Optional.of(regions.get(0));
         if (regions.size() == 1) {
-            return Optional.of(regions.get(0));
+            return intersectedRegion;
         }
-        Optional<Region> intersectedRegion = intersectRegions(regions.get(0), regions.get(1), rangeFactory, schema);
-        System.out.println("Intersected regions " + regions.get(0) + " and " + regions.get(1) + " to get " + intersectedRegion);
-        for (int i = 2; i < regions.size(); i++) {
+        for (int i = 1; i < regions.size(); i++) {
             intersectedRegion = intersectOptionalRegions(intersectedRegion, Optional.of(regions.get(i)), rangeFactory, schema);
         }
         return intersectedRegion;

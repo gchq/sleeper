@@ -23,10 +23,8 @@ import org.apache.spark.sql.types.StructType;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.datasource.FindFiltersToPush.PushedAndNonPushedFilters;
 import sleeper.query.core.rowretrieval.QueryPlanner;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Doesn't need to be serialisable.
@@ -89,12 +87,10 @@ public class SleeperScanBuilder implements SupportsPushDownFilters {
         for (int i = 0; i < filters.length; i++) {
             System.out.println("\t" + filters[i]);
         }
-        // Accept and remember pushdown filters on keyField to prune files
-        List<Filter> accepted = new ArrayList<>();
-        List<Filter> rejected = new ArrayList<>();
-        CreateRegionsFromPushedFilters.findFiltersToPush(schema, filters, accepted, rejected);
-        pushedFilters = accepted.toArray(new Filter[0]);
-        return rejected.toArray(new Filter[0]);
+        FindFiltersToPush findFiltersToPush = new FindFiltersToPush(schema);
+        PushedAndNonPushedFilters pushedAndNonPushedFilters = findFiltersToPush.splitFiltersIntoPushedAndNonPushed(filters);
+        pushedFilters = pushedAndNonPushedFilters.getPushedFilters().toArray(new Filter[0]);
+        return pushedAndNonPushedFilters.getNonPushedFilters().toArray(new Filter[0]);
     }
 
     @Override

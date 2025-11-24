@@ -1,0 +1,95 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.datasource;
+
+import org.apache.spark.sql.sources.EqualTo;
+import org.apache.spark.sql.sources.Filter;
+import org.apache.spark.sql.sources.GreaterThan;
+import org.apache.spark.sql.sources.GreaterThanOrEqual;
+import org.apache.spark.sql.sources.LessThan;
+import org.apache.spark.sql.sources.LessThanOrEqual;
+
+import sleeper.core.schema.Schema;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Splits an array of pushed filters into two sublists, one containing filters which correspond to a single
+ * region, one containing filters which correspond to multiple regions.
+ *
+ * TODO - Rename to SplitPushedFiltersIntoSingleAndMultiRegionFilters ?
+ */
+public class SplitPushedFiltersIntoAndsAndOrs {
+    private final Set<String> rowKeyFieldNames;
+
+    public SplitPushedFiltersIntoAndsAndOrs(Schema schema) {
+        this.rowKeyFieldNames = new HashSet<>(schema.getRowKeyFieldNames());
+    }
+
+    public SingleAndMultiRegionFilters splitPushedFilters(Filter[] filters) {
+        SingleAndMultiRegionFilters singleAndMultiRegionFilters = new SingleAndMultiRegionFilters();
+        for (Filter filter : filters) {
+            if (singleRegionFilter(filter)) {
+                singleAndMultiRegionFilters.addSingleRegionFilter(filter);
+            } else {
+                singleAndMultiRegionFilters.addMultiRegionFilter(filter);
+            }
+        }
+        return singleAndMultiRegionFilters;
+    }
+
+    private boolean singleRegionFilter(Filter filter) {
+        // We know that all filters are pushed filters, so we do not need to check whether they
+        // refer to a key field.
+        if (filter instanceof EqualTo
+                || filter instanceof GreaterThan
+                || filter instanceof GreaterThanOrEqual
+                || filter instanceof LessThan
+                || filter instanceof LessThanOrEqual) {
+            return true;
+        }
+        return false;
+    }
+
+    public static class SingleAndMultiRegionFilters {
+        private List<Filter> singleRegionFilters;
+        private List<Filter> multiRegionFilters;
+
+        SingleAndMultiRegionFilters() {
+            this.singleRegionFilters = new ArrayList<>();
+            this.multiRegionFilters = new ArrayList<>();
+        }
+
+        void addSingleRegionFilter(Filter filter) {
+            this.singleRegionFilters.add(filter);
+        }
+
+        void addMultiRegionFilter(Filter filter) {
+            this.multiRegionFilters.add(filter);
+        }
+
+        public List<Filter> getSingleRegionFilters() {
+            return singleRegionFilters;
+        }
+
+        public List<Filter> getMultiRegionFilters() {
+            return multiRegionFilters;
+        }
+    }
+}
