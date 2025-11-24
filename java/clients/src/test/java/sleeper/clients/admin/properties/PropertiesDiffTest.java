@@ -38,7 +38,7 @@ import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_D
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstanceProperties;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstancePropertiesWithId;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class PropertiesDiffTest {
@@ -238,9 +238,9 @@ public class PropertiesDiffTest {
         }
 
         private PropertiesDiff generateSingleDiff(InstanceProperty property, String oldValue, String newValue) {
-            InstanceProperties before = createSimpleTestInstanceProperties();
+            InstanceProperties before = createSimpleTestInstancePropertiesWithId("simple-id");
             before.set(property, oldValue);
-            InstanceProperties after = createSimpleTestInstanceProperties();
+            InstanceProperties after = createSimpleTestInstancePropertiesWithId("simple-id");
             after.set(property, newValue);
             return new PropertiesDiff(before, after);
         }
