@@ -82,7 +82,7 @@ public class InstancePropertiesTestHelper {
      * @return    the instance properties
      */
     public static InstanceProperties createTestInstancePropertiesWithId(String id) {
-        InstanceProperties instanceProperties = createSimpleTestInstanceProperties(id);
+        InstanceProperties instanceProperties = createSimpleTestInstancePropertiesWithId(id);
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
         instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
         instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
