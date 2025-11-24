@@ -18,6 +18,7 @@ package sleeper.query.datafusion;
 import jnr.ffi.Pointer;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
+import jnr.ffi.annotations.Synchronized;
 
 import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.bridge.FFIContext;
@@ -28,6 +29,7 @@ import java.util.Optional;
 /**
  * Calls the native library with query functionality.
  */
+@Synchronized
 public interface DataFusionQueryFunctions extends ForeignFunctions {
 
     /**
@@ -65,8 +67,17 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * @return                       indication of success
      * @throws IllegalStateException if the context has already been closed
      */
+
+    public static class Foo {
+    }
+
+    static final Foo SYNC = new Foo();
+
     default int query_stream(FFIContext<DataFusionQueryFunctions> context, FFILeafPartitionQueryConfig input, FFIQueryResults outputStream) {
-        return native_query_stream(context.getForeignContext(), input, outputStream);
+        synchronized (SYNC) {
+            System.err.println("\n\nquery stream Holds lock on " + System.identityHashCode(SYNC) + " " + Thread.holdsLock(SYNC));
+            return native_query_stream(context.getForeignContext(), input, outputStream);
+        }
     }
 
     /**
@@ -84,6 +95,7 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * @return              indication of success
      */
     @SuppressWarnings(value = "checkstyle:parametername")
+    @Synchronized
     int native_query_stream(@In Pointer context, @In FFILeafPartitionQueryConfig input, @Out FFIQueryResults outputStream);
 
     /**

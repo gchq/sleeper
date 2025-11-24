@@ -15,9 +15,11 @@
  */
 package sleeper.query.datafusion;
 
+import jnr.ffi.Pointer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.bridge.FFIBridge;
 
 import java.io.IOException;
@@ -40,10 +42,49 @@ class DataFusionQueryFunctionsIfLoaded {
         this.loadingFailure = loadingFailure;
     }
 
-    private static DataFusionQueryFunctionsIfLoaded createForeignInterface() {
+    public static class Bar {
+    }
+
+    static Bar SYNC22 = new Bar() {
+
+    };
+
+    public static DataFusionQueryFunctionsIfLoaded createForeignInterface() {
         try {
             DataFusionQueryFunctions functions = FFIBridge.createForeignInterface(DataFusionQueryFunctions.class);
-            return new DataFusionQueryFunctionsIfLoaded(functions, null);
+            DataFusionQueryFunctions wrapped = new DataFusionQueryFunctions() {
+
+                @Override
+                public Pointer create_context() {
+                    synchronized (SYNC22) {
+                        return functions.create_context();
+                    }
+                }
+
+                @Override
+                public void destroy_context(Pointer ctx) {
+                    synchronized (SYNC22) {
+                        functions.destroy_context(ctx);
+                    }
+                }
+
+                @Override
+                public int native_query_stream(Pointer context, FFILeafPartitionQueryConfig input, FFIQueryResults outputStream) {
+                    synchronized (SYNC22) {
+                        System.err.println("\n\nnative query stream Holds lock on " + System.identityHashCode(SYNC22) + " " + Thread.holdsLock(SYNC22));
+                        return functions.native_query_stream(context, input, outputStream);
+                    }
+                }
+
+                @Override
+                public int native_query_file(Pointer context, FFILeafPartitionQueryConfig input, FFIFileResult outputResult) {
+                    synchronized (SYNC22) {
+                        return functions.native_query_file(context, input, outputResult);
+                    }
+                }
+
+            };
+            return new DataFusionQueryFunctionsIfLoaded(wrapped, null);
         } catch (RuntimeException | IOException e) {
             LOGGER.warn("Could not load foreign interface", e);
             return new DataFusionQueryFunctionsIfLoaded(null, e);

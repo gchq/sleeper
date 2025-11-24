@@ -61,7 +61,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     @Override
     public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
         DataFusionQueryFunctions functions = context.getFunctions();
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getSystemRuntime();
         FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
         // Create NULL pointer which will be set by the FFI call upon return

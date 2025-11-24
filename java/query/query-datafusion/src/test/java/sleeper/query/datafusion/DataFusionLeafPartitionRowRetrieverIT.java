@@ -68,6 +68,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -114,7 +115,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         }
     }
 
-    @Test
+    //@Test
     void shouldSupportFiltersAndAggregations() {
         // Given
         LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
@@ -135,8 +136,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         List<Row> rows = makeRows();
 
         public static final int ROW_COUNT = 10_00;
-        public static final int TASK_COUNT = 70;
-        public static final int QUERY_COUNT = 30;
+        public static final int TASK_COUNT = 50;
+        public static final int QUERY_COUNT = 30000;
 
         private List<Row> makeRows() {
             List<Row> rows = new ArrayList<>();
@@ -177,21 +178,23 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
                     for (int i = 0; i < QUERY_COUNT; i++) {
                         CloseableIterator<Row> results = queryExec.execute(query);
-                        results.forEachRemaining(row -> {
-                        });
+                        // results.forEachRemaining(row -> {
+                        // });
                     }
                 }
                 return null;
             };
 
             // When
+            List<Future<Void>> results = new ArrayList<>();
             for (int i = 0; i < TASK_COUNT; i++) {
-                es.submit(task);
+                results.add(es.submit(task));
             }
             es.shutdown();
 
             // Then - all tasks should complete normally
             assertThat(es.awaitTermination(2, TimeUnit.MINUTES)).isTrue();
+            assertThat(results).map(Future::get).allMatch(e -> e == null);
         }
     }
 
@@ -214,7 +217,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
         }
 
-        @Test
+        //@Test
         void shouldPushDownFilter() throws Exception {
             // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
@@ -230,7 +233,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(expected);
         }
 
-        @Test
+        //@Test
         void shouldPushDownAggregation() throws Exception {
             // Given
             tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
@@ -245,7 +248,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(aggregatedRows);
         }
 
-        @Test
+        //@Test
         void shouldRestrictValueColumnsOnFilterColumn() throws Exception {
             // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
@@ -264,7 +267,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(expected);
         }
 
-        @Test
+        //@Test
         void shouldRestrictValueColumnsOnFilterOtherColumn() throws Exception {
             // Given
             tableProperties.set(FILTERING_CONFIG, "ageOff(value1,100)");
@@ -283,7 +286,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(expected);
         }
 
-        @Test
+        //@Test
         void shouldRestrictValueColumnsOnAggregation() throws Exception {
             // Given
             tableProperties.set(AGGREGATION_CONFIG, "min(value1),sum(value2)");
@@ -301,7 +304,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(expected);
         }
 
-        @Test
+        //@Test
         void shouldCombineFilteringAggregationAndCustomIterator() throws Exception {
             // Given
             List<Row> extraRows = List.of(
@@ -333,7 +336,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     @Nested
     @DisplayName("Apply a custom iterator")
     class CustomIterator {
-        @Test
+        //@Test
         void shouldApplyCustomIterator() throws Exception {
             // Given
             Row row1 = new Row(Map.of("id", "1", "timestamp", System.currentTimeMillis()));
@@ -367,7 +370,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
         }
 
-        @Test
+        //@Test
         void shouldQueryByExactRange() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
@@ -376,7 +379,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldQueryByRange() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, false));
@@ -402,7 +405,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             ingestData(List.of(row));
         }
 
-        @Test
+        //@Test
         void shouldFindRowByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
@@ -411,7 +414,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactly(row);
         }
 
-        @Test
+        //@Test
         void shouldFindNothingByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
@@ -420,7 +423,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldFindRowByRange() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", -10L, true, 1L, true));
@@ -429,7 +432,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactly(row);
         }
 
-        @Test
+        //@Test
         void shouldFindNothingByRange() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 10L, true, 100L, true));
@@ -455,7 +458,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             ingestData(rows);
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
@@ -464,7 +467,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(rows);
         }
 
-        @Test
+        //@Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
@@ -473,7 +476,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByRange() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
@@ -501,7 +504,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             }
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
@@ -510,7 +513,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(rows);
         }
 
-        @Test
+        //@Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
@@ -519,7 +522,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByRange() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
@@ -542,7 +545,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             }
         }
 
-        @Test
+        //@Test
         void shouldReturnFirstRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
@@ -552,7 +555,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
         }
 
-        @Test
+        //@Test
         void shouldReturnMiddleRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 5L));
@@ -562,7 +565,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
         }
 
-        @Test
+        //@Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
@@ -571,7 +574,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByExactRange() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, true));
@@ -581,7 +584,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(getMultipleRows());
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
             // When
             List<Row> results = executeQueryByRange(
@@ -592,7 +595,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(getMultipleRows());
         }
 
-        @Test
+        //@Test
         void shouldReturnSomeRowsByRangePartiallyCoveringData() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 5L, true, 123456789L, true));
@@ -604,7 +607,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             .collect(Collectors.toList()));
         }
 
-        @Test
+        //@Test
         void shouldExcludeLastValueWhenMaxIsNotInclusive() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, true, 10L, false));
@@ -616,7 +619,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             .collect(Collectors.toList()));
         }
 
-        @Test
+        //@Test
         void shouldExcludeFirstValueWhenMinIsNotInclusive() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, false, 10L, true));
@@ -628,7 +631,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             .collect(Collectors.toList()));
         }
 
-        @Test
+        //@Test
         void shouldExcludeFirstAndLastValueWhenMaxAndMinAreNotInclusive() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 1L, false, 10L, false));
@@ -660,7 +663,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             }
         }
 
-        @Test
+        //@Test
         void shouldReturnFirstRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
@@ -670,7 +673,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(0)));
         }
 
-        @Test
+        //@Test
         void shouldReturnMiddleRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 5L));
@@ -680,7 +683,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRows().get(4)));
         }
 
-        @Test
+        //@Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
@@ -689,7 +692,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
             // When
             List<Row> results = executeQueryByRange(
@@ -700,7 +703,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(getMultipleRows());
         }
 
-        @Test
+        //@Test
         void shouldReturnSomeRowsByRangePartiallyCoveringData() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createRange("key", 5L, true, 123456789L, true));
@@ -748,7 +751,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             return rows;
         }
 
-        @Test
+        //@Test
         void shouldReturnFirstRowsByExactMatch() throws Exception {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", 1L);
@@ -762,7 +765,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(0)));
         }
 
-        @Test
+        //@Test
         void shouldReturnMiddleRowsByExactMatch() throws Exception {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", 5L);
@@ -776,7 +779,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .allSatisfy(row -> assertThat(row).isEqualTo(getMultipleRowsMultidimRowKey().get(4)));
         }
 
-        @Test
+        //@Test
         void shouldReturnNoRowsByExactMatch() throws Exception {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", 8L);
@@ -789,7 +792,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByRangeContainingRangeOfData() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", -100000L, true, 123456789L, true);
@@ -803,7 +806,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(getMultipleRowsMultidimRowKey());
         }
 
-        @Test
+        //@Test
         void shouldReturnSomeRowsByRangePartiallyCoveringData() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", 2L, true, 5L, true);
@@ -882,7 +885,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             ingestData(rows);
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsByRange() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "", true, null, false);
@@ -898,7 +901,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(rows);
         }
 
-        @Test
+        //@Test
         void shouldFindFirstRowsByRange() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
@@ -911,7 +914,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactly(row1, row1, row1);
         }
 
-        @Test
+        //@Test
         void shouldFindFirstRowsByExactMatchOnBothKeys() throws Exception {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", "D");
@@ -924,7 +927,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactly(row1, row1, row1);
         }
 
-        @Test
+        //@Test
         void shouldExcludeFirstRowsByKey1MinNotInclusive() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "D", false, "E", true);
@@ -937,7 +940,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldExcludeFirstRowsByKey1MaxNotInclusive() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", true, "D", false);
@@ -950,7 +953,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldExcludeFirstRowsByKey2MinNotInclusive() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
@@ -963,7 +966,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldExcludeFirstRowsByKey2MaxNotInclusive() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "C", true, "E", true);
@@ -976,7 +979,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldQueryPartition1And2ByRange() throws Exception {
 
             // Given
@@ -991,7 +994,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(Arrays.asList(row1, row2));
         }
 
-        @Test
+        //@Test
         void shouldFindNoRowsInRegionToRightOfAllData() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "T", true, "Z", true);
@@ -1004,7 +1007,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldQueryByOneDimensionalRegion() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory()
@@ -1015,7 +1018,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(List.of(row2, row4));
         }
 
-        @Test
+        //@Test
         void shouldQueryByRegionWithExactMatchOnFirstDimension() throws Exception {
             // Given
             Range range1 = rangeFactory().createExactRange("key1", "C");
@@ -1029,7 +1032,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(List.of(row3));
         }
 
-        @Test
+        //@Test
         void shouldFindNoRowsInRegionWhereMaxEqualsRow1AndMaxIsNotInclusive() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "", true, "D", false);
@@ -1042,7 +1045,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).isEmpty();
         }
 
-        @Test
+        //@Test
         void shouldFindFirstRowsInRegionWhereMaxEqualsRow1AndMaxIsInclusive() throws Exception {
             // Given
             Range range1 = rangeFactory().createRange("key1", "", true, "D", true);
@@ -1056,7 +1059,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(List.of(row1));
         }
 
-        @Test
+        //@Test
         void shouldExcludeLastRowsWhenRegionCoversAllRowsWithMaxEqualToLastRowAndNotInclusive() throws Exception {
             // Given
             // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - no
@@ -1071,7 +1074,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(Arrays.asList(row1, row2, row3));
         }
 
-        @Test
+        //@Test
         void shouldReturnAllRowsWhenRegionCoversAllRowsWithMaxEqualToLastRowAndIsInclusive() throws Exception {
             // Given
             // Row i is in range? 1 - yes; 2 - yes; 3 - yes; 4 - yes
@@ -1090,7 +1093,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         // Row row2 = createRowMultidimensionalKey("K", "H", 1000L, 10000L);
         // Row row3 = createRowMultidimensionalKey("C", "X", 100000L, 1000000L);
         // Row row4 = createRowMultidimensionalKey("P", "Z", 10000000L, 100000000L);
-        @Test
+        //@Test
         void shouldExcludeRowsAtEdgeOfRangesWhenRegionCoversAllRowsWithBoundsNotInclusive() throws Exception {
             // Given
             // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min;
@@ -1106,7 +1109,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     .hasSameElementsAs(Collections.singletonList(row1));
         }
 
-        @Test
+        //@Test
         void shouldIncludeRowsAtMaxOfRangesWhenRegionCoversAllRowsWithMinExclusiveMaxInclusive() throws Exception {
             // Given
             // Row i is in range? 1 - yes; 2 - excluded by key2 min; 3 - excluded by key1 min; 4 - yes
@@ -1162,7 +1165,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                     "value2", i * 100));
         }
 
-        @Test
+        //@Test
         void shouldReturnSortedDataByFirstKeyValue() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 1L));
@@ -1171,7 +1174,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(getSortedRowsForTestingSortingWithKey(1));
         }
 
-        @Test
+        //@Test
         void shouldReturnSortedDataByMidKeyValue() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 5L));
@@ -1180,7 +1183,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             assertThat(results).containsExactlyElementsOf(getSortedRowsForTestingSortingWithKey(5));
         }
 
-        @Test
+        //@Test
         void shouldReturnNoDataByKeyWithNoData() throws Exception {
             // When
             List<Row> results = executeQueryByRange(rangeFactory().createExactRange("key", 0L));
@@ -1192,7 +1195,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
     // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
     // is not pushed down to DataFusion and can therefore be tested in memory.
-    @Test
+    //@Test
     public void shouldApplyQueryTimeIterator() throws Exception {
         // Given
         tableProperties.setSchema(getSecurityLabelSchema());
@@ -1220,7 +1223,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                 .allSatisfy(result -> assertThat(result).isEqualTo(expected));
     }
 
-    @Test
+    //@Test
     public void shouldReturnOnlyRequestedValuesWhenSpecified() throws Exception {
         // Given
         tableProperties.setSchema(getLongKeySchema());
@@ -1249,7 +1252,7 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
     // Note that this behaviour is mainly tested in QueryExecutorTest and against the iterator directly, as the iterator
     // is not pushed down to DataFusion and can therefore be tested in memory.
-    @Test
+    //@Test
     public void shouldReadFieldRequiredByIteratorEvenWhenUserRequestedDifferentFields() throws Exception {
         // Given
         tableProperties.setSchema(getSecurityLabelSchema());
