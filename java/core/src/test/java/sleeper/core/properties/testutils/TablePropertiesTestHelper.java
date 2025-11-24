@@ -24,8 +24,6 @@ import java.util.UUID;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstanceProperties;
-import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 /**
  * Helpers to create table properties.
@@ -66,15 +64,4 @@ public class TablePropertiesTestHelper {
         return tableProperties;
     }
 
-    /**
-     * Creates simple properties for a Sleeper table.
-     *
-     * @return the table properties
-     */
-    public static TableProperties generateSimpleTestTableProperties() {
-        TableProperties tableProperties = new TableProperties(createSimpleTestInstanceProperties());
-        tableProperties.set(TABLE_NAME, "test-table");
-        tableProperties.setSchema(createSchemaWithKey("key"));
-        return tableProperties;
-    }
 }

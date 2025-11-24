@@ -37,8 +37,10 @@ import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_D
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstanceProperties;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstancePropertiesWithId;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.generateSimpleTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class PropertiesDiffTest {
 
@@ -180,14 +182,21 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            TableProperties before = generateSimpleTestTableProperties();
+            TableProperties before = generateCompareTestTableProperties();
             before.set(ITERATOR_CONFIG, "config-before");
-            TableProperties after = generateSimpleTestTableProperties();
+            TableProperties after = generateCompareTestTableProperties();
             after.set(ITERATOR_CONFIG, "config-after");
 
             // When / Then
             assertThat(getChanges(before, after))
                     .containsExactly(valueChanged(ITERATOR_CONFIG, "config-before", "config-after"));
+        }
+
+        public static TableProperties generateCompareTestTableProperties() {
+            TableProperties tableProperties = new TableProperties(createSimpleTestInstanceProperties());
+            tableProperties.set(TABLE_NAME, "test-table");
+            tableProperties.setSchema(createSchemaWithKey("key"));
+            return tableProperties;
         }
     }
 
@@ -244,6 +253,7 @@ public class PropertiesDiffTest {
             after.set(property, newValue);
             return new PropertiesDiff(before, after);
         }
+
     }
 
     private <T extends SleeperProperty> List<PropertyDiff> getChanges(SleeperProperties<T> before, SleeperProperties<T> after) {

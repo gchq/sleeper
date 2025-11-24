@@ -40,8 +40,10 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCK
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstanceProperties;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.generateSimpleTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class UpdatePropertiesWithTextEditorIT {
 
@@ -128,9 +130,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUpdateTableProperties() throws Exception {
             // Given
-            TableProperties before = generateSimpleTestTableProperties();
+            TableProperties before = generateCompareTestTableProperties();
             before.set(ROW_GROUP_SIZE, "123");
-            TableProperties after = generateSimpleTestTableProperties();
+            TableProperties after = generateCompareTestTableProperties();
             after.set(ROW_GROUP_SIZE, "456");
 
             // When
@@ -145,8 +147,8 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldRetrieveTablePropertiesAfterChange() throws Exception {
             // Given
-            TableProperties before = generateSimpleTestTableProperties();
-            TableProperties after = generateSimpleTestTableProperties();
+            TableProperties before = generateCompareTestTableProperties();
+            TableProperties after = generateCompareTestTableProperties();
             after.set(ROW_GROUP_SIZE, "456");
 
             // When
@@ -212,9 +214,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldCreateUpdateRequestWithTableProperties() throws Exception {
             // Given
-            TableProperties before = generateSimpleTestTableProperties();
+            TableProperties before = generateCompareTestTableProperties();
             before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
-            TableProperties after = generateSimpleTestTableProperties();
+            TableProperties after = generateCompareTestTableProperties();
             after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
 
             // When
@@ -315,5 +317,12 @@ class UpdatePropertiesWithTextEditorIT {
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
         }
+    }
+
+    public static TableProperties generateCompareTestTableProperties() {
+        TableProperties tableProperties = new TableProperties(createSimpleTestInstanceProperties());
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.setSchema(createSchemaWithKey("key"));
+        return tableProperties;
     }
 }
