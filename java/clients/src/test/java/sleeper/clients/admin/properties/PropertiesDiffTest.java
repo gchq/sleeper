@@ -27,6 +27,7 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.newValue;
@@ -39,20 +40,20 @@ import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTION
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createSimpleTestInstancePropertiesWithId;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class PropertiesDiffTest {
 
     @DisplayName("Compare instance properties")
     @Nested
     class CompareInstanceProperties {
+        String id = UUID.randomUUID().toString();
 
         @Test
         void shouldDetectNoChanges() {
 
             // Given
-            InstanceProperties before = createTestInstanceProperties();
-            InstanceProperties after = createTestInstanceProperties();
+            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
 
             // When / Then
             assertThat(getChanges(before, after)).isEmpty();
@@ -61,9 +62,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyHasBeenUpdated() {
             // Given
-            InstanceProperties before = createTestInstanceProperties();
+            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "30");
-            InstanceProperties after = createTestInstanceProperties();
+            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
 
             // When / Then
@@ -74,8 +75,8 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsNewlySet() {
             // Given
-            InstanceProperties before = createTestInstanceProperties();
-            InstanceProperties after = createTestInstanceProperties();
+            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
             after.set(INGEST_SOURCE_BUCKET, "some-bucket");
 
             // When / Then
@@ -86,9 +87,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectPropertyIsUnset() {
             // Given
-            InstanceProperties before = createTestInstanceProperties();
+            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
             before.set(INGEST_SOURCE_BUCKET, "some-bucket");
-            InstanceProperties after = createTestInstanceProperties();
+            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
 
             // When / Then
             assertThat(getChanges(before, after))
@@ -98,8 +99,8 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectDefaultedPropertyIsNewlySet() {
             // Given
-            InstanceProperties before = createTestInstanceProperties();
-            InstanceProperties after = createTestInstanceProperties();
+            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
+            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
 
             // When / Then
@@ -110,9 +111,9 @@ public class PropertiesDiffTest {
         @Test
         void shouldDetectDefaultedPropertyIsUnset() {
             // Given
-            InstanceProperties before = createTestInstanceProperties();
+            InstanceProperties before = createSimpleTestInstancePropertiesWithId(id);
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "50");
-            InstanceProperties after = createTestInstanceProperties();
+            InstanceProperties after = createSimpleTestInstancePropertiesWithId(id);
 
             // When / Then
             assertThat(getChanges(before, after))
