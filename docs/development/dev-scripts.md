@@ -77,6 +77,10 @@ Publishes Maven artifacts to a remote repository, see [publishing artefacts](pub
 This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
 modules relate to one another.
 
+#### `trivy.sh`
+
+This will run the Trivy security scanning tool in a Docker container: https://github.com/aquasecurity/trivy
+
 #### `updateVersionNumber.sh`
 
 This is used during the release process to update the version number across the project, see
