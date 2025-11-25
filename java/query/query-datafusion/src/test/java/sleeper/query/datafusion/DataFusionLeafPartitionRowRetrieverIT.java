@@ -127,7 +127,6 @@ public class DataFusionLeafPartitionRowRetrieverIT {
 
         // Then
         assertThat(supportsFiltersAndAggregations).isTrue();
-
     }
 
     @Nested

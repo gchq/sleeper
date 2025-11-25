@@ -18,7 +18,6 @@ package sleeper.query.datafusion;
 import jnr.ffi.Pointer;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
-import jnr.ffi.annotations.Synchronized;
 
 import sleeper.foreign.FFIFileResult;
 import sleeper.foreign.bridge.FFIContext;
@@ -28,8 +27,6 @@ import sleeper.foreign.bridge.ForeignFunctions;
  * Calls the native library with query functionality.
  */
 public interface DataFusionQueryFunctions extends ForeignFunctions {
-    static final Object CHECK = new Object();
-
     /**
      * Invokes a native query. Returns a stream of Arrow record batches.
      *
@@ -43,9 +40,7 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * @throws IllegalStateException if the context has already been closed
      */
     default int query_stream(FFIContext<DataFusionQueryFunctions> context, FFILeafPartitionQueryConfig input, FFIQueryResults outputStream) {
-        synchronized (CHECK) {
-            return native_query_stream(context.getForeignContext(), input, outputStream);
-        }
+        return native_query_stream(context.getForeignContext(), input, outputStream);
     }
 
     /**
@@ -63,7 +58,6 @@ public interface DataFusionQueryFunctions extends ForeignFunctions {
      * @return              indication of success
      */
     @SuppressWarnings(value = "checkstyle:parametername")
-    @Synchronized
     int native_query_stream(@In Pointer context, @In FFILeafPartitionQueryConfig input, @Out FFIQueryResults outputStream);
 
     /**
