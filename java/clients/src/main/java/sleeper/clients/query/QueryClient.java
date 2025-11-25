@@ -52,7 +52,6 @@ import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -122,7 +121,7 @@ public class QueryClient extends QueryCommandLineClient {
         return cachedQueryExecutors.get(query.getTableName()).execute(query);
     }
 
-    public static void main(String[] args) throws ObjectFactoryException, InterruptedException, IOException {
+    public static void main(String[] args) throws ObjectFactoryException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
