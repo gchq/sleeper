@@ -146,7 +146,6 @@ public class QueryClient extends QueryCommandLineClient {
                     .run();
         } finally {
             executorService.shutdown();
-
         }
     }
 }
