@@ -91,19 +91,17 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      * @see                         FFIContext#closeRootContext()
      */
     public static <T extends ForeignFunctions> FFIContext<T> getFFIContext(Class<T> functionClass) throws UncheckedIOException {
-        try {
-            synchronized (CONTEXT_LOCK) {
+        synchronized (CONTEXT_LOCK) {
+            try {
+                T functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass"));
                 if (rootContext == null) {
-                    T functions = FFIBridge.createForeignInterface(Objects.requireNonNull(functionClass, "functionClass"));
                     rootContext = new FFIContext<>(functions, functions.create_context());
                 }
                 rootContext.checkOpen();
-                return new FFIContext<T>((T) rootContext.functions, rootContext.context);
-                // return new FFIContext<>(functions, functions.clone_context(rootContext.context));
-                // return new FFIContext<>(functions, functions.create_context());
+                return new FFIContext<>(functions, functions.clone_context(rootContext.context));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
