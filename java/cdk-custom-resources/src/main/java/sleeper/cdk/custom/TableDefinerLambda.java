@@ -90,14 +90,18 @@ public class TableDefinerLambda {
         properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
         TableProperties tableProperties = new TableProperties(instanceProperties, properties);
 
-        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
+        String tableName = tableProperties.get(TableProperty.TABLE_NAME);
+        LOGGER.info("Validating table properties for table {}", tableName);
         tableProperties.validate();
+        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+        LOGGER.info("Creating table {}", tableName);
         tablePropertiesStore.createTable(tableProperties);
 
-        List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"), tableProperties.getSchema(),
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
+        List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"),
+                tableProperties.getSchema(),
                 tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
-
+        LOGGER.info("Initalising state store from split points for table {}", tableName);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
     }
 
