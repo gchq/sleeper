@@ -210,6 +210,7 @@ pub extern "C" fn native_query_stream(
     let result = context
         .rt
         .block_on(run_query(&details, &context.sleeper_context));
+    eprintln!("\n\nRUST JUST RAN A QUERY!");
     match result {
         Ok(res) => {
             let CompletedOutput::ArrowRecordBatch(batch_stream) = res else {

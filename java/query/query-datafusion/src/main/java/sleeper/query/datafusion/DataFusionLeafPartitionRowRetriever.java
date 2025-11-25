@@ -63,12 +63,13 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         DataFusionQueryFunctions functions = context.getFunctions();
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getSystemRuntime();
         FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
-
         // Create NULL pointer which will be set by the FFI call upon return
         FFIQueryResults results = new FFIQueryResults(runtime);
         try {
             // Perform native query
+            System.err.println("CALLING RUST!!");
             int result = functions.query_stream(context, params, results);
+            System.err.println("RUST HAS RETURNED TO JAVA");
             // Check result
             if (result != 0) {
                 LOGGER.error("DataFusion query failed, return code: {}", result);
@@ -83,8 +84,28 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
             // Convert pointer from Rust to Java FFI Arrow array stream.
             // At this point Java assumes ownership of the stream and must release it when no longer
             // needed.
-            return new RowIteratorFromArrowReader(Data.importArrayStream(allocator, ArrowArrayStream.wrap(results.arrowArrayStream.longValue())));
-        } catch (IOException e) {
+            var iterator = new CloseableIterator<Row>() {
+
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
+
+                @Override
+                public Row next() {
+                    // TODO Auto-generated method stub
+                    throw new UnsupportedOperationException("Unimplemented method 'next'");
+                }
+
+                @Override
+                public void close() throws IOException {
+                }
+            };
+
+            var other = new RowIteratorFromArrowReader(Data.importArrayStream(allocator, ArrowArrayStream.wrap(results.arrowArrayStream.longValue())));
+            // return iterator;
+            return other;
+        } catch (Exception e) {
             throw new RowRetrievalException(e.getMessage(), e);
         }
     }

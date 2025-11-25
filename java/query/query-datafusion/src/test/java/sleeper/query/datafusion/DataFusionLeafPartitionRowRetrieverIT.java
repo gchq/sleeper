@@ -59,6 +59,7 @@ import sleeper.query.core.rowretrieval.QueryExecutor;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,6 +97,14 @@ public class DataFusionLeafPartitionRowRetrieverIT {
     @TempDir
     public Path tempDir;
 
+    public DataFusionLeafPartitionRowRetrieverIT() {
+        try {
+            this.tempDir = Files.createTempDirectory("jt").toAbsolutePath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
@@ -130,14 +139,22 @@ public class DataFusionLeafPartitionRowRetrieverIT {
         assertThat(supportsFiltersAndAggregations).isTrue();
     }
 
+    public static void main(String[] args) throws Exception {
+        DataFusionLeafPartitionRowRetrieverIT thing = new DataFusionLeafPartitionRowRetrieverIT();
+        thing.setUp();
+        MultiThreadStressTest mt = thing.new MultiThreadStressTest();
+        mt.setUp();
+        mt.shouldExecuteQueriesInParallel();
+    }
+
     @Nested
     @DisplayName("Multi-threading")
     class MultiThreadStressTest {
         List<Row> rows = makeRows();
 
         public static final int ROW_COUNT = 10_00;
-        public static final int TASK_COUNT = 1;
-        public static final int QUERY_COUNT = 2;
+        public static final int TASK_COUNT = 150;
+        public static final int QUERY_COUNT = 300;
 
         private List<Row> makeRows() {
             List<Row> rows = new ArrayList<>();
@@ -154,9 +171,19 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             ingestData(rows);
         }
 
+        public static class TLock {
+            public int a;
+
+            public TLock(int a) {
+                this.a = a;
+            }
+        }
+
+        public static TLock LOCK = new TLock(5);
+
         /** Tests that we can sucessfully execute tasks in parallel without segmentation faults. */
         @Test
-        void shouldExecuteQueriesInParallel() throws Exception {
+        public void shouldExecuteQueriesInParallel() throws Exception {
             //Given
 
             ExecutorService es = Executors.newFixedThreadPool(TASK_COUNT);
@@ -178,9 +205,16 @@ public class DataFusionLeafPartitionRowRetrieverIT {
                             new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), tableProperties, rowRetriever));
 
                     for (int i = 0; i < QUERY_COUNT; i++) {
-                        CloseableIterator<Row> results = queryExec.execute(query);
-                        results.forEachRemaining(row -> {
-                        });
+                        CloseableIterator<Row> results;
+                        synchronized (LOCK) {
+                            results = queryExec.execute(query);
+                        }
+                        int count = 0;
+                        while (results.hasNext()) {
+                            results.next();
+                            count++;
+                        }
+                        System.err.println("Found " + count + " results");
                     }
                 }
                 return null;

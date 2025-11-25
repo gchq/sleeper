@@ -75,7 +75,6 @@ public class QueryExecutor {
 
     private List<Supplier<CloseableIterator<Row>>> createRowIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
         List<Supplier<CloseableIterator<Row>>> iterators = new ArrayList<>();
-
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
             iterators.add(() -> {
                 try {

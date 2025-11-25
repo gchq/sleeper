@@ -124,7 +124,7 @@
                                     </arguments>
                                 </configuration>
                             </execution>
-                            <execution>
+                            <!--<execution>
                                 <id>Invoke Rust Cargo build (Linux Aarch64)</id>
                                 <phase>generate-resources</phase>
                                 <goals>
@@ -139,7 +139,7 @@
                                         <argument>aarch64</argument>
                                     </arguments>
                                 </configuration>
-                            </execution>
+                            </execution>-->
                         </executions>
                     </plugin>
                 </plugins>
