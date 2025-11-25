@@ -25,19 +25,21 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.ReadSplitPoints;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.schema.Schema;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.table.TableIdGenerator;
+import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
+import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Lambda Function which defines sleeper tables.
@@ -46,6 +48,7 @@ public class TableDefinerLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(PropertiesWriterLambda.class);
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
+    private final String bucketName;
 
     public TableDefinerLambda() {
         this(S3Client.create(), DynamoDbClient.create());
@@ -54,21 +57,20 @@ public class TableDefinerLambda {
     public TableDefinerLambda(S3Client s3Client, DynamoDbClient dynamoClient) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
+        this.bucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
     }
 
     public void handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
         Map<String, Object> resourceProperties = event.getResourceProperties();
-        String instanceId = (String) resourceProperties.get("instanceId");
-        String tableName = (String) resourceProperties.get("tableName");
         switch (event.getRequestType()) {
             case "Create":
-                addTable(instanceId, tableName, resourceProperties);
+                addTable(resourceProperties);
                 break;
             case "Update":
-                updateTable(instanceId, tableName, resourceProperties);
+                updateTable(resourceProperties);
                 break;
             case "Delete":
-                deleteTable(instanceId, tableName);
+                deleteTable(resourceProperties);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
@@ -76,41 +78,34 @@ public class TableDefinerLambda {
     }
 
     /*
-     * instanceId: id
-     * tableName: Foo
      * tableProperties: {
      * some: bar
      * other: ram
      * }
      * splitPoints: {}
-     * schema: {
-     * rowkeyFields: row
-     * sortKeyFields: sort
-     * valueFields: value
-     * }
      */
-    private void addTable(String instanceId, String tableName, Map<String, Object> resourceProperties) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+    private void addTable(Map<String, Object> resourceProperties) throws IOException {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         Properties properties = new Properties();
         properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
         TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-        String tableId = new TableIdGenerator().generateString();
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(TABLE_ID, tableId);
-        tableProperties.setSchema(Schema.loadFromString((String) resourceProperties.get("schema")));
 
         TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
         tableProperties.validate();
         tablePropertiesStore.createTable(tableProperties);
-        new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
+
+        List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"), tableProperties.getSchema(),
+                tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
+
+        new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
     }
 
-    private void updateTable(String instanceId, String tableName, Map<String, Object> resourceProperties) {
+    private void updateTable(Map<String, Object> resourceProperties) {
         //TODO
     }
 
-    private void deleteTable(String instanceId, String tableName) {
+    private void deleteTable(Map<String, Object> resourceProperties) {
         //TODO
     }
 }
