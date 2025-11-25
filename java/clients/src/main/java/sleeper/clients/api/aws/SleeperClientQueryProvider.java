@@ -111,8 +111,9 @@ public interface SleeperClientQueryProvider {
         @Override
         public void close() {
             try (allocator; context) {
+            } finally {
+                executorService.shutdown();
             }
-            executorService.shutdown();
         }
     }
 }

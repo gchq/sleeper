@@ -32,8 +32,6 @@ import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.sketches.store.SketchesStore;
 
-import java.io.IOException;
-
 import static sleeper.core.properties.table.TableProperty.DATA_ENGINE;
 
 /**
@@ -62,7 +60,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     }
 
     @Override
-    public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) throws IOException {
+    public CompactionRunner createCompactor(CompactionJob job, TableProperties tableProperties) {
         Configuration hadoopConf = hadoopProvider.getConfiguration(tableProperties);
         if (job.getIteratorClassName() != null) {
             CompactionRunner runner = createJavaRunner(hadoopConf);
@@ -77,7 +75,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         return runner;
     }
 
-    private CompactionRunner createRunnerForEngine(DataEngine engine, Configuration hadoopConf) throws IOException {
+    private CompactionRunner createRunnerForEngine(DataEngine engine, Configuration hadoopConf) {
         switch (engine) {
             case DATAFUSION:
             case DATAFUSION_EXPERIMENTAL:
