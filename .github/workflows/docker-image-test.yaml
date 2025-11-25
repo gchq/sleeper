@@ -9,7 +9,7 @@ on:
         required: false
         type: boolean
       testClassNames:
-        required: true
+        required: false
         type: string
 
 env:
@@ -64,6 +64,7 @@ jobs:
         run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} --cache-to type=gha,mode=max --cache-from type=gha --builder sleeper --load
       - name: Docker image tests
         working-directory: ./java
+        if: ${{ inputs.testClassNames != '' }}
         run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
