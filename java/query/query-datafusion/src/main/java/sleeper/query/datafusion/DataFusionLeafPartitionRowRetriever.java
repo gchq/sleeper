@@ -52,6 +52,7 @@ import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
  */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
+    private static final Object LOCK = new Object();
 
     private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator allocator;
@@ -91,14 +92,21 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
      */
     public ArrowReader getArrowReader(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
         DataFusionQueryFunctions functions = context.getFunctions();
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
+        // Segmentation faults can occur if multiple threads are trying to allocate and de-allocate query parameter and result
+        // objects in JNR-FFI. Therefore we acquire a lock on those parts of the system. This doesn't prevent
+        // result retrieval happening in parallel, once the query planning step has finished.
+        int result;
+        FFIQueryResults results;
+        synchronized (LOCK) {
+            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+            FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
-        // Create NULL pointer which will be set by the FFI call upon return
-        FFIQueryResults results = new FFIQueryResults(runtime);
+            // Create NULL pointer which will be set by the FFI call upon return
+            results = new FFIQueryResults(runtime);
 
-        // Perform native query
-        int result = functions.query_stream(context, params, results);
+            // Perform native query
+            result = functions.query_stream(context, params, results);
+        }
         // Check result
         if (result != 0) {
             LOGGER.error("DataFusion query failed, return code: {}", result);
