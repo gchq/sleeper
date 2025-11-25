@@ -69,7 +69,7 @@ public class DeployNewTestInstance {
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdk.Type.SYSTEM_TEST)
-                    .deployWithClients(s3Client, dynamoClient, ecrClient);
+                    .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient);
         }
     }
 
