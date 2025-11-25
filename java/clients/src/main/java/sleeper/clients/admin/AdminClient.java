@@ -15,11 +15,14 @@
  */
 package sleeper.clients.admin;
 
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
@@ -94,11 +97,13 @@ public class AdminClient {
                 DynamoDbClient dynamoClient = AwsV2ClientHelper.buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = AwsV2ClientHelper.buildAwsV2Client(SqsClient.builder());
                 EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
-                EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
+                EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder());
+                StsClient stsClient = AwsV2ClientHelper.buildAwsV2Client(StsClient.builder())) {
+            AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.fromScriptsDirectory(scriptsDir),
                     CheckVersionExistsInEcr.withEcrClient(ecrClient),
-                    "", ""); //TODO
+                    stsClient.getCallerIdentity().account(), regionProvider.getRegion().id());
             errorCode = start(instanceId, s3Client, dynamoClient,
                     cdk, generatedDir, uploadDockerImages, out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
