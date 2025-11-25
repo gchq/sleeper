@@ -19,14 +19,12 @@ import jnr.ffi.Pointer;
 import jnr.ffi.provider.jffi.ArrayMemoryIO;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FFIContextTest {
 
     @Test
-    void shouldClose() throws IOException {
+    void shouldClose() {
         // Given
         ForeignFunctions functions = new ForeignFunctions() {
 
