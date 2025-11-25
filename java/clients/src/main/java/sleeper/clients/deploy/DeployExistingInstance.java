@@ -101,7 +101,7 @@ public class DeployExistingInstance {
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        CheckVersionExistsInEcr.withEcrClient(ecr)),
+                        CheckVersionExistsInEcr.withEcrClient(ecr), "", ""), //TODO
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 

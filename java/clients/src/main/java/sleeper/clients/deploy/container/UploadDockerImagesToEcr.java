@@ -34,10 +34,16 @@ public class UploadDockerImagesToEcr {
 
     private final UploadDockerImages uploader;
     private final CheckVersionExistsInEcr repositoryChecker;
+    private final String account;
+    private final String region;
+    private final String repositoryHost;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckVersionExistsInEcr repositoryChecker) {
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckVersionExistsInEcr repositoryChecker, String accountIn, String regionIn) {
         this.uploader = uploader;
         this.repositoryChecker = repositoryChecker;
+        this.account = accountIn;
+        this.region = regionIn;
+        this.repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
     }
 
     public void upload(UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
@@ -46,11 +52,11 @@ public class UploadDockerImagesToEcr {
         List<StackDockerImage> imagesToUpload = requestedImages.stream()
                 .filter(image -> imageDoesNotExistInRepositoryWithVersion(image, request))
                 .collect(Collectors.toUnmodifiableList());
-        String repositoryPrefix = request.getRepositoryHost() + "/" + request.getEcrPrefix();
+        String repositoryPrefix = repositoryHost + "/" + request.getEcrPrefix();
         if (!imagesToUpload.isEmpty()) {
             uploader.getCommandRunner().runOrThrow(pipeline(
-                    command("aws", "ecr", "get-login-password", "--region", request.getRegion()),
-                    command("docker", "login", "--username", "AWS", "--password-stdin", request.getRepositoryHost())));
+                    command("aws", "ecr", "get-login-password", "--region", region),
+                    command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
         uploader.upload(repositoryPrefix, imagesToUpload);
     }

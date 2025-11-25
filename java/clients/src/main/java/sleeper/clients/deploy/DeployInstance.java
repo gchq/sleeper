@@ -17,6 +17,8 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -76,6 +78,7 @@ public class DeployInstance {
         Set<String> options = Stream.of(args).skip(5).map(String::toLowerCase).collect(toUnmodifiableSet());
         boolean deployPaused = options.contains("--deploy-paused");
 
+        AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         try (S3Client s3Client = S3Client.create();
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
@@ -91,7 +94,7 @@ public class DeployInstance {
                     SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                     new UploadDockerImagesToEcr(
                             UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
-                            CheckVersionExistsInEcr.withEcrClient(ecrClient)),
+                            CheckVersionExistsInEcr.withEcrClient(ecrClient), stsClient.getCallerIdentity().account(), regionProvider.getRegion().id()), // TODO
                     WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                     InvokeCdk.fromScriptsDirectory(scriptsDirectory));
 

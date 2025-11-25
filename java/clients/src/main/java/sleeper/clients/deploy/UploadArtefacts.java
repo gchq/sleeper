@@ -129,7 +129,7 @@ public class UploadArtefacts {
                             .deployConfig(DeployConfiguration.fromScriptsDirectory(args.scriptsDir()))
                             .createMultiplatformBuilder(args.createMultiplatformBuilder())
                             .build(),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient));
+                    CheckVersionExistsInEcr.withEcrClient(ecrClient), account, region);
 
             if (args.createDeployment()) {
                 InvokeCdk.fromScriptsDirectory(args.scriptsDir())
@@ -140,7 +140,6 @@ public class UploadArtefacts {
                     .build());
             uploadImages.upload(UploadDockerImagesToEcrRequest.builder()
                     .ecrPrefix(ecrPrefix)
-                    .account(account).region(region)
                     .images(images)
                     .build());
         }

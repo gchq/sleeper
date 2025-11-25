@@ -97,7 +97,8 @@ public class AdminClient {
                 EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.fromScriptsDirectory(scriptsDir),
-                    CheckVersionExistsInEcr.withEcrClient(ecrClient));
+                    CheckVersionExistsInEcr.withEcrClient(ecrClient),
+                    "", ""); //TODO
             errorCode = start(instanceId, s3Client, dynamoClient,
                     cdk, generatedDir, uploadDockerImages, out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
