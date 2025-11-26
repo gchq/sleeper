@@ -50,8 +50,8 @@ public class SystemTestApp extends Stack {
         super(app, id, stackProps);
         this.props = sleeperProps;
 
-        props.getInstanceProperties().set(ACCOUNT, getAccount());
-        props.getInstanceProperties().set(REGION, getRegion());
+        props.getInstanceProperties().set(ACCOUNT, this.getAccount());
+        props.getInstanceProperties().set(REGION, this.getRegion());
         this.jars = sleeperProps.getJars();
         this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
     }
