@@ -44,7 +44,7 @@ public class SleeperInstancePrinter {
                 .filter(construct -> construct instanceof Stack)
                 .map(construct -> (Stack) construct)
                 .toList();
-        Map<String, Object> templateByStackId = stacks.stream()
+        Map<String, Object> stackIdToTemplate = stacks.stream()
                 .collect(toMap(
                         s -> s.getNode().getId(),
                         s -> toSanitisedMap(s),
@@ -52,7 +52,7 @@ public class SleeperInstancePrinter {
                             throw new IllegalStateException("Duplicate stack ID");
                         },
                         LinkedHashMap::new));
-        return gson.toJson(Map.of("TemplateByStackId", templateByStackId));
+        return gson.toJson(Map.of("StackIdToTemplate", stackIdToTemplate));
     }
 
     private Map<String, Object> toSanitisedMap(Stack stack) {
