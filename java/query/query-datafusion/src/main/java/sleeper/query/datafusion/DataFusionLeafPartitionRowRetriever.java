@@ -83,6 +83,9 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     /**
      * Executes a Sleeper leaf partition query via Apache DataFusion.
      *
+     * Thread safety: The resulting reader object is NOT thread safe. You must use external synchronisation if you
+     * want to access it from multiple threads.
+     *
      * @param  leafPartitionQuery    the sub query
      * @param  dataReadSchema        a schema containing all key fields for the table, and all value fields required
      *                               for the query
