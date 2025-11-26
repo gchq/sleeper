@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 public class FFIContextTest {
 
@@ -50,6 +51,29 @@ public class FFIContextTest {
 
         // When - Then
         assertThat(context.isClosed()).isFalse();
+
+        context.close();
+
+        assertThat(context.isClosed()).isTrue();
+    }
+
+    public interface FunctionTest extends ForeignFunctions {
+        void someFunction();
+    }
+
+    @Test
+    void shouldFailGracefully() throws IOException {
+        // Given
+        IOException e = new IOException("test code");
+        FFIContext<FunctionTest> context = FFIContext.createDummyContext(FunctionTest.class, e);
+
+        // When - Then
+        assertThat(context.isClosed()).isFalse();
+
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> context.getFunctions().someFunction())
+                .withMessage("The native sleeper_df library is not loaded, native implementation not available")
+                .withCause(e);
 
         context.close();
 
