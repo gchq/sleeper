@@ -38,12 +38,12 @@ public class UploadDockerImagesToEcr {
     private final String region;
     private final String repositoryHost;
 
-    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckVersionExistsInEcr repositoryChecker, String accountIn, String regionIn) {
+    public UploadDockerImagesToEcr(UploadDockerImages uploader, CheckVersionExistsInEcr repositoryChecker, String account, String region) {
         this.uploader = uploader;
         this.repositoryChecker = repositoryChecker;
-        this.account = accountIn;
-        this.region = regionIn;
-        this.repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
+        this.account = account;
+        this.region = region;
+        this.repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", this.account, this.region);
     }
 
     public void upload(UploadDockerImagesToEcrRequest request) throws IOException, InterruptedException {
