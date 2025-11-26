@@ -29,6 +29,7 @@ import sleeper.core.properties.local.SaveLocalProperties;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -197,6 +198,11 @@ class SleeperInstanceStacksPropsIT {
         instanceProperties.set(JARS_BUCKET, "test-bucket");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
+
+        Properties tagsProperties = instanceProperties.getTagsProperties();
+        tagsProperties.setProperty("InstanceID", id);
+        instanceProperties.loadTags(tagsProperties);
+
         return instanceProperties;
     }
 }
