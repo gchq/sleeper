@@ -94,7 +94,7 @@ public class DeployInstance {
                     SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                     new UploadDockerImagesToEcr(
                             UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
-                            CheckVersionExistsInEcr.withEcrClient(ecrClient), stsClient.getCallerIdentity().account(), regionProvider.getRegion().id()), // TODO
+                            CheckVersionExistsInEcr.withEcrClient(ecrClient), stsClient.getCallerIdentity().account(), regionProvider.getRegion().id()),
                     WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                     InvokeCdk.fromScriptsDirectory(scriptsDirectory));
 
