@@ -116,7 +116,7 @@ public class DockerDeployment {
 
     /**
      * Retrieves the Docker image name for this deployment. Includes the repository URL and the tag.
-     * This method requires that CDK defined properties are set due to requiring Account and Region.
+     * This method requires that CDK defined properties are set due to requiring account and region.
      *
      * @param  properties the instance properties
      * @return            the Docker image name
