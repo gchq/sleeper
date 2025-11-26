@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 
 public class SleeperInstanceIT {
@@ -51,8 +52,24 @@ public class SleeperInstanceIT {
     InstanceProperties instanceProperties = createTestInstancePropertiesWithId("test-instance");
 
     @Test
-    void shouldGenerateCloudFormationTemplateWithDefaultStacks() {
+    void shouldGenerateCloudFormationTemplatesWithDefaultOptionalStacks() {
         // Given
+        instanceProperties.unset(OPTIONAL_STACKS);
+
+        // When
+        Stack stack = createSleeperInstanceAsRootStack();
+
+        // Then
+        Approvals.verify(toJson(stack), new Options()
+                .withReporter((receieved, approved) -> false) // Generating diff output for failures is too slow, so skip it
+                .forFile().withName("default-instance", ".json"));
+    }
+
+    private SleeperJarsInBucket jarsInBucket() {
+        return SleeperJarsInBucket.from(jar -> jar.getArtifactId() + "-test-version", instanceProperties);
+    }
+
+    private Stack createSleeperInstanceAsRootStack() {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
                 .build());
@@ -69,18 +86,7 @@ public class SleeperInstanceIT {
                 .jars(jarsInBucket())
                 .skipCheckingVersionMatchesProperties(true)
                 .build();
-
-        // When
-        Stack stack = SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
-
-        // Then
-        Approvals.verify(toJson(stack), new Options()
-                .withReporter((receieved, approved) -> false) // Generating diff output for failures is too slow, so skip it
-                .forFile().withName("default-instance", ".json"));
-    }
-
-    private SleeperJarsInBucket jarsInBucket() {
-        return SleeperJarsInBucket.from(jar -> jar.getArtifactId() + "-test-version", instanceProperties);
+        return SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
     }
 
     private String toJson(Stack stack) {
