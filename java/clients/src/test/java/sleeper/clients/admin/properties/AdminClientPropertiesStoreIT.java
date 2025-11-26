@@ -50,8 +50,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
@@ -395,8 +393,6 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     private UploadDockerImagesToEcrRequest withImages(StackDockerImage... images) {
         return UploadDockerImagesToEcrRequest.builder()
                 .ecrPrefix(instanceProperties.get(ID))
-                .account(instanceProperties.get(ACCOUNT))
-                .region(instanceProperties.get(REGION))
                 .version(instanceProperties.get(VERSION))
                 .images(List.of(images))
                 .build();
