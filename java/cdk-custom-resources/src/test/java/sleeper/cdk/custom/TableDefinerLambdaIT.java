@@ -65,7 +65,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     }
 
     @Test
-    public void shouldCreateTable() throws IOException {
+    public void shouldCreateTableWithNoSplitPoints() throws IOException {
         // Given
         HashMap<String, Object> resourceProperties = new HashMap<>();
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
@@ -88,6 +88,35 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                         .rootFirst("root")
                         .buildList());
 
+    }
+
+    @Test
+    public void shouldCreateTableWithMultipleSplitPoints() throws IOException {
+        // Given
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+        resourceProperties.put("splitPoints", "0\n5\n10\n");
+
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Create")
+                .withResourceProperties(resourceProperties)
+                .build();
+
+        // When
+        tableDefinerLambda.handleEvent(event, null);
+
+        // Then
+        TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
+        assertThat(foundProperties).isEqualTo(tableProperties);
+        assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
+        assertThat(stateStore(foundProperties).getAllPartitions())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
+                .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "l", "r", Long.valueOf(5))
+                        .splitToNewChildren("l", "ll", "lr", Long.valueOf(0))
+                        .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
+                        .buildList());
     }
 
     private StateStore stateStore(TableProperties tableProperties) {
