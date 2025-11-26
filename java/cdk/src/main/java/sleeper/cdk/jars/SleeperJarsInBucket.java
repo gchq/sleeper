@@ -80,6 +80,10 @@ public class SleeperJarsInBucket {
         return ecrRepositoryPrefix + "/" + jar.getImageName();
     }
 
+    /**
+     * Checks the version ID of the latest version of a given jar in the jars bucket. When we provide the CDK with a
+     * specific S3 version ID, it can tell when the jar has changed even if it still has the same filename.
+     */
     public interface GetVersionId {
         String getVersionId(LambdaJar jar);
 
