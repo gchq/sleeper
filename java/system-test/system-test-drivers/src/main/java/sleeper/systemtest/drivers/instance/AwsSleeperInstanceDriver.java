@@ -19,6 +19,7 @@ package sleeper.systemtest.drivers.instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
@@ -96,7 +97,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
                     .instanceType(InvokeCdk.Type.STANDARD)
                     .runCommand(CommandUtils::runCommandLogOutput)
                     .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
-                    .deployWithClients(s3, dynamoDB, ecr, sts);
+                    .deployWithClients(s3, dynamoDB, ecr, sts, DefaultAwsRegionProviderChain.builder().build());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -126,6 +127,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         try {
             DeployExistingInstance.builder()
                     .clients(s3, ecr, sts)
+                    .regionProvider(regionProvider)
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())

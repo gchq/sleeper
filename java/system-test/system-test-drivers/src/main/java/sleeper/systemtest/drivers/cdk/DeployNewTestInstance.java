@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.drivers.cdk;
 
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -69,7 +70,7 @@ public class DeployNewTestInstance {
                     .extraDockerImages(List.of(SYSTEM_TEST_IMAGE))
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdk.Type.SYSTEM_TEST)
-                    .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient);
+                    .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient, DefaultAwsRegionProviderChain.builder().build());
         }
     }
 

@@ -55,6 +55,7 @@ public class DeployExistingInstance {
     private final S3Client s3;
     private final EcrClient ecr;
     private final StsClient sts;
+    private final AwsRegionProvider regionProvider;
     private final boolean deployPaused;
     private final CommandPipelineRunner runCommand;
     private final boolean createMultiPlatformBuilder;
@@ -66,6 +67,7 @@ public class DeployExistingInstance {
         s3 = builder.s3;
         ecr = builder.ecr;
         sts = builder.sts;
+        regionProvider = builder.regionProvider;
         deployPaused = builder.deployPaused;
         runCommand = builder.runCommand;
         createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
@@ -89,6 +91,7 @@ public class DeployExistingInstance {
                 EcrClient ecrClient = EcrClient.create();
                 StsClient stsClient = StsClient.create()) {
             builder().clients(s3Client, ecrClient, stsClient)
+                    .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
                     .deployPaused(deployPaused)
@@ -98,7 +101,6 @@ public class DeployExistingInstance {
     }
 
     public void update() throws IOException, InterruptedException {
-        AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3, scriptsDirectory),
                 new UploadDockerImagesToEcr(
@@ -129,6 +131,7 @@ public class DeployExistingInstance {
         private S3Client s3;
         private EcrClient ecr;
         private StsClient sts;
+        private AwsRegionProvider regionProvider;
         private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean createMultiPlatformBuilder = true;
@@ -164,6 +167,11 @@ public class DeployExistingInstance {
             this.s3 = s3;
             this.ecr = ecr;
             this.sts = sts;
+            return this;
+        }
+
+        public Builder regionProvider(AwsRegionProvider regionProvider) {
+            this.regionProvider = regionProvider;
             return this;
         }
 

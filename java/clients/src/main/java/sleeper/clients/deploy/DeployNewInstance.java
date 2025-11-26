@@ -57,6 +57,7 @@ public class DeployNewInstance {
     private final DynamoDbClient dynamoClient;
     private final EcrClient ecrClient;
     private final StsClient stsClient;
+    private final AwsRegionProvider regionProvider;
     private final Path scriptsDirectory;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final List<StackDockerImage> extraDockerImages;
@@ -70,6 +71,7 @@ public class DeployNewInstance {
         dynamoClient = builder.dynamoClient;
         ecrClient = builder.ecrClient;
         stsClient = builder.stsClient;
+        regionProvider = builder.regionProvider;
         scriptsDirectory = builder.scriptsDirectory;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraDockerImages = builder.extraDockerImages;
@@ -108,7 +110,7 @@ public class DeployNewInstance {
                     .deployInstanceConfiguration(config)
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdk.Type.STANDARD)
-                    .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient);
+                    .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient, DefaultAwsRegionProviderChain.builder().build());
         }
     }
 
@@ -117,7 +119,6 @@ public class DeployNewInstance {
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
         deployInstanceConfiguration.validate();
-        AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                 new UploadDockerImagesToEcr(
@@ -154,6 +155,7 @@ public class DeployNewInstance {
         private StsClient stsClient;
         private DynamoDbClient dynamoClient;
         private EcrClient ecrClient;
+        private AwsRegionProvider regionProvider;
         private Path scriptsDirectory;
         private SleeperInstanceConfiguration deployInstanceConfiguration;
         private List<StackDockerImage> extraDockerImages = List.of();
@@ -182,6 +184,11 @@ public class DeployNewInstance {
 
         public Builder ecrClient(EcrClient ecrClient) {
             this.ecrClient = ecrClient;
+            return this;
+        }
+
+        public Builder regionProvider(AwsRegionProvider regionProvider) {
+            this.regionProvider = regionProvider;
             return this;
         }
 
@@ -225,11 +232,13 @@ public class DeployNewInstance {
         }
 
         public void deployWithClients(
-                S3Client s3Client, DynamoDbClient dynamoClient, EcrClient ecrClient, StsClient stsClient) throws IOException, InterruptedException {
+                S3Client s3Client, DynamoDbClient dynamoClient, EcrClient ecrClient, StsClient stsClient,
+                AwsRegionProvider regionProvider) throws IOException, InterruptedException {
             s3Client(s3Client)
                     .dynamoClient(dynamoClient)
                     .ecrClient(ecrClient)
                     .stsClient(stsClient)
+                    .regionProvider(regionProvider)
                     .build().deploy();
         }
     }
