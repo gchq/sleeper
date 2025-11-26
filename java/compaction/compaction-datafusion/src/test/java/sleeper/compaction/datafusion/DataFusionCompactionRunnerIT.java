@@ -261,6 +261,11 @@ public class DataFusionCompactionRunnerIT {
             // When
             runTask(job);
 
+            // The should_merge_empty_files test in rust/sleeper_core/tests/compaction_test.rs asserts that no result file
+            // is written when empty files are compacted. This differs here as it appears DataFusion will not always
+            // write an empty results file. See comment in that file. We ensure a result file is always written on the Java
+            // side in DataFusionCompactionRunner.
+
             // Then
             assertThat(getRowsProcessed(job)).isEqualTo(new RowsProcessed(0, 0));
             assertThat(readDataFile(job.getOutputFile())).isEmpty();
