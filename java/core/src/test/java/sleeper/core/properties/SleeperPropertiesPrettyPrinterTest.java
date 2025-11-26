@@ -121,7 +121,8 @@ class SleeperPropertiesPrettyPrinterTest {
                             "# retained.\n" +
                             "# See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html\n" +
                             "# for valid options.\n" +
-                            "# Use -1 to indicate infinite retention.");
+                            "# Use -1 to indicate infinite retention.\n" +
+                            "sleeper.log.retention.days=30");
         }
 
         @Test
