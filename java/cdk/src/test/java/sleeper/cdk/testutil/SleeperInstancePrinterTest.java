@@ -31,9 +31,40 @@ public class SleeperInstancePrinterTest {
             .create();
 
     @Test
-    void shouldSanitisePropertiesJoin() {
+    void shouldRemoveTemplateURL() {
         // Given
-        String exampleProperties = """
+        String templateSnippet = """
+                {
+                  "TemplateURL": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "https://s3.test-region.",
+                        {
+                            "Ref": "AWS::URLSuffix"
+                        },
+                        "/cdk-hnb659fds-assets-test-account-test-region/4330b5c344bc7b15668e1cdac745eeee2908bed02e74b0e53835aec8ef5e0527.json"
+                      ]
+                    ]
+                  }
+                }""";
+        Map<String, Object> map = gson.fromJson(templateSnippet, Map.class);
+
+        // When
+        Map<String, Object> sanitised = printer.sanitiseTemplate(map);
+        String printed = gson.toJson(sanitised);
+
+        // Then
+        assertThat(printed).isEqualTo("""
+                {
+                  "TemplateURL": "removed-for-test"
+                }""");
+    }
+
+    @Test
+    void shouldRemoveDateFromPropertiesJoin() {
+        // Given
+        String templateSnippet = """
                 {
                   "properties": {
                     "Fn::Join": [
@@ -48,7 +79,7 @@ public class SleeperInstancePrinterTest {
                     ]
                   }
                 }""";
-        Map<String, Object> map = gson.fromJson(exampleProperties, Map.class);
+        Map<String, Object> map = gson.fromJson(templateSnippet, Map.class);
 
         // When
         Map<String, Object> sanitised = printer.sanitiseTemplate(map);
