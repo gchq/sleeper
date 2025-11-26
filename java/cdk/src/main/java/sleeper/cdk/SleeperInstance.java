@@ -73,16 +73,18 @@ public class SleeperInstance {
     /**
      * Declares an instance of Sleeper as a root level stack.
      *
-     * @param scope        the scope to add the instance to, usually an App or Stage
-     * @param id           the stack ID
-     * @param stackProps   configuration of the stack
-     * @param sleeperProps configuration to deploy the instance
+     * @param  scope        the scope to add the instance to, usually an App or Stage
+     * @param  id           the stack ID
+     * @param  stackProps   configuration of the stack
+     * @param  sleeperProps configuration to deploy the instance
+     * @return              the stack
      */
-    public static void createAsRootStack(Construct scope, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
+    public static Stack createAsRootStack(Construct scope, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
         Stack stack = new Stack(scope, id, stackProps);
         sleeperProps.getInstanceProperties().set(ACCOUNT, stack.getAccount());
         sleeperProps.getInstanceProperties().set(REGION, stack.getRegion());
         addNestedStacks(stack, sleeperProps);
+        return stack;
     }
 
     private static SleeperInstance addNestedStacks(Construct scope, SleeperInstanceProps props) {

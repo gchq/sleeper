@@ -40,21 +40,25 @@ public class SleeperJarsInBucket {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarsInBucket.class);
 
-    private final S3Client s3;
+    private final GetVersionId getVersionId;
     private final String bucketName;
     private final LambdaDeployType deployType;
     private final String ecrRepositoryPrefix;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    private SleeperJarsInBucket(S3Client s3, String bucketName, LambdaDeployType deployType, String ecrRepositoryPrefix) {
-        this.s3 = s3;
+    private SleeperJarsInBucket(GetVersionId getVersionId, String bucketName, LambdaDeployType deployType, String ecrRepositoryPrefix) {
+        this.getVersionId = getVersionId;
         this.bucketName = bucketName;
         this.deployType = deployType;
         this.ecrRepositoryPrefix = ecrRepositoryPrefix;
     }
 
     public static SleeperJarsInBucket from(S3Client s3, InstanceProperties instanceProperties) {
-        return new SleeperJarsInBucket(s3,
+        return from(GetVersionId.fromJarsBucket(s3, instanceProperties), instanceProperties);
+    }
+
+    public static SleeperJarsInBucket from(GetVersionId getVersionId, InstanceProperties instanceProperties) {
+        return new SleeperJarsInBucket(getVersionId,
                 instanceProperties.get(JARS_BUCKET),
                 instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
                 instanceProperties.get(ECR_REPOSITORY_PREFIX));
@@ -69,15 +73,27 @@ public class SleeperJarsInBucket {
     }
 
     public String getLatestVersionId(LambdaJar jar) {
-        return latestVersionIdByJar.computeIfAbsent(jar,
-                missingJar -> {
-                    String versionId = s3.headObject(builder -> builder.bucket(bucketName).key(missingJar.getFilename())).versionId();
-                    LOGGER.info("Found latest version ID for jar {}: {}", missingJar.getFilename(), versionId);
-                    return versionId;
-                });
+        return latestVersionIdByJar.computeIfAbsent(jar, getVersionId::getVersionId);
     }
 
     public String getRepositoryName(LambdaJar jar) {
         return ecrRepositoryPrefix + "/" + jar.getImageName();
+    }
+
+    /**
+     * Checks the version ID of the latest version of a given jar in the jars bucket. When we provide the CDK with a
+     * specific S3 version ID, it can tell when the jar has changed even if it still has the same filename.
+     */
+    public interface GetVersionId {
+        String getVersionId(LambdaJar jar);
+
+        static GetVersionId fromJarsBucket(S3Client s3Client, InstanceProperties instanceProperties) {
+            String bucketName = instanceProperties.get(JARS_BUCKET);
+            return jar -> {
+                String versionId = s3Client.headObject(builder -> builder.bucket(bucketName).key(jar.getFilename())).versionId();
+                LOGGER.info("Found latest version ID for jar {}: {}", jar.getFilename(), versionId);
+                return versionId;
+            };
+        }
     }
 }
