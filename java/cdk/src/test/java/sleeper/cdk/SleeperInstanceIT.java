@@ -51,10 +51,6 @@ public class SleeperInstanceIT {
                 .forFile().withName("default-instance", ".json"));
     }
 
-    private SleeperJarsInBucket jarsInBucket() {
-        return SleeperJarsInBucket.from(jar -> jar.getArtifactId() + "-test-version", instanceProperties);
-    }
-
     private Stack createSleeperInstanceAsRootStack() {
         App app = new App(AppProps.builder()
                 .analyticsReporting(false)
@@ -73,5 +69,9 @@ public class SleeperInstanceIT {
                 .skipCheckingVersionMatchesProperties(true)
                 .build();
         return SleeperInstance.createAsRootStack(app, "TestInstance", stackProps, sleeperProps);
+    }
+
+    private SleeperJarsInBucket jarsInBucket() {
+        return SleeperJarsInBucket.from(jar -> jar.getArtifactId() + "-test-version", instanceProperties);
     }
 }
