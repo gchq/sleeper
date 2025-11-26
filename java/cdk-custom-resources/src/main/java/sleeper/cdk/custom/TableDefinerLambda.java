@@ -51,13 +51,13 @@ public class TableDefinerLambda {
     private final String bucketName;
 
     public TableDefinerLambda() {
-        this(S3Client.create(), DynamoDbClient.create());
+        this(S3Client.create(), DynamoDbClient.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public TableDefinerLambda(S3Client s3Client, DynamoDbClient dynamoClient) {
+    public TableDefinerLambda(S3Client s3Client, DynamoDbClient dynamoClient, String bucketName) {
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
-        this.bucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        this.bucketName = bucketName;
     }
 
     public void handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {

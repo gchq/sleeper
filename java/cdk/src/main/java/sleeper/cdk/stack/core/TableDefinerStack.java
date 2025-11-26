@@ -67,9 +67,10 @@ public class TableDefinerStack extends NestedStack {
                 .build();
 
         //TODO Update this to use TableProperties/SplitPoints
-        CustomResource.Builder.create(this, "InstanceProperties")
-                .resourceType("Custom::InstanceProperties")
-                .properties(Map.of("properties", instanceProperties.saveAsString()))
+        CustomResource.Builder.create(this, "TableDefinerProperties")
+                .resourceType("Custom::TableDefinerProperties")
+                .properties(Map.of("tableProperties", instanceProperties.saveAsString(),
+                        "splitPoints", ""))
                 .serviceToken(tableDefinerProvider.getServiceToken())
                 .build();
 
