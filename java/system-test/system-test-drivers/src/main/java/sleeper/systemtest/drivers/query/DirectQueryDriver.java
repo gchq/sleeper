@@ -58,7 +58,8 @@ public class DirectQueryDriver implements QueryDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(DirectQueryDriver.class);
     private static final ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
     private static final BufferAllocator ALLOCATOR = new RootAllocator();
-    private static final FFIContext<DataFusionQueryFunctions> CONTEXT = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
+    private static final FFIContext<DataFusionQueryFunctions> CONTEXT = FFIContext
+            .getFFIContextSafely(DataFusionQueryFunctions.class);
 
     private final SystemTestInstanceContext instance;
     private final LeafPartitionRowRetrieverProvider rowRetrieverProvider;
@@ -66,8 +67,10 @@ public class DirectQueryDriver implements QueryDriver {
     public DirectQueryDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.rowRetrieverProvider = QueryEngineSelector.javaAndDataFusion(
-                new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE, clients.tableHadoopProvider(instance.getInstanceProperties())),
-                new DataFusionLeafPartitionRowRetriever.Provider(clients.createDataFusionAwsConfig(), ALLOCATOR, CONTEXT));
+                new LeafPartitionRowRetrieverImpl.Provider(EXECUTOR_SERVICE,
+                        clients.tableHadoopProvider(instance.getInstanceProperties())),
+                new DataFusionLeafPartitionRowRetriever.Provider(clients.createDataFusionAwsConfig(), ALLOCATOR,
+                        CONTEXT));
     }
 
     public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
@@ -92,7 +95,8 @@ public class DirectQueryDriver implements QueryDriver {
         return new PartitionTree(stateStore.getAllPartitions());
     }
 
-    private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
+    private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore,
+            PartitionTree partitionTree) {
         LeafPartitionRowRetriever rowRetriever = rowRetrieverProvider.getRowRetriever(tableProperties);
         return new QueryExecutor(
                 QueryPlanner.initialiseNow(tableProperties, stateStore),
