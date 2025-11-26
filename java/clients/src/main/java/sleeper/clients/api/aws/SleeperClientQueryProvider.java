@@ -69,7 +69,7 @@ public interface SleeperClientQueryProvider {
         return hadoopProvider -> {
             ExecutorService executorService = Executors.newFixedThreadPool(threadPoolSize);
             BufferAllocator allocator = new RootAllocator();
-            FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
+            FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContextSafely(DataFusionQueryFunctions.class);
 
             LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(executorService, hadoopProvider);
             LeafPartitionRowRetrieverProvider dataFusionProvider = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, context);
@@ -95,7 +95,7 @@ public interface SleeperClientQueryProvider {
     class PersistentThreadPool implements SleeperClientQueryProvider, UncheckedAutoCloseable {
         private final ExecutorService executorService;
         private final BufferAllocator allocator = new RootAllocator();
-        private final FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
+        private final FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContextSafely(DataFusionQueryFunctions.class);
 
         private PersistentThreadPool(ExecutorService executorService) {
             this.executorService = executorService;

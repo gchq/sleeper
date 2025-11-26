@@ -16,9 +16,11 @@
 package sleeper.foreign.bridge;
 
 import jnr.ffi.Pointer;
+import jnr.ffi.provider.jffi.ArrayMemoryIO;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Proxy;
 import java.util.Objects;
 
 /**
@@ -67,11 +69,10 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
      *
      * This method is thread-safe.
      *
-     * @param  functions   the FFI functions instance
-     * @param  context     the foreign context pointer
-     * @throws IOException if the native library couldn't be loaded
+     * @param functions the FFI functions instance
+     * @param context   the foreign context pointer
      */
-    FFIContext(T functions, Pointer context) throws IOException {
+    FFIContext(T functions, Pointer context) {
         this.functions = functions;
         this.context = context;
     }
@@ -102,6 +103,41 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+        }
+    }
+
+    /**
+     * Creates an FFI context with fallback if native library can't be loaded.
+     *
+     * This behaves exactly as {@link FFIContext#getForeignContext()}, but instead of throwing an exception on failure,
+     * a dummy context is returned. If any foreign functions are called on it, an {@link UnsupportedOperationException}
+     * will be thrown.
+     *
+     * @param  <T>           the interface type of the functions to be called in this context
+     * @param  functionClass class type for the FFI interface
+     * @return               a dummy context that can be opened and closed, but will not support any foreign function
+     *                       calls
+     */
+    public static <T extends ForeignFunctions> FFIContext<T> getFFIContextSafely(Class<T> functionClass) {
+        try {
+            return getFFIContext(functionClass);
+        } catch (UncheckedIOException e) {
+            // create a dynamic proxy that implements T
+            @SuppressWarnings("unchecked")
+            T functions = (T) Proxy.newProxyInstance(null, new Class<?>[]{functionClass}, (proxy, method, args) -> {
+                switch (method.getName()) {
+                    case "create_context":
+                        return new ArrayMemoryIO(jnr.ffi.Runtime.getSystemRuntime(), 1);
+                    case "destroy_context":
+                        return null;
+                    // All other methods from type T will throw when called
+                    case "clone_context":
+                    default:
+                        throw new UnsupportedOperationException(
+                                "The native sleeper_df library is not loaded, native implementation not available", e);
+                }
+            });
+            return new FFIContext<T>(functions, functions.create_context());
         }
     }
 

@@ -46,7 +46,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCompactionRunnerFactory.class);
 
     private static class ContextHolder {
-        public static final FFIContext<DataFusionCompactionFunctions> INSTANCE = FFIContext.getFFIContext(DataFusionCompactionFunctions.class);
+        public static final FFIContext<DataFusionCompactionFunctions> INSTANCE = FFIContext.getFFIContextSafely(DataFusionCompactionFunctions.class);
     }
 
     public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
