@@ -92,6 +92,20 @@ class SleeperInstanceStacksPropsIT {
             assertThat(loaded.get(VERSION))
                     .matches("\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?");
         }
+
+        @Test
+        void shouldSetTagPropertiesWhenInstancePropertiesAreLoaded() throws IOException {
+            // Given
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+
+            // When
+            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
+
+            // Then
+            assertThat(loaded.getTags().get("InstanceID"))
+                    .matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}$");
+        }
     }
 
     @Nested
