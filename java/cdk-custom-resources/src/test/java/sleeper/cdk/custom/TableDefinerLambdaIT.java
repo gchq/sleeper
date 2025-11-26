@@ -39,7 +39,6 @@ import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -51,6 +50,8 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+    private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     @TempDir
     private Path tempDir;
@@ -58,20 +59,14 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     @BeforeEach
     void setUp() {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        createBucket(instanceProperties.get(DATA_BUCKET));
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
     }
 
     @Test
     public void shouldCreateTable() throws IOException {
         // Given
-        TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-
-        // When
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-
         HashMap<String, Object> resourceProperties = new HashMap<>();
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
         resourceProperties.put("splitPoints", "");
@@ -81,6 +76,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                 .withResourceProperties(resourceProperties)
                 .build();
 
+        // When
         tableDefinerLambda.handleEvent(event, null);
 
         // Then
