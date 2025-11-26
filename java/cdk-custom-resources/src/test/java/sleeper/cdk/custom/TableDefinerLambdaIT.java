@@ -16,9 +16,13 @@
 package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -27,17 +31,19 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Properties;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.SCHEMA;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 public class TableDefinerLambdaIT extends LocalStackTestBase {
@@ -46,22 +52,25 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final Schema schema = createSchemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
 
-    private TableProperties createTableProperties(String bucketName) {
-        Properties properties = new Properties();
-        properties.setProperty(TABLE_NAME.getPropertyName(), "tableName");
-        properties.setProperty(SCHEMA.getPropertyName(), schema.toString());
-        return new TableProperties(instanceProperties, properties);
+    @TempDir
+    private Path tempDir;
+
+    @BeforeEach
+    void setUp() {
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     @Test
     public void shouldCreateTable() throws IOException {
         // Given
-        String bucketName = UUID.randomUUID().toString();
-        createBucket(bucketName);
-        TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, bucketName);
+        TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
 
         // When
-        TableProperties tableProperties = createTableProperties(bucketName);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         HashMap<String, Object> resourceProperties = new HashMap<>();
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
