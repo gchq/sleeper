@@ -20,6 +20,7 @@ import com.google.gson.GsonBuilder;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.assertions.Template;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -43,8 +44,15 @@ public class SleeperInstancePrinter {
                 .filter(construct -> construct instanceof Stack)
                 .map(construct -> (Stack) construct)
                 .toList();
-        List<Map<String, Object>> maps = stacks.stream().map(this::toSanitisedMap).toList();
-        return gson.toJson(maps);
+        Map<String, Object> templateByStackId = stacks.stream()
+                .collect(toMap(
+                        s -> s.getNode().getId(),
+                        s -> toSanitisedMap(s),
+                        (stack1, stack2) -> {
+                            throw new IllegalStateException("Duplicate stack ID");
+                        },
+                        LinkedHashMap::new));
+        return gson.toJson(Map.of("TemplateByStackId", templateByStackId));
     }
 
     private Map<String, Object> toSanitisedMap(Stack stack) {
