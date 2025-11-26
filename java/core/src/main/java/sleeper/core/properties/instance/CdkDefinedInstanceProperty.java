@@ -65,11 +65,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
 
     //AWS Config
     CdkDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
-            .description("The AWS account number. This is the AWS account that the instance is be deployed within.")
+            .description("The AWS account number. This is the AWS account that the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
     CdkDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
-            .description("The AWS region the sleeper is deploy within.")
+            .description("The AWS region the instance is deployed in.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
