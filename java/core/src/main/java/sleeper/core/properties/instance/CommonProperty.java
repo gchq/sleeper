@@ -115,16 +115,6 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .build();
-    UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
-            .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
-            .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .editable(false).build();
-    UserDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
-            .description("The AWS region to deploy to.")
-            .validationPredicate(Objects::nonNull)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .editable(false).build();
     UserDefinedInstanceProperty ENDPOINT_URL = Index.propertyBuilder("sleeper.endpoint.url")
             .description("The AWS endpoint URL. This should only be set for a non-standard service endpoint. Usually " +
                     "this is used to set the URL to LocalStack for a locally deployed instance.")

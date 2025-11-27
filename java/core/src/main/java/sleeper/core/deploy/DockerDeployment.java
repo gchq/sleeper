@@ -22,10 +22,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
  * A deployment of a Sleeper component that is deployed with Docker. Can be used to derive the Docker image names and
@@ -116,6 +116,7 @@ public class DockerDeployment {
 
     /**
      * Retrieves the Docker image name for this deployment. Includes the repository URL and the tag.
+     * This method requires that CDK defined properties are set due to requiring account and region.
      *
      * @param  properties the instance properties
      * @return            the Docker image name

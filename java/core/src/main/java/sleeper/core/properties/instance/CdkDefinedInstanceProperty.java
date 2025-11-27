@@ -63,6 +63,16 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
+    //AWS Config
+    CdkDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
+            .description("The AWS account number. This is the AWS account that the instance is deployed in.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    CdkDefinedInstanceProperty REGION = Index.propertyBuilder("sleeper.region")
+            .description("The AWS region the instance is deployed in.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     // Data
     CdkDefinedInstanceProperty DATA_BUCKET = Index.propertyBuilder("sleeper.data.bucket")
             .description("The S3 bucket name used to store table data.")

@@ -25,9 +25,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks.
@@ -46,18 +44,18 @@ public class SleeperCdkApp {
                 DynamoDbClient dynamoClient = DynamoDbClient.create()) {
             SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
             InstanceProperties instanceProperties = props.getInstanceProperties();
-
             String id = instanceProperties.get(ID);
+
             Environment environment = Environment.builder()
-                    .account(instanceProperties.get(ACCOUNT))
-                    .region(instanceProperties.get(REGION))
+                    .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
+                    .region(System.getenv("CDK_DEFAULT_REGION"))
                     .build();
             SleeperInstance.createAsRootStack(app, id,
                     StackProps.builder()
                             .stackName(id)
                             .env(environment)
                             .build(),
-                    SleeperInstanceProps.fromContext(app, s3Client, dynamoClient));
+                    props);
             instanceProperties.getTags()
                     .forEach((key, value) -> Tags.of(app).add(key, value));
 
