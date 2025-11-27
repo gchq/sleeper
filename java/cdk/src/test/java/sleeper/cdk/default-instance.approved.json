@@ -13033,7 +13033,7 @@
                 "test-subnet"
               ]
             },
-            "ReleaseLabel": "emr-7.12.0",
+            "ReleaseLabel": "emr-1.2.3",
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -21807,7 +21807,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157Ref"
                   },
-                  "\nsleeper.tables.id.index.dynamo.table\u003d",
+                  "\nsleeper.bulk.import.emr.serverless.release\u003demr-1.2.3\nsleeper.tables.id.index.dynamo.table\u003d",
                   {
                     "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Ref"
                   },
@@ -22095,7 +22095,7 @@
                   {
                     "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Arn"
                   },
-                  "\nsleeper.default.bulk.import.emr.release.label\u003demr-1.2.3\nsleeper.compaction.pending.dlq.url\u003d",
+                  "\nsleeper.compaction.pending.dlq.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECRef"
                   },
