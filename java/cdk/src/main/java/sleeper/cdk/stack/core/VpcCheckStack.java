@@ -30,6 +30,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
 import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -38,12 +39,11 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-
 public class VpcCheckStack extends NestedStack {
 
-    public VpcCheckStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, LoggingStack logging) {
+    public VpcCheckStack(
+            Construct scope, String id, InstanceProperties instanceProperties,
+            SleeperJarsInBucket jars, SleeperNetworking networking, LoggingStack logging) {
         super(scope, id);
 
         // Jars bucket
@@ -76,8 +76,8 @@ public class VpcCheckStack extends NestedStack {
         new CustomResource(this, "VpcCheck", new CustomResourceProps.Builder()
                 .resourceType("Custom::VpcCheck")
                 .properties(Map.of(
-                        "vpcId", instanceProperties.get(VPC_ID),
-                        "region", instanceProperties.get(REGION)))
+                        "vpcId", networking.vpc().getVpcId(),
+                        "region", getRegion()))
                 .serviceToken(provider.getServiceToken())
                 .build());
 

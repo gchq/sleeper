@@ -133,7 +133,7 @@ public class SleeperCoreStacks {
 
         SleeperJarsInBucket jars = props.getJars();
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
-            new VpcCheckStack(scope, "Vpc", instanceProperties, jars, loggingStack);
+            new VpcCheckStack(scope, "Vpc", instanceProperties, jars, networking, loggingStack);
         } else {
             LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
                     + "in very significant NAT charges.");
