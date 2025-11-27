@@ -3065,6 +3065,15 @@
             "LogGroupName": "sleeper-test-instance-compaction-commit-batcher"
           }
         },
+        "tabledefiner1B009C7F": {
+          "Type": "AWS::Logs::LogGroup",
+          "DeletionPolicy": "Retain",
+          "UpdateReplacePolicy": "Retain",
+          "Properties": {
+            "RetentionInDays": 30,
+            "LogGroupName": "sleeper-test-instance-table-definer"
+          }
+        },
         "querykeepwarm130FBF6F": {
           "Type": "AWS::Logs::LogGroup",
           "DeletionPolicy": "Retain",
@@ -3369,6 +3378,15 @@
           "Properties": {
             "RetentionInDays": 30,
             "LogGroupName": "sleeper-test-instance-auto-delete-s3-objects-provider"
+          }
+        },
+        "tabledefinerprovider41F0A6E3": {
+          "Type": "AWS::Logs::LogGroup",
+          "DeletionPolicy": "Retain",
+          "UpdateReplacePolicy": "Retain",
+          "Properties": {
+            "RetentionInDays": 30,
+            "LogGroupName": "sleeper-test-instance-table-definer-provider"
           }
         },
         "ingestbatchercreatejobs2FB73B9F": {
@@ -13035,7 +13053,7 @@
                 "test-subnet"
               ]
             },
-            "ReleaseLabel": "emr-7.9.0",
+            "ReleaseLabel": "emr-1.2.3",
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -21809,7 +21827,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157Ref"
                   },
-                  "\nsleeper.tables.id.index.dynamo.table\u003d",
+                  "\nsleeper.bulk.import.emr.serverless.release\u003demr-1.2.3\nsleeper.tables.id.index.dynamo.table\u003d",
                   {
                     "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Ref"
                   },
