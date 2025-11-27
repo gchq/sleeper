@@ -20,9 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
@@ -65,7 +62,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 
@@ -105,17 +101,13 @@ public class CompactionTaskResources {
     }
 
     private Cluster ecsClusterForCompactionTasks(SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperLambdaCode taskCreatorJar, CompactionJobResources jobResources) {
-        VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(VPC_ID))
-                .build();
-        IVpc vpc = Vpc.fromLookup(stack, "VPC1", vpcLookupOptions);
         String clusterName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-cluster");
         Cluster cluster = Cluster.Builder
                 .create(stack, "CompactionCluster")
                 .clusterName(clusterName)
                 .containerInsightsV2(ContainerInsights.ENHANCED)
-                .vpc(vpc)
+                .vpc(coreStacks.getVpc())
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
@@ -133,7 +125,7 @@ public class CompactionTaskResources {
                     .createTaskDefinition(containerImage, environmentVariables);
         } else {
             taskDefinition = new CompactionOnEc2Resources(instanceProperties, stack, coreStacks)
-                    .createTaskDefinition(cluster, vpc, taskCreatorJar, containerImage, environmentVariables);
+                    .createTaskDefinition(cluster, coreStacks.getVpc(), taskCreatorJar, containerImage, environmentVariables);
         }
         coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
