@@ -13033,7 +13033,7 @@
                 "test-subnet"
               ]
             },
-            "ReleaseLabel": "emr-7.9.0",
+            "ReleaseLabel": "emr-7.12.0",
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -22095,7 +22095,7 @@
                   {
                     "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionCompactionJobDefinitionsQueueFBECFCD6Arn"
                   },
-                  "\nsleeper.compaction.pending.dlq.url\u003d",
+                  "\nsleeper.default.bulk.import.emr.release.label\u003demr-1.2.3\nsleeper.compaction.pending.dlq.url\u003d",
                   {
                     "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECRef"
                   },

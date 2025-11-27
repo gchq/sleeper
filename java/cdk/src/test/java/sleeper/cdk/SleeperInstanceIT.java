@@ -30,6 +30,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 
 public class SleeperInstanceIT {
@@ -41,6 +42,7 @@ public class SleeperInstanceIT {
     void shouldGenerateCloudFormationTemplatesWithDefaultOptionalStacks() {
         // Given
         instanceProperties.unset(OPTIONAL_STACKS);
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL, "emr-1.2.3");
 
         // When
         Stack stack = createSleeperInstanceAsRootStack();
