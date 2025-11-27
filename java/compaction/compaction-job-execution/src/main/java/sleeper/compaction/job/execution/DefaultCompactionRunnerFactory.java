@@ -22,10 +22,12 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
+import sleeper.compaction.datafusion.DataFusionCompactionFunctions;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
 import sleeper.core.properties.model.DataEngine;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.util.ObjectFactory;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.sketches.store.SketchesStore;
@@ -42,6 +44,10 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
     private final SketchesStore sketchesStore;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCompactionRunnerFactory.class);
+
+    private static class ContextHolder {
+        public static final FFIContext<DataFusionCompactionFunctions> INSTANCE = FFIContext.getFFIContextSafely(DataFusionCompactionFunctions.class);
+    }
 
     public DefaultCompactionRunnerFactory(ObjectFactory objectFactory, Configuration configuration, SketchesStore sketchesStore) {
         this(objectFactory, TableHadoopConfigurationProvider.fixed(configuration), sketchesStore);
@@ -73,7 +79,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         switch (engine) {
             case DATAFUSION:
             case DATAFUSION_EXPERIMENTAL:
-                return new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), hadoopConf);
+                return new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), hadoopConf, ContextHolder.INSTANCE);
             case JAVA:
             default:
                 return createJavaRunner(hadoopConf);

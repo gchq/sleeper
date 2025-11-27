@@ -19,14 +19,17 @@ import jnr.ffi.Pointer;
 import jnr.ffi.provider.jffi.ArrayMemoryIO;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 public class FFIContextTest {
 
     @Test
-    void shouldClose() {
+    void shouldClose() throws IOException {
         // Given
-        FFIContext<ForeignFunctions> context = new FFIContext<>(new ForeignFunctions() {
+        ForeignFunctions functions = new ForeignFunctions() {
 
             @Override
             public Pointer create_context() {
@@ -38,10 +41,39 @@ public class FFIContextTest {
 
             }
 
-        });
+            @Override
+            public Pointer clone_context(Pointer ctx) {
+                throw new UnsupportedOperationException("Unimplemented method 'clone_context'");
+            }
+
+        };
+        FFIContext<ForeignFunctions> context = new FFIContext<>(functions, functions.create_context());
 
         // When - Then
         assertThat(context.isClosed()).isFalse();
+
+        context.close();
+
+        assertThat(context.isClosed()).isTrue();
+    }
+
+    public interface FunctionTest extends ForeignFunctions {
+        void someFunction();
+    }
+
+    @Test
+    void shouldFailGracefully() throws IOException {
+        // Given
+        IOException e = new IOException("test code");
+        FFIContext<FunctionTest> context = FFIContext.createDummyContext(FunctionTest.class, e);
+
+        // When - Then
+        assertThat(context.isClosed()).isFalse();
+
+        assertThatExceptionOfType(UnsupportedOperationException.class)
+                .isThrownBy(() -> context.getFunctions().someFunction())
+                .withMessage("The native sleeper_df library is not loaded, native implementation not available")
+                .withCause(e);
 
         context.close();
 

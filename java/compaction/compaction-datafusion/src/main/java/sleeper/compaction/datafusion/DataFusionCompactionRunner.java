@@ -58,18 +58,20 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     private final DataFusionAwsConfig awsConfig;
     private final Configuration hadoopConf;
+    private final FFIContext<DataFusionCompactionFunctions> context;
 
-    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf) {
+    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf,
+            FFIContext<DataFusionCompactionFunctions> context) {
         this.awsConfig = awsConfig;
         this.hadoopConf = hadoopConf;
+        this.context = context;
     }
 
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionCompactionFunctions.INSTANCE);
+        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
-
-        RowsProcessed result = invokeDataFusion(job, params, runtime);
+        RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
         // Get the filesystem object
         FileSystem fs = FileSystem.get(hadoopConf);
@@ -78,7 +80,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
         if (result.getRowsWritten() < 1 && !fs.exists(outputPath)) {
             try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
                     outputPath, tableProperties, hadoopConf)) {
-                // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
+                // Write an empty file. This should be temporary, as we expect DataFusion to add
+                // support for this.
                 // See the test should_merge_empty_files in compaction_test.rs
             }
         }
@@ -89,12 +92,11 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     /**
-     * Creates the input struct that contains all the information needed by the Rust code
-     * side of the compaction.
+     * Creates the input struct that contains all the information needed by the Rust
+     * code side of the compaction.
      *
      * This includes all Parquet writer settings as well as compaction data such as
-     * input files, compaction
-     * region etc.
+     * input files, compaction region etc.
      *
      * @param  job             compaction job
      * @param  tableProperties configuration for the Sleeper table
@@ -134,27 +136,26 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     /**
-     * Take the compaction parameters and invoke the DataFusion compactor using the FFI
-     * bridge.
+     * Take the compaction parameters and invoke the DataFusion compactor using the FFI bridge.
      *
      * @param  job              the compaction job
      * @param  compactionParams the compaction input parameters
      * @param  runtime          the JNR FFI runtime object
+     * @param  context          the open context for FFI calls
      * @return                  rows read/written
      * @throws IOException      if the foreign library call doesn't complete successfully
      */
-    private static RowsProcessed invokeDataFusion(CompactionJob job,
-            FFICommonConfig compactionParams, jnr.ffi.Runtime runtime) throws IOException {
+    private static RowsProcessed invokeDataFusion(CompactionJob job, FFICommonConfig compactionParams,
+            jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context) throws IOException {
         // Create object to hold the result (in native memory)
         FFIFileResult compactionData = new FFIFileResult(runtime);
         // Perform compaction
-        try (FFIContext<DataFusionCompactionFunctions> context = new FFIContext<>(DataFusionCompactionFunctions.INSTANCE)) {
-            int result = context.getFunctions().compact(context, compactionParams, compactionData);
-            // Check result
-            if (result != 0) {
-                LOGGER.error("DataFusion compaction failed, return code: {}", result);
-                throw new IOException("DataFusion compaction failed with return code " + result);
-            }
+
+        int result = context.getFunctions().compact(context, compactionParams, compactionData);
+        // Check result
+        if (result != 0) {
+            LOGGER.error("DataFusion compaction failed, return code: {}", result);
+            throw new IOException("DataFusion compaction failed with return code " + result);
         }
 
         long totalNumberOfRowsRead = compactionData.rows_read.get();

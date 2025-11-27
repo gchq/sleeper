@@ -87,5 +87,4 @@ public class QueryExecutor {
         }
         return iterators;
     }
-
 }
