@@ -138,6 +138,10 @@ public class LambdaHandler {
             .jar(LambdaJar.CUSTOM_RESOURCES)
             .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
             .core().add();
+    public static final LambdaHandler TABLE_DEFINER = builder()
+            .jar(LambdaJar.CUSTOM_RESOURCES)
+            .handler("sleeper.cdk.custom.TableDefinerLambda::handleEvent")
+            .core().add();
     public static final LambdaHandler VPC_CHECK = builder()
             .jar(LambdaJar.CUSTOM_RESOURCES)
             .handler("sleeper.cdk.custom.VpcCheckLambda::handleEvent")
