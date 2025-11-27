@@ -17,6 +17,7 @@ package sleeper.cdk.stack.bulkimport;
 
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsBlockDeviceConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsConfigurationProperty;
@@ -50,7 +51,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
@@ -92,12 +92,13 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
                 LogGroupRef.BULK_IMPORT_EMR_PERSISTENT_START, commonEmrStack);
         configureJobStarterFunction(jobStarter);
-        createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
+        createCluster(this, instanceProperties, coreStacks, importBucketStack.getImportBucket(), commonEmrStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     private static void createCluster(Construct scope,
             InstanceProperties instanceProperties,
+            SleeperCoreStacks coreStacks,
             IBucket importBucket,
             CommonEmrBulkImportStack commonStack) {
 
@@ -129,7 +130,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
-                .ec2SubnetIds(instanceProperties.getList(SUBNETS))
+                .ec2SubnetIds(coreStacks.getSubnets().stream().map(ISubnet::getSubnetId).toList())
                 .masterInstanceFleet(masterInstanceFleetConfigProperty)
                 .coreInstanceFleet(coreInstanceFleetConfigProperty);
 
