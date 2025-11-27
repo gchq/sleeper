@@ -135,19 +135,19 @@ public class FFIContext<T extends ForeignFunctions> implements AutoCloseable {
         // create a dynamic proxy that implements T
         @SuppressWarnings("unchecked")
         T functions = (T) Proxy.newProxyInstance(functionClass.getClassLoader(), new Class<?>[]{functionClass},
-            (proxy, method, args) -> {
-            switch (method.getName()) {
-                case "create_context":
-                    return new ArrayMemoryIO(jnr.ffi.Runtime.getSystemRuntime(), 1);
-                case "destroy_context":
-                    return null;
-                // All other methods from type T will throw when called
-                case "clone_context":
-                default:
-                    throw new UnsupportedOperationException(
-                            "The native sleeper_df library is not loaded, native implementation not available", e);
-            }
-        });
+                (proxy, method, args) -> {
+                    switch (method.getName()) {
+                        case "create_context":
+                            return new ArrayMemoryIO(jnr.ffi.Runtime.getSystemRuntime(), 1);
+                        case "destroy_context":
+                            return null;
+                        // All other methods from type T will throw when called
+                        case "clone_context":
+                        default:
+                            throw new UnsupportedOperationException(
+                                    "The native sleeper_df library is not loaded, native implementation not available", e);
+                    }
+                });
         return new FFIContext<T>(functions, functions.create_context());
     }
 
