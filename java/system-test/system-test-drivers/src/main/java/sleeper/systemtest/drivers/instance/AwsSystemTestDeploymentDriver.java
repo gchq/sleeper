@@ -120,7 +120,6 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
         new SyncJars(s3, parameters.getJarsDirectory())
                 .sync(SyncJarsRequest.builder()
                         .bucketName(SleeperArtefactsLocation.getDefaultJarsBucketName(parameters.getArtefactsDeploymentId()))
-                        .region(parameters.getRegion())
                         .uploadFilter(jar -> LambdaJar.isFileJar(jar, CUSTOM_RESOURCES))
                         .build());
         if (!parameters.isSystemTestClusterEnabled()) {
@@ -132,11 +131,9 @@ public class AwsSystemTestDeploymentDriver implements SystemTestDeploymentDriver
                         .deployConfig(DeployConfiguration.fromScriptsDirectory(parameters.getScriptsDirectory()))
                         .commandRunner(CommandUtils::runCommandLogOutput)
                         .build(),
-                CheckVersionExistsInEcr.withEcrClient(ecr));
+                CheckVersionExistsInEcr.withEcrClient(ecr), parameters.getAccount(), parameters.getRegion());
         dockerUploader.upload(UploadDockerImagesToEcrRequest.builder()
                 .ecrPrefix(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(parameters.getArtefactsDeploymentId()))
-                .account(parameters.getAccount())
-                .region(parameters.getRegion())
                 .version(SleeperVersion.getVersion())
                 .images(List.of(SYSTEM_TEST_IMAGE))
                 .build());

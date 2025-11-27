@@ -30,12 +30,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
@@ -114,16 +112,14 @@ public class SleeperPropertiesValidationTest {
         void shouldFailValidationIfRequiredPropertyIsMissing() {
             // Given - no account set
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.set(REGION, "eu-west-2");
             instanceProperties.set(JARS_BUCKET, "jars");
             instanceProperties.set(VERSION, "0.1");
-            instanceProperties.set(ID, "test");
             instanceProperties.set(VPC_ID, "aVPC");
             instanceProperties.set(SUBNETS, "subnet1");
 
             // When / Then
             assertThatThrownBy(instanceProperties::validate)
-                    .hasMessageContaining(ACCOUNT.getPropertyName());
+                    .hasMessageContaining(ID.getPropertyName());
         }
 
         @Test

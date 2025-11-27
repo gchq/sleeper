@@ -29,8 +29,8 @@ import java.util.UUID;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class AssumeSleeperRole {
     public static final Logger LOGGER = LoggerFactory.getLogger(AssumeSleeperRole.class);

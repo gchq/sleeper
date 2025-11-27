@@ -32,7 +32,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.net.URI;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 
 class QueryWebSocketConnection extends WebSocketClient implements QueryWebSocketClient.Connection {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryWebSocketConnection.class);

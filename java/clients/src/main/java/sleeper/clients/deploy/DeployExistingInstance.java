@@ -18,9 +18,12 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.UploadDockerImages;
@@ -51,6 +54,8 @@ public class DeployExistingInstance {
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3;
     private final EcrClient ecr;
+    private final StsClient sts;
+    private final AwsRegionProvider regionProvider;
     private final boolean deployPaused;
     private final CommandPipelineRunner runCommand;
     private final boolean createMultiPlatformBuilder;
@@ -61,6 +66,8 @@ public class DeployExistingInstance {
         tablePropertiesList = builder.tablePropertiesList;
         s3 = builder.s3;
         ecr = builder.ecr;
+        sts = builder.sts;
+        regionProvider = builder.regionProvider;
         deployPaused = builder.deployPaused;
         runCommand = builder.runCommand;
         createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
@@ -81,8 +88,10 @@ public class DeployExistingInstance {
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
-                EcrClient ecrClient = EcrClient.create()) {
-            builder().clients(s3Client, ecrClient)
+                EcrClient ecrClient = EcrClient.create();
+                StsClient stsClient = StsClient.create()) {
+            builder().clients(s3Client, ecrClient, stsClient)
+                    .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
                     .deployPaused(deployPaused)
@@ -101,7 +110,7 @@ public class DeployExistingInstance {
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        CheckVersionExistsInEcr.withEcrClient(ecr)),
+                        CheckVersionExistsInEcr.withEcrClient(ecr), sts.getCallerIdentity().account(), regionProvider.getRegion().id()),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
@@ -121,6 +130,8 @@ public class DeployExistingInstance {
         private List<TableProperties> tablePropertiesList;
         private S3Client s3;
         private EcrClient ecr;
+        private StsClient sts;
+        private AwsRegionProvider regionProvider;
         private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
         private boolean createMultiPlatformBuilder = true;
@@ -152,9 +163,15 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder clients(S3Client s3, EcrClient ecr) {
+        public Builder clients(S3Client s3, EcrClient ecr, StsClient sts) {
             this.s3 = s3;
             this.ecr = ecr;
+            this.sts = sts;
+            return this;
+        }
+
+        public Builder regionProvider(AwsRegionProvider regionProvider) {
+            this.regionProvider = regionProvider;
             return this;
         }
 

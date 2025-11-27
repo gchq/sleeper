@@ -102,7 +102,7 @@ class SleeperPropertiesPrettyPrinterTest {
             String output = printEmptyInstanceProperties();
 
             // Then
-            assertThat(output.indexOf("sleeper.account"))
+            assertThat(output.indexOf("sleeper.endpoint.url"))
                     .isLessThan(output.indexOf("sleeper.log.retention.days"))
                     .isLessThan(output.indexOf("sleeper.vpc"));
             assertThat(output.indexOf("sleeper.ingest"))
@@ -116,9 +116,13 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyValueWithDescription() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.account=1234567890"))
-                    .contains("# The AWS account number. This is the AWS account that the instance will be deployed to.\n" +
-                            "sleeper.account=1234567890\n");
+            assertThat(printInstanceProperties("sleeper.log.retention.days=30"))
+                    .contains("# The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are\n" +
+                            "# retained.\n" +
+                            "# See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html\n" +
+                            "# for valid options.\n" +
+                            "# Use -1 to indicate infinite retention.\n" +
+                            "sleeper.log.retention.days=30");
         }
 
         @Test

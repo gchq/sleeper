@@ -33,9 +33,9 @@ import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
@@ -46,15 +46,14 @@ public class SystemTestApp extends Stack {
     private final SleeperJarsInBucket jars;
     private final SystemTestProperties instanceProperties;
 
-    public SystemTestApp(App app, String id, StackProps props, SleeperInstanceProps sleeperProps) {
-        super(app, id, props);
-        this.props = sleeperProps;
+    public SystemTestApp(App app, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
+        super(app, id, stackProps);
+        this.props = setProps(sleeperProps);
         this.jars = sleeperProps.getJars();
         this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
     }
 
     public void create() {
-
         LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
         AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
 
@@ -65,6 +64,7 @@ public class SystemTestApp extends Stack {
         // Sleeper instance
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, loggingStack, autoDeleteS3Stack);
         SleeperOptionalStacks.create(this, props, coreStacks);
+
         coreStacks.createRoles();
 
         // Stack for writing random data
@@ -88,8 +88,8 @@ public class SystemTestApp extends Stack {
 
             String id = instanceProperties.get(ID);
             Environment environment = Environment.builder()
-                    .account(instanceProperties.get(ACCOUNT))
-                    .region(instanceProperties.get(REGION))
+                    .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
+                    .region(System.getenv("CDK_DEFAULT_REGION"))
                     .build();
 
             new SystemTestApp(app, id, StackProps.builder()
@@ -100,5 +100,11 @@ public class SystemTestApp extends Stack {
 
             app.synth();
         }
+    }
+
+    private SleeperInstanceProps setProps(SleeperInstanceProps props) {
+        props.getInstanceProperties().set(ACCOUNT, getAccount());
+        props.getInstanceProperties().set(REGION, getRegion());
+        return props;
     }
 }

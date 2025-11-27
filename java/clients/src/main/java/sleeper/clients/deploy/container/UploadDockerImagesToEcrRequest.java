@@ -26,23 +26,15 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesToEcrRequest {
     private final String ecrPrefix;
-    private final String account;
-    private final String region;
     private final List<StackDockerImage> images;
-    private final String repositoryHost;
 
     private UploadDockerImagesToEcrRequest(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
-        account = requireNonNull(builder.account, "account must not be null");
-        region = requireNonNull(builder.region, "region must not be null");
         images = requireNonNull(builder.images, "images must not be null");
-        repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
     }
 
     public static Builder builder() {
@@ -67,7 +59,7 @@ public class UploadDockerImagesToEcrRequest {
     }
 
     public Builder toBuilder() {
-        return builder().ecrPrefix(ecrPrefix).account(account).region(region).images(images);
+        return builder().ecrPrefix(ecrPrefix).images(images);
     }
 
     public UploadDockerImagesToEcrRequest withExtraImages(List<StackDockerImage> extraImages) {
@@ -84,20 +76,8 @@ public class UploadDockerImagesToEcrRequest {
         return ecrPrefix;
     }
 
-    public String getAccount() {
-        return account;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
     public List<StackDockerImage> getImages() {
         return images;
-    }
-
-    public String getRepositoryHost() {
-        return repositoryHost;
     }
 
     @Override
@@ -109,23 +89,21 @@ public class UploadDockerImagesToEcrRequest {
             return false;
         }
         UploadDockerImagesToEcrRequest other = (UploadDockerImagesToEcrRequest) obj;
-        return Objects.equals(ecrPrefix, other.ecrPrefix) && Objects.equals(account, other.account) && Objects.equals(region, other.region) && Objects.equals(images, other.images);
+        return Objects.equals(ecrPrefix, other.ecrPrefix) && Objects.equals(images, other.images);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ecrPrefix, account, region, images);
+        return Objects.hash(ecrPrefix, images);
     }
 
     @Override
     public String toString() {
-        return "UploadDockerImagesToEcrRequest{ecrPrefix=" + ecrPrefix + ", account=" + account + ", region=" + region + ", images=" + images + "}";
+        return "UploadDockerImagesToEcrRequest{ecrPrefix=" + ecrPrefix + ", images=" + images + "}";
     }
 
     public static final class Builder {
         private String ecrPrefix;
-        private String account;
-        private String region;
         private List<StackDockerImage> images;
 
         private Builder() {
@@ -133,23 +111,11 @@ public class UploadDockerImagesToEcrRequest {
 
         public Builder properties(InstanceProperties properties) {
             return ecrPrefix(properties.get(ECR_REPOSITORY_PREFIX))
-                    .account(properties.get(ACCOUNT))
-                    .region(properties.get(REGION))
                     .version(properties.get(VERSION));
         }
 
         public Builder ecrPrefix(String ecrPrefix) {
             this.ecrPrefix = ecrPrefix;
-            return this;
-        }
-
-        public Builder account(String account) {
-            this.account = account;
-            return this;
-        }
-
-        public Builder region(String region) {
-            this.region = region;
             return this;
         }
 
