@@ -21,7 +21,6 @@ import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
 import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
 import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
-import com.facebook.collections.Pair;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType;
@@ -52,6 +51,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.core.util.Pair;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
@@ -130,7 +130,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
         List<Pair<String, String>> rowKeys = split.getProperties().entrySet().stream()
                 .filter(entry -> ROW_KEY_PREFIX_TEST.test(entry.getKey()))
-                .map(entry -> Pair.of(entry.getKey(), entry.getValue()))
+                .map(entry -> new Pair<>(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
 
         List<Object> minRowKeys = getRowKey(rowKeys, rowKeyFields, "Min");
@@ -147,25 +147,25 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
         rowKeyStream.stream()
                 .filter(entry -> entry.getFirst().contains(indicator))
-                .map(entry -> getIndexToObjectPair(rowKeyFields, entry))
-                .forEach(pair -> rowKey.set(pair.getFirst(), pair.getSecond()));
+                .map(entry -> getIndexToObjectNewPair(rowKeyFields, entry))
+                .forEach(NewPair -> rowKey.set(NewPair.getFirst(), NewPair.getSecond()));
 
         return rowKey;
     }
 
-    private Pair<Integer, ? extends Serializable> getIndexToObjectPair(List<Field> rowKeyFields, Pair<String, String> entry) {
+    private Pair<Integer, ? extends Serializable> getIndexToObjectNewPair(List<Field> rowKeyFields, Pair<String, String> entry) {
         String key = entry.getFirst();
         Integer index = Integer.valueOf(key.substring(key.lastIndexOf("RowKey") + 6));
         String stringValue = entry.getSecond();
         Type type = rowKeyFields.get(index).getType();
         if (type instanceof StringType) {
-            return Pair.of(index, stringValue);
+            return new Pair<Integer, Serializable>(index, stringValue);
         } else if (type instanceof ByteArrayType) {
-            return Pair.of(index, BinaryUtils.fromBase64(stringValue));
+            return new Pair<Integer, Serializable>(index, BinaryUtils.fromBase64(stringValue));
         } else if (type instanceof IntType) {
-            return Pair.of(index, Integer.parseInt(stringValue));
+            return new Pair<Integer, Serializable>(index, Integer.parseInt(stringValue));
         } else if (type instanceof LongType) {
-            return Pair.of(index, Long.parseLong(stringValue));
+            return new Pair<Integer, Serializable>(index, Long.parseLong(stringValue));
         } else {
             throw new RuntimeException("Unexpected Primitive type: " + type);
         }
