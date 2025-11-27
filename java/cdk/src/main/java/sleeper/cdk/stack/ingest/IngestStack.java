@@ -20,9 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
@@ -71,7 +68,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CPU;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
@@ -171,17 +167,13 @@ public class IngestStack extends NestedStack {
             Queue ingestJobQueue,
             SleeperLambdaCode lambdaCode) {
 
-        VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(VPC_ID))
-                .build();
-        IVpc vpc = Vpc.fromLookup(this, "VPC1", vpcLookupOptions);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String clusterName = String.join("-", "sleeper", instanceId, "ingest-cluster");
         Cluster cluster = Cluster.Builder
                 .create(this, "IngestCluster")
                 .clusterName(clusterName)
                 .containerInsightsV2(ContainerInsights.ENHANCED)
-                .vpc(vpc)
+                .vpc(coreStacks.getVpc())
                 .build();
         instanceProperties.set(INGEST_CLUSTER, cluster.getClusterName());
 
