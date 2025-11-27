@@ -42,7 +42,7 @@ import java.util.Properties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * Lambda Function which defines sleeper tables.
+ * Lambda Function which defines Sleeper tables.
  */
 public class TableDefinerLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(PropertiesWriterLambda.class);
@@ -77,13 +77,6 @@ public class TableDefinerLambda {
         }
     }
 
-    /*
-     * tableProperties: {
-     * some: bar
-     * other: ram
-     * }
-     * splitPoints: {}
-     */
     private void addTable(Map<String, Object> resourceProperties) throws IOException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         Properties properties = new Properties();
