@@ -54,7 +54,6 @@ public class SystemTestApp extends Stack {
     }
 
     public void create() {
-        //
         LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
         AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
 
