@@ -43,8 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 

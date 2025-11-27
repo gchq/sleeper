@@ -29,6 +29,7 @@ import sleeper.core.properties.local.SaveLocalProperties;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -38,10 +39,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.SleeperVersion.getVersion;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
@@ -60,10 +59,16 @@ class SleeperInstanceStacksPropsIT {
             InstanceProperties properties = createUserDefinedInstanceProperties();
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
-            // When / Then
+            // When
+            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
+
+            // Then
+            Properties tagsProperties = properties.getTagsProperties();
+            tagsProperties.setProperty("InstanceID", properties.get(ID));
+            properties.loadTags(tagsProperties);
             properties.set(VERSION, getVersion());
-            assertThat(loadInstanceProperties(cdkContextWithPropertiesFile(tempDir)))
-                    .isEqualTo(properties);
+
+            assertThat(loaded).isEqualTo(properties);
         }
 
         @Test
@@ -92,6 +97,20 @@ class SleeperInstanceStacksPropsIT {
             // Then
             assertThat(loaded.get(VERSION))
                     .matches("\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?");
+        }
+
+        @Test
+        void shouldSetTagPropertiesWhenInstancePropertiesAreLoaded() throws IOException {
+            // Given
+            InstanceProperties properties = createUserDefinedInstanceProperties();
+            SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
+
+            // When
+            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
+
+            // Then
+            assertThat(loaded.getTags().get("InstanceID"))
+                    .matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}$");
         }
     }
 
@@ -197,10 +216,9 @@ class SleeperInstanceStacksPropsIT {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(JARS_BUCKET, "test-bucket");
-        instanceProperties.set(ACCOUNT, "test-account");
-        instanceProperties.set(REGION, "test-region");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
+
         return instanceProperties;
     }
 }

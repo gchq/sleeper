@@ -34,20 +34,24 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
-import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
-import static sleeper.core.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 
 class UpdatePropertiesWithTextEditorIT {
 
     @TempDir
     private Path tempDir;
     private UpdatePropertiesWithTextEditorTestHelper helper;
+    private String id = "test-instance";
 
     @BeforeEach
     void setUp() {
@@ -61,7 +65,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldInvokeNanoOnInstancePropertiesFile() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = createTestInstanceProperties();
 
             // When / Then
             assertThat(helper.openInstancePropertiesGetCommandRun(properties))
@@ -71,7 +75,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldWriteInstancePropertiesFile() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = createTestInstanceProperties();
 
             // When / Then
             assertThat(helper.openInstancePropertiesGetPropertiesWritten(properties))
@@ -81,9 +85,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldGetDiffAfterPropertiesChanged() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
             before.set(INGEST_SOURCE_BUCKET, "bucket-before");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
             after.set(INGEST_SOURCE_BUCKET, "bucket-after");
 
             // When / Then
@@ -95,8 +99,8 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldRetrievePropertiesAfterChange() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties before = createTestInstanceProperties();
+            InstanceProperties after = createTestInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
@@ -109,7 +113,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = createTestInstanceProperties();
 
             // When
             String tempFileString = Files.readString(helper.openInstancePropertiesGetPathToFile(properties));
@@ -128,9 +132,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUpdateTableProperties() throws Exception {
             // Given
-            TableProperties before = generateTestTableProperties();
+            TableProperties before = generateCompareTestTableProperties();
             before.set(ROW_GROUP_SIZE, "123");
-            TableProperties after = generateTestTableProperties();
+            TableProperties after = generateCompareTestTableProperties();
             after.set(ROW_GROUP_SIZE, "456");
 
             // When
@@ -145,8 +149,8 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldRetrieveTablePropertiesAfterChange() throws Exception {
             // Given
-            TableProperties before = generateTestTableProperties();
-            TableProperties after = generateTestTableProperties();
+            TableProperties before = generateCompareTestTableProperties();
+            TableProperties after = generateCompareTestTableProperties();
             after.set(ROW_GROUP_SIZE, "456");
 
             // When
@@ -164,7 +168,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldWriteSingleInstancePropertyGroupToFile() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = createTestInstanceProperties();
             properties.set(LOGGING_LEVEL, "ERROR");
 
             // When / Then
@@ -176,7 +180,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldFormatPropertiesUsingPrettyPrinter() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = createTestInstanceProperties();
             properties.set(LOGGING_LEVEL, "ERROR");
 
             // When
@@ -193,9 +197,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldCreateUpdateRequestWithInstanceProperties() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
             before.set(LOGGING_LEVEL, "ERROR");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
             after.set(LOGGING_LEVEL, "INFO");
 
             // When
@@ -212,9 +216,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldCreateUpdateRequestWithTableProperties() throws Exception {
             // Given
-            TableProperties before = generateTestTableProperties();
+            TableProperties before = generateCompareTestTableProperties();
             before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
-            TableProperties after = generateTestTableProperties();
+            TableProperties after = generateCompareTestTableProperties();
             after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
 
             // When
@@ -231,9 +235,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUnsetPropertyWhenRemovedInEditor() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
             before.set(LOGGING_LEVEL, "ERROR");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
             after.unset(LOGGING_LEVEL);
 
             // When
@@ -250,7 +254,7 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldNotShowUnknownProperties() throws Exception {
             // Given
-            InstanceProperties properties = generateTestInstanceProperties();
+            InstanceProperties properties = createTestInstanceProperties();
             properties.getProperties().setProperty("unknown.property", "some-value");
 
             // When
@@ -261,9 +265,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUpdateAnUnknownProperty() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
             before.getProperties().setProperty("unknown.property", "value-before");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
             after.getProperties().setProperty("unknown.property", "value-after");
 
             // When
@@ -280,9 +284,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldUpdateAPropertyOutsideTheSpecifiedGroup() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
             before.set(INGEST_SOURCE_BUCKET, "bucket-before");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
             after.set(INGEST_SOURCE_BUCKET, "bucket-after");
 
             // When
@@ -299,9 +303,9 @@ class UpdatePropertiesWithTextEditorIT {
         @Test
         void shouldLeaveUnknownPropertyUnchangedWhenEditingAnotherProperty() throws Exception {
             // Given
-            InstanceProperties before = generateTestInstanceProperties();
+            InstanceProperties before = createTestInstancePropertiesWithId(id);
             before.getProperties().setProperty("unknown.property", "test-value");
-            InstanceProperties after = generateTestInstanceProperties();
+            InstanceProperties after = createTestInstancePropertiesWithId(id);
             after.getProperties().setProperty("unknown.property", "test-value");
             after.set(LOGGING_LEVEL, "TRACE");
 
@@ -315,5 +319,14 @@ class UpdatePropertiesWithTextEditorIT {
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
         }
+    }
+
+    public static TableProperties generateCompareTestTableProperties() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(ID, "test-instance");
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, "test-table");
+        tableProperties.setSchema(createSchemaWithKey("key"));
+        return tableProperties;
     }
 }

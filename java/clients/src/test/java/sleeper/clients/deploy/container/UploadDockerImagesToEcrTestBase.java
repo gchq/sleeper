@@ -27,9 +27,7 @@ import java.util.List;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBase {
@@ -39,8 +37,6 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
     @BeforeEach
     void setUpBase() {
         properties.set(ID, "test-instance");
-        properties.set(ACCOUNT, "123");
-        properties.set(REGION, "test-region");
         properties.set(VERSION, "1.0.0");
     }
 

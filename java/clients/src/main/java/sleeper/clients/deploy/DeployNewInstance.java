@@ -29,7 +29,6 @@ import sleeper.clients.deploy.container.StackDockerImage;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.jar.SyncJars;
-import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.table.AddTable;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
@@ -37,7 +36,6 @@ import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -48,6 +46,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 public class DeployNewInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployNewInstance.class);
@@ -55,6 +56,8 @@ public class DeployNewInstance {
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final EcrClient ecrClient;
+    private final StsClient stsClient;
+    private final AwsRegionProvider regionProvider;
     private final Path scriptsDirectory;
     private final SleeperInstanceConfiguration deployInstanceConfiguration;
     private final List<StackDockerImage> extraDockerImages;
@@ -67,6 +70,8 @@ public class DeployNewInstance {
         s3Client = builder.s3Client;
         dynamoClient = builder.dynamoClient;
         ecrClient = builder.ecrClient;
+        stsClient = builder.stsClient;
+        regionProvider = builder.regionProvider;
         scriptsDirectory = builder.scriptsDirectory;
         deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraDockerImages = builder.extraDockerImages;
@@ -85,23 +90,27 @@ public class DeployNewInstance {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <csv-list-of-subnets> " +
                     "<optional-instance-properties-file> <optional-deploy-paused-flag>");
         }
-        AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
                 StsClient stsClient = StsClient.create();
                 EcrClient ecrClient = EcrClient.create()) {
             Path scriptsDirectory = Path.of(args[0]);
-            PopulateInstanceProperties populateInstanceProperties = PopulateInstancePropertiesAws.builder(stsClient, regionProvider)
-                    .instanceId(args[1]).vpcId(args[2]).subnetIds(args[3])
-                    .build();
+
             Path instancePropertiesFile = optionalArgument(args, 4).map(Path::of).orElse(null);
             boolean deployPaused = "true".equalsIgnoreCase(optionalArgument(args, 5).orElse("false"));
+
+            SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
+                    instancePropertiesFile, scriptsDirectory.resolve("templates"));
+
+            config.getInstanceProperties().set(ID, args[1]);
+            config.getInstanceProperties().set(VPC_ID, args[2]);
+            config.getInstanceProperties().set(SUBNETS, args[3]);
+
             builder().scriptsDirectory(scriptsDirectory)
-                    .deployInstanceConfiguration(SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
-                            instancePropertiesFile, populateInstanceProperties, scriptsDirectory.resolve("templates")))
+                    .deployInstanceConfiguration(config)
                     .deployPaused(deployPaused)
                     .instanceType(InvokeCdk.Type.STANDARD)
-                    .deployWithClients(s3Client, dynamoClient, ecrClient);
+                    .deployWithClients(s3Client, dynamoClient, ecrClient, stsClient, DefaultAwsRegionProviderChain.builder().build());
         }
     }
 
@@ -119,7 +128,7 @@ public class DeployNewInstance {
                                 .commandRunner(runCommand)
                                 .createMultiplatformBuilder(createMultiPlatformBuilder)
                                 .build(),
-                        CheckVersionExistsInEcr.withEcrClient(ecrClient)),
+                        CheckVersionExistsInEcr.withEcrClient(ecrClient), stsClient.getCallerIdentity().account(), regionProvider.getRegion().id()),
                 DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                 InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
@@ -143,8 +152,10 @@ public class DeployNewInstance {
 
     public static final class Builder {
         private S3Client s3Client;
+        private StsClient stsClient;
         private DynamoDbClient dynamoClient;
         private EcrClient ecrClient;
+        private AwsRegionProvider regionProvider;
         private Path scriptsDirectory;
         private SleeperInstanceConfiguration deployInstanceConfiguration;
         private List<StackDockerImage> extraDockerImages = List.of();
@@ -161,6 +172,11 @@ public class DeployNewInstance {
             return this;
         }
 
+        public Builder stsClient(StsClient stsClient) {
+            this.stsClient = stsClient;
+            return this;
+        }
+
         public Builder dynamoClient(DynamoDbClient dynamoClient) {
             this.dynamoClient = dynamoClient;
             return this;
@@ -168,6 +184,11 @@ public class DeployNewInstance {
 
         public Builder ecrClient(EcrClient ecrClient) {
             this.ecrClient = ecrClient;
+            return this;
+        }
+
+        public Builder regionProvider(AwsRegionProvider regionProvider) {
+            this.regionProvider = regionProvider;
             return this;
         }
 
@@ -211,10 +232,13 @@ public class DeployNewInstance {
         }
 
         public void deployWithClients(
-                S3Client s3Client, DynamoDbClient dynamoClient, EcrClient ecrClient) throws IOException, InterruptedException {
+                S3Client s3Client, DynamoDbClient dynamoClient, EcrClient ecrClient, StsClient stsClient,
+                AwsRegionProvider regionProvider) throws IOException, InterruptedException {
             s3Client(s3Client)
                     .dynamoClient(dynamoClient)
                     .ecrClient(ecrClient)
+                    .stsClient(stsClient)
+                    .regionProvider(regionProvider)
                     .build().deploy();
         }
     }

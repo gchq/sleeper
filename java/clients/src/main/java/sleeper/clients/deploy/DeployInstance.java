@@ -29,13 +29,12 @@ import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
 import sleeper.clients.deploy.jar.SyncJarsRequest;
-import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdk;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
@@ -85,19 +84,17 @@ public class DeployInstance {
                 StsClient stsClient = StsClient.create()) {
 
             SleeperInstanceConfiguration instanceConfiguration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
-            PopulateInstancePropertiesAws.builder(stsClient, regionProvider)
-                    .instanceId(instanceId)
-                    .vpcId(vpcId)
-                    .subnetIds(subnetIds)
-                    .build().populate(instanceConfiguration.getInstanceProperties());
-            PopulateInstanceProperties.setFromEnvironmentVariables(instanceConfiguration.getInstanceProperties());
+            instanceConfiguration.getInstanceProperties().set(ID, instanceId);
+            instanceConfiguration.getInstanceProperties().set(VPC_ID, vpcId);
+            instanceConfiguration.getInstanceProperties().set(SUBNETS, subnetIds);
+            setFromEnvironmentVariables(instanceConfiguration.getInstanceProperties());
             instanceConfiguration.validate();
 
             DeployInstance deployInstance = new DeployInstance(
                     SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
                     new UploadDockerImagesToEcr(
                             UploadDockerImages.fromScriptsDirectory(scriptsDirectory),
-                            CheckVersionExistsInEcr.withEcrClient(ecrClient)),
+                            CheckVersionExistsInEcr.withEcrClient(ecrClient), stsClient.getCallerIdentity().account(), regionProvider.getRegion().id()),
                     WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
                     InvokeCdk.fromScriptsDirectory(scriptsDirectory));
 
@@ -153,6 +150,15 @@ public class DeployInstance {
                         instanceConfig.getTableProperties().stream());
                 return directory.resolve("instance.properties");
             };
+        }
+    }
+
+    private static void setFromEnvironmentVariables(InstanceProperties instanceProperties) {
+        for (UserDefinedInstanceProperty property : UserDefinedInstanceProperty.getAll()) {
+            String value = System.getenv(property.toEnvironmentVariable());
+            if (value != null) {
+                instanceProperties.set(property, value);
+            }
         }
     }
 }

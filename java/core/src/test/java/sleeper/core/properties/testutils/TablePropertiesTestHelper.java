@@ -63,4 +63,5 @@ public class TablePropertiesTestHelper {
         tableProperties.set(TABLE_ID, tableId);
         return tableProperties;
     }
+
 }

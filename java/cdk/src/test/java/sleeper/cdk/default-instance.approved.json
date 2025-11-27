@@ -12839,7 +12839,9 @@
                 {
                   "Action": "elasticmapreduce:RunJobFlow",
                   "Condition": {
-                    "StringEquals": {}
+                    "StringEquals": {
+                      "elasticmapreduce:RequestTag/InstanceID": "test-instance"
+                    }
                   },
                   "Effect": "Allow",
                   "Resource": "*"
@@ -22099,7 +22101,7 @@
                   {
                     "Ref": "referencetoTestInstanceCompactionNestedStackCompactionNestedStackResource654ED576OutputsTestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECRef"
                   },
-                  "\nsleeper.ingest.arrow.max.local.store.bytes\u003d536870912\nsleeper.query.leaf.partition.queue.arn\u003d",
+                  "\nsleeper.tags\u003dInstanceID,test-instance\nsleeper.ingest.arrow.max.local.store.bytes\u003d536870912\nsleeper.query.leaf.partition.queue.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryQueue64615BA9Arn"
                   },
