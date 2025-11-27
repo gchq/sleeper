@@ -16,13 +16,13 @@
 
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import software.amazon.awscdk.CfnJson;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.emr.CfnSecurityConfiguration;
 import software.amazon.awscdk.services.iam.CfnInstanceProfile;
 import software.amazon.awscdk.services.iam.CfnInstanceProfileProps;
@@ -41,6 +41,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -50,15 +51,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_ENCRYPTION_KEY_ARN;
 
 public class CommonEmrBulkImportStack extends NestedStack {
@@ -78,12 +74,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
         IKey ebsKey = createEbsEncryptionKey(this, instanceProperties);
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), coreStacks, ebsKey);
-        emrRole = createEmrRole(this, instanceProperties, ec2Role, ebsKey);
+        emrRole = createEmrRole(this, instanceProperties, coreStacks, ec2Role, ebsKey);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties, ebsKey);
     }
 
     private static IRole createEc2Role(
-            Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
+            Stack scope, InstanceProperties instanceProperties, IBucket importBucket,
             SleeperCoreStacks coreStacks, IKey ebsKey) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
@@ -102,15 +98,14 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
         // Required to enable debugging
         role.addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("sqs:GetQueueUrl", "sqs:SendMessage"))
+                .actions(List.of("sqs:GetQueueUrl", "sqs:SendMessage"))
                 .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("arn:aws:sqs:"
-                        + instanceProperties.get(REGION) + ":" + instanceProperties.get(ACCOUNT)
+                .resources(List.of("arn:" + scope.getPartition() + ":sqs:" + scope.getRegion() + ":" + scope.getAccount()
                         + ":AWS-ElasticMapReduce-*"))
                 .build());
 
         role.addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("ec2:Describe*",
+                .actions(List.of("ec2:Describe*",
                         "elasticmapreduce:Describe*",
                         "elasticmapreduce:ListBootstrapActions",
                         "elasticmapreduce:ListClusters",
@@ -120,7 +115,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                         "cloudwatch:*",
                         "s3:GetObject*"))
                 .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("*"))
+                .resources(List.of("*"))
                 .build());
 
         // Allow SSM access
@@ -130,19 +125,15 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
         new CfnInstanceProfile(scope, "EC2InstanceProfile", CfnInstanceProfileProps.builder()
                 .instanceProfileName(role.getRoleName())
-                .roles(Lists.newArrayList(role.getRoleName()))
+                .roles(List.of(role.getRoleName()))
                 .build());
 
         importBucket.grantReadWrite(role);
         return role;
     }
 
-    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role, IKey ebsKey) {
+    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks, IRole ec2Role, IKey ebsKey) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
-        String region = instanceProperties.get(REGION);
-        String account = instanceProperties.get(ACCOUNT);
-        String vpc = instanceProperties.get(VPC_ID);
-        List<String> subnets = instanceProperties.getList(SUBNETS);
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
         PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
@@ -152,31 +143,31 @@ public class CommonEmrBulkImportStack extends NestedStack {
         ManagedPolicy customEmrManagedPolicy = ManagedPolicy.Builder.create(scope, "CustomEMRManagedPolicy")
                 .description("Custom policy for EMR bulk import to operate in VPC")
                 .managedPolicyName(String.join("-", "sleeper", instanceId, "bulk-import-emr-in-vpc"))
-                .document(PolicyDocument.Builder.create().statements(Lists.newArrayList(
+                .document(PolicyDocument.Builder.create().statements(List.of(
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("CreateSecurityGroupInVPC")
-                                .actions(Lists.newArrayList("ec2:CreateSecurityGroup"))
+                                .actions(List.of("ec2:CreateSecurityGroup"))
                                 .effect(Effect.ALLOW)
-                                .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":vpc/" + vpc))
+                                .resources(List.of(coreStacks.getVpc().getVpcArn()))
                                 .build()),
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("ManageResourcesInSubnet")
-                                .actions(Lists.newArrayList(
+                                .actions(List.of(
                                         "ec2:CreateNetworkInterface",
                                         "ec2:RunInstances",
                                         "ec2:CreateFleet",
                                         "ec2:CreateLaunchTemplate",
                                         "ec2:CreateLaunchTemplateVersion"))
                                 .effect(Effect.ALLOW)
-                                .resources(subnets.stream()
-                                        .map(subnet -> "arn:aws:ec2:" + region + ":" + account + ":subnet/" + subnet)
-                                        .collect(Collectors.toList()))
+                                .resources(coreStacks.getSubnets().stream()
+                                        .map(SleeperNetworking::getSubnetArn)
+                                        .toList())
                                 .build()),
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("PassEc2Role")
                                 .effect(Effect.ALLOW)
-                                .actions(Lists.newArrayList("iam:PassRole"))
-                                .resources(Lists.newArrayList(ec2Role.getRoleArn()))
+                                .actions(List.of("iam:PassRole"))
+                                .resources(List.of(ec2Role.getRoleArn()))
                                 .conditions(Map.of("StringLike", Map.of("iam:PassedToService", "ec2.amazonaws.com*")))
                                 .build())))
                         .build())
@@ -191,7 +182,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         Role role = new Role(scope, "EmrRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
                 .description("The role assumed by the Bulk import clusters")
-                .managedPolicies(Lists.newArrayList(emrManagedPolicy, customEmrManagedPolicy))
+                .managedPolicies(List.of(emrManagedPolicy, customEmrManagedPolicy))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
         ebsKey.grant(role, KMS_GRANTS);

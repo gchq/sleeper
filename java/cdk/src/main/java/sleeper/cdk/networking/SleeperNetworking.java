@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.networking;
 
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Subnet;
@@ -65,5 +66,14 @@ public record SleeperNetworking(IVpc vpc, List<ISubnet> subnets) {
             subnets.add(Subnet.fromSubnetId(scope, "Subnet" + i, subnetIds.get(i)));
         }
         return new SleeperNetworking(vpc, subnets);
+    }
+
+    public static String getSubnetArn(ISubnet subnet) {
+        Stack stack = subnet.getStack();
+        String partition = stack.getPartition();
+        String region = stack.getRegion();
+        String account = stack.getAccount();
+        String subnetId = subnet.getSubnetId();
+        return "arn:" + partition + ":ec2:" + region + ":" + account + ":subnet/" + subnetId;
     }
 }

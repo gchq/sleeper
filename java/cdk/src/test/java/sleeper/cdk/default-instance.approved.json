@@ -11260,7 +11260,18 @@
                     "sqs:SendMessage"
                   ],
                   "Effect": "Allow",
-                  "Resource": "arn:aws:sqs:test-region:test-account:AWS-ElasticMapReduce-*"
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":sqs:test-region:test-account:AWS-ElasticMapReduce-*"
+                      ]
+                    ]
+                  }
                 },
                 {
                   "Action": [
@@ -11329,7 +11340,18 @@
                 {
                   "Action": "ec2:CreateSecurityGroup",
                   "Effect": "Allow",
-                  "Resource": "arn:aws:ec2:test-region:test-account:vpc/vpc-12345",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":ec2:test-region:test-account:vpc/vpc-12345"
+                      ]
+                    ]
+                  },
                   "Sid": "CreateSecurityGroupInVPC"
                 },
                 {
@@ -11341,7 +11363,18 @@
                     "ec2:CreateLaunchTemplateVersion"
                   ],
                   "Effect": "Allow",
-                  "Resource": "arn:aws:ec2:test-region:test-account:subnet/test-subnet",
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:",
+                        {
+                          "Ref": "AWS::Partition"
+                        },
+                        ":ec2:test-region:test-account:subnet/test-subnet"
+                      ]
+                    ]
+                  },
                   "Sid": "ManageResourcesInSubnet"
                 },
                 {
