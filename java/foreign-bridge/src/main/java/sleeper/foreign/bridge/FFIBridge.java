@@ -23,18 +23,24 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Provides low-level bridge functionality for calling foreign code.
- *
- * @see FFIBridge#createForeignInterface(Class)
  */
-public class FFIBridge {
+class FFIBridge {
     /**
      * Native library extraction object. This can extract native libraries from the classpath and
      * unpack them to a temporary directory.
      */
     private static final JniExtractor EXTRACTOR = NativeLoader.getJniExtractor();
+    /**
+     * Map for recording which native libraries have been extracted to which path.
+     *
+     * IMPORTANT: Access to this Map MUST be synchronized.
+     */
+    private static final Map<String, File> EXTRACTED_NATIVE_LIBS = new HashMap<>();
 
     /** Paths in the JAR file where a native library may have been placed. */
     private static final String[] LIB_PATHS = {
@@ -53,8 +59,12 @@ public class FFIBridge {
      * the wrong CPU architecture, loading will fail and the next path will be tried. This way, we
      * maintain a single JAR file that can work across multiple CPU architectures.
      *
-     * Each call to this library will extract and link a new copy of the foreign library so clients
-     * are encouraged to cache results of successful calls to this function.
+     * Upon successful loading and linking, the path to the extracted library will be cached, therefore
+     * subsequent calls to this function for the same library will avoid extracting a fresh copy
+     * of the native library.
+     *
+     * Thread safety: The instance returned by this method is NOT thread safe, therefore if shared across
+     * threads, then external synchronization MUST be used by the client.
      *
      * @param  clazz       the interface describing the foreign function calls
      * @param  <T>         interface type containing Java functions stubs
@@ -63,7 +73,7 @@ public class FFIBridge {
      */
     public static synchronized <T extends ForeignFunctions> T createForeignInterface(Class<T> clazz) throws IOException {
         try {
-            return extractAndLink(clazz, "sleeper_df");
+            return cachedLibraryLoad(clazz, "sleeper_df");
         } catch (UnsatisfiedLinkError err) {
             throw (IOException) new IOException("Could not load and link foreign library", err);
         }
@@ -81,6 +91,10 @@ public class FFIBridge {
      * The library named should be given without platform prefixes, e.g. "foo" will be expanded into
      * "libfoo.so" or "foo.dll" as appropriate for this platform.
      *
+     * Upon successful load, the library name and extracted path are cached.
+     *
+     * This should be called from inside a synchronised context.
+     *
      * @param  <T>                  the type of the interface to the native code
      * @param  clazz                the class of the interface to the native code
      * @param  libName              the library name to extract without platform prefixes
@@ -88,7 +102,7 @@ public class FFIBridge {
      * @throws IOException          if an error occured during file extraction
      * @throws UnsatisfiedLinkError if the library could not be found or loaded
      */
-    public static <T> T extractAndLink(Class<T> clazz, String libName) throws IOException {
+    private static <T> T extractAndLink(Class<T> clazz, String libName) throws IOException {
         // Work through each potential path to see if we can load the library
         // successfully
         for (String path : LIB_PATHS) {
@@ -100,8 +114,11 @@ public class FFIBridge {
             if (extractedLib != null) {
                 LOGGER.debug("Extracted file is at {}", extractedLib);
                 try {
-                    return LibraryLoader.create(clazz).failImmediately()
+                    T instance = LibraryLoader.create(clazz).failImmediately()
                             .load(extractedLib.getAbsolutePath());
+                    // Remember that we can successfully load the library from this path
+                    EXTRACTED_NATIVE_LIBS.put(libName, extractedLib);
+                    return instance;
                 } catch (UnsatisfiedLinkError e) {
                     // wrong library, try the next path
                     LOGGER.warn("Unable to load native library from {}", path, e);
@@ -111,6 +128,30 @@ public class FFIBridge {
 
         // No matches
         throw new UnsatisfiedLinkError("Couldn't locate or load " + libName);
+    }
+
+    /**
+     * Loads a native library from the classpath, using a cached location if possible.
+     *
+     * If the requested library has already been successfully loaded and linked, then
+     * the cached entry will be used. Otherwise, the library will be extracted from the classpath.
+     *
+     * This should be called from inside a synchronised context.
+     *
+     * @param  <T>                  the type of the interface to the native code
+     * @param  clazz                the class of the interface to the native code
+     * @param  libName              the library name to extract without platform prefixes
+     * @return                      the absolute extracted path, or null if the library couldn't be found
+     * @throws IOException          if an error occured during file extraction
+     * @throws UnsatisfiedLinkError if the library could not be found or loaded
+     */
+    private static <T> T cachedLibraryLoad(Class<T> clazz, String libName) throws IOException {
+        File cachedPath = EXTRACTED_NATIVE_LIBS.get(libName);
+        if (cachedPath != null) {
+            return LibraryLoader.create(clazz).failImmediately().load(cachedPath.getAbsolutePath());
+        } else {
+            return extractAndLink(clazz, libName);
+        }
     }
 
     private FFIBridge() {

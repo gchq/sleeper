@@ -37,6 +37,13 @@ public interface ForeignFunctions {
      * read or write any data behind the pointer as this will lead to undefined
      * behaviour and most likely unpredictable crashes.
      * <p>
+     * <strong>Thread safety: </strong>Context handles are NOT thread-safe. External
+     * synchronization MUST be if calling methods on the returned context handle from
+     * different threads (even if the calls are not made concurrently!). If you wish
+     * to make independent calls to the foreign functions from multiple threads, it is
+     * HIGHLY recommended that you use {@link ForeignFunctions#clone_context(Pointer)} to
+     * create a new context handle that shares state safely in the native code.
+     * <p>
      * <strong>Note:</strong> It is the callers responsibility to call
      * {@link ForeignFunctions#destroy_context(Pointer)} when this context is no
      * longer required, otherwise the resources attached to this context will leak.
@@ -62,4 +69,22 @@ public interface ForeignFunctions {
      */
     void destroy_context(@In Pointer ctx);
 
+    /**
+     * FFI call to clone a previously allocated context.
+     * <p>
+     * This will clone the foreign context object safely. The primary purpose of this
+     * function is to allow for a new Java context handle that can be used on a different
+     * thread to the one that created the context.
+     * <p>
+     * <strong>It is undefined behaviour to pass a null or invalid pointer to this
+     * function.</strong>
+     * <p>
+     * <strong>Note:</strong> It is the callers responsibility to call
+     * {@link ForeignFunctions#destroy_context(Pointer)} when this context is no
+     * longer required, otherwise the resources attached to this context will leak.
+     *
+     * @param  ctx the handle to the context to clone
+     * @return     a handle to the cloned context
+     */
+    Pointer clone_context(@In Pointer ctx);
 }

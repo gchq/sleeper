@@ -21,7 +21,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]>        </notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*$</packageUrl>
-        <cpe>cpe:/a:apache:spark:3.5.5</cpe>
+        <cpe>cpe:/a:apache:spark:3.5.6</cpe>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -31,7 +31,7 @@
         Some of the Spark dependencies were not identified by the Spark CPE, so we've added this to catch
         several shaded dependencies.
         ]]>        </notes>
-        <filePath regex="true">^.*/spark-[^/]+-3\.5\.5\.jar/.*$</filePath>
+        <filePath regex="true">^.*/spark-[^/]+-3\.5\.6\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>

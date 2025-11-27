@@ -329,8 +329,8 @@ impl AggregateUDFImpl for NonNullable {
         self.inner.supports_null_handling_clause()
     }
 
-    fn is_ordered_set_aggregate(&self) -> bool {
-        self.inner.is_ordered_set_aggregate()
+    fn supports_within_group_clause(&self) -> bool {
+        self.inner.supports_within_group_clause()
     }
 
     fn documentation(&self) -> Option<&Documentation> {
@@ -537,7 +537,7 @@ mod tests {
             fn value_from_stats<'a>(&self, statistics_args: &StatisticsArgs<'a>) -> Option<ScalarValue> ;
             fn default_value(&self, data_type: &DataType) -> Result<ScalarValue>;
             fn supports_null_handling_clause(&self) -> bool;
-            fn is_ordered_set_aggregate(&self) -> bool;
+            fn supports_within_group_clause(&self) -> bool;
             fn documentation(&self) -> Option<&'static Documentation>;
             fn set_monotonicity(&self, data_type: &DataType) -> SetMonotonicity;
         }
@@ -878,6 +878,7 @@ mod tests {
                 name: "test",
                 is_distinct: false,
                 exprs: &[],
+                expr_fields: &[],
             })
             .expect("No Accumulator instance");
 
@@ -965,6 +966,7 @@ mod tests {
             name: "test",
             is_distinct: false,
             exprs: &[],
+            expr_fields: &[],
         });
 
         // Then
@@ -996,6 +998,7 @@ mod tests {
                 name: "test",
                 is_distinct: false,
                 exprs: &[],
+                expr_fields: &[],
             })
             .expect("No GroupsAccumulator instance");
 
@@ -1039,6 +1042,7 @@ mod tests {
                 name: "test",
                 is_distinct: false,
                 exprs: &[],
+                expr_fields: &[],
             })
             .expect("No sliding accumulator instance");
 
@@ -1232,18 +1236,18 @@ mod tests {
     }
 
     #[test]
-    fn should_call_is_ordered_set_aggregate() {
+    fn should_call_supports_within_group_clause() {
         // Given
         let mut mock_udf = MockUDFImpl::new();
         mock_udf.expect_name().return_const("mockudf".to_owned());
         mock_udf
-            .expect_is_ordered_set_aggregate()
+            .expect_supports_within_group_clause()
             .once()
             .return_const(true);
         let nonnull = NonNullable::new(Arc::new(mock_udf));
 
         // When
-        let ordered_set = nonnull.is_ordered_set_aggregate();
+        let ordered_set = nonnull.supports_within_group_clause();
 
         // Then
         assert!(ordered_set);

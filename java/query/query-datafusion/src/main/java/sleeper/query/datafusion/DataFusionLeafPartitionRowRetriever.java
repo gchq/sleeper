@@ -45,14 +45,26 @@ import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 
 /**
  * Implements a Sleeper row retriever based on Apache DataFusion using native code.
+ *
+ * Thread safety: This code is not thread safe. You should either use external synchronisation, or
+ * create a new instance of this class per thread. You should also create new Arrow allocators and FFI context
+ * objects per thread.
  */
 public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetriever {
     private static final Logger LOGGER = LoggerFactory.getLogger(DataFusionLeafPartitionRowRetriever.class);
+    private static final Object LOCK = new Object();
 
     private final DataFusionAwsConfig awsConfig;
     private final BufferAllocator allocator;
     private final FFIContext<DataFusionQueryFunctions> context;
 
+    /**
+     * Creates a new DataFusion query executor with an FFI context from the given provider.
+     *
+     * @param awsConfig AWS configuration
+     * @param allocator Arrow buffer allocator to use
+     * @param context   the FFI context to call
+     */
     public DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig awsConfig, BufferAllocator allocator, FFIContext<DataFusionQueryFunctions> context) {
         this.awsConfig = awsConfig;
         this.allocator = allocator;
@@ -69,24 +81,35 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
     }
 
     /**
-     * Returns an {@link ArrowReader} containing the results of the query.
+     * Executes a Sleeper leaf partition query via Apache DataFusion.
      *
-     * @param  leafPartitionQuery    the query to execute
-     * @param  dataReadSchema        the schema with which to read the data
-     * @param  tableProperties       the table properties
-     * @return
-     * @throws RowRetrievalException
+     * Thread safety: The resulting reader object is NOT thread safe. You must use external synchronisation if you
+     * want to access it from multiple threads.
+     *
+     * @param  leafPartitionQuery    the sub query
+     * @param  dataReadSchema        a schema containing all key fields for the table, and all value fields required
+     *                               for the query
+     * @param  tableProperties       the properties for the table being queried
+     * @return                       batches of Arrow records
+     * @throws RowRetrievalException for any DataFusion failure
      */
     public ArrowReader getArrowReader(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
         DataFusionQueryFunctions functions = context.getFunctions();
-        jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
-        FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
+        // Segmentation faults can occur if multiple threads are trying to allocate and de-allocate query parameter and result
+        // objects in JNR-FFI. Therefore we acquire a lock on those parts of the system. This doesn't prevent
+        // result retrieval happening in parallel, once the query planning step has finished.
+        int result;
+        FFIQueryResults results;
+        synchronized (LOCK) {
+            jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(functions);
+            FFILeafPartitionQueryConfig params = createFFIQueryData(leafPartitionQuery, dataReadSchema, tableProperties, awsConfig, runtime);
 
-        // Create NULL pointer which will be set by the FFI call upon return
-        FFIQueryResults results = new FFIQueryResults(runtime);
+            // Create NULL pointer which will be set by the FFI call upon return
+            results = new FFIQueryResults(runtime);
 
-        // Perform native query
-        int result = functions.query_stream(context, params, results);
+            // Perform native query
+            result = functions.query_stream(context, params, results);
+        }
         // Check result
         if (result != 0) {
             LOGGER.error("DataFusion query failed, return code: {}", result);
@@ -99,8 +122,7 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         }
 
         // Convert pointer from Rust to Java FFI Arrow array stream.
-        // At this point Java assumes ownership of the stream and must release it when no longer
-        // needed.
+        // At this point Java assumes ownership of the stream and must release it when no longer needed.
         return Data.importArrayStream(allocator, ArrowArrayStream.wrap(results.arrowArrayStream.longValue()));
     }
 

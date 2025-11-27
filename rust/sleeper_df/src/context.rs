@@ -45,6 +45,7 @@ fn make_runtime() -> Runtime {
 /// Passing a pointer back across an FFI layer is safe as long as the
 /// consumer simply treats it as a meangingless handle.
 #[allow(non_camel_case_types)]
+#[derive(Clone)]
 pub struct FFIContext {
     /// Shared pointer to a runtime
     pub rt: Arc<Runtime>,
@@ -138,13 +139,59 @@ pub unsafe extern "C" fn destroy_context(ctx: *mut FFIContext) {
         // Unwinding panics are caught at the FFI boundary due to using
         // extern "C", so avoid undefined behaviour of allowing unwind to
         // cross FFI boundary
-        panic!("Null pointer passed to destroy_context!");
+        panic!("Null pointer passed to destroy_context");
+    }
+}
+
+/// Creates a clone of the given [`FFIContext`].
+///
+/// The internal state of the provided context is cloned so that
+/// the Tokio runtime is shared (safely) between the two contexts.
+///
+/// This forms part of the external interface to this crate,
+/// thus it is marked as `extern "C"` to make it publicly available
+/// to FFI clients.
+///
+/// It is the callers responsibility to free the context when
+/// it is no longer needed by calling [`destroy_context`]. If this
+/// context is destroyed while functions are still running with it,
+/// some internal resources may not be freed until all remaining
+/// references are themselves freed. E.g. if you have called [`native_query_stream`]
+/// and still hold references to the returned stream, you may
+/// safely call [`destroy_context`] and still use the existing stream.
+///
+/// # Safety
+/// See [`create_context`] for additional safety notes.
+///
+/// Do NOT call this function with a pointer to an [`FFIContext`] that
+/// has already been freed! Doing so will cause undefined behaviour!
+///
+/// **DO NOT** attempt to read any data behind the pointer
+/// as its layout, alignment and contents may change without
+/// notice between versions and may differ between OSes, Rust
+/// versions and hardware platform.
+///
+/// # Errors
+/// If a NULL pointer is passed to this function.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn clone_context(ctx: *mut FFIContext) -> *mut FFIContext {
+    if let Some(ctx_ref) = unsafe { ctx.as_mut() } {
+        let clone_context = Box::new(ctx_ref.clone());
+        // Rust gives up ownership at this point
+        Box::into_raw(clone_context)
+    } else {
+        // Unwinding panics are caught at the FFI boundary due to using
+        // extern "C", so avoid undefined behaviour of allowing unwind to
+        // cross FFI boundary
+        panic!("Null pointer passed to clone_context");
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::context::create_context;
+    use std::sync::Arc;
+
+    use crate::context::{clone_context, create_context};
 
     #[test]
     pub fn should_return_non_null() {
@@ -153,5 +200,25 @@ mod tests {
 
         // Then
         assert!(!ptr.is_null());
+    }
+
+    #[test]
+    pub fn should_return_different_value_ptr() {
+        // Given
+        let ctx = create_context();
+        let clone = unsafe { clone_context(ctx) };
+        let runtime = unsafe { ctx.as_ref() }.unwrap().rt.clone();
+        let clone_runtime = unsafe { clone.as_ref() }.unwrap().rt.clone();
+
+        // Then
+        assert_ne!(
+            ctx.addr(),
+            clone.addr(),
+            "Pointers should have different values"
+        );
+        assert!(
+            Arc::ptr_eq(&runtime, &clone_runtime),
+            "Underlying Tokio runtime objects pointers should be equal"
+        );
     }
 }

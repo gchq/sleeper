@@ -38,7 +38,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 public class VpcCheckStack extends NestedStack {

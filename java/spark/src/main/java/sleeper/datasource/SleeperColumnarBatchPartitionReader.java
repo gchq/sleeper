@@ -60,7 +60,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
 
         SleeperInputPartition sleeperInputPartition = (SleeperInputPartition) partition;
         BufferAllocator allocator = new RootAllocator();
-        FFIContext<DataFusionQueryFunctions> ffiContext = new FFIContext<>(DataFusionQueryFunctions.getInstance());
+        FFIContext<DataFusionQueryFunctions> ffiContext = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
 
         LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
                 .files(sleeperInputPartition.getFiles())

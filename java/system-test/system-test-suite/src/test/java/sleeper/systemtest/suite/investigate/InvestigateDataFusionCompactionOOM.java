@@ -24,9 +24,11 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.datafusion.DataFusionCompactionFunctions;
 import sleeper.compaction.datafusion.DataFusionCompactionRunner;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 
 import java.io.IOException;
@@ -76,8 +78,10 @@ public class InvestigateDataFusionCompactionOOM {
         Path tempDir = Files.createTempDirectory("sleeper-test");
         Path outputFile = tempDir.resolve(UUID.randomUUID().toString());
         CompactionJob localJob = inferredJob.toBuilder().outputFile("file://" + outputFile.toString()).build();
-        CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), new Configuration());
-        runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()).getRegion());
+        try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
+            CompactionRunner runner = new DataFusionCompactionRunner(DataFusionAwsConfig.getDefault(), new Configuration(), context);
+            runner.compact(localJob, logs.tableProperties(), partitionTree.getPartition(localJob.getPartitionId()).getRegion());
+        }
     }
 
 }

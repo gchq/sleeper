@@ -34,7 +34,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.deploy.PopulatePropertiesTestHelper.createTestPopulateInstanceProperties;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
@@ -163,14 +162,13 @@ public class SleeperInstanceConfigurationIT {
             Path instancePropertiesPath = Files.writeString(
                     propertiesDir.resolve("instance.properties"),
                     "sleeper.filesystem=test://");
-            PopulateInstanceProperties populateProperties = createTestPopulateInstanceProperties();
 
             // When
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
-                    instancePropertiesPath, populateProperties, templatesDir);
+                    instancePropertiesPath, templatesDir);
 
             // Then
-            InstanceProperties expectedInstanceProperties = populateProperties.populate(new InstanceProperties());
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(FILE_SYSTEM, "test://");
             assertThat(config).isEqualTo(new SleeperInstanceConfiguration(expectedInstanceProperties, List.of()));
         }
@@ -179,14 +177,13 @@ public class SleeperInstanceConfigurationIT {
         void shouldPopulateInstancePropertiesFromTemplate() throws Exception {
             // Given
             writeTemplates();
-            PopulateInstanceProperties populateProperties = createTestPopulateInstanceProperties();
-
             // When
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingInstance(
-                    null, populateProperties, templatesDir);
+                    null, templatesDir);
 
             // Then
-            InstanceProperties expectedInstanceProperties = populateProperties.populate(new InstanceProperties());
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
+
             Map<String, String> tags = new HashMap<>(expectedInstanceProperties.getTags());
             tags.put("Project", "TemplateProject");
             expectedInstanceProperties.setTags(tags);
@@ -209,17 +206,16 @@ public class SleeperInstanceConfigurationIT {
             Files.writeString(
                     propertiesDir.resolve("table.properties"),
                     "sleeper.table.name=some-table");
-            PopulateInstanceProperties populateProperties = createTestPopulateInstanceProperties();
             SleeperInstanceConfigurationFromTemplates fromTemplates = SleeperInstanceConfigurationFromTemplates.builder()
                     .templatesDir(templatesDir)
                     .tableNameForTemplate("template-table").build();
 
             // When
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
-                    instancePropertiesPath, populateProperties, fromTemplates);
+                    instancePropertiesPath, fromTemplates);
 
             // Then
-            InstanceProperties expectedInstanceProperties = populateProperties.populate(new InstanceProperties());
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(FILE_SYSTEM, "test://");
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "some-table");
@@ -233,17 +229,16 @@ public class SleeperInstanceConfigurationIT {
             Path instancePropertiesPath = Files.writeString(
                     propertiesDir.resolve("instance.properties"),
                     "sleeper.filesystem=test://");
-            PopulateInstanceProperties populateProperties = createTestPopulateInstanceProperties();
             SleeperInstanceConfigurationFromTemplates fromTemplates = SleeperInstanceConfigurationFromTemplates.builder()
                     .templatesDir(templatesDir)
                     .tableNameForTemplate("template-table").build();
 
             // When
             SleeperInstanceConfiguration config = SleeperInstanceConfiguration.forNewInstanceDefaultingTables(
-                    instancePropertiesPath, populateProperties, fromTemplates);
+                    instancePropertiesPath, fromTemplates);
 
             // Then
-            InstanceProperties expectedInstanceProperties = populateProperties.populate(new InstanceProperties());
+            InstanceProperties expectedInstanceProperties = new InstanceProperties();
             expectedInstanceProperties.set(FILE_SYSTEM, "test://");
             TableProperties expectedTableProperties = new TableProperties(expectedInstanceProperties);
             expectedTableProperties.set(TABLE_NAME, "template-table");

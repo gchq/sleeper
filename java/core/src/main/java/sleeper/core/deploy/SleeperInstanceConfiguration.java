@@ -67,15 +67,13 @@ public class SleeperInstanceConfiguration {
     /**
      * Creates a configuration for a new instance, setting tables from templates if not specified.
      *
-     * @param  instancePropertiesPath     the path to the local configuration instance properties file
-     * @param  populateInstanceProperties the settings to populate the instance properties
-     * @param  fromTemplates              the settings to load the templates
-     * @return                            the instance configuration
+     * @param  instancePropertiesPath the path to the local configuration instance properties file
+     * @param  fromTemplates          the settings to load the templates
+     * @return                        the instance configuration
      */
     public static SleeperInstanceConfiguration forNewInstanceDefaultingTables(
-            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
-            SleeperInstanceConfigurationFromTemplates fromTemplates) {
-        SleeperInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath, populateInstanceProperties);
+            Path instancePropertiesPath, SleeperInstanceConfigurationFromTemplates fromTemplates) {
+        SleeperInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
         if (configuration.getTableProperties().isEmpty()) {
             configuration = configuration.withTableProperties(instanceProperties -> List.of(
                     fromTemplates.loadTableProperties(instanceProperties)));
@@ -87,21 +85,18 @@ public class SleeperInstanceConfiguration {
      * Creates a configuration for a new instance, setting instance properties from templates if not
      * specified.
      *
-     * @param  instancePropertiesPath     the path to the local configuration instance properties file, or null if not
-     *                                    present
-     * @param  populateInstanceProperties the settings to populate the instance properties
-     * @param  templatesDir               the directory to load the templates from
-     * @return                            the instance configuration
+     * @param  instancePropertiesPath the path to the local configuration instance properties file, or null if not
+     *                                present
+     * @param  templatesDir           the directory to load the templates from
+     * @return                        the instance configuration
      */
     public static SleeperInstanceConfiguration forNewInstanceDefaultingInstance(
-            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties,
-            Path templatesDir) {
+            Path instancePropertiesPath, Path templatesDir) {
         if (instancePropertiesPath != null) {
-            return fromLocalConfiguration(instancePropertiesPath, populateInstanceProperties);
+            return fromLocalConfiguration(instancePropertiesPath);
         } else {
-            InstanceProperties instanceProperties = SleeperInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir);
-            populateInstanceProperties.populate(instanceProperties);
-            return new SleeperInstanceConfiguration(instanceProperties, List.of());
+            return new SleeperInstanceConfiguration(SleeperInstanceConfigurationFromTemplates.loadInstanceProperties(templatesDir),
+             List.of());
         }
     }
 
@@ -119,13 +114,6 @@ public class SleeperInstanceConfiguration {
         return SleeperInstanceConfiguration.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(tableProperties).build();
-    }
-
-    private static SleeperInstanceConfiguration fromLocalConfiguration(
-            Path instancePropertiesPath, PopulateInstanceProperties populateInstanceProperties) {
-        SleeperInstanceConfiguration configuration = fromLocalConfiguration(instancePropertiesPath);
-        populateInstanceProperties.populate(configuration.getInstanceProperties());
-        return configuration;
     }
 
     /**

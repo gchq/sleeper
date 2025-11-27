@@ -149,9 +149,10 @@ See [publishing artefacts](development/publishing.md) for how to set this up you
 The codebase is structured around the components explained in the [design document](design.md). The elements of the
 design largely correspond to Maven modules. We'll look at the module architecture in more detail below.
 
-If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script in
-the [development scripts section](#development-scripts) that can display the dependency structure as a graph. There's
-also a document with information on past and current [dependency conflicts](development/dependency-conflicts.md).
+If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script
+documented in [development scripts](development/dev-scripts.md) that can display the dependency structure as a graph.
+There's also a document with information on past and
+current [dependency conflicts](development/dependency-conflicts.md).
 
 If you'd like to raise or pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
 
