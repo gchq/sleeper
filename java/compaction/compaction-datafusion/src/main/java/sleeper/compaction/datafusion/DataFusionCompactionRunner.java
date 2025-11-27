@@ -17,6 +17,7 @@ package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
@@ -66,14 +67,17 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(DataFusionCompactionFunctions.INSTANCE);
-
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
 
         RowsProcessed result = invokeDataFusion(job, params, runtime);
 
-        if (result.getRowsWritten() < 1) {
+        // Get the filesystem object
+        FileSystem fs = FileSystem.get(hadoopConf);
+        Path outputPath = new Path(job.getOutputFile());
+
+        if (result.getRowsWritten() < 1 && !fs.exists(outputPath)) {
             try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                    new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
+                    outputPath, tableProperties, hadoopConf)) {
                 // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
                 // See the test should_merge_empty_files in compaction_test.rs
             }
