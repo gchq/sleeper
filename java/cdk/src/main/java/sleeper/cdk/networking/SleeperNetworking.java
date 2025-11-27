@@ -31,7 +31,8 @@ import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 /**
- * Networking settings to deploy an instance of Sleeper.
+ * Networking settings to deploy an instance of Sleeper. To use all private subnets you can pass in the result of
+ * {@link IVpc#getPrivateSubnets() }.
  *
  * @param vpc     the VPC to deploy Sleeper into
  * @param subnets the subnets to deploy Sleeper into

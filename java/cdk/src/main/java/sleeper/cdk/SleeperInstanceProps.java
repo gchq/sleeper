@@ -141,8 +141,8 @@ public class SleeperInstanceProps {
         return deployPaused;
     }
 
-    public SleeperNetworking getNetworking(Construct scope) {
-        return networkingProvider.getNetworking(scope);
+    public SleeperNetworkingProvider getNetworkingProvider() {
+        return networkingProvider;
     }
 
     public static class Builder {

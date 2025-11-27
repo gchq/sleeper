@@ -63,7 +63,9 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 public class SleeperCoreStacks {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCoreStacks.class);
@@ -109,15 +111,26 @@ public class SleeperCoreStacks {
     }
 
     public static SleeperCoreStacks create(Construct scope, SleeperInstanceProps props) {
-        SleeperNetworking networking = props.getNetworking(scope);
+        SleeperNetworking networking = setupNetworking(scope, props);
         LoggingStack loggingStack = new LoggingStack(scope, "Logging", props.getInstanceProperties());
         AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
         return create(scope, props, networking, loggingStack, autoDeleteS3Stack);
     }
 
+    public static SleeperNetworking setupNetworking(Construct scope, SleeperInstanceProps props) {
+        SleeperNetworking networking = props.getNetworkingProvider().getNetworking(scope);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        String vpcId = networking.vpc().getVpcId();
+        List<String> subnetIds = networking.subnets().stream().map(ISubnet::getSubnetId).toList();
+        instanceProperties.set(VPC_ID, vpcId);
+        instanceProperties.setList(SUBNETS, subnetIds);
+        return networking;
+    }
+
     public static SleeperCoreStacks create(
             Construct scope, SleeperInstanceProps props, SleeperNetworking networking, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
+
         SleeperJarsInBucket jars = props.getJars();
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
             new VpcCheckStack(scope, "Vpc", instanceProperties, jars, loggingStack);

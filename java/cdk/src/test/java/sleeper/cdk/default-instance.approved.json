@@ -3704,7 +3704,7 @@
                 "Arn"
               ]
             },
-            "vpcId": "test-vpc",
+            "vpcId": "vpc-12345",
             "region": "test-region"
           }
         },
@@ -11329,7 +11329,7 @@
                 {
                   "Action": "ec2:CreateSecurityGroup",
                   "Effect": "Allow",
-                  "Resource": "arn:aws:ec2:test-region:test-account:vpc/test-vpc",
+                  "Resource": "arn:aws:ec2:test-region:test-account:vpc/vpc-12345",
                   "Sid": "CreateSecurityGroupInVPC"
                 },
                 {
@@ -21847,7 +21847,7 @@
                   {
                     "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryLeafPartitionQueryDeadLetterQueueD8816EFFArn"
                   },
-                  "\nsleeper.vpc\u003dtest-vpc\nsleeper.table.metrics.dlq.arn\u003d",
+                  "\nsleeper.vpc\u003dvpc-12345\nsleeper.table.metrics.dlq.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceTableMetricsNestedStackTableMetricsNestedStackResource07987969OutputsTestInstanceTableMetricsMetricsJobDeadLetterQueue1EDBE7B1Arn"
                   },

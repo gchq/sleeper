@@ -17,8 +17,6 @@ package sleeper.cdk.networking;
 
 import software.constructs.Construct;
 
-import java.util.List;
-
 /**
  * Creates the networking settings when deploying an instance of Sleeper.
  */
@@ -31,16 +29,5 @@ public interface SleeperNetworkingProvider {
      * @return       the networking settings
      */
     SleeperNetworking getNetworking(Construct scope);
-
-    /**
-     * Creates a provider that uses VPCs and subnets specified by their IDs.
-     *
-     * @param  vpcId     the VPC ID
-     * @param  subnetIds the subnet IDs
-     * @return           the provider
-     */
-    static SleeperNetworkingProvider byIds(String vpcId, List<String> subnetIds) {
-        return scope -> SleeperNetworking.createByIds(scope, vpcId, subnetIds);
-    }
 
 }
