@@ -13053,7 +13053,7 @@
                 "test-subnet"
               ]
             },
-            "ReleaseLabel": "emr-7.9.0",
+            "ReleaseLabel": "emr-1.2.3",
             "Tags": [
               {
                 "Key": "DeploymentStack",
@@ -21827,7 +21827,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157Ref"
                   },
-                  "\nsleeper.tables.id.index.dynamo.table\u003d",
+                  "\nsleeper.bulk.import.emr.serverless.release\u003demr-1.2.3\nsleeper.tables.id.index.dynamo.table\u003d",
                   {
                     "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Ref"
                   },
