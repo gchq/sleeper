@@ -46,20 +46,18 @@ public class SyncJars {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 3 || args.length > 4) {
-            throw new IllegalArgumentException("Usage: <jars-dir> <bucket-name> <region> <optional-delete-old-jars>");
+        if (args.length < 2 || args.length > 3) {
+            throw new IllegalArgumentException("Usage: <jars-dir> <bucket-name> <optional-delete-old-jars>");
         }
         Path jarsDirectory = Path.of(args[0]);
         String bucketName = args[1];
-        String region = args[2];
-        boolean deleteOldJars = optionalArgument(args, 3)
+        boolean deleteOldJars = optionalArgument(args, 2)
                 .map(Boolean::parseBoolean)
                 .orElse(false);
         try (S3Client s3 = S3Client.create()) {
             new SyncJars(s3, jarsDirectory)
                     .sync(SyncJarsRequest.builder()
                             .bucketName(bucketName)
-                            .region(region)
                             .deleteOldJars(deleteOldJars)
                             .build());
         }

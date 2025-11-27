@@ -17,6 +17,7 @@ package sleeper.compaction.datafusion;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
@@ -59,7 +60,8 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     private final Configuration hadoopConf;
     private final FFIContext<DataFusionCompactionFunctions> context;
 
-    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf, FFIContext<DataFusionCompactionFunctions> context) {
+    public DataFusionCompactionRunner(DataFusionAwsConfig awsConfig, Configuration hadoopConf,
+            FFIContext<DataFusionCompactionFunctions> context) {
         this.awsConfig = awsConfig;
         this.hadoopConf = hadoopConf;
         this.context = context;
@@ -68,14 +70,18 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     @Override
     public RowsProcessed compact(CompactionJob job, TableProperties tableProperties, Region region) throws IOException {
         jnr.ffi.Runtime runtime = jnr.ffi.Runtime.getRuntime(context.getFunctions());
-
         FFICommonConfig params = createCompactionParams(job, tableProperties, region, awsConfig, runtime);
         RowsProcessed result = invokeDataFusion(job, params, runtime, context);
 
-        if (result.getRowsWritten() < 1) {
+        // Get the filesystem object
+        FileSystem fs = FileSystem.get(hadoopConf);
+        Path outputPath = new Path(job.getOutputFile());
+
+        if (result.getRowsWritten() < 1 && !fs.exists(outputPath)) {
             try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
-                    new Path(job.getOutputFile()), tableProperties, hadoopConf)) {
-                // Write an empty file. This should be temporary, as we expect DataFusion to add support for this.
+                    outputPath, tableProperties, hadoopConf)) {
+                // Write an empty file. This should be temporary, as we expect DataFusion to add
+                // support for this.
                 // See the test should_merge_empty_files in compaction_test.rs
             }
         }
@@ -86,19 +92,20 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     /**
-     * Creates the input struct that contains all the information needed by the Rust code
+     * Creates the input struct that contains all the information needed by the Rust
+     * code
      * side of the compaction.
      *
      * This includes all Parquet writer settings as well as compaction data such as
      * input files, compaction
      * region etc.
      *
-     * @param  job             compaction job
-     * @param  tableProperties configuration for the Sleeper table
-     * @param  region          region being compacted
-     * @param  awsConfig       settings to access AWS, or null to use defaults
-     * @param  runtime         FFI runtime
-     * @return                 object to pass to FFI layer
+     * @param job             compaction job
+     * @param tableProperties configuration for the Sleeper table
+     * @param region          region being compacted
+     * @param awsConfig       settings to access AWS, or null to use defaults
+     * @param runtime         FFI runtime
+     * @return object to pass to FFI layer
      */
     private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
@@ -131,15 +138,16 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     /**
-     * Take the compaction parameters and invoke the DataFusion compactor using the FFI
+     * Take the compaction parameters and invoke the DataFusion compactor using the
+     * FFI
      * bridge.
      *
-     * @param  job              the compaction job
-     * @param  compactionParams the compaction input parameters
-     * @param  runtime          the JNR FFI runtime object
-     * @param  context          the open context for FFI calls
-     * @return                  rows read/written
-     * @throws IOException      if the foreign library call doesn't complete successfully
+     * @param job              the compaction job
+     * @param compactionParams the compaction input parameters
+     * @param runtime          the JNR FFI runtime object
+     * @param context          the open context for FFI calls
+     * @return rows read/written
+     * @throws IOException if the foreign library call doesn't complete successfully
      */
     private static RowsProcessed invokeDataFusion(CompactionJob job, FFICommonConfig compactionParams,
             jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context) throws IOException {

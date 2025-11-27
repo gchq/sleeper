@@ -33,6 +33,7 @@ import sleeper.core.properties.table.TableProperties;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -259,6 +260,10 @@ public class SleeperInstanceProps {
             Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
             Objects.requireNonNull(tableProperties, "tableProperties must not be null");
             Objects.requireNonNull(jars, "jars must not be null");
+
+            Properties tagsProperties = instanceProperties.getTagsProperties();
+            tagsProperties.setProperty("InstanceID", instanceProperties.get(ID));
+            instanceProperties.loadTags(tagsProperties);
 
             if (validateProperties) {
                 instanceProperties.validate();

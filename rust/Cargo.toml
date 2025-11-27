@@ -25,7 +25,7 @@ repository = "https://github.com/gchq/sleeper"
 authors = ["GCHQ"]
 
 [workspace.dependencies]
-arrow = { version = "56.2.0" }                      # Batch of reading from Parquet files
+arrow = { version = "57.0.0" }                      # Batch of reading from Parquet files
 assert_cmd = { version = "2.1.1" }                 # CLI interface testing
 async-trait = { version = "0.1.89" }
 aws-config = { version = "1.8.11" }                  # Credential loading
@@ -38,7 +38,7 @@ clap = { version = "4.5.53" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
 cxx = { version = "1.0.189" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.181" }
-datafusion = { version = "50.2.0" }
+datafusion = { version = "51.0.0" }
 env_logger = { version = "0.11.8" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
 git2 = { version = "0.20.2" }                       # Interact with version control
