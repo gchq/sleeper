@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.SleeperOptionalStacks;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
@@ -54,6 +55,7 @@ public class SystemTestApp extends Stack {
     }
 
     public void create() {
+        SleeperNetworking networking = props.getNetworking(this);
         LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
         AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
 
@@ -62,7 +64,7 @@ public class SystemTestApp extends Stack {
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", instanceProperties, jars, autoDeleteS3Stack);
 
         // Sleeper instance
-        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, loggingStack, autoDeleteS3Stack);
+        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, networking, loggingStack, autoDeleteS3Stack);
         SleeperOptionalStacks.create(this, props, coreStacks);
 
         coreStacks.createRoles();

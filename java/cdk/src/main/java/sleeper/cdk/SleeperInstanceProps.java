@@ -21,6 +21,8 @@ import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.networking.SleeperNetworking;
+import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.MismatchedVersionException;
 import sleeper.cdk.util.NewInstanceValidator;
@@ -37,6 +39,8 @@ import java.util.Properties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 /**
  * Configuration to deploy a Sleeper instance with the CDK.
@@ -46,12 +50,14 @@ public class SleeperInstanceProps {
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
     private final SleeperJarsInBucket jars;
+    private final SleeperNetworkingProvider networkingProvider;
     private final boolean deployPaused;
 
     private SleeperInstanceProps(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
         jars = builder.jars;
+        networkingProvider = builder.networkingProvider;
         deployPaused = builder.deployPaused;
     }
 
@@ -113,6 +119,9 @@ public class SleeperInstanceProps {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
+                .networkingProvider(SleeperNetworkingProvider.byIds(
+                        configuration.getInstanceProperties().get(VPC_ID),
+                        configuration.getInstanceProperties().getList(SUBNETS)))
                 .tableProperties(configuration.getTableProperties())
                 .validateProperties(context.getBooleanOrDefault("validate", true))
                 .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
@@ -137,11 +146,16 @@ public class SleeperInstanceProps {
         return deployPaused;
     }
 
+    public SleeperNetworking getNetworking(Construct scope) {
+        return networkingProvider.getNetworking(scope);
+    }
+
     public static class Builder {
         private InstanceProperties instanceProperties;
         private SleeperJarsInBucket jars;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
+        private SleeperNetworkingProvider networkingProvider;
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
         private boolean skipCheckingVersionMatchesProperties = false;
@@ -197,6 +211,27 @@ public class SleeperInstanceProps {
          */
         public Builder tableProperties(List<TableProperties> tableProperties) {
             this.tableProperties = tableProperties;
+            return this;
+        }
+
+        /**
+         * Sets the networking settings to deploy an instance of Sleeper.
+         *
+         * @param  networking the networking settings
+         * @return            this builder
+         */
+        public Builder networking(SleeperNetworking networking) {
+            return networkingProvider(scope -> networking);
+        }
+
+        /**
+         * Sets the networking settings to deploy an instance of Sleeper.
+         *
+         * @param  networkingProvider a provider for the networking settings
+         * @return                    this builder
+         */
+        public Builder networkingProvider(SleeperNetworkingProvider networkingProvider) {
+            this.networkingProvider = networkingProvider;
             return this;
         }
 
