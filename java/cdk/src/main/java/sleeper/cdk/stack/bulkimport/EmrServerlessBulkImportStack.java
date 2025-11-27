@@ -16,10 +16,8 @@
 package sleeper.cdk.stack.bulkimport;
 
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStartConfigurationProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStopConfigurationProperty;
@@ -62,8 +60,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTART;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP;
@@ -98,7 +94,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-        createEmrServerlessApplication(instanceProperties, autoStopEmrServerlessApplicationStack);
+        createEmrServerlessApplication(instanceProperties, coreStacks, autoStopEmrServerlessApplicationStack);
         IRole emrRole = createEmrServerlessRole(
                 instanceProperties, importBucketStack, coreStacks, jarsBucket);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
@@ -132,7 +128,9 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .build());
     }
 
-    public void createEmrServerlessApplication(InstanceProperties instanceProperties, AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {
+    public void createEmrServerlessApplication(
+            InstanceProperties instanceProperties, SleeperCoreStacks coreStacks,
+            AutoStopEmrServerlessApplicationStack autoStopEmrServerlessApplicationStack) {
         CfnApplication emrServerlessCluster = CfnApplication.Builder.create(this, "BulkImportEMRServerless")
                 .name(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties)))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
@@ -145,8 +143,9 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                         .enabled(instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP))
                         .idleTimeoutMinutes(instanceProperties.getInt(BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES)).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
-                        .subnetIds(instanceProperties.getList(SUBNETS))
-                        .securityGroupIds(List.of(createSecurityGroup(instanceProperties))).build())
+                        .subnetIds(coreStacks.getSubnets().stream().map(ISubnet::getSubnetId).toList())
+                        .securityGroupIds(List.of(createSecurityGroup(coreStacks)))
+                        .build())
                 .build();
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME,
                 emrServerlessCluster.getName());
@@ -156,13 +155,12 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         autoStopEmrServerlessApplicationStack.addAutoStopEmrServerlessApplication(this, emrServerlessCluster);
     }
 
-    private String createSecurityGroup(InstanceProperties instanceProperties) {
-        IVpc vpc = Vpc.fromLookup(this, "VPC",
-                VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build());
-
+    private String createSecurityGroup(SleeperCoreStacks coreStacks) {
         SecurityGroup securityGroup = SecurityGroup.Builder
                 .create(this, "EMR-Serverless")
-                .description("Security Group used by EMR Serverless").vpc(vpc).build();
+                .description("Security Group used by EMR Serverless")
+                .vpc(coreStacks.getVpc())
+                .build();
         return securityGroup.getSecurityGroupId();
     }
 
