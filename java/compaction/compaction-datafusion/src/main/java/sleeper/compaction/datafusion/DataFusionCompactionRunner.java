@@ -93,19 +93,17 @@ public class DataFusionCompactionRunner implements CompactionRunner {
 
     /**
      * Creates the input struct that contains all the information needed by the Rust
-     * code
-     * side of the compaction.
+     * code side of the compaction.
      *
      * This includes all Parquet writer settings as well as compaction data such as
-     * input files, compaction
-     * region etc.
+     * input files, compaction region etc.
      *
-     * @param job             compaction job
-     * @param tableProperties configuration for the Sleeper table
-     * @param region          region being compacted
-     * @param awsConfig       settings to access AWS, or null to use defaults
-     * @param runtime         FFI runtime
-     * @return object to pass to FFI layer
+     * @param  job             compaction job
+     * @param  tableProperties configuration for the Sleeper table
+     * @param  region          region being compacted
+     * @param  awsConfig       settings to access AWS, or null to use defaults
+     * @param  runtime         FFI runtime
+     * @return                 object to pass to FFI layer
      */
     private static FFICommonConfig createCompactionParams(CompactionJob job, TableProperties tableProperties,
             Region region, DataFusionAwsConfig awsConfig, jnr.ffi.Runtime runtime) {
@@ -138,16 +136,14 @@ public class DataFusionCompactionRunner implements CompactionRunner {
     }
 
     /**
-     * Take the compaction parameters and invoke the DataFusion compactor using the
-     * FFI
-     * bridge.
+     * Take the compaction parameters and invoke the DataFusion compactor using the FFI bridge.
      *
-     * @param job              the compaction job
-     * @param compactionParams the compaction input parameters
-     * @param runtime          the JNR FFI runtime object
-     * @param context          the open context for FFI calls
-     * @return rows read/written
-     * @throws IOException if the foreign library call doesn't complete successfully
+     * @param  job              the compaction job
+     * @param  compactionParams the compaction input parameters
+     * @param  runtime          the JNR FFI runtime object
+     * @param  context          the open context for FFI calls
+     * @return                  rows read/written
+     * @throws IOException      if the foreign library call doesn't complete successfully
      */
     private static RowsProcessed invokeDataFusion(CompactionJob job, FFICommonConfig compactionParams,
             jnr.ffi.Runtime runtime, FFIContext<DataFusionCompactionFunctions> context) throws IOException {
