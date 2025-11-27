@@ -45,6 +45,7 @@ import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterators;
@@ -81,12 +82,11 @@ public class DirectQueryDriver implements QueryDriver {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         PartitionTree tree = getPartitionTree(stateStore);
-        try {
-            QueryExecutor queryExecutor = executor(tableProperties, stateStore, tree);
-            CloseableIterator<Row> rowIterator = queryExecutor.execute(query);
+        QueryExecutor queryExecutor = executor(tableProperties, stateStore, tree);
+        try (CloseableIterator<Row> rowIterator = queryExecutor.execute(query)) {
             return stream(rowIterator)
                     .collect(Collectors.toUnmodifiableList());
-        } catch (QueryException e) {
+        } catch (QueryException | IOException e) {
             throw new RuntimeException(e);
         }
     }

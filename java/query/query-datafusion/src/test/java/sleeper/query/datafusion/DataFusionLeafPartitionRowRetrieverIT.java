@@ -160,8 +160,8 @@ public class DataFusionLeafPartitionRowRetrieverIT {
             ExecutorService es = Executors.newFixedThreadPool(TASK_COUNT);
             Callable<Void> task = () -> {
                 // Ensure resources are all local to thread
-                FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
-                try (BufferAllocator allocator = new RootAllocator()) {
+                try (BufferAllocator allocator = new RootAllocator();
+                        FFIContext<DataFusionQueryFunctions> context = FFIContext.getFFIContext(DataFusionQueryFunctions.class)) {
                     LeafPartitionRowRetrieverProvider rowRetrieverProvider = new DataFusionLeafPartitionRowRetriever.Provider(
                             // DataFusion spends time trying to auth with AWS unless you override it
                             DataFusionAwsConfig.overrideEndpoint("dummy"), allocator, context);
