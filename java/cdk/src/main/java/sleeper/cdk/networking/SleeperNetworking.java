@@ -22,8 +22,13 @@ import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.constructs.Construct;
 
+import sleeper.core.properties.instance.InstanceProperties;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 /**
  * Networking settings to deploy an instance of Sleeper.
@@ -32,6 +37,16 @@ import java.util.List;
  * @param subnets the subnets to deploy Sleeper into
  */
 public record SleeperNetworking(IVpc vpc, List<ISubnet> subnets) {
+
+    /**
+     * Refers to VPCs and subnets by their IDs.
+     *
+     * @param  properties the Sleeper instance properties
+     * @return            the networking settings
+     */
+    public static SleeperNetworking createByProperties(Construct scope, InstanceProperties properties) {
+        return createByIds(scope, properties.get(VPC_ID), properties.getList(SUBNETS));
+    }
 
     /**
      * Refers to VPCs and subnets by their IDs.

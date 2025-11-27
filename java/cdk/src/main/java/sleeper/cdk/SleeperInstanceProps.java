@@ -39,8 +39,6 @@ import java.util.Properties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 /**
  * Configuration to deploy a Sleeper instance with the CDK.
@@ -119,9 +117,6 @@ public class SleeperInstanceProps {
         Path propertiesFile = Path.of(context.tryGetContext("propertiesfile"));
         SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
-                .networkingProvider(SleeperNetworkingProvider.byIds(
-                        configuration.getInstanceProperties().get(VPC_ID),
-                        configuration.getInstanceProperties().getList(SUBNETS)))
                 .tableProperties(configuration.getTableProperties())
                 .validateProperties(context.getBooleanOrDefault("validate", true))
                 .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
@@ -155,7 +150,7 @@ public class SleeperInstanceProps {
         private SleeperJarsInBucket jars;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
-        private SleeperNetworkingProvider networkingProvider;
+        private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
         private boolean skipCheckingVersionMatchesProperties = false;
