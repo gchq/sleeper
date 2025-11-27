@@ -59,10 +59,16 @@ class SleeperInstanceStacksPropsIT {
             InstanceProperties properties = createUserDefinedInstanceProperties();
             SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
 
-            // When / Then
+            // When
+            InstanceProperties loaded = loadInstanceProperties(cdkContextWithPropertiesFile(tempDir));
+
+            // Then
+            Properties tagsProperties = properties.getTagsProperties();
+            tagsProperties.setProperty("InstanceID", properties.get(ID));
+            properties.loadTags(tagsProperties);
             properties.set(VERSION, getVersion());
-            assertThat(loadInstanceProperties(cdkContextWithPropertiesFile(tempDir)))
-                    .isEqualTo(properties);
+
+            assertThat(loaded).isEqualTo(properties);
         }
 
         @Test
@@ -212,10 +218,6 @@ class SleeperInstanceStacksPropsIT {
         instanceProperties.set(JARS_BUCKET, "test-bucket");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
-
-        Properties tagsProperties = instanceProperties.getTagsProperties();
-        tagsProperties.setProperty("InstanceID", id);
-        instanceProperties.loadTags(tagsProperties);
 
         return instanceProperties;
     }
