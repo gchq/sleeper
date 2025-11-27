@@ -60,6 +60,30 @@ public class RangeTest {
     }
 
     @Test
+    public void shouldReturnTrueForEqualsWhenExactRangeCreatedInTwoWays() {
+        // Given
+        Field field = new Field("key", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Range range1 = rangeFactory.createExactRange(field, "A");
+        Range range2 = rangeFactory.createRange(field, "A", true, "A", true);
+        Range range3 = rangeFactory.createRange(field, "A", true, "A" + '\u0000', true);
+
+        // When
+        boolean equals1 = range1.equals(range2);
+        boolean equals2 = range1.equals(range3);
+        int hashCode1 = range1.hashCode();
+        int hashCode2 = range2.hashCode();
+        int hashCode3 = range3.hashCode();
+
+        // Then
+        assertThat(equals1).isTrue();
+        assertThat(equals2).isFalse();
+        assertThat(hashCode2).isEqualTo(hashCode1);
+        assertThat(hashCode3).isNotEqualTo(hashCode1);
+    }
+
+    @Test
     public void shouldThrowExceptionIfGivenWrongType() {
         // Given
         Field field = new Field("key", new IntType());
