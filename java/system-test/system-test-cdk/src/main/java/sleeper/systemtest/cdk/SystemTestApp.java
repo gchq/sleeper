@@ -48,10 +48,7 @@ public class SystemTestApp extends Stack {
 
     public SystemTestApp(App app, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
         super(app, id, stackProps);
-        this.props = sleeperProps;
-
-        props.getInstanceProperties().set(ACCOUNT, this.getAccount());
-        props.getInstanceProperties().set(REGION, this.getRegion());
+        this.props = setProps(sleeperProps);
         this.jars = sleeperProps.getJars();
         this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
     }
@@ -104,5 +101,11 @@ public class SystemTestApp extends Stack {
 
             app.synth();
         }
+    }
+
+    private final SleeperInstanceProps setProps(SleeperInstanceProps props) {
+        props.getInstanceProperties().set(ACCOUNT, getAccount());
+        props.getInstanceProperties().set(REGION, getRegion());
+        return props;
     }
 }
