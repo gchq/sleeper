@@ -46,6 +46,7 @@ import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
 import sleeper.systemtest.dsl.query.QueryDriver;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterators;
@@ -86,7 +87,9 @@ public class DirectQueryDriver implements QueryDriver {
         try (CloseableIterator<Row> rowIterator = queryExecutor.execute(query)) {
             return stream(rowIterator)
                     .collect(Collectors.toUnmodifiableList());
-        } catch (QueryException | IOException e) {
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (QueryException e) {
             throw new RuntimeException(e);
         }
     }
