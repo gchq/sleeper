@@ -27,7 +27,6 @@ import java.io.IOException;
  */
 @FunctionalInterface
 public interface CompactionRunner {
-
     /**
      * Compacts the input files of a compaction job into one output file.
      *
