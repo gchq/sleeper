@@ -20,8 +20,6 @@ import software.amazon.awscdk.services.ec2.ISecurityGroup;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Port;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.emr.CfnStudio;
 import software.amazon.awscdk.services.emr.CfnStudioProps;
 import software.amazon.awscdk.services.iam.Effect;
@@ -35,6 +33,7 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -43,8 +42,6 @@ import java.util.List;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_STUDIO_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 /**
  * Deploys a studio configuration to view EMR Serverless jobs.
@@ -54,28 +51,26 @@ public class EmrStudioStack extends NestedStack {
     private ISecurityGroup workspaceSecurityGroup;
     private IBucket bucket;
 
-    public EmrStudioStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public EmrStudioStack(Construct scope, String id, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         bucket = Bucket.fromBucketName(this, "BulkImportBucket", instanceProperties.get(BULK_IMPORT_BUCKET));
 
-        IVpc vpc = Vpc.fromLookup(this, "VPC",
-                VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build());
-        createDefaultEngineSecurityGroup(vpc, instanceId);
-        createWorkspaceSecurityGroup(vpc, instanceId);
-        createEmrStudio(instanceProperties, vpc);
+        createDefaultEngineSecurityGroup(coreStacks.getVpc(), instanceId);
+        createWorkspaceSecurityGroup(coreStacks.getVpc(), instanceId);
+        createEmrStudio(instanceProperties, coreStacks);
         Utils.addStackTagIfSet(this, instanceProperties);
 
     }
 
-    public void createEmrStudio(InstanceProperties instanceProperties, IVpc vpc) {
+    public void createEmrStudio(InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         String instanceId = instanceProperties.get(ID);
 
         CfnStudioProps props = CfnStudioProps.builder()
                 .name(String.join("-", "sleeper", instanceId, "emr", "studio"))
                 .description("EMR Studio to be used to access EMR Serverless").authMode("IAM")
-                .vpcId(vpc.getVpcId())
-                .subnetIds(instanceProperties.getList(SUBNETS))
+                .vpcId(coreStacks.networking().vpcId())
+                .subnetIds(coreStacks.networking().subnetIds())
                 .engineSecurityGroupId(defaultEngineSecurityGroup.getSecurityGroupId())
                 .serviceRole(createEmrStudioServiceRole(instanceId))
                 .workspaceSecurityGroupId(workspaceSecurityGroup.getSecurityGroupId())
@@ -84,7 +79,6 @@ public class EmrStudioStack extends NestedStack {
 
         CfnStudio studio = new CfnStudio(this, getArtifactId(), props);
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_STUDIO_URL, studio.getAttrUrl());
-
     }
 
     private String createEmrStudioServiceRole(String instanceId) {

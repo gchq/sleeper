@@ -27,9 +27,6 @@ import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.cdk.stack.core.SleeperInstanceRoles;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
-
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks.
  * <p>
@@ -65,9 +62,7 @@ public class SleeperInstance {
      */
     public static SleeperInstance createAsNestedStack(Construct scope, String id, NestedStackProps stackProps, SleeperInstanceProps sleeperProps) {
         NestedStack stack = new NestedStack(scope, id, stackProps);
-        sleeperProps.getInstanceProperties().set(ACCOUNT, stack.getAccount());
-        sleeperProps.getInstanceProperties().set(REGION, stack.getRegion());
-        return addNestedStacks(stack, sleeperProps);
+        return create(stack, sleeperProps);
     }
 
     /**
@@ -81,21 +76,31 @@ public class SleeperInstance {
      */
     public static Stack createAsRootStack(Construct scope, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
         Stack stack = new Stack(scope, id, stackProps);
-        sleeperProps.getInstanceProperties().set(ACCOUNT, stack.getAccount());
-        sleeperProps.getInstanceProperties().set(REGION, stack.getRegion());
-        addNestedStacks(stack, sleeperProps);
+        create(stack, sleeperProps);
         return stack;
     }
 
-    private static SleeperInstance addNestedStacks(Construct scope, SleeperInstanceProps props) {
-
-        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(scope, props);
-        SleeperOptionalStacks.create(scope, props, coreStacks);
+    /**
+     * Declares an instance of Sleeper as a stack. Takes an empty stack that will contain the resources of the instance.
+     * <p>
+     * Please avoid adding other resources to the same stack, to avoid construct ID conflicts.
+     * <p>
+     * A Sleeper instance consists of a number of nested stacks, which will be nested under the stack you provide. These
+     * nested stacks will always have the same CDK construct IDs. For multiple instances, each Sleeper instance should
+     * be its own nested stack. Also see {@link #createAsNestedStack()}.
+     *
+     * @param  stack an empty stack to contain the instance resources, usually a Stack or NestedStack
+     * @param  props configuration to deploy the instance
+     * @return       the stack
+     */
+    public static SleeperInstance create(Stack stack, SleeperInstanceProps props) {
+        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(stack, props);
+        SleeperOptionalStacks.create(stack, props, coreStacks);
 
         // Only create roles after we know which policies are deployed in the instance
         coreStacks.createRoles();
         // Only write properties after CDK-defined properties are set
-        new PropertiesStack(scope, "Properties", props.getInstanceProperties(), props.getJars(), coreStacks);
+        new PropertiesStack(stack, "Properties", props.getInstanceProperties(), props.getJars(), coreStacks);
         return new SleeperInstance(props.getInstanceProperties(), coreStacks);
     }
 

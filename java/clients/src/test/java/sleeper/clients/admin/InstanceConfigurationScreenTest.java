@@ -28,6 +28,7 @@ import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.SaveChangesScreen;
 import sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.ValidateChangesScreen;
+import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.model.OptionalStack;
@@ -394,7 +395,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.vpc\n" +
-                    "The id of the VPC to deploy to.\n" +
+                    SleeperPropertiesPrettyPrinter.formatDescription("", VPC_ID.getDescription()) + "\n" +
                     "Before: before-vpc\n" +
                     "After (cannot be changed, please undo): after-vpc\n" +
                     "\n" +
@@ -420,7 +421,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.vpc\n" +
-                    "The id of the VPC to deploy to.\n" +
+                    SleeperPropertiesPrettyPrinter.formatDescription("", VPC_ID.getDescription()) + "\n" +
                     "Before: before-vpc\n" +
                     "After (cannot be changed, please undo): after-vpc\n" +
                     "\n" +

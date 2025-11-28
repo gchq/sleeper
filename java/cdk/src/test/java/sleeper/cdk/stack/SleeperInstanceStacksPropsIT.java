@@ -193,7 +193,9 @@ class SleeperInstanceStacksPropsIT {
     }
 
     private SleeperInstanceProps readProps(CdkContext context) {
-        return SleeperInstanceProps.fromContext(context, null, null);
+        SleeperInstanceProps props = SleeperInstanceProps.fromContext(context, null, null);
+        props.validate();
+        return props;
     }
 
     private static CdkContext cdkContextWithPropertiesFile(Path tempDir) {
