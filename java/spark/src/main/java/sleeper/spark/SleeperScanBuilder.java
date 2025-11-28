@@ -68,24 +68,6 @@ public class SleeperScanBuilder implements SupportsPushDownFilters {
      *
      * All of the filters in the array are to be anded together.
      *
-     * Here are some examples of the Filter[] that is produced by WHERE clauses in certain queries:
-     * - WHERE key = 'abc': EqualTo(key,abc) (Filter[] is of length 1)
-     * - WHERE key > 'abc': GreaterThan(key,abc) (Filter[] is of length 1)
-     * - WHERE key = 'abc' OR key = 'ghj': Or(EqualTo(key,abc),EqualTo(key,ghj)) (Filter[] is of length 1)
-     * - WHERE key = 'abc' OR key = 'ghj' OR key = 'rst':
-     * Or(Or(EqualTo(key,abc),EqualTo(key,ghj)),EqualTo(key,rst))(Filter[] is of length 1)
-     * - WHERE key = 'a' OR key = 'b' OR key = 'c' OR key = 'd' OR key = 'e' OR key = 'f':
-     * - Or(Or(Or(EqualTo(key,a),EqualTo(key,b)),EqualTo(key,c)),Or(Or(EqualTo(key,d),EqualTo(key,e)),EqualTo(key,f)))
-     * - (Filter[] is of length 1)
-     * - WHERE key1 = 'abc' AND key2 > 'x':
-     * - Filter[] is of length 2
-     * - EqualTo(key1,abc)
-     * - GreaterThan(key2,x)
-     * - WHERE (key1 = 'abc' OR key1 = 'ghj') AND key2 > 'x':
-     * - Filter[] is of length 2
-     * - Or(EqualTo(key,abc),EqualTo(key,qq))
-     * - GreaterThan(value,x)
-     *
      * @param filters The array of Filters to inspect
      */
     @Override
