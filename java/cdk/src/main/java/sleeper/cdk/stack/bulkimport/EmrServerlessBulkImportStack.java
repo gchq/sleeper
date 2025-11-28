@@ -16,7 +16,6 @@
 package sleeper.cdk.stack.bulkimport;
 
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStartConfigurationProperty;
@@ -143,7 +142,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                         .enabled(instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP))
                         .idleTimeoutMinutes(instanceProperties.getInt(BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES)).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
-                        .subnetIds(coreStacks.getSubnets().stream().map(ISubnet::getSubnetId).toList())
+                        .subnetIds(coreStacks.networking().subnetIds())
                         .securityGroupIds(List.of(createSecurityGroup(coreStacks)))
                         .build())
                 .build();

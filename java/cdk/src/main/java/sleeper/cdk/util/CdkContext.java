@@ -17,6 +17,10 @@ package sleeper.cdk.util;
 
 import software.constructs.Construct;
 
+import sleeper.core.properties.model.SleeperPropertyValueUtils;
+
+import java.util.List;
+
 public interface CdkContext {
 
     String tryGetContext(String property);
@@ -33,6 +37,10 @@ public interface CdkContext {
             return false;
         }
         throw new IllegalArgumentException("Expected true or false for context variable: " + property);
+    }
+
+    default List<String> getList(String property) {
+        return SleeperPropertyValueUtils.readList(tryGetContext(property));
     }
 
     static CdkContext from(Construct scope) {

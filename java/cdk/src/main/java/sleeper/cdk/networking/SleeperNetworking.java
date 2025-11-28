@@ -23,10 +23,12 @@ import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.constructs.Construct;
 
+import sleeper.cdk.util.CdkContext;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
@@ -41,8 +43,29 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 public record SleeperNetworking(IVpc vpc, List<ISubnet> subnets) {
 
     /**
-     * Refers to VPCs and subnets by their IDs.
+     * Refers to VPCs and subnets by their IDs. First reads the CDK context variables "vpc" and "subnets". If the VPC
+     * is set but the subnets are not, defaults to all private subnets. If the context variables are not set, reads the
+     * IDs from the instance properties.
      *
+     * @param  scope         the scope to add references to the VPC and subnets to
+     * @param  context       the context to read the IDs from if they are set
+     * @param  configuration the configuration to read the IDs from if the context variables are not set
+     * @return               the networking settings
+     */
+    public static SleeperNetworking createByContext(Construct scope, CdkContext context, SleeperInstanceConfiguration configuration) {
+        String vpcId = context.tryGetContext("vpc");
+        if (vpcId != null) {
+            List<String> subnetIds = context.getList("subnets");
+            return createByIds(scope, vpcId, subnetIds);
+        } else {
+            return createByProperties(scope, configuration.getInstanceProperties());
+        }
+    }
+
+    /**
+     * Refers to VPC and subnets by their IDs.
+     *
+     * @param  scope      the scope to add references to the VPC and subnets to
      * @param  properties the Sleeper instance properties
      * @return            the networking settings
      */
@@ -51,8 +74,9 @@ public record SleeperNetworking(IVpc vpc, List<ISubnet> subnets) {
     }
 
     /**
-     * Refers to VPCs and subnets by their IDs.
+     * Refers to VPC and subnets by their IDs.
      *
+     * @param  scope     the scope to add references to the VPC and subnets to
      * @param  vpcId     the VPC ID
      * @param  subnetIds the subnet IDs
      * @return           the networking settings
@@ -61,14 +85,31 @@ public record SleeperNetworking(IVpc vpc, List<ISubnet> subnets) {
         IVpc vpc = Vpc.fromLookup(scope, "VPC", VpcLookupOptions.builder()
                 .vpcId(vpcId)
                 .build());
-        List<ISubnet> subnets = new ArrayList<>(subnetIds.size());
-        for (int i = 0; i < subnetIds.size(); i++) {
-            subnets.add(Subnet.fromSubnetId(scope, "Subnet" + i, subnetIds.get(i)));
-        }
+        List<ISubnet> subnets = subnetIds == null
+                ? vpc.getPrivateSubnets()
+                : IntStream.range(0, subnetIds.size())
+                        .mapToObj(i -> Subnet.fromSubnetId(scope, "Subnet" + i, subnetIds.get(i)))
+                        .toList();
         return new SleeperNetworking(vpc, subnets);
     }
 
-    public static String getSubnetArn(ISubnet subnet) {
+    public String vpcId() {
+        return vpc.getVpcId();
+    }
+
+    public String vpcArn() {
+        return vpc.getVpcArn();
+    }
+
+    public List<String> subnetIds() {
+        return subnets.stream().map(ISubnet::getSubnetId).toList();
+    }
+
+    public List<String> subnetArns() {
+        return subnets.stream().map(SleeperNetworking::getSubnetArn).toList();
+    }
+
+    private static String getSubnetArn(ISubnet subnet) {
         Stack stack = subnet.getStack();
         String partition = stack.getPartition();
         String region = stack.getRegion();
