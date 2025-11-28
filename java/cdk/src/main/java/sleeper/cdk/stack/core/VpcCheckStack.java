@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.CustomResourceProps;
 import software.amazon.awscdk.NestedStack;
@@ -41,6 +42,8 @@ import java.util.Map;
 
 public class VpcCheckStack extends NestedStack {
 
+    // SpotBugs doesn't like us calling getRegion, but it seems to be the best option.
+    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public VpcCheckStack(
             Construct scope, String id, InstanceProperties instanceProperties,
             SleeperJarsInBucket jars, SleeperNetworking networking, LoggingStack logging) {
