@@ -15,6 +15,7 @@
  */
 package sleeper.core.properties.local;
 
+import sleeper.core.deploy.SleeperTableConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
@@ -166,23 +167,36 @@ public class LoadLocalProperties {
                 .filter(Objects::nonNull);
     }
 
-    private static TableProperties readTablePropertiesFolderOrNull(
-            InstanceProperties instanceProperties, Path folder) {
-        Path propertiesPath = folder.resolve("table.properties");
+    /**
+     * Loads table configuration from a properties file, with no validation. Looks for associated files in the same
+     * folder.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  propertiesFile     the path to the table properties file
+     * @return                    the table configuration
+     */
+    public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
+        Path folder = propertiesFile.getParent();
         Path schemaPath = folder.resolve("schema.json");
-        if (!Files.exists(propertiesPath)) {
-            return null;
-        }
         try {
-            Properties properties = loadProperties(propertiesPath);
+            Properties properties = loadProperties(propertiesFile);
             if (Files.exists(schemaPath)) {
                 String schemaString = Files.readString(schemaPath);
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
             }
-            return new TableProperties(instanceProperties, properties);
+            return new SleeperTableConfiguration(new TableProperties(instanceProperties, properties), List.of());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static TableProperties readTablePropertiesFolderOrNull(
+            InstanceProperties instanceProperties, Path folder) {
+        Path propertiesPath = folder.resolve("table.properties");
+        if (!Files.exists(propertiesPath)) {
+            return null;
+        }
+        return loadTableFromPropertiesFileNoValidation(instanceProperties, propertiesPath).properties();
     }
 
     private static Path directoryOf(Path filePath) {

@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.deploy.SleeperTableConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
@@ -27,12 +28,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
-import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFileNoValidation;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -58,11 +58,15 @@ class LoadLocalPropertiesTablesIT {
     }
 
     private Stream<TableProperties> loadTablePropertiesNoValidation() {
-        return loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesFile);
+        return LoadLocalProperties.loadTablesFromInstancePropertiesFileNoValidation(instanceProperties, instancePropertiesFile);
     }
 
     private Stream<TableProperties> loadTablePropertiesWithInstancePropertiesFile(Path file) {
-        return loadTablesFromInstancePropertiesFile(instanceProperties, file);
+        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(instanceProperties, file);
+    }
+
+    private SleeperTableConfiguration loadTableConfigurationFromPropertiesFile(Path file) {
+        return LoadLocalProperties.loadTableFromPropertiesFileNoValidation(instanceProperties, file);
     }
 
     @Test
@@ -100,6 +104,22 @@ class LoadLocalPropertiesTablesIT {
         properties2.setSchema(schema2);
         assertThat(loadTableProperties())
                 .containsExactly(properties1, properties2);
+    }
+
+    @Test
+    void shouldLoadConfigurationFromPropertiesFile() throws Exception {
+        // Given
+        TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        properties.save(tempDir.resolve("table.properties"));
+        Schema schema = createSchemaWithKey("test-key");
+        schema.save(tempDir.resolve("schema.json"));
+
+        // When
+        SleeperTableConfiguration found = loadTableConfigurationFromPropertiesFile(tempDir.resolve("table.properties"));
+
+        // Then
+        properties.setSchema(schema);
+        assertThat(found).isEqualTo(new SleeperTableConfiguration(properties, List.of()));
     }
 
     @Test
