@@ -16,6 +16,8 @@
 package sleeper.core.deploy;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.List;
@@ -27,5 +29,37 @@ import java.util.List;
  * @param initialPartitions the partitions to initialise the table when it is first created or reinitialised
  */
 public record SleeperTableConfiguration(TableProperties properties, List<Partition> initialPartitions) {
+
+    /**
+     * Validates the configuration.
+     *
+     * @throws SleeperPropertiesInvalidException if any property is invalid
+     * @throws IllegalArgumentException          on a validation failure
+     */
+    public void validate() {
+        properties.validate();
+        PartitionTree tree = new PartitionTree(initialPartitions);
+        List<String> unlinkedPartitionIds = initialPartitions.stream()
+                .filter(partition -> !isPartitionLinkedToRoot(tree, partition))
+                .map(Partition::getId)
+                .toList();
+        if (!unlinkedPartitionIds.isEmpty()) {
+            throw new IllegalArgumentException("Found partitions unlinked to the rest of the tree: " + unlinkedPartitionIds);
+        }
+    }
+
+    private boolean isPartitionLinkedToRoot(PartitionTree tree, Partition partition) {
+        if (partition.getParentPartitionId() == null) {
+            return true;
+        }
+        Partition parent = tree.getPartition(partition.getParentPartitionId());
+        if (parent == null) {
+            return false;
+        }
+        if (!parent.getChildPartitionIds().contains(partition.getId())) {
+            return false;
+        }
+        return isPartitionLinkedToRoot(tree, parent);
+    }
 
 }
