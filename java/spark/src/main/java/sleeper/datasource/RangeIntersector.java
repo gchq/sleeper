@@ -24,10 +24,21 @@ import sleeper.core.schema.type.PrimitiveType;
 import java.util.Optional;
 
 /**
- * Utility methods to intersect {@link Range}s.
+ * Utility methods to intersect Ranges.
  */
 public class RangeIntersector {
+    private RangeIntersector() {
 
+    }
+
+    /**
+     * Intersects the two provided ranges. If the two ranges do not overlap, this will return an empty optional.
+     *
+     * @param  range1       the first range
+     * @param  range2       the second range
+     * @param  rangeFactory the RangeFactory to use
+     * @return              an optional range corresponding to the intersection of the two provided ranges
+     */
     public static Optional<Range> intersectRanges(Range range1, Range range2, RangeFactory rangeFactory) {
         if (!range1.getField().equals(range2.getField())) {
             throw new IllegalArgumentException("Cannot intersect two ranges for different fields");

@@ -34,6 +34,14 @@ public class SplitPushedFiltersIntoSingleAndMultiRegionFilters {
     public SplitPushedFiltersIntoSingleAndMultiRegionFilters() {
     }
 
+    /**
+     * Takes the filters that have been pushed down to Sleeper and splits them into two types - those that
+     * correspond to a single region and those that correspond to multiple regions.
+     *
+     * @param  filters The filters that have been pushed down to Sleeper
+     * @return         a split of the pushed filters into ones which correspond to a single region and ones which
+     *                 correspond to multiple regions
+     */
     public SingleAndMultiRegionFilters splitPushedFilters(Filter[] filters) {
         SingleAndMultiRegionFilters singleAndMultiRegionFilters = new SingleAndMultiRegionFilters();
         for (Filter filter : filters) {
@@ -59,6 +67,10 @@ public class SplitPushedFiltersIntoSingleAndMultiRegionFilters {
         return false;
     }
 
+    /**
+     * A class to store a list of filters corresponding to a single region and a list of filters corresponding
+     * to multiple regions.
+     */
     public static class SingleAndMultiRegionFilters {
         private List<Filter> singleRegionFilters;
         private List<Filter> multiRegionFilters;

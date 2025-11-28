@@ -25,7 +25,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.query.core.rowretrieval.QueryPlanner;
 
 /**
- * An implementation of {@link Scan} that provides a {@link SleeperBatch}.
+ * An implementation of Scan that provides a SleeperBatch.
  */
 public class SleeperScan implements Scan {
     private InstanceProperties instanceProperties;

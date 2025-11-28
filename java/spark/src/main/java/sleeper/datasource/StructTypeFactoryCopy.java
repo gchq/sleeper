@@ -38,6 +38,12 @@ import sleeper.core.schema.type.Type;
  */
 public class StructTypeFactoryCopy {
 
+    /**
+     * Converts a Sleeper Schema into the equivalent Spark StructType.
+     *
+     * @param  schema The schema
+     * @return        The StructType equivalent of the scheme
+     */
     public StructType getStructType(Schema schema) {
         int numberFields = schema.getAllFields().size();
         StructField[] structFields = new StructField[numberFields];

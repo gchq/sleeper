@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Used to create the {@link InputPartition}s that Spark will use to read the data in the Sleeper table.
+ * Used to create the InputPartitions that Spark will use to read the data in the Sleeper table.
  */
 public class SleeperBatch implements Batch {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperBatch.class);
@@ -73,7 +73,6 @@ public class SleeperBatch implements Batch {
                 .regions(regions)
                 .build();
         List<LeafPartitionQuery> leafPartitionQueries = queryPlanner.splitIntoLeafPartitionQueries(query);
-        // TODO Logging at error to make visible for debugging
         LOGGER.info("Split query into {} leaf partition queries", leafPartitionQueries.size());
 
         return leafPartitionQueries.stream()
@@ -93,13 +92,13 @@ public class SleeperBatch implements Batch {
 
     private List<Region> getMinimumRegionCoveringPushedFilters() {
         Schema schema = tableProperties.getSchema();
-        CreateRegionsFromPushedFilters createRegions = new CreateRegionsFromPushedFilters(schema);//, pushedFilters);
+        CreateRegionsFromPushedFilters createRegions = new CreateRegionsFromPushedFilters(schema);
         List<Region> minimumRegions = createRegions.getMinimumRegionCoveringPushedFilters(pushedFilters);
         return minimumRegions;
     }
 
     @Override
     public PartitionReaderFactory createReaderFactory() {
-        return new SleeperPartitionReaderFactory(Utils.saveInstancePropertiesToString(instanceProperties), Utils.saveTablePropertiesToString(tableProperties));
+        return new SleeperPartitionReaderFactory(instanceProperties.saveAsString(), tableProperties.saveAsString());
     }
 }

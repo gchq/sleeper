@@ -31,7 +31,7 @@ import sleeper.query.core.rowretrieval.QueryPlanner;
 import java.util.Arrays;
 
 /**
- * An implementation of ScanBuilder that allows a {@link Scan} to be created for a Sleeper table. This
+ * An implementation of ScanBuilder that allows a Scan to be created for a Sleeper table. This
  * {@link Scan} supports pushing down certain filters to the Sleeper readers.
  *
  * TODO Make this extend SupportsPushDownRequiredColumns so that column projections can be pushed down to the queries.

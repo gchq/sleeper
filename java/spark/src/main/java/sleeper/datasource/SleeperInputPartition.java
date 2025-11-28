@@ -81,12 +81,24 @@ public class SleeperInputPartition implements InputPartition {
         return leafPartitionId;
     }
 
+    /**
+     * The region corresponding to the Sleeper leaf partition that this InputPartition relates to.
+     *
+     * @return the partition region
+     */
     public Region getPartitionRegion() {
         Schema schema = new SchemaSerDe().fromJson(schemaAsJson);
         RegionSerDe regionSerDe = new RegionSerDe(schema);
         return regionSerDe.fromJson(partitionRegionAsJson);
     }
 
+    /**
+     * Returns the regions that need to be queried in this InputPartition, i.e. the regions that correspond to the query
+     * filters.
+     *
+     * @return the regions that need to be queried in this InputPartition, i.e. the regions that correspond to the query
+     *         filters
+     */
     public List<Region> getRegions() {
         Schema schema = new SchemaSerDe().fromJson(schemaAsJson);
         RegionSerDe regionSerDe = new RegionSerDe(schema);

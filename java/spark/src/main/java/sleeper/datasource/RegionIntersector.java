@@ -26,10 +26,21 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Utility methods to intersect {@link Region}s.
+ * Utility methods to intersect Regions.
  */
 public class RegionIntersector {
+    private RegionIntersector() {
 
+    }
+
+    /**
+     * Intersects the provided list of regions. If they do not overlap an empty optional will be returned.
+     *
+     * @param  regions      the regions to be intersected
+     * @param  rangeFactory a range factory
+     * @param  schema       the schema of the Sleeper table
+     * @return              an optional region formed from intersecting the provided regions
+     */
     public static Optional<Region> intersectRegions(List<Region> regions, RangeFactory rangeFactory, Schema schema) {
         if (null == regions || regions.isEmpty()) {
             return Optional.empty();
@@ -58,6 +69,15 @@ public class RegionIntersector {
         return intersectRegions(optionalRegion1.get(), optionalRegion2.get(), rangeFactory, schema);
     }
 
+    /**
+     * Intersects the provided two regions. If they do not overlap an empty optional will be returned.
+     *
+     * @param  region1      the first region
+     * @param  region2      the second region
+     * @param  rangeFactory a range factory
+     * @param  schema       the schema of the Sleeper table
+     * @return              an optional region formed from intersecting the provided regions
+     */
     public static Optional<Region> intersectRegions(Region region1, Region region2, RangeFactory rangeFactory, Schema schema) {
         if (!region1.doesRegionOverlap(region2)) {
             return Optional.empty();

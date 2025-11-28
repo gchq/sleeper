@@ -42,9 +42,23 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Creates Regions from filters.
+ */
 public class CreateRegionFromFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateRegionFromFilter.class);
 
+    private CreateRegionFromFilter() {
+
+    }
+
+    /**
+     * Converts a filter into an optional list of regions corresponding to that filter.
+     *
+     * @param  filter the filter
+     * @param  schema the schema of the Sleeper table
+     * @return        an optional list of regions corresponding to the provided filter
+     */
     public static Optional<List<Region>> createRegionsFromFilter(Filter filter, Schema schema) {
         if (filter instanceof Or) {
             Or or = (Or) filter;
@@ -71,6 +85,13 @@ public class CreateRegionFromFilter {
         }
     }
 
+    /**
+     * A region corresponding to the provided filter.
+     *
+     * @param  filter the filter
+     * @param  schema the schema of the Sleeper table
+     * @return        a region corresponding to the provided filter
+     */
     public static Region createRegionFromSimpleFilter(Filter filter, Schema schema) {
         MutableRegion mutableRegion = new MutableRegion(schema);
         updateRegionWithFilter(mutableRegion, filter, new HashSet<>(schema.getRowKeyFieldNames()));
@@ -79,6 +100,9 @@ public class CreateRegionFromFilter {
         return region;
     }
 
+    /**
+     * An internal class used to allow a region to be updated as filters are added.
+     */
     private static class MutableRegion {
         private final Map<String, MutableRange> rowKeyToMutableRange;
 
@@ -99,6 +123,9 @@ public class CreateRegionFromFilter {
         }
     }
 
+    /**
+     * An internal class used to allow a range to be updated as filters are added.
+     */
     private static class MutableRange {
         private final String fieldName;
         private final RangeFactory rangeFactory;

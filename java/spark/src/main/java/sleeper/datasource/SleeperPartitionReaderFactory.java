@@ -24,12 +24,13 @@ import org.apache.spark.sql.vectorized.ColumnarBatch;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
+import static sleeper.core.properties.PropertiesUtils.loadProperties;
+
 /**
- * An implementation of {@link PartitionReaderFactory} that allows readers to create readers for the Sleeper
- * partitions.
+ * Allows readers to be created for partitions of the Spark DataFrame.
  *
- * This class will be shipped to the Spark executors for execution, and hence needs to be Serializable. For this
- * reason, the * instance and table properties are stored internally as {@link String}s.
+ * This class will be shipped to the Spark executors for execution, and hence needs to be Serializable.
+ * For this reason, the instance and table properties are stored internally as {@link String}s.
  */
 public class SleeperPartitionReaderFactory implements PartitionReaderFactory {
     private static final long serialVersionUID = 9223372036854775807L;
@@ -44,15 +45,15 @@ public class SleeperPartitionReaderFactory implements PartitionReaderFactory {
 
     @Override
     public PartitionReader<ColumnarBatch> createColumnarReader(InputPartition partition) {
-        InstanceProperties instanceProperties = Utils.loadInstancePropertiesFromString(instancePropertiesAsString);
-        TableProperties tableProperties = Utils.loadTablePropertiesFromString(instanceProperties, tablePropertiesAsString);
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesAsString));
+        TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesAsString));
         return new SleeperColumnarBatchPartitionReader(instanceProperties, tableProperties, partition);
     }
 
     @Override
     public PartitionReader<InternalRow> createReader(InputPartition partition) {
-        InstanceProperties instanceProperties = Utils.loadInstancePropertiesFromString(instancePropertiesAsString);
-        TableProperties tableProperties = Utils.loadTablePropertiesFromString(instanceProperties, tablePropertiesAsString);
+        InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesAsString));
+        TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesAsString));
         return new SleeperRowPartitionReader(instanceProperties, tableProperties, partition);
     }
 

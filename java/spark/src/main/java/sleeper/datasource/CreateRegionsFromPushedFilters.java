@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Used to identify a list of the minimum {@link Region}s that the pushed filters correspond to.
+ * Used to identify a list of the minimum Regions that the pushed filters correspond to.
  */
 public class CreateRegionsFromPushedFilters {
     private final Schema schema;
@@ -38,6 +38,14 @@ public class CreateRegionsFromPushedFilters {
         this.rangeFactory = new RangeFactory(schema);
     }
 
+    /**
+     * Given the filters that have been pushed to Sleeper, identifies the minimum list of regions that need to
+     * be read to return results corresponding to those filters. Note that this is not a one-to-one map between
+     * the pushedFilters array and the list of regions.
+     *
+     * @param  pushedFilters the filters that have been pushed to Sleeper
+     * @return               a list of the smallest regions that correspond to the filters
+     */
     public List<Region> getMinimumRegionCoveringPushedFilters(Filter[] pushedFilters) {
         SplitPushedFiltersIntoSingleAndMultiRegionFilters split = new SplitPushedFiltersIntoSingleAndMultiRegionFilters();
         SingleAndMultiRegionFilters singleAndMultiRegionFilters = split.splitPushedFilters(pushedFilters);

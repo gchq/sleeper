@@ -32,7 +32,7 @@ import sleeper.query.core.rowretrieval.QueryPlanner;
 import java.util.Map;
 
 /**
- * A {@link TableProvider} that allows a Sleeper table to be treated as a Spark table.
+ * A TableProvider that allows a Sleeper table to be treated as a Spark table.
  */
 public class SleeperTableProvider implements TableProvider, DataSourceRegister {
     private String instanceId;
@@ -66,6 +66,7 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
         return new SleeperTable(instanceProperties, tableProperties, structType, planner);
     }
 
+    @Override
     public boolean supportsExternalMetadata() {
         return true;
     }

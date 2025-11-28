@@ -45,7 +45,7 @@ import java.util.List;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
- * Reads data from a Sleeper table using the {@link DataFusionLeafPartitionRowRetriever}. This returns Arrow
+ * Reads data from a Sleeper table using the DataFusionLeafPartitionRowRetriever. This returns Arrow
  * record batches which are converted into Spark {@link ColumnarBatch}s.
  */
 public class SleeperColumnarBatchPartitionReader implements PartitionReader<ColumnarBatch> {

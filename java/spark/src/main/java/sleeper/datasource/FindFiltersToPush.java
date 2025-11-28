@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Given an array of {@link Filter}s provided by Spark, this class identifies which of those can be pushed
+ * Given an array of Filters provided by Spark, this class identifies which of those can be pushed
  * down to Sleeper, and which Spark will need to apply itself.
  */
 public class FindFiltersToPush {
@@ -42,6 +42,13 @@ public class FindFiltersToPush {
         this.rowKeyFieldNames = new HashSet<>(schema.getRowKeyFieldNames());
     }
 
+    /**
+     * Inspects the filters that Spark provides that apply the filtering the user wants to perform, and
+     * splits them into two lists - the pushed and non-pushed filters.
+     *
+     * @param  filters the filters from the Spark query against the Sleeper DataFrame
+     * @return         the pushed and non-pushed filters
+     */
     public PushedAndNonPushedFilters splitFiltersIntoPushedAndNonPushed(Filter[] filters) {
         PushedAndNonPushedFilters pushedAndNonPushedFilters = new PushedAndNonPushedFilters();
         for (Filter filter : filters) {
@@ -76,6 +83,9 @@ public class FindFiltersToPush {
         return false;
     }
 
+    /**
+     * A class to store a list of filters that have been pushed to Sleeper and a list of those that have not.
+     */
     public static class PushedAndNonPushedFilters {
         private List<Filter> pushedFilters;
         private List<Filter> nonPushedFilters;
