@@ -139,7 +139,10 @@ public class SleeperInstanceProps {
         instanceProperties.set(REGION, stack.getRegion());
         instanceProperties.set(VPC_ID, networking.vpcId());
         instanceProperties.setList(SUBNETS, networking.subnetIds());
+        validate();
+    }
 
+    public void validate() {
         if (validateProperties) {
             instanceProperties.validate();
             try {
