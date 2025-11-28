@@ -195,6 +195,15 @@ public abstract class QueryCommandLineClient {
         }
     }
 
+    private String promptForSQL() {
+        String sql = in.promptLine("Input some SQL to be run after filter - hit return for none: ");
+        if ("".equals(sql)) {
+            return null;
+        } else {
+            return sql;
+        }
+    }
+
     protected Query constructExactQuery(String tableName, Schema schema, RangeFactory rangeFactory) {
         int i = 0;
         List<Range> ranges = new ArrayList<>();
@@ -219,11 +228,15 @@ public abstract class QueryCommandLineClient {
             }
             i++;
         }
+
+        String sql = promptForSQL();
+
         Region region = new Region(ranges);
         return Query.builder()
                 .tableName(tableName)
                 .queryId(queryIdSupplier.get())
                 .regions(List.of(region))
+                .sql(sql)
                 .build();
     }
 

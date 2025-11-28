@@ -189,6 +189,7 @@ public class QueryPlanner {
                     .leafPartitionId(partition.getId())
                     .partitionRegion(partition.getRegion())
                     .files(files)
+                    .sqlString(query.getSQL())
                     .build();
             LOGGER.debug("Created {}", leafQuery);
             leafPartitionQueriesList.add(leafQuery);

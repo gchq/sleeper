@@ -44,6 +44,8 @@ public class FFILeafPartitionQueryConfig extends Struct {
     public final FFIArray<java.lang.String> requested_value_fields = new FFIArray<>(this);
     /** Specifies if logical and physical DataFusion query plans should be written to a log output. */
     public final Struct.Boolean explain_plans = new Struct.Boolean();
+    /** Some SQL. */
+    public final Struct.UTF8StringRef sql_string = new Struct.UTF8StringRef();
 
     public FFILeafPartitionQueryConfig(
             jnr.ffi.Runtime runtime) {

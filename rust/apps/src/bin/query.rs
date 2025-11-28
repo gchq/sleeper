@@ -69,6 +69,9 @@ struct CmdLineArgs {
     /// Sleeper filter configuration
     #[arg(short = 'f', long, required = false, num_args = 1)]
     filter_config: Option<String>,
+    /// Additional SQL filter
+    #[arg(short = 'z', long, required = false)]
+    sql_query: Option<String>,
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -176,6 +179,7 @@ async fn main() -> color_eyre::Result<()> {
         ranges: vec![SleeperRegion::new(query_map)],
         requested_value_fields: None,
         explain_plans: true,
+        sql_query: args.sql_query,
     };
 
     let result = run_query(&query_config, &SleeperContext::default()).await?;

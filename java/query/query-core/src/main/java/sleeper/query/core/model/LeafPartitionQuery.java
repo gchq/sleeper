@@ -41,6 +41,7 @@ public class LeafPartitionQuery {
     private final String leafPartitionId;
     private final Region partitionRegion;
     private final List<String> files;
+    private final String sqlString;
 
     private LeafPartitionQuery(Builder builder) {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
@@ -51,6 +52,7 @@ public class LeafPartitionQuery {
         leafPartitionId = Objects.requireNonNull(builder.leafPartitionId, "leafPartitionId must not be null");
         partitionRegion = Objects.requireNonNull(builder.partitionRegion, "partitionRegion must not be null");
         files = Objects.requireNonNull(builder.files, "files must not be null");
+        sqlString = builder.sqlString;
     }
 
     public static Builder builder() {
@@ -63,6 +65,10 @@ public class LeafPartitionQuery {
 
     public String getQueryId() {
         return queryId;
+    }
+
+    public String getSQLString() {
+        return sqlString;
     }
 
     public QueryProcessingConfig getProcessingConfig() {
@@ -124,7 +130,8 @@ public class LeafPartitionQuery {
                 .processingConfig(processingConfig)
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
-                .files(files);
+                .files(files)
+                .sqlString(sqlString);
     }
 
     @Override
@@ -143,12 +150,13 @@ public class LeafPartitionQuery {
                 && Objects.equals(processingConfig, that.processingConfig)
                 && Objects.equals(leafPartitionId, that.leafPartitionId)
                 && Objects.equals(partitionRegion, that.partitionRegion)
-                && Objects.equals(files, that.files);
+                && Objects.equals(files, that.files)
+                && Objects.equals(sqlString, that.sqlString);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, queryId, subQueryId, regions, processingConfig, leafPartitionId, partitionRegion, files);
+        return Objects.hash(tableId, queryId, subQueryId, regions, processingConfig, leafPartitionId, partitionRegion, files, sqlString);
     }
 
     @Override
@@ -162,6 +170,7 @@ public class LeafPartitionQuery {
                 ", leafPartitionId='" + leafPartitionId + '\'' +
                 ", partitionRegion=" + partitionRegion +
                 ", files=" + files +
+                ", sqlString=" + sqlString +
                 '}';
     }
 
@@ -177,6 +186,7 @@ public class LeafPartitionQuery {
         private String leafPartitionId;
         private Region partitionRegion;
         private List<String> files;
+        private String sqlString;
 
         private Builder() {
         }
@@ -200,6 +210,11 @@ public class LeafPartitionQuery {
          */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
+            return this;
+        }
+
+        public Builder sqlString(String sqlString) {
+            this.sqlString = sqlString;
             return this;
         }
 

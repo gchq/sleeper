@@ -16,7 +16,7 @@
 */
 use crate::{
     objects::{ffi_common_config::FFICommonConfig, sleeper_region::FFISleeperRegion},
-    unpack::unpack_string_array,
+    unpack::{unpack_string, unpack_string_array},
 };
 use arrow::ffi_stream::FFI_ArrowArrayStream;
 use color_eyre::eyre::bail;
@@ -44,6 +44,8 @@ pub struct FFILeafPartitionQueryConfig {
     pub requested_value_fields: *const *const c_char,
     /// Should logical and physical query plans be written to logging output?
     pub explain_plans: bool,
+    /// An extra SQL string to run
+    pub sql_string: *const c_char,
 }
 
 impl FFILeafPartitionQueryConfig {
@@ -86,11 +88,18 @@ impl FFILeafPartitionQueryConfig {
             None
         };
 
+        let sql_query = if !self.sql_string.is_null() {
+            Some(unpack_string(self.sql_string)?)
+        } else {
+            None
+        };
+
         Ok(LeafPartitionQueryConfig {
             common,
             ranges,
             requested_value_fields: requested_value_columns,
             explain_plans: self.explain_plans,
+            sql_query,
         })
     }
 }

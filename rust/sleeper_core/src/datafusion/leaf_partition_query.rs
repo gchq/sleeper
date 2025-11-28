@@ -33,6 +33,7 @@ use datafusion::{
     execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
     logical_expr::{Expr, ident},
     physical_plan::displayable,
+    prelude::SQLOptions,
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -52,6 +53,8 @@ pub struct LeafPartitionQueryConfig<'a> {
     pub requested_value_fields: Option<Vec<String>>,
     /// Should logical/physical plan explanation be logged?
     pub explain_plans: bool,
+    /// Some extra SQL?
+    pub sql_query: Option<String>,
 }
 
 impl Display for LeafPartitionQueryConfig<'_> {
@@ -104,17 +107,35 @@ impl<'a> LeafPartitionQuery<'a> {
         // Create query frame and sketches if it has been enabled
         let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
 
+        // Convert to physical plan
+        let completer = ops.create_output_completer();
+
+        let mut frame = completer.complete_frame(frame)?;
+        let task_ctx = Arc::new(frame.task_ctx());
+
+        if let Some(sql) = &self.config.sql_query {
+            let runtime = task_ctx.runtime_env();
+            let config = task_ctx.session_config();
+            let ctx = SessionContext::new_with_config_rt(config.clone(), runtime);
+
+            let table = frame.into_view();
+            ctx.register_table("my_table", table)?;
+            frame = ctx
+                .sql_with_options(
+                    sql,
+                    SQLOptions::new()
+                        .with_allow_ddl(false)
+                        .with_allow_dml(false)
+                        .with_allow_statements(false),
+                )
+                .await?;
+        }
+
         if self.config.explain_plans {
             explain_plan(&frame).await?;
         }
 
-        // Convert to physical plan
         let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
-        let completer = ops.create_output_completer();
-
-        let frame = completer.complete_frame(frame)?;
-        let task_ctx = Arc::new(frame.task_ctx());
-
         let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
 
         if self.config.explain_plans {
@@ -125,7 +146,9 @@ impl<'a> LeafPartitionQuery<'a> {
         }
 
         // Run query
-        let result = completer.execute_frame(physical_plan, task_ctx).await?;
+        let result = completer
+            .execute_frame(physical_plan, task_ctx.clone())
+            .await?;
 
         // Do we have some sketch output to write?
         if let Some(sketch_func) = sketcher
@@ -138,7 +161,6 @@ impl<'a> LeafPartitionQuery<'a> {
         {
             output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
         }
-
         Ok(result)
     }
 
