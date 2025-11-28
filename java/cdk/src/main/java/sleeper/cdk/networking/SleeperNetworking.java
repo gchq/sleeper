@@ -82,28 +82,15 @@ public record SleeperNetworking(IVpc vpc, List<ISubnet> subnets) {
      * @return           the networking settings
      */
     public static SleeperNetworking createByIds(Construct scope, String vpcId, List<String> subnetIds) {
-        IVpc vpc = createVpcById(scope, vpcId);
+        IVpc vpc = Vpc.fromLookup(scope, "VPC", VpcLookupOptions.builder()
+                .vpcId(vpcId)
+                .build());
         List<ISubnet> subnets = subnetIds == null
                 ? vpc.getPrivateSubnets()
                 : IntStream.range(0, subnetIds.size())
                         .mapToObj(i -> Subnet.fromSubnetId(scope, "Subnet" + i, subnetIds.get(i)))
                         .toList();
         return new SleeperNetworking(vpc, subnets);
-    }
-
-    public static IVpc createVpcById(Construct scope, String vpcId) {
-        return Vpc.fromLookup(scope, "VPC", VpcLookupOptions.builder()
-                .vpcId(vpcId)
-                .build());
-    }
-
-    public static String getSubnetArn(ISubnet subnet) {
-        Stack stack = subnet.getStack();
-        String partition = stack.getPartition();
-        String region = stack.getRegion();
-        String account = stack.getAccount();
-        String subnetId = subnet.getSubnetId();
-        return "arn:" + partition + ":ec2:" + region + ":" + account + ":subnet/" + subnetId;
     }
 
     public String vpcId() {
@@ -116,5 +103,18 @@ public record SleeperNetworking(IVpc vpc, List<ISubnet> subnets) {
 
     public List<String> subnetIds() {
         return subnets.stream().map(ISubnet::getSubnetId).toList();
+    }
+
+    public List<String> subnetArns() {
+        return subnets.stream().map(SleeperNetworking::getSubnetArn).toList();
+    }
+
+    private static String getSubnetArn(ISubnet subnet) {
+        Stack stack = subnet.getStack();
+        String partition = stack.getPartition();
+        String region = stack.getRegion();
+        String account = stack.getAccount();
+        String subnetId = subnet.getSubnetId();
+        return "arn:" + partition + ":ec2:" + region + ":" + account + ":subnet/" + subnetId;
     }
 }

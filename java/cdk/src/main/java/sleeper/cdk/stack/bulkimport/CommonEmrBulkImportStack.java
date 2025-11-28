@@ -41,7 +41,6 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -148,7 +147,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                 .sid("CreateSecurityGroupInVPC")
                                 .actions(List.of("ec2:CreateSecurityGroup"))
                                 .effect(Effect.ALLOW)
-                                .resources(List.of(coreStacks.getVpc().getVpcArn()))
+                                .resources(List.of(coreStacks.networking().vpcArn()))
                                 .build()),
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("ManageResourcesInSubnet")
@@ -159,9 +158,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                         "ec2:CreateLaunchTemplate",
                                         "ec2:CreateLaunchTemplateVersion"))
                                 .effect(Effect.ALLOW)
-                                .resources(coreStacks.getSubnets().stream()
-                                        .map(SleeperNetworking::getSubnetArn)
-                                        .toList())
+                                .resources(coreStacks.networking().subnetArns())
                                 .build()),
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("PassEc2Role")

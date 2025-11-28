@@ -17,7 +17,6 @@ package sleeper.cdk.stack.bulkimport;
 
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.emr.CfnCluster;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsBlockDeviceConfigProperty;
 import software.amazon.awscdk.services.emr.CfnCluster.EbsConfigurationProperty;
@@ -130,7 +129,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
 
         JobFlowInstancesConfigProperty.Builder jobFlowInstancesConfigPropertyBuilder = JobFlowInstancesConfigProperty.builder()
-                .ec2SubnetIds(coreStacks.getSubnets().stream().map(ISubnet::getSubnetId).toList())
+                .ec2SubnetIds(coreStacks.networking().subnetIds())
                 .masterInstanceFleet(masterInstanceFleetConfigProperty)
                 .coreInstanceFleet(coreInstanceFleetConfigProperty);
 

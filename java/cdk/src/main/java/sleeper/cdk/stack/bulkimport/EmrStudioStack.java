@@ -17,7 +17,6 @@ package sleeper.cdk.stack.bulkimport;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.ISecurityGroup;
-import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.Port;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
@@ -70,8 +69,8 @@ public class EmrStudioStack extends NestedStack {
         CfnStudioProps props = CfnStudioProps.builder()
                 .name(String.join("-", "sleeper", instanceId, "emr", "studio"))
                 .description("EMR Studio to be used to access EMR Serverless").authMode("IAM")
-                .vpcId(coreStacks.getVpc().getVpcId())
-                .subnetIds(coreStacks.getSubnets().stream().map(ISubnet::getSubnetId).toList())
+                .vpcId(coreStacks.networking().vpcId())
+                .subnetIds(coreStacks.networking().subnetIds())
                 .engineSecurityGroupId(defaultEngineSecurityGroup.getSecurityGroupId())
                 .serviceRole(createEmrStudioServiceRole(instanceId))
                 .workspaceSecurityGroupId(workspaceSecurityGroup.getSecurityGroupId())

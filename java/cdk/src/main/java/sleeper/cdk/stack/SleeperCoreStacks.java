@@ -164,6 +164,10 @@ public class SleeperCoreStacks {
         return stacks;
     }
 
+    public SleeperNetworking networking() {
+        return networking;
+    }
+
     public IVpc getVpc() {
         return networking.vpc();
     }
