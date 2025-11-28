@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.datasource;
+package sleeper.spark;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;

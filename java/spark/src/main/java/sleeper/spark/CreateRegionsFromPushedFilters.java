@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.datasource;
+package sleeper.spark;
 
 import org.apache.spark.sql.sources.Filter;
 
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
-import sleeper.datasource.SplitPushedFiltersIntoSingleAndMultiRegionFilters.SingleAndMultiRegionFilters;
+import sleeper.spark.SplitPushedFiltersIntoSingleAndMultiRegionFilters.SingleAndMultiRegionFilters;
 
 import java.util.ArrayList;
 import java.util.List;

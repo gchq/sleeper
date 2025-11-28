@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.datasource;
+package sleeper.spark;
 
 import org.apache.spark.sql.connector.read.Scan;
 import org.apache.spark.sql.connector.read.SupportsPushDownFilters;
@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.datasource.FindFiltersToPush.PushedAndNonPushedFilters;
 import sleeper.query.core.rowretrieval.QueryPlanner;
+import sleeper.spark.FindFiltersToPush.PushedAndNonPushedFilters;
 
 import java.util.Arrays;
 
