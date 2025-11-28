@@ -87,7 +87,7 @@ public class SleeperOptionalStacks {
 
             // Stack to created EMR studio to be used to access EMR Serverless
             if (optionalStacks.contains(OptionalStack.EmrStudioStack)) {
-                new EmrStudioStack(scope, "EmrStudio", instanceProperties);
+                new EmrStudioStack(scope, "EmrStudio", instanceProperties, coreStacks);
             }
         }
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)

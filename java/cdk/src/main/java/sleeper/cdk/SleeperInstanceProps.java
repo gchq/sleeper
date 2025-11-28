@@ -21,6 +21,8 @@ import software.amazon.awssdk.services.s3.internal.BucketUtils;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.networking.SleeperNetworking;
+import sleeper.cdk.networking.SleeperNetworkingProvider;
 import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.MismatchedVersionException;
 import sleeper.cdk.util.NewInstanceValidator;
@@ -46,12 +48,14 @@ public class SleeperInstanceProps {
     private final InstanceProperties instanceProperties;
     private final List<TableProperties> tableProperties;
     private final SleeperJarsInBucket jars;
+    private final SleeperNetworkingProvider networkingProvider;
     private final boolean deployPaused;
 
     private SleeperInstanceProps(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
         jars = builder.jars;
+        networkingProvider = builder.networkingProvider;
         deployPaused = builder.deployPaused;
     }
 
@@ -137,11 +141,16 @@ public class SleeperInstanceProps {
         return deployPaused;
     }
 
+    public SleeperNetworkingProvider getNetworkingProvider() {
+        return networkingProvider;
+    }
+
     public static class Builder {
         private InstanceProperties instanceProperties;
         private SleeperJarsInBucket jars;
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
+        private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
         private boolean skipCheckingVersionMatchesProperties = false;
@@ -197,6 +206,27 @@ public class SleeperInstanceProps {
          */
         public Builder tableProperties(List<TableProperties> tableProperties) {
             this.tableProperties = tableProperties;
+            return this;
+        }
+
+        /**
+         * Sets the networking settings to deploy an instance of Sleeper.
+         *
+         * @param  networking the networking settings
+         * @return            this builder
+         */
+        public Builder networking(SleeperNetworking networking) {
+            return networkingProvider(scope -> networking);
+        }
+
+        /**
+         * Sets the networking settings to deploy an instance of Sleeper.
+         *
+         * @param  networkingProvider a provider for the networking settings
+         * @return                    this builder
+         */
+        public Builder networkingProvider(SleeperNetworkingProvider networkingProvider) {
+            this.networkingProvider = networkingProvider;
             return this;
         }
 

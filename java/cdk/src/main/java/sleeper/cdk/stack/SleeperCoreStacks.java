@@ -20,6 +20,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
+import software.amazon.awscdk.services.ec2.ISubnet;
+import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
@@ -34,6 +36,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.SleeperInstanceProps;
 import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
 import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
@@ -60,11 +63,14 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 public class SleeperCoreStacks {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCoreStacks.class);
 
+    private final SleeperNetworking networking;
     private final LoggingStack loggingStack;
     private final TrackDeadLetters deadLetters;
     private final ConfigBucketStack configBucketStack;
@@ -81,7 +87,7 @@ public class SleeperCoreStacks {
 
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     private SleeperCoreStacks(
-            LoggingStack loggingStack, TrackDeadLetters deadLetters,
+            SleeperNetworking networking, LoggingStack loggingStack, TrackDeadLetters deadLetters,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
@@ -89,6 +95,7 @@ public class SleeperCoreStacks {
             CompactionTrackerResources compactionTracker,
             AutoDeleteS3ObjectsStack autoDeleteS3Stack,
             AutoStopEcsClusterTasksStack autoStopEcsStack) {
+        this.networking = networking;
         this.loggingStack = loggingStack;
         this.deadLetters = deadLetters;
         this.configBucketStack = configBucketStack;
@@ -104,17 +111,29 @@ public class SleeperCoreStacks {
     }
 
     public static SleeperCoreStacks create(Construct scope, SleeperInstanceProps props) {
+        SleeperNetworking networking = setupNetworking(scope, props);
         LoggingStack loggingStack = new LoggingStack(scope, "Logging", props.getInstanceProperties());
         AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
-        return create(scope, props, loggingStack, autoDeleteS3Stack);
+        return create(scope, props, networking, loggingStack, autoDeleteS3Stack);
+    }
+
+    public static SleeperNetworking setupNetworking(Construct scope, SleeperInstanceProps props) {
+        SleeperNetworking networking = props.getNetworkingProvider().getNetworking(scope);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
+        String vpcId = networking.vpc().getVpcId();
+        List<String> subnetIds = networking.subnets().stream().map(ISubnet::getSubnetId).toList();
+        instanceProperties.set(VPC_ID, vpcId);
+        instanceProperties.setList(SUBNETS, subnetIds);
+        return networking;
     }
 
     public static SleeperCoreStacks create(
-            Construct scope, SleeperInstanceProps props, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
+            Construct scope, SleeperInstanceProps props, SleeperNetworking networking, LoggingStack loggingStack, AutoDeleteS3ObjectsStack autoDeleteS3Stack) {
         InstanceProperties instanceProperties = props.getInstanceProperties();
+
         SleeperJarsInBucket jars = props.getJars();
         if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
-            new VpcCheckStack(scope, "Vpc", instanceProperties, jars, loggingStack);
+            new VpcCheckStack(scope, "Vpc", instanceProperties, jars, networking, loggingStack);
         } else {
             LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
                     + "in very significant NAT charges.");
@@ -143,7 +162,7 @@ public class SleeperCoreStacks {
                 stateStoreStacks, ingestTracker, compactionTracker,
                 policiesStack, deadLetters);
 
-        SleeperCoreStacks stacks = new SleeperCoreStacks(loggingStack, deadLetters,
+        SleeperCoreStacks stacks = new SleeperCoreStacks(networking, loggingStack, deadLetters,
                 configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
                 stateStoreCommitterStack, ingestTracker, compactionTracker, autoDeleteS3Stack, autoStopEcsStack);
 
@@ -153,6 +172,14 @@ public class SleeperCoreStacks {
         new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
                 props, stacks, transactionLogStateStoreStack, deadLetters);
         return stacks;
+    }
+
+    public IVpc getVpc() {
+        return networking.vpc();
+    }
+
+    public List<ISubnet> getSubnets() {
+        return networking.subnets();
     }
 
     public Topic getAlertsTopic() {
