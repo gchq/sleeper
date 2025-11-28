@@ -137,7 +137,8 @@ public class LoadLocalProperties {
      */
     public static Stream<TableProperties> loadTablesFromInstancePropertiesFileNoValidation(
             InstanceProperties instanceProperties, Path instancePropertiesFile) {
-        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile));
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile))
+                .map(SleeperTableConfiguration::properties);
     }
 
     /**
@@ -150,20 +151,20 @@ public class LoadLocalProperties {
     public static Stream<TableProperties> loadTablesFromDirectory(
             InstanceProperties instanceProperties, Path directory) {
         return loadTablesFromDirectoryNoValidation(instanceProperties, directory)
-                .map(tableProperties -> {
-                    tableProperties.validate();
-                    return tableProperties;
+                .map(table -> {
+                    table.validate();
+                    return table.properties();
                 });
     }
 
     /**
-     * Loads table properties by scanning under the given directory, with no validation.
+     * Loads table configurations by scanning under the given directory, with no validation.
      *
      * @param  instanceProperties the instance properties
      * @param  directory          the directory
-     * @return                    the table properties found
+     * @return                    the table configurations found
      */
-    public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
+    public static Stream<SleeperTableConfiguration> loadTablesFromDirectoryNoValidation(
             InstanceProperties instanceProperties, Path directory) {
         return streamBaseAndTableFolders(directory)
                 .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
@@ -203,13 +204,13 @@ public class LoadLocalProperties {
         }
     }
 
-    private static TableProperties readTablePropertiesFolderOrNull(
+    private static SleeperTableConfiguration readTablePropertiesFolderOrNull(
             InstanceProperties instanceProperties, Path folder) {
         Path propertiesPath = folder.resolve("table.properties");
         if (!Files.exists(propertiesPath)) {
             return null;
         }
-        return loadTableFromPropertiesFileNoValidation(instanceProperties, propertiesPath).properties();
+        return loadTableFromPropertiesFileNoValidation(instanceProperties, propertiesPath);
     }
 
     private static Path directoryOf(Path filePath) {

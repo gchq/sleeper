@@ -18,6 +18,7 @@ package sleeper.core.deploy;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
+import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.ArrayList;
@@ -35,10 +36,22 @@ public record SleeperTableConfiguration(TableProperties properties, List<Partiti
      * Validates the configuration.
      *
      * @throws SleeperPropertiesInvalidException if any property is invalid
-     * @throws IllegalArgumentException          on a validation failure
+     * @throws IllegalArgumentException          on any other validation failure
      */
     public void validate() {
-        properties.validate();
+        SleeperPropertiesValidationReporter validationReporter = new SleeperPropertiesValidationReporter();
+        validate(validationReporter);
+        validationReporter.throwIfFailed();
+    }
+
+    /**
+     * Validates the configuration.
+     *
+     * @param  validationReporter       the reporter for any table property validation failure
+     * @throws IllegalArgumentException on any other validation failure
+     */
+    public void validate(SleeperPropertiesValidationReporter validationReporter) {
+        properties.validate(validationReporter);
         PartitionTree tree = new PartitionTree(initialPartitions);
         List<String> unlinkedPartitionIds = initialPartitions.stream()
                 .filter(partition -> !isPartitionLinkedToRoot(tree, partition))
