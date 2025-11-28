@@ -20,9 +20,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.deploy.SleeperTableConfiguration;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -111,15 +114,22 @@ class LoadLocalPropertiesTablesIT {
         // Given
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties.save(tempDir.resolve("table.properties"));
-        Schema schema = createSchemaWithKey("test-key");
+        Schema schema = createSchemaWithKey("test-key", new LongType());
         schema.save(tempDir.resolve("schema.json"));
+        List<Object> splitPoints = List.of(10L, 20L, 30L);
+        WriteSplitPoints.toFile(splitPoints, false, tempDir.resolve("splits.txt"));
 
         // When
         SleeperTableConfiguration found = loadTableConfigurationFromPropertiesFile(tempDir.resolve("table.properties"));
 
         // Then
         properties.setSchema(schema);
-        assertThat(found).isEqualTo(new SleeperTableConfiguration(properties, List.of()));
+        assertThat(found.properties()).isEqualTo(properties);
+        PartitionTree expectedTree = new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
+        PartitionTree foundTree = new PartitionTree(found.initialPartitions());
+        assertThat(foundTree.streamLeavesInTreeOrder())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
+                .containsExactlyElementsOf(() -> expectedTree.streamLeavesInTreeOrder().iterator());
     }
 
     @Test

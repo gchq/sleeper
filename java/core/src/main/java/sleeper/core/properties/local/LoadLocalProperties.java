@@ -16,6 +16,8 @@
 package sleeper.core.properties.local;
 
 import sleeper.core.deploy.SleeperTableConfiguration;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 
 /**
  * Loads Sleeper configuration files from the local file system.
@@ -178,13 +181,20 @@ public class LoadLocalProperties {
     public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
         Path folder = propertiesFile.getParent();
         Path schemaPath = folder.resolve("schema.json");
+        Path splitPointsPath = folder.resolve("splits.txt");
         try {
             Properties properties = loadProperties(propertiesFile);
             if (Files.exists(schemaPath)) {
                 String schemaString = Files.readString(schemaPath);
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
             }
-            return new SleeperTableConfiguration(new TableProperties(instanceProperties, properties), List.of());
+            TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+            List<Partition> initialPartitions = List.of();
+            if (Files.exists(splitPointsPath)) {
+                List<Object> splitPoints = ReadSplitPoints.fromFile(splitPointsPath, tableProperties.getSchema(), tableProperties.getBoolean(SPLIT_POINTS_BASE64_ENCODED));
+                initialPartitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
+            }
+            return new SleeperTableConfiguration(new TableProperties(instanceProperties, properties), initialPartitions);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
