@@ -30,37 +30,62 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class RangeIntersectorTest {
     private static final Field ROW_KEY_FIELD = new Field("key", new StringType());
-    private static final Field ROW_KEY_FIELD2 = new Field("key2", new StringType());
     private static final Schema SCHEMA = Schema.builder()
             .rowKeyFields(ROW_KEY_FIELD)
             .valueFields(new Field("value", new StringType()))
             .build();
-    private static final Schema SCHEMA2 = Schema.builder()
-            .rowKeyFields(ROW_KEY_FIELD, ROW_KEY_FIELD2)
-            .valueFields(new Field("value", new StringType()))
-            .build();
     private static final RangeFactory RANGE_FACTORY = new RangeFactory(SCHEMA);
-    private static final RangeFactory RANGE_FACTORY2 = new RangeFactory(SCHEMA2);
 
     @Test
-    void should() {
+    void shouldIntersectRangeWithExactRangeToGiveExactRange() {
         // Given
         Range range1 = RANGE_FACTORY.createExactRange(ROW_KEY_FIELD.getName(), "E");
         Range range2 = RANGE_FACTORY.createRangeCoveringAllValues(ROW_KEY_FIELD);
 
-        String x = (String) RangeCanonicaliser.canonicaliseRange(range1).getMax();
-        String y = (String) RangeCanonicaliser.canonicaliseRange(range1).getMin();
-        System.out.println("Canonicalised range to " + RangeCanonicaliser.canonicaliseRange(range1) + " " + x.length() + " " + y.length());
-        System.out.println("Canonicalised range to " + RangeCanonicaliser.canonicaliseRange(range2));
+        // When
+        Optional<Range> optionalRange = RangeIntersector.intersectRanges(range1, range2, RANGE_FACTORY);
 
-        System.out.println("QQQ: " + range1.doesRangeOverlap(range1));
+        // Then
+        assertThat(optionalRange).contains(RangeCanonicaliser.canonicaliseRange(range1));
+    }
+
+    @Test
+    void shouldIntersectRangeWithFullRangeToGiveRange() {
+        // Given
+        Range range1 = RANGE_FACTORY.createRange(ROW_KEY_FIELD.getName(), "E", true, "T", true);
+        Range range2 = RANGE_FACTORY.createRangeCoveringAllValues(ROW_KEY_FIELD);
 
         // When
         Optional<Range> optionalRange = RangeIntersector.intersectRanges(range1, range2, RANGE_FACTORY);
 
-        System.out.println("QQQ2: " + range1 + " " + x + " " + range1.equals(RangeCanonicaliser.canonicaliseRange(range1)));
-
         // Then
         assertThat(optionalRange).contains(RangeCanonicaliser.canonicaliseRange(range1));
+    }
+
+    @Test
+    void shouldIntersectTwoOverlappingRangesCorrectly() {
+        // Given
+        Range range1 = RANGE_FACTORY.createRange(ROW_KEY_FIELD.getName(), "E", true, "T", true);
+        Range range2 = RANGE_FACTORY.createRange(ROW_KEY_FIELD.getName(), "F", true, "Z", true);
+
+        // When
+        Optional<Range> optionalRange = RangeIntersector.intersectRanges(range1, range2, RANGE_FACTORY);
+
+        // Then
+        Range expectedRange = RANGE_FACTORY.createRange(ROW_KEY_FIELD.getName(), "F", true, "T", true);
+        assertThat(optionalRange).contains(RangeCanonicaliser.canonicaliseRange(expectedRange));
+    }
+
+    @Test
+    void shouldIntersectTwoNonOverlappingRangesToGiveNoRange() {
+        // Given
+        Range range1 = RANGE_FACTORY.createRange(ROW_KEY_FIELD.getName(), "E", true, "F", true);
+        Range range2 = RANGE_FACTORY.createRange(ROW_KEY_FIELD.getName(), "G", true, "Z", true);
+
+        // When
+        Optional<Range> optionalRange = RangeIntersector.intersectRanges(range1, range2, RANGE_FACTORY);
+
+        // Then
+        assertThat(optionalRange).isEmpty();
     }
 }

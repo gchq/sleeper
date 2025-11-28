@@ -42,12 +42,10 @@ public class RangeIntersector {
         Comparable canonicalRange1Min = validateComparable(range1.getField(), canonicalRange1.getMin(), "minimum value");
         Comparable canonicalRange2Min = validateComparable(range1.getField(), canonicalRange2.getMin(), "minimum value");
         Object newMin = PrimitiveType.COMPARATOR.compare(canonicalRange1Min, canonicalRange2Min) < 0 ? canonicalRange2Min : canonicalRange1Min;
-        System.out.println("new min of " + newMin + " from " + canonicalRange1Min + " and " + canonicalRange2Min);
 
         Comparable canonicalRange1Max = validateComparable(range1.getField(), canonicalRange1.getMax(), "maximum value");
         Comparable canonicalRange2Max = validateComparable(range1.getField(), canonicalRange2.getMax(), "maximum value");
         Object newMax = PrimitiveType.COMPARATOR.compare(canonicalRange1Max, canonicalRange2Max) > 0 ? canonicalRange2Max : canonicalRange1Max;
-        System.out.println("new max of " + newMax + " from " + canonicalRange1Max + " and " + canonicalRange2Max);
 
         return Optional.of(rangeFactory.createRange(range1.getField(), newMin, true, newMax, false));
     }

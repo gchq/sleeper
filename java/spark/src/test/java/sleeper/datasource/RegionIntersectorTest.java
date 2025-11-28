@@ -18,6 +18,7 @@ package sleeper.datasource;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.RangeCanonicaliser;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -81,8 +82,8 @@ public class RegionIntersectorTest {
         Optional<Region> optionalRegion = RegionIntersector.intersectRegions(regions, RANGE_FACTORY2, SCHEMA2);
 
         // Then
-        Region expectedRegion = new Region(List.of(RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD.getName(), "E"),
-                RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2.getName(), "T")));
+        Region expectedRegion = new Region(List.of(RangeCanonicaliser.canonicaliseRange(RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD.getName(), "E")),
+                RangeCanonicaliser.canonicaliseRange(RANGE_FACTORY2.createExactRange(ROW_KEY_FIELD2.getName(), "T"))));
         assertThat(optionalRegion).contains(expectedRegion);
     }
 
