@@ -21,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.deploy.SleeperTableConfiguration;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -68,7 +69,7 @@ class LoadLocalPropertiesTablesIT {
         return LoadLocalProperties.loadTablesFromInstancePropertiesFile(instanceProperties, file);
     }
 
-    private SleeperTableConfiguration loadTableConfigurationFromPropertiesFile(Path file) {
+    private SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(Path file) {
         return LoadLocalProperties.loadTableFromPropertiesFileNoValidation(instanceProperties, file);
     }
 
@@ -110,7 +111,7 @@ class LoadLocalPropertiesTablesIT {
     }
 
     @Test
-    void shouldLoadConfigurationFromPropertiesFile() throws Exception {
+    void shouldLoadTableConfigurationFromPropertiesFile() throws Exception {
         // Given
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties.save(tempDir.resolve("table.properties"));
@@ -120,7 +121,7 @@ class LoadLocalPropertiesTablesIT {
         WriteSplitPoints.toFile(splitPoints, false, tempDir.resolve("splits.txt"));
 
         // When
-        SleeperTableConfiguration found = loadTableConfigurationFromPropertiesFile(tempDir.resolve("table.properties"));
+        SleeperTableConfiguration found = loadTableFromPropertiesFileNoValidation(tempDir.resolve("table.properties"));
 
         // Then
         properties.setSchema(schema);
@@ -130,6 +131,23 @@ class LoadLocalPropertiesTablesIT {
         assertThat(foundTree.streamLeavesInTreeOrder())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyElementsOf(() -> expectedTree.streamLeavesInTreeOrder().iterator());
+    }
+
+    @Test
+    void shouldLoadTableConfigurationWithNoSplitPoints() throws Exception {
+        // Given
+        TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
+        properties.save(tempDir.resolve("table.properties"));
+        Schema schema = createSchemaWithKey("test-key", new LongType());
+        schema.save(tempDir.resolve("schema.json"));
+
+        // When
+        SleeperTableConfiguration found = loadTableFromPropertiesFileNoValidation(tempDir.resolve("table.properties"));
+
+        // Then
+        properties.setSchema(schema);
+        assertThat(found).isEqualTo(new SleeperTableConfiguration(properties,
+                new PartitionsBuilder(properties).singlePartition("root").buildList()));
     }
 
     @Test

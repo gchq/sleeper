@@ -189,12 +189,15 @@ public class LoadLocalProperties {
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
             }
             TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-            List<Partition> initialPartitions = List.of();
-            if (Files.exists(splitPointsPath)) {
-                List<Object> splitPoints = ReadSplitPoints.fromFile(splitPointsPath, tableProperties.getSchema(), tableProperties.getBoolean(SPLIT_POINTS_BASE64_ENCODED));
-                initialPartitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
+            if (tableProperties.getSchema() == null) {
+                return new SleeperTableConfiguration(tableProperties, List.of());
             }
-            return new SleeperTableConfiguration(new TableProperties(instanceProperties, properties), initialPartitions);
+            List<Object> splitPoints = List.of();
+            if (Files.exists(splitPointsPath)) {
+                splitPoints = ReadSplitPoints.fromFile(splitPointsPath, tableProperties.getSchema(), tableProperties.getBoolean(SPLIT_POINTS_BASE64_ENCODED));
+            }
+            List<Partition> initialPartitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
+            return new SleeperTableConfiguration(tableProperties, initialPartitions);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
