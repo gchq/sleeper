@@ -144,12 +144,15 @@ public abstract class QueryCommandLineClient {
             i++;
         }
 
+        String sql = promptForSQL();
+
         Region region = new Region(ranges);
 
         return Query.builder()
                 .tableName(tableName)
                 .queryId(queryIdSupplier.get())
                 .regions(List.of(region))
+                .sql(sql)
                 .build();
     }
 
