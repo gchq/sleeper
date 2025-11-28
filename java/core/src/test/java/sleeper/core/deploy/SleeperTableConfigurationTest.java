@@ -109,29 +109,49 @@ public class SleeperTableConfigurationTest {
     }
 
     @Test
-    void shouldRefuseChildPartitionWithIncorrectParentIdSet() {
+    void shouldRefuseChildPartitionsWithIncorrectParentIdSet() {
         // Given
         PartitionTree tree = new PartitionsBuilder(tableProperties)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "aaa")
+                .splitToNewChildren("R", "RL", "RR", "bbb")
                 .buildTree();
 
         // When
         SleeperTableConfiguration configuration = new SleeperTableConfiguration(tableProperties,
                 List.of(
                         tree.getRootPartition(),
-                        tree.getPartition("L").toBuilder().parentPartitionId("wrong").build(),
-                        tree.getPartition("R")));
+                        tree.getPartition("L").toBuilder().parentPartitionId("wrong1").build(),
+                        tree.getPartition("R"),
+                        tree.getPartition("RL"),
+                        tree.getPartition("RR").toBuilder().parentPartitionId("wrong2").build()));
 
         // Then
         assertThatThrownBy(configuration::validate)
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Found partitions unlinked to the rest of the tree: [L]");
+                .hasMessage("Found partitions unlinked to the rest of the tree: [L, RR]");
     }
 
     @Test
-    void shouldFindChildPartitionIsMissing() {
-        // TODO
+    void shouldFindMissingChildPartitions() {
+        // Given
+        PartitionTree tree = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "aaa")
+                .splitToNewChildren("R", "RL", "RR", "bbb")
+                .buildTree();
+
+        // When
+        SleeperTableConfiguration configuration = new SleeperTableConfiguration(tableProperties,
+                List.of(
+                        tree.getRootPartition(),
+                        tree.getPartition("R"),
+                        tree.getPartition("RL")));
+
+        // Then
+        assertThatThrownBy(configuration::validate)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Found missing child partitions: [L, RR]");
     }
 
 }
