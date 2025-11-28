@@ -19,6 +19,7 @@ package sleeper.cdk.stack;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
@@ -63,9 +64,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 public class SleeperCoreStacks {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCoreStacks.class);
@@ -110,21 +109,12 @@ public class SleeperCoreStacks {
         this.autoStopEcsStack = autoStopEcsStack;
     }
 
-    public static SleeperCoreStacks create(Construct scope, SleeperInstanceProps props) {
-        SleeperNetworking networking = setupNetworking(scope, props);
-        LoggingStack loggingStack = new LoggingStack(scope, "Logging", props.getInstanceProperties());
-        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(scope, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
-        return create(scope, props, networking, loggingStack, autoDeleteS3Stack);
-    }
-
-    public static SleeperNetworking setupNetworking(Construct scope, SleeperInstanceProps props) {
-        SleeperNetworking networking = props.getNetworkingProvider().getNetworking(scope);
-        InstanceProperties instanceProperties = props.getInstanceProperties();
-        String vpcId = networking.vpc().getVpcId();
-        List<String> subnetIds = networking.subnets().stream().map(ISubnet::getSubnetId).toList();
-        instanceProperties.set(VPC_ID, vpcId);
-        instanceProperties.setList(SUBNETS, subnetIds);
-        return networking;
+    public static SleeperCoreStacks create(Stack stack, SleeperInstanceProps props) {
+        SleeperNetworking networking = props.getNetworkingProvider().getNetworking(stack);
+        props.prepareProperties(stack, networking);
+        LoggingStack loggingStack = new LoggingStack(stack, "Logging", props.getInstanceProperties());
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(stack, "AutoDeleteS3Objects", props.getInstanceProperties(), props.getJars(), loggingStack);
+        return create(stack, props, networking, loggingStack, autoDeleteS3Stack);
     }
 
     public static SleeperCoreStacks create(
@@ -172,6 +162,10 @@ public class SleeperCoreStacks {
         new TransactionLogTransactionStack(scope, "TransactionLogTransaction",
                 props, stacks, transactionLogStateStoreStack, deadLetters);
         return stacks;
+    }
+
+    public SleeperNetworking networking() {
+        return networking;
     }
 
     public IVpc getVpc() {

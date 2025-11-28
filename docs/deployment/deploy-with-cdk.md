@@ -86,6 +86,7 @@ SleeperInstance.createAsNestedStack(stack, "MyInstance",
                 .description("My instance")
                 .build(),
         SleeperInstanceProps.builder(myInstanceConfig, s3Client, dynamoClient)
+                .networking(new SleeperNetworking(vpc, vpc.getPrivateSubnets()))
                 .deployPaused(false)
                 .build());
 ```
@@ -102,9 +103,11 @@ CDK apps used by the automated scripts. The following commands will deploy a Sle
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
+VPC_ID=my-vpc-id
+SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
+cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/cdk-$VERSION.jar sleeper.cdk.SleeperCdkApp"
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks, you can add "--require-approval never" to the
@@ -114,9 +117,11 @@ If you'd like to include data generation for system tests, use the system test C
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
+VPC_ID=my-vpc-id
+SUBNETS=my-subnet-1,my-subnet-2,my-subnet-3
 SCRIPTS_DIR=./scripts # This is from the root of the Sleeper Git repository
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
-cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp"
+cdk deploy --all -c propertiesfile=$INSTANCE_PROPERTIES -c vpc=$VPC_ID -c subnets=$SUBNETS -c newinstance=true -a "java -cp $SCRIPTS_DIR/jars/system-test-$VERSION-utility.jar sleeper.systemtest.cdk.SystemTestApp"
 ```
 
 #### Tear down
