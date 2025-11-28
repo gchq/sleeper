@@ -27,11 +27,16 @@ sleeper.jars.bucket=changeme
 # ECR repository names are generated in the format `<prefix>/<image name>`.
 sleeper.ecr.repository.prefix=changeme
 
-# The id of the VPC to deploy to.
+# The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
+# using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you
+# can set this in SleeperInstanceProps under networking.
 sleeper.vpc=changeme
 
 # A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
-# clusters will be deployed in a subnet chosen when the cluster is created.
+# clusters will be deployed in a subnet chosen when the cluster is created. This property may be
+# passed as an argument during deployment. If using the Sleeper CDK app, you can set the context
+# variable "subnets". If using your own CDK app, you can set this in SleeperInstanceProps under
+# networking.
 sleeper.subnets=changeme
 
 

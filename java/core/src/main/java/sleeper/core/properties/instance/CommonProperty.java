@@ -121,7 +121,9 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty VPC_ID = Index.propertyBuilder("sleeper.vpc")
-            .description("The id of the VPC to deploy to.")
+            .description("The id of the VPC to deploy to. This property may be passed as an argument during " +
+                    "deployment. If using the Sleeper CDK app, you can set the context variable \"vpc\". If using " +
+                    "your own CDK app, you can set this in SleeperInstanceProps under networking.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
@@ -133,7 +135,10 @@ public interface CommonProperty {
             .build();
     UserDefinedInstanceProperty SUBNETS = Index.propertyBuilder("sleeper.subnets")
             .description("A comma separated list of subnets to deploy to. ECS tasks will be run across multiple " +
-                    "subnets. EMR clusters will be deployed in a subnet chosen when the cluster is created.")
+                    "subnets. EMR clusters will be deployed in a subnet chosen when the cluster is created. " +
+                    "This property may be passed as an argument during deployment. If using the Sleeper CDK app, you " +
+                    "can set the context variable \"subnets\". If using your own CDK app, you can set this in " +
+                    "SleeperInstanceProps under networking.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();

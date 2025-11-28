@@ -27,9 +27,6 @@ import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.cdk.stack.core.SleeperInstanceRoles;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
-
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks.
  * <p>
@@ -97,10 +94,6 @@ public class SleeperInstance {
      * @return       the stack
      */
     public static SleeperInstance create(Stack stack, SleeperInstanceProps props) {
-        InstanceProperties instanceProperties = props.getInstanceProperties();
-        instanceProperties.set(ACCOUNT, stack.getAccount());
-        instanceProperties.set(REGION, stack.getRegion());
-
         SleeperCoreStacks coreStacks = SleeperCoreStacks.create(stack, props);
         SleeperOptionalStacks.create(stack, props, coreStacks);
 

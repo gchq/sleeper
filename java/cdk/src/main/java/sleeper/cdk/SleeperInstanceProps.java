@@ -15,6 +15,7 @@
  */
 package sleeper.cdk;
 
+import software.amazon.awscdk.Stack;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.internal.BucketUtils;
@@ -37,8 +38,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 /**
  * Configuration to deploy a Sleeper instance with the CDK.
@@ -49,6 +54,7 @@ public class SleeperInstanceProps {
     private final List<TableProperties> tableProperties;
     private final SleeperJarsInBucket jars;
     private final SleeperNetworkingProvider networkingProvider;
+    private final boolean validateProperties;
     private final boolean deployPaused;
 
     private SleeperInstanceProps(Builder builder) {
@@ -56,6 +62,7 @@ public class SleeperInstanceProps {
         tableProperties = builder.tableProperties;
         jars = builder.jars;
         networkingProvider = builder.networkingProvider;
+        validateProperties = builder.validateProperties;
         deployPaused = builder.deployPaused;
     }
 
@@ -118,11 +125,34 @@ public class SleeperInstanceProps {
         SleeperInstanceConfiguration configuration = SleeperInstanceConfiguration.fromLocalConfiguration(propertiesFile);
         return builder(configuration.getInstanceProperties(), s3Client, dynamoClient)
                 .tableProperties(configuration.getTableProperties())
+                .networkingProvider(scope -> SleeperNetworking.createByContext(scope, context, configuration))
                 .validateProperties(context.getBooleanOrDefault("validate", true))
                 .ensureInstanceDoesNotExist(context.getBooleanOrDefault("newinstance", false))
                 .skipCheckingVersionMatchesProperties(context.getBooleanOrDefault("skipVersionCheck", false))
                 .deployPaused(context.getBooleanOrDefault("deployPaused", false))
                 .build();
+    }
+
+    public void prepareProperties(Stack stack, SleeperNetworking networking) {
+
+        instanceProperties.set(ACCOUNT, stack.getAccount());
+        instanceProperties.set(REGION, stack.getRegion());
+        instanceProperties.set(VPC_ID, networking.vpcId());
+        instanceProperties.setList(SUBNETS, networking.subnetIds());
+
+        if (validateProperties) {
+            instanceProperties.validate();
+            try {
+                BucketUtils.isValidDnsBucketName(instanceProperties.get(ID), true);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + instanceProperties.get(ID),
+                        e);
+            }
+            for (TableProperties table : tableProperties) {
+                table.validate();
+            }
+        }
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -294,20 +324,6 @@ public class SleeperInstanceProps {
             Properties tagsProperties = instanceProperties.getTagsProperties();
             tagsProperties.setProperty("InstanceID", instanceProperties.get(ID));
             instanceProperties.loadTags(tagsProperties);
-
-            if (validateProperties) {
-                instanceProperties.validate();
-                try {
-                    BucketUtils.isValidDnsBucketName(instanceProperties.get(ID), true);
-                } catch (IllegalArgumentException e) {
-                    throw new IllegalArgumentException(
-                            "Sleeper instance ID is not valid as part of an S3 bucket name: " + instanceProperties.get(ID),
-                            e);
-                }
-                for (TableProperties table : tableProperties) {
-                    table.validate();
-                }
-            }
 
             if (ensureInstanceDoesNotExist) {
                 newInstanceValidator.validate(instanceProperties);
