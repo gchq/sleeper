@@ -64,7 +64,7 @@ public class FindFiltersToPush {
         } else if (filter instanceof LessThan) {
             return rowKeyFieldNames.contains(((LessThan) filter).attribute());
         } else if (filter instanceof LessThanOrEqual) {
-            return rowKeyFieldNames.contains(((LessThan) filter).attribute());
+            return rowKeyFieldNames.contains(((LessThanOrEqual) filter).attribute());
         } else if (filter instanceof In) {
             return rowKeyFieldNames.contains(((In) filter).attribute());
         } else if (filter instanceof Or) {
@@ -99,6 +99,11 @@ public class FindFiltersToPush {
 
         public List<Filter> getNonPushedFilters() {
             return nonPushedFilters;
+        }
+
+        @Override
+        public String toString() {
+            return "PushedAndNonPushedFilters{pushedFilters=" + pushedFilters + ", nonPushedFilters=" + nonPushedFilters + "}";
         }
     }
 }

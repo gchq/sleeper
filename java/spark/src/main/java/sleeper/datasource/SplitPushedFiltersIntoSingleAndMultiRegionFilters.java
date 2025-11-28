@@ -22,24 +22,16 @@ import org.apache.spark.sql.sources.GreaterThanOrEqual;
 import org.apache.spark.sql.sources.LessThan;
 import org.apache.spark.sql.sources.LessThanOrEqual;
 
-import sleeper.core.schema.Schema;
-
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Splits an array of pushed filters into two sublists, one containing filters which correspond to a single
  * region, one containing filters which correspond to multiple regions.
- *
- * TODO - Rename to SplitPushedFiltersIntoSingleAndMultiRegionFilters ?
  */
-public class SplitPushedFiltersIntoAndsAndOrs {
-    private final Set<String> rowKeyFieldNames;
+public class SplitPushedFiltersIntoSingleAndMultiRegionFilters {
 
-    public SplitPushedFiltersIntoAndsAndOrs(Schema schema) {
-        this.rowKeyFieldNames = new HashSet<>(schema.getRowKeyFieldNames());
+    public SplitPushedFiltersIntoSingleAndMultiRegionFilters() {
     }
 
     public SingleAndMultiRegionFilters splitPushedFilters(Filter[] filters) {

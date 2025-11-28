@@ -23,6 +23,8 @@ import org.apache.spark.sql.sources.In;
 import org.apache.spark.sql.sources.LessThan;
 import org.apache.spark.sql.sources.LessThanOrEqual;
 import org.apache.spark.sql.sources.Or;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -41,6 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class CreateRegionFromFilter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateRegionFromFilter.class);
 
     public static Optional<List<Region>> createRegionsFromFilter(Filter filter, Schema schema) {
         if (filter instanceof Or) {
@@ -72,8 +75,7 @@ public class CreateRegionFromFilter {
         MutableRegion mutableRegion = new MutableRegion(schema);
         updateRegionWithFilter(mutableRegion, filter, new HashSet<>(schema.getRowKeyFieldNames()));
         Region region = mutableRegion.getRegion();
-        System.out.println("Entire region: " + Region.coveringAllValuesOfAllRowKeys(schema));
-        System.out.println("Created region " + region + " for filter " + filter);
+        LOGGER.debug("Filter {} was converted to Region {}", filter, region);
         return region;
     }
 

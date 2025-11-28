@@ -30,7 +30,7 @@ import java.util.Set;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
- * Doesn't need to be serialisable.
+ * Allows a Sleeper table to be used as a table in Spark which supports reading of the data.
  */
 public class SleeperTable implements SupportsRead {
     private InstanceProperties instanceProperties;

@@ -33,7 +33,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 /**
- *
+ * This is a duplicate of StructTypeFactory from the bulk-import-runner module. This was duplicated to avoid
+ * pulling in all the dependencies of that module which are not needed here. TODO --- avoid this duplication.
  */
 public class StructTypeFactoryCopy {
 

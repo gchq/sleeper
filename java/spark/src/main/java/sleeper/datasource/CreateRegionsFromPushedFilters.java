@@ -16,13 +16,11 @@
 package sleeper.datasource;
 
 import org.apache.spark.sql.sources.Filter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
-import sleeper.datasource.SplitPushedFiltersIntoAndsAndOrs.SingleAndMultiRegionFilters;
+import sleeper.datasource.SplitPushedFiltersIntoSingleAndMultiRegionFilters.SingleAndMultiRegionFilters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +28,8 @@ import java.util.Optional;
 
 /**
  * Used to identify a list of the minimum {@link Region}s that the pushed filters correspond to.
- *
- * Contains a static method to identify the filters that can be pushed to the Sleeper data source.
  */
 public class CreateRegionsFromPushedFilters {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateRegionsFromPushedFilters.class);
-
     private final Schema schema;
     private final RangeFactory rangeFactory;
 
@@ -45,7 +39,7 @@ public class CreateRegionsFromPushedFilters {
     }
 
     public List<Region> getMinimumRegionCoveringPushedFilters(Filter[] pushedFilters) {
-        SplitPushedFiltersIntoAndsAndOrs split = new SplitPushedFiltersIntoAndsAndOrs(schema);
+        SplitPushedFiltersIntoSingleAndMultiRegionFilters split = new SplitPushedFiltersIntoSingleAndMultiRegionFilters();
         SingleAndMultiRegionFilters singleAndMultiRegionFilters = split.splitPushedFilters(pushedFilters);
         Region regionFromSingleRegionFilters = getRegionFromSingleRegionFilters(singleAndMultiRegionFilters.getSingleRegionFilters());
         List<Region> regionsFromMultiRegionFilters = getRegionsFromMultiRegionFilters(singleAndMultiRegionFilters.getMultiRegionFilters());
@@ -70,7 +64,7 @@ public class CreateRegionsFromPushedFilters {
         Region intersectedRegion = CreateRegionFromFilter.createRegionFromSimpleFilter(singleRegionFilters.get(0), schema);
         for (int i = 1; i < singleRegionFilters.size(); i++) {
             Region region = CreateRegionFromFilter.createRegionFromSimpleFilter(singleRegionFilters.get(i), schema);
-            intersectedRegion = RegionIntersector.intersectRegions(intersectedRegion, region, new RangeFactory(schema), schema).get(); // TODO Shouldn't need .get()
+            intersectedRegion = RegionIntersector.intersectRegions(intersectedRegion, region, new RangeFactory(schema), schema).get();
         }
         return intersectedRegion;
     }
@@ -78,7 +72,7 @@ public class CreateRegionsFromPushedFilters {
     private List<Region> getRegionsFromMultiRegionFilters(List<Filter> multiRegionFilters) {
         List<Region> regions = new ArrayList<>();
         for (Filter filter : multiRegionFilters) {
-            regions.addAll(CreateRegionFromFilter.createRegionsFromFilter(filter, schema).get()); // TODO Shouldn't need .get()
+            regions.addAll(CreateRegionFromFilter.createRegionsFromFilter(filter, schema).get());
         }
         return regions;
     }

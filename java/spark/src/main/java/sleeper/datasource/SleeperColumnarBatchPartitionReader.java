@@ -45,7 +45,8 @@ import java.util.List;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
- * Doesn't need to be serialisable.
+ * Reads data from a Sleeper table using the {@link DataFusionLeafPartitionRowRetriever}. This returns Arrow
+ * record batches which are converted into Spark {@link ColumnarBatch}s.
  */
 public class SleeperColumnarBatchPartitionReader implements PartitionReader<ColumnarBatch> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperColumnarBatchPartitionReader.class);
@@ -53,6 +54,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
     private TableProperties tableProperties;
     private Schema schema;
     private ArrowReader arrowReader;
+    private long numBatches;
 
     public SleeperColumnarBatchPartitionReader(InstanceProperties instanceProperties, TableProperties tableProperties, InputPartition partition) {
         this.tableProperties = tableProperties;
@@ -72,6 +74,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
                 .regions(sleeperInputPartition.getRegions())
                 .processingConfig(QueryProcessingConfig.none())
                 .build();
+        numBatches = 0L;
         try {
             this.arrowReader = new DataFusionLeafPartitionRowRetriever(DataFusionAwsConfig.getDefault(), allocator, ffiContext)
                     .getArrowReader(leafPartitionQuery, schema, tableProperties);
@@ -83,7 +86,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
 
     @Override
     public void close() throws IOException {
-        LOGGER.info("Closing arrowReader");
+        LOGGER.info("Closing arrowReader (processed {}" + numBatches + " columnar batches)");
         arrowReader.close();
     }
 
@@ -104,6 +107,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
             ColumnarBatch sparkColumnarBatch = new ColumnarBatch(
                     columnVectors.toArray(new ColumnVector[0]),
                     batch.getRowCount());
+            numBatches++;
             return sparkColumnarBatch;
         } catch (IOException e) {
             throw new RuntimeException("Exception calling get() to retrieve ColumnarBatch", e);

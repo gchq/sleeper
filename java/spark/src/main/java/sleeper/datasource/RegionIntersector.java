@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Utility methods to intersect {@link Region}s.
+ */
 public class RegionIntersector {
 
     public static Optional<Region> intersectRegions(List<Region> regions, RangeFactory rangeFactory, Schema schema) {
@@ -41,7 +44,7 @@ public class RegionIntersector {
         return intersectedRegion;
     }
 
-    public static Optional<Region> intersectOptionalRegions(Optional<Region> optionalRegion1, Optional<Region> optionalRegion2,
+    private static Optional<Region> intersectOptionalRegions(Optional<Region> optionalRegion1, Optional<Region> optionalRegion2,
             RangeFactory rangeFactory, Schema schema) {
         if (optionalRegion1.isEmpty() && optionalRegion2.isEmpty()) {
             return Optional.empty();
@@ -57,7 +60,6 @@ public class RegionIntersector {
 
     public static Optional<Region> intersectRegions(Region region1, Region region2, RangeFactory rangeFactory, Schema schema) {
         if (!region1.doesRegionOverlap(region2)) {
-            System.out.println("" + region1 + " and " + region2 + " don't overlap");
             return Optional.empty();
         }
 
@@ -66,9 +68,9 @@ public class RegionIntersector {
             Range range1 = region1.getRange(rowKeyField.getName());
             Range range2 = region2.getRange(rowKeyField.getName());
             Optional<Range> intersectedRange = RangeIntersector.intersectRanges(range1, range2, rangeFactory);
-            System.out.println("Intersected" + range1 + " and " + range2 + " to get " + intersectedRange);
             if (intersectedRange.isEmpty()) {
-                throw new RuntimeException("TODO");
+                throw new RuntimeException("Regions " + region1 + " and " + region2
+                        + " had two ranges that do not intersect (" + range1 + ", " + range2 + ") - this is impossible");
             }
             ranges.add(intersectedRange.get());
         }

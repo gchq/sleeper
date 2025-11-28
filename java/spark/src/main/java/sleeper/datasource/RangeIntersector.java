@@ -23,6 +23,9 @@ import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.Optional;
 
+/**
+ * Utility methods to intersect {@link Range}s.
+ */
 public class RangeIntersector {
 
     public static Optional<Range> intersectRanges(Range range1, Range range2, RangeFactory rangeFactory) {
@@ -31,7 +34,6 @@ public class RangeIntersector {
         }
 
         if (!range1.doesRangeOverlap(range2)) {
-            System.out.println(range1 + " does not overlap " + range2);
             return Optional.empty();
         }
 

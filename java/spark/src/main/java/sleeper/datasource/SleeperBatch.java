@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Doesn't need to be serialisable.
+ * Used to create the {@link InputPartition}s that Spark will use to read the data in the Sleeper table.
  */
 public class SleeperBatch implements Batch {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperBatch.class);
@@ -74,7 +74,7 @@ public class SleeperBatch implements Batch {
                 .build();
         List<LeafPartitionQuery> leafPartitionQueries = queryPlanner.splitIntoLeafPartitionQueries(query);
         // TODO Logging at error to make visible for debugging
-        LOGGER.error("Split query into {} leaf partition queries", leafPartitionQueries.size());
+        LOGGER.info("Split query into {} leaf partition queries", leafPartitionQueries.size());
 
         return leafPartitionQueries.stream()
                 .map(q -> queryToSleeperInputPartition(q))

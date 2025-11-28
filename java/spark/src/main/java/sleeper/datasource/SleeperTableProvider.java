@@ -32,7 +32,7 @@ import sleeper.query.core.rowretrieval.QueryPlanner;
 import java.util.Map;
 
 /**
- * Doesn't need to be serialisable.
+ * A {@link TableProvider} that allows a Sleeper table to be treated as a Spark table.
  */
 public class SleeperTableProvider implements TableProvider, DataSourceRegister {
     private String instanceId;

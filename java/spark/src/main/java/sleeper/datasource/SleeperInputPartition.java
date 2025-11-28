@@ -28,12 +28,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Should contain all the information needed to run the query over this partition,
- * i.e. files and partition region.
- *
- * Needs to be serialisable.
+ * This contains all the information needed to run a Sleeper queru for a particular Spark
+ * partition. It needs to be Serializable and so the schema and regions are stored as
+ * {@link String}s.
  */
 public class SleeperInputPartition implements InputPartition {
+    private static final long serialVersionUID = 9223372036854775807L;
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInputPartition.class);
 
     // All fields must be serialisable, so store the schema, partition region and query region as Strings.
@@ -48,6 +48,7 @@ public class SleeperInputPartition implements InputPartition {
 
     public SleeperInputPartition(String tableId, String schemaAsJson, String queryId, String subQueryId, String leafPartitionId,
             String partitionRegionAsJson, List<String> regionsAsJson, List<String> files) {
+
         LOGGER.info("Initialised SleeperInputPartition for table {} with schema {}, queryId {}, subQueryId {}, leafPartitionId {}, partitionRegionAsJson {}, files {}",
                 tableId, schemaAsJson, queryId, subQueryId, leafPartitionId, partitionRegionAsJson, files);
         this.tableId = tableId;

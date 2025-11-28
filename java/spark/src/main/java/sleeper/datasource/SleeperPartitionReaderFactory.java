@@ -25,11 +25,17 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
 /**
- * Needs to be serializable.
+ * An implementation of {@link PartitionReaderFactory} that allows readers to create readers for the Sleeper
+ * partitions.
+ *
+ * This class will be shipped to the Spark executors for execution, and hence needs to be Serializable. For this
+ * reason, the * instance and table properties are stored internally as {@link String}s.
  */
 public class SleeperPartitionReaderFactory implements PartitionReaderFactory {
-    private String instancePropertiesAsString;
-    private String tablePropertiesAsString;
+    private static final long serialVersionUID = 9223372036854775807L;
+
+    private final String instancePropertiesAsString;
+    private final String tablePropertiesAsString;
 
     public SleeperPartitionReaderFactory(String instancePropertiesAString, String tablePropertiesAsString) {
         this.instancePropertiesAsString = instancePropertiesAString;
