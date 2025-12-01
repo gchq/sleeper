@@ -181,6 +181,9 @@ public class LoadLocalProperties {
      */
     public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
         Path folder = propertiesFile.getParent();
+        if (folder == null) {
+            throw new IllegalArgumentException("Properties file parameter has no parent directory, please pass in a file instead of a directory.");
+        }
         Path schemaPath = folder.resolve("schema.json");
         Path splitPointsPath = folder.resolve("splits.txt");
         try {
