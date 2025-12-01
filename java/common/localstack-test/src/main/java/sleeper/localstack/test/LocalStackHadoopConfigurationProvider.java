@@ -16,7 +16,7 @@
 package sleeper.localstack.test;
 
 import org.apache.hadoop.conf.Configuration;
-import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.localstack.LocalStackContainer;
 
 public class LocalStackHadoopConfigurationProvider {
 
@@ -40,7 +40,7 @@ public class LocalStackHadoopConfigurationProvider {
 
     public static void configureHadoop(Configuration configuration, LocalStackContainer container) {
         configuration.setClassLoader(LocalStackHadoopConfigurationProvider.class.getClassLoader());
-        configuration.set("fs.s3a.endpoint", container.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+        configuration.set("fs.s3a.endpoint", container.getEndpoint().toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", container.getAccessKey());
         configuration.set("fs.s3a.secret.key", container.getSecretKey());
