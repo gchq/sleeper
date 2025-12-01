@@ -16,9 +16,12 @@
 package sleeper.cdk.custom;
 
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
+import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -27,16 +30,32 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
+import sleeper.core.util.ObjectFactory;
+import sleeper.ingest.core.IngestResult;
+import sleeper.ingest.runner.IngestFactory;
+import sleeper.ingest.runner.IngestRows;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +67,8 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class TableDefinerLambdaIT extends LocalStackTestBase {
 
@@ -127,6 +148,97 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     }
 
     @Test
+    void shouldDeleteOneTableWhenAnotherTableIsPresent() throws Exception {
+        // Given
+        String tableName = tableProperties.get(TABLE_NAME);
+        TableProperties table1 = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+        StateStore stateStore1 = createStateStore(table1);
+        update(stateStore1).initialise(schema);
+        AllReferencesToAFile file1 = ingestRows(table1, List.of(
+                new Row(Map.of("key1", 25L))));
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
+                .containsExactly(
+                        FilenameUtils.getName(file1.getFilename()),
+                        FilenameUtils.getName(file1.getFilename()).replace("parquet", "sketches"));
+        TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
+        StateStore stateStore2 = createStateStore(table2);
+        update(stateStore2).initialise(schema);
+        AllReferencesToAFile file2 = ingestRows(table2, List.of(new Row(Map.of("key1", 25L))));
+
+        // When
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Delete")
+                .withResourceProperties(resourceProperties)
+                .build();
+        tableDefinerLambda.handleEvent(event, null);
+
+        // Then
+        assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(streamTableFileTransactions(table1)).isEmpty();
+        assertThat(streamTablePartitionTransactions(table1)).isEmpty();
+        assertThat(propertiesStore.loadByName("table-2"))
+                .isEqualTo(table2);
+        assertThat(streamTableFileTransactions(table2)).isNotEmpty();
+        assertThat(streamTablePartitionTransactions(table2)).isNotEmpty();
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
+                .containsExactly(
+                        FilenameUtils.getName(file2.getFilename()),
+                        FilenameUtils.getName(file2.getFilename()).replace("parquet", "sketches"));
+    }
+
+    @Test
+    void shouldDeleteTableWhenSnapshotIsPresent() throws Exception {
+        // Given
+        String tableName = tableProperties.get(TABLE_NAME);
+        TableProperties table = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+        StateStore stateStore = createStateStore(table);
+        update(stateStore).initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50L)
+                .buildList());
+        AllReferencesToAFile file = ingestRows(table, List.of(
+                new Row(Map.of("key1", 25L)),
+                new Row(Map.of("key1", 100L))));
+
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
+                .createSnapshot();
+
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
+                .containsExactly(
+                        // Data files
+                        FilenameUtils.getName(file.getFilename()),
+                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"),
+                        // Snapshot files
+                        "1-files.arrow",
+                        "1-partitions.arrow");
+
+        // When
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Delete")
+                .withResourceProperties(resourceProperties)
+                .build();
+        tableDefinerLambda.handleEvent(event, null);
+
+        // Then
+        assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
+                .isInstanceOf(TableNotFoundException.class);
+        assertThat(listDataBucketObjectKeys()).isEmpty();
+        // And
+        var snapshotMetadataStore = snapshotMetadataStore(table);
+        assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
+        assertThat(snapshotMetadataStore.getFilesSnapshots()).isEmpty();
+        assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();
+    }
+
+    @Test
     public void shouldFailToDeleteTableThatDoesNotExist() {
         // When / Then
         HashMap<String, Object> resourceProperties = new HashMap<>();
@@ -145,5 +257,63 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
     private StateStore stateStore(TableProperties tableProperties) {
         return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
+    }
+
+    private TableProperties createTable(TableStatus tableStatus) {
+        TableProperties table = createTestTableProperties(instanceProperties, schema);
+        table.set(TABLE_ID, tableStatus.getTableUniqueId());
+        table.set(TABLE_NAME, tableStatus.getTableName());
+        propertiesStore.save(table);
+        return table;
+    }
+
+    private StateStore createStateStore(TableProperties tableProperties) {
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
+    }
+
+    private AllReferencesToAFile ingestRows(TableProperties tableProperties, List<Row> rows) throws Exception {
+        IngestFactory factory = IngestFactory.builder()
+                .objectFactory(ObjectFactory.noUserJars())
+                .localDir(inputFolderName)
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
+                .s3AsyncClient(s3AsyncClient)
+                .instanceProperties(instanceProperties)
+                .hadoopConfiguration(hadoopConf)
+                .build();
+
+        IngestRows ingestRows = factory.createIngestRows(tableProperties);
+        ingestRows.init();
+        for (Row row : rows) {
+            ingestRows.write(row);
+        }
+        IngestResult result = ingestRows.close();
+        List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(result.getFileReferenceList());
+        if (files.size() != 1) {
+            throw new IllegalStateException("Expected one file ingested, found " + files.size());
+        }
+        return files.get(0);
+    }
+
+    private List<String> listDataBucketObjectKeys() {
+        return s3Client.listObjects(ListObjectsRequest.builder()
+                .bucket(instanceProperties.get(DATA_BUCKET))
+                .build())
+                .contents().stream()
+                .map(S3Object::key)
+                .toList();
+    }
+
+    private Stream<TransactionLogEntry> streamTableFileTransactions(TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client)
+                .readTransactions(TransactionLogRange.fromMinimum(1));
+    }
+
+    private Stream<TransactionLogEntry> streamTablePartitionTransactions(TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client)
+                .readTransactions(TransactionLogRange.fromMinimum(1));
+    }
+
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotMetadataStore(TableProperties tableProperties) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient);
     }
 }
