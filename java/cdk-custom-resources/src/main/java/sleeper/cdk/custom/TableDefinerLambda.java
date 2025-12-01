@@ -44,7 +44,6 @@ import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWi
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * Lambda Function which defines Sleeper tables.
@@ -54,6 +53,7 @@ public class TableDefinerLambda {
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final String bucketName;
+    private String tableName;
     private InstanceProperties instanceProperties;
     private TableProperties tableProperties;
     private TablePropertiesStore tablePropertiesStore;
@@ -95,13 +95,12 @@ public class TableDefinerLambda {
         Properties properties = new Properties();
         properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
         tableProperties = new TableProperties(instanceProperties, properties);
-
-        LOGGER.info("Validating table properties for table {}", tableProperties.get(TABLE_NAME));
-        tableProperties.validate();
+        tableName = tableProperties.get(TableProperty.TABLE_NAME);
     }
 
     private void addTable(Map<String, Object> resourceProperties) throws IOException {
-        String tableName = tableProperties.get(TableProperty.TABLE_NAME);
+        LOGGER.info("Validating table properties for table {}", tableName);
+        tableProperties.validate();
 
         LOGGER.info("Creating table {}", tableName);
         tablePropertiesStore.createTable(tableProperties);
@@ -118,9 +117,10 @@ public class TableDefinerLambda {
     }
 
     private void deleteTable() {
+        tableProperties = tablePropertiesStore.loadByName(tableName);
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
-        tablePropertiesStore.deleteByName(tableProperties.get(TABLE_NAME));
+        tablePropertiesStore.deleteByName(tableName);
     }
 }

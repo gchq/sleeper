@@ -18,6 +18,7 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -28,15 +29,20 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 
+import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -50,13 +56,19 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private String inputFolderName;
+
+    @TempDir
+    private Path tempDir;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        inputFolderName = createTempDirectory(tempDir, null).toString();
     }
 
     @Test
@@ -112,6 +124,23 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                         .splitToNewChildren("l", "ll", "lr", Long.valueOf(0))
                         .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
                         .buildList());
+    }
+
+    @Test
+    public void shouldFailToDeleteTableThatDoesNotExist() {
+        // When / Then
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Delete")
+                .withResourceProperties(resourceProperties)
+                .build();
+
+        // When
+        assertThatThrownBy(() -> tableDefinerLambda.handleEvent(event, null))
+                .isInstanceOf(TableNotFoundException.class);
+
     }
 
     private StateStore stateStore(TableProperties tableProperties) {
