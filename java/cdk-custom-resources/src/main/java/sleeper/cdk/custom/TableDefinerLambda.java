@@ -43,7 +43,9 @@ import java.util.Properties;
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 /**
  * Lambda Function which defines Sleeper tables.
@@ -118,9 +120,14 @@ public class TableDefinerLambda {
 
     private void deleteTable() {
         tableProperties = tablePropertiesStore.loadByName(tableName);
-        stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
-        deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
-        new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
-        tablePropertiesStore.deleteByName(tableName);
+        if (!instanceProperties.getBoolean(DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG)) {
+            tableProperties.set(TABLE_ONLINE, "false");
+            tablePropertiesStore.save(tableProperties);
+        } else {
+            stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
+            deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
+            new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
+            tablePropertiesStore.deleteByName(tableName);
+        }
     }
 }

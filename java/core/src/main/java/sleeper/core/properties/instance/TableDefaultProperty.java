@@ -376,6 +376,13 @@ public interface TableDefaultProperty {
             .defaultValue(DataEngine.DATAFUSION.toString())
             .validationPredicate(DataEngine::isValid)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG = Index.propertyBuilder("sleeper.default.table.delete.data.on.config.removal")
+            .description("Select whether to delete all data in a sleeper table when table removed from properties." +
+                    "If false (default) it will simply take the table offline instead." +
+                    "Valid values are: true/false")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

@@ -62,6 +62,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -150,6 +151,9 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     @Test
     void shouldDeleteOneTableWhenAnotherTableIsPresent() throws Exception {
         // Given
+        instanceProperties.set(DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG, "true");
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
         String tableName = tableProperties.get(TABLE_NAME);
         TableProperties table1 = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
         StateStore stateStore1 = createStateStore(table1);
@@ -194,6 +198,9 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     @Test
     void shouldDeleteTableWhenSnapshotIsPresent() throws Exception {
         // Given
+        instanceProperties.set(DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG, "true");
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
         String tableName = tableProperties.get(TABLE_NAME);
         TableProperties table = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
         StateStore stateStore = createStateStore(table);
