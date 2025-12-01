@@ -223,7 +223,7 @@
         <!-- Testing -->
         <junit.version>6.0.1</junit.version>
         <mockito.version>5.20.0</mockito.version>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>2.0.2</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
         <assertj.version>3.27.6</assertj.version>
@@ -1470,7 +1470,7 @@
             <!-- Test Dependencies -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
-                <artifactId>localstack</artifactId>
+                <artifactId>testcontainers-localstack</artifactId>
                 <version>${testcontainers.version}</version>
             </dependency>
             <dependency>
