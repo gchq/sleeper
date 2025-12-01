@@ -8,7 +8,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.34.0
 
-### 1st December, 2025
+### 2nd December, 2025
 
 This contains a process to publish artefacts for deployment of a version of Sleeper, improvements for deploying Sleeper
 directly with the CDK, and queries with DataFusion.
