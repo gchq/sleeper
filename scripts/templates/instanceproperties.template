@@ -1673,3 +1673,7 @@ sleeper.default.statestore.committer.update.every.batch=true
 # Select which data engine to use for the table. Valid values are: [java, datafusion,
 # datafusion_experimental]
 sleeper.default.table.data.engine=DATAFUSION
+
+# Select whether to delete all data in a sleeper table when table removed from properties.If false
+# (default) it will simply take the table offline instead.Valid values are: true/false
+sleeper.default.table.delete.data.on.config.removal=false
