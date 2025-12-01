@@ -60,7 +60,6 @@ Bugfixes:
 - DataFusion compactions no longer change the type of fields from int to long when applying aggregation
 - Stopped scaling compaction cluster to zero during redeployment, removed instance property `sleeper.compaction.ec2.pool.desired`
 - Disabled provenance on Docker images for AWS Lambda
-- Query lambda no longer silently falls back to Java if DataFusion compaction code could not be loaded
 - Each call to run a web socket query in the Python `SleeperClient` now produces a single query for Sleeper
 - Resolved problems running integration tests w/Testcontainers on latest Docker version
 
