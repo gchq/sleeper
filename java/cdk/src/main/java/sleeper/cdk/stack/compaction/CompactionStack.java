@@ -16,7 +16,6 @@
 package sleeper.cdk.stack.compaction;
 
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
@@ -59,7 +58,7 @@ public class CompactionStack extends NestedStack {
 
         // Jars bucket
         SleeperJarsInBucket jars = props.getJars();
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         jobResources = new CompactionJobResources(this, props, lambdaCode, jarsBucket, coreStacks);

@@ -63,7 +63,7 @@ public class KeepLambdaWarmStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-keep-warm");
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         // Keep lambda warm function
