@@ -11,10 +11,56 @@ available [here](docs/development/roadmap.md).
 This contains a process to publish artefacts for deployment of a version of Sleeper, improvements for deploying Sleeper
 directly with the CDK, and queries with DataFusion.
 
-Build:
+Query:
+- Queries can be run much faster with DataFusion
+  - This is experimental initially, and is only used for tables set to the experimental data engine
 
-- Added scripts to publish Docker images and Maven artifacts to remote repositories
+Compaction:
+- Added an option to disable readahead for DataFusion compactions, `sleeper.table.datafusion.s3.readahead.enabled`
+  - This reduces the number of GETs to S3, reducing cost
+  - There's a known issue with this causing occasional failures in large compactions (see https://github.com/gchq/sleeper/issues/5777)
+
+Clients:
+- Added support for web socket queries in Java `SleeperClient`
+
+Deployment:
 - Added scripts to retrieve and use published artefacts for deployment
+- Added a script for declarative deployment
+- Enabled deletion of a Sleeper instance directly with the CDK, instead of the tear down script
+  - ECS tasks are now stopped automatically
+  - EMR instances are now stopped automatically
+  - Deployment artefacts held in AWS are managed by the CDK
+- Enabled inclusion of Sleeper instances in another CDK app
+- Added an option to delete log groups when a Sleeper instance is deleted
+- Stopped deploying Athena integration by default, as it is experimental
+
+Logging:
+- Added ability to configure logging for Rust code
+- Clarified logs in task scaling lambdas
+- Reduced noisy logging in compaction creation
+- Added further logging in bulk export processor lambda
+
+Upgrades:
+- Upgraded to AWS EMR 7.12.0
+- Upgraded to Apache Spark 3.5.6
+- Upgraded to Apache DataFusion 51.0.0
+
+Build:
+- Added scripts to publish Docker images and Maven artifacts to remote repositories
+
+System tests:
+- Nightly system tests now run in parallel, in a number of smaller test suites
+
+Bugfixes:
+- Ingest batcher can now accept files held in the table data bucket
+- Docker-based CLI no longer leaves behind old Docker images during upgrade
+- Avoided hitting API Gateway size limits during web socket queries
+- DataFusion compactions no longer change the type of fields from int to long when applying aggregation
+- Stopped scaling compaction cluster to zero during redeployment, removed instance property `sleeper.compaction.ec2.pool.desired`
+- Disabled provenance on Docker images for AWS Lambda
+- Query lambda no longer silently falls back to Java if DataFusion compaction code could not be loaded
+- Each call to run a web socket query in the Python `SleeperClient` now produces a single query for Sleeper
+- Resolved problems running integration tests w/Testcontainers on latest Docker version
 
 
 ## Version 0.33.0

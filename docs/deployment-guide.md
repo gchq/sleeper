@@ -98,6 +98,8 @@ declaratively:
 ./scripts/deploy/deploy.sh <instance-id> <vpc-id> <subnet-ids> ./my-instance/instance.properties
 ```
 
+This does not currently include Sleeper tables, see issue https://github.com/gchq/sleeper/issues/5870.
+
 #### Update existing instance
 
 The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars
