@@ -8,6 +8,8 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.34.0
 
+### 1st December, 2025
+
 This contains a process to publish artefacts for deployment of a version of Sleeper, improvements for deploying Sleeper
 directly with the CDK, and queries with DataFusion.
 
@@ -65,6 +67,8 @@ Bugfixes:
 
 ## Version 0.33.0
 
+### 26th September, 2025
+
 This contains configuration to apply aggregation and filtering in Java or DataFusion.
 
 Compaction:
@@ -99,6 +103,8 @@ Bugfixes:
 
 
 ## Version 0.32.0
+
+### 29th July, 2025
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.32.0*
@@ -146,6 +152,8 @@ Bugfixes:
 
 ## Version 0.31.1
 
+### 1st July, 2025
+
 This is a bug fix release for the Python API.
 
 Compaction:
@@ -174,6 +182,8 @@ Bugfixes:
 
 
 ## Version 0.31.0
+
+### 24th June, 2025
 
 This includes the first version of bulk export, upgrading from AWS SDK v1 to AWS SDK v2, and upgrading EMR, Spark and
 Hadoop.
@@ -243,6 +253,8 @@ Bugfixes:
 
 ## Version 0.30.1
 
+### 28th April, 2025
+
 *Note: this may be a breaking change if you have deployed with your own custom-named ECR repositories, see below under Deployment.*
 
 This includes fixes for the new Java client API to directly interact with a Sleeper instance.
@@ -264,6 +276,8 @@ Bugfixes:
 
 
 ## Version 0.30.0
+
+### 14th April, 2025
 
 This includes improvements to garbage collection to keep up with larger numbers of compaction jobs.
 
@@ -304,6 +318,8 @@ Bugfixes:
 
 ## Version 0.29.0
 
+### 12th March, 2025
+
 State store:
 - Removed DynamoDB & S3 state store implementations
 - Introduced a transaction log follower lambda following a DynamoDB stream
@@ -330,6 +346,8 @@ Bugfixes:
 - Prevented state store transactions being uploaded to S3 multiple times
 
 ## Version 0.28.0
+
+### 31st January, 2025
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.28.0*
@@ -386,6 +404,8 @@ Bugfixes:
 
 ## Version 0.27.0
 
+### 13th December, 2024
+
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.27.0*
 
@@ -433,6 +453,8 @@ Bugfixes:
 
 
 ## Version 0.26.0
+
+### 12th November, 2024
 
 This includes upgrades to Java, EMR, Spark and the AWS SDK, and improvements to the deployment process.
 
@@ -504,6 +526,8 @@ Bugfixes:
 
 ## Version 0.25.0
 
+### 19th September, 2024
+
 This includes improvements to the transaction log state store implementation, and stabilisation of accelerated
 compactions with Apache DataFusion.
 
@@ -570,6 +594,8 @@ Bugfixes:
 
 ## Version 0.24.0
 
+### 17th July, 2024
+
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.24.0*
 
@@ -625,6 +651,8 @@ Bugfixes:
 
 ## Version 0.23.0
 
+### 23rd May, 2024
+
 This contains the following improvements:
 
 Tables:
@@ -671,11 +699,15 @@ Bugfixes:
 
 ## Version 0.22.1
 
+### 25th March, 2024
+
 This is a bug-fix release. It contains a fix of the following bug:
 
 - Fixed bug in compaction task starter logic that was introduced in 0.22.0.
 
 ## Version 0.22.0
+
+### 22nd March, 2024
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.22.0*
@@ -715,6 +747,8 @@ System tests:
 - Added tests for running compactions in parallel, in preparation for the next milestone.
 
 ## Version 0.21.0
+
+### 8th February, 2024
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.21.0*
@@ -785,6 +819,8 @@ Bugfixes:
 
 ## Version 0.20.0
 
+### 20th November, 2023
+
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
 to version 0.20.0*
 
@@ -850,6 +886,8 @@ Bugfixes:
 
 ## Version 0.19.0
 
+### 20th September, 2023
+
 This contains the following improvements:
 
 Bulk Import:
@@ -902,6 +940,8 @@ Bugfixes:
 - Prune Docker system in nightly tests to avoid disk filling up with images
 
 ## Version 0.18.0
+
+### 10th August, 2023
 
 This contains the following improvements:
 
@@ -967,6 +1007,8 @@ Bugfixes:
 
 ## Version 0.17.0
 
+### 9th June, 2023
+
 This contains the following improvements:
 
 Ingest batcher:
@@ -1004,6 +1046,8 @@ Bugfixes:
 - Fixed an issue where tearing down an instance would fail if the config bucket was empty.
 
 ## Version 0.16.0
+
+### 2nd May, 2023
 
 This contains the following improvements:
 
@@ -1055,6 +1099,8 @@ Bugfixes:
   tasks was 1.
 
 ## Version 0.15.0
+
+### 30th March, 2023
 
 This contains the following improvements:
 
@@ -1129,6 +1175,8 @@ Bugfixes:
 
 ## Version 0.14.0
 
+### 30th January, 2023
+
 This contains the following improvements:
 
 General code improvements:
@@ -1165,6 +1213,8 @@ Docker CLI:
 - Uploaded an image for deploying a fixed, built version of Sleeper to be used in the future
 
 ## Version 0.13.0
+
+### 6th January, 2023
 
 This contains the following improvements:
 
@@ -1211,6 +1261,8 @@ Build:
   locally.
 
 ## Version 0.12.0
+
+### 20th October, 2022
 
 This contains the following improvements:
 
@@ -1299,5 +1351,7 @@ Documentation:
 - Clarified documentation on `cdk bootstrap` process.
 
 ## Version 0.11.0
+
+### 20th June, 2022
 
 First public release.
