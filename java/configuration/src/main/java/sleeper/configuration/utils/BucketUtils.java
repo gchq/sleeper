@@ -37,11 +37,11 @@ public class BucketUtils {
     }
 
     /**
-     * Checks if an s3 bucket exists.
+     * Checks if an S3 bucket exists.
      *
-     * @param  s3         the S3client to interact with AWS.
-     * @param  bucketName the string name of the bucket to check.
-     * @return            true if bucket exists, false otherwise.
+     * @param  s3         the client to interact with AWS
+     * @param  bucketName the string name of the bucket to check
+     * @return            true if bucket exists, false otherwise
      */
     public static boolean doesBucketExist(S3Client s3, String bucketName) {
         try {
@@ -57,9 +57,9 @@ public class BucketUtils {
     /**
      * Deletes all objects in an S3 bucket with matching prefix.
      *
-     * @param s3Client   the S3client to interact with AWS.
-     * @param bucketName the string name of the bucket to check.
-     * @param prefix     the string prefix of objects to delete.
+     * @param s3Client   the client to interact with AWS
+     * @param bucketName the string name of the bucket to check
+     * @param prefix     the string prefix of objects to delete
      */
     public static void deleteAllObjectsInBucketWithPrefix(S3Client s3Client, String bucketName, String prefix) {
         deleteObjectsInBucketWithPrefix(s3Client, bucketName, prefix, key -> true);
@@ -68,10 +68,10 @@ public class BucketUtils {
     /**
      * Deletes all objects in an S3 bucket with matching prefix and key predicate.
      *
-     * @param s3Client     the S3client to interact with AWS.
-     * @param bucketName   the string name of the bucket to check.
-     * @param prefix       the string prefix of objects to delete.
-     * @param keyPredicate the key predicate of objects to delete.
+     * @param s3Client     the client to interact with AWS
+     * @param bucketName   the string name of the bucket to check
+     * @param prefix       the string prefix of objects to delete
+     * @param keyPredicate the key predicate of objects to delete
      */
     public static void deleteObjectsInBucketWithPrefix(S3Client s3Client, String bucketName, String prefix, Predicate<String> keyPredicate) {
         LOGGER.info("Deleting all objects in the bucket {} with prefix {}", bucketName, prefix);
