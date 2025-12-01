@@ -34,8 +34,8 @@ import sleeper.statestore.StateStoreFactory;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static sleeper.clients.util.BucketUtils.deleteObjectsInBucketWithPrefix;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.BucketUtils.deleteObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
