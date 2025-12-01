@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.util;
+package sleeper.configuration.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +27,22 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import java.util.List;
 import java.util.function.Predicate;
 
+/**
+ * Util for interacting with S3 buckets.
+ */
 public class BucketUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(BucketUtils.class);
 
     private BucketUtils() {
     }
 
+    /**
+     * Checks if an s3 bucket exists.
+     *
+     * @param  s3         the S3client to interact with AWS.
+     * @param  bucketName the string name of the bucket to check.
+     * @return            the boolean for if the bucket exists.
+     */
     public static boolean doesBucketExist(S3Client s3, String bucketName) {
         try {
             s3.headBucket(builder -> builder
@@ -44,10 +54,25 @@ public class BucketUtils {
         }
     }
 
+    /**
+     * Deletes all objects in an S3 bucket with matching prefix.
+     *
+     * @param s3Client   the S3client to interact with AWS.
+     * @param bucketName the string name of the bucket to check.
+     * @param prefix     the string prefix of objects to delete.
+     */
     public static void deleteAllObjectsInBucketWithPrefix(S3Client s3Client, String bucketName, String prefix) {
         deleteObjectsInBucketWithPrefix(s3Client, bucketName, prefix, key -> true);
     }
 
+    /**
+     * Deletes all objects in an S3 bucket with matching prefix and key predicate.
+     *
+     * @param s3Client     the S3client to interact with AWS.
+     * @param bucketName   the string name of the bucket to check.
+     * @param prefix       the string prefix of objects to delete.
+     * @param keyPredicate the key predicate of objects to delete.
+     */
     public static void deleteObjectsInBucketWithPrefix(S3Client s3Client, String bucketName, String prefix, Predicate<String> keyPredicate) {
         LOGGER.info("Deleting all objects in the bucket {} with prefix {}", bucketName, prefix);
         int totalObjectsDeleted = 0;
