@@ -291,7 +291,7 @@ Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.*, org.bouncycastle:bcutil-jdk1
 
 - Bouncy Castle License
 
-Testcontainers (org.testcontainers:*:1.*)
+Testcontainers (org.testcontainers:*:2.*)
 
 - MIT License
 
