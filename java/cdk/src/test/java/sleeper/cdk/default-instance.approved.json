@@ -22076,7 +22076,7 @@
                   {
                     "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryResultsQueue40C89520Arn"
                   },
-                  "\nsleeper.data.bucket\u003d",
+                  "\nsleeper.default.table.delete.data.on.config.removal\u003dfalse\nsleeper.data.bucket\u003d",
                   {
                     "Ref": "referencetoTestInstanceTableDataNestedStackTableDataNestedStackResourceA3ECDA9FOutputsTestInstanceTableDataTableDataBucket68FE959DRef"
                   },
