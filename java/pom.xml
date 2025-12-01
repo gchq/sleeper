@@ -215,7 +215,7 @@
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.2</jgrapht.version>
-        <apfloat.version>1.14.0</apfloat.version>
+        <apfloat.version>1.15.0</apfloat.version>
         <joda-time.version>2.14.0</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
         <jnr.ffi.version>2.2.18</jnr.ffi.version>
@@ -223,7 +223,7 @@
         <!-- Testing -->
         <junit.version>6.0.1</junit.version>
         <mockito.version>5.20.0</mockito.version>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>2.0.2</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
         <assertj.version>3.27.6</assertj.version>
@@ -232,7 +232,7 @@
         <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
         <jsonunit.version>5.1.0</jsonunit.version>
-        <checkstyle.version>12.1.2</checkstyle.version>
+        <checkstyle.version>12.2.0</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
         <sleeper.system.test.subnet.ids />
@@ -252,7 +252,7 @@
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.1</shade.plugin.version>
-        <assembly.plugin.version>3.7.1</assembly.plugin.version>
+        <assembly.plugin.version>3.8.0</assembly.plugin.version>
         <jar.plugin.version>3.5.0</jar.plugin.version>
         <compiler.plugin.version>3.14.1</compiler.plugin.version>
         <enforcer.plugin.version>3.6.2</enforcer.plugin.version>
@@ -265,7 +265,7 @@
         <dependency-check.plugin.version>12.1.9</dependency-check.plugin.version>
         <site.plugin.version>3.21.0</site.plugin.version>
         <exec.plugin.version>3.6.2</exec.plugin.version>
-        <resources.plugin.version>3.3.1</resources.plugin.version>
+        <resources.plugin.version>3.4.0</resources.plugin.version>
         <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
@@ -1470,7 +1470,7 @@
             <!-- Test Dependencies -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
-                <artifactId>localstack</artifactId>
+                <artifactId>testcontainers-localstack</artifactId>
                 <version>${testcontainers.version}</version>
             </dependency>
             <dependency>

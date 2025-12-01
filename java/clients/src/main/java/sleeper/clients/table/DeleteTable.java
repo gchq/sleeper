@@ -31,9 +31,9 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
-import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
