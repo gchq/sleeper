@@ -18,7 +18,6 @@ package sleeper.core.deploy;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
-import sleeper.core.properties.SleeperPropertiesValidationReporter;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.ArrayList;
@@ -36,10 +35,10 @@ public record SleeperTableConfiguration(TableProperties properties, List<Partiti
      * Validates the configuration.
      *
      * @throws SleeperPropertiesInvalidException if any property is invalid
-     * @throws IllegalArgumentException          on any other validation failure
+     * @throws InitialPartitionsInvalidException if the initial partition tree is invalid
      */
     public void validate() {
-        SleeperPropertiesValidationReporter validationReporter = new SleeperPropertiesValidationReporter();
+        SleeperTableValidationReporter validationReporter = new SleeperTableValidationReporter();
         validate(validationReporter);
         validationReporter.throwIfFailed();
     }
@@ -47,11 +46,18 @@ public record SleeperTableConfiguration(TableProperties properties, List<Partiti
     /**
      * Validates the configuration.
      *
-     * @param  validationReporter       the reporter for any table property validation failure
-     * @throws IllegalArgumentException on any other validation failure
+     * @param validationReporter the reporter for any validation failure
      */
-    public void validate(SleeperPropertiesValidationReporter validationReporter) {
-        properties.validate(validationReporter);
+    public void validate(SleeperTableValidationReporter validationReporter) {
+        properties.validate(validationReporter.getPropertiesReporter());
+        try {
+            validateInitialPartitions();
+        } catch (RuntimeException e) {
+            validationReporter.initialPartitionsInvalid(e);
+        }
+    }
+
+    private void validateInitialPartitions() {
         PartitionTree tree = new PartitionTree(initialPartitions);
         List<String> unlinkedPartitionIds = initialPartitions.stream()
                 .filter(partition -> !isPartitionLinkedToRoot(tree, partition))

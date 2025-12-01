@@ -69,7 +69,7 @@ public class SleeperTableConfigurationTest {
 
         // Then
         assertThatThrownBy(configuration::validate)
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InitialPartitionsInvalidException.class)
                 .hasMessage("There should be exactly one root partition, found 0");
     }
 
@@ -85,7 +85,7 @@ public class SleeperTableConfigurationTest {
 
         // Then
         assertThatThrownBy(configuration::validate)
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InitialPartitionsInvalidException.class)
                 .hasMessage("There should be exactly one root partition, found 2");
     }
 
@@ -104,7 +104,7 @@ public class SleeperTableConfigurationTest {
 
         // Then
         assertThatThrownBy(configuration::validate)
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InitialPartitionsInvalidException.class)
                 .hasMessage("Found partitions unlinked to the rest of the tree: [L, R]");
     }
 
@@ -128,7 +128,7 @@ public class SleeperTableConfigurationTest {
 
         // Then
         assertThatThrownBy(configuration::validate)
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InitialPartitionsInvalidException.class)
                 .hasMessage("Found partitions unlinked to the rest of the tree: [L, RR]");
     }
 
@@ -150,7 +150,7 @@ public class SleeperTableConfigurationTest {
 
         // Then
         assertThatThrownBy(configuration::validate)
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(InitialPartitionsInvalidException.class)
                 .hasMessage("Found missing child partitions: [L, RR]");
     }
 
