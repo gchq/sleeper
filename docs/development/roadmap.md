@@ -7,6 +7,7 @@ The following improvements are actively being worked on:
 
 - https://github.com/gchq/sleeper/issues/5078 Improvements to bulk import.
 - https://github.com/gchq/sleeper/issues/5781 Easier CDK-focused deployment.
+- https://github.com/gchq/sleeper/issues/6132 Create a Spark DataFrame from a Sleeper table.
 
 The following are likely to be worked on in the near future:
 
