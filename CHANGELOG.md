@@ -18,9 +18,10 @@ Query:
   - This is experimental initially, and is only used for tables set to the experimental data engine
 
 Compaction:
-- Added an option to disable readahead for DataFusion compactions, `sleeper.table.datafusion.s3.readahead.enabled`
-  - This reduces the number of GETs to S3, reducing cost
+- Added an option to disable readahead for DataFusion compactions
+  - This reduces the number of GETs to S3, reducing cost, and was previously always enabled
   - There's a known issue with this causing occasional failures in large compactions (see https://github.com/gchq/sleeper/issues/5777)
+  - Configured in table property `sleeper.table.datafusion.s3.readahead.enabled`, which defaults to true
 
 Clients:
 - Added support for web socket queries in Java `SleeperClient`
