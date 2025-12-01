@@ -14989,7 +14989,7 @@
                       {
                         "Ref": "AWS::URLSuffix"
                       },
-                      "/test-instance/compaction-job-execution:0.34.0-SNAPSHOT"
+                      "/test-instance/compaction-job-execution:1.2.3"
                     ]
                   ]
                 },
@@ -20249,7 +20249,7 @@
                       {
                         "Ref": "AWS::URLSuffix"
                       },
-                      "/test-instance/ingest:0.34.0-SNAPSHOT"
+                      "/test-instance/ingest:1.2.3"
                     ]
                   ]
                 },
@@ -22016,7 +22016,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93Ref"
                   },
-                  "\nsleeper.version\u003d0.34.0-SNAPSHOT\nsleeper.bulk.import.emr.serverless.role.arn\u003d",
+                  "\nsleeper.version\u003d1.2.3\nsleeper.bulk.import.emr.serverless.role.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessEmrServerlessRole192390D8Arn"
                   },

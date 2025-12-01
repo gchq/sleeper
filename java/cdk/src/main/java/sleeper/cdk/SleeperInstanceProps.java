@@ -54,6 +54,7 @@ public class SleeperInstanceProps {
     private final List<TableProperties> tableProperties;
     private final SleeperJarsInBucket jars;
     private final SleeperNetworkingProvider networkingProvider;
+    private final String version;
     private final boolean validateProperties;
     private final boolean deployPaused;
 
@@ -62,6 +63,7 @@ public class SleeperInstanceProps {
         tableProperties = builder.tableProperties;
         jars = builder.jars;
         networkingProvider = builder.networkingProvider;
+        version = builder.version;
         validateProperties = builder.validateProperties;
         deployPaused = builder.deployPaused;
     }
@@ -135,6 +137,8 @@ public class SleeperInstanceProps {
 
     public void prepareProperties(Stack stack, SleeperNetworking networking) {
 
+        CdkDefinedInstanceProperty.getAll().forEach(instanceProperties::unset);
+        instanceProperties.set(VERSION, version);
         instanceProperties.set(ACCOUNT, stack.getAccount());
         instanceProperties.set(REGION, stack.getRegion());
         instanceProperties.set(VPC_ID, networking.vpcId());
@@ -184,6 +188,7 @@ public class SleeperInstanceProps {
         private NewInstanceValidator newInstanceValidator;
         private List<TableProperties> tableProperties = List.of();
         private SleeperNetworkingProvider networkingProvider = scope -> SleeperNetworking.createByProperties(scope, instanceProperties);
+        private String version = SleeperVersion.getVersion();
         private boolean validateProperties = true;
         private boolean ensureInstanceDoesNotExist = false;
         private boolean skipCheckingVersionMatchesProperties = false;
@@ -264,6 +269,19 @@ public class SleeperInstanceProps {
         }
 
         /**
+         * Sets the version of Sleeper being deployed. Normally this should only be set in tests, in order to control
+         * the output deterministically as the version of Sleeper changes. In all other circumstances it should be left
+         * to default to the current version being used.
+         *
+         * @param  version the version number
+         * @return         this builder
+         */
+        public Builder version(String version) {
+            this.version = version;
+            return this;
+        }
+
+        /**
          * Sets whether to validate the instance and table properties before deployment.
          * <p>
          * Default: true
@@ -333,17 +351,13 @@ public class SleeperInstanceProps {
             }
 
             String deployedVersion = instanceProperties.get(VERSION);
-            String localVersion = SleeperVersion.getVersion();
             if (!skipCheckingVersionMatchesProperties
                     && deployedVersion != null
-                    && !localVersion.equals(deployedVersion)) {
+                    && !version.equals(deployedVersion)) {
                 throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
                         "Please upgrade/downgrade to make these match",
-                        localVersion, deployedVersion));
+                        version, deployedVersion));
             }
-
-            CdkDefinedInstanceProperty.getAll().forEach(instanceProperties::unset);
-            instanceProperties.set(VERSION, localVersion);
 
             return new SleeperInstanceProps(this);
         }
