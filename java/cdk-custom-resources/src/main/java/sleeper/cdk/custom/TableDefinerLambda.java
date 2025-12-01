@@ -40,7 +40,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 /**
@@ -116,7 +119,7 @@ public class TableDefinerLambda {
 
     private void deleteTable() {
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
-        //deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
+        deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
         tablePropertiesStore.deleteByName(tableProperties.get(TABLE_NAME));
     }
