@@ -6,6 +6,17 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.34.0
+
+This contains a process to publish artefacts for deployment of a version of Sleeper, improvements for deploying Sleeper
+directly with the CDK, and queries with DataFusion.
+
+Build:
+
+- Added scripts to publish Docker images and Maven artifacts to remote repositories
+- Added scripts to retrieve and use published artefacts for deployment
+
+
 ## Version 0.33.0
 
 This contains configuration to apply aggregation and filtering in Java or DataFusion.
