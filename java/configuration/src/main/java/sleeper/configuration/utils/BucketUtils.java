@@ -41,7 +41,7 @@ public class BucketUtils {
      *
      * @param  s3         the S3client to interact with AWS.
      * @param  bucketName the string name of the bucket to check.
-     * @return            the boolean for if the bucket exists.
+     * @return            true if bucket exists, false otherwise.
      */
     public static boolean doesBucketExist(S3Client s3, String bucketName) {
         try {
