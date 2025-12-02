@@ -43,7 +43,7 @@ import java.util.Properties;
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
@@ -120,7 +120,7 @@ public class TableDefinerLambda {
 
     private void deleteTable() {
         tableProperties = tablePropertiesStore.loadByName(tableName);
-        if (!instanceProperties.getBoolean(DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG)) {
+        if (instanceProperties.getBoolean(RETAIN_DATA_AFTER_TABLE_REMOVAL)) {
             tableProperties.set(TABLE_ONLINE, "false");
             tablePropertiesStore.save(tableProperties);
         } else {

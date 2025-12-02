@@ -96,6 +96,14 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
+    UserDefinedInstanceProperty RETAIN_DATA_AFTER_TABLE_REMOVAL = Index.propertyBuilder("sleeper.retain.data.after.destroy")
+            .description("Whether to take a sleeper table offlie when removed from the table properties or to " +
+                    "delete all data associated with table.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy. Not case sensitive.\n" +
                     "Valid values: " + SleeperPropertyValueUtils.describeEnumValues(OptionalStack.class))

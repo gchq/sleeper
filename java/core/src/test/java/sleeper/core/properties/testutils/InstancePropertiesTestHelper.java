@@ -54,7 +54,6 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA_ENGINE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 
 /**
@@ -107,7 +106,6 @@ public class InstancePropertiesTestHelper {
 
         instanceProperties.setEnum(DEFAULT_ASYNC_COMMIT_BEHAVIOUR, DefaultAsyncCommitBehaviour.DISABLED);
         instanceProperties.setEnum(DEFAULT_DATA_ENGINE, DataEngine.JAVA);
-        instanceProperties.set(DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG, "false");
 
         // Ingest
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, Integer.MAX_VALUE);
