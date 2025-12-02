@@ -288,6 +288,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "instance property.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
+    TableProperty RETAIN_DATA_AFTER_DELETE = Index.propertyBuilder("sleeper.table.retain.data.after.delete")
+            .validationPredicate(SleeperPropertyValueUtils::isNullOrTrueOrFalse)
+            .description("If true, removing the table from the properties file will take the table offline.\n" +
+                    "If false, it will delete all data associated with the table when the table is removed from the properties.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
             .defaultProperty(DEFAULT_COMPACTION_STRATEGY_CLASS)
             .description("The name of the class that defines how compaction jobs should be created.\n" +

@@ -44,6 +44,7 @@ import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWi
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
+import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
@@ -82,7 +83,9 @@ public class TableDefinerLambda {
                 updateTable(resourceProperties);
                 break;
             case "Delete":
-                deleteTable();
+                deleteTable(Boolean.getBoolean(tableProperties.getProperties().getOrDefault(RETAIN_DATA_AFTER_DELETE,
+                        instanceProperties.get(RETAIN_DATA_AFTER_TABLE_REMOVAL))
+                        .toString()));
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
@@ -118,7 +121,7 @@ public class TableDefinerLambda {
         //TODO
     }
 
-    private void deleteTable() {
+    private void deleteTable(boolean retainData) {
         tableProperties = tablePropertiesStore.loadByName(tableName);
         if (instanceProperties.getBoolean(RETAIN_DATA_AFTER_TABLE_REMOVAL)) {
             tableProperties.set(TABLE_ONLINE, "false");
