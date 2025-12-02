@@ -257,9 +257,4 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
                 .applyTransform(mergingIterator);
     }
 
-    public static record FieldAsString(String fieldName, String value) {
-    }
-
-    public static record FieldAtDimension(int dimension, Object value) {
-    }
 }
