@@ -32,14 +32,14 @@ public abstract class ByteArray implements Comparable<ByteArray> {
      *
      * @return array details in primitive type
      */
-    abstract byte[] getArray();
+    public abstract byte[] getArray();
 
     /**
      * Returns length of the array within the object.
      *
      * @return length of array
      */
-    abstract int getLength();
+    public abstract int getLength();
 
     /**
      * Simple method for wrapping primitive type within an object.
