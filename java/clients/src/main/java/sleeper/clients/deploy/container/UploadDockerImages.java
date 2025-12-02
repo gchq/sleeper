@@ -93,7 +93,7 @@ public class UploadDockerImages {
         Path dockerfileDirectory = baseDockerDirectory.resolve(image.getDirectoryName());
         image.getLambdaJar().ifPresent(jar -> {
             copyFile.copyWrappingExceptions(
-                    jarsDirectory.resolve(jar.getFilename()),
+                    jarsDirectory.resolve(jar.getFilename(version)),
                     dockerfileDirectory.resolve("lambda.jar"));
         });
 

@@ -17,6 +17,7 @@ package sleeper.clients.deploy.container;
 
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
+import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.util.cli.CommandArguments;
@@ -61,7 +62,7 @@ public class BuildDockerImage {
         if (args.isLambda()) {
             dockerfileDirectory = args.dockerDir().resolve("lambda");
             LambdaJar jar = configuration.getLambdaJarByImageName(args.imageName()).orElseThrow();
-            Path copyFrom = args.jarsDir().resolve(jar.getFilename());
+            Path copyFrom = args.jarsDir().resolve(jar.getFilename(SleeperVersion.getVersion()));
             Path copyTo = dockerfileDirectory.resolve("lambda.jar");
             Files.copy(copyFrom, copyTo, StandardCopyOption.REPLACE_EXISTING);
         } else {
