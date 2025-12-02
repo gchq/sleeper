@@ -15,7 +15,6 @@
  */
 package sleeper.core.util;
 
-import com.facebook.collections.ByteArray;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
