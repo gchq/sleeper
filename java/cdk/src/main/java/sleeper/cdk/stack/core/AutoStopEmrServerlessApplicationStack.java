@@ -23,7 +23,6 @@ import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
@@ -56,7 +55,7 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
     private void createLambda(InstanceProperties instanceProperties, SleeperJarsInBucket jars, LoggingStack loggingStack) {
 
         // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",

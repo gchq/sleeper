@@ -90,7 +90,7 @@ public class QueryStack extends NestedStack {
             QueryQueueStack queryQueueStack) {
         super(scope, id);
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String tableName = String.join("-", "sleeper",

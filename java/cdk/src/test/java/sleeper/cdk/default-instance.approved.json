@@ -3529,14 +3529,14 @@
                   "Action": "lambda:InvokeFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "LambdaCurrentVersionDF706F6Abf3231963db2869ad5ff102b135bdf90"
+                    "Ref": "LambdaCurrentVersionDF706F6Ad49351b5e88a11a7f10ac7e287eb1464"
                   }
                 },
                 {
                   "Action": "lambda:GetFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "LambdaCurrentVersionDF706F6Abf3231963db2869ad5ff102b135bdf90"
+                    "Ref": "LambdaCurrentVersionDF706F6Ad49351b5e88a11a7f10ac7e287eb1464"
                   }
                 }
               ]
@@ -3585,17 +3585,6 @@
             ]
           }
         },
-        "LambdaCurrentVersionDF706F6Abf3231963db2869ad5ff102b135bdf90": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "LambdaD247545B"
-            }
-          }
-        },
         "LambdaD247545B": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
@@ -3628,7 +3617,7 @@
             "Code": {
               "S3ObjectVersion": "cdk-custom-resources-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "cdk-custom-resources-0.34.0-SNAPSHOT.jar"
+              "S3Key": "cdk-custom-resources-1.2.3.jar"
             },
             "Tags": [
               {
@@ -3636,6 +3625,17 @@
                 "Value": "AutoDeleteS3Objects"
               }
             ]
+          }
+        },
+        "LambdaCurrentVersionDF706F6Ad49351b5e88a11a7f10ac7e287eb1464": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "LambdaD247545B"
+            }
           }
         },
         "ProviderframeworkonEvent83C1D0A7": {
@@ -3664,7 +3664,7 @@
             "Environment": {
               "Variables": {
                 "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Ref": "LambdaCurrentVersionDF706F6Abf3231963db2869ad5ff102b135bdf90"
+                  "Ref": "LambdaCurrentVersionDF706F6Ad49351b5e88a11a7f10ac7e287eb1464"
                 }
               }
             },
@@ -3706,6 +3706,17 @@
             },
             "vpcId": "vpc-12345",
             "region": "test-region"
+          }
+        },
+        "VpcCheckLambdaCurrentVersion75EDC33F9f3d52b8edaffc3583d80bf807ffedcd": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "VpcCheckLambda1278DA75"
+            }
           }
         },
         "VpcCheckLambdaServiceRoleAFA352A3": {
@@ -3792,7 +3803,7 @@
             "Environment": {
               "Variables": {
                 "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Ref": "VpcCheckLambdaCurrentVersion75EDC33F1a39a8f31878d3e00cdf06f4603d17cd"
+                  "Ref": "VpcCheckLambdaCurrentVersion75EDC33F9f3d52b8edaffc3583d80bf807ffedcd"
                 }
               }
             },
@@ -3872,7 +3883,7 @@
             "Code": {
               "S3ObjectVersion": "cdk-custom-resources-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "cdk-custom-resources-0.34.0-SNAPSHOT.jar"
+              "S3Key": "cdk-custom-resources-1.2.3.jar"
             },
             "Tags": [
               {
@@ -3880,17 +3891,6 @@
                 "Value": "Vpc"
               }
             ]
-          }
-        },
-        "VpcCheckLambdaCurrentVersion75EDC33F1a39a8f31878d3e00cdf06f4603d17cd": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "VpcCheckLambda1278DA75"
-            }
           }
         },
         "VpcCustomResourceProviderframeworkonEventServiceRoleDefaultPolicyB3561E00": {
@@ -3904,14 +3904,14 @@
                   "Action": "lambda:InvokeFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "VpcCheckLambdaCurrentVersion75EDC33F1a39a8f31878d3e00cdf06f4603d17cd"
+                    "Ref": "VpcCheckLambdaCurrentVersion75EDC33F9f3d52b8edaffc3583d80bf807ffedcd"
                   }
                 },
                 {
                   "Action": "lambda:GetFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "VpcCheckLambdaCurrentVersion75EDC33F1a39a8f31878d3e00cdf06f4603d17cd"
+                    "Ref": "VpcCheckLambdaCurrentVersion75EDC33F9f3d52b8edaffc3583d80bf807ffedcd"
                   }
                 }
               ]
@@ -3992,6 +3992,17 @@
             ]
           }
         },
+        "LambdaCurrentVersionDF706F6A217a5c10d8c2c7270f65bf3ffd4be9e4": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "LambdaD247545B"
+            }
+          }
+        },
         "LambdaServiceRoleA8ED4D3B": {
           "Type": "AWS::IAM::Role",
           "Properties": {
@@ -4040,14 +4051,14 @@
                   "Action": "lambda:InvokeFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "LambdaCurrentVersionDF706F6A24b20a85471de9a97e67ae8d57436879"
+                    "Ref": "LambdaCurrentVersionDF706F6A217a5c10d8c2c7270f65bf3ffd4be9e4"
                   }
                 },
                 {
                   "Action": "lambda:GetFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "LambdaCurrentVersionDF706F6A24b20a85471de9a97e67ae8d57436879"
+                    "Ref": "LambdaCurrentVersionDF706F6A217a5c10d8c2c7270f65bf3ffd4be9e4"
                   }
                 }
               ]
@@ -4128,7 +4139,7 @@
             "Code": {
               "S3ObjectVersion": "cdk-custom-resources-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "cdk-custom-resources-0.34.0-SNAPSHOT.jar"
+              "S3Key": "cdk-custom-resources-1.2.3.jar"
             },
             "Tags": [
               {
@@ -4136,17 +4147,6 @@
                 "Value": "AutoStopEcsClusterTasks"
               }
             ]
-          }
-        },
-        "LambdaCurrentVersionDF706F6A24b20a85471de9a97e67ae8d57436879": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "LambdaD247545B"
-            }
           }
         },
         "ProviderframeworkonEvent83C1D0A7": {
@@ -4175,7 +4175,7 @@
             "Environment": {
               "Variables": {
                 "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Ref": "LambdaCurrentVersionDF706F6A24b20a85471de9a97e67ae8d57436879"
+                  "Ref": "LambdaCurrentVersionDF706F6A217a5c10d8c2c7270f65bf3ffd4be9e4"
                 }
               }
             },
@@ -7121,7 +7121,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "StateStoreCommitterCurrentVersionF3ECCC04095d018e5314bc4a6a207ebca111df56",
+                      "StateStoreCommitterCurrentVersionF3ECCC04d8e48f47d388348a15bd59a0c703ec4b",
                       "Version"
                     ]
                   }
@@ -7184,7 +7184,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             }
           }
         },
@@ -7277,7 +7277,7 @@
             "QueueName": "sleeper-test-instance-StateStoreCommitterQ.fifo"
           }
         },
-        "StateStoreCommitterCurrentVersionF3ECCC04095d018e5314bc4a6a207ebca111df56": {
+        "StateStoreCommitterCurrentVersionF3ECCC04d8e48f47d388348a15bd59a0c703ec4b": {
           "Type": "AWS::Lambda::Version",
           "Metadata": {
             "aws:cdk:do-not-refactor": true
@@ -7605,7 +7605,7 @@
         },
         "TestInstanceTransactionLogSnapshotTransactionLogSnapshotCreationTriggerCurrentVersion72902924Ref": {
           "Value": {
-            "Ref": "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAEa1c0cad1a5f42a91997413cbf371eb6b"
+            "Ref": "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAE727d9a69cdc611ca63af2d7743c18730"
           }
         },
         "TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionQueue593263E8Ref": {
@@ -7662,7 +7662,7 @@
         },
         "TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionTriggerCurrentVersionEB512F8DRef": {
           "Value": {
-            "Ref": "TransactionLogSnapshotDeletionTriggerCurrentVersionA11D2C0Fd9f5761bd65961f4f395513c5e981673"
+            "Ref": "TransactionLogSnapshotDeletionTriggerCurrentVersionA11D2C0F31aacbac7505150614701eb12b5bd7a5"
           }
         },
         "TestInstanceTransactionLogSnapshotTransactionLogSnapshotDeadLetterQueueDC73D528Ref": {
@@ -7720,7 +7720,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -7884,6 +7884,17 @@
             ]
           }
         },
+        "TransactionLogSnapshotCreationCurrentVersion3FA3F63C64904bd2979718a79425ae225fa664c2": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "TransactionLogSnapshotCreationED5D3214"
+            }
+          }
+        },
         "TransactionLogSnapshotDeletionTriggerServiceRole2E871423": {
           "Type": "AWS::IAM::Role",
           "Properties": {
@@ -7935,7 +7946,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "TransactionLogSnapshotCreationCurrentVersion3FA3F63Cd92701a273d4e22fbcb66097486278cf",
+                      "TransactionLogSnapshotCreationCurrentVersion3FA3F63C64904bd2979718a79425ae225fa664c2",
                       "Version"
                     ]
                   }
@@ -7982,17 +7993,6 @@
                 "Value": "TransactionLogSnapshot"
               }
             ]
-          }
-        },
-        "TransactionLogSnapshotDeletionCurrentVersionBCFDBFFE702db2e655309f3eef7ba1643549392c": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "TransactionLogSnapshotDeletionA61F5C0B"
-            }
           }
         },
         "TransactionLogSnapshotDeletionServiceRoleDefaultPolicy3AE84B6C": {
@@ -8210,7 +8210,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -8255,7 +8255,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -8265,11 +8265,22 @@
             ]
           }
         },
+        "TransactionLogSnapshotDeletionTriggerCurrentVersionA11D2C0F31aacbac7505150614701eb12b5bd7a5": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "TransactionLogSnapshotDeletionTrigger130EAC65"
+            }
+          }
+        },
         "TransactionLogSnapshotDeletionScheduleAllowEventRuleTestInstanceTransactionLogSnapshotTransactionLogSnapshotDeletionTriggerCurrentVersionC5357B4EC6344878": {
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "TransactionLogSnapshotDeletionTriggerCurrentVersionA11D2C0Fd9f5761bd65961f4f395513c5e981673"
+              "Ref": "TransactionLogSnapshotDeletionTriggerCurrentVersionA11D2C0F31aacbac7505150614701eb12b5bd7a5"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -8285,7 +8296,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAEa1c0cad1a5f42a91997413cbf371eb6b"
+              "Ref": "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAE727d9a69cdc611ca63af2d7743c18730"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -8295,17 +8306,6 @@
               ]
             },
             "Principal": "events.amazonaws.com"
-          }
-        },
-        "TransactionLogSnapshotCreationCurrentVersion3FA3F63Cd92701a273d4e22fbcb66097486278cf": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "TransactionLogSnapshotCreationED5D3214"
-            }
           }
         },
         "TransactionLogSnapshotDeletionAlarmEAC03758": {
@@ -8351,17 +8351,6 @@
             "Threshold": 0
           }
         },
-        "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAEa1c0cad1a5f42a91997413cbf371eb6b": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "TransactionLogSnapshotCreationTriggerAA3536B9"
-            }
-          }
-        },
         "TransactionLogSnapshotCreationServiceRole5800AF1A": {
           "Type": "AWS::IAM::Role",
           "Properties": {
@@ -8397,17 +8386,6 @@
                 "Value": "TransactionLogSnapshot"
               }
             ]
-          }
-        },
-        "TransactionLogSnapshotDeletionTriggerCurrentVersionA11D2C0Fd9f5761bd65961f4f395513c5e981673": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "TransactionLogSnapshotDeletionTrigger130EAC65"
-            }
           }
         },
         "TransactionLogSnapshotDeletionTrigger130EAC65": {
@@ -8446,7 +8424,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -8822,7 +8800,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "TransactionLogSnapshotDeletionCurrentVersionBCFDBFFE702db2e655309f3eef7ba1643549392c",
+                      "TransactionLogSnapshotDeletionCurrentVersionBCFDBFFE3ce9709b5e626ce457ff2585870c8d67",
                       "Version"
                     ]
                   }
@@ -8846,6 +8824,17 @@
             ]
           }
         },
+        "TransactionLogSnapshotDeletionCurrentVersionBCFDBFFE3ce9709b5e626ce457ff2585870c8d67": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "TransactionLogSnapshotDeletionA61F5C0B"
+            }
+          }
+        },
         "TransactionLogSnapshotDeletionSchedule8CC47909": {
           "Type": "AWS::Events::Rule",
           "Properties": {
@@ -8855,7 +8844,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "TransactionLogSnapshotDeletionTriggerCurrentVersionA11D2C0Fd9f5761bd65961f4f395513c5e981673"
+                  "Ref": "TransactionLogSnapshotDeletionTriggerCurrentVersionA11D2C0F31aacbac7505150614701eb12b5bd7a5"
                 },
                 "Id": "Target0"
               }
@@ -8878,7 +8867,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAEa1c0cad1a5f42a91997413cbf371eb6b"
+                  "Ref": "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAE727d9a69cdc611ca63af2d7743c18730"
                 },
                 "Id": "Target0"
               }
@@ -8890,6 +8879,17 @@
               }
             ],
             "Name": "test-instance-TransactionLogSnapshotCreationRule"
+          }
+        },
+        "TransactionLogSnapshotCreationTriggerCurrentVersion80320EAE727d9a69cdc611ca63af2d7743c18730": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "TransactionLogSnapshotCreationTriggerAA3536B9"
+            }
           }
         },
         "TransactionLogSnapshotDeadLetterQueueC177B5DC": {
@@ -9034,7 +9034,7 @@
       "Outputs": {
         "TestInstanceTransactionLogTransactionTransactionLogTransactionDeletionTriggerCurrentVersion5F5C5690Ref": {
           "Value": {
-            "Ref": "TransactionLogTransactionDeletionTriggerCurrentVersion887C1A95f71c10554be16f0dc7d077cefd181768"
+            "Ref": "TransactionLogTransactionDeletionTriggerCurrentVersion887C1A952bd36dba02a94df30500f9e33e198c9a"
           }
         },
         "TestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueue6BB38617Arn": {
@@ -9078,6 +9078,17 @@
         }
       },
       "Resources": {
+        "TransactionLogTransactionDeletionCurrentVersionAC0E472B2e927047c7ddbb983a0398e5fb6cb548": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "TransactionLogTransactionDeletionB3923846"
+            }
+          }
+        },
         "TransactionLogTransactionDeletionTrigger63BE36EC": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
@@ -9114,7 +9125,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -9122,17 +9133,6 @@
                 "Value": "TransactionLogTransaction"
               }
             ]
-          }
-        },
-        "TransactionLogFollowerCurrentVersionD48C73BD125d76340999eb2e84d2b149c2cbae36": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "TransactionLogFollower8971259F"
-            }
           }
         },
         "TransactionLogTransactionDeletionTriggerServiceRoleDefaultPolicy4E1ABD2B": {
@@ -9317,25 +9317,14 @@
             "Threshold": 0
           }
         },
-        "TransactionLogTransactionDeletionTriggerCurrentVersion887C1A95f71c10554be16f0dc7d077cefd181768": {
+        "TransactionLogFollowerCurrentVersionD48C73BDaea211dbb2dfd2dad93a67d60e7275aa": {
           "Type": "AWS::Lambda::Version",
           "Metadata": {
             "aws:cdk:do-not-refactor": true
           },
           "Properties": {
             "FunctionName": {
-              "Ref": "TransactionLogTransactionDeletionTrigger63BE36EC"
-            }
-          }
-        },
-        "TransactionLogTransactionDeletionCurrentVersionAC0E472Bd023e6365749c3272216013e4a18125d": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "TransactionLogTransactionDeletionB3923846"
+              "Ref": "TransactionLogFollower8971259F"
             }
           }
         },
@@ -9374,7 +9363,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -9382,6 +9371,17 @@
                 "Value": "TransactionLogTransaction"
               }
             ]
+          }
+        },
+        "TransactionLogTransactionDeletionTriggerCurrentVersion887C1A952bd36dba02a94df30500f9e33e198c9a": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "TransactionLogTransactionDeletionTrigger63BE36EC"
+            }
           }
         },
         "TransactionLogTransactionDeletionCurrentVersionSqsEventSourceTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionQueueB4A95C487317BE72": {
@@ -9398,7 +9398,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "TransactionLogTransactionDeletionCurrentVersionAC0E472Bd023e6365749c3272216013e4a18125d",
+                      "TransactionLogTransactionDeletionCurrentVersionAC0E472B2e927047c7ddbb983a0398e5fb6cb548",
                       "Version"
                     ]
                   }
@@ -9451,7 +9451,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "TransactionLogTransactionDeletionTriggerCurrentVersion887C1A95f71c10554be16f0dc7d077cefd181768"
+              "Ref": "TransactionLogTransactionDeletionTriggerCurrentVersion887C1A952bd36dba02a94df30500f9e33e198c9a"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -9498,7 +9498,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -9517,7 +9517,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "TransactionLogTransactionDeletionTriggerCurrentVersion887C1A95f71c10554be16f0dc7d077cefd181768"
+                  "Ref": "TransactionLogTransactionDeletionTriggerCurrentVersion887C1A952bd36dba02a94df30500f9e33e198c9a"
                 },
                 "Id": "Target0"
               }
@@ -9855,7 +9855,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "TransactionLogFollowerCurrentVersionD48C73BD125d76340999eb2e84d2b149c2cbae36",
+                      "TransactionLogFollowerCurrentVersionD48C73BDaea211dbb2dfd2dad93a67d60e7275aa",
                       "Version"
                     ]
                   }
@@ -10187,7 +10187,7 @@
         },
         "TestInstanceTableMetricsMetricsTriggerCurrentVersion65A885FBRef": {
           "Value": {
-            "Ref": "MetricsTriggerCurrentVersionF32AFF9F4945bc1c845faee747ab9f269dc30452"
+            "Ref": "MetricsTriggerCurrentVersionF32AFF9F77d02c9c10f192bf7e0e6f90bc156e00"
           }
         },
         "TestInstanceTableMetricsMetricsJobDeadLetterQueue1EDBE7B1Ref": {
@@ -10224,7 +10224,7 @@
         "TestInstanceTableMetricsMetricsTriggerCurrentVersion65A885FBVersion": {
           "Value": {
             "Fn::GetAtt": [
-              "MetricsTriggerCurrentVersionF32AFF9F4945bc1c845faee747ab9f269dc30452",
+              "MetricsTriggerCurrentVersionF32AFF9F77d02c9c10f192bf7e0e6f90bc156e00",
               "Version"
             ]
           }
@@ -10431,7 +10431,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "MetricsTriggerCurrentVersionF32AFF9F4945bc1c845faee747ab9f269dc30452"
+                  "Ref": "MetricsTriggerCurrentVersionF32AFF9F77d02c9c10f192bf7e0e6f90bc156e00"
                 },
                 "Id": "Target0"
               }
@@ -10470,11 +10470,22 @@
             ]
           }
         },
+        "MetricsPublisherCurrentVersion75F92AE0ebe5d8c4ed0cb069d3fc887770175cde": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "MetricsPublisher6BE7482F"
+            }
+          }
+        },
         "MetricsPublishScheduleAllowEventRuleTestInstanceTableMetricsMetricsTriggerCurrentVersion3B52A7DDF3FEAFD9": {
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "MetricsTriggerCurrentVersionF32AFF9F4945bc1c845faee747ab9f269dc30452"
+              "Ref": "MetricsTriggerCurrentVersionF32AFF9F77d02c9c10f192bf7e0e6f90bc156e00"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -10500,7 +10511,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "MetricsPublisherCurrentVersion75F92AE046f4baefee28edc92f20bc4129c30810",
+                      "MetricsPublisherCurrentVersion75F92AE0ebe5d8c4ed0cb069d3fc887770175cde",
                       "Version"
                     ]
                   }
@@ -10561,18 +10572,7 @@
             ]
           }
         },
-        "MetricsPublisherCurrentVersion75F92AE046f4baefee28edc92f20bc4129c30810": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "MetricsPublisher6BE7482F"
-            }
-          }
-        },
-        "MetricsTriggerCurrentVersionF32AFF9F4945bc1c845faee747ab9f269dc30452": {
+        "MetricsTriggerCurrentVersionF32AFF9F77d02c9c10f192bf7e0e6f90bc156e00": {
           "Type": "AWS::Lambda::Version",
           "Metadata": {
             "aws:cdk:do-not-refactor": true
@@ -10721,7 +10721,7 @@
             "Code": {
               "S3ObjectVersion": "metrics-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "metrics-0.34.0-SNAPSHOT.jar"
+              "S3Key": "metrics-1.2.3.jar"
             },
             "Tags": [
               {
@@ -10766,7 +10766,7 @@
             "Code": {
               "S3ObjectVersion": "metrics-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "metrics-0.34.0-SNAPSHOT.jar"
+              "S3Key": "metrics-1.2.3.jar"
             },
             "Tags": [
               {
@@ -11989,14 +11989,14 @@
                   "Action": "lambda:InvokeFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "LambdaCurrentVersionDF706F6A9185ed318d29b71002873a1d9f71f351"
+                    "Ref": "LambdaCurrentVersionDF706F6A74eaad4867a8ddc398052cf0543134d9"
                   }
                 },
                 {
                   "Action": "lambda:GetFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "LambdaCurrentVersionDF706F6A9185ed318d29b71002873a1d9f71f351"
+                    "Ref": "LambdaCurrentVersionDF706F6A74eaad4867a8ddc398052cf0543134d9"
                   }
                 }
               ]
@@ -12077,7 +12077,7 @@
             "Code": {
               "S3ObjectVersion": "cdk-custom-resources-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "cdk-custom-resources-0.34.0-SNAPSHOT.jar"
+              "S3Key": "cdk-custom-resources-1.2.3.jar"
             },
             "Tags": [
               {
@@ -12087,7 +12087,7 @@
             ]
           }
         },
-        "LambdaCurrentVersionDF706F6A9185ed318d29b71002873a1d9f71f351": {
+        "LambdaCurrentVersionDF706F6A74eaad4867a8ddc398052cf0543134d9": {
           "Type": "AWS::Lambda::Version",
           "Metadata": {
             "aws:cdk:do-not-refactor": true
@@ -12124,7 +12124,7 @@
             "Environment": {
               "Variables": {
                 "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Ref": "LambdaCurrentVersionDF706F6A9185ed318d29b71002873a1d9f71f351"
+                  "Ref": "LambdaCurrentVersionDF706F6A74eaad4867a8ddc398052cf0543134d9"
                 }
               }
             },
@@ -12599,6 +12599,17 @@
             ]
           }
         },
+        "BulkImportEMRServerlessJobStarterCurrentVersionEF1FE36D1c8dbce3ad781887901860f855c9d94a": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "BulkImportEMRServerlessJobStarter5DE5995C"
+            }
+          }
+        },
         "BulkImportEMRServerlessJobStarter5DE5995C": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
@@ -12635,7 +12646,7 @@
             "Code": {
               "S3ObjectVersion": "bulk-import-starter-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "bulk-import-starter-0.34.0-SNAPSHOT.jar"
+              "S3Key": "bulk-import-starter-1.2.3.jar"
             },
             "Tags": [
               {
@@ -12643,17 +12654,6 @@
                 "Value": "BulkImportEMRServerless"
               }
             ]
-          }
-        },
-        "BulkImportEMRServerlessJobStarterCurrentVersionEF1FE36De12674da8e53f8ec708ee1960f40517a": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "BulkImportEMRServerlessJobStarter5DE5995C"
-            }
           }
         },
         "BulkImportEMRServerlessJobStarterServiceRoleDefaultPolicy62E0A580": {
@@ -13383,7 +13383,7 @@
         "TestInstanceGarbageCollectorGarbageCollectorTriggerCurrentVersionAA3B84DDVersion": {
           "Value": {
             "Fn::GetAtt": [
-              "GarbageCollectorTriggerCurrentVersionF013FA48132cfe179a7568ce1a6f1902da39c484",
+              "GarbageCollectorTriggerCurrentVersionF013FA48cf84d7833039edf975b167b7f25d568c",
               "Version"
             ]
           }
@@ -13395,7 +13395,7 @@
         },
         "TestInstanceGarbageCollectorGarbageCollectorTriggerCurrentVersionAA3B84DDRef": {
           "Value": {
-            "Ref": "GarbageCollectorTriggerCurrentVersionF013FA48132cfe179a7568ce1a6f1902da39c484"
+            "Ref": "GarbageCollectorTriggerCurrentVersionF013FA48cf84d7833039edf975b167b7f25d568c"
           }
         },
         "TestInstanceGarbageCollectorGCJobQueueD56E334DArn": {
@@ -13434,17 +13434,6 @@
         }
       },
       "Resources": {
-        "GarbageCollectorTriggerCurrentVersionF013FA48132cfe179a7568ce1a6f1902da39c484": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "GarbageCollectorTrigger8742143A"
-            }
-          }
-        },
         "GarbageCollectorLambdaServiceRoleE60E53E0": {
           "Type": "AWS::IAM::Role",
           "Properties": {
@@ -13491,7 +13480,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "GarbageCollectorTriggerCurrentVersionF013FA48132cfe179a7568ce1a6f1902da39c484"
+                  "Ref": "GarbageCollectorTriggerCurrentVersionF013FA48cf84d7833039edf975b167b7f25d568c"
                 },
                 "Id": "Target0"
               }
@@ -13801,7 +13790,7 @@
             "Code": {
               "S3ObjectVersion": "garbage-collector-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "lambda-garbagecollector-0.34.0-SNAPSHOT.jar"
+              "S3Key": "lambda-garbagecollector-1.2.3.jar"
             },
             "Tags": [
               {
@@ -13809,17 +13798,6 @@
                 "Value": "GarbageCollector"
               }
             ]
-          }
-        },
-        "GarbageCollectorLambdaCurrentVersion5949EF30f8492664f4f334fb2820eea64f77d374": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "GarbageCollectorLambdaE120BD31"
-            }
           }
         },
         "GarbageCollectorAlarm8532C8FE": {
@@ -13865,6 +13843,17 @@
             "Threshold": 0
           }
         },
+        "GarbageCollectorTriggerCurrentVersionF013FA48cf84d7833039edf975b167b7f25d568c": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "GarbageCollectorTrigger8742143A"
+            }
+          }
+        },
         "GarbageCollectorTrigger8742143A": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
@@ -13901,7 +13890,7 @@
             "Code": {
               "S3ObjectVersion": "garbage-collector-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "lambda-garbagecollector-0.34.0-SNAPSHOT.jar"
+              "S3Key": "lambda-garbagecollector-1.2.3.jar"
             },
             "Tags": [
               {
@@ -13915,7 +13904,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "GarbageCollectorTriggerCurrentVersionF013FA48132cfe179a7568ce1a6f1902da39c484"
+              "Ref": "GarbageCollectorTriggerCurrentVersionF013FA48cf84d7833039edf975b167b7f25d568c"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -13964,6 +13953,17 @@
             ]
           }
         },
+        "GarbageCollectorLambdaCurrentVersion5949EF308e3abd48d7b156010ebf2197f6c0939a": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "GarbageCollectorLambdaE120BD31"
+            }
+          }
+        },
         "GarbageCollectorLambdaCurrentVersionSqsEventSourceTestInstanceGarbageCollectorGCJobQueue9FB9C72249D73519": {
           "Type": "AWS::Lambda::EventSourceMapping",
           "Properties": {
@@ -13978,7 +13978,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "GarbageCollectorLambdaCurrentVersion5949EF30f8492664f4f334fb2820eea64f77d374",
+                      "GarbageCollectorLambdaCurrentVersion5949EF308e3abd48d7b156010ebf2197f6c0939a",
                       "Version"
                     ]
                   }
@@ -14179,7 +14179,7 @@
         "TestInstanceCompactionCompactionJobsCreationTriggerCurrentVersion5E26F8A5Version": {
           "Value": {
             "Fn::GetAtt": [
-              "CompactionJobsCreationTriggerCurrentVersionD5B88BF601cb1cee2982224c6e65ea5478c089f8",
+              "CompactionJobsCreationTriggerCurrentVersionD5B88BF67df5e338af7c15316c791575b666cf25",
               "Version"
             ]
           }
@@ -14285,7 +14285,7 @@
         },
         "TestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Ref": {
           "Value": {
-            "Ref": "CompactionTasksCreatorCurrentVersion2E3420E40287cf1f640e36e973c6db09f8bc46a2"
+            "Ref": "CompactionTasksCreatorCurrentVersion2E3420E49c34bcbf50dacb9cb1fd58f3dd9031d7"
           }
         },
         "TestInstanceCompactionCompactionJobCreationDLQB8A078BDArn": {
@@ -14346,7 +14346,7 @@
         },
         "TestInstanceCompactionCompactionJobsCreationTriggerCurrentVersion5E26F8A5Ref": {
           "Value": {
-            "Ref": "CompactionJobsCreationTriggerCurrentVersionD5B88BF601cb1cee2982224c6e65ea5478c089f8"
+            "Ref": "CompactionJobsCreationTriggerCurrentVersionD5B88BF67df5e338af7c15316c791575b666cf25"
           }
         },
         "TestInstanceCompactionPendingCompactionJobBatchDLQE42B71ECArn": {
@@ -14373,7 +14373,7 @@
         "TestInstanceCompactionCompactionTasksCreatorCurrentVersion57E78EC7Version": {
           "Value": {
             "Fn::GetAtt": [
-              "CompactionTasksCreatorCurrentVersion2E3420E40287cf1f640e36e973c6db09f8bc46a2",
+              "CompactionTasksCreatorCurrentVersion2E3420E49c34bcbf50dacb9cb1fd58f3dd9031d7",
               "Version"
             ]
           }
@@ -14424,7 +14424,7 @@
             "Code": {
               "S3ObjectVersion": "statestore-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "statestore-lambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "statestore-lambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -14438,7 +14438,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "CompactionTasksCreatorCurrentVersion2E3420E40287cf1f640e36e973c6db09f8bc46a2"
+              "Ref": "CompactionTasksCreatorCurrentVersion2E3420E49c34bcbf50dacb9cb1fd58f3dd9031d7"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -14464,7 +14464,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "CompactionCommitBatcherCurrentVersionE40B6054d72c30df839fd13a7b69fedc6f6b0b77",
+                      "CompactionCommitBatcherCurrentVersionE40B60541d5dda02b3a7042c579ce81626ffac6e",
                       "Version"
                     ]
                   }
@@ -14536,6 +14536,17 @@
                 "Value": "Compaction"
               }
             ]
+          }
+        },
+        "CompactionJobsCreationHandlerCurrentVersion872850F230043e8c5ebad93429da8995722a8cac": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "CompactionJobsCreationHandlerAC80181B"
+            }
           }
         },
         "CompactionJobDispatcherServiceRoleDefaultPolicy62D1573C": {
@@ -14931,7 +14942,7 @@
             "Code": {
               "S3ObjectVersion": "compaction-task-creation-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "runningjobs-0.34.0-SNAPSHOT.jar"
+              "S3Key": "runningjobs-1.2.3.jar"
             },
             "Tags": [
               {
@@ -14989,7 +15000,7 @@
                       {
                         "Ref": "AWS::URLSuffix"
                       },
-                      "/test-instance/compaction-job-execution:0.34.0-SNAPSHOT"
+                      "/test-instance/compaction-job-execution:1.2.3"
                     ]
                   ]
                 },
@@ -15059,7 +15070,7 @@
             "Code": {
               "S3ObjectVersion": "compaction-job-creation-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "lambda-jobSpecCreationLambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "lambda-jobSpecCreationLambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -15073,7 +15084,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "CompactionJobsCreationTriggerCurrentVersionD5B88BF601cb1cee2982224c6e65ea5478c089f8"
+              "Ref": "CompactionJobsCreationTriggerCurrentVersionD5B88BF67df5e338af7c15316c791575b666cf25"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -15083,6 +15094,17 @@
               ]
             },
             "Principal": "events.amazonaws.com"
+          }
+        },
+        "CompactionCommitBatcherCurrentVersionE40B60541d5dda02b3a7042c579ce81626ffac6e": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "CompactionCommitBatcher593C3BC4"
+            }
           }
         },
         "PendingCompactionJobBatchQ39102D53": {
@@ -15166,7 +15188,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "CompactionJobDispatcherCurrentVersion1FEE5579fedce7f7bc9faa9e48500e67718787af",
+                      "CompactionJobDispatcherCurrentVersion1FEE557903c9e1f74b0a476074c2fb013354f7aa",
                       "Version"
                     ]
                   }
@@ -15288,20 +15310,6 @@
             ]
           }
         },
-        "CompactionTasksCreatorCurrentVersion2E3420E40287cf1f640e36e973c6db09f8bc46a2": {
-          "Type": "AWS::Lambda::Version",
-          "DependsOn": [
-            "CompactionClusterAutoStop"
-          ],
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "CompactionTasksCreator85FF715C"
-            }
-          }
-        },
         "CompactionFargateTaskDefinitionTaskRoleA667B4D1": {
           "Type": "AWS::IAM::Role",
           "Properties": {
@@ -15325,6 +15333,17 @@
             ]
           }
         },
+        "CompactionJobDispatcherCurrentVersion1FEE557903c9e1f74b0a476074c2fb013354f7aa": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "CompactionJobDispatcherABA5378D"
+            }
+          }
+        },
         "CompactionTasksCreationPeriodicTrigger83AF9165": {
           "Type": "AWS::Events::Rule",
           "Properties": {
@@ -15334,7 +15353,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "CompactionTasksCreatorCurrentVersion2E3420E40287cf1f640e36e973c6db09f8bc46a2"
+                  "Ref": "CompactionTasksCreatorCurrentVersion2E3420E49c34bcbf50dacb9cb1fd58f3dd9031d7"
                 },
                 "Id": "Target0"
               }
@@ -15397,6 +15416,20 @@
                 "Ref": "CompactionFargateTaskDefinitionExecutionRole4A456844"
               }
             ]
+          }
+        },
+        "CompactionTasksCreatorCurrentVersion2E3420E49c34bcbf50dacb9cb1fd58f3dd9031d7": {
+          "Type": "AWS::Lambda::Version",
+          "DependsOn": [
+            "CompactionClusterAutoStop"
+          ],
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "CompactionTasksCreator85FF715C"
+            }
           }
         },
         "CompactionFargateTaskDefinitionExecutionRole4A456844": {
@@ -15675,6 +15708,17 @@
             ]
           }
         },
+        "CompactionJobsCreationTriggerCurrentVersionD5B88BF67df5e338af7c15316c791575b666cf25": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "CompactionJobsCreationTrigger1EC35DE1"
+            }
+          }
+        },
         "CompactionAlarm581E7707": {
           "Type": "AWS::CloudWatch::Alarm",
           "Properties": {
@@ -15820,28 +15864,6 @@
             ]
           }
         },
-        "CompactionJobsCreationHandlerCurrentVersion872850F233b836c6e6ea0dbb53b4d7e155f3e253": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "CompactionJobsCreationHandlerAC80181B"
-            }
-          }
-        },
-        "CompactionCommitBatcherCurrentVersionE40B6054d72c30df839fd13a7b69fedc6f6b0b77": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "CompactionCommitBatcher593C3BC4"
-            }
-          }
-        },
         "CompactionCommitQueueE037D242": {
           "Type": "AWS::SQS::Queue",
           "DeletionPolicy": "Delete",
@@ -15864,17 +15886,6 @@
                 "Value": "Compaction"
               }
             ]
-          }
-        },
-        "CompactionJobDispatcherCurrentVersion1FEE5579fedce7f7bc9faa9e48500e67718787af": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "CompactionJobDispatcherABA5378D"
-            }
           }
         },
         "PendingCompactionAlarm056BF1F0": {
@@ -15943,7 +15954,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "CompactionJobsCreationTriggerCurrentVersionD5B88BF601cb1cee2982224c6e65ea5478c089f8"
+                  "Ref": "CompactionJobsCreationTriggerCurrentVersionD5B88BF67df5e338af7c15316c791575b666cf25"
                 },
                 "Id": "Target0"
               }
@@ -16289,17 +16300,6 @@
             ]
           }
         },
-        "CompactionJobsCreationTriggerCurrentVersionD5B88BF601cb1cee2982224c6e65ea5478c089f8": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "CompactionJobsCreationTrigger1EC35DE1"
-            }
-          }
-        },
         "CompactionJobsCreationHandlerAC80181B": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
@@ -16335,7 +16335,7 @@
             "Code": {
               "S3ObjectVersion": "compaction-job-creation-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "lambda-jobSpecCreationLambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "lambda-jobSpecCreationLambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -16713,7 +16713,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "CompactionJobsCreationHandlerCurrentVersion872850F233b836c6e6ea0dbb53b4d7e155f3e253",
+                      "CompactionJobsCreationHandlerCurrentVersion872850F230043e8c5ebad93429da8995722a8cac",
                       "Version"
                     ]
                   }
@@ -16772,7 +16772,7 @@
             "Code": {
               "S3ObjectVersion": "compaction-job-creation-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "lambda-jobSpecCreationLambda-0.34.0-SNAPSHOT.jar"
+              "S3Key": "lambda-jobSpecCreationLambda-1.2.3.jar"
             },
             "Tags": [
               {
@@ -16838,7 +16838,7 @@
         "TestInstancePartitionSplittingFindPartitionsToSplitTriggerLambdaCurrentVersionD6930CA9Version": {
           "Value": {
             "Fn::GetAtt": [
-              "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91af7f59d3e30b0935793b45dfcf49d2c8",
+              "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91f603d9dbbbf61984cb518ec541e4f997",
               "Version"
             ]
           }
@@ -16928,7 +16928,7 @@
         },
         "TestInstancePartitionSplittingFindPartitionsToSplitTriggerLambdaCurrentVersionD6930CA9Ref": {
           "Value": {
-            "Ref": "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91af7f59d3e30b0935793b45dfcf49d2c8"
+            "Ref": "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91f603d9dbbbf61984cb518ec541e4f997"
           }
         },
         "TestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157QueueName": {
@@ -16976,7 +16976,7 @@
             "Code": {
               "S3ObjectVersion": "splitter-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "lambda-splitter-0.34.0-SNAPSHOT.jar"
+              "S3Key": "lambda-splitter-1.2.3.jar"
             },
             "Tags": [
               {
@@ -16984,6 +16984,28 @@
                 "Value": "PartitionSplitting"
               }
             ]
+          }
+        },
+        "FindPartitionsToSplitLambdaCurrentVersion3550596F4f6b5610c79db42bed0ffe0ee7055a7a": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "FindPartitionsToSplitLambda7FCC5BEC"
+            }
+          }
+        },
+        "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91f603d9dbbbf61984cb518ec541e4f997": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "FindPartitionsToSplitTriggerLambda9389D7D7"
+            }
           }
         },
         "FindPartitionsToSplitBatchQueueF5DCC7E5": {
@@ -17015,7 +17037,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91af7f59d3e30b0935793b45dfcf49d2c8"
+              "Ref": "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91f603d9dbbbf61984cb518ec541e4f997"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -17177,7 +17199,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91af7f59d3e30b0935793b45dfcf49d2c8"
+                  "Ref": "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91f603d9dbbbf61984cb518ec541e4f997"
                 },
                 "Id": "Target0"
               }
@@ -17440,6 +17462,17 @@
             "Threshold": 0
           }
         },
+        "SplitPartitionLambdaCurrentVersionBC35E2383ba0a661d97af707fb37e85515db41f3": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "SplitPartitionLambda567FD4CB"
+            }
+          }
+        },
         "FindPartitionsToSplitDeadLetterQueue50D6773C": {
           "Type": "AWS::SQS::Queue",
           "DeletionPolicy": "Delete",
@@ -17469,7 +17502,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "SplitPartitionLambdaCurrentVersionBC35E2386496ab978536552f014790a62f17becc",
+                      "SplitPartitionLambdaCurrentVersionBC35E2383ba0a661d97af707fb37e85515db41f3",
                       "Version"
                     ]
                   }
@@ -17507,7 +17540,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "FindPartitionsToSplitLambdaCurrentVersion3550596F7438682620a730e5823a3d8548bd29c9",
+                      "FindPartitionsToSplitLambdaCurrentVersion3550596F4f6b5610c79db42bed0ffe0ee7055a7a",
                       "Version"
                     ]
                   }
@@ -17567,7 +17600,7 @@
             "Code": {
               "S3ObjectVersion": "splitter-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "lambda-splitter-0.34.0-SNAPSHOT.jar"
+              "S3Key": "lambda-splitter-1.2.3.jar"
             },
             "Tags": [
               {
@@ -17575,17 +17608,6 @@
                 "Value": "PartitionSplitting"
               }
             ]
-          }
-        },
-        "FindPartitionsToSplitTriggerLambdaCurrentVersionC3771F91af7f59d3e30b0935793b45dfcf49d2c8": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "FindPartitionsToSplitTriggerLambda9389D7D7"
-            }
           }
         },
         "SplitPartitionLambdaServiceRole74013A64": {
@@ -17917,17 +17939,6 @@
             ]
           }
         },
-        "SplitPartitionLambdaCurrentVersionBC35E2386496ab978536552f014790a62f17becc": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "SplitPartitionLambda567FD4CB"
-            }
-          }
-        },
         "SplitPartitionLambda567FD4CB": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
@@ -17964,7 +17975,7 @@
             "Code": {
               "S3ObjectVersion": "splitter-lambda-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "lambda-splitter-0.34.0-SNAPSHOT.jar"
+              "S3Key": "lambda-splitter-1.2.3.jar"
             },
             "Tags": [
               {
@@ -17972,17 +17983,6 @@
                 "Value": "PartitionSplitting"
               }
             ]
-          }
-        },
-        "FindPartitionsToSplitLambdaCurrentVersion3550596F7438682620a730e5823a3d8548bd29c9": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "FindPartitionsToSplitLambda7FCC5BEC"
-            }
           }
         },
         "PartitionSplittingDeadLetterQueue92FF1D7A": {
@@ -18361,7 +18361,7 @@
                     {
                       "Ref": "AWS::URLSuffix"
                     },
-                    "/test-instance/query-lambda:0.34.0-SNAPSHOT"
+                    "/test-instance/query-lambda:1.2.3"
                   ]
                 ]
               }
@@ -18396,6 +18396,17 @@
                 "Value": "Query"
               }
             ]
+          }
+        },
+        "QueryLeafPartitionExecutorLambdaCurrentVersion57D7E0178f095f48117f9cc681640558677bd216": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "QueryLeafPartitionExecutorLambda23A190EE"
+            }
           }
         },
         "LeafPartitionQueryDeadLetterQueue1090F3DB": {
@@ -18792,17 +18803,6 @@
             ]
           }
         },
-        "QueryLeafPartitionExecutorLambdaCurrentVersion57D7E0175dbe301371c8a033ff1974d4258dfa40": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "QueryLeafPartitionExecutorLambda23A190EE"
-            }
-          }
-        },
         "QueryExecutorLambdaServiceRoleDefaultPolicy7D468E2D": {
           "Type": "AWS::IAM::Policy",
           "Properties": {
@@ -19044,17 +19044,6 @@
             ]
           }
         },
-        "QueryExecutorLambdaCurrentVersion57ADA607453c1480a2b9e8f0d6f78bbb8447412b": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "QueryExecutorLambdaC152EAEE"
-            }
-          }
-        },
         "QueryExecutorLambdaCurrentVersionSqsEventSourceTestInstanceQueryQueueE04CA2CD20157E2A": {
           "Type": "AWS::Lambda::EventSourceMapping",
           "Properties": {
@@ -19069,7 +19058,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "QueryExecutorLambdaCurrentVersion57ADA607453c1480a2b9e8f0d6f78bbb8447412b",
+                      "QueryExecutorLambdaCurrentVersion57ADA607dbd82e8ce8584bb9752cafa0e1e8361f",
                       "Version"
                     ]
                   }
@@ -19171,7 +19160,7 @@
                     {
                       "Ref": "AWS::URLSuffix"
                     },
-                    "/test-instance/query-lambda:0.34.0-SNAPSHOT"
+                    "/test-instance/query-lambda:1.2.3"
                   ]
                 ]
               }
@@ -19182,6 +19171,17 @@
                 "Value": "Query"
               }
             ]
+          }
+        },
+        "QueryExecutorLambdaCurrentVersion57ADA607dbd82e8ce8584bb9752cafa0e1e8361f": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "QueryExecutorLambdaC152EAEE"
+            }
           }
         },
         "PutToAnyS3BucketAndSendToAnySQSPolicyLeafPartition06A6190C": {
@@ -19259,7 +19259,7 @@
                   ":",
                   {
                     "Fn::GetAtt": [
-                      "QueryLeafPartitionExecutorLambdaCurrentVersion57D7E0175dbe301371c8a033ff1974d4258dfa40",
+                      "QueryLeafPartitionExecutorLambdaCurrentVersion57D7E0178f095f48117f9cc681640558677bd216",
                       "Version"
                     ]
                   }
@@ -19417,7 +19417,7 @@
         "TestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CVersion": {
           "Value": {
             "Fn::GetAtt": [
-              "IngestTasksCreatorCurrentVersion4DD1B1147066dff91b172b96f3daece9879062d9",
+              "IngestTasksCreatorCurrentVersion4DD1B1140fc74c8dbd66e651c64726664bd7edaa",
               "Version"
             ]
           }
@@ -19498,7 +19498,7 @@
         },
         "TestInstanceIngestIngestTasksCreatorCurrentVersion7CB52F7CRef": {
           "Value": {
-            "Ref": "IngestTasksCreatorCurrentVersion4DD1B1147066dff91b172b96f3daece9879062d9"
+            "Ref": "IngestTasksCreatorCurrentVersion4DD1B1140fc74c8dbd66e651c64726664bd7edaa"
           }
         },
         "TestInstanceIngestIngestTasksCreationPeriodicTriggerCA9BE66FRef": {
@@ -19945,7 +19945,7 @@
             "Code": {
               "S3ObjectVersion": "ingest-taskrunner-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "ingest-taskrunner-0.34.0-SNAPSHOT.jar"
+              "S3Key": "ingest-taskrunner-1.2.3.jar"
             },
             "Tags": [
               {
@@ -19982,7 +19982,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "IngestTasksCreatorCurrentVersion4DD1B1147066dff91b172b96f3daece9879062d9"
+              "Ref": "IngestTasksCreatorCurrentVersion4DD1B1140fc74c8dbd66e651c64726664bd7edaa"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -20081,20 +20081,6 @@
             ]
           }
         },
-        "IngestTasksCreatorCurrentVersion4DD1B1147066dff91b172b96f3daece9879062d9": {
-          "Type": "AWS::Lambda::Version",
-          "DependsOn": [
-            "IngestClusterAutoStop"
-          ],
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "IngestTasksCreator8578ECAC"
-            }
-          }
-        },
         "IngestTaskDefinitionTaskRole94258059": {
           "Type": "AWS::IAM::Role",
           "Properties": {
@@ -20178,7 +20164,7 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "IngestTasksCreatorCurrentVersion4DD1B1147066dff91b172b96f3daece9879062d9"
+                  "Ref": "IngestTasksCreatorCurrentVersion4DD1B1140fc74c8dbd66e651c64726664bd7edaa"
                 },
                 "Id": "Target0"
               }
@@ -20190,6 +20176,20 @@
               }
             ],
             "Name": "test-instance-IngestTasksCreationRule"
+          }
+        },
+        "IngestTasksCreatorCurrentVersion4DD1B1140fc74c8dbd66e651c64726664bd7edaa": {
+          "Type": "AWS::Lambda::Version",
+          "DependsOn": [
+            "IngestClusterAutoStop"
+          ],
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "IngestTasksCreator8578ECAC"
+            }
           }
         },
         "IngestClusterE0D09E7F": {
@@ -20249,7 +20249,7 @@
                       {
                         "Ref": "AWS::URLSuffix"
                       },
-                      "/test-instance/ingest:0.34.0-SNAPSHOT"
+                      "/test-instance/ingest:1.2.3"
                     ]
                   ]
                 },
@@ -20377,7 +20377,7 @@
         "TestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Version": {
           "Value": {
             "Fn::GetAtt": [
-              "IngestBatcherJobCreationLambdaCurrentVersionED62A44Fabc997be4c614a2fbbfad6fd7e82c711",
+              "IngestBatcherJobCreationLambdaCurrentVersionED62A44F54e5763d6b6c4ff13371dd9e31809ae7",
               "Version"
             ]
           }
@@ -20413,7 +20413,7 @@
         },
         "TestInstanceIngestBatcherIngestBatcherJobCreationLambdaCurrentVersion9A27FA14Ref": {
           "Value": {
-            "Ref": "IngestBatcherJobCreationLambdaCurrentVersionED62A44Fabc997be4c614a2fbbfad6fd7e82c711"
+            "Ref": "IngestBatcherJobCreationLambdaCurrentVersionED62A44F54e5763d6b6c4ff13371dd9e31809ae7"
           }
         },
         "TestInstanceIngestBatcherIngestBatcherSubmitDLQ615E0449QueueName": {
@@ -20432,7 +20432,7 @@
         "TestInstanceIngestBatcherSubmitToIngestBatcherLambdaCurrentVersion9D7068BDVersion": {
           "Value": {
             "Fn::GetAtt": [
-              "SubmitToIngestBatcherLambdaCurrentVersion5F74E2173fbf04b69a91afc2ea975fb7870473f2",
+              "SubmitToIngestBatcherLambdaCurrentVersion5F74E217a3551e4601ff714ed84adaa41b630f5f",
               "Version"
             ]
           }
@@ -20493,18 +20493,7 @@
             "Code": {
               "S3ObjectVersion": "ingest-batcher-submitter-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "ingest-batcher-submitter-0.34.0-SNAPSHOT.jar"
-            }
-          }
-        },
-        "IngestBatcherJobCreationLambdaCurrentVersionED62A44Fabc997be4c614a2fbbfad6fd7e82c711": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "IngestBatcherJobCreationLambdaE1FDD6DE"
+              "S3Key": "ingest-batcher-submitter-1.2.3.jar"
             }
           }
         },
@@ -20579,7 +20568,7 @@
           "Type": "AWS::Lambda::Permission",
           "Properties": {
             "FunctionName": {
-              "Ref": "IngestBatcherJobCreationLambdaCurrentVersionED62A44Fabc997be4c614a2fbbfad6fd7e82c711"
+              "Ref": "IngestBatcherJobCreationLambdaCurrentVersionED62A44F54e5763d6b6c4ff13371dd9e31809ae7"
             },
             "Action": "lambda:InvokeFunction",
             "SourceArn": {
@@ -20589,6 +20578,17 @@
               ]
             },
             "Principal": "events.amazonaws.com"
+          }
+        },
+        "SubmitToIngestBatcherLambdaCurrentVersion5F74E217a3551e4601ff714ed84adaa41b630f5f": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "SubmitToIngestBatcherLambda5509FC1C"
+            }
           }
         },
         "IngestBatcherJobCreationLambdaServiceRoleDefaultPolicyFA7D8B61": {
@@ -20733,23 +20733,12 @@
             "Targets": [
               {
                 "Arn": {
-                  "Ref": "IngestBatcherJobCreationLambdaCurrentVersionED62A44Fabc997be4c614a2fbbfad6fd7e82c711"
+                  "Ref": "IngestBatcherJobCreationLambdaCurrentVersionED62A44F54e5763d6b6c4ff13371dd9e31809ae7"
                 },
                 "Id": "Target0"
               }
             ],
             "Name": "test-instance-IngestBatcherJobCreationRule"
-          }
-        },
-        "SubmitToIngestBatcherLambdaCurrentVersion5F74E2173fbf04b69a91afc2ea975fb7870473f2": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "SubmitToIngestBatcherLambda5509FC1C"
-            }
           }
         },
         "IngestBatcherJobCreationLambdaE1FDD6DE": {
@@ -20788,7 +20777,18 @@
             "Code": {
               "S3ObjectVersion": "ingest-batcher-job-creator-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "ingest-batcher-job-creator-0.34.0-SNAPSHOT.jar"
+              "S3Key": "ingest-batcher-job-creator-1.2.3.jar"
+            }
+          }
+        },
+        "IngestBatcherJobCreationLambdaCurrentVersionED62A44F54e5763d6b6c4ff13371dd9e31809ae7": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "IngestBatcherJobCreationLambdaE1FDD6DE"
             }
           }
         },
@@ -21674,7 +21674,7 @@
             "Code": {
               "S3ObjectVersion": "cdk-custom-resources-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
-              "S3Key": "cdk-custom-resources-0.34.0-SNAPSHOT.jar"
+              "S3Key": "cdk-custom-resources-1.2.3.jar"
             },
             "Tags": [
               {
@@ -22016,7 +22016,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingPartitionSplittingJobQueueCBD86C93Ref"
                   },
-                  "\nsleeper.version\u003d0.34.0-SNAPSHOT\nsleeper.bulk.import.emr.serverless.role.arn\u003d",
+                  "\nsleeper.version\u003d1.2.3\nsleeper.bulk.import.emr.serverless.role.arn\u003d",
                   {
                     "Ref": "referencetoTestInstanceBulkImportEMRServerlessNestedStackBulkImportEMRServerlessNestedStackResourceD565E782OutputsTestInstanceBulkImportEMRServerlessEmrServerlessRole192390D8Arn"
                   },
@@ -22255,17 +22255,6 @@
             ]
           }
         },
-        "PropertiesWriterLambdaCurrentVersion1AFF462Dd9ea0a80bc16a31e1d69be802bcd6fe6": {
-          "Type": "AWS::Lambda::Version",
-          "Metadata": {
-            "aws:cdk:do-not-refactor": true
-          },
-          "Properties": {
-            "FunctionName": {
-              "Ref": "PropertiesWriterLambda6DA85248"
-            }
-          }
-        },
         "PropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC": {
           "Type": "AWS::IAM::Policy",
           "Properties": {
@@ -22321,14 +22310,14 @@
                   "Action": "lambda:InvokeFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd9ea0a80bc16a31e1d69be802bcd6fe6"
+                    "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
                   }
                 },
                 {
                   "Action": "lambda:GetFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd9ea0a80bc16a31e1d69be802bcd6fe6"
+                    "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
                   }
                 }
               ]
@@ -22338,6 +22327,17 @@
                 "Ref": "PropertiesWriterProviderframeworkonEventServiceRole148772E9"
               }
             ]
+          }
+        },
+        "PropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c": {
+          "Type": "AWS::Lambda::Version",
+          "Metadata": {
+            "aws:cdk:do-not-refactor": true
+          },
+          "Properties": {
+            "FunctionName": {
+              "Ref": "PropertiesWriterLambda6DA85248"
+            }
           }
         },
         "PropertiesWriterProviderframeworkonEvent01372F53": {
@@ -22366,7 +22366,7 @@
             "Environment": {
               "Variables": {
                 "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd9ea0a80bc16a31e1d69be802bcd6fe6"
+                  "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
                 }
               }
             },

@@ -17,8 +17,10 @@ package sleeper.cdk.jars;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.constructs.Construct;
 
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -27,6 +29,7 @@ import sleeper.core.properties.model.LambdaDeployType;
 import java.util.HashMap;
 import java.util.Map;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -41,16 +44,18 @@ public class SleeperJarsInBucket {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarsInBucket.class);
 
     private final GetVersionId getVersionId;
+    private final String version;
     private final String bucketName;
     private final LambdaDeployType deployType;
     private final String ecrRepositoryPrefix;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
-    private SleeperJarsInBucket(GetVersionId getVersionId, String bucketName, LambdaDeployType deployType, String ecrRepositoryPrefix) {
+    private SleeperJarsInBucket(GetVersionId getVersionId, InstanceProperties instanceProperties) {
         this.getVersionId = getVersionId;
-        this.bucketName = bucketName;
-        this.deployType = deployType;
-        this.ecrRepositoryPrefix = ecrRepositoryPrefix;
+        this.version = instanceProperties.get(VERSION);
+        this.bucketName = instanceProperties.get(JARS_BUCKET);
+        this.deployType = instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
+        this.ecrRepositoryPrefix = instanceProperties.get(ECR_REPOSITORY_PREFIX);
     }
 
     public static SleeperJarsInBucket from(S3Client s3, InstanceProperties instanceProperties) {
@@ -58,18 +63,15 @@ public class SleeperJarsInBucket {
     }
 
     public static SleeperJarsInBucket from(GetVersionId getVersionId, InstanceProperties instanceProperties) {
-        return new SleeperJarsInBucket(getVersionId,
-                instanceProperties.get(JARS_BUCKET),
-                instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class),
-                instanceProperties.get(ECR_REPOSITORY_PREFIX));
+        return new SleeperJarsInBucket(getVersionId, instanceProperties);
     }
 
-    public String bucketName() {
-        return bucketName;
+    public IBucket createJarsBucketReference(Construct scope, String id) {
+        return Bucket.fromBucketName(scope, id, bucketName);
     }
 
     public SleeperLambdaCode lambdaCode(IBucket bucketConstruct) {
-        return new SleeperLambdaCode(this, deployType, bucketConstruct);
+        return new SleeperLambdaCode(this, version, deployType, bucketConstruct);
     }
 
     public String getLatestVersionId(LambdaJar jar) {
@@ -88,10 +90,12 @@ public class SleeperJarsInBucket {
         String getVersionId(LambdaJar jar);
 
         static GetVersionId fromJarsBucket(S3Client s3Client, InstanceProperties instanceProperties) {
+            String version = instanceProperties.get(VERSION);
             String bucketName = instanceProperties.get(JARS_BUCKET);
             return jar -> {
-                String versionId = s3Client.headObject(builder -> builder.bucket(bucketName).key(jar.getFilename())).versionId();
-                LOGGER.info("Found latest version ID for jar {}: {}", jar.getFilename(), versionId);
+                String filename = jar.getFilename(version);
+                String versionId = s3Client.headObject(builder -> builder.bucket(bucketName).key(filename)).versionId();
+                LOGGER.info("Found latest version ID for jar {}: {}", filename, versionId);
                 return versionId;
             };
         }
