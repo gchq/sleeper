@@ -96,7 +96,7 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
-    UserDefinedInstanceProperty RETAIN_DATA_AFTER_TABLE_REMOVAL = Index.propertyBuilder("sleeper.retain.data.after.destroy")
+    UserDefinedInstanceProperty RETAIN_DATA_AFTER_TABLE_REMOVAL = Index.propertyBuilder("sleeper.retain.data.after.table.removal")
             .description("Whether to take a sleeper table offline when removed from the table properties or to " +
                     "delete all the data associated with the table.")
             .defaultValue("true")
