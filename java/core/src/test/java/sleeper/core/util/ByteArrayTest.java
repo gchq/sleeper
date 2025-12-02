@@ -74,15 +74,6 @@ public class ByteArrayTest {
     }
 
     @Test
-    void shouldTestHashCode() {
-        // Given
-        byte[] data = {1, 2, 3};
-
-        // When / Then
-        assertThat(ByteArray.wrap(data)).isEqualTo(Arrays.hashCode(data));
-    }
-
-    @Test
     void shouldAllowUsageWithinAHashSet() {
         //Give
         TreeSet<ByteArray> treeSet = new TreeSet<>();

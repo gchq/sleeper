@@ -16,27 +16,30 @@
 package sleeper.core.util;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Class to provide wrapper object for primitive byte array into an object.
  * Require as hashCode and equals requied for usage of type within a HashSet.
  *
  */
-public class ByteArray implements Comparable<ByteArray> {
+public abstract class ByteArray implements Comparable<ByteArray> {
 
-    private final byte[] array;
+    public static final ByteArrayComparator BYTE_ARRAY_COMPARATOR = new ByteArrayComparator();
 
-    private ByteArray(byte[] array) {
-        this.array = array;
-    }
+    /**
+     * Returns contents of object as primitive type.
+     *
+     * @return array details in primitive type
+     */
+    abstract byte[] getArray();
 
-    public byte[] getArray() {
-        return array;
-    }
-
-    public int getLength() {
-        return array.length;
-    }
+    /**
+     * Returns length of the array within the object.
+     *
+     * @return length of array
+     */
+    abstract int getLength();
 
     /**
      * Simple method for wrapping primitive type within an object.
@@ -45,25 +48,7 @@ public class ByteArray implements Comparable<ByteArray> {
      * @return       wrapped object
      */
     public static ByteArray wrap(byte[] array) {
-        return new ByteArray(array);
-    }
-
-    @Override
-    public int compareTo(ByteArray o) {
-        return 0;
-        //return BYTE_ARRAY_COMPARATOR.compare(this, o);
-    }
-
-    @Override
-    public String toString() {
-        return "PureByteArray{" +
-                "array=" + Arrays.toString(array) +
-                '}';
-    }
-
-    @Override
-    public int hashCode() {
-        return array != null ? Arrays.hashCode(array) : 0;
+        return new PureByteArray(array);
     }
 
     /**
@@ -105,4 +90,96 @@ public class ByteArray implements Comparable<ByteArray> {
         return ByteArray.equals(this, that);
     }
 
+    /**
+     * Hash code implementation of class.
+     *
+     * @return hash code
+     */
+    public int hashCode() {
+        return getArray() != null ? Arrays.hashCode(getArray()) : 0;
+    }
+}
+
+/**
+ * Declared implementation of PureByteArray to match design for Arrays comparion.
+ */
+class PureByteArray extends ByteArray {
+
+    private final byte[] array;
+
+    PureByteArray(byte[] array) {
+        this.array = array;
+    }
+
+    public byte[] getArray() {
+        return array;
+    }
+
+    public int getLength() {
+        return array.length;
+    }
+
+    @Override
+    public int compareTo(ByteArray o) {
+        return BYTE_ARRAY_COMPARATOR.compare(this, o);
+    }
+
+    @Override
+    public String toString() {
+        return "PureByteArray{" +
+                "array=" + Arrays.toString(array) +
+                '}';
+    }
+
+}
+
+/**
+ * Comparator for ByteArray type.
+ */
+class ByteArrayComparator implements Comparator<ByteArray> {
+    @Override
+    public int compare(ByteArray o1, ByteArray o2) {
+        if (o1 == null) {
+            if (o2 == null) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+
+        if (o2 == null) {
+            return 1;
+        }
+
+        if (o1.getArray() == null) {
+            if (o2.getArray() == null) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+
+        if (o2.getArray() == null) {
+            return 1;
+        }
+
+        int array1Length = o1.getLength();
+        int array2Length = o2.getLength();
+
+        if (array1Length < array2Length) {
+            return -1;
+        } else if (array1Length > array2Length) {
+            return 1;
+        } else {
+            int length = Math.min(array1Length, array2Length);
+            for (int i = 0; i < length; i++) {
+                if (o1.getArray()[i] < o2.getArray()[i]) {
+                    return -1;
+                } else if (o1.getArray()[i] > o2.getArray()[i]) {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+    }
 }
