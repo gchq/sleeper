@@ -20,9 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
@@ -64,7 +61,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class BulkExportTaskResources {
@@ -135,17 +131,13 @@ public class BulkExportTaskResources {
 
     private Cluster ecsClusterForBulkExportTasks(
             SleeperCoreStacks coreStacks, IBucket jarsBucket, IBucket resultsBucket) {
-        VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(VPC_ID))
-                .build();
-        IVpc vpc = Vpc.fromLookup(stack, "VPC1", vpcLookupOptions);
         String clusterName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "bulk-export-cluster");
         Cluster cluster = Cluster.Builder
                 .create(stack, "BulkExportCluster")
                 .clusterName(clusterName)
                 .containerInsightsV2(ContainerInsights.ENHANCED)
-                .vpc(vpc)
+                .vpc(coreStacks.getVpc())
                 .build();
         instanceProperties.set(BULK_EXPORT_CLUSTER, cluster.getClusterName());
 

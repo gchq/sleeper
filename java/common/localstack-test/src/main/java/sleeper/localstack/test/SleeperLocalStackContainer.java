@@ -20,8 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.UncheckedIOException;
@@ -43,7 +42,6 @@ public class SleeperLocalStackContainer {
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     private static LocalStackContainer start() {
         LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(LOCALSTACK_DOCKER_IMAGE))
-                .withServices(Service.S3, Service.DYNAMODB, Service.SQS, Service.STS, Service.CLOUDWATCH)
                 .withEnv("LOCALSTACK_HOST", getHostAddress())
                 .withNetwork(Network.newNetwork())
                 .withNetworkAliases("localstack")

@@ -30,17 +30,18 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.foreign.bridge.FFIContext;
 import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.QueryEngineSelector;
-import sleeper.query.datafusion.DataFusionQueryContext;
+import sleeper.query.datafusion.DataFusionLeafPartitionRowRetriever;
+import sleeper.query.datafusion.DataFusionQueryFunctions;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 
 import java.util.concurrent.Executors;
-import java.util.function.Supplier;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -48,11 +49,10 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAM
 
 /**
  * A lambda that is triggered when a serialised leaf partition query arrives on an SQS queue. A processor executes the
- * request using a
- * {@link LeafPartitionQueryExecutor} and publishes the results to either SQS or S3 based on the configuration
+ * request using a {@link LeafPartitionQueryExecutor} and publishes the results to either SQS or S3 based on the
+ * configuration
  * of the query. The processor contains a cache that includes mappings from partitions to files in those partitions.
- * This is reused by
- * subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
+ * This is reused by subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
  */
 @SuppressWarnings("unused")
 public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Void> {
@@ -66,19 +66,18 @@ public class SqsLeafPartitionQueryLambda implements RequestHandler<SQSEvent, Voi
                 buildAwsV2Client(SqsClient.builder()),
                 buildAwsV2Client(DynamoDbClient.builder()),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()),
-                DataFusionQueryContext.createIfLoaded(RootAllocator::new), DataFusionAwsConfig::getDefault);
+                new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), new RootAllocator(), FFIContext.getFFIContext(DataFusionQueryFunctions.class)));
     }
 
     public SqsLeafPartitionQueryLambda(
             S3Client s3Client, SqsClient sqsClient, DynamoDbClient dynamoClient, String configBucket,
-            DataFusionQueryContext dataFusionContext, Supplier<DataFusionAwsConfig> awsConfig) throws ObjectFactoryException {
+            LeafPartitionRowRetrieverProvider dataFusionProvider) throws ObjectFactoryException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         TableHadoopConfigurationProvider hadoopProvider = TableHadoopConfigurationProvider.withCache(
                 TableHadoopConfigurationProvider.forQueryLambdas(instanceProperties));
         LeafPartitionRowRetrieverProvider javaProvider = new LeafPartitionRowRetrieverImpl.Provider(
                 Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)), hadoopProvider);
-        LeafPartitionRowRetrieverProvider dataFusionProvider = dataFusionContext.createDataFusionProvider(DataFusionAwsConfig::getDefault);
         messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsLeafPartitionQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)

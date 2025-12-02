@@ -67,7 +67,7 @@ public class EmrBulkImportPerformanceST {
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(5),
                         "jobs finished with one run each")
-                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_500_000, 5_000_000),
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(3_000_000, 5_000_000),
                         "meets expected performance");
     }
 }

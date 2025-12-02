@@ -67,7 +67,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
         -->
-        <spark.version>3.5.5</spark.version>
+        <spark.version>3.5.6</spark.version>
         <hadoop.version>3.4.1</hadoop.version>
         <parquet.version>1.16.0</parquet.version>
         <joom.spark.platform.version>0.4.10</joom.spark.platform.version>
@@ -185,7 +185,7 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
-        <google.errorprone.version>2.44.0</google.errorprone.version>
+        <google.errorprone.version>2.45.0</google.errorprone.version>
         <cdk.version>2.230.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.3</constructs.version>
@@ -215,7 +215,7 @@
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.2</jgrapht.version>
-        <apfloat.version>1.14.0</apfloat.version>
+        <apfloat.version>1.15.0</apfloat.version>
         <joda-time.version>2.14.0</joda-time.version>
         <json-smart.version>2.6.0</json-smart.version>
         <jnr.ffi.version>2.2.18</jnr.ffi.version>
@@ -223,7 +223,7 @@
         <!-- Testing -->
         <junit.version>6.0.1</junit.version>
         <mockito.version>5.20.0</mockito.version>
-        <testcontainers.version>1.21.3</testcontainers.version>
+        <testcontainers.version>2.0.2</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
         <assertj.version>3.27.6</assertj.version>
@@ -232,7 +232,7 @@
         <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
         <jsonunit.version>5.1.0</jsonunit.version>
-        <checkstyle.version>12.1.2</checkstyle.version>
+        <checkstyle.version>12.2.0</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
         <sleeper.system.test.subnet.ids />
@@ -252,7 +252,7 @@
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <aspectj.plugin.version>1.14.1</aspectj.plugin.version>
         <shade.plugin.version>3.6.1</shade.plugin.version>
-        <assembly.plugin.version>3.7.1</assembly.plugin.version>
+        <assembly.plugin.version>3.8.0</assembly.plugin.version>
         <jar.plugin.version>3.5.0</jar.plugin.version>
         <compiler.plugin.version>3.14.1</compiler.plugin.version>
         <enforcer.plugin.version>3.6.2</enforcer.plugin.version>
@@ -265,7 +265,7 @@
         <dependency-check.plugin.version>12.1.9</dependency-check.plugin.version>
         <site.plugin.version>3.21.0</site.plugin.version>
         <exec.plugin.version>3.6.2</exec.plugin.version>
-        <resources.plugin.version>3.3.1</resources.plugin.version>
+        <resources.plugin.version>3.4.0</resources.plugin.version>
         <maven.deploy.plugin.version>3.1.4</maven.deploy.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
@@ -1470,7 +1470,7 @@
             <!-- Test Dependencies -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
-                <artifactId>localstack</artifactId>
+                <artifactId>testcontainers-localstack</artifactId>
                 <version>${testcontainers.version}</version>
             </dependency>
             <dependency>
