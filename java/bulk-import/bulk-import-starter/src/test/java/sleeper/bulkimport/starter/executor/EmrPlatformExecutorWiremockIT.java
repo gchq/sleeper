@@ -71,6 +71,7 @@ import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL;
 import static sleeper.core.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
+import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -92,6 +93,7 @@ class EmrPlatformExecutorWiremockIT {
         instanceProperties.set(CONFIG_BUCKET, "config-bucket");
         instanceProperties.set(JARS_BUCKET, "jars-bucket");
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL, "emr-1.2.3");
         instanceProperties.set(BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY, "16g");
         instanceProperties.set(BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY, "16g");
         instanceProperties.set(BULK_IMPORT_EMR_SPARK_EXECUTOR_INSTANCES, "29");

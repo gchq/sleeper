@@ -54,8 +54,8 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.constructs.Construct;
 import software.constructs.IDependable;
 
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.ContainerConstants;
@@ -74,11 +74,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_EC2_DEFINITION_FAMILY;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_DESIRED;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_POOL_MINIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_ROOT_SIZE;
@@ -88,17 +87,17 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 public class CompactionOnEc2Resources {
     private final InstanceProperties instanceProperties;
     private final Stack stack;
-    private final CoreStacks coreStacks;
+    private final SleeperCoreStacks coreStacks;
 
     public CompactionOnEc2Resources(
-            InstanceProperties instanceProperties, Stack stack, CoreStacks coreStacks) {
+            InstanceProperties instanceProperties, Stack stack, SleeperCoreStacks coreStacks) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
         this.coreStacks = coreStacks;
     }
 
     public ITaskDefinition createTaskDefinition(
-            Cluster cluster, IVpc vpc, LambdaCode taskCreatorJar,
+            Cluster cluster, IVpc vpc, SleeperLambdaCode taskCreatorJar,
             ContainerImage containerImage, Map<String, String> environmentVariables) {
 
         Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder
@@ -115,7 +114,7 @@ public class CompactionOnEc2Resources {
     }
 
     private ContainerDefinitionOptions createEC2ContainerDefinition(
-            CoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
+            SleeperCoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
         String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
         CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
         return ContainerDefinitionOptions.builder()
@@ -128,7 +127,7 @@ public class CompactionOnEc2Resources {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void addEC2CapacityProvider(Cluster cluster, IVpc vpc, LambdaCode taskCreatorJar) {
+    private void addEC2CapacityProvider(Cluster cluster, IVpc vpc, SleeperLambdaCode taskCreatorJar) {
 
         // Create some extra user data to enable ECS container metadata file
         UserData customUserData = UserData.forLinux();
@@ -173,7 +172,6 @@ public class CompactionOnEc2Resources {
                 .vpc(vpc)
                 .launchTemplate(scalingLaunchTemplate)
                 .minCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MINIMUM))
-                .desiredCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_DESIRED))
                 .maxCapacity(instanceProperties.getInt(COMPACTION_EC2_POOL_MAXIMUM))
                 .terminationPolicies(List.of(TerminationPolicy.CUSTOM_LAMBDA_FUNCTION))
                 .terminationPolicyCustomLambdaFunctionArn(customTermination.getFunctionArn())
@@ -201,7 +199,7 @@ public class CompactionOnEc2Resources {
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private IFunction lambdaForCustomTerminationPolicy(CoreStacks coreStacks, LambdaCode lambdaCode) {
+    private IFunction lambdaForCustomTerminationPolicy(SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode) {
 
         // Run tasks function
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);

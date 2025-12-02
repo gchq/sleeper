@@ -29,12 +29,10 @@ import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployNewInstance;
-import sleeper.clients.deploy.properties.PopulateInstancePropertiesAws;
-import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -47,7 +45,8 @@ import java.util.List;
 import java.util.Set;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.CREATE_FAILED;
 import static software.amazon.awssdk.services.cloudformation.model.StackStatus.ROLLBACK_COMPLETE;
 
@@ -83,21 +82,21 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         S3InstanceProperties.saveToS3(s3, instanceProperties);
     }
 
-    public boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig) {
+    public boolean deployInstanceIfNotPresent(String instanceId, SleeperInstanceConfiguration deployConfig) {
         if (deployedStackIsPresent(instanceId)) {
             return false;
         }
         LOGGER.info("Deploying instance: {}", instanceId);
-        PopulateInstancePropertiesAws.builder(sts, regionProvider)
-                .instanceId(instanceId).vpcId(parameters.getVpcId()).subnetIds(parameters.getSubnetIds())
-                .extraInstanceProperties(instanceProperties -> instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                .build().populate(deployConfig.getInstanceProperties());
+        deployConfig.getInstanceProperties().set(ID, instanceId);
+        deployConfig.getInstanceProperties().set(VPC_ID, parameters.getVpcId());
+        deployConfig.getInstanceProperties().set(SUBNETS, parameters.getSubnetIds());
         try {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
-                    .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                    .instanceType(InvokeCdk.Type.STANDARD)
                     .runCommand(CommandUtils::runCommandLogOutput)
-                    .deployWithClients(s3, dynamoDB, ecr);
+                    .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
+                    .deployWithClients(s3, dynamoDB, ecr, sts, regionProvider);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -126,12 +125,13 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     public void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
         try {
             DeployExistingInstance.builder()
-                    .clients(s3, ecr)
+                    .clients(s3, ecr, sts)
+                    .regionProvider(regionProvider)
                     .properties(instanceProperties)
                     .tablePropertiesList(tableProperties)
                     .scriptsDirectory(parameters.getScriptsDirectory())
-                    .deployCommand(CdkCommand.deployExistingPaused())
                     .runCommand(CommandUtils::runCommandLogOutput)
+                    .createMultiPlatformBuilder(parameters.isCreateMultiPlatformBuilder())
                     .build().update();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

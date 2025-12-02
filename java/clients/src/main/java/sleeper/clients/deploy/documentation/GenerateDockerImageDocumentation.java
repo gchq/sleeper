@@ -15,6 +15,8 @@
  */
 package sleeper.clients.deploy.documentation;
 
+import com.google.common.io.CharStreams;
+
 import sleeper.clients.util.tablewriter.TableFieldDefinition;
 import sleeper.clients.util.tablewriter.TableStructure;
 import sleeper.clients.util.tablewriter.TableWriter;
@@ -22,17 +24,15 @@ import sleeper.clients.util.tablewriter.TableWriterFactory;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaJar;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
-import java.io.UnsupportedEncodingException;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class GenerateDockerImageDocumentation {
 
@@ -40,15 +40,14 @@ public class GenerateDockerImageDocumentation {
     }
 
     public static void main(String[] args) throws IOException {
-        Path path = Path.of(args[0]).resolve("docs/deployment/images-to-upload.md");
-        if (Files.exists(path)) {
-            Files.delete(path);
-        }
-        Files.createFile(path);
-        writeFile(path, output -> writePropertiesMarkdownFile(output, "Docker Deployment Images", getECRDescription(),
-                createDockerDeploymentTableWriter(DockerDeployment.all())));
-        writeFile(path, output -> writePropertiesMarkdownFile(output, "Lambda Deployment Images", getLambdaDescription(),
-                createLambdaJarTableWriter(LambdaJar.getAll())));
+        Path path = Path.of(args[0]).resolve("docs/deployment/docker-images.md");
+        String template = getResourceAsString("docker-images.template.md");
+        String dockerDeploymentTable = tableToString(createDockerDeploymentTableWriter(DockerDeployment.all()));
+        String lambdaTable = tableToString(createLambdaJarTableWriter(LambdaJar.all()));
+        String output = template
+                .replace("%DOCKER_IMAGES_TABLE%", dockerDeploymentTable)
+                .replace("%LAMBDA_IMAGES_TABLE%", lambdaTable);
+        Files.writeString(path, output);
     }
 
     private static TableWriter createDockerDeploymentTableWriter(List<DockerDeployment> deployments) {
@@ -87,52 +86,19 @@ public class GenerateDockerImageDocumentation {
                 }).build();
     }
 
-    private static void writePropertiesMarkdownFile(
-            OutputStream output, String sectionName, String sectionDescription, TableWriter tableWriter) {
-        PrintStream out = printStream(output);
-        out.println("## " + sectionName);
-        out.println(sectionDescription);
-        out.println();
-        tableWriter.write(out);
-        out.println();
-    }
-
-    private static void writeFile(Path file, Consumer<OutputStream> generator) {
-        try (OutputStream stream = Files.newOutputStream(file, StandardOpenOption.APPEND)) {
-            generator.accept(stream);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed writing file: " + file, e);
+    private static String getResourceAsString(String path) throws IOException {
+        try (Reader reader = new InputStreamReader(
+                GenerateDockerImageDocumentation.class.getClassLoader().getResourceAsStream(path),
+                StandardCharsets.UTF_8)) {
+            return CharStreams.toString(reader);
         }
     }
 
-    private static PrintStream printStream(OutputStream output) {
-        try {
-            return new PrintStream(output, true, StandardCharsets.UTF_8.name());
-        } catch (UnsupportedEncodingException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static String getECRDescription() {
-        return """
-                A build of Sleeper outputs several directories under `scripts/docker`. Each is the directory to build a Docker image, with a Dockerfile.
-                Some of these are used for parts of Sleeper that are always deployed from Docker images, and those are listed here.
-                * Deployment name - This is both the name of its directory under `scripts/docker`, and the name of the image when it's built and the repository it's uploaded to.
-                * Optional Stack - They're each associated with an optional stack, and will only be used when that optional stack is deployed in an instance of Sleeper.
-                * Multiplatform - Compaction job execution is built as a multiplatform image, so it can be deployed in both x86 and ARM architectures.
-                """;
-    }
-
-    private static String getLambdaDescription() {
-        return """
-                These are all used with the Docker build directory that's output during a build of Sleeper at `scripts/docker/lambda`.
-                Most lambdas are usually deployed from a jar in the jars bucket, but some need to be deployed as a Docker container, and we have the option to deploy all lambdas as Docker containers as well.
-                To build a Docker image for a lambda, we copy its jar file from `scripts/jars` to `scripts/docker/lambda/lambda.jar`, and then run the Docker build for that directory.
-                This results in a separate Docker image for each lambda jar.
-                * Filename - This is the name of the jar file that's output by the build in `scripts/jars`.
-                It includes the version number you've built, which we've included as a placeholder here.
-                * Image name - This is the name of the Docker image that's built, and the name of the repository it's uploaded to.
-                * Always Docker deploy - This means that that lambda will always be deployed with Docker, usually because the jar is too large to deploy directly.
-                    """;
+    private static String tableToString(TableWriter tableWriter) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
+        tableWriter.write(printStream);
+        printStream.flush();
+        return outputStream.toString(StandardCharsets.UTF_8);
     }
 }

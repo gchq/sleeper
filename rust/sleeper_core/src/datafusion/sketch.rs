@@ -17,23 +17,21 @@
  */
 use crate::datafusion::sketch_udf::SketchUDF;
 use arrow::{array::ArrayAccessor, datatypes::DataType};
-use bytes::{Buf, BufMut};
-use color_eyre::eyre::eyre;
+use bytes::BufMut;
 use cxx::{Exception, UniquePtr};
 use datafusion::{
     common::DFSchema,
     dataframe::DataFrame,
     error::DataFusionError,
-    logical_expr::{ScalarUDF, col},
-    parquet::data_type::AsBytes,
+    logical_expr::{ScalarUDF, ident},
 };
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use objectstore_ext::s3::ObjectStoreFactory;
 use rust_sketch::quantiles::{
-    byte::{byte_deserialize, byte_sketch_t, new_byte_sketch},
-    i64::{i64_deserialize, i64_sketch_t, new_i64_sketch},
-    str::{new_str_sketch, str_deserialize, string_sketch_t},
+    byte::{byte_sketch_t, new_byte_sketch},
+    i64::{i64_sketch_t, new_i64_sketch},
+    str::{new_str_sketch, string_sketch_t},
 };
 use std::{
     fmt::Debug,
@@ -352,17 +350,17 @@ impl<'a> Sketcher<'a> {
             .map(datafusion::common::Column::name)
             .collect::<Vec<_>>();
 
-        let row_key_exprs = self.row_keys.iter().map(col).collect::<Vec<_>>();
+        let row_key_exprs = self.row_keys.iter().map(ident).collect::<Vec<_>>();
 
         // Iterate through column names, mapping each into an `Expr`
         let mut col_names_expr = Vec::new();
         for col_name in col_names {
-            // Have we found the first row key column?
+            // Have we found the first row key field?
             let expr = if self.row_keys[0] == *col_name {
-                // Sketch function needs to be called with each row key column
+                // Sketch function needs to be called with each row key field
                 self.sketch.call(row_key_exprs.clone()).alias(col_name)
             } else {
-                col(col_name)
+                ident(col_name)
             };
             col_names_expr.push(expr);
         }
@@ -470,55 +468,6 @@ pub fn create_sketch_path(output_path: &Url) -> Url {
             .to_string_lossy(),
     );
     res
-}
-
-#[allow(clippy::missing_errors_doc)]
-pub async fn deserialise_sketches(
-    path: &Url,
-    key_types: Vec<DataType>,
-) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let factory = ObjectStoreFactory::new(None);
-    deserialise_sketches_with_factory(&factory, path, key_types).await
-}
-
-async fn deserialise_sketches_with_factory(
-    store_factory: &ObjectStoreFactory,
-    path: &Url,
-    key_types: Vec<DataType>,
-) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let store_path = object_store::path::Path::from(path.path());
-    let store = store_factory.get_object_store(path)?;
-    let result = store.get(&store_path).await?;
-    read_sketches_from_result(result, key_types).await
-}
-
-async fn read_sketches_from_result(
-    result: object_store::GetResult,
-    key_types: Vec<DataType>,
-) -> color_eyre::Result<Vec<DataSketchVariant>> {
-    let mut bytes = result.bytes().await?;
-    let mut sketches: Vec<DataSketchVariant> = vec![];
-    for key_type in key_types {
-        let length = bytes.get_u32() as usize;
-        let sketch_bytes = bytes.split_to(length);
-        sketches.push(read_sketch(sketch_bytes.as_bytes(), key_type)?);
-    }
-    Ok(sketches)
-}
-
-fn read_sketch(bytes: &[u8], key_type: DataType) -> color_eyre::Result<DataSketchVariant> {
-    match key_type {
-        t @ (DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64) => {
-            Ok(DataSketchVariant::Int(t.clone(), i64_deserialize(bytes)?))
-        }
-        t @ (DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View) => {
-            Ok(DataSketchVariant::Str(t.clone(), str_deserialize(bytes)?))
-        }
-        t @ (DataType::Binary | DataType::LargeBinary | DataType::BinaryView) => Ok(
-            DataSketchVariant::Bytes(t.clone(), byte_deserialize(bytes)?),
-        ),
-        _ => Err(eyre!("DataType not supported {key_type}")),
-    }
 }
 
 /// Update the given sketch from an array.

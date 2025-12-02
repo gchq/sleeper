@@ -21,7 +21,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]>        </notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*$</packageUrl>
-        <cpe>cpe:/a:apache:spark:3.5.5</cpe>
+        <cpe>cpe:/a:apache:spark:3.5.6</cpe>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -31,7 +31,7 @@
         Some of the Spark dependencies were not identified by the Spark CPE, so we've added this to catch
         several shaded dependencies.
         ]]>        </notes>
-        <filePath regex="true">^.*/spark-[^/]+-3\.5\.5\.jar/.*$</filePath>
+        <filePath regex="true">^.*/spark-[^/]+-3\.5\.6\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -105,7 +105,7 @@
         We don't expose that page, so it won't be a problem.
         This is a provided dependency for the module bulk-import/bulk-import-runner.
         ]]>        </notes>
-        <filePath regex="true">^.*/avro-ipc-1\.12\.0\.jar/.*/jquery-.*\.js$</filePath>
+        <filePath regex="true">^.*/avro-ipc-.*\.jar/.*/jquery-.*\.js$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -155,7 +155,7 @@
         This dependency is only used by WireMock, which is only used for tests.
 
         file name: http2-common-11.0.25.jar
-        ]]></notes>
+        ]]>        </notes>
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty\.http2/http2-common@.*$</packageUrl>
         <vulnerabilityName>CVE-2025-5115</vulnerabilityName>
     </suppress>

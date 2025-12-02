@@ -21,11 +21,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
-import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -38,19 +38,20 @@ import static sleeper.core.statestore.AllReferencesToAFileTestHelper.sumFileRefe
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.OPTIONAL_FEATURES_DISABLED;
 
 @SystemTest
-@Slow // Slow because it deploys a separate instance just for this test, and the CDK is slow
+// Slow because it deploys a separate instance just for this test, and the CDK is slow
+@Slow1
 public class OptionalFeaturesDisabledST {
 
     @TempDir
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceAddOnlineTable(OPTIONAL_FEATURES_DISABLED);
     }
 
     @Test
-    void shouldIngest1FileFromDataBucketWhenSourceBucketAndTrackerAreDisabled(SleeperSystemTest sleeper) throws Exception {
+    void shouldIngest1FileFromDataBucketWhenSourceBucketAndTrackerAreDisabled(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.sourceFiles().inDataBucket()
                 .createWithNumberedRows("file.parquet", LongStream.range(0, 100));
@@ -68,7 +69,7 @@ public class OptionalFeaturesDisabledST {
     }
 
     @Test
-    void shouldAllowForCompactionWhenTrackerIsDisabled(SleeperSystemTest sleeper) throws Exception {
+    void shouldAllowForCompactionWhenTrackerIsDisabled(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.updateTableProperties(Map.of(COMPACTION_FILES_BATCH_SIZE, "5"));
         // Files with rows 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)

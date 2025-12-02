@@ -20,7 +20,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.InMemoryTransactionBodyStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.committer.StateStoreCommitter;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
@@ -40,17 +40,13 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class InMemoryStateStoreCommitter {
 
     private final InMemoryTransactionBodyStore transactionBodyStore;
-    private final InMemoryIngestByQueue ingest;
-    private final InMemoryCompaction compaction;
     private final Queue<StateStoreCommitRequest> queue = new LinkedList<>();
     private final Map<String, Integer> numCommitsByTableId = new HashMap<>();
     private final Map<String, Double> commitsPerSecondByTableId = new HashMap<>();
     private final Map<String, Boolean> runCommitterOnSendByTableId = new HashMap<>();
 
-    public InMemoryStateStoreCommitter(InMemoryTransactionBodyStore transactionBodyStore, InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
+    public InMemoryStateStoreCommitter(InMemoryTransactionBodyStore transactionBodyStore) {
         this.transactionBodyStore = transactionBodyStore;
-        this.ingest = ingest;
-        this.compaction = compaction;
     }
 
     public StateStoreCommitterDriver withContext(SystemTestContext context) {
@@ -65,17 +61,17 @@ public class InMemoryStateStoreCommitter {
         return new FakeLogs(numCommitsByTableId, Map.of());
     }
 
-    public void setRunCommitterOnSend(SleeperSystemTest sleeper, boolean runCommitterOnSend) {
+    public void setRunCommitterOnSend(SleeperDsl sleeper, boolean runCommitterOnSend) {
         runCommitterOnSendByTableId.put(sleeper.tableProperties().get(TABLE_ID), runCommitterOnSend);
     }
 
-    public void addFakeCommits(SleeperSystemTest sleeper, int commits) {
+    public void addFakeCommits(SleeperDsl sleeper, int commits) {
         numCommitsByTableId.compute(
                 sleeper.tableProperties().get(TABLE_ID),
                 (id, count) -> count == null ? commits : count + commits);
     }
 
-    public void setFakeCommitsPerSecond(SleeperSystemTest sleeper, double commitsPerSecond) {
+    public void setFakeCommitsPerSecond(SleeperDsl sleeper, double commitsPerSecond) {
         commitsPerSecondByTableId.put(sleeper.tableProperties().get(TABLE_ID), commitsPerSecond);
     }
 

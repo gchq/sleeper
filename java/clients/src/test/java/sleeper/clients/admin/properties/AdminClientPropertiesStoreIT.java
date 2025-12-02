@@ -51,12 +51,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.clients.deploy.container.StackDockerImage.dockerBuildImage;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.core.properties.local.LoadLocalProperties.loadTablesFromDirectory;
@@ -395,8 +393,6 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     private UploadDockerImagesToEcrRequest withImages(StackDockerImage... images) {
         return UploadDockerImagesToEcrRequest.builder()
                 .ecrPrefix(instanceProperties.get(ID))
-                .account(instanceProperties.get(ACCOUNT))
-                .region(instanceProperties.get(REGION))
                 .version(instanceProperties.get(VERSION))
                 .images(List.of(images))
                 .build();
@@ -428,7 +424,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             tablePropertiesHolder.clear();
             loadTablesFromDirectory(properties, tempDir).forEach(tablePropertiesHolder::add);
             return null;
-        }).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange()));
+        }).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 
     private void createTableInS3(String tableName) {
@@ -446,14 +442,14 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     }
 
     private void verifyAnyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange()));
+        verify(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 
     private void verifyPropertiesDeployedWithCdk() throws Exception {
-        verify(cdk).invokeInferringType(instanceProperties, CdkCommand.deployPropertiesChange());
+        verify(cdk).invokeInferringType(instanceProperties, CdkCommand.deployPropertiesChange(propertiesFile()));
     }
 
     private void doThrowWhenPropertiesDeployedWithCdk(Throwable throwable) throws Exception {
-        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange()));
+        doThrow(throwable).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange(propertiesFile())));
     }
 }

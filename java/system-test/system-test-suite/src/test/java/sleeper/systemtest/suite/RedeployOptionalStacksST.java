@@ -20,9 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.model.OptionalStack;
-import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.Slow;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -31,7 +31,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.REENABLE_OPTI
 
 @SystemTest
 // Slow because it needs to do many CDK deployments
-@Slow
+@Slow1
 public class RedeployOptionalStacksST {
 
     private static final Set<OptionalStack> REDEPLOYABLE_STACKS = new LinkedHashSet<>(OptionalStack.all());
@@ -43,20 +43,19 @@ public class RedeployOptionalStacksST {
     }
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(REENABLE_OPTIONAL_STACKS);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperDsl sleeper) {
         sleeper.disableOptionalStacks(OptionalStack.all());
     }
 
     @Test
-    void shouldDisableAndReenableAllOptionalStacks(SleeperSystemTest sleeper) {
+    void shouldDisableAndReenableAllOptionalStacks(SleeperDsl sleeper) {
         sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
         sleeper.disableOptionalStacks(OptionalStack.all());
         sleeper.enableOptionalStacks(REDEPLOYABLE_STACKS);
     }
-
 }

@@ -18,37 +18,33 @@ package sleeper.clients.deploy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sts.StsClient;
 
-import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
-import sleeper.clients.deploy.container.UploadDockerImagesToEcrRequest;
 import sleeper.clients.deploy.jar.SyncJars;
-import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
-import sleeper.clients.util.cdk.CdkDeploy;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.command.CommandPipelineRunner;
 import sleeper.clients.util.command.CommandUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.SleeperVersion;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.SaveLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.clients.util.cdk.CdkCommand.deployExisting;
-import static sleeper.clients.util.cdk.CdkCommand.deployExistingPaused;
 
 public class DeployExistingInstance {
 
@@ -58,8 +54,11 @@ public class DeployExistingInstance {
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3;
     private final EcrClient ecr;
-    private final CdkDeploy deployCommand;
+    private final StsClient sts;
+    private final AwsRegionProvider regionProvider;
+    private final boolean deployPaused;
     private final CommandPipelineRunner runCommand;
+    private final boolean createMultiPlatformBuilder;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
@@ -67,8 +66,11 @@ public class DeployExistingInstance {
         tablePropertiesList = builder.tablePropertiesList;
         s3 = builder.s3;
         ecr = builder.ecr;
-        deployCommand = builder.deployCommand;
+        sts = builder.sts;
+        regionProvider = builder.regionProvider;
+        deployPaused = builder.deployPaused;
         runCommand = builder.runCommand;
+        createMultiPlatformBuilder = builder.createMultiPlatformBuilder;
     }
 
     public static Builder builder() {
@@ -86,53 +88,37 @@ public class DeployExistingInstance {
 
         try (S3Client s3Client = S3Client.create();
                 DynamoDbClient dynamoClient = DynamoDbClient.create();
-                EcrClient ecrClient = EcrClient.create()) {
-            builder().clients(s3Client, ecrClient)
+                EcrClient ecrClient = EcrClient.create();
+                StsClient stsClient = StsClient.create()) {
+            builder().clients(s3Client, ecrClient, stsClient)
+                    .regionProvider(DefaultAwsRegionProviderChain.builder().build())
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
-                    .deployCommand(deployPaused ? deployExistingPaused() : deployExisting())
+                    .deployPaused(deployPaused)
                     .loadPropertiesFromS3(s3Client, dynamoClient)
                     .build().update();
         }
     }
 
     public void update() throws IOException, InterruptedException {
-        LOGGER.info("-------------------------------------------------------");
-        LOGGER.info("Running Deployment");
-        LOGGER.info("-------------------------------------------------------");
+        DeployInstance deployInstance = new DeployInstance(
+                SyncJars.fromScriptsDirectory(s3, scriptsDirectory),
+                new UploadDockerImagesToEcr(
+                        UploadDockerImages.builder()
+                                .scriptsDirectory(scriptsDirectory)
+                                .deployConfig(DeployConfiguration.fromScriptsDirectory(scriptsDirectory))
+                                .commandRunner(runCommand)
+                                .createMultiplatformBuilder(createMultiPlatformBuilder)
+                                .build(),
+                        CheckVersionExistsInEcr.withEcrClient(ecr), sts.getCallerIdentity().account(), regionProvider.getRegion().id()),
+                DeployInstance.WriteLocalProperties.underScriptsDirectory(scriptsDirectory),
+                InvokeCdk.builder().scriptsDirectory(scriptsDirectory).runCommand(runCommand).build());
 
-        // Write properties files for CDK
-        Path generatedDirectory = scriptsDirectory.resolve("generated");
-        Path jarsDirectory = scriptsDirectory.resolve("jars");
-        Files.createDirectories(generatedDirectory);
-        ClientUtils.clearDirectory(generatedDirectory);
-        SaveLocalProperties.saveToDirectory(generatedDirectory, properties, tablePropertiesList.stream());
-
-        SyncJars.builder().s3(s3)
-                .jarsDirectory(jarsDirectory).instanceProperties(properties)
-                .deleteOldJars(false)
-                .build().sync();
-
-        UploadDockerImagesToEcr dockerImageUploader = new UploadDockerImagesToEcr(
-                UploadDockerImages.builder()
-                        .baseDockerDirectory(scriptsDirectory.resolve("docker")).jarsDirectory(jarsDirectory)
-                        .commandRunner(runCommand)
-                        .build(),
-                EcrRepositoryCreator.withEcrClient(ecr));
-        dockerImageUploader.upload(UploadDockerImagesToEcrRequest.forDeployment(properties));
-
-        LOGGER.info("-------------------------------------------------------");
-        LOGGER.info("Deploying Stacks");
-        LOGGER.info("-------------------------------------------------------");
-        InvokeCdkForInstance.builder()
-                .propertiesFile(generatedDirectory.resolve("instance.properties"))
-                .version(SleeperVersion.getVersion())
-                .jarsDirectory(jarsDirectory)
-                .build().invokeInferringType(properties, deployCommand, runCommand);
-
-        // We can use RestartTasks here to terminate indefinitely running ECS tasks, in order to get them onto the new
-        // version of the jars. That will be part of issues #639 and #640 once graceful termination is implemented.
-        // Note we'll need to reload instance properties as the cluster/lambda names may have been updated by the CDK.
+        deployInstance.deploy(DeployInstanceRequest.builder()
+                .instanceConfig(SleeperInstanceConfiguration.builder().instanceProperties(properties).tableProperties(tablePropertiesList).build())
+                .cdkCommand(deployPaused ? CdkCommand.deployExistingPaused() : CdkCommand.deployExisting())
+                .inferInstanceType()
+                .build());
 
         LOGGER.info("Finished deployment of existing instance");
     }
@@ -144,8 +130,11 @@ public class DeployExistingInstance {
         private List<TableProperties> tablePropertiesList;
         private S3Client s3;
         private EcrClient ecr;
-        private CdkDeploy deployCommand = CdkCommand.deployExisting();
+        private StsClient sts;
+        private AwsRegionProvider regionProvider;
+        private boolean deployPaused;
         private CommandPipelineRunner runCommand = CommandUtils::runCommandInheritIO;
+        private boolean createMultiPlatformBuilder = true;
 
         private Builder() {
         }
@@ -174,19 +163,30 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder clients(S3Client s3, EcrClient ecr) {
+        public Builder clients(S3Client s3, EcrClient ecr, StsClient sts) {
             this.s3 = s3;
             this.ecr = ecr;
+            this.sts = sts;
             return this;
         }
 
-        public Builder deployCommand(CdkDeploy deployCommand) {
-            this.deployCommand = deployCommand;
+        public Builder regionProvider(AwsRegionProvider regionProvider) {
+            this.regionProvider = regionProvider;
+            return this;
+        }
+
+        public Builder deployPaused(boolean deployPaused) {
+            this.deployPaused = deployPaused;
             return this;
         }
 
         public Builder runCommand(CommandPipelineRunner runCommand) {
             this.runCommand = runCommand;
+            return this;
+        }
+
+        public Builder createMultiPlatformBuilder(boolean createMultiPlatformBuilder) {
+            this.createMultiPlatformBuilder = createMultiPlatformBuilder;
             return this;
         }
 

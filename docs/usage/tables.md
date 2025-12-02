@@ -41,7 +41,7 @@ with `adminClient.sh`.
 Here's an example of how you might use these together to create and add data to a table:
 
 ```bash
-cat schema.json
+cat ./scripts/templates/schema.template
 {
   "rowKeyFields": [
     {
@@ -57,7 +57,7 @@ cat schema.json
   ]
 }
 ID=my-instance-id
-./scripts/utility/estimateSplitPoints.sh schema.json 128 100000 32768 splits.file s3a://my-bucket/file.parquet
+./scripts/utility/estimateSplitPoints.sh ./scripts/templates/schema.template 128 100000 32768 splits.file s3a://my-bucket/file.parquet
 ./scripts/utility/addTable.sh $ID table1
 ./scripts/utility/reinitialiseTable.sh $ID table1 true splits.file
 ./scripts/utility/sendToIngestBatcher.sh $ID table1 my-bucket/file.parquet
@@ -96,8 +96,9 @@ The paths to your sample data can be specified as a path in your local file syst
 give a path in an S3 bucket like `s3a://my-bucket/my-prefix/file.parquet`.
 
 You can apply the resulting split points when adding a table by setting an absolute path to the output file in the
-table property `sleeper.table.splits.file`. If you haven't added any data to the table yet, you can apply the split
-points by reinitialising the table.
+table property `sleeper.table.splits.file`. If you've created a table but haven't added any data yet, you can apply a
+change to this by reinitialising the table. In the future it will not be necessary to set this property when using the
+instance configuration folder structure, see issue https://github.com/gchq/sleeper/issues/583.
 
 ### Add table
 

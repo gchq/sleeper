@@ -36,15 +36,6 @@ class SyncJarsIT extends JarsBucketITBase {
     class UploadJars {
 
         @Test
-        void shouldCreateNewBucketIfNotPresent() throws IOException {
-            // When
-            uploadJarsToBucket(bucketName);
-
-            // Then
-            assertThat(listObjectKeys()).isEmpty();
-        }
-
-        @Test
         void shouldUploadJars() throws IOException {
             // When
             Files.createFile(tempDir.resolve("test1.jar"));
@@ -139,15 +130,6 @@ class SyncJarsIT extends JarsBucketITBase {
     @Nested
     @DisplayName("Report when bucket changed")
     class ReportChanges {
-
-        @Test
-        void shouldReportChangeIfBucketCreated() throws IOException {
-            // When
-            boolean changed = uploadJarsToBucket(bucketName);
-
-            // Then
-            assertThat(changed).isTrue();
-        }
 
         @Test
         void shouldReportNoChangeIfBucketAlreadyExisted() throws IOException {

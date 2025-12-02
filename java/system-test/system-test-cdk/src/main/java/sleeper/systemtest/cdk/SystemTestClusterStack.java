@@ -20,9 +20,6 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.Tags;
-import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
@@ -39,9 +36,8 @@ import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.core.CoreStacks;
-import sleeper.cdk.stack.ingest.IngestBatcherStack;
-import sleeper.cdk.stack.ingest.IngestStacks;
+import sleeper.cdk.networking.SleeperNetworking;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -56,7 +52,6 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_LOG_RETENTION_DAYS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
@@ -67,27 +62,25 @@ import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TAS
 public class SystemTestClusterStack extends NestedStack {
 
     public SystemTestClusterStack(
-            Construct scope, String id, SystemTestStandaloneProperties properties, SystemTestBucketStack bucketStack) {
+            Construct scope, String id, SystemTestStandaloneProperties properties, SleeperNetworking networking,
+            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
-        create(properties, properties, properties.toInstancePropertiesForCdkUtils(), bucketStack);
+        create(properties, properties, properties.toInstancePropertiesForCdkUtils(), networking, bucketStack, autoStopEcsClusterTasksStack);
         Tags.of(this).add("DeploymentStack", id);
     }
 
     public SystemTestClusterStack(
-            Construct scope, String id, SystemTestProperties properties, SystemTestBucketStack bucketStack,
-            CoreStacks coreStacks, IngestStacks ingestStacks, IngestBatcherStack ingestBatcherStack) {
+            Construct scope, String id, SystemTestProperties properties, SleeperNetworking networking,
+            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         super(scope, id);
-        create(properties.testPropertiesOnly(), properties::set, properties, bucketStack);
+        create(properties.testPropertiesOnly(), properties::set, properties, networking, bucketStack, autoStopEcsClusterTasksStack);
         Utils.addStackTagIfSet(this, properties);
     }
 
     private void create(
             SystemTestPropertyValues properties, SystemTestPropertySetter propertySetter,
-            InstanceProperties instanceProperties, SystemTestBucketStack bucketStack) {
-        VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(VPC_ID))
-                .build();
-        IVpc vpc = Vpc.fromLookup(this, "SystemTestVPC", vpcLookupOptions);
+            InstanceProperties instanceProperties, SleeperNetworking networking,
+            SystemTestBucketStack bucketStack, AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
 
         // ECS cluster for tasks to write data
@@ -96,13 +89,15 @@ public class SystemTestClusterStack extends NestedStack {
                 .create(this, "SystemTestCluster")
                 .clusterName(clusterName)
                 .containerInsightsV2(ContainerInsights.ENHANCED)
-                .vpc(vpc)
+                .vpc(networking.vpc())
                 .build();
         propertySetter.set(SYSTEM_TEST_CLUSTER_NAME, cluster.getClusterName());
         CfnOutputProps writeClusterOutputProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
                 .build();
         new CfnOutput(this, "systemTestClusterName", writeClusterOutputProps);
+
+        autoStopEcsClusterTasksStack.addAutoStopEcsClusterTasks(this, cluster);
 
         FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
                 .create(this, "TaskDefinition")
@@ -128,6 +123,7 @@ public class SystemTestClusterStack extends NestedStack {
                         .logGroup(LogGroup.Builder.create(this, "SystemTestTasks")
                                 .logGroupName(logGroupName)
                                 .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
+                                .removalPolicy(Utils.logsRemovalPolicy(instanceProperties))
                                 .build())
                         .build()))
                 .environment(EnvironmentUtils.createDefaultEnvironment(instanceProperties))

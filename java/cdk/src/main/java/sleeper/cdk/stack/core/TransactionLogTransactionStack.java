@@ -17,7 +17,6 @@ package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -27,16 +26,16 @@ import software.amazon.awscdk.services.lambda.MetricsConfig;
 import software.amazon.awscdk.services.lambda.StartingPosition;
 import software.amazon.awscdk.services.lambda.eventsources.DynamoEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.util.TrackDeadLetters;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -45,14 +44,11 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_TRANSACTION_DELETION_RULE;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_BATCH_SIZE;
@@ -67,20 +63,21 @@ import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FO
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
             Construct scope, String id,
-            InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks,
+            SleeperInstanceProps props, SleeperCoreStacks coreStacks,
             TransactionLogStateStoreStack transactionLogStateStoreStack,
-            Topic topic, List<IMetric> errorMetrics) {
+            TrackDeadLetters trackDeadLetters) {
         super(scope, id);
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-        createFunctionToFollowTransactionLog(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack);
-        createTransactionDeletionLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
-        Utils.addStackTagIfSet(this, instanceProperties);
+        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
+        createFunctionToFollowTransactionLog(props.getInstanceProperties(), lambdaCode, coreStacks, transactionLogStateStoreStack);
+        createTransactionDeletionLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, trackDeadLetters);
+        Utils.addStackTagIfSet(this, props.getInstanceProperties());
     }
 
-    private void createTransactionDeletionLambda(InstanceProperties instanceProperties, LambdaCode lambdaCode,
-            CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
-            Topic topic, List<IMetric> errorMetrics) {
+    private void createTransactionDeletionLambda(SleeperInstanceProps props, SleeperLambdaCode lambdaCode,
+            SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack,
+            TrackDeadLetters trackDeadLetters) {
+        InstanceProperties instanceProperties = props.getInstanceProperties();
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion-trigger");
         String deletionFunctionName = String.join("-", "sleeper", instanceId, "state-transaction-deletion");
@@ -107,7 +104,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .schedule(Schedule.rate(Duration.minutes(
                         instanceProperties.getLong(TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(transactionDeletionTrigger)))
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .build();
         instanceProperties.set(TRANSACTION_LOG_TRANSACTION_DELETION_RULE, rule.getRuleName());
 
@@ -130,10 +127,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         instanceProperties.set(TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_ARN, queue.getQueueArn());
         instanceProperties.set(TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL, deadLetterQueue.getQueueUrl());
         instanceProperties.set(TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_ARN, deadLetterQueue.getQueueArn());
-        createAlarmForDlq(this, "TransactionLogTransactionDeletionAlarm",
-                "Alarms if there are any messages on the dead letter queue for the transaction log transaction deletion queue",
-                deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("Transaction Log Transaction Deletion Errors", deadLetterQueue, instanceProperties));
+        trackDeadLetters.alarmOnDeadLetters(this, "TransactionLogTransactionDeletionAlarm", "transaction log transaction deletion", deadLetterQueue);
         queue.grantSendMessages(transactionDeletionTrigger);
 
         transactionDeletionLambda.addEventSource(SqsEventSource.Builder.create(queue)
@@ -147,7 +141,7 @@ public class TransactionLogTransactionStack extends NestedStack {
     }
 
     private void createFunctionToFollowTransactionLog(
-            InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
+            InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode, SleeperCoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "state-transaction-follower");
         IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder

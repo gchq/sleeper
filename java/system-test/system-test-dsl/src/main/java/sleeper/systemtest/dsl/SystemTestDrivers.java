@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl;
 
+import sleeper.systemtest.dsl.bulkexport.BulkExportDriver;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
@@ -54,7 +55,7 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 
 /**
  * The interface for the system test DSL to interact with Sleeper and the deployed environment. Where
- * {@link SleeperSystemTest} defines the language for interacting with Sleeper, the implementation is defined
+ * {@link SleeperDsl} defines the language for interacting with Sleeper, the implementation is defined
  * by drivers that can be accessed through an implementation of this interface.
  */
 public interface SystemTestDrivers {
@@ -100,6 +101,8 @@ public interface SystemTestDrivers {
     QueryAllTablesDriver queryByWebSocket(SystemTestContext context);
 
     ClearQueryResultsDriver clearQueryResults(SystemTestContext context);
+
+    BulkExportDriver bulkExport(SystemTestContext context);
 
     CompactionDriver compaction(SystemTestContext context);
 

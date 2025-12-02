@@ -35,6 +35,7 @@ import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.ingest.IngestStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 
 import java.util.ArrayList;
@@ -42,8 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
@@ -64,6 +65,7 @@ public class DashboardStack extends NestedStack {
             CompactionStack compactionStack,
             PartitionSplittingStack partitionSplittingStack,
             InstanceProperties instanceProperties,
+            List<TableProperties> tableProperties,
             List<IMetric> errorMetrics) {
         super(scope, id);
 
@@ -72,8 +74,8 @@ public class DashboardStack extends NestedStack {
         this.partitionSplittingStack = partitionSplittingStack;
 
         instanceId = instanceProperties.get(ID);
-        tableNames = Utils.getAllTableProperties(instanceProperties, this)
-                .map(tableProperties -> tableProperties.get(TableProperty.TABLE_NAME))
+        tableNames = tableProperties.stream()
+                .map(properties -> properties.get(TableProperty.TABLE_NAME))
                 .sorted()
                 // There's a limit of 500 widgets in a dashboard, including the widgets not associated with a table
                 .limit(50)

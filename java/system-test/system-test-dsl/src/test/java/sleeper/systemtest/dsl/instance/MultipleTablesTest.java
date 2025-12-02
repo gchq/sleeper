@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.schema.Schema;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.Map;
@@ -49,12 +49,12 @@ public class MultipleTablesTest {
     private static final int NUMBER_OF_TABLES = 200;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
     }
 
     @Test
-    void shouldIngestOneFileToMultipleTables(SleeperSystemTest sleeper) {
+    void shouldIngestOneFileToMultipleTables(SleeperDsl sleeper) {
         // Given we have several tables
         // And we have one source file to be ingested
         sleeper.tables().createMany(NUMBER_OF_TABLES, schema);
@@ -76,7 +76,7 @@ public class MultipleTablesTest {
     }
 
     @Test
-    void shouldCompactAndGCMultipleTables(SleeperSystemTest sleeper) {
+    void shouldCompactAndGCMultipleTables(SleeperDsl sleeper) {
         // Given we have several tables
         // And we ingest two source files as separate jobs
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
@@ -106,7 +106,7 @@ public class MultipleTablesTest {
     }
 
     @Test
-    void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
+    void shouldSplitPartitionsOfMultipleTables(SleeperDsl sleeper) {
         // Given we have several tables with a split threshold of 20
         // And we ingest a file of 100 rows to each table
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
@@ -139,7 +139,7 @@ public class MultipleTablesTest {
     }
 
     @Test
-    void shouldGenerateMetricsForMultipleTables(SleeperSystemTest sleeper) {
+    void shouldGenerateMetricsForMultipleTables(SleeperDsl sleeper) {
         // Given we have several tables
         // And we ingest two source files as separate jobs
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(

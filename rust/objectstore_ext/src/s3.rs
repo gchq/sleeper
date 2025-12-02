@@ -111,14 +111,16 @@ fn extract_bucket(src: &Url) -> color_eyre::Result<String> {
 pub struct ObjectStoreFactory {
     s3_config: Option<AmazonS3Builder>,
     store_map: RefCell<HashMap<String, Arc<dyn ObjectStore>>>,
+    use_readahead: bool,
 }
 
 impl ObjectStoreFactory {
     #[must_use]
-    pub fn new(s3_config: Option<AmazonS3Builder>) -> Self {
+    pub fn new(s3_config: Option<AmazonS3Builder>, use_readahead: bool) -> Self {
         Self {
             s3_config,
             store_map: RefCell::new(HashMap::new()),
+            use_readahead,
         }
     }
 
@@ -180,19 +182,9 @@ impl ObjectStoreFactory {
         match src.scheme() {
             "s3" => {
                 let bucket = format!("s3://{}", extract_bucket(src)?);
-                Ok(self.connect_s3(src).map(|e| {
-                    Arc::new(LoggingObjectStore::new(
-                        ReadaheadStore::new(e, bucket.clone())
-                            .with_max_live_streams(
-                                std::thread::available_parallelism()
-                                    .unwrap_or(NonZero::new(2usize).unwrap())
-                                    .get(),
-                            )
-                            .with_max_stream_age(Duration::from_secs(60)),
-                        "DataFusion",
-                        bucket,
-                    ))
-                })?)
+                Ok(self
+                    .connect_s3(src)
+                    .map(|store| self.wrap_s3_store(store, &bucket))?)
             }
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
@@ -214,6 +206,31 @@ impl ObjectStoreFactory {
             )),
         }
     }
+
+    fn wrap_s3_store(&self, store: AmazonS3, bucket: &str) -> Arc<dyn ObjectStore> {
+        if self.use_readahead {
+            Arc::new(apply_s3_logging_store(
+                apply_readahead_store(store, bucket),
+                bucket,
+            ))
+        } else {
+            Arc::new(apply_s3_logging_store(store, bucket))
+        }
+    }
+}
+
+fn apply_readahead_store<T: ObjectStore>(store: T, bucket: &str) -> ReadaheadStore<T> {
+    ReadaheadStore::new(store, bucket)
+        .with_max_live_streams(
+            std::thread::available_parallelism()
+                .unwrap_or(NonZero::new(2usize).unwrap())
+                .get(),
+        )
+        .with_max_stream_age(Duration::from_secs(60))
+}
+
+fn apply_s3_logging_store<T: ObjectStore>(store: T, bucket: &str) -> LoggingObjectStore<T> {
+    LoggingObjectStore::new(store, "DataFusion", bucket)
 }
 
 #[cfg(test)]

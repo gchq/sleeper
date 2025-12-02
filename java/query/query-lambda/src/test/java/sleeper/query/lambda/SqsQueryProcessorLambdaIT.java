@@ -60,6 +60,8 @@ import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutput;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.tracker.QueryStatusReportListener;
 import sleeper.query.core.tracker.QueryTrackerStore;
 import sleeper.query.core.tracker.TrackedQuery;
@@ -139,7 +141,13 @@ public class SqsQueryProcessorLambdaIT extends LocalStackTestBase {
         instanceProperties = createInstance(dataDir);
         queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        queyLeafPartitionQueryLambda = new SqsLeafPartitionQueryLambda(
+                s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET),
+                new LeafPartitionRowRetrieverProvider() {
+                    public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
+                        throw new UnsupportedOperationException("DataFusion provider not usable here");
+                    }
+                });
     }
 
     @Test

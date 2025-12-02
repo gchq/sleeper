@@ -23,7 +23,11 @@ import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.networking.SleeperNetworking;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.AutoStopEcsClusterTasksStack;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.nio.file.Path;
@@ -36,12 +40,21 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 public class SystemTestStandaloneApp extends Stack {
 
     public SystemTestStandaloneApp(
-            App app, String id, StackProps props, SystemTestStandaloneProperties properties, BuiltJars jars) {
+            App app, String id, StackProps props, SystemTestStandaloneProperties properties, SleeperJarsInBucket jars) {
         super(app, id, props);
 
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars);
+        InstanceProperties instanceProperties = properties.toInstancePropertiesForCdkUtils();
+        SleeperNetworking networking = SleeperNetworking.createByProperties(this, instanceProperties);
+
+        AutoDeleteS3ObjectsStack autoDeleteS3ObjectsStack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties,
+                jars);
+
+        AutoStopEcsClusterTasksStack autoStopEcsClusterTasksStack = new AutoStopEcsClusterTasksStack(this, "AutoStopEcsClusterTasks", instanceProperties,
+                jars);
+
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties, jars, autoDeleteS3ObjectsStack);
         if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
-            new SystemTestClusterStack(this, "SystemTestCluster", properties, bucketStack);
+            new SystemTestClusterStack(this, "SystemTestCluster", properties, networking, bucketStack, autoStopEcsClusterTasksStack);
         }
         new SystemTestPropertiesStack(this, "SystemTestProperties", properties, bucketStack, jars);
     }
@@ -56,7 +69,7 @@ public class SystemTestStandaloneApp extends Stack {
         systemTestProperties.getPropertiesIndex().getCdkDefined().forEach(systemTestProperties::unset);
 
         try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = BuiltJars.from(s3Client, systemTestProperties.toInstancePropertiesForCdkUtils());
+            SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, systemTestProperties.toInstancePropertiesForCdkUtils());
 
             String id = systemTestProperties.get(SYSTEM_TEST_ID);
             Environment environment = Environment.builder()

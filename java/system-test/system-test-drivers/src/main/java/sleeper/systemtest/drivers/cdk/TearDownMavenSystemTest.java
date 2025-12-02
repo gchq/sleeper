@@ -58,28 +58,32 @@ public class TearDownMavenSystemTest {
                 .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownStandaloneInstances = standaloneInstanceIds.stream()
-                .map(instanceId -> TearDownTestInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
+                .map(instanceId -> TearDownInstance.builder().instanceId(instanceId).clients(clients).scriptsDir(scriptsDir).build())
                 .collect(toUnmodifiableList());
         List<TearDownInstance> tearDownAllInstances = Stream.concat(tearDownMavenInstances.stream(), tearDownStandaloneInstances.stream()).collect(toUnmodifiableList());
 
         for (TearDownInstance instance : tearDownAllInstances) {
-            instance.shutdownSystemProcesses();
             instance.deleteStack();
         }
         for (TearDownInstance instance : tearDownMavenInstances) {
             instance.waitForStackToDelete();
         }
         for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
-            deployment.shutdownSystemProcesses();
             deployment.deleteStack();
         }
         for (TearDownInstance instance : tearDownStandaloneInstances) {
             instance.waitForStackToDelete();
-            instance.cleanupAfterStackDeleted();
+            instance.deleteArtefactsStack();
         }
         for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
             deployment.waitForStackToDelete();
-            deployment.cleanupAfterAllInstancesAndStackDeleted();
+            deployment.deleteArtefactsStack();
+        }
+        for (TearDownInstance instance : tearDownStandaloneInstances) {
+            instance.waitForArtefactsStackToDelete();
+        }
+        for (TearDownSystemTestDeployment deployment : tearDownSystemTestDeployments) {
+            deployment.waitForArtefactsStackToDelete();
         }
 
         LOGGER.info("Tear down finished, took {}", LoggedDuration.withFullOutput(startTime, Instant.now()));

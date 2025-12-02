@@ -18,8 +18,9 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches;
+import sleeper.compaction.core.job.creation.CreateCompactionJobBatches.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
@@ -121,7 +122,7 @@ public class InMemoryCompaction {
             instance.streamTableProperties().forEach(table -> {
                 try {
                     jobCreator.createJobsWithStrategy(table);
-                } catch (IOException | ObjectFactoryException e) {
+                } catch (ObjectFactoryException e) {
                     throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
                 }
             });
@@ -133,10 +134,15 @@ public class InMemoryCompaction {
             instance.streamTableProperties().forEach(table -> {
                 try {
                     jobCreator.createJobWithForceAllFiles(table);
-                } catch (IOException | ObjectFactoryException e) {
+                } catch (ObjectFactoryException e) {
                     throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
                 }
             });
+        }
+
+        @Override
+        public void createJobBatches(List<CompactionJob> jobs) {
+            jobBatchCreator().createBatches(instance.getTableProperties(), instance.getStateStore(), jobs);
         }
 
         @Override
@@ -180,12 +186,19 @@ public class InMemoryCompaction {
         }
 
         private CreateCompactionJobs jobCreator() {
-            return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), batchJobsWriter(),
+            return new CreateCompactionJobs(
+                    instance.getInstanceProperties(), instance.getStateStoreProvider(),
+                    jobBatchCreator(),
+                    ObjectFactory.noUserJars(), GenerateJobId.random(), new Random());
+        }
+
+        private CreateCompactionJobBatches jobBatchCreator() {
+            return new CreateCompactionJobBatches(
+                    instance.getInstanceProperties(),
+                    batchJobsWriter(),
                     compactionJobMessage -> {
                     }, idAssignmentCommit -> {
-                    },
-                    GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
+                    }, GenerateBatchId.random(), Instant::now);
         }
     }
 
@@ -255,7 +268,7 @@ public class InMemoryCompaction {
                 .sum());
     }
 
-    private CreateCompactionJobs.BatchJobsWriter batchJobsWriter() {
+    private CreateCompactionJobBatches.BatchJobsWriter batchJobsWriter() {
         return (bucketName, key, jobs) -> jobs.forEach(job -> {
             queuedJobs.add(job);
             jobTracker.jobCreated(job.createCreatedEvent());

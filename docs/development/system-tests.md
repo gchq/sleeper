@@ -3,6 +3,10 @@ System tests
 
 The following notes describe how to use the system tests that work with a deployed instance of the system.
 
+In order to run any system tests you need an environment suitable for deploying Sleeper. To avoid latency and
+unnecessary data transfer, system tests should be run from inside AWS, usually in an EC2 instance. See
+the [getting started guide](../getting-started.md) for how to create a suitable environment.
+
 ## Manual testing
 
 There's a script to create an instance quickly for manual testing purposes, which generates random test data for
@@ -72,13 +76,27 @@ of that class, and look at the tests in that module for examples.
 
 This test module contains several JUnit test suites:
 - QuickSystemTestSuite (the default)
-- NightlyFunctionalSystemTestSuite
-- NightlyPerformanceSystemTestSuite
+- SlowSystemTestSuite1-n
+- ExpensiveSystemTestSuite1-n
 
-Tests that are tagged as Slow or Expensive will not be included in the quick suite. The quick suite is intended to run
-in around 40 minutes. The nightly functional suite includes tests tagged as Slow, and will take a bit longer. The
-nightly performance suite includes all tests, including ones tagged as Expensive. The performance tests work with a
+The nightly test runs have been broken down into a number of test suites that each run in parallel.
+This is to speed up the time it takes for the nightly system tests to complete. Each suite (Quick, Slow1-n, Expensive1-n)
+begins by creating a copy of the Sleeper project and then running specific system tests inside that copy. Results are then
+collated once all suites have finished, then uploaded to an s3 bucket. The suite's Sleeper instances are isolated from one
+another so that they can run in parallel.
+
+For more information about the nightly system tests see [here](../../scripts/test/nightly/README.md).
+
+Tests that are tagged as Slow(1-n) or Expensive(1-n) will not be included in the quick suite. The quick suite is intended
+to run in around 40 minutes. The nightly functional run includes tests tagged as Slow, and will take a bit longer. The
+nightly performance run includes all tests, including ones tagged as Expensive. The performance tests work with a
 larger bulk of data. They take time to run and can be costly to run frequently.
+When adding a new Slow or Expensive System test add either the Slow1-n or Expensive1-n tag.
+
+### Current Slow and Expensive test suites
+The current system tests running in each suite can be seen in [system-test-suites](system-test-suites.md).
+
+When adding new slow or expensive system tests ensure this documentation is updated.
 
 ### Running tests
 
@@ -227,3 +245,4 @@ directs the operation. For standard ingest and compaction this is an ECS task. F
 | 0.31.1         | 30/06/2025 | 279,570         | 1,505,024             | 162,736         | 4,365,772       |
 | 0.32.0         | 28/07/2025 | 290,473         | 3,119,642             | 170,735         | 4,277,371       |
 | 0.33.0         | 24/09/2025 | 279,038         | 3,879,695             | 175,805         | 4,384,010       |
+| 0.34.0         | 01/12/2025 | 296,435         | 3,957,087             | 187,877         | 3,411,815       |

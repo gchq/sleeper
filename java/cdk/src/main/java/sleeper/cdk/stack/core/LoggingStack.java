@@ -32,14 +32,12 @@ import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_D
 public class LoggingStack extends NestedStack {
 
     private final Map<LogGroupRef, ILogGroup> logGroupByRef = new HashMap<>();
-    private final InstanceProperties instanceProperties;
 
     public LoggingStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
-        this.instanceProperties = instanceProperties;
 
         for (LogGroupRef ref : LogGroupRef.values()) {
-            createLogGroup(ref);
+            logGroupByRef.put(ref, createLogGroup(this, ref, instanceProperties));
         }
     }
 
@@ -47,11 +45,21 @@ public class LoggingStack extends NestedStack {
         return Objects.requireNonNull(logGroupByRef.get(ref), "No log group found: " + ref);
     }
 
-    private void createLogGroup(LogGroupRef ref) {
-        logGroupByRef.put(ref, LogGroup.Builder.create(this, ref.shortName)
+    /**
+     * Creates a log group for a standalone deployment where the logging stack is not deployed.
+     * When deploying a Sleeper instance, call {@link #getLogGroup} instead.
+     *
+     * @param  scope              the scope to add the log group to
+     * @param  ref                the log group to deploy
+     * @param  instanceProperties the fake instance properties, usually adapted from system test properties
+     * @return                    the log group
+     */
+    public static ILogGroup createLogGroup(Construct scope, LogGroupRef ref, InstanceProperties instanceProperties) {
+        return LogGroup.Builder.create(scope, ref.shortName)
                 .logGroupName(ref.prefix + String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), ref.shortName))
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .build());
+                .removalPolicy(Utils.logsRemovalPolicy(instanceProperties))
+                .build();
     }
 
     public enum LogGroupRef {
@@ -59,15 +67,13 @@ public class LoggingStack extends NestedStack {
         // Accessed directly by getter on this class
         VPC_CHECK("vpc-check"),
         VPC_CHECK_PROVIDER("vpc-check-provider"),
-        CONFIG_AUTODELETE("config-autodelete"),
-        CONFIG_AUTODELETE_PROVIDER("config-autodelete-provider"),
-        TABLE_DATA_AUTODELETE("table-data-autodelete"),
-        TABLE_DATA_AUTODELETE_PROVIDER("table-data-autodelete-provider"),
         STATESTORE_COMMITTER("statestore-committer"),
 
         // Accessed via CoreStacks getters
         PROPERTIES_WRITER("properties-writer"),
         PROPERTIES_WRITER_PROVIDER("properties-writer-provider"),
+        TABLE_DEFINER("table-definer"),
+        TABLE_DEFINER_PROVIDER("table-definer-provider"),
         STATE_SNAPSHOT_CREATION_TRIGGER("state-snapshot-creation-trigger"),
         STATE_SNAPSHOT_CREATION("state-snapshot-creation"),
         STATE_SNAPSHOT_DELETION_TRIGGER("state-snapshot-deletion-trigger"),
@@ -77,22 +83,22 @@ public class LoggingStack extends NestedStack {
         STATE_TRANSACTION_FOLLOWER("state-transaction-follower"),
         METRICS_TRIGGER("metrics-trigger"),
         METRICS_PUBLISHER("metrics-publisher"),
+        AUTO_DELETE_S3_OBJECTS("auto-delete-s3-objects"),
+        AUTO_DELETE_S3_OBJECTS_PROVIDER("auto-delete-s3-objects-provider"),
+        AUTO_STOP_ECS_CLUSTER_TASKS("auto-stop-ecs-cluster-tasks"),
+        AUTO_STOP_ECS_CLUSTER_TASKS_PROVIDER("auto-stop-ecs-cluster-tasks-provider"),
+        AUTO_STOP_EMR_SERVERLESS_APPLICATION("auto-stop-emr-serverless"),
+        AUTO_STOP_EMR_SERVERLESS_APPLICATION_PROVIDER("auto-stop-emr-serverless-provider"),
         BULK_EXPORT("bulk-export"),
         BULK_EXPORT_TASKS("FargateBulkExportTasks"),
         BULK_EXPORT_TASKS_CREATOR("bulk-export-task-creator"),
-        BULK_EXPORT_AUTODELETE("bulk-export-results-autodelete"),
-        BULK_EXPORT_AUTODELETE_PROVIDER("bulk-export-results-autodelete-provider"),
         BULK_IMPORT_EMR_SERVERLESS_START("bulk-import-EMRServerless-start"),
         BULK_IMPORT_EMR_NON_PERSISTENT_START("bulk-import-NonPersistentEMR-start"),
         BULK_IMPORT_EMR_PERSISTENT_START("bulk-import-PersistentEMR-start"),
         BULK_IMPORT_EKS_STARTER("bulk-import-eks-starter"),
         BULK_IMPORT_EKS("bulk-import-eks"),
         BULK_IMPORT_EKS_STATE_MACHINE("EksBulkImportStateMachine", "/aws/vendedlogs/states/"),
-        BULK_IMPORT_AUTODELETE("bulk-import-autodelete"),
-        BULK_IMPORT_AUTODELETE_PROVIDER("bulk-import-autodelete-provider"),
         INGEST_TASKS("IngestTasks"),
-        INGEST_TASKS_AUTOSTOP("ingest-tasks-autostop"),
-        INGEST_TASKS_AUTOSTOP_PROVIDER("ingest-tasks-autostop-provider"),
         INGEST_CREATE_TASKS("ingest-create-tasks"),
         INGEST_BATCHER_SUBMIT_FILES("ingest-batcher-submit-files"),
         INGEST_BATCHER_CREATE_JOBS("ingest-batcher-create-jobs"),
@@ -112,13 +118,9 @@ public class LoggingStack extends NestedStack {
         QUERY_EXECUTOR("query-executor"),
         QUERY_LEAF_PARTITION("query-leaf-partition"),
         QUERY_WEBSOCKET_HANDLER("query-websocket-handler"),
-        QUERY_RESULTS_AUTODELETE("query-results-autodelete"),
-        QUERY_RESULTS_AUTODELETE_PROVIDER("query-results-autodelete-provider"),
         QUERY_KEEP_WARM("query-keep-warm"),
         SIMPLE_ATHENA_HANDLER("Simple-athena-handler"),
-        ITERATOR_APPLYING_ATHENA_HANDLER("IteratorApplying-athena-handler"),
-        SPILL_BUCKET_AUTODELETE("spill-bucket-autodelete"),
-        SPILL_BUCKET_AUTODELETE_PROVIDER("spill-bucket-autodelete-provider");
+        ITERATOR_APPLYING_ATHENA_HANDLER("IteratorApplying-athena-handler");
 
         private final String shortName;
         private final String prefix;

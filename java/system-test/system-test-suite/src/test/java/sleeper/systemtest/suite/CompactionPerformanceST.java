@@ -23,11 +23,11 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.row.testutils.SortedRowsCheck;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive2;
 
 import java.time.Duration;
 import java.util.Map;
@@ -40,22 +40,23 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
 
 @SystemTest
-@Expensive // Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
+// Expensive because it takes a long time to compact this many rows on fairly large ECS instances.
+@Expensive2
 public class CompactionPerformanceST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceNoTables(COMPACTION_PERFORMANCE);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperDsl sleeper) {
         sleeper.compaction().scaleToZero();
     }
 
     @Test
-    void shouldMeetCompactionPerformanceStandards(SleeperSystemTest sleeper) {
+    void shouldMeetCompactionPerformanceStandards(SleeperDsl sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         sleeper.systemTestCluster().runDataGenerationJobs(110,
@@ -76,8 +77,9 @@ public class CompactionPerformanceST {
                 .satisfies(file -> assertThat(SortedRowsCheck.check(DEFAULT_SCHEMA, sleeper.getRows(file)))
                         .isEqualTo(SortedRowsCheck.sorted(sumFileReferenceRowCounts(file))));
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(10)
-                        && stats.isAverageRunRowsPerSecondInRange(180_000, 400_000),
+                .matches(stats -> stats.isAllFinishedOneRunEach(10),
+                        "compactions finished with one run each")
+                .matches(stats -> stats.isAverageRunRowsPerSecondInRange(180_000, 400_000),
                         "meets expected performance");
     }
 }

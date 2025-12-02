@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 
 /**
  * Definitions of jar files used to deploy lambda functions.
@@ -96,42 +97,46 @@ public class LambdaJar {
             .imageName("statestore-lambda")
             .artifactId("statestore-lambda").add();
 
-    private final String filename;
-    private final String imageName;
-    private final boolean alwaysDockerDeploy;
     private final String filenameFormat;
+    private final String imageName;
     private final String artifactId;
+    private final boolean alwaysDockerDeploy;
 
     private LambdaJar(Builder builder) {
         this.filenameFormat = requireNonNull(builder.filenameFormat, "filename must not be null");
-        this.filename = String.format(filenameFormat, SleeperVersion.getVersion());
         this.imageName = requireNonNull(builder.imageName, "imageName must not be null");
-        this.alwaysDockerDeploy = requireNonNull(builder.alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
         this.artifactId = requireNonNull(builder.artifactId, "Artifact ID must not be null");
+        this.alwaysDockerDeploy = requireNonNull(builder.alwaysDockerDeploy, "alwaysDockerDeploy must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public String getFilename() {
-        return filename;
-    }
-
-    public String getImageName() {
-        return imageName;
-    }
-
-    public boolean isAlwaysDockerDeploy() {
-        return alwaysDockerDeploy;
+    /**
+     * Computes the filename of this jar file for a given version of Sleeper.
+     *
+     * @param  version the version number
+     * @return         the filename
+     */
+    public String getFilename(String version) {
+        return String.format(filenameFormat, version);
     }
 
     public String getFilenameFormat() {
         return filenameFormat;
     }
 
+    public String getImageName() {
+        return imageName;
+    }
+
     public String getArtifactId() {
         return artifactId;
+    }
+
+    public boolean isAlwaysDockerDeploy() {
+        return alwaysDockerDeploy;
     }
 
     /**
@@ -151,7 +156,7 @@ public class LambdaJar {
      * @return                    the ECR repository name
      */
     public String getEcrRepositoryName(InstanceProperties instanceProperties) {
-        return DockerDeployment.getEcrRepositoryPrefix(instanceProperties) + "/" + imageName;
+        return instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + imageName;
     }
 
     /**
@@ -167,16 +172,21 @@ public class LambdaJar {
 
     private static boolean isFilenameOfJar(String fileName, LambdaJar... jars) {
         return Stream.of(jars)
-                .map(LambdaJar::getFilename)
+                .map(jar -> jar.getFilename(SleeperVersion.getVersion()))
                 .anyMatch(fileName::equals);
     }
 
     @Override
     public String toString() {
-        return "LambdaJar{filename=" + filename + ", imageName=" + imageName + ", artifactId=" + artifactId + "}";
+        return "LambdaJar{filenameFormat=" + filenameFormat + ", imageName=" + imageName + ", artifactId=" + artifactId + ", alwaysDockerDeploy=" + alwaysDockerDeploy + "}";
     }
 
-    public static List<LambdaJar> getAll() {
+    /**
+     * Returns all lambda jar definitions.
+     *
+     * @return the definitions
+     */
+    public static List<LambdaJar> all() {
         return Collections.unmodifiableList(ALL);
     }
 
@@ -247,7 +257,7 @@ public class LambdaJar {
          *
          * @return the lambda jar
          */
-        public LambdaJar add() {
+        private LambdaJar add() {
             LambdaJar lambdaJar = build();
             ALL.add(lambdaJar);
             return lambdaJar;

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RowNumbers;
@@ -44,13 +44,13 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class IngestBatcherST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
     @Test
-    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperSystemTest sleeper) {
+    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree(SleeperDsl sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
@@ -76,7 +76,7 @@ public class IngestBatcherST {
     }
 
     @Test
-    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperSystemTest sleeper) {
+    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen(SleeperDsl sleeper) {
         // Given
         sleeper.updateTableProperties(Map.of(
                 INGEST_BATCHER_INGEST_QUEUE, BULK_IMPORT_EMR_SERVERLESS.toString(),
@@ -100,6 +100,29 @@ public class IngestBatcherST {
         // Then
         assertThat(sleeper.directQuery().allRowsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 400)));
+        assertThat(sleeper.tableFiles().references()).hasSize(1);
+    }
+
+    @Test
+    void shouldIngestFileFromTableDataBucket(SleeperDsl sleeper) {
+        // Given
+        sleeper.updateTableProperties(Map.of(
+                INGEST_BATCHER_INGEST_QUEUE, STANDARD_INGEST.toString(),
+                INGEST_BATCHER_MIN_JOB_FILES, "1",
+                INGEST_BATCHER_MIN_JOB_SIZE, "1K",
+                INGEST_BATCHER_MAX_JOB_FILES, "3"));
+        sleeper.sourceFiles()
+                .inDataBucket()
+                .createWithNumberedRows("test-file.parquet", LongStream.range(0, 100));
+
+        // When
+        sleeper.ingest().batcher()
+                .sendSourceFilesExpectingJobs(1, "test-file.parquet")
+                .waitForStandardIngestTask().waitForIngestJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRowsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRows(LongStream.range(0, 100)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);
     }
 }

@@ -21,10 +21,10 @@ import org.junit.jupiter.api.parallel.Execution;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
-import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Slow3;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -49,12 +49,12 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
 
 @SystemTest
-@Slow
+@Slow3
 @Execution(SAME_THREAD)
 public class StateStoreCommitterThroughputST {
 
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnOneTable(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
@@ -75,7 +75,7 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenCommittingFilesWithIngestJobOnOneTable(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
@@ -96,7 +96,7 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(UUID.randomUUID().toString()).buildTree();
@@ -119,7 +119,7 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenCommittingFilesWithNoJobOnMultipleTables(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
         sleeper.tables().createMany(10, DEFAULT_SCHEMA);
@@ -145,7 +145,7 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenCommittingCompactionJobIdAssignment(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
@@ -175,7 +175,7 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingCompaction(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenCommittingCompaction(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
@@ -215,7 +215,7 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    void shouldMeetExpectedThroughputWhenCommittingDeletedFiles(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenCommittingDeletedFiles(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceAddOfflineTable(COMMITTER_THROUGHPUT);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
@@ -254,7 +254,7 @@ public class StateStoreCommitterThroughputST {
     }
 
     @Test
-    void shouldMeetExpectedThroughputWhenPerformingManyOperationsOnMultipleTables(SleeperSystemTest sleeper) throws Exception {
+    void shouldMeetExpectedThroughputWhenPerformingManyOperationsOnMultipleTables(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.connectToInstanceNoTables(COMMITTER_THROUGHPUT);
         sleeper.tables().createMany(10, DEFAULT_SCHEMA);

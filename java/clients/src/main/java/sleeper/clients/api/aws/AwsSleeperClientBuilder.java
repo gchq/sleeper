@@ -22,6 +22,7 @@ import sleeper.clients.api.BulkExportQuerySender;
 import sleeper.clients.api.BulkImportJobSender;
 import sleeper.clients.api.IngestBatcherSender;
 import sleeper.clients.api.IngestJobSender;
+import sleeper.clients.api.QueryWebSocketSender;
 import sleeper.clients.api.SleeperClient;
 import sleeper.clients.util.ShutdownWrapper;
 import sleeper.clients.util.UncheckedAutoCloseables;
@@ -29,8 +30,10 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.ObjectFactory;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.statestore.StateStoreFactory;
 
@@ -47,7 +50,7 @@ public class AwsSleeperClientBuilder {
     private InstanceProperties instanceProperties;
     private SleeperClientAwsClientsProvider awsProvider = SleeperClientAwsClientsProvider.createDefaultForEachClient();
     private SleeperClientHadoopProvider hadoopProvider = SleeperClientHadoopProvider.getDefault();
-    private SleeperClientHadoopQueryProvider queryProvider = SleeperClientHadoopQueryProvider.createDefaultForEachClient();
+    private SleeperClientQueryProvider queryProvider = SleeperClientQueryProvider.createDefaultForEachClient();
 
     /**
      * Creates a Sleeper client.
@@ -57,14 +60,15 @@ public class AwsSleeperClientBuilder {
     public SleeperClient build() {
         SleeperClientAwsClients awsClients = awsProvider.getAwsClients();
         InstanceProperties instanceProperties = loadInstanceProperties(awsClients.s3());
-        Configuration hadoopConf = hadoopProvider.getConfiguration(instanceProperties);
-        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoopConf);
+        TableHadoopConfigurationProvider hadoop = hadoopProvider.getProvider(instanceProperties);
+        ShutdownWrapper<LeafPartitionRowRetrieverProvider> rowRetrieverProvider = queryProvider.getRowRetrieverProvider(hadoop);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, awsClients.dynamo());
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3());
 
         return new SleeperClient.Builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
-                .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, awsClients.s3()))
+                .tablePropertiesProvider(tablePropertiesProvider)
                 .tablePropertiesStore(S3TableProperties.createStore(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, awsClients.s3(), awsClients.dynamo()))
                 .objectFactory(ObjectFactory.noUserJars())
@@ -73,6 +77,8 @@ public class AwsSleeperClientBuilder {
                 .bulkImportJobSender(BulkImportJobSender.toSqs(instanceProperties, awsClients.sqs()))
                 .ingestBatcherSender(IngestBatcherSender.toSqs(instanceProperties, awsClients.sqs()))
                 .bulkExportQuerySender(BulkExportQuerySender.toSqs(instanceProperties, awsClients.sqs()))
+                .queryWebSocketSender(QueryWebSocketSender.query(instanceProperties, tablePropertiesProvider,
+                        awsClients.awsCredentialsProvider()))
                 .shutdown(new UncheckedAutoCloseables(List.of(awsClients, rowRetrieverProvider)))
                 .build();
     }
@@ -115,7 +121,7 @@ public class AwsSleeperClientBuilder {
      * @return                     this builder
      */
     public AwsSleeperClientBuilder queryThreadPoolSize(int queryThreadPoolSize) {
-        return queryProvider(SleeperClientHadoopQueryProvider.withThreadPoolForEachClient(queryThreadPoolSize));
+        return queryProvider(SleeperClientQueryProvider.withThreadPoolForEachClient(queryThreadPoolSize));
     }
 
     /**
@@ -124,7 +130,7 @@ public class AwsSleeperClientBuilder {
      * @param  queryProvider the provider
      * @return               this builder
      */
-    public AwsSleeperClientBuilder queryProvider(SleeperClientHadoopQueryProvider queryProvider) {
+    public AwsSleeperClientBuilder queryProvider(SleeperClientQueryProvider queryProvider) {
         this.queryProvider = queryProvider;
         return this;
     }

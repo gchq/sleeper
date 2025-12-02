@@ -44,6 +44,14 @@ public interface LoggingLevelsProperty {
             .description("The logging level for everything else.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty RUST_BACKTRACE = Index.propertyBuilder("sleeper.logging.backtrace")
+            .description("Configuration for Rust backtrace generation, set in the environment variable RUST_BACKTRACE.")
+            .propertyGroup(InstancePropertyGroup.LOGGING)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty RUST_LOG = Index.propertyBuilder("sleeper.logging.rust")
+            .description("Configuration for Rust logging, set in the environment variable RUST_LOG.")
+            .propertyGroup(InstancePropertyGroup.LOGGING)
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

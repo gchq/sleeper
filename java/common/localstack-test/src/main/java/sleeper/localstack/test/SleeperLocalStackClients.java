@@ -16,8 +16,8 @@
 package sleeper.localstack.test;
 
 import org.apache.hadoop.conf.Configuration;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import org.testcontainers.localstack.LocalStackContainer;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -26,6 +26,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
+import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsCredentialsProvider;
 import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.getHadoopConfiguration;
 
@@ -38,13 +39,14 @@ public class SleeperLocalStackClients {
     }
 
     private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
-    public static final S3Client S3_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
-    public static final S3AsyncClient S3_ASYNC_CLIENT = buildAwsV2Client(CONTAINER, Service.S3, S3AsyncClient.crtBuilder());
+    public static final S3Client S3_CLIENT = buildAwsV2Client(CONTAINER, S3Client.builder());
+    public static final S3AsyncClient S3_ASYNC_CLIENT = buildAwsV2Client(CONTAINER, S3AsyncClient.crtBuilder());
     public static final S3TransferManager S3_TRANSFER_MANAGER = S3TransferManager.builder().s3Client(S3_ASYNC_CLIENT).build();
-    public static final DynamoDbClient DYNAMO_CLIENT = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
-    public static final SqsClient SQS_CLIENT = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
-    public static final StsClient STS_CLIENT = buildAwsV2Client(CONTAINER, Service.STS, StsClient.builder());
-    public static final CloudWatchClient CLOUDWATCH_CLIENT = buildAwsV2Client(CONTAINER, Service.CLOUDWATCH, CloudWatchClient.builder());
+    public static final DynamoDbClient DYNAMO_CLIENT = buildAwsV2Client(CONTAINER, DynamoDbClient.builder());
+    public static final SqsClient SQS_CLIENT = buildAwsV2Client(CONTAINER, SqsClient.builder());
+    public static final StsClient STS_CLIENT = buildAwsV2Client(CONTAINER, StsClient.builder());
+    public static final CloudWatchClient CLOUDWATCH_CLIENT = buildAwsV2Client(CONTAINER, CloudWatchClient.builder());
     public static final Configuration HADOOP_CONF = getHadoopConfiguration(CONTAINER);
+    public static final AwsCredentialsProvider CREDENTIALS_PROVIDER = buildAwsCredentialsProvider();
 
 }

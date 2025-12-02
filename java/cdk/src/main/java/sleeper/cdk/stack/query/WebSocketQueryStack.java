@@ -34,13 +34,12 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -58,17 +57,17 @@ public final class WebSocketQueryStack extends NestedStack {
     public WebSocketQueryStack(Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars, CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
+            SleeperJarsInBucket jars, SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         super(scope, id);
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         setupWebSocketApi(instanceProperties, lambdaCode, coreStacks, queryQueueStack, queryStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private void setupWebSocketApi(InstanceProperties instanceProperties, LambdaCode lambdaCode,
-            CoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
+    private void setupWebSocketApi(InstanceProperties instanceProperties, SleeperLambdaCode lambdaCode,
+            SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "query-websocket-handler");

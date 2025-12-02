@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.command.CommandFailedException;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -38,17 +38,17 @@ public class PythonQueryST {
     private Path tempDir;
 
     @BeforeEach
-    void setup(SleeperSystemTest sleeper) {
+    void setup(SleeperDsl sleeper) {
         sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @AfterEach
-    void tearDown(SleeperSystemTest sleeper) {
+    void tearDown(SleeperDsl sleeper) {
         sleeper.query().emptyResultsBucket();
     }
 
     @Test
-    void shouldRunExactKeyQuery(SleeperSystemTest sleeper) {
+    void shouldRunExactKeyQuery(SleeperDsl sleeper) {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
@@ -62,7 +62,7 @@ public class PythonQueryST {
     }
 
     @Test
-    void shouldRunRangeKeyQuery(SleeperSystemTest sleeper) {
+    void shouldRunRangeKeyQuery(SleeperDsl sleeper) {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
@@ -76,7 +76,7 @@ public class PythonQueryST {
     }
 
     @Test
-    void shouldRunRangeKeyQueryWithMinAndMaxInclusive(SleeperSystemTest sleeper) {
+    void shouldRunRangeKeyQueryWithMinAndMaxInclusive(SleeperDsl sleeper) {
         // Given
         sleeper.ingest().direct(tempDir).numberedRows(LongStream.range(0, 100));
 
@@ -90,7 +90,7 @@ public class PythonQueryST {
     }
 
     @Test
-    void shouldFailToRunRangeKeyQueryWithNonExistentTable(SleeperSystemTest sleeper) {
+    void shouldFailToRunRangeKeyQueryWithNonExistentTable(SleeperDsl sleeper) {
         // When/Then
         assertThatThrownBy(() -> sleeper.pythonApi()
                 .query(tempDir).range("key", "not-a-table",
@@ -101,7 +101,7 @@ public class PythonQueryST {
     }
 
     @Test
-    void shouldFailToRunRangeKeyQueryWithNonExistentKey(SleeperSystemTest sleeper) {
+    void shouldFailToRunRangeKeyQueryWithNonExistentKey(SleeperDsl sleeper) {
         // When/Then
         assertThatThrownBy(() -> sleeper.pythonApi()
                 .query(tempDir).range("not-a-key",

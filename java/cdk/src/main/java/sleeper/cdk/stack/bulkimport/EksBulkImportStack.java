@@ -21,13 +21,7 @@ import com.google.gson.reflect.TypeToken;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.cdk.lambdalayer.kubectl.v32.KubectlV32Layer;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
-import software.amazon.awscdk.services.ec2.ISubnet;
-import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.eks.AwsAuthMapping;
 import software.amazon.awscdk.services.eks.Cluster;
 import software.amazon.awscdk.services.eks.FargateCluster;
@@ -47,7 +41,6 @@ import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.stepfunctions.Choice;
@@ -61,9 +54,9 @@ import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -81,15 +74,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
 import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
-import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 
 /**
@@ -100,9 +89,8 @@ public final class EksBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
 
     public EksBulkImportStack(
-            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-            Topic errorsTopic, BulkImportBucketStack importBucketStack, CoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars,
+            BulkImportBucketStack importBucketStack, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -117,10 +105,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .queue(queueForDLs)
                 .build();
 
-        createAlarmForDlq(this, "BulkImportEKSUndeliveredJobsAlarm",
-                "Alarms if there are any messages that have failed validation or failed to be passed to the statemachine",
-                queueForDLs, errorsTopic);
-        errorMetrics.add(Utils.createErrorMetric("Bulk Import EKS Errors", queueForDLs, instanceProperties));
+        coreStacks.alarmOnDeadLetters(this, "BulkImportEKSUndeliveredJobsAlarm", "passing bulk import jobs to the state machine for EKS", queueForDLs);
 
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
@@ -137,7 +122,7 @@ public final class EksBulkImportStack extends NestedStack {
         Map<String, String> env = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", "EKS");
         IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper", instanceId, "bulk-import-eks-starter");
 
@@ -154,18 +139,13 @@ public final class EksBulkImportStack extends NestedStack {
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         coreStacks.grantValidateBulkImport(bulkImportJobStarter.getRole());
 
-        VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(VPC_ID))
-                .build();
-        IVpc vpc = Vpc.fromLookup(this, "VPC", vpcLookupOptions);
-
         String uniqueBulkImportId = String.join("-", "sleeper", instanceId, "bulk-import-eks");
         Cluster bulkImportCluster = FargateCluster.Builder.create(this, "EksBulkImportCluster")
                 .clusterName(uniqueBulkImportId)
                 .version(KubernetesVersion.V1_32)
                 .kubectlLayer(new KubectlV32Layer(this, "KubectlLayer"))
-                .vpc(vpc)
-                .vpcSubnets(List.of(SubnetSelection.builder().subnets(vpc.getPrivateSubnets()).build()))
+                .vpc(coreStacks.getVpc())
+                .vpcSubnets(List.of(SubnetSelection.builder().subnets(coreStacks.getSubnets()).build()))
                 .build();
 
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
@@ -173,18 +153,17 @@ public final class EksBulkImportStack extends NestedStack {
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
 
-        ISubnet subnet = Subnet.fromSubnetId(this, "EksBulkImportSubnet", instanceProperties.getList(SUBNETS).get(0));
         FargateProfile fargateProfile = bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
                 .fargateProfileName(uniqueBulkImportId)
-                .vpc(vpc)
+                .vpc(coreStacks.getVpc())
                 .subnetSelection(SubnetSelection.builder()
-                        .subnets(List.of(subnet))
+                        .subnets(List.of(coreStacks.getSubnets().get(0)))
                         .build())
                 .selectors(List.of(Selector.builder()
                         .namespace(uniqueBulkImportId)
                         .build()))
                 .build());
-        addFluentBitLogging(bulkImportCluster, fargateProfile, instanceProperties, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
+        addFluentBitLogging(bulkImportCluster, fargateProfile, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
 
         ServiceAccount sparkSubmitServiceAccount = bulkImportCluster.addServiceAccount("SparkSubmitServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)
@@ -200,7 +179,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .forEach(sa -> sa.getNode().addDependency(namespace));
         coreStacks.grantIngest(sparkServiceAccount.getRole());
 
-        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, coreStacks, errorsTopic);
+        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, coreStacks);
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
@@ -225,7 +204,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, CoreStacks coreStacks, Topic errorsTopic) {
+    private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties, SleeperCoreStacks coreStacks) {
         String imageName = DockerDeployment.EKS_BULK_IMPORT.getDockerImageName(instanceProperties);
 
         Map<String, Object> runJobState = parseEksStepDefinition(
@@ -245,7 +224,7 @@ public final class EksBulkImportStack extends NestedStack {
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
                 .message(TaskInput.fromJsonPathAt("$.errorMessage"))
-                .topic(errorsTopic)
+                .topic(coreStacks.getAlertsTopic())
                 .build();
 
         Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage")
@@ -269,7 +248,7 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     @SuppressWarnings("unchecked")
-    private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, InstanceProperties instanceProperties, ILogGroup logGroup) {
+    private void addFluentBitLogging(Cluster cluster, FargateProfile fargateProfile, ILogGroup logGroup) {
         // Based on guide at https://docs.aws.amazon.com/eks/latest/userguide/fargate-logging.html
 
         KubernetesManifest namespace = cluster.addManifest("LoggingNamespace", Map.of(
@@ -282,7 +261,7 @@ public final class EksBulkImportStack extends NestedStack {
         // Fluent Bit configuration
         // See https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch
         Function<String, String> outputReplacements = replacements(Map.of(
-                "region-placeholder", instanceProperties.get(REGION),
+                "region-placeholder", cluster.getStack().getRegion(),
                 "log-group-placeholder", logGroup.getLogGroupName()));
         withDependencyOn(namespace, cluster.addManifest("LoggingConfig", Map.of(
                 "apiVersion", "v1",

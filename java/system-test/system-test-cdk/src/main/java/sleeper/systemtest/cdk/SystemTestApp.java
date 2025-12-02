@@ -18,61 +18,65 @@ package sleeper.systemtest.cdk;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.cdk.SleeperCdkApp;
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.util.Utils;
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.networking.SleeperNetworking;
+import sleeper.cdk.stack.SleeperCoreStacks;
+import sleeper.cdk.stack.SleeperOptionalStacks;
+import sleeper.cdk.stack.core.AutoDeleteS3ObjectsStack;
+import sleeper.cdk.stack.core.LoggingStack;
+import sleeper.cdk.stack.core.PropertiesStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
  * Deploys Sleeper and additional stacks used for large-scale system tests.
  */
-public class SystemTestApp extends SleeperCdkApp {
-    private boolean readyToGenerateProperties = false;
-    private final BuiltJars jars;
+public class SystemTestApp extends Stack {
+    private final SleeperInstanceProps props;
+    private final SleeperJarsInBucket jars;
+    private final SystemTestProperties instanceProperties;
 
-    public SystemTestApp(App app, String id, StackProps props, SystemTestProperties sleeperProperties, BuiltJars jars) {
-        super(app, id, props, sleeperProperties, jars);
-        this.jars = jars;
+    public SystemTestApp(App app, String id, StackProps stackProps, SleeperInstanceProps sleeperProps) {
+        super(app, id, stackProps);
+        this.props = setProps(sleeperProps);
+        this.jars = sleeperProps.getJars();
+        this.instanceProperties = SystemTestProperties.from(sleeperProps.getInstanceProperties());
     }
 
-    @Override
     public void create() {
-        SystemTestProperties properties = getInstanceProperties();
-        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", properties, jars);
-        super.create();
+        SleeperNetworking networking = props.getNetworkingProvider().getNetworking(this);
+        props.prepareProperties(this, networking);
+        LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
+        AutoDeleteS3ObjectsStack autoDeleteS3Stack = new AutoDeleteS3ObjectsStack(this, "AutoDeleteS3Objects", instanceProperties, jars, loggingStack);
+
+        // System test bucket needs to be created first so that it's listed as an ingest source bucket before the ingest
+        // stacks are created.
+        SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestIngestBucket", instanceProperties, jars, autoDeleteS3Stack);
+
+        // Sleeper instance
+        SleeperCoreStacks coreStacks = SleeperCoreStacks.create(this, props, networking, loggingStack, autoDeleteS3Stack);
+        SleeperOptionalStacks.create(this, props, coreStacks);
+
+        coreStacks.createRoles();
+
         // Stack for writing random data
-        if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
-            new SystemTestClusterStack(this, "SystemTest", properties, bucketStack,
-                    getCoreStacks(), getIngestStacks(), getIngestBatcherStack());
+        if (instanceProperties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
+            new SystemTestClusterStack(this, "SystemTest", instanceProperties, networking, bucketStack, coreStacks.getAutoStopEcsStack());
         }
 
-        readyToGenerateProperties = true;
-        generateProperties();
-    }
-
-    @Override
-    protected void generateProperties() {
-        if (readyToGenerateProperties) {
-            super.generateProperties();
-        }
-    }
-
-    @Override
-    protected SystemTestProperties getInstanceProperties() throws RuntimeException {
-        InstanceProperties properties = super.getInstanceProperties();
-        if (properties instanceof SystemTestProperties) {
-            return (SystemTestProperties) properties;
-        }
-        throw new RuntimeException("Error when retrieving instance properties");
+        // Delay writing properties to include data generation cluster
+        new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
     }
 
     public static void main(String[] args) {
@@ -80,24 +84,30 @@ public class SystemTestApp extends SleeperCdkApp {
                 .analyticsReporting(false)
                 .build());
 
-        SystemTestProperties systemTestProperties = Utils.loadInstanceProperties(SystemTestProperties::new, app);
+        try (S3Client s3Client = S3Client.create();
+                DynamoDbClient dynamoClient = DynamoDbClient.create()) {
+            SleeperInstanceProps props = SleeperInstanceProps.fromContext(app, s3Client, dynamoClient);
+            InstanceProperties instanceProperties = props.getInstanceProperties();
 
-        String id = systemTestProperties.get(ID);
-        Environment environment = Environment.builder()
-                .account(systemTestProperties.get(ACCOUNT))
-                .region(systemTestProperties.get(REGION))
-                .build();
-
-        try (S3Client s3Client = S3Client.create()) {
-            BuiltJars jars = BuiltJars.from(s3Client, systemTestProperties);
+            String id = instanceProperties.get(ID);
+            Environment environment = Environment.builder()
+                    .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
+                    .region(System.getenv("CDK_DEFAULT_REGION"))
+                    .build();
 
             new SystemTestApp(app, id, StackProps.builder()
                     .stackName(id)
                     .env(environment)
                     .build(),
-                    systemTestProperties, jars).create();
+                    props).create();
 
             app.synth();
         }
+    }
+
+    private SleeperInstanceProps setProps(SleeperInstanceProps props) {
+        props.getInstanceProperties().set(ACCOUNT, getAccount());
+        props.getInstanceProperties().set(REGION, getRegion());
+        return props;
     }
 }

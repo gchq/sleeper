@@ -16,7 +16,7 @@
 * limitations under the License.
 */
 use crate::{
-    CommonConfig, SleeperPartitionRegion,
+    CommonConfig, SleeperRegion,
     datafusion::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
@@ -26,11 +26,13 @@ use crate::{
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
-use datafusion::{common::plan_err, logical_expr::Expr, physical_plan::displayable};
 use datafusion::{
+    common::plan_err,
     dataframe::DataFrame,
     error::DataFusionError,
-    execution::{config::SessionConfig, context::SessionContext},
+    execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
+    logical_expr::{Expr, ident},
+    physical_plan::displayable,
 };
 use log::info;
 use objectstore_ext::s3::ObjectStoreFactory;
@@ -40,14 +42,14 @@ use std::{
 };
 
 /// All information needed for a Sleeper leaf partition query.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct LeafPartitionQueryConfig<'a> {
     /// Basic information
     pub common: CommonConfig<'a>,
     /// Query ranges
-    pub ranges: Vec<SleeperPartitionRegion<'a>>,
-    /// Should sketches be produced?
-    pub write_quantile_sketch: bool,
+    pub ranges: Vec<SleeperRegion<'a>>,
+    /// Requested value fields for Sleeper query
+    pub requested_value_fields: Option<Vec<String>>,
     /// Should logical/physical plan explanation be logged?
     pub explain_plans: bool,
 }
@@ -56,8 +58,8 @@ impl Display for LeafPartitionQueryConfig<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Query config: {}, ranges: {:?} write quantile sketches: {}",
-            self.common, self.ranges, self.write_quantile_sketch
+            "Query config: {}, query ranges: {:?}, requested_value_fields: {:?}",
+            self.common, self.ranges, self.requested_value_fields
         )
     }
 }
@@ -69,16 +71,20 @@ pub struct LeafPartitionQuery<'a> {
     config: &'a LeafPartitionQueryConfig<'a>,
     /// Used to create object store implementations
     store_factory: &'a ObjectStoreFactory,
+    /// Runtime for this query
+    runtime: Arc<RuntimeEnv>,
 }
 
 impl<'a> LeafPartitionQuery<'a> {
     pub fn new(
         config: &'a LeafPartitionQueryConfig<'a>,
         store_factory: &'a ObjectStoreFactory,
+        runtime: Arc<RuntimeEnv>,
     ) -> LeafPartitionQuery<'a> {
         Self {
             config,
             store_factory,
+            runtime,
         }
     }
 
@@ -94,7 +100,7 @@ impl<'a> LeafPartitionQuery<'a> {
             return plan_err!("No query regions specified");
         }
         let ops = SleeperOperations::new(&self.config.common);
-        info!("DataFusion query: {ops}");
+        info!("DataFusion query: {}", self.config);
         // Create query frame and sketches if it has been enabled
         let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
 
@@ -103,10 +109,13 @@ impl<'a> LeafPartitionQuery<'a> {
         }
 
         // Convert to physical plan
+        let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
         let completer = ops.create_output_completer();
+
         let frame = completer.complete_frame(frame)?;
         let task_ctx = Arc::new(frame.task_ctx());
-        let physical_plan = ops.to_physical_plan(frame).await?;
+
+        let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
 
         if self.config.explain_plans {
             info!(
@@ -120,21 +129,14 @@ impl<'a> LeafPartitionQuery<'a> {
 
         // Do we have some sketch output to write?
         if let Some(sketch_func) = sketcher
-            && self.config.write_quantile_sketch
+            && let OutputType::File {
+                output_file,
+                write_sketch_file,
+                opts: _,
+            } = self.config.common.output()
+            && *write_sketch_file
         {
-            match &self.config.common.output {
-                OutputType::File {
-                    output_file,
-                    opts: _,
-                } => {
-                    output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
-                }
-                OutputType::ArrowRecordBatch => {
-                    return plan_err!(
-                        "Quantile sketch output cannot be enabled if file output not selected"
-                    );
-                }
-            }
+            output_sketch(self.store_factory, output_file, sketch_func.sketch()).await?;
         }
 
         Ok(result)
@@ -149,22 +151,39 @@ impl<'a> LeafPartitionQuery<'a> {
         ops: &'a SleeperOperations<'a>,
         frame: DataFrame,
     ) -> Result<(Option<Sketcher<'a>>, DataFrame), DataFusionError> {
-        if self.config.write_quantile_sketch {
-            match self.config.common.output {
-                OutputType::File {
-                    output_file: _,
-                    opts: _,
-                } => {
-                    let sketcher = ops.create_sketcher(frame.schema());
-                    let frame = sketcher.apply_sketch(frame)?;
-                    Ok((Some(sketcher), frame))
-                }
-                OutputType::ArrowRecordBatch => plan_err!(
-                    "Quantile sketch output cannot be enabled if file output not selected"
-                ),
+        match self.config.common.output() {
+            OutputType::File {
+                output_file: _,
+                write_sketch_file: true,
+                opts: _,
+            } => {
+                let sketcher = ops.create_sketcher(frame.schema());
+                let frame = sketcher.apply_sketch(frame)?;
+                Ok((Some(sketcher), frame))
             }
+            OutputType::File {
+                output_file: _,
+                write_sketch_file: _,
+                opts: _,
+            }
+            | OutputType::ArrowRecordBatch => Ok((None, frame)),
+        }
+    }
+
+    /// If only certain value fields have been requested, then project them.
+    ///
+    /// Row key and sort key fields are always projected.
+    fn maybe_project_columns(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
+        if let Some(value_fields) = &self.config.requested_value_fields {
+            let project_columns = self
+                .config
+                .common
+                .sorting_columns_iter()
+                .chain(value_fields.iter().map(String::as_str))
+                .map(ident);
+            frame.select(project_columns)
         } else {
-            Ok((None, frame))
+            Ok(frame)
         }
     }
 
@@ -182,12 +201,16 @@ impl<'a> LeafPartitionQuery<'a> {
         let sf = ops
             .apply_config(SessionConfig::new(), self.store_factory)
             .await?;
-        let ctx = ops.configure_context(SessionContext::new_with_config(sf), self.store_factory)?;
+        let ctx = ops.configure_context(
+            SessionContext::new_with_config_rt(sf, self.runtime.clone()),
+            self.store_factory,
+        )?;
         let mut frame = ops.create_initial_partitioned_read(&ctx).await?;
         frame = self.apply_query_regions(frame)?;
         frame = ops.apply_user_filters(frame)?;
         frame = ops.apply_general_sort(frame)?;
         frame = ops.apply_aggregations(frame)?;
+        frame = self.maybe_project_columns(frame)?;
         self.maybe_add_sketch_output(ops, frame)
     }
 }

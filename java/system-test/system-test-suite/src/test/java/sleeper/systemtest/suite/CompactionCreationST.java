@@ -23,10 +23,10 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.compaction.FoundCompactionJobs;
-import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Slow1;
 
 import java.time.Duration;
 import java.util.List;
@@ -45,17 +45,18 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_CR
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.fileFactory;
 
 @SystemTest
-@Slow // Slow because it deploys its own instance so it can drain the whole compaction jobs queue
+// Slow because it deploys its own instance so it can drain the whole compaction jobs queue
+@Slow1
 @Execution(SAME_THREAD)
 public class CompactionCreationST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(COMPACTION_CREATION);
     }
 
     @Test
-    void shouldCreateLargeQuantitiesOfCompactionJobsAtOnce(SleeperSystemTest sleeper) throws Exception {
+    void shouldCreateLargeQuantitiesOfCompactionJobsAtOnce(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
@@ -83,7 +84,7 @@ public class CompactionCreationST {
     }
 
     @Test
-    void shouldSendBadCompactionBatchToDeadLetterQueue(SleeperSystemTest sleeper) throws Exception {
+    void shouldSendBadCompactionBatchToDeadLetterQueue(SleeperDsl sleeper) throws Exception {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"));
         FileReference inputFile = fileFactory(sleeper).rootFile("input.parquet", 100);

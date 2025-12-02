@@ -15,7 +15,7 @@ from setuptools import setup
 
 setup(
     name="sleeper",
-    version="0.33.0",
+    version="0.34.0",
     description="Python client for Sleeper",
     install_requires=[
         "pyarrow",
@@ -26,6 +26,8 @@ setup(
         "jproperties",
         "ruff",
         "pytest",
+        "pytest-mock",
+        "pytest-asyncio",
         "testcontainers[localstack]",
     ],
     package_dir={"": "src"},

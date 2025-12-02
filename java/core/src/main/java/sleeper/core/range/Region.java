@@ -16,6 +16,8 @@
 package sleeper.core.range;
 
 import sleeper.core.key.Key;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
@@ -54,6 +56,31 @@ public class Region {
     }
 
     /**
+     * Creates a region covering all values of all row key fields.
+     *
+     * @param  schema the schema
+     * @return        the region
+     */
+    public static Region coveringAllValuesOfAllRowKeys(Schema schema) {
+        return coveringAllValuesOfAllRowKeys(schema, new RangeFactory(schema));
+    }
+
+    /**
+     * Creates a region covering all values of all row key fields.
+     *
+     * @param  schema       the schema
+     * @param  rangeFactory a range factory created from the schema
+     * @return              the region
+     */
+    public static Region coveringAllValuesOfAllRowKeys(Schema schema, RangeFactory rangeFactory) {
+        List<Range> ranges = new ArrayList<>();
+        for (Field field : schema.getRowKeyFields()) {
+            ranges.add(rangeFactory.createRangeCoveringAllValues(field));
+        }
+        return new Region(ranges);
+    }
+
+    /**
      * Gets the range for a field.
      *
      * @param  fieldName the field name
@@ -79,8 +106,13 @@ public class Region {
     /**
      * Returns the ranges in this region ordered according to the given schema.
      *
-     * @param  schema the schema that dictates returned order
-     * @return        a List of Ranges in schema order.
+     * All row key dimensions in the schema must be present in this region,
+     * otherwise an exception is thrown.
+     *
+     * @param  schema                   the schema that dictates returned order
+     * @return                          a List of Ranges in schema order.
+     * @throws IllegalArgumentException if a row key in the given schema is not present in this region
+     * @see                             getPartialRangesOrdered
      */
     public List<Range> getRangesOrdered(Schema schema) {
         List<String> rowKeysOrdered = schema.getRowKeyFieldNames();

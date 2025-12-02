@@ -24,29 +24,26 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.rowretrieval.QueryExecutor;
+import sleeper.query.core.rowretrieval.QueryPlanner;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.statestore.StateStoreFactory;
 
-import java.nio.file.Path;
 import java.time.Instant;
-import java.util.concurrent.Executors;
 
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
-import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS;
 
 /**
  * A lambda that is triggered when a serialised query arrives on an SQS queue. A processor executes the request using a
- * {@link QueryExecutor} and publishes the results to either SQS or S3 based on the configuration of the query.
+ * {@link QueryPlanner} and publishes the results to either SQS or S3 based on the configuration of the query.
  * The processor contains a cache that includes mappings from partitions to files in those partitions. This is reused by
  * subsequent calls to the lambda if the AWS runtime chooses to reuse the instance.
  */
@@ -63,8 +60,9 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private SqsQueryProcessor processor;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
-        this(S3Client.create(), SqsClient.create(),
-                DynamoDbClient.create(),
+        this(buildAwsV2Client(S3Client.builder()),
+                buildAwsV2Client(SqsClient.builder()),
+                buildAwsV2Client(DynamoDbClient.builder()),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
@@ -115,8 +113,6 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
                 .sqsClient(sqsClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
                 .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
-                .executorService(Executors.newFixedThreadPool(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_ROW_RETRIEVAL_THREADS)))
-                .objectFactory(new S3UserJarsLoader(instanceProperties, s3Client, Path.of("/tmp")).buildObjectFactory())
                 .queryListener(new DynamoDBQueryTracker(instanceProperties, dynamoClient))
                 .build();
         lastUpdateTime = Instant.now();

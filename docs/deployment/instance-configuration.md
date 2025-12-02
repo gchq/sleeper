@@ -28,7 +28,8 @@ You can include the following files in your configuration:
 * A `splits.txt` file which allows you to pre-split partitions in a Sleeper table.
 
 The `.properties` files are Java properties files. The directory containing `instance.properties` will be considered
-the root directory of your configuration.
+the root directory of your configuration. You can find descriptions of all properties in the
+system [here](usage/property-master.md).
 
 You can optionally create a `tags.properties` file next to your `instance.properties`, to apply tags to AWS resources
 deployed by Sleeper. An example tags.properties file can be found [here](../../example/full/tags.properties).
@@ -41,14 +42,12 @@ tables.
 Each table will also need a `schema.json` file next to the `table.properties` file.
 See [create a schema](../usage/schema.md) for how to create a schema.
 
-You can optionally create a `splits.txt` file, which sets the starting split points for partitions when the table is
-created. These are the boundaries where one partition ends and another begins. If you do not set split points, the table
-will be initialised with a single root partition. Note that pre-splitting a table is important for any large-scale use
-of Sleeper, and is essential for running bulk import jobs.
-See [tables](../usage/tables.md#pre-split-partitions) for more information on how to create this file.
+The `splits.txt` file defines initial split points for the table's partition tree.
+See [tables](../usage/tables.md#pre-split-partitions) for how to create this.
 
 At time of writing, the `splits.txt` file needs to be referenced from the `table.properties` file in
-the `sleeper.table.splits.file` property, as an absolute path. This will change in a future version of Sleeper.
+the `sleeper.table.splits.file` property, as an absolute path. This will change in a future version of Sleeper. See
+issue https://github.com/gchq/sleeper/issues/583.
 
 Here's a full example with two tables:
 
@@ -62,6 +61,19 @@ tables/table-2/table.properties
 tables/table-2/schema.json
 tables/table-2/splits.txt
 ```
+
+### Configuring an instance
+
+Please ensure you predefine split points for each table. The `splits.txt` file sets the starting split points for
+partitions when the table is created. These are the boundaries where one partition ends and another begins.
+If you do not set split points, the table will be initialised with a single root partition. Note that pre-splitting a
+table is important for any large-scale use of Sleeper, and is essential for running bulk import jobs. Also see
+the [tables documentation](../usage/tables.md#pre-split-partitions) for details.
+
+Note, if you do not set the property `sleeper.retain.infra.after.destroy` to false when deploying then however you
+choose to tear down Sleeper later on you will also need to destroy some further S3 buckets and DynamoDB tables manually.
+This is because by default they are kept.  Similarly, by default all log groups will be retained when the Sleeper instance is
+torn down. You can set `sleeper.retain.logs.after.destroy` to false as well.
 
 ### Optional Stacks
 

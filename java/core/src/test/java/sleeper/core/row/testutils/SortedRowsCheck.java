@@ -15,6 +15,9 @@
  */
 package sleeper.core.row.testutils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.row.Row;
 import sleeper.core.row.RowComparator;
@@ -32,6 +35,8 @@ import java.util.List;
  */
 public record SortedRowsCheck(long rowsRead, List<Row> outOfOrder) {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(SortedRowsCheck.class);
+
     /**
      * Checks whether a given set of rows are sorted. Will read through all rows and close the given iterator.
      *
@@ -41,6 +46,7 @@ public record SortedRowsCheck(long rowsRead, List<Row> outOfOrder) {
      */
     public static SortedRowsCheck check(Schema schema, CloseableIterator<Row> rows) {
         try (rows) {
+            LOGGER.info("Checking whether rows are sorted, reading...");
             if (!rows.hasNext()) {
                 return sorted(0);
             }
@@ -50,12 +56,17 @@ public record SortedRowsCheck(long rowsRead, List<Row> outOfOrder) {
             while (rows.hasNext()) {
                 Row next = rows.next();
                 rowsRead++;
+                if (rowsRead % 10_000_000 == 0) {
+                    LOGGER.info("Read {} rows", rowsRead);
+                }
                 int diff = comparator.compare(row, next);
                 if (diff > 0) {
+                    LOGGER.info("Found rows out of order after reading {}", rowsRead);
                     return outOfOrderAt(rowsRead, row, next);
                 }
                 row = next;
             }
+            LOGGER.info("Found rows fully sorted after reading {}", rowsRead);
             return sorted(rowsRead);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

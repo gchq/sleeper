@@ -43,18 +43,44 @@ public class IteratorFactory {
      * For custom iterators, the named iterator class is created and its
      * {@link ConfigStringIterator#init(String, Schema)} method is called.
      *
+     * This is equivalent to calling:
+     * <code>{@link #getIterator(IteratorConfig, Schema, boolean) getIterator(iteratorConfig, schema, true)}
+     * </code>
+     *
      * @param  iteratorConfig            config object holding iterator details
      * @param  schema                    the Sleeper {@link Schema} of the {@link Row} objects
      * @return                           an initialised iterator
      * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
      *                                   found
+     * @see                              IteratorFactory#getIterator(IteratorConfig, Schema, boolean)
      */
     public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema) throws IteratorCreationException {
+        return getIterator(iteratorConfig, schema, true);
+    }
+
+    /**
+     * Creates iterators based on the given configuration. This includes filtering, aggregation, and custom iterators.
+     * For custom iterators, the named iterator class is created and its
+     * {@link ConfigStringIterator#init(String, Schema)} method is called.
+     *
+     * If {@code applyFiltersAggregations} is true, then any filters specified in the configuration will be applied
+     * with a filtering iterator and similarly, any aggregations will be applied if present.
+     *
+     * @param  iteratorConfig            config object holding iterator details
+     * @param  schema                    the Sleeper {@link Schema} of the {@link Row} objects
+     * @param  applyFiltersAggregations  if filtering iterators and aggregating should be added
+     * @return                           an initialised iterator
+     * @throws IteratorCreationException if an iterator can't be created, for example it's class definition can't be
+     *                                   found
+     */
+    public SortedRowIterator getIterator(IteratorConfig iteratorConfig, Schema schema, boolean applyFiltersAggregations) throws IteratorCreationException {
         try {
             List<SortedRowIterator> iterators = new ArrayList<>();
-            iteratorConfig.getFilters().forEach(filter -> iterators.add(new AgeOffIterator(schema, filter)));
-            if (!iteratorConfig.getAggregations().isEmpty()) {
-                iterators.add(new AggregationIterator(schema, iteratorConfig.getAggregations()));
+            if (applyFiltersAggregations) {
+                iteratorConfig.getFilters().forEach(filter -> iterators.add(new AgeOffIterator(schema, filter)));
+                if (!iteratorConfig.getAggregations().isEmpty()) {
+                    iterators.add(new AggregationIterator(schema, iteratorConfig.getAggregations()));
+                }
             }
             if (iteratorConfig.getIteratorClassName() != null) {
                 String className = iteratorConfig.getIteratorClassName();
@@ -70,5 +96,4 @@ public class IteratorFactory {
             throw new IteratorCreationException(exc);
         }
     }
-
 }

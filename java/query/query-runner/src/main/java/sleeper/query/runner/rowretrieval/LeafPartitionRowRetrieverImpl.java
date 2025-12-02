@@ -33,8 +33,10 @@ import sleeper.core.row.RowComparator;
 import sleeper.core.schema.Schema;
 import sleeper.parquet.row.ParquetRowReaderFactory;
 import sleeper.parquet.utils.RangeQueryUtils;
+import sleeper.parquet.utils.TableHadoopConfigurationProvider;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.rowretrieval.LeafPartitionRowRetriever;
+import sleeper.query.core.rowretrieval.LeafPartitionRowRetrieverProvider;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 
 import java.io.IOException;
@@ -125,7 +127,7 @@ public class LeafPartitionRowRetrieverImpl implements LeafPartitionRowRetriever 
     }
 
     @Override
-    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException {
+    public CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException {
         List<String> files = leafPartitionQuery.getFiles();
         if (files.isEmpty()) {
             return new WrappedIterator<>(Collections.emptyIterator());
@@ -144,5 +146,24 @@ public class LeafPartitionRowRetrieverImpl implements LeafPartitionRowRetriever 
                 .withFilter(FilterCompat.get(filterPredicate))
                 .useColumnIndexFilter(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED))
                 .build();
+    }
+
+    /**
+     * A provider to create instances of this class.
+     */
+    public static class Provider implements LeafPartitionRowRetrieverProvider {
+        private final ExecutorService executorService;
+        private final TableHadoopConfigurationProvider hadoopConfigurationProvider;
+
+        public Provider(ExecutorService executorService, TableHadoopConfigurationProvider hadoopConfigurationProvider) {
+            this.executorService = executorService;
+            this.hadoopConfigurationProvider = hadoopConfigurationProvider;
+        }
+
+        @Override
+        public LeafPartitionRowRetriever getRowRetriever(TableProperties tableProperties) {
+            Configuration hadoopConf = hadoopConfigurationProvider.getConfiguration(tableProperties);
+            return new LeafPartitionRowRetrieverImpl(executorService, hadoopConf, tableProperties);
+        }
     }
 }

@@ -14,11 +14,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{
-    SleeperParquetOptions,
-    datafusion::{
-        ParquetWriterConfigurer, SleeperOperations, metrics::RowCounts, util::collect_stats,
-    },
+use crate::datafusion::{
+    ParquetWriterConfigurer, SleeperOperations, metrics::RowCounts, util::collect_stats,
 };
 #[cfg(doc)]
 use arrow::record_batch::RecordBatch;
@@ -46,6 +43,8 @@ pub enum OutputType {
     File {
         /// Output file Url
         output_file: Url,
+        /// Should a quantile sketch be written out?
+        write_sketch_file: bool,
         /// Parquet output options
         opts: SleeperParquetOptions,
     },
@@ -59,8 +58,39 @@ impl OutputType {
             Self::ArrowRecordBatch => Box::new(ArrowOutputCompleter::new(ops)),
             Self::File {
                 output_file: _,
+                write_sketch_file: _,
                 opts: _,
             } => Box::new(FileOutputCompleter::new(ops)),
+        }
+    }
+}
+
+/// All Parquet output options supported by Sleeper.
+#[derive(Debug)]
+pub struct SleeperParquetOptions {
+    pub max_row_group_size: usize,
+    pub max_page_size: usize,
+    pub compression: String,
+    pub writer_version: String,
+    pub column_truncate_length: usize,
+    pub stats_truncate_length: usize,
+    pub dict_enc_row_keys: bool,
+    pub dict_enc_sort_keys: bool,
+    pub dict_enc_values: bool,
+}
+
+impl Default for SleeperParquetOptions {
+    fn default() -> Self {
+        Self {
+            max_row_group_size: 1_000_000,
+            max_page_size: 65535,
+            compression: "zstd".into(),
+            writer_version: "v2".into(),
+            column_truncate_length: usize::MAX,
+            stats_truncate_length: usize::MAX,
+            dict_enc_row_keys: true,
+            dict_enc_sort_keys: true,
+            dict_enc_values: true,
         }
     }
 }
@@ -125,9 +155,10 @@ impl<'a> FileOutputCompleter<'a> {
 #[async_trait]
 impl Completer for FileOutputCompleter<'_> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        match &self.ops.config.output {
+        match self.ops.config.output() {
             OutputType::File {
                 output_file: _,
+                write_sketch_file: _,
                 opts: parquet_options,
             } => {
                 let configurer = ParquetWriterConfigurer { parquet_options };
@@ -145,7 +176,7 @@ impl Completer for FileOutputCompleter<'_> {
         task_ctx: Arc<TaskContext>,
     ) -> Result<CompletedOutput, DataFusionError> {
         collect(physical_plan.clone(), task_ctx).await?;
-        let stats = collect_stats(&self.ops.config.input_files, &physical_plan)?;
+        let stats = collect_stats(self.ops.config.input_files(), &physical_plan)?;
         Ok(CompletedOutput::File(stats))
     }
 }
@@ -165,9 +196,10 @@ impl<'a> ArrowOutputCompleter<'a> {
 #[async_trait]
 impl Completer for ArrowOutputCompleter<'_> {
     fn complete_frame(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        match &self.ops.config.output {
+        match self.ops.config.output() {
             OutputType::File {
                 output_file: _,
+                write_sketch_file: _,
                 opts: _,
             } => {
                 plan_err!("Can't use ArrowOutputCompleter with CompletionOptions::File")

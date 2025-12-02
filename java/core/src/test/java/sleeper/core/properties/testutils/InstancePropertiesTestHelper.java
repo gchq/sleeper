@@ -31,10 +31,13 @@ import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_ROWS;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
@@ -43,11 +46,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
@@ -83,15 +84,15 @@ public class InstancePropertiesTestHelper {
     public static InstanceProperties createTestInstancePropertiesWithId(String id) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
+        instanceProperties.set(ACCOUNT, "test-account");
+        instanceProperties.set(REGION, "test-region");
+        instanceProperties.set(VPC_ID, "test-vpc");
+        instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
         instanceProperties.set(DATA_BUCKET, "sleeper-" + id + "-table-data");
         instanceProperties.set(JARS_BUCKET, "sleeper-" + id + "-jars");
         instanceProperties.set(QUERY_RESULTS_BUCKET, "sleeper-" + id + "-query-results");
-        instanceProperties.set(ACCOUNT, "test-account");
-        instanceProperties.set(REGION, "test-region");
         instanceProperties.set(VERSION, "1.2.3");
-        instanceProperties.set(VPC_ID, "test-vpc");
-        instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, "sleeper-" + id + "-file-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, "sleeper-" + id + "-partition-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, "sleeper-" + id + "-transaction-log-all-snapshots");
@@ -114,6 +115,8 @@ public class InstancePropertiesTestHelper {
         instanceProperties.setNumber(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, 512 * 1024 * 1024L);
         instanceProperties.setNumber(MAX_ROWS_TO_WRITE_LOCALLY, 1000);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 100000);
+
+        instanceProperties.set(QUERY_WEBSOCKET_API_URL, "api-gateway-test");
         return instanceProperties;
     }
 

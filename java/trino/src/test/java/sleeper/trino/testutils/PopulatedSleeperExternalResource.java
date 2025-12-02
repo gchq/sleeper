@@ -22,8 +22,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
+import org.testcontainers.localstack.LocalStackContainer;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -134,8 +133,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        System.out.println("S3 endpoint:       " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString());
+        System.out.println("LocalStack endpoint:       " + localStackContainer.getEndpoint().toString());
 
         sleeperConfig.setLocalWorkingDirectory(createTempDirectory(UUID.randomUUID().toString()).toString());
 
@@ -178,9 +176,9 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         DistributedQueryRunner distributedQueryRunner = SleeperQueryRunner.createSleeperQueryRunner(
                 extraPropertiesForQueryRunner,
                 sleeperConfig,
-                buildAwsV2Client(localStackContainer, Service.S3, S3Client.builder()),
-                buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder()),
-                buildAwsV2Client(localStackContainer, Service.DYNAMODB, DynamoDbClient.builder()),
+                buildAwsV2Client(localStackContainer, S3Client.builder()),
+                buildAwsV2Client(localStackContainer, S3AsyncClient.builder()),
+                buildAwsV2Client(localStackContainer, DynamoDbClient.builder()),
                 hadoopConfigurationProvider);
         queryAssertions = new QueryAssertions(distributedQueryRunner);
     }

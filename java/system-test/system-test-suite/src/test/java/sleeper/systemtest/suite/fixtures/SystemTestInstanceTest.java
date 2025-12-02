@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.fixtures;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.CommonProperty;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
@@ -58,7 +58,7 @@ public class SystemTestInstanceTest {
 
         assertThat(instances)
                 .extracting(config -> config.buildDeployConfig(parameters))
-                .flatExtracting(DeployInstanceConfiguration::getTableProperties)
+                .flatExtracting(SleeperInstanceConfiguration::getTableProperties)
                 .extracting(tableProperties -> tableProperties.get(TableProperty.STATESTORE_CLASSNAME))
                 .hasSize(instances.size())
                 .containsOnly("test-class");

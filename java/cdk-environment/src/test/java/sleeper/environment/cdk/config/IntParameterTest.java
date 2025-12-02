@@ -26,7 +26,7 @@ public class IntParameterTest {
     @Test
     public void useDefaultValueWhenUnset() {
         AppContext context = AppContext.empty();
-        assertThat(context.get(BUILD_ROOT_VOLUME_SIZE_GIB)).isEqualTo(200);
+        assertThat(context.get(BUILD_ROOT_VOLUME_SIZE_GIB)).isEqualTo(350);
     }
 
     @Test

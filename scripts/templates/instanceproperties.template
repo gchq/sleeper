@@ -12,20 +12,31 @@
 # globally unique as it will be used to name AWS resources such as S3 buckets.
 sleeper.id=changeme
 
-# The S3 bucket containing the jar files of the Sleeper components.
+# The ID of the artefacts deployment to use to deploy the Sleeper instance. By default we assume an
+# artefacts deployment with the same ID as the Sleeper instance. This property is used to compute the
+# default values of `sleeper.jars.bucket` and `sleeper.ecr.repository.prefix`.
+sleeper.artefacts.deployment=changeme
+
+# The S3 bucket containing the jar files of the Sleeper components. If unset, a default name is
+# computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it is not.
 sleeper.jars.bucket=changeme
 
-# The AWS account number. This is the AWS account that the instance will be deployed to.
-sleeper.account=changeme
+# If set, this property will be used as a prefix for the names of ECR repositories. If unset, a
+# default prefix is computed from `sleeper.artefacts.deployment` if it is set, or `sleeper.id` if it
+# is not.
+# ECR repository names are generated in the format `<prefix>/<image name>`.
+sleeper.ecr.repository.prefix=changeme
 
-# The AWS region to deploy to.
-sleeper.region=changeme
-
-# The id of the VPC to deploy to.
+# The id of the VPC to deploy to. This property may be passed as an argument during deployment. If
+# using the Sleeper CDK app, you can set the context variable "vpc". If using your own CDK app, you
+# can set this in SleeperInstanceProps under networking.
 sleeper.vpc=changeme
 
 # A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
-# clusters will be deployed in a subnet chosen when the cluster is created.
+# clusters will be deployed in a subnet chosen when the cluster is created. This property may be
+# passed as an argument during deployment. If using the Sleeper CDK app, you can set the context
+# variable "subnets". If using your own CDK app, you can set this in SleeperInstanceProps under
+# networking.
 sleeper.subnets=changeme
 
 
@@ -36,8 +47,8 @@ sleeper.subnets=changeme
 ## The following instance properties are commonly used throughout Sleeper.
 
 # A comma-separated list of the jars containing application specific iterator code. These jars are
-# assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that bucket contains two iterator
-# jars called iterator1.jar and iterator2.jar then the property should be
+# assumed to be in the bucket given by `sleeper.jars.bucket`. For example, if that bucket contains two
+# iterator jars called iterator1.jar and iterator2.jar then the property should be
 # 'sleeper.userjars=iterator1.jar,iterator2.jar'.
 # sleeper.userjars=
 
@@ -50,12 +61,15 @@ sleeper.stack.tag.name=DeploymentStack
 # instance is destroyed.
 sleeper.retain.infra.after.destroy=true
 
+# Whether to keep the sleeper log groups when the instance is destroyed.
+sleeper.retain.logs.after.destroy=true
+
 # The optional stacks to deploy. Not case sensitive.
 # Valid values: [IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrBulkImportStack,
 # PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, BulkExportStack, QueryStack,
 # WebSocketQueryStack, AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack,
 # PartitionSplittingStack, DashboardStack, TableMetricsStack]
-sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack,QueryStack,AthenaStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack,DashboardStack,TableMetricsStack
+sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack,QueryStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack,DashboardStack,TableMetricsStack
 
 # The deployment type for AWS Lambda. Not case sensitive.
 # There are two types of Lambda deployments, jar and container.
@@ -110,12 +124,6 @@ sleeper.task.runner.timeout.seconds=900
 # If true, properties will be reloaded every time a long running job is started or a lambda is run.
 # This will mainly be used in test scenarios to ensure properties are up to date.
 sleeper.properties.force.reload=false
-
-# If set, this property will be used as a prefix for the names of ECR repositories. If unset, then the
-# instance ID will be used to determine the names instead.
-# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
-# the ability to use this in the CDK in the future.
-# sleeper.ecr.repository.prefix=
 
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
 # sleeper.ecs.security.groups=
@@ -667,7 +675,7 @@ sleeper.bulk.import.emr.ebs.volumes.per.instance=4
 sleeper.bulk.import.emr.serverless.architecture=X86_64
 
 # The version of EMR Serverless to use.
-sleeper.bulk.import.emr.serverless.release=emr-7.9.0
+sleeper.bulk.import.emr.serverless.release=emr-7.12.0
 
 # Set to true to allow an EMR Serverless Application to start automatically when a job is submitted.
 sleeper.bulk.import.emr.serverless.autostart.enabled=true
@@ -803,7 +811,7 @@ sleeper.bulk.import.emr.serverless.initial.capacity.driver.disk=20GB
 # for bulk importing data using Spark running on EMR.
 # This property is a default which can be overridden by a table property or by a property in the bulk
 # import job specification.
-sleeper.default.bulk.import.emr.release.label=emr-7.9.0
+sleeper.default.bulk.import.emr.release.label=emr-7.12.0
 
 # (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
 # cluster. Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk
@@ -860,7 +868,7 @@ sleeper.default.bulk.import.emr.executor.initial.instances=2
 sleeper.default.bulk.import.emr.executor.max.instances=10
 
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
-sleeper.bulk.import.persistent.emr.release.label=emr-7.9.0
+sleeper.bulk.import.persistent.emr.release.label=emr-7.12.0
 
 # (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
 # Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk import using
@@ -1220,10 +1228,6 @@ sleeper.compaction.ec2.type=t4g.xlarge
 # The minimum number of instances for the EC2 cluster (when using EC2-based compactions).
 sleeper.compaction.ec2.pool.minimum=0
 
-# The initial desired number of instances for the EC2 cluster (when using EC2-based compactions).
-# Can be set by dividing initial maximum containers by number that should fit on instance type.
-sleeper.compaction.ec2.pool.desired=0
-
 # The maximum number of instances for the EC2 cluster (when using EC2-based compactions).
 sleeper.compaction.ec2.pool.maximum=75
 
@@ -1396,6 +1400,12 @@ sleeper.dashboard.time.window.minutes=5
 # The logging level for everything else.
 # sleeper.logging.root.level=
 
+# Configuration for Rust backtrace generation, set in the environment variable RUST_BACKTRACE.
+# sleeper.logging.backtrace=
+
+# Configuration for Rust logging, set in the environment variable RUST_LOG.
+# sleeper.logging.rust=
+
 
 ## The following instance properties relate to the integration with Athena.
 
@@ -1449,6 +1459,10 @@ sleeper.default.parquet.columnindex.truncate.length=128
 # https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
 # The length in bytes to truncate the min/max binary values in row groups.
 sleeper.default.parquet.statistics.truncate.length=2147483647
+
+# Enables a cache of data when reading from S3 with the DataFusion data engine, to hold data in larger
+# blocks than are requested by DataFusion.
+sleeper.default.datafusion.s3.readahead.enabled=true
 
 # Used to set parquet.writer.version, see documentation here:
 # https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
@@ -1656,5 +1670,6 @@ sleeper.default.statestore.committer.update.every.commit=false
 # before adding a batch of transactions in the asynchronous state store committer.
 sleeper.default.statestore.committer.update.every.batch=true
 
-# Select which data engine to use for the table. Valid values are: [java, datafusion]
+# Select which data engine to use for the table. Valid values are: [java, datafusion,
+# datafusion_experimental]
 sleeper.default.table.data.engine=DATAFUSION

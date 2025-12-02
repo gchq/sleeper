@@ -20,14 +20,11 @@ import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.Stack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
-import software.amazon.awscdk.services.ec2.IVpc;
-import software.amazon.awscdk.services.ec2.Vpc;
-import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.ContainerInsights;
 import software.amazon.awscdk.services.ecs.Ec2TaskDefinition;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
@@ -40,11 +37,11 @@ import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.Queue;
 
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
@@ -58,15 +55,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 
@@ -82,41 +77,37 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 public class CompactionTaskResources {
     private static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
 
-    private final InstanceProperties instanceProperties;
     private final Stack stack;
+    private final SleeperInstanceProps props;
+    private final InstanceProperties instanceProperties;
 
     public CompactionTaskResources(Stack stack,
-            InstanceProperties instanceProperties,
-            LambdaCode lambdaCode,
+            SleeperInstanceProps props,
+            SleeperLambdaCode lambdaCode,
             IBucket jarsBucket,
             CompactionJobResources jobResources,
-            Topic topic,
-            CoreStacks coreStacks,
-            List<IMetric> errorMetrics) {
+            SleeperCoreStacks coreStacks) {
 
-        this.instanceProperties = instanceProperties;
         this.stack = stack;
+        this.props = props;
+        this.instanceProperties = props.getInstanceProperties();
 
-        ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, jobResources);
-        lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
+        Cluster cluster = ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, jobResources);
+        IFunction taskCreator = lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
+        coreStacks.addAutoStopEcsClusterTasksAfterTaskCreatorIsDeleted(stack, cluster, taskCreator);
 
         // Allow running compaction tasks
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(runTasksPolicyStatement());
-
     }
 
-    private void ecsClusterForCompactionTasks(CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, CompactionJobResources jobResources) {
-        VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(VPC_ID))
-                .build();
-        IVpc vpc = Vpc.fromLookup(stack, "VPC1", vpcLookupOptions);
+    private Cluster ecsClusterForCompactionTasks(SleeperCoreStacks coreStacks, IBucket jarsBucket, SleeperLambdaCode taskCreatorJar, CompactionJobResources jobResources) {
         String clusterName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-cluster");
         Cluster cluster = Cluster.Builder
                 .create(stack, "CompactionCluster")
                 .clusterName(clusterName)
-                .containerInsights(Boolean.TRUE)
-                .vpc(vpc)
+                .containerInsightsV2(ContainerInsights.ENHANCED)
+                .vpc(coreStacks.getVpc())
                 .build();
         instanceProperties.set(COMPACTION_CLUSTER, cluster.getClusterName());
 
@@ -134,7 +125,7 @@ public class CompactionTaskResources {
                     .createTaskDefinition(containerImage, environmentVariables);
         } else {
             taskDefinition = new CompactionOnEc2Resources(instanceProperties, stack, coreStacks)
-                    .createTaskDefinition(cluster, vpc, taskCreatorJar, containerImage, environmentVariables);
+                    .createTaskDefinition(cluster, coreStacks.getVpc(), taskCreatorJar, containerImage, environmentVariables);
         }
         coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
@@ -152,11 +143,13 @@ public class CompactionTaskResources {
                 .value(cluster.getClusterName())
                 .build();
         new CfnOutput(stack, COMPACTION_CLUSTER_NAME, compactionClusterProps);
+
+        return cluster;
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    private void lambdaToCreateCompactionTasks(
-            CoreStacks coreStacks, LambdaCode lambdaCode, Queue compactionJobsQueue) {
+    private IFunction lambdaToCreateCompactionTasks(
+            SleeperCoreStacks coreStacks, SleeperLambdaCode lambdaCode, Queue compactionJobsQueue) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-tasks-creator");
 
@@ -189,12 +182,14 @@ public class CompactionTaskResources {
                 .create(stack, "CompactionTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.COMPACTION_TASK_CREATION.getDescription())
-                .enabled(!shouldDeployPaused(stack))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))
                 .build();
         instanceProperties.set(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+
+        return handler;
     }
 
     private static PolicyStatement runTasksPolicyStatement() {

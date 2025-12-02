@@ -21,7 +21,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.localstack.LocalStackContainer;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
@@ -44,6 +44,8 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.CompactionJobTrackerTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.job.run.RowsProcessed;
+import sleeper.foreign.bridge.FFIContext;
+import sleeper.foreign.datafusion.DataFusionAwsConfig;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.row.ParquetReaderIterator;
@@ -107,8 +109,10 @@ public class DataFusionCompactionRunnerLocalStackIT extends LocalStackTestBase {
     }
 
     private void runTask(CompactionJob job) throws Exception {
-        CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration());
-        compactionTaskTestHelper().runTask(runner, List.of(job));
+        try (FFIContext<DataFusionCompactionFunctions> context = FFIContext.getFFIContext(DataFusionCompactionFunctions.class)) {
+            CompactionRunner runner = new DataFusionCompactionRunner(createAwsConfig(), new Configuration(), context);
+            compactionTaskTestHelper().runTask(runner, List.of(job));
+        }
     }
 
     private CompactionTaskTestHelper compactionTaskTestHelper() {

@@ -28,7 +28,6 @@ import sleeper.clients.deploy.localstack.stack.TableDockerStack;
 import sleeper.clients.table.AddTable;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.DefaultAsyncCommitBehaviour;
 import sleeper.core.properties.model.OptionalStack;
@@ -44,13 +43,13 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.ENDPOINT_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
@@ -91,13 +90,12 @@ public class DeployDockerInstance {
             DeployDockerInstance.builder()
                     .s3Client(s3Client)
                     .dynamoClient(dynamoClient).sqsClient(sqsClient).build()
-                    .deploy(instanceId);
+                    .deploy(new InstanceProperties(), instanceId);
         }
     }
 
-    public void deploy(String instanceId) {
-        InstanceProperties instanceProperties = PopulateInstanceProperties.populateDefaultsFromInstanceId(
-                new InstanceProperties(), instanceId);
+    public void deploy(InstanceProperties instanceProperties, String instanceId) {
+        instanceProperties.set(ID, instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
         extraTableProperties.accept(tableProperties);
         deploy(instanceProperties, List.of(tableProperties));

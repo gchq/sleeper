@@ -19,14 +19,57 @@
     <parent>
         <artifactId>query</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.33.0</version>
+        <version>0.34.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>query-datafusion</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-c-data</artifactId>
+        </dependency>
         <!-- Sleeper dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>arrow</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>query-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>foreign-bridge</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Test dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-runner</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>example-iterators</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

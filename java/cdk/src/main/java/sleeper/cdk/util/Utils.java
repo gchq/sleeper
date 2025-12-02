@@ -15,16 +15,9 @@
  */
 package sleeper.cdk.util;
 
-import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.Tags;
-import software.amazon.awscdk.services.cloudwatch.Alarm;
-import software.amazon.awscdk.services.cloudwatch.ComparisonOperator;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
-import software.amazon.awscdk.services.cloudwatch.MetricOptions;
-import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
-import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
 import software.amazon.awscdk.services.ecs.LogDriver;
 import software.amazon.awscdk.services.iam.Effect;
@@ -33,36 +26,21 @@ import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
-import software.amazon.awscdk.services.sns.Topic;
-import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.stepfunctions.LogLevel;
 import software.amazon.awscdk.services.stepfunctions.LogOptions;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.internal.BucketUtils;
-import software.constructs.Construct;
 
-import sleeper.core.SleeperVersion;
-import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.local.LoadLocalProperties;
-import sleeper.core.properties.table.TableProperties;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.Properties;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_LOGS_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
-import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 /**
  * Collection of utility methods related to the CDK deployment.
@@ -155,64 +133,6 @@ public class Utils {
         }
     }
 
-    public static <T extends InstanceProperties> T loadInstanceProperties(Function<Properties, T> properties, Construct scope) {
-        return loadInstanceProperties(properties, tryGetContext(scope));
-    }
-
-    public static <T extends InstanceProperties> T loadInstanceProperties(
-            Function<Properties, T> constructor, Function<String, String> tryGetContext) {
-        Path propertiesFile = Path.of(tryGetContext.apply("propertiesfile"));
-        T properties = LoadLocalProperties.loadInstancePropertiesNoValidation(constructor, propertiesFile);
-
-        if (!"false".equalsIgnoreCase(tryGetContext.apply("validate"))) {
-            properties.validate();
-            try {
-                BucketUtils.isValidDnsBucketName(properties.get(ID), true);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
-                        "Sleeper instance ID is not valid as part of an S3 bucket name: " + properties.get(ID),
-                        e);
-            }
-        }
-        if ("true".equalsIgnoreCase(tryGetContext.apply("newinstance"))) {
-            try (S3Client s3Client = S3Client.create(); DynamoDbClient dynamoClient = DynamoDbClient.create()) {
-                new NewInstanceValidator(s3Client, dynamoClient).validate(properties, propertiesFile);
-            }
-        }
-        String deployedVersion = properties.get(VERSION);
-        String localVersion = SleeperVersion.getVersion();
-        CdkDefinedInstanceProperty.getAll().forEach(properties::unset);
-
-        if (!"true".equalsIgnoreCase(tryGetContext.apply("skipVersionCheck"))
-                && deployedVersion != null
-                && !localVersion.equals(deployedVersion)) {
-            throw new MismatchedVersionException(String.format("Local version %s does not match deployed version %s. " +
-                    "Please upgrade/downgrade to make these match",
-                    localVersion, deployedVersion));
-        }
-        properties.set(VERSION, localVersion);
-        return properties;
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Construct scope) {
-        return getAllTableProperties(instanceProperties, tryGetContext(scope));
-    }
-
-    public static Stream<TableProperties> getAllTableProperties(
-            InstanceProperties instanceProperties, Function<String, String> tryGetContext) {
-        return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                instanceProperties, Path.of(tryGetContext.apply("propertiesfile")));
-    }
-
-    private static Function<String, String> tryGetContext(Construct scope) {
-        return key -> (String) scope.getNode().tryGetContext(key);
-    }
-
-    public static boolean shouldDeployPaused(Construct scope) {
-        return "true".equalsIgnoreCase((String) scope.getNode().tryGetContext("deployPaused"));
-    }
-
     public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
         Optional.ofNullable(properties.get(STACK_TAG_NAME))
                 .ifPresent(tagName -> Tags.of(stack).add(tagName, stack.getNode().getId()));
@@ -220,6 +140,14 @@ public class Utils {
 
     public static RemovalPolicy removalPolicy(InstanceProperties properties) {
         if (properties.getBoolean(RETAIN_INFRA_AFTER_DESTROY)) {
+            return RemovalPolicy.RETAIN;
+        } else {
+            return RemovalPolicy.DESTROY;
+        }
+    }
+
+    public static RemovalPolicy logsRemovalPolicy(InstanceProperties properties) {
+        if (properties.getBoolean(RETAIN_LOGS_AFTER_DESTROY)) {
             return RemovalPolicy.RETAIN;
         } else {
             return RemovalPolicy.DESTROY;
@@ -247,22 +175,6 @@ public class Utils {
         }
     }
 
-    public static void createAlarmForDlq(Construct scope, String id, String description, Queue dlq, Topic topic) {
-        Alarm alarm = Alarm.Builder
-                .create(scope, id)
-                .alarmName(dlq.getQueueName())
-                .alarmDescription(description)
-                .metric(dlq.metricApproximateNumberOfMessagesVisible()
-                        .with(MetricOptions.builder().statistic("Sum").period(Duration.seconds(60)).build()))
-                .comparisonOperator(ComparisonOperator.GREATER_THAN_THRESHOLD)
-                .threshold(0)
-                .evaluationPeriods(1)
-                .datapointsToAlarm(1)
-                .treatMissingData(TreatMissingData.IGNORE)
-                .build();
-        alarm.addAlarmAction(new SnsAction(topic));
-    }
-
     public static void grantInvokeOnPolicy(IFunction function, ManagedPolicy policy) {
         // IFunction.grantInvoke does not work with a ManagedPolicy at time of writing.
         // It tries to set it as a Principal, which you can't do with a ManagedPolicy.
@@ -271,11 +183,5 @@ public class Utils {
                 .actions(List.of("lambda:InvokeFunction"))
                 .resources(List.of(function.getFunctionArn()))
                 .build());
-    }
-
-    public static IMetric createErrorMetric(String label, Queue errorQueue, InstanceProperties instanceProperties) {
-        int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
-        return errorQueue.metricApproximateNumberOfMessagesVisible(
-                MetricOptions.builder().label(label).period(Duration.minutes(timeWindowInMinutes)).statistic("Sum").build());
     }
 }

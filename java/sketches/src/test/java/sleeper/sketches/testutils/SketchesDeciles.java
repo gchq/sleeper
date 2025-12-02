@@ -18,6 +18,7 @@ package sleeper.sketches.testutils;
 import com.google.common.base.Strings;
 import org.apache.datasketches.quantiles.ItemsUnion;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -47,6 +48,10 @@ public class SketchesDeciles {
 
     public static SketchesDeciles from(Sketches sketches) {
         return new SketchesDeciles(createDecilesByField(sketches));
+    }
+
+    public static SketchesDeciles from(TableProperties tableProperties, List<Row> rows) {
+        return from(tableProperties.getSchema(), rows);
     }
 
     public static SketchesDeciles from(Schema schema, List<Row> rows) {

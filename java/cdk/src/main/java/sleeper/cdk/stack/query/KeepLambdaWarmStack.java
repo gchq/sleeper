@@ -23,13 +23,12 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.jars.SleeperLambdaCode;
+import sleeper.cdk.stack.SleeperCoreStacks;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -39,7 +38,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_WARM_LAMBDA_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
@@ -53,19 +51,19 @@ import static sleeper.core.properties.instance.QueryProperty.QUERY_WARM_LAMBDA_E
  */
 public class KeepLambdaWarmStack extends NestedStack {
 
-    public KeepLambdaWarmStack(Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            BuiltJars jars,
-            CoreStacks coreStacks,
+    public KeepLambdaWarmStack(
+            Construct scope, String id,
+            SleeperInstanceProps props,
+            SleeperCoreStacks coreStacks,
             QueryQueueStack queryQueueStack) {
         super(scope, id);
+        InstanceProperties instanceProperties = props.getInstanceProperties();
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-keep-warm");
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
+        SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         // Keep lambda warm function
         IFunction handler = lambdaCode.buildFunction(this, LambdaHandler.KEEP_QUERY_WARM, "WarmQueryExecutorLambda", builder -> builder
@@ -82,7 +80,7 @@ public class KeepLambdaWarmStack extends NestedStack {
                 .create(this, "QueryExecutionPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.QUERY_WARM_LAMBDA.buildRuleName(instanceProperties))
                 .description(SleeperScheduleRule.QUERY_WARM_LAMBDA.getDescription())
-                .enabled(!shouldDeployPaused(this))
+                .enabled(!props.isDeployPaused())
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties
                         .getInt(QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES))))
                 .targets(List.of(LambdaFunction.Builder

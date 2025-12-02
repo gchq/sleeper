@@ -27,9 +27,7 @@ import java.util.List;
 import static sleeper.clients.util.command.Command.command;
 import static sleeper.clients.util.command.CommandPipeline.pipeline;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBase {
@@ -39,8 +37,6 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
     @BeforeEach
     void setUpBase() {
         properties.set(ID, "test-instance");
-        properties.set(ACCOUNT, "123");
-        properties.set(REGION, "test-region");
         properties.set(VERSION, "1.0.0");
     }
 
@@ -54,7 +50,7 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
 
     protected abstract UploadDockerImagesToEcr uploader();
 
-    protected CommandPipeline loginDockerCommand() {
+    protected CommandPipeline dockerLoginToEcrCommand() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",
                         "123.dkr.ecr.test-region.amazonaws.com"));
@@ -62,7 +58,7 @@ public abstract class UploadDockerImagesToEcrTestBase extends DockerImagesTestBa
 
     protected List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {
         List<CommandPipeline> commands = new ArrayList<>();
-        commands.add(loginDockerCommand());
+        commands.add(dockerLoginToEcrCommand());
         for (String image : images) {
             String tag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/" + image + ":1.0.0";
             commands.add(buildImageCommand(tag, "./docker/" + image));

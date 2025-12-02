@@ -22,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -47,7 +47,7 @@ public class TableMetricsST {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(MAIN);
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
@@ -55,7 +55,7 @@ public class TableMetricsST {
     }
 
     @Test
-    void shouldReportTableMetrics(SleeperSystemTest sleeper) {
+    void shouldReportTableMetrics(SleeperDsl sleeper) {
         // Given
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA,
                 Map.of(TABLE_ONLINE, "false"));
@@ -79,7 +79,7 @@ public class TableMetricsST {
     }
 
     @Test
-    void shouldReportTableMetricsForMoreTablesThanBatchSize(SleeperSystemTest sleeper) {
+    void shouldReportTableMetricsForMoreTablesThanBatchSize(SleeperDsl sleeper) {
         // Given
         sleeper.tables().createWithProperties(
                 List.of("A", "B", "C"), DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"))

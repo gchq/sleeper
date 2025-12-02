@@ -39,6 +39,7 @@ use datafusion::{
 };
 use std::{
     any::Any,
+    hash::{Hash, Hasher},
     sync::{Arc, LazyLock},
 };
 
@@ -70,7 +71,7 @@ pub fn non_null_sum(expression: Expr) -> Expr {
         vec![expression],
         false,
         None,
-        None,
+        vec![],
         None,
     ))
 }
@@ -82,7 +83,7 @@ pub fn non_null_min(expression: Expr) -> Expr {
         vec![expression],
         false,
         None,
-        None,
+        vec![],
         None,
     ))
 }
@@ -94,7 +95,7 @@ pub fn non_null_max(expression: Expr) -> Expr {
         vec![expression],
         false,
         None,
-        None,
+        vec![],
         None,
     ))
 }
@@ -174,6 +175,23 @@ impl NonNullable {
 impl From<Arc<dyn AggregateUDFImpl>> for NonNullable {
     fn from(value: Arc<dyn AggregateUDFImpl>) -> Self {
         Self::new(value)
+    }
+}
+
+// The trait definition of AggregateUDFImpl now requires Eq and PartialEq traits in order
+// to meet the requirement for DynEq.
+impl PartialEq for NonNullable {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner) && self.func_name == other.func_name
+    }
+}
+
+impl Eq for NonNullable {}
+
+impl Hash for NonNullable {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.inner.dyn_hash(state);
+        self.func_name.hash(state);
     }
 }
 
@@ -311,8 +329,8 @@ impl AggregateUDFImpl for NonNullable {
         self.inner.supports_null_handling_clause()
     }
 
-    fn is_ordered_set_aggregate(&self) -> bool {
-        self.inner.is_ordered_set_aggregate()
+    fn supports_within_group_clause(&self) -> bool {
+        self.inner.supports_within_group_clause()
     }
 
     fn documentation(&self) -> Option<&Documentation> {
@@ -462,12 +480,16 @@ mod tests {
             simplify::SimplifyContext,
             utils::AggregateOrderSensitivity,
         },
-        physical_expr::LexOrdering,
         scalar::ScalarValue,
     };
     use mockall::predicate::*;
     use mockall::*;
-    use std::{any::Any, collections::HashMap, sync::Arc};
+    use std::{
+        any::Any,
+        collections::HashMap,
+        hash::{Hash, Hasher},
+        sync::Arc,
+    };
 
     // Create mock Aggregate UDF - used to check NonNullable is calling the correct underlying functions
     mock! {
@@ -511,19 +533,28 @@ mod tests {
             fn simplify(&self) -> Option<AggregateFunctionSimplification>;
             fn reverse_expr(&self) -> ReversedUDAF;
             fn coerce_types(&self, arg_types: &[DataType]) -> Result<Vec<DataType>> ;
-            fn equals(&self, other: &dyn AggregateUDFImpl) -> bool;
-            fn hash_value(&self) -> u64 ;
             fn is_descending(&self) -> Option<bool> ;
             fn value_from_stats<'a>(&self, statistics_args: &StatisticsArgs<'a>) -> Option<ScalarValue> ;
             fn default_value(&self, data_type: &DataType) -> Result<ScalarValue>;
             fn supports_null_handling_clause(&self) -> bool;
-            fn is_ordered_set_aggregate(&self) -> bool;
+            fn supports_within_group_clause(&self) -> bool;
             fn documentation(&self) -> Option<&'static Documentation>;
             fn set_monotonicity(&self, data_type: &DataType) -> SetMonotonicity;
         }
         unsafe impl Send for UDFImpl {}
         unsafe impl Sync for UDFImpl {}
     }
+
+    impl Hash for MockUDFImpl {
+        fn hash<H: Hasher>(&self, _: &mut H) {}
+    }
+    impl PartialEq for MockUDFImpl {
+        fn eq(&self, _: &Self) -> bool {
+            // Mock instances are identical
+            true
+        }
+    }
+    impl Eq for MockUDFImpl {}
 
     // Mock Accumulator - used to test NonNullableAccumulator is wrapping correctly.
     mock! {
@@ -617,7 +648,7 @@ mod tests {
 
         // When
         let Expr::AggregateFunction(aggregate) = expr else {
-            return internal_err!("Expected a non nullable sum");
+            return internal_err!("Expected a non nullable max");
         };
 
         let expect_nonnullable = aggregate.func;
@@ -642,7 +673,7 @@ mod tests {
 
         // When
         let Expr::AggregateFunction(aggregate) = expr else {
-            return internal_err!("Expected a non nullable sum");
+            return internal_err!("Expected a non nullable min");
         };
 
         let expect_nonnullable = aggregate.func;
@@ -842,11 +873,12 @@ mod tests {
                 return_field: Arc::new(Field::new("", DataType::Int64, false)),
                 schema: &Schema::empty(),
                 ignore_nulls: false,
-                ordering_req: LexOrdering::empty(),
+                order_bys: &[],
                 is_reversed: false,
                 name: "test",
                 is_distinct: false,
                 exprs: &[],
+                expr_fields: &[],
             })
             .expect("No Accumulator instance");
 
@@ -929,11 +961,12 @@ mod tests {
             return_field: Arc::new(Field::new("", DataType::Int64, false)),
             schema: &Schema::empty(),
             ignore_nulls: false,
-            ordering_req: LexOrdering::empty(),
+            order_bys: &[],
             is_reversed: false,
             name: "test",
             is_distinct: false,
             exprs: &[],
+            expr_fields: &[],
         });
 
         // Then
@@ -960,11 +993,12 @@ mod tests {
                 return_field: Arc::new(Field::new("", DataType::Int64, false)),
                 schema: &Schema::empty(),
                 ignore_nulls: false,
-                ordering_req: LexOrdering::empty(),
+                order_bys: &[],
                 is_reversed: false,
                 name: "test",
                 is_distinct: false,
                 exprs: &[],
+                expr_fields: &[],
             })
             .expect("No GroupsAccumulator instance");
 
@@ -1003,11 +1037,12 @@ mod tests {
                 return_field: Arc::new(Field::new("", DataType::Int64, false)),
                 schema: &Schema::empty(),
                 ignore_nulls: false,
-                ordering_req: LexOrdering::empty(),
+                order_bys: &[],
                 is_reversed: false,
                 name: "test",
                 is_distinct: false,
                 exprs: &[],
+                expr_fields: &[],
             })
             .expect("No sliding accumulator instance");
 
@@ -1064,7 +1099,7 @@ mod tests {
             .returning(|| Some(Box::new(|_, _| Ok(sum(lit(1))))));
         let nonnull = NonNullable::new(Arc::new(mock_udf));
         let test_agg_function =
-            AggregateFunction::new_udf(sum_udaf(), vec![], false, None, None, None);
+            AggregateFunction::new_udf(sum_udaf(), vec![], false, None, vec![], None);
 
         // When
         let simplified_expr = nonnull.simplify().expect("couldn't unwrap simplify result");
@@ -1201,18 +1236,18 @@ mod tests {
     }
 
     #[test]
-    fn should_call_is_ordered_set_aggregate() {
+    fn should_call_supports_within_group_clause() {
         // Given
         let mut mock_udf = MockUDFImpl::new();
         mock_udf.expect_name().return_const("mockudf".to_owned());
         mock_udf
-            .expect_is_ordered_set_aggregate()
+            .expect_supports_within_group_clause()
             .once()
             .return_const(true);
         let nonnull = NonNullable::new(Arc::new(mock_udf));
 
         // When
-        let ordered_set = nonnull.is_ordered_set_aggregate();
+        let ordered_set = nonnull.supports_within_group_clause();
 
         // Then
         assert!(ordered_set);

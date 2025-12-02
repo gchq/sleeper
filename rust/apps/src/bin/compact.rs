@@ -22,9 +22,10 @@ use log::info;
 use num_format::{Locale, ToFormattedString};
 use sleeper_core::{
     ColRange, CommonConfigBuilder, OutputType, PartitionBound, SleeperParquetOptions,
-    SleeperPartitionRegion,
+    SleeperRegion,
     filter_aggregation_config::{aggregate::Aggregate, filter::Filter},
     run_compaction,
+    sleeper_context::SleeperContext,
 };
 use std::{collections::HashMap, io::Write};
 use url::Url;
@@ -32,8 +33,8 @@ use url::Url;
 /// Runs a Sleeper compaction algorithm.
 ///
 /// A sequence of Parquet files is read and compacted into a single output Parquet file. The input
-/// files must be individually sorted according to the row key columns and then the sort columns. A sketches file containing
-/// serialised Apache Data Sketches quantiles sketches is written for reach row key column.
+/// files must be individually sorted according to the row key fields and then the sort fields. A sketches file containing
+/// serialised Apache Data Sketches quantiles sketches is written for reach row key field.
 ///
 #[derive(Parser, Debug)]
 #[command(author, version)]
@@ -49,10 +50,10 @@ struct CmdLineArgs {
     /// List of input Parquet files (must be sorted) as URLs
     #[arg(num_args=1.., required=true)]
     input: Vec<String>,
-    /// Column names for a row key columns
+    /// Column names for a row key fields
     #[arg(short = 'k', long, num_args=1.., required=true)]
     row_keys: Vec<String>,
-    /// Column names for sort key columns
+    /// Column names for sort key fields
     #[arg(short = 's', long)]
     sort_keys: Vec<String>,
     /// Partition region minimum keys (inclusive). Must be one per row key specified.
@@ -111,10 +112,10 @@ async fn main() -> color_eyre::Result<()> {
         .or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(&args.output))))?;
 
     if args.row_keys.len() != args.region_maxs.len() {
-        bail!("quantity of region maximums != quantity of row key columns");
+        bail!("quantity of region maximums != quantity of row key fields");
     }
     if args.row_keys.len() != args.region_mins.len() {
-        bail!("quantity of region minimums != quantity of row key columns");
+        bail!("quantity of region minimums != quantity of row key fields");
     }
     let mut map = HashMap::new();
     for (key, bounds) in args
@@ -151,9 +152,10 @@ async fn main() -> color_eyre::Result<()> {
         .input_files_sorted(true)
         .row_key_cols(args.row_keys)
         .sort_key_cols(args.sort_keys)
-        .region(SleeperPartitionRegion::new(map))
+        .region(SleeperRegion::new(map))
         .output(OutputType::File {
             output_file,
+            write_sketch_file: true,
             opts: parquet_options,
         })
         .aggregates(Aggregate::parse_config(
@@ -164,7 +166,7 @@ async fn main() -> color_eyre::Result<()> {
         )?)
         .build()?;
 
-    let result = run_compaction(&details).await?;
+    let result = run_compaction(&details, &SleeperContext::default()).await?;
     info!(
         "Compaction read {} rows and wrote {} rows",
         result.rows_read.to_formatted_string(&Locale::en),

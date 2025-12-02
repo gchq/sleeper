@@ -14,50 +14,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use crate::{FFICommonConfig, objects::FFIRowKeySchemaType};
+use crate::objects::RowKeySchemaType;
 use color_eyre::{
     Report,
     eyre::{Result, bail, eyre},
 };
-use sleeper_core::{AwsConfig, PartitionBound};
+use sleeper_core::PartitionBound;
 use std::{
     ffi::{CStr, c_char, c_void},
     slice,
 };
-
-pub fn unpack_aws_config(params: &FFICommonConfig) -> Result<Option<AwsConfig>> {
-    Ok(if params.override_aws_config {
-        if params.aws_region.is_null() {
-            bail!("FFICompactionsParams aws_region pointer is NULL");
-        }
-        if params.aws_endpoint.is_null() {
-            bail!("FFICompactionsParams aws_endpoint pointer is NULL");
-        }
-        if params.aws_access_key.is_null() {
-            bail!("FFICompactionsParams aws_access_key pointer is NULL");
-        }
-        if params.aws_secret_key.is_null() {
-            bail!("FFICompactionsParams aws_secret_key pointer is NULL");
-        }
-        Some(AwsConfig {
-            region: unsafe { CStr::from_ptr(params.aws_region) }
-                .to_str()?
-                .to_owned(),
-            endpoint: unsafe { CStr::from_ptr(params.aws_endpoint) }
-                .to_str()?
-                .to_owned(),
-            access_key: unsafe { CStr::from_ptr(params.aws_access_key) }
-                .to_str()?
-                .to_owned(),
-            secret_key: unsafe { CStr::from_ptr(params.aws_secret_key) }
-                .to_str()?
-                .to_owned(),
-            allow_http: params.aws_allow_http,
-        })
-    } else {
-        None
-    })
-}
 
 pub fn unpack_str<'a>(pointer: *const c_char) -> Result<&'a str> {
     Ok(unsafe { CStr::from_ptr(pointer) }.to_str()?)
@@ -130,29 +96,6 @@ pub fn unpack_typed_array<T: Copy>(array_base: *const *const T, len: usize) -> R
         .collect()
 }
 
-/// Create a vector of pointers to a generic type.
-///
-/// # Errors
-/// If the array length is invalid, then behaviour is undefined.
-pub fn unpack_typed_ref_array<T: Copy>(
-    array_base: *const *const T,
-    len: usize,
-) -> Result<Vec<*const T>> {
-    if array_base.is_null() {
-        bail!("NULL pointer for array_base in generic typed array");
-    }
-    unsafe { slice::from_raw_parts(array_base, len) }
-        .iter()
-        .map(|p| {
-            if p.is_null() {
-                Err(eyre!("Found NULL pointer in generic typed array"))
-            } else {
-                Ok(*p)
-            }
-        })
-        .collect()
-}
-
 /// Create a vector of a variant array type. Each element may be a
 /// i32, i64, String or byte array. The schema types define what decoding is attempted.
 ///
@@ -168,10 +111,13 @@ pub fn unpack_typed_ref_array<T: Copy>(
 pub fn unpack_variant_array<'a>(
     array_base: *const *const c_void,
     len: usize,
-    schema_types: &[FFIRowKeySchemaType],
+    schema_types: &[RowKeySchemaType],
     nulls_present: bool,
 ) -> Result<Vec<PartitionBound<'a>>> {
-    assert_eq!(len, schema_types.len());
+    assert!(
+        len <= schema_types.len(),
+        "More array elements than schema_types!"
+    );
     if array_base.is_null() {
         bail!("NULL pointer for array_base in variant array");
     }
@@ -183,24 +129,20 @@ pub fn unpack_variant_array<'a>(
                 Err(eyre!("Found NULL pointer in variant array"))
             } else {
                 match type_id {
-                    FFIRowKeySchemaType::Int32 => {
-                        Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
-                            Some(v) => PartitionBound::Int32(*v),
-                            None => PartitionBound::Unbounded,
-                        })
-                    }
-                    FFIRowKeySchemaType::Int64 => {
-                        Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
-                            Some(v) => PartitionBound::Int64(*v),
-                            None => PartitionBound::Unbounded,
-                        })
-                    }
-                    FFIRowKeySchemaType::String => {
+                    RowKeySchemaType::Int32 => Ok(match unsafe { bptr.cast::<i32>().as_ref() } {
+                        Some(v) => PartitionBound::Int32(*v),
+                        None => PartitionBound::Unbounded,
+                    }),
+                    RowKeySchemaType::Int64 => Ok(match unsafe { bptr.cast::<i64>().as_ref() } {
+                        Some(v) => PartitionBound::Int64(*v),
+                        None => PartitionBound::Unbounded,
+                    }),
+                    RowKeySchemaType::String => {
                         match unsafe { bptr.cast::<i32>().as_ref() } {
                             //unpack length (signed because it's from Java)
                             Some(str_len) => {
                                 if *str_len < 0 {
-                                    bail!("Illegal variant length in FFI array: {str_len}");
+                                    bail!("Illegal string variant length in FFI array: {str_len}");
                                 }
                                 std::str::from_utf8(unsafe {
                                     #[allow(clippy::cast_sign_loss)]
@@ -215,12 +157,14 @@ pub fn unpack_variant_array<'a>(
                             None => Ok(PartitionBound::Unbounded),
                         }
                     }
-                    FFIRowKeySchemaType::ByteArray => {
+                    RowKeySchemaType::ByteArray => {
                         match unsafe { bptr.cast::<i32>().as_ref() } {
                             //unpack length (signed because it's from Java)
                             Some(byte_len) => {
                                 if *byte_len < 0 {
-                                    bail!("Illegal byte array length in FFI array: {byte_len}");
+                                    bail!(
+                                        "Illegal byte array variant length in FFI array: {byte_len}"
+                                    );
                                 }
                                 Ok(PartitionBound::ByteArray(unsafe {
                                     #[allow(clippy::cast_sign_loss)]

@@ -15,11 +15,14 @@
  */
 package sleeper.clients.admin;
 
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sts.StsClient;
 
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
@@ -30,12 +33,12 @@ import sleeper.clients.admin.screen.IngestBatcherReportScreen;
 import sleeper.clients.admin.screen.IngestStatusReportScreen;
 import sleeper.clients.admin.screen.InstanceConfigurationScreen;
 import sleeper.clients.admin.screen.PartitionsStatusReportScreen;
-import sleeper.clients.deploy.container.EcrRepositoryCreator;
+import sleeper.clients.deploy.container.CheckVersionExistsInEcr;
 import sleeper.clients.deploy.container.UploadDockerImages;
 import sleeper.clients.deploy.container.UploadDockerImagesToEcr;
 import sleeper.clients.report.TableNamesReport;
 import sleeper.clients.report.ingest.job.PersistentEMRStepCount;
-import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.clients.util.cdk.InvokeCdk;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.common.task.QueueMessageCount;
@@ -83,8 +86,7 @@ public class AdminClient {
         Path generatedDir = scriptsDir.resolve("generated");
         Path jarsDir = scriptsDir.resolve("jars");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
-        InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
-                .propertiesFile(generatedDir.resolve("instance.properties"))
+        InvokeCdk cdk = InvokeCdk.builder()
                 .jarsDirectory(jarsDir).version(version).build();
 
         ConsoleOutput out = new ConsoleOutput(System.out);
@@ -95,10 +97,13 @@ public class AdminClient {
                 DynamoDbClient dynamoClient = AwsV2ClientHelper.buildAwsV2Client(DynamoDbClient.builder());
                 SqsClient sqsClient = AwsV2ClientHelper.buildAwsV2Client(SqsClient.builder());
                 EcrClient ecrClient = AwsV2ClientHelper.buildAwsV2Client(EcrClient.builder());
-                EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder())) {
+                EmrClient emrClient = AwsV2ClientHelper.buildAwsV2Client(EmrClient.builder());
+                StsClient stsClient = AwsV2ClientHelper.buildAwsV2Client(StsClient.builder())) {
+            AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
             UploadDockerImagesToEcr uploadDockerImages = new UploadDockerImagesToEcr(
                     UploadDockerImages.fromScriptsDirectory(scriptsDir),
-                    EcrRepositoryCreator.withEcrClient(ecrClient));
+                    CheckVersionExistsInEcr.withEcrClient(ecrClient),
+                    stsClient.getCallerIdentity().account(), regionProvider.getRegion().id());
             errorCode = start(instanceId, s3Client, dynamoClient,
                     cdk, generatedDir, uploadDockerImages, out, in,
                     new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
@@ -110,7 +115,7 @@ public class AdminClient {
 
     public static int start(String instanceId,
             S3Client s3Client, DynamoDbClient dynamoClient,
-            InvokeCdkForInstance cdk, Path generatedDir, UploadDockerImagesToEcr uploadDockerImages,
+            InvokeCdk cdk, Path generatedDir, UploadDockerImagesToEcr uploadDockerImages,
             ConsoleOutput out, ConsoleInput in, UpdatePropertiesWithTextEditor editor,
             QueueMessageCount.Client queueClient,
             Function<InstanceProperties, Map<String, Integer>> getStepCount) throws InterruptedException {

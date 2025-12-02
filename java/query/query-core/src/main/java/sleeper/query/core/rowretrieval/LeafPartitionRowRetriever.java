@@ -16,6 +16,7 @@
 package sleeper.query.core.rowretrieval;
 
 import sleeper.core.iterator.closeable.CloseableIterator;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
@@ -32,11 +33,27 @@ public interface LeafPartitionRowRetriever {
      * @param  leafPartitionQuery    the sub query
      * @param  dataReadSchema        a schema containing all key fields for the table, and all value fields required
      *                               for the query
+     * @param  tableProperties       the properties for the table being queried
      * @return                       An iterator over all rows in the specified files that are in the specified
      *                               partition, and are in one of the specified regions. Only values specified in the
      *                               data read schema will be returned. Other processing specified in the query will
      *                               be applied by the caller.
      * @throws RowRetrievalException if the first row of any file could not be read
      */
-    CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RowRetrievalException;
+    CloseableIterator<Row> getRows(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema, TableProperties tableProperties) throws RowRetrievalException;
+
+    /**
+     * Indicates if this implementation can apply row filters and aggregations.
+     *
+     * Some implementations support row filters (e.g. age off) and aggregations (e.g. sum) internally. This
+     * method will return true for those implementations. For implementations that do not, then appropriate iterators
+     * must be applied to the results of the
+     * {@link LeafPartitionRowRetriever#getRows(LeafPartitionQuery, Schema, TableProperties)}
+     * method.
+     *
+     * @return true if filters and aggregations are supported
+     */
+    default boolean supportsFiltersAndAggregations() {
+        return false;
+    }
 }

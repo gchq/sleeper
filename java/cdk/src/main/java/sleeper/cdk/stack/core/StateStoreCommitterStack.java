@@ -17,27 +17,25 @@ package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.logs.ILogGroup;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
-import software.amazon.awscdk.services.sns.Topic;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.DeduplicationScope;
 import software.amazon.awscdk.services.sqs.FifoThroughputLimit;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.jars.SleeperJarsInBucket;
+import sleeper.cdk.jars.SleeperLambdaCode;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestTrackerResources;
+import sleeper.cdk.util.TrackDeadLetters;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -45,7 +43,6 @@ import sleeper.core.util.EnvironmentUtils;
 
 import java.util.List;
 
-import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_EVENT_SOURCE_ID;
@@ -67,7 +64,7 @@ public class StateStoreCommitterStack extends NestedStack {
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
-            BuiltJars jars,
+            SleeperJarsInBucket jars,
             LoggingStack loggingStack,
             ConfigBucketStack configBucketStack,
             TableIndexStack tableIndexStack,
@@ -75,21 +72,20 @@ public class StateStoreCommitterStack extends NestedStack {
             IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker,
             ManagedPoliciesStack policiesStack,
-            Topic topic,
-            List<IMetric> errorMetrics) {
+            TrackDeadLetters deadLetters) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
+        SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        commitQueue = sqsQueueForStateStoreCommitter(policiesStack, topic, errorMetrics);
+        commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
         lambdaToCommitStateStoreUpdates(
                 loggingStack, policiesStack, lambdaCode,
                 configBucketStack, tableIndexStack, stateStoreStacks,
                 compactionTracker, ingestTracker);
     }
 
-    private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, Topic topic, List<IMetric> errorMetrics) {
+    private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, TrackDeadLetters deadLetters) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         Queue deadLetterQueue = Queue.Builder
                 .create(this, "StateStoreCommitterDLQ")
@@ -116,15 +112,12 @@ public class StateStoreCommitterStack extends NestedStack {
 
         queue.grantSendMessages(policiesStack.getDirectIngestPolicyForGrants());
         queue.grantPurge(policiesStack.getPurgeQueuesPolicyForGrants());
-        createAlarmForDlq(this, "StateStoreCommitterAlarm",
-                "Alarms if there are any messages on the dead letter queue for the state store committer lambda",
-                deadLetterQueue, topic);
-        errorMetrics.add(Utils.createErrorMetric("State Store Committer Errors", deadLetterQueue, instanceProperties));
+        deadLetters.alarmOnDeadLetters(this, "StateStoreCommitterAlarm", "the state store committer", deadLetterQueue);
         return queue;
     }
 
     private void lambdaToCommitStateStoreUpdates(
-            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode lambdaCode,
+            LoggingStack loggingStack, ManagedPoliciesStack policiesStack, SleeperLambdaCode lambdaCode,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
             CompactionTrackerResources compactionTracker,
             IngestTrackerResources ingestTracker) {

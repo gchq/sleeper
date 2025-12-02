@@ -22,6 +22,7 @@ import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
+import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.table.TablePropertyGroup;
@@ -38,10 +39,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
@@ -68,9 +66,6 @@ public class GeneratePropertiesTemplates {
 
     private static final Map<InstanceProperty, String> BASIC_INSTANCE_EXAMPLE_VALUES = Map.of(
             ID, "basic-example",
-            JARS_BUCKET, "the name of the bucket containing your jars, e.g. sleeper-<insert-unique-name-here>-jars",
-            ACCOUNT, "1234567890",
-            REGION, "eu-west-2",
             VPC_ID, "1234567890",
             SUBNETS, "subnet-abcdefgh");
 
@@ -138,7 +133,17 @@ public class GeneratePropertiesTemplates {
 
     private static InstanceProperties generateTemplateInstanceProperties() {
         InstanceProperties properties = new InstanceProperties();
-        BASIC_INSTANCE_EXAMPLE_VALUES.keySet().forEach(property -> properties.set(property, "changeme"));
+        BASIC_INSTANCE_EXAMPLE_VALUES.keySet()
+                .forEach(property -> properties.set(property, "changeme"));
+        // The template has separate sections for template values and default values. This structure suggests that the
+        // default values should be left unchanged. If you did that when it's defaulting to another property, you'd set
+        // them to the templated value instead of the real value set when the user fills in the template.
+        // To avoid that, we set these to "changeme" which makes them appear under template values instead. We rely on
+        // the description of the property to explain this.
+        UserDefinedInstanceProperty.getAll().stream()
+                .filter(property -> property.getDefaultProperty() != null)
+                .filter(property -> properties.isSet(property.getDefaultProperty()))
+                .forEach(property -> properties.set(property, "changeme"));
         return properties;
     }
 

@@ -22,11 +22,11 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.properties.model.IngestFileWritingStrategy;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.testutil.Expensive;
 import sleeper.systemtest.suite.testutil.SystemTest;
+import sleeper.systemtest.suite.testutil.parallel.Expensive3;
 
 import java.time.Duration;
 import java.util.Map;
@@ -42,17 +42,17 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMPACTIONS;
 
 @SystemTest
-@Expensive
+@Expensive3
 public class ParallelCompactionsST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) throws Exception {
+    void setUp(SleeperDsl sleeper, AfterTestReports reporting) throws Exception {
         sleeper.connectToInstanceNoTables(PARALLEL_COMPACTIONS);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @Test
-    void shouldApplyOneCompactionPerPartition(SleeperSystemTest sleeper) {
+    void shouldApplyOneCompactionPerPartition(SleeperDsl sleeper) {
         // Given we configure to compact many partitions
         sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
                 TABLE_ONLINE, "false",
@@ -73,12 +73,14 @@ public class ParallelCompactionsST {
                 .putTableOnlineWaitForJobCreation(40960,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)))
-                .waitForTasks(300)
+                .waitForTasks(200,
+                        PollWithRetries.intervalAndPollingTimeout(
+                                Duration.ofSeconds(10), Duration.ofMinutes(10)))
                 .waitForJobsToFinishThenCommit(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)),
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(2)))
+                                Duration.ofSeconds(10), Duration.ofMinutes(3)))
                 // The table is still online, so it will continue to compact until each partition has 1 file.
                 // Because the table is online, we can't control the order in which the files are compacted, so we
                 // don't know how many jobs will run. We do know it will eventually get to one file per partition.
@@ -108,7 +110,7 @@ public class ParallelCompactionsST {
         assertThat(sleeper.reporting().finishedCompactionTasks())
                 .allSatisfy(task -> assertThat(task.getJobRuns())
                         .describedAs("ran the expected distribution of jobs")
-                        .isBetween(0, 400));
+                        .isBetween(0, 600));
     }
 
 }

@@ -116,6 +116,12 @@ work. Starting from the root of the Git repository:
 ./scripts/build/buildForTest.sh
 ```
 
+You can disable building the Rust code by passing `-DskipRust` as an argument to that script. This can also be passed in
+any Maven build. This can speed up the build if you don't need the DataFusion data engine, or if you've already had a
+previous build that included Rust, skipping Rust will reuse the same binaries.
+
+When running Maven directly, you can pass `-Pquick` to skip tests and linting.
+
 ### Sleeper CLI
 
 To build the Sleeper CLI, you can run this script:
@@ -132,34 +138,21 @@ If you have the CLI installed already it will be replaced with the version that 
 is different in the version you installed before, it will not be replaced. You can find it
 at `$HOME/.local/bin/sleeper`, and manually overwrite it with the contents of `./scripts/cli/runInDocker.sh`.
 
-### Java
+### Publishing artefacts
 
-To build the Java code only, without installing it for the scripts:
-
-```bash
-cd java
-mvn clean install -Pquick
-```
-
-Removing the '-Pquick' option will cause the unit and integration tests to run.
-
-### Disabling Rust component
-
-You can disable the building of the Rust modules with:
-
-```bash
-cd java
-mvn clean install -Pquick -DskipRust=true
-```
+Tools are available to publish built artefacts to shared repositories, and to install them locally to avoid the need to
+build Sleeper yourself. We do not currently publish artefacts publicly.
+See [publishing artefacts](development/publishing.md) for how to set this up yourself.
 
 ## Using the codebase
 
 The codebase is structured around the components explained in the [design document](design.md). The elements of the
 design largely correspond to Maven modules. We'll look at the module architecture in more detail below.
 
-If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script in
-the [development scripts section](#development-scripts) that can display the dependency structure as a graph. There's
-also a document with information on past and current [dependency conflicts](development/dependency-conflicts.md).
+If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script
+documented in [development scripts](development/dev-scripts.md) that can display the dependency structure as a graph.
+There's also a document with information on past and
+current [dependency conflicts](development/dependency-conflicts.md).
 
 If you'd like to raise or pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
 
@@ -245,34 +238,4 @@ See the [release process guide](development/release-process.md) for instructions
 
 ## Development scripts
 
-In the `/scripts/dev` folder are some scripts that can assist you while working on Sleeper:
-
-#### `showInternalDependencies.sh`
-
-This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
-modules relate to one another.
-
-#### `generateDocumentation.sh`
-
-This will regenerate the examples and templates for Sleeper configuration properties files. Use this if you've made any
-changes to Sleeper configuration properties. This will propagate any changes to property descriptions, ordering,
-grouping, etc.
-
-#### `cleanupLogGroups.sh`
-
-When deploying multiple instances (or running multiple system tests), many log groups will be generated. This can make
-it difficult to find the logs you need to view. This script will delete any log groups that meet all of the following
-criteria:
-
-* Its name does not contain the name of any deployed CloudFormation stack
-* Either it's empty, or it has no retention period and is older than 30 days
-
-This can be used to limit the number of log groups in your AWS account, particularly if all your log groups are
-deployed by the CDK or CloudFormation, with the stack name in the log group name.
-
-Note that this will not delete log groups for recently deleted instances of Sleeper, so you will still need a different
-instance ID when deploying a new instance to avoid naming collisions with existing log groups.
-
-#### `updateVersionNumber.sh`
-
-This is used during the release process to update the version number across the project (see below).
+See [development scripts](development/dev-scripts.md) for scripts that can assist you while working on Sleeper.

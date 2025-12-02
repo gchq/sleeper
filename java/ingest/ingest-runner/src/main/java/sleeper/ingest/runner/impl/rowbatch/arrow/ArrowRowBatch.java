@@ -27,6 +27,8 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.arrow.ArrowToRowConversionUtils;
+import sleeper.arrow.RowIteratorFromArrowReader;
 import sleeper.core.iterator.closeable.CloseableIterator;
 import sleeper.core.iterator.closeable.MergingIterator;
 import sleeper.core.row.Row;
@@ -92,8 +94,6 @@ import static java.util.Objects.requireNonNull;
 public class ArrowRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRowBatch.class);
     private static final DecimalFormat FORMATTER = new DecimalFormat("0.#");
-    public static final String MAP_KEY_FIELD_NAME = "key";
-    public static final String MAP_VALUE_FIELD_NAME = "value";
     private static final int INITIAL_ARROW_VECTOR_CAPACITY = 1024;
 
     protected final VectorSchemaRoot vectorSchemaRoot;
@@ -291,7 +291,7 @@ public class ArrowRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDATATYP
             String localArrowFileName) throws IOException {
         FileChannel inputFileChannel = FileChannel.open(Paths.get(localArrowFileName), StandardOpenOption.READ);
         ArrowStreamReader arrowStreamReader = new ArrowStreamReader(inputFileChannel, bufferAllocator);
-        return new RowIteratorFromArrowStreamReader(arrowStreamReader);
+        return new RowIteratorFromArrowReader(arrowStreamReader);
     }
 
     /**
@@ -334,8 +334,8 @@ public class ArrowRowBatch<INCOMINGDATATYPE> implements RowBatch<INCOMINGDATATYP
             // in our experiments.
             Type keySleeperType = ((MapType) sleeperType).getKeyType();
             Type valueSleeperType = ((MapType) sleeperType).getValueType();
-            Field keySleeperField = new Field(MAP_KEY_FIELD_NAME, keySleeperType);
-            Field valueSleeperField = new Field(MAP_VALUE_FIELD_NAME, valueSleeperType);
+            Field keySleeperField = new Field(ArrowToRowConversionUtils.MAP_KEY_FIELD_NAME, keySleeperType);
+            Field valueSleeperField = new Field(ArrowToRowConversionUtils.MAP_VALUE_FIELD_NAME, valueSleeperType);
             org.apache.arrow.vector.types.pojo.Field keyArrowField = convertSleeperPrimitiveFieldToArrowField(keySleeperField);
             org.apache.arrow.vector.types.pojo.Field valueArrowField = convertSleeperPrimitiveFieldToArrowField(valueSleeperField);
             org.apache.arrow.vector.types.pojo.Field elementArrowStructField = new org.apache.arrow.vector.types.pojo.Field(

@@ -44,6 +44,7 @@ deleteOldLogs() {
     find "$LOGS_DIR_HOST"/* -maxdepth 0 -type f -daystart -mtime +7 -exec echo "Deleting file:" {} \; -exec rm -f {} \;
 }
 
+mkdir -p "$LOGS_DIR_HOST"
 deleteOldLogs &> "$REMOVE_OLD_LOGS_LOG_HOST"
 docker system prune -af &> "$DOCKER_PRUNE_LOG_HOST"
 sleeper cli upgrade &> "$CLI_UPGRADE_LOG_HOST"

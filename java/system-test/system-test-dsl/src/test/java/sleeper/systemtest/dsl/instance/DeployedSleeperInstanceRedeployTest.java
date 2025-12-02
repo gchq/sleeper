@@ -18,8 +18,7 @@ package sleeper.systemtest.dsl.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.deploy.DeployInstanceConfiguration;
-import sleeper.core.deploy.PopulateInstanceProperties;
+import sleeper.core.deploy.SleeperInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.testutil.InMemoryTestInstance;
@@ -28,6 +27,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
@@ -121,17 +124,16 @@ public class DeployedSleeperInstanceRedeployTest {
         // Replicate system test behaviour
         InstanceProperties properties = buildDeployConfig().getInstanceProperties();
         // Replicate behaviour in DeployNewInstance
-        return PopulateInstanceProperties.builder()
-                .accountSupplier(() -> "test-account")
-                .regionIdSupplier(() -> "test-region")
-                .instanceId("test-instance")
-                .vpcId("test-vpc")
-                .subnetIds("test-subnet")
-                .build()
-                .populate(properties);
+        properties.set(ACCOUNT, "test-account");
+        properties.set(REGION, "test-region");
+        properties.set(ID, "test-instance");
+        properties.set(VPC_ID, "test-vpc");
+        properties.set(SUBNETS, "test-subnet");
+
+        return properties;
     }
 
-    private DeployInstanceConfiguration buildDeployConfig() {
+    private SleeperInstanceConfiguration buildDeployConfig() {
         return instanceConfig.buildDeployConfig(UNIT_TEST_PARAMETERS, systemTestProperties);
     }
 

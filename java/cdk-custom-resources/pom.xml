@@ -21,7 +21,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>aws</artifactId>
-        <version>0.33.0</version>
+        <version>0.34.0</version>
     </parent>
 
     <artifactId>cdk-custom-resources</artifactId>
@@ -35,6 +35,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -56,6 +61,18 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>ecs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>emrserverless</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>emr</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cloudwatchevents</artifactId>
         </dependency>
         <!-- Test dependencies -->
         <dependency>

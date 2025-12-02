@@ -27,7 +27,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
-import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SleeperDsl;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -50,12 +50,12 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class StateStoreSnapshotsST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) {
+    void setUp(SleeperDsl sleeper) {
         sleeper.connectToInstanceNoTables(MAIN);
     }
 
     @Test
-    void shouldAddManyFiles(SleeperSystemTest sleeper) throws Exception {
+    void shouldAddManyFiles(SleeperDsl sleeper) throws Exception {
         // Given we create a table
         sleeper.tables().createWithProperties("snapshots", DEFAULT_SCHEMA, Map.of(
                 STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getSimpleName(),

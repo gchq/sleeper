@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.AGGREGATION_CONFIG;
 import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
@@ -75,7 +76,7 @@ public class IteratorFactoryTest {
         tableProperties.set(ITERATOR_CONFIG, "2");
 
         // When
-        List<Row> output = applyIterator(List.of(
+        List<Row> output = applyIteratorWithFilterAndAggregations(List.of(
                 new Row(Map.of("key", 1, "value", 10L)),
                 new Row(Map.of("key", 2, "value", 9999999999999997L)),
                 new Row(Map.of("key", 3, "value", 9999999999999998L)),
@@ -88,6 +89,57 @@ public class IteratorFactoryTest {
     }
 
     @Test
+    void shouldNotApplyFilteringOrAggregationsConfig() throws Exception {
+        // Given
+        tableProperties.setSchema(Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()))
+                .build());
+        tableProperties.set(FILTERING_CONFIG, "ageOff(value,100)");
+        tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+
+        // When
+        List<Row> output = applyIterator(List.of(
+                new Row(Map.of("key", 1, "value", 10L)),
+                new Row(Map.of("key", 1, "value", 20L)),
+                new Row(Map.of("key", 2, "value", 9999999999999997L)),
+                new Row(Map.of("key", 3, "value", 9999999999999998L)),
+                new Row(Map.of("key", 4, "value", 9999999999999999L))));
+
+        // Then
+        assertThat(output).containsExactly(
+                new Row(Map.of("key", 1, "value", 10L)),
+                new Row(Map.of("key", 1, "value", 20L)),
+                new Row(Map.of("key", 2, "value", 9999999999999997L)),
+                new Row(Map.of("key", 3, "value", 9999999999999998L)),
+                new Row(Map.of("key", 4, "value", 9999999999999999L)));
+    }
+
+    @Test
+    void shouldApplyFilteringAndAggregationConfig() throws Exception {
+        // Given
+        tableProperties.setSchema(Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .valueFields(new Field("value", new LongType()))
+                .build());
+        tableProperties.set(FILTERING_CONFIG, "ageOff(value,100)");
+        tableProperties.set(AGGREGATION_CONFIG, "sum(value)");
+
+        // When
+        List<Row> output = applyIteratorWithFilterAndAggregations(List.of(
+                new Row(Map.of("key", 1, "value", 10L)),
+                new Row(Map.of("key", 1, "value", 20L)),
+                new Row(Map.of("key", 2, "value", 9999999999999997L)),
+                new Row(Map.of("key", 2, "value", 9999999999999998L)),
+                new Row(Map.of("key", 4, "value", 9999999999999999L))));
+
+        // Then
+        assertThat(output).containsExactly(
+                new Row(Map.of("key", 2, "value", 19999999999999995L)),
+                new Row(Map.of("key", 4, "value", 9999999999999999L)));
+    }
+
+    @Test
     void shouldCreateNoOpIterator() throws Exception {
         // Given no configuration
         List<Row> rows = List.of(
@@ -95,14 +147,18 @@ public class IteratorFactoryTest {
                 new Row(Map.of("key", "A", "value", 456L)));
 
         // When / Then
-        assertThat(applyIterator(rows)).isEqualTo(rows);
+        assertThat(applyIteratorWithFilterAndAggregations(rows)).isEqualTo(rows);
     }
 
     private List<Row> applyIterator(List<Row> rows) throws Exception {
-        return SortedRowIteratorTestHelper.apply(createIterator(), rows);
+        return SortedRowIteratorTestHelper.apply(createIterator(false), rows);
     }
 
-    private SortedRowIterator createIterator() throws Exception {
-        return IteratorFactoryTestHelper.createIterator(tableProperties);
+    private List<Row> applyIteratorWithFilterAndAggregations(List<Row> rows) throws Exception {
+        return SortedRowIteratorTestHelper.apply(createIterator(true), rows);
+    }
+
+    private SortedRowIterator createIterator(boolean applyFiltersAggregations) throws Exception {
+        return IteratorFactoryTestHelper.createIterator(tableProperties, applyFiltersAggregations);
     }
 }
