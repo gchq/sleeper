@@ -182,7 +182,6 @@
         <jackson.annotations.version>2.20</jackson.annotations.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.13.0</jjwt.build.version>
-        <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.45.0</google.errorprone.version>
@@ -1147,29 +1146,6 @@
                 <groupId>com.github.jknack</groupId>
                 <artifactId>handlebars</artifactId>
                 <version>${handlebars.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.facebook.jcommon</groupId>
-                <artifactId>collections</artifactId>
-                <version>${facebook.collections.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>annotations</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-lang</groupId>
-                        <artifactId>commons-lang</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.datatype</groupId>
-                        <artifactId>jackson-datatype-guava</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <!-- Apache commons -->
             <dependency>
