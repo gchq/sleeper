@@ -15,10 +15,10 @@
  */
 package sleeper.sketches.testutils;
 
-import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
 import sleeper.core.schema.Field;
+import sleeper.core.util.ByteArray;
 import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;

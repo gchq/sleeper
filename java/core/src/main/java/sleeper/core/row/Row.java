@@ -15,12 +15,11 @@
  */
 package sleeper.core.row;
 
-import com.facebook.collections.ByteArray;
-
 import sleeper.core.key.Key;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.util.ByteArray;
 
 import java.util.ArrayList;
 import java.util.Collections;

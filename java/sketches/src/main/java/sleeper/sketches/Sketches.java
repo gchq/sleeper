@@ -15,7 +15,6 @@
  */
 package sleeper.sketches;
 
-import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
 
@@ -26,6 +25,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.ByteArray;
 
 import java.util.Comparator;
 import java.util.HashMap;

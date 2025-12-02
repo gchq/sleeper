@@ -15,7 +15,6 @@
  */
 package sleeper.core.partition;
 
-import com.facebook.collections.ByteArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +29,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.ByteArray;
 
 import java.util.ArrayList;
 import java.util.Collections;

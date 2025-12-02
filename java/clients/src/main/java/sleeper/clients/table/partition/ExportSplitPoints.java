@@ -15,7 +15,6 @@
  */
 package sleeper.clients.table.partition;
 
-import com.facebook.collections.ByteArray;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -33,6 +32,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.ByteArray;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.BufferedWriter;

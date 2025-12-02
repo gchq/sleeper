@@ -15,7 +15,6 @@
  */
 package sleeper.sketches;
 
-import com.facebook.collections.ByteArray;
 import org.apache.datasketches.ArrayOfItemsSerDe;
 import org.apache.datasketches.ArrayOfLongsSerDe;
 import org.apache.datasketches.ArrayOfStringsSerDe;
@@ -31,6 +30,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.ByteArray;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

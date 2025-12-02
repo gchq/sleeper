@@ -15,8 +15,9 @@
  */
 package sleeper.core.properties.local;
 
-import com.facebook.collections.ByteArray;
 import org.apache.commons.codec.binary.Base64;
+
+import sleeper.core.util.ByteArray;
 
 import java.io.IOException;
 import java.io.StringWriter;

@@ -15,7 +15,7 @@
  */
 package sleeper.core.schema.type;
 
-import com.facebook.collections.ByteArray;
+import sleeper.core.util.ByteArray;
 
 /**
  * A primitive type that represents a byte array.
