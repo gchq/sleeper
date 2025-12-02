@@ -102,7 +102,6 @@ public interface CommonProperty {
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy. Not case sensitive.\n" +
