@@ -166,19 +166,21 @@ class ByteArrayComparator implements Comparator<ByteArray> {
         int array1Length = o1.getLength();
         int array2Length = o2.getLength();
 
+        int length = Math.min(array1Length, array2Length);
+
+        for (int i = 0; i < length; i++) {
+            if (o1.getArray()[i] < o2.getArray()[i]) {
+                return -1;
+            } else if (o1.getArray()[i] > o2.getArray()[i]) {
+                return 1;
+            }
+        }
+
         if (array1Length < array2Length) {
             return -1;
         } else if (array1Length > array2Length) {
             return 1;
         } else {
-            int length = Math.min(array1Length, array2Length);
-            for (int i = 0; i < length; i++) {
-                if (o1.getArray()[i] < o2.getArray()[i]) {
-                    return -1;
-                } else if (o1.getArray()[i] > o2.getArray()[i]) {
-                    return 1;
-                }
-            }
             return 0;
         }
     }
