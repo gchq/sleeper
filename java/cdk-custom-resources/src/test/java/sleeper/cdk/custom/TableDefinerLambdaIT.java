@@ -65,6 +65,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -149,7 +150,57 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldDeleteOneTableWhenAnotherTableIsPresent() throws Exception {
+    public void shouldFailToDeleteTableThatDoesNotExist() {
+        // When / Then
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Delete")
+                .withResourceProperties(resourceProperties)
+                .build();
+
+        // When
+        assertThatThrownBy(() -> tableDefinerLambda.handleEvent(event, null))
+                .isInstanceOf(TableNotFoundException.class);
+
+    }
+
+    @Test
+    void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetFalse() throws Exception {
+        // Given
+        instanceProperties.set(DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG, "false");
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
+        String tableName = tableProperties.get(TABLE_NAME);
+        TableProperties tableProps = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+        StateStore stateStore = createStateStore(tableProps);
+        update(stateStore).initialise(schema);
+        AllReferencesToAFile file = ingestRows(tableProps, List.of(new Row(Map.of("key1", 25L))));
+
+        // When
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Delete")
+                .withResourceProperties(resourceProperties)
+                .build();
+        tableDefinerLambda.handleEvent(event, null);
+
+        // Then
+        tableProps.set(TABLE_ONLINE, "false");
+        assertThat(propertiesStore.loadByName(tableName)).isEqualTo(tableProps);
+        assertThat(streamTableFileTransactions(tableProps)).isNotEmpty();
+        assertThat(streamTablePartitionTransactions(tableProps)).isNotEmpty();
+        assertThat(listDataBucketObjectKeys())
+                .extracting(FilenameUtils::getName)
+                .containsExactly(
+                        FilenameUtils.getName(file.getFilename()),
+                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
+    }
+
+    @Test
+    void shouldFullyDeleteSpecifiedTableButNoOthers() throws Exception {
         // Given
         instanceProperties.set(DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG, "true");
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
@@ -196,7 +247,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldDeleteTableWhenSnapshotIsPresent() throws Exception {
+    void shouldFullyDeleteTableWhenSnapshotIsPresent() throws Exception {
         // Given
         instanceProperties.set(DEFAULT_DELETE_ALL_DATA_ON_REMOVAL_FROM_CONFIG, "true");
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
@@ -243,23 +294,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
         assertThat(snapshotMetadataStore.getFilesSnapshots()).isEmpty();
         assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();
-    }
-
-    @Test
-    public void shouldFailToDeleteTableThatDoesNotExist() {
-        // When / Then
-        HashMap<String, Object> resourceProperties = new HashMap<>();
-        resourceProperties.put("tableProperties", tableProperties.saveAsString());
-
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Delete")
-                .withResourceProperties(resourceProperties)
-                .build();
-
-        // When
-        assertThatThrownBy(() -> tableDefinerLambda.handleEvent(event, null))
-                .isInstanceOf(TableNotFoundException.class);
-
     }
 
     private StateStore stateStore(TableProperties tableProperties) {
