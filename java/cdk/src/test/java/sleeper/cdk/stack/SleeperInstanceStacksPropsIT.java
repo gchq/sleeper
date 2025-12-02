@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 
 import sleeper.cdk.SleeperInstanceProps;
@@ -39,8 +40,6 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static sleeper.core.SleeperVersion.getVersion;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -55,8 +54,8 @@ class SleeperInstanceStacksPropsIT {
 
     private final String account = "test-account";
     private final String region = "test-region";
-    private final String vpcId = "test-vpc";
-    private final List<String> subnetIds = List.of("test-subnet");
+    private final String vpcId = "vpc-12345";
+    private final List<String> subnetIds = List.of("subnet-12345");
 
     @TempDir
     private Path tempDir;
@@ -210,12 +209,13 @@ class SleeperInstanceStacksPropsIT {
 
     private SleeperInstanceProps readProps(CdkContext context) {
         SleeperInstanceProps props = SleeperInstanceProps.fromContext(context, null, null);
-        Stack stack = mock(Stack.class);
-        SleeperNetworking networking = mock(SleeperNetworking.class);
-        when(stack.getAccount()).thenReturn(account);
-        when(stack.getRegion()).thenReturn(region);
-        when(networking.vpcId()).thenReturn(vpcId);
-        when(networking.subnetIds()).thenReturn(subnetIds);
+        Stack stack = Stack.Builder.create()
+                .env(Environment.builder()
+                        .account(account)
+                        .region(region)
+                        .build())
+                .build();
+        SleeperNetworking networking = SleeperNetworking.createByIds(stack, vpcId, subnetIds);
         props.prepareProperties(stack, networking);
         return props;
     }
