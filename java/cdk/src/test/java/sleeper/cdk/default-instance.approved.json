@@ -4411,8 +4411,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -4426,9 +4424,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -4446,14 +4452,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -4526,8 +4550,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -4541,9 +4563,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -4557,14 +4587,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -4932,8 +4980,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -4947,9 +4993,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -4963,14 +5017,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -5041,13 +5113,21 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherDynamoDBIngestBatcherRequestsTableABCDB5F3Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -5109,8 +5189,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5124,9 +5202,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5136,6 +5222,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -5176,8 +5272,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5195,9 +5289,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5215,9 +5317,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5227,6 +5337,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -5353,8 +5473,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5368,9 +5486,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5388,9 +5514,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5408,9 +5542,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5429,8 +5571,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5440,6 +5580,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -5488,8 +5638,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5507,9 +5655,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5527,9 +5683,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5539,6 +5703,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -5619,8 +5793,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5634,9 +5806,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5650,14 +5830,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -5722,13 +5920,21 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceQueryNestedStackQueryNestedStackResource79C6CBEEOutputsTestInstanceQueryQueryTrackingTableD59EF8F3Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -5823,8 +6029,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5838,9 +6042,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5854,9 +6066,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5870,9 +6090,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5886,9 +6114,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5902,9 +6138,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobUpdatesTable6B542F3DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5931,9 +6175,30 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Arn"
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestJobLookupTable52BF3656Arn"
+                          },
+                          "/index/*"
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5947,9 +6212,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceIngestTrackerNestedStackIngestTrackerNestedStackResourceD1FCAFA0OutputsTestInstanceIngestTrackerDynamoDBIngestTaskStatusTable7BA7D53BArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5963,9 +6236,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceCompactionTrackerNestedStackCompactionTrackerNestedStackResource6AA07358OutputsTestInstanceCompactionTrackerDynamoDBCompactionJobUpdatesTable0B49652AArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -5979,14 +6260,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceCompactionTrackerNestedStackCompactionTrackerNestedStackResource6AA07358OutputsTestInstanceCompactionTrackerDynamoDBCompactionJobLookupTable4CC99F10Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceCompactionTrackerNestedStackCompactionTrackerNestedStackResource6AA07358OutputsTestInstanceCompactionTrackerDynamoDBCompactionTaskStatusTable9E1002EFArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -6092,8 +6391,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -6107,9 +6404,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -6123,14 +6428,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -6171,8 +6494,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -6186,9 +6507,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -6206,14 +6535,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -7338,8 +7685,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -7353,9 +7698,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -7369,14 +7722,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -7417,8 +7788,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -7432,9 +7801,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -7452,9 +7829,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -7464,6 +7849,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -7830,8 +8225,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -7845,9 +8238,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -7861,14 +8262,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -8045,8 +8464,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8060,9 +8477,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8076,9 +8501,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8092,9 +8525,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8108,9 +8549,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8120,6 +8569,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -8484,8 +8943,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8499,9 +8956,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8515,9 +8980,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8531,9 +9004,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8547,9 +9028,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8563,9 +9052,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8583,9 +9080,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8595,6 +9100,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -8689,8 +9204,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8704,9 +9217,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -8720,14 +9241,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -9183,8 +9722,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9198,9 +9735,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9214,14 +9759,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -9633,8 +10196,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9648,9 +10209,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9664,14 +10233,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -9705,8 +10292,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9720,9 +10305,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9736,9 +10329,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9752,14 +10353,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -9928,8 +10547,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9943,9 +10560,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9959,9 +10584,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9975,9 +10608,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -9995,9 +10636,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -10015,9 +10664,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -10031,14 +10688,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogAllSnapshotsTable2337E270Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -10281,8 +10956,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -10296,9 +10969,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -10312,14 +10993,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -10353,8 +11052,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -10368,9 +11065,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -10384,14 +11089,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -10617,8 +11340,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -10632,9 +11353,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -10648,14 +11377,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -11010,8 +11757,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -11025,9 +11770,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -11041,14 +11794,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -11089,8 +11860,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -11104,9 +11873,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -11124,14 +11901,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -12365,8 +13160,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -12380,9 +13173,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -12396,14 +13197,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -12444,8 +13263,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -12459,9 +13276,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -12479,14 +13304,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -12706,8 +13549,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -12721,9 +13562,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -12737,14 +13586,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -12778,8 +13645,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -12793,14 +13658,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -13528,8 +14411,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -13543,9 +14424,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -13559,14 +14448,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -13607,8 +14514,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -13622,9 +14527,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -13634,6 +14547,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -14036,8 +14959,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -14051,9 +14972,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -14067,14 +14996,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -14613,8 +15560,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -14628,9 +15573,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -14644,14 +15597,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -14692,8 +15663,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -14707,9 +15676,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -14727,14 +15704,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -15810,8 +16805,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -15825,9 +16818,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -15841,14 +16842,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -16020,8 +17039,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -16035,9 +17052,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -16051,14 +17076,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -16099,8 +17142,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -16114,9 +17155,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -16126,6 +17175,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -16159,13 +17218,21 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -16411,8 +17478,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -16426,9 +17491,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -16442,14 +17515,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -16490,8 +17581,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -16505,9 +17594,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -16525,14 +17622,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -17247,8 +18362,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17262,9 +18375,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17278,14 +18399,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -17326,8 +18465,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17341,9 +18478,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17353,6 +18498,16 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -17681,8 +18836,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17696,9 +18849,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17712,14 +18873,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -17783,8 +18962,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17798,9 +18975,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17814,14 +18999,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -17855,8 +19058,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17870,9 +19071,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -17886,14 +19095,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -18457,8 +19684,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18472,9 +19697,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18488,14 +19721,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -18529,8 +19780,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18544,9 +19793,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18560,14 +19817,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -18625,8 +19900,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18636,6 +19909,19 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "QueryTrackingTableEE351F53",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -18850,8 +20136,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18865,9 +20149,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18881,14 +20173,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -18922,8 +20232,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18937,9 +20245,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -18953,14 +20269,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -19015,8 +20349,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -19026,6 +20358,19 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "QueryTrackingTableEE351F53",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -19649,8 +20994,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -19664,9 +21007,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -19680,14 +21031,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -19728,8 +21097,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -19743,9 +21110,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreTransactionLogLatestSnapshotsTable96DB8F9FArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -19763,14 +21138,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStoreFileTransactionLogTable79925701Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTransactionLogStateStoreNestedStackTransactionLogStateStoreNestedStackResource40043CEEOutputsTestInstanceTransactionLogStateStorePartitionTransactionLogTable82098866Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -20601,8 +21994,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -20612,6 +22003,19 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "DynamoDBIngestBatcherRequestsTableF9077058",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -20648,8 +22052,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -20663,9 +22065,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -20679,14 +22089,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -20849,8 +22277,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -20860,6 +22286,19 @@
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "DynamoDBIngestBatcherRequestsTableF9077058",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
@@ -20910,8 +22349,6 @@
                 {
                   "Action": [
                     "dynamodb:BatchGetItem",
-                    "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -20925,9 +22362,17 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByNameDynamoDBTable8F569277Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
@@ -20941,14 +22386,32 @@
                 },
                 {
                   "Action": [
-                    "dynamodb:BatchGetItem",
                     "dynamodb:GetRecords",
-                    "dynamodb:GetShardIterator",
+                    "dynamodb:GetShardIterator"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByIdDynamoDBTable4933A725Arn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:BatchGetItem",
                     "dynamodb:Query",
                     "dynamodb:GetItem",
                     "dynamodb:Scan",
                     "dynamodb:ConditionCheckItem",
                     "dynamodb:DescribeTable"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": {
+                    "Ref": "referencetoTestInstanceTableIndexNestedStackTableIndexNestedStackResource69736C72OutputsTestInstanceTableIndexIndexByOnlineDynamoDBTable5A4BFE9DArn"
+                  }
+                },
+                {
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator"
                   ],
                   "Effect": "Allow",
                   "Resource": {
