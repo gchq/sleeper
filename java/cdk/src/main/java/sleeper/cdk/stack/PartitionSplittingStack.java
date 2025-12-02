@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.IQueue;
@@ -85,7 +84,7 @@ public class PartitionSplittingStack extends NestedStack {
         SleeperJarsInBucket jars = props.getJars();
 
         // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
 
         // Create queue for batching tables
         findPartitionsToSplitQueue = createBatchQueues(instanceProperties, coreStacks);

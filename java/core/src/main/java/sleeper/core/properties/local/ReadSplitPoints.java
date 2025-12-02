@@ -30,8 +30,10 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -89,6 +91,22 @@ public class ReadSplitPoints {
      */
     public static List<Object> fromString(String splitPoints, Schema schema, boolean stringsBase64Encoded) {
         return fromLines(splitPoints.lines(), schema, stringsBase64Encoded);
+    }
+
+    /**
+     * Reads a split points file.
+     *
+     * @param  file                 the split points file
+     * @param  schema               the Sleeper table schema
+     * @param  stringsBase64Encoded true if string values are Base64 encoded in the file
+     * @return                      the split points
+     */
+    public static List<Object> fromFile(Path file, Schema schema, boolean stringsBase64Encoded) {
+        try (Stream<String> lines = Files.lines(file)) {
+            return fromLines(lines, schema, stringsBase64Encoded);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static List<Object> fromLines(Stream<String> lines, Schema schema, boolean stringsBase64Encoded) {

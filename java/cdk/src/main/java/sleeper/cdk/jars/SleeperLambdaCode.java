@@ -26,7 +26,6 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.model.LambdaDeployType;
@@ -37,11 +36,13 @@ import java.util.function.Consumer;
 public class SleeperLambdaCode {
 
     private final SleeperJarsInBucket jars;
+    private final String version;
     private final LambdaDeployType deployType;
     private final IBucket bucket;
 
-    SleeperLambdaCode(SleeperJarsInBucket jars, LambdaDeployType deployType, IBucket bucket) {
+    SleeperLambdaCode(SleeperJarsInBucket jars, String version, LambdaDeployType deployType, IBucket bucket) {
         this.jars = jars;
+        this.version = version;
         this.deployType = deployType;
         this.bucket = bucket;
     }
@@ -73,7 +74,7 @@ public class SleeperLambdaCode {
     }
 
     private Code jarCode(LambdaJar jar) {
-        return Code.fromBucket(bucket, jar.getFilename(), jars.getLatestVersionId(jar));
+        return Code.fromBucket(bucket, jar.getFilename(version), jars.getLatestVersionId(jar));
     }
 
     private DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
@@ -81,7 +82,7 @@ public class SleeperLambdaCode {
                 Repository.fromRepositoryName(scope, id + "Repository", jars.getRepositoryName(handler.getJar())),
                 EcrImageCodeProps.builder()
                         .cmd(List.of(handler.getHandler()))
-                        .tagOrDigest(SleeperVersion.getVersion())
+                        .tagOrDigest(version)
                         .build());
     }
 }

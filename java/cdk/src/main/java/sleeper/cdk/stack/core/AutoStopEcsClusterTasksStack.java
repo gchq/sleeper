@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.ecs.ICluster;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
@@ -65,7 +64,7 @@ public class AutoStopEcsClusterTasksStack extends NestedStack {
     private void createLambda(InstanceProperties instanceProperties, SleeperJarsInBucket jars, ILogGroup logGroup, ILogGroup providerLogGroup) {
 
         // Jars bucket
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String functionName = String.join("-", "sleeper",

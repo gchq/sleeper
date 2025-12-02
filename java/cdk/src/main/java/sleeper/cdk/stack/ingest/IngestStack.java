@@ -35,7 +35,6 @@ import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -102,7 +101,7 @@ public class IngestStack extends NestedStack {
         //      then it creates more tasks).
         //  - A lambda that stops task when a delete cluster event is triggered.
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         ingestJobQueue = sqsQueueForIngestJobs(coreStacks);

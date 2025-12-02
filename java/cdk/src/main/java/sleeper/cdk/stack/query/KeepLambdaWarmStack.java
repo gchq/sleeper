@@ -23,7 +23,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
@@ -63,7 +62,7 @@ public class KeepLambdaWarmStack extends NestedStack {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-keep-warm");
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
 
         // Keep lambda warm function

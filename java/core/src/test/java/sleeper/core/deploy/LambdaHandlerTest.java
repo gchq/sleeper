@@ -17,8 +17,6 @@ package sleeper.core.deploy;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.SleeperVersion;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class LambdaHandlerTest {
@@ -40,8 +38,8 @@ public class LambdaHandlerTest {
     @Test
     void shouldIncludeVersionInJarNames() {
         assertThat(LambdaHandler.all())
-                .extracting(handler -> handler.getJar().getFilename())
+                .extracting(handler -> handler.getJar().getFilename("1.2.3"))
                 .allSatisfy(fileName -> assertThat(fileName)
-                        .contains(SleeperVersion.getVersion()));
+                        .contains("1.2.3"));
     }
 }
