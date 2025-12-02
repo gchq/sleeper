@@ -26,7 +26,6 @@ import software.amazon.awscdk.services.lambda.MetricsConfig;
 import software.amazon.awscdk.services.lambda.StartingPosition;
 import software.amazon.awscdk.services.lambda.eventsources.DynamoEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.DeadLetterQueue;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -68,7 +67,7 @@ public class TransactionLogTransactionStack extends NestedStack {
             TransactionLogStateStoreStack transactionLogStateStoreStack,
             TrackDeadLetters trackDeadLetters) {
         super(scope, id);
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", props.getJars().bucketName());
+        IBucket jarsBucket = props.getJars().createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = props.getJars().lambdaCode(jarsBucket);
         createFunctionToFollowTransactionLog(props.getInstanceProperties(), lambdaCode, coreStacks, transactionLogStateStoreStack);
         createTransactionDeletionLambda(props, lambdaCode, coreStacks, transactionLogStateStoreStack, trackDeadLetters);
