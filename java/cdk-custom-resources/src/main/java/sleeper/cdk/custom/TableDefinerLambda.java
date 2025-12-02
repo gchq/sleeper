@@ -83,9 +83,7 @@ public class TableDefinerLambda {
                 updateTable(resourceProperties);
                 break;
             case "Delete":
-                deleteTable(Boolean.getBoolean(tableProperties.getProperties().getOrDefault(RETAIN_DATA_AFTER_DELETE,
-                        instanceProperties.get(RETAIN_DATA_AFTER_TABLE_REMOVAL))
-                        .toString()));
+                deleteTable();
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
@@ -121,12 +119,17 @@ public class TableDefinerLambda {
         //TODO
     }
 
-    private void deleteTable(boolean retainData) {
+    private void deleteTable() {
         tableProperties = tablePropertiesStore.loadByName(tableName);
-        if (instanceProperties.getBoolean(RETAIN_DATA_AFTER_TABLE_REMOVAL)) {
+        boolean retainData = Boolean.parseBoolean(
+                tableProperties.getProperties().getOrDefault(RETAIN_DATA_AFTER_DELETE,
+                        instanceProperties.get(RETAIN_DATA_AFTER_TABLE_REMOVAL)).toString());
+        if (retainData) {
+            LOGGER.info("Taking table {} offline.", tableName);
             tableProperties.set(TABLE_ONLINE, "false");
             tablePropertiesStore.save(tableProperties);
         } else {
+            LOGGER.info("Deleting table {} and associated data.", tableName);
             stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
             deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
             new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
