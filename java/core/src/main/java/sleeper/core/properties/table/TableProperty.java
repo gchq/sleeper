@@ -30,6 +30,7 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -289,7 +290,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty RETAIN_DATA_AFTER_DELETE = Index.propertyBuilder("sleeper.table.retain.data.after.delete")
-            .validationPredicate(SleeperPropertyValueUtils::isNullOrTrueOrFalse)
+            .defaultProperty(RETAIN_DATA_AFTER_TABLE_REMOVAL)
             .description("If true, removing the table from the properties file will take the table offline.\n" +
                     "If false, it will delete all data associated with the table when the table is removed from the properties.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
