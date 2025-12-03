@@ -45,6 +45,19 @@ public class ByteArrayTest {
     }
 
     @Test
+    void shouldValidateEqualityWhenContentsOfArraysComeFromSameSource() {
+        // Given
+        byte[] data = {1, 'b', 'c', 4, 5};
+
+        // When
+        ByteArray first = ByteArray.wrap(data);
+        ByteArray second = ByteArray.wrap(data);
+
+        // Then
+        assertThat(first.getArray()).isEqualTo(second.getArray());
+    }
+
+    @Test
     void shouldGetArrayFromObject() {
         // Given
         byte[] data = {'a', 'b', 'c', 'd', 'e'};
@@ -60,6 +73,15 @@ public class ByteArrayTest {
     void shouldValidateEqualsMethodWithNullObjects() {
         // When / Then
         assertThat(ByteArray.equals(null, null)).isTrue();
+    }
+
+    @Test
+    void shouldValidateEqualMethodWhenOnlyOneObjectNull() {
+        //Given
+        ByteArray valid = ByteArray.wrap(new byte[]{'a', 2, 3});
+
+        // When / Then
+        assertThat(ByteArray.equals(valid, null)).isFalse();
     }
 
     @Test
