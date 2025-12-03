@@ -56,7 +56,7 @@ public abstract class ByteArray implements Comparable<ByteArray> {
      *
      * @param  array1 first ByteArray object
      * @param  array2 second ByteArray object
-     * @return        true is equal
+     * @return        true if equal
      */
     public static boolean equals(ByteArray array1, ByteArray array2) {
         //If both null, then they are equal
@@ -75,7 +75,7 @@ public abstract class ByteArray implements Comparable<ByteArray> {
      * Method for checking equality versus generic object declaration.
      *
      * @param  o object to compare versus
-     * @return   true is equal
+     * @return   true if equal
      */
     public boolean equals(Object o) {
         if (this == o) {
