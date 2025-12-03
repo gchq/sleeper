@@ -38,23 +38,22 @@ import java.util.Comparator;
 /**
  * Code utilised below is a subset of the ByteArray class from facebook.collections.
  *
- * Class to provide wrapper object for primitive byte array into an object.
- * Require as hashCode and equals requied for usage of type within a HashSet.
- *
+ * A wrapper object for primitive byte array type.
+ * Required as hashCode and equals methods required for usage of type within a HashSet.
  */
 public abstract class ByteArray implements Comparable<ByteArray> {
 
     public static final ByteArrayComparator BYTE_ARRAY_COMPARATOR = new ByteArrayComparator();
 
     /**
-     * Returns contents of object as primitive type.
+     * Returns the contents of this object as a primitive byte array
      *
-     * @return array details in primitive type
+     * @return the byte array
      */
     public abstract byte[] getArray();
 
     /**
-     * Returns length of the array within the object.
+     * Returns the length of the wrapped array.
      *
      * @return length of array
      */
@@ -71,7 +70,7 @@ public abstract class ByteArray implements Comparable<ByteArray> {
     }
 
     /**
-     * Method for checking equaility.
+     * Method for checking equality.
      *
      * @param  array1 first ByteArray object
      * @param  array2 second ByteArray object
