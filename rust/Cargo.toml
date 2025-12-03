@@ -44,7 +44,7 @@ futures = { version = "0.3.31" }                    # Async processing
 git2 = { version = "0.20.2" }                       # Interact with version control
 human-panic = { version = "2.0.4" }                 # Readable panic messages
 libc = { version = "0.2.177" }                      # FFI type support
-log = { version = "0.4.28" }                        # Standard logging framework
+log = { version = "0.4.29" }                        # Standard logging framework
 nohash = { version = "0.2.0" }                      # No-op hashing for integral types
 num-format = { version = "0.4.4" }                  # Nicely formatted numbers
 num-traits = { version = "0.2.19" }                 # Unified traits for integral types
