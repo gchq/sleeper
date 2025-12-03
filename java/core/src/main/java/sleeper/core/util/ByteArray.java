@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 /*
@@ -55,25 +54,25 @@ public abstract class ByteArray implements Comparable<ByteArray> {
     /**
      * Returns the length of the wrapped array.
      *
-     * @return length of array
+     * @return the length of array
      */
     public abstract int getLength();
 
     /**
-     * Simple method for wrapping primitive type within an object.
+     * Wraps a primitive byte array.
      *
      * @param  array primitive byte array
-     * @return       wrapped object
+     * @return       the wrapped object
      */
     public static ByteArray wrap(byte[] array) {
         return new PureByteArray(array);
     }
 
     /**
-     * Method for checking equality.
+     * Checks equality of two byte arrays.
      *
-     * @param  array1 first ByteArray object
-     * @param  array2 second ByteArray object
+     * @param  array1 the first ByteArray object
+     * @param  array2 the second ByteArray object
      * @return        true if equal
      */
     public static boolean equals(ByteArray array1, ByteArray array2) {
@@ -89,12 +88,7 @@ public abstract class ByteArray implements Comparable<ByteArray> {
         return Arrays.equals(array1.getArray(), array2.getArray());
     }
 
-    /**
-     * Method for checking equality versus generic object declaration.
-     *
-     * @param  o object to compare versus
-     * @return   true if equal
-     */
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -108,11 +102,7 @@ public abstract class ByteArray implements Comparable<ByteArray> {
         return ByteArray.equals(this, that);
     }
 
-    /**
-     * Hash code implementation of class.
-     *
-     * @return hash code
-     */
+    @Override
     public int hashCode() {
         return getArray() != null ? Arrays.hashCode(getArray()) : 0;
     }
