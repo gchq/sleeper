@@ -24,23 +24,33 @@ import java.util.Comparator;
  * A wrapper object for primitive byte array type.
  * Required as hashCode and equals methods required for usage of type within a HashSet.
  */
-public abstract class ByteArray implements Comparable<ByteArray> {
+public class ByteArray implements Comparable<ByteArray> {
 
-    public static final ByteArrayComparator BYTE_ARRAY_COMPARATOR = new ByteArrayComparator();
+    final ByteArrayComparator BYTE_ARRAY_COMPARATOR = new ByteArrayComparator();
+
+    private final byte[] array;
+
+    ByteArray(byte[] array) {
+        this.array = array;
+    }
 
     /**
      * Returns the contents of this object as a primitive byte array.
      *
      * @return the byte array
      */
-    public abstract byte[] getArray();
+    public byte[] getArray() {
+        return array;
+    }
 
     /**
      * Returns the length of the wrapped array.
      *
      * @return the length of array
      */
-    public abstract int getLength();
+    public int getLength() {
+        return array.length;
+    }
 
     /**
      * Wraps a primitive byte array.
@@ -49,7 +59,7 @@ public abstract class ByteArray implements Comparable<ByteArray> {
      * @return       the wrapped object
      */
     public static ByteArray wrap(byte[] array) {
-        return new PureByteArray(array);
+        return new ByteArray(array);
     }
 
     /**
@@ -87,93 +97,72 @@ public abstract class ByteArray implements Comparable<ByteArray> {
     }
 
     @Override
-    public int hashCode() {
-        return getArray() != null ? Arrays.hashCode(getArray()) : 0;
-    }
-}
-
-/**
- * Declared implementation of PureByteArray to match design for Arrays comparion.
- */
-class PureByteArray extends ByteArray {
-
-    private final byte[] array;
-
-    PureByteArray(byte[] array) {
-        this.array = array;
-    }
-
-    public byte[] getArray() {
-        return array;
-    }
-
-    public int getLength() {
-        return array.length;
-    }
-
-    @Override
     public int compareTo(ByteArray o) {
         return BYTE_ARRAY_COMPARATOR.compare(this, o);
     }
 
     @Override
+    public int hashCode() {
+        return getArray() != null ? Arrays.hashCode(getArray()) : 0;
+    }
+
+    @Override
     public String toString() {
-        return "PureByteArray{" +
+        return "ByteArray{" +
                 "array=" + Arrays.toString(array) +
                 '}';
     }
 
-}
+    /**
+     * Comparator for ByteArray type.
+     */
+    private class ByteArrayComparator implements Comparator<ByteArray> {
+        @Override
+        public int compare(ByteArray o1, ByteArray o2) {
+            if (o1 == null) {
+                if (o2 == null) {
+                    return 0;
+                } else {
+                    return -1;
+                }
+            }
 
-/**
- * Comparator for ByteArray type.
- */
-class ByteArrayComparator implements Comparator<ByteArray> {
-    @Override
-    public int compare(ByteArray o1, ByteArray o2) {
-        if (o1 == null) {
             if (o2 == null) {
-                return 0;
-            } else {
-                return -1;
-            }
-        }
-
-        if (o2 == null) {
-            return 1;
-        }
-
-        if (o1.getArray() == null) {
-            if (o2.getArray() == null) {
-                return 0;
-            } else {
-                return -1;
-            }
-        }
-
-        if (o2.getArray() == null) {
-            return 1;
-        }
-
-        int array1Length = o1.getLength();
-        int array2Length = o2.getLength();
-
-        int length = Math.min(array1Length, array2Length);
-
-        for (int i = 0; i < length; i++) {
-            if (o1.getArray()[i] < o2.getArray()[i]) {
-                return -1;
-            } else if (o1.getArray()[i] > o2.getArray()[i]) {
                 return 1;
             }
-        }
 
-        if (array1Length < array2Length) {
-            return -1;
-        } else if (array1Length > array2Length) {
-            return 1;
-        } else {
-            return 0;
+            if (o1.getArray() == null) {
+                if (o2.getArray() == null) {
+                    return 0;
+                } else {
+                    return -1;
+                }
+            }
+
+            if (o2.getArray() == null) {
+                return 1;
+            }
+
+            int array1Length = o1.getLength();
+            int array2Length = o2.getLength();
+
+            int length = Math.min(array1Length, array2Length);
+
+            for (int i = 0; i < length; i++) {
+                if (o1.getArray()[i] < o2.getArray()[i]) {
+                    return -1;
+                } else if (o1.getArray()[i] > o2.getArray()[i]) {
+                    return 1;
+                }
+            }
+
+            if (array1Length < array2Length) {
+                return -1;
+            } else if (array1Length > array2Length) {
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 }

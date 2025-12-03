@@ -25,17 +25,19 @@ public class ByteArrayTest {
 
     @Test
     void shouldProvideByteArrayAsPrimitiveType() {
+        // Given
         byte[] data = {1, 2, 3};
+
         // When
         ByteArray result = ByteArray.wrap(data);
 
-        //Then
+        // Then
         assertThat(result.getArray()).isEqualTo(data);
         assertThat(result.getLength()).isEqualTo(data.length);
     }
 
     @Test
-    void shouldCompareByteArraysCorrectly() {
+    void shouldMatchByteArraysWhenWrappedUsingSameData() {
         // Given
         ByteArray first = ByteArray.wrap(new byte[]{7, 8, 9});
         ByteArray second = ByteArray.wrap(new byte[]{7, 8, 9});
@@ -58,18 +60,28 @@ public class ByteArrayTest {
     }
 
     @Test
-    void shouldValidateEqualsMethodWithNullObjects() {
+    void shouldReturnCorrectComparisionWithNullArguments() {
         // When / Then
         assertThat(ByteArray.equals(null, null)).isTrue();
     }
 
     @Test
-    void shouldValidateEqualMethodWhenOnlyOneObjectNull() {
-        //Given
+    void shouldProvideCorrectComparisionWhenOneComparatorIsNull() {
+        // Given
         ByteArray valid = ByteArray.wrap(new byte[]{'a', 2, 3});
 
         // When / Then
         assertThat(ByteArray.equals(valid, null)).isFalse();
+    }
+
+    @Test
+    void shouldMatchByteArrayWhenComparingVersusObject() {
+        // Given
+        ByteArray valid = ByteArray.wrap(new byte[]{3, 'd', 5});
+
+        // When / Then
+        assertThat(valid.equals(ByteArray.wrap(new byte[]{3, 'd', 5}))).isTrue();
+
     }
 
     @Test
