@@ -26,7 +26,7 @@ import java.util.Comparator;
  */
 public class ByteArray implements Comparable<ByteArray> {
 
-    final ByteArrayComparator BYTE_ARRAY_COMPARATOR = new ByteArrayComparator();
+    final ByteArrayComparator byteArrayComparator = new ByteArrayComparator();
 
     private final byte[] array;
 
@@ -98,7 +98,7 @@ public class ByteArray implements Comparable<ByteArray> {
 
     @Override
     public int compareTo(ByteArray o) {
-        return BYTE_ARRAY_COMPARATOR.compare(this, o);
+        return byteArrayComparator.compare(this, o);
     }
 
     @Override
