@@ -18,6 +18,7 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
@@ -79,285 +80,299 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private String inputFolderName;
-
-    @TempDir
-    private Path tempDir;
 
     @BeforeEach
     void setUp() throws IOException {
         createBucket(instanceProperties.get(CONFIG_BUCKET));
-        createBucket(instanceProperties.get(DATA_BUCKET));
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        inputFolderName = createTempDirectory(tempDir, null).toString();
     }
 
-    @Test
-    public void shouldCreateTableWithNoSplitPoints() throws IOException {
-        // Given
-        HashMap<String, Object> resourceProperties = new HashMap<>();
-        resourceProperties.put("tableProperties", tableProperties.saveAsString());
-        resourceProperties.put("splitPoints", "");
+    @Nested
+    class TableDefinerLambdaCreateIT {
 
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Create")
-                .withResourceProperties(resourceProperties)
-                .build();
-
-        // When
-        tableDefinerLambda.handleEvent(event, null);
-
-        // Then
-        TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
-        assertThat(foundProperties).isEqualTo(tableProperties);
-        assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
-        assertThat(stateStore(foundProperties).getAllPartitions())
-                .containsExactlyElementsOf(new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .buildList());
-
-    }
-
-    @Test
-    public void shouldCreateTableWithMultipleSplitPoints() throws IOException {
-        // Given
-        HashMap<String, Object> resourceProperties = new HashMap<>();
-        resourceProperties.put("tableProperties", tableProperties.saveAsString());
-        resourceProperties.put("splitPoints", "0\n5\n10\n");
-
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Create")
-                .withResourceProperties(resourceProperties)
-                .build();
-
-        // When
-        tableDefinerLambda.handleEvent(event, null);
-
-        // Then
-        TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
-        assertThat(foundProperties).isEqualTo(tableProperties);
-        assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
-        assertThat(stateStore(foundProperties).getAllPartitions())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
-                .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "l", "r", Long.valueOf(5))
-                        .splitToNewChildren("l", "ll", "lr", Long.valueOf(0))
-                        .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
-                        .buildList());
-    }
-
-    @Test
-    public void shouldFailToDeleteTableThatDoesNotExist() {
-        // Given
-        instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-
-        HashMap<String, Object> resourceProperties = new HashMap<>();
-        resourceProperties.put("tableProperties", tableProperties.saveAsString());
-
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Delete")
-                .withResourceProperties(resourceProperties)
-                .build();
-
-        // When / Then
-        assertThatThrownBy(() -> tableDefinerLambda.handleEvent(event, null))
-                .isInstanceOf(TableNotFoundException.class);
-
-    }
-
-    @Test
-    void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetFalse() throws Exception {
-        // Given
-        instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "true");
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-
-        String tableName = tableProperties.get(TABLE_NAME);
-        TableProperties tableProps = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
-        StateStore stateStore = createStateStore(tableProps);
-        update(stateStore).initialise(schema);
-        AllReferencesToAFile file = ingestRows(tableProps, List.of(new Row(Map.of("key1", 25L))));
-
-        // When
-        HashMap<String, Object> resourceProperties = new HashMap<>();
-        resourceProperties.put("tableProperties", tableProperties.saveAsString());
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Delete")
-                .withResourceProperties(resourceProperties)
-                .build();
-        tableDefinerLambda.handleEvent(event, null);
-
-        // Then
-        tableProps.set(TABLE_ONLINE, "false");
-        assertThat(propertiesStore.loadByName(tableName)).isEqualTo(tableProps);
-        assertThat(streamTableFileTransactions(tableProps)).isNotEmpty();
-        assertThat(streamTablePartitionTransactions(tableProps)).isNotEmpty();
-        assertThat(listDataBucketObjectKeys())
-                .extracting(FilenameUtils::getName)
-                .containsExactly(
-                        FilenameUtils.getName(file.getFilename()),
-                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
-    }
-
-    @Test
-    void shouldFullyDeleteSpecifiedTableButNoOthers() throws Exception {
-        // Given
-        instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-
-        String tableName = tableProperties.get(TABLE_NAME);
-        TableProperties table1 = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
-        StateStore stateStore1 = createStateStore(table1);
-        update(stateStore1).initialise(schema);
-        AllReferencesToAFile file1 = ingestRows(table1, List.of(
-                new Row(Map.of("key1", 25L))));
-        assertThat(listDataBucketObjectKeys())
-                .extracting(FilenameUtils::getName)
-                .containsExactly(
-                        FilenameUtils.getName(file1.getFilename()),
-                        FilenameUtils.getName(file1.getFilename()).replace("parquet", "sketches"));
-        TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
-        StateStore stateStore2 = createStateStore(table2);
-        update(stateStore2).initialise(schema);
-        AllReferencesToAFile file2 = ingestRows(table2, List.of(new Row(Map.of("key1", 25L))));
-
-        // When
-        HashMap<String, Object> resourceProperties = new HashMap<>();
-        resourceProperties.put("tableProperties", tableProperties.saveAsString());
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Delete")
-                .withResourceProperties(resourceProperties)
-                .build();
-        tableDefinerLambda.handleEvent(event, null);
-
-        // Then
-        assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
-                .isInstanceOf(TableNotFoundException.class);
-        assertThat(streamTableFileTransactions(table1)).isEmpty();
-        assertThat(streamTablePartitionTransactions(table1)).isEmpty();
-        assertThat(propertiesStore.loadByName("table-2"))
-                .isEqualTo(table2);
-        assertThat(streamTableFileTransactions(table2)).isNotEmpty();
-        assertThat(streamTablePartitionTransactions(table2)).isNotEmpty();
-        assertThat(listDataBucketObjectKeys())
-                .extracting(FilenameUtils::getName)
-                .containsExactly(
-                        FilenameUtils.getName(file2.getFilename()),
-                        FilenameUtils.getName(file2.getFilename()).replace("parquet", "sketches"));
-    }
-
-    @Test
-    void shouldFullyDeleteTableWhenSnapshotIsPresent() throws Exception {
-        // Given
-        instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-
-        String tableName = tableProperties.get(TABLE_NAME);
-        TableProperties table = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
-        StateStore stateStore = createStateStore(table);
-        update(stateStore).initialise(new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50L)
-                .buildList());
-        AllReferencesToAFile file = ingestRows(table, List.of(
-                new Row(Map.of("key1", 25L)),
-                new Row(Map.of("key1", 100L))));
-
-        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
-                .createSnapshot();
-
-        assertThat(listDataBucketObjectKeys())
-                .extracting(FilenameUtils::getName)
-                .containsExactly(
-                        // Data files
-                        FilenameUtils.getName(file.getFilename()),
-                        FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"),
-                        // Snapshot files
-                        "1-files.arrow",
-                        "1-partitions.arrow");
-
-        // When
-        HashMap<String, Object> resourceProperties = new HashMap<>();
-        resourceProperties.put("tableProperties", tableProperties.saveAsString());
-        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                .withRequestType("Delete")
-                .withResourceProperties(resourceProperties)
-                .build();
-        tableDefinerLambda.handleEvent(event, null);
-
-        // Then
-        assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
-                .isInstanceOf(TableNotFoundException.class);
-        assertThat(listDataBucketObjectKeys()).isEmpty();
-        // And
-        var snapshotMetadataStore = snapshotMetadataStore(table);
-        assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
-        assertThat(snapshotMetadataStore.getFilesSnapshots()).isEmpty();
-        assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();
-    }
-
-    private StateStore stateStore(TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
-    }
-
-    private TableProperties createTable(TableStatus tableStatus) {
-        TableProperties table = createTestTableProperties(instanceProperties, schema);
-        table.set(TABLE_ID, tableStatus.getTableUniqueId());
-        table.set(TABLE_NAME, tableStatus.getTableName());
-        propertiesStore.save(table);
-        return table;
-    }
-
-    private StateStore createStateStore(TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
-    }
-
-    private AllReferencesToAFile ingestRows(TableProperties tableProperties, List<Row> rows) throws Exception {
-        IngestFactory factory = IngestFactory.builder()
-                .objectFactory(ObjectFactory.noUserJars())
-                .localDir(inputFolderName)
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
-                .s3AsyncClient(s3AsyncClient)
-                .instanceProperties(instanceProperties)
-                .hadoopConfiguration(hadoopConf)
-                .build();
-
-        IngestRows ingestRows = factory.createIngestRows(tableProperties);
-        ingestRows.init();
-        for (Row row : rows) {
-            ingestRows.write(row);
+        private StateStore stateStore(TableProperties tableProperties) {
+            return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
         }
-        IngestResult result = ingestRows.close();
-        List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(result.getFileReferenceList());
-        if (files.size() != 1) {
-            throw new IllegalStateException("Expected one file ingested, found " + files.size());
+
+        @Test
+        public void shouldCreateTableWithNoSplitPoints() throws IOException {
+            // Given
+            HashMap<String, Object> resourceProperties = new HashMap<>();
+            resourceProperties.put("tableProperties", tableProperties.saveAsString());
+            resourceProperties.put("splitPoints", "");
+
+            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                    .withRequestType("Create")
+                    .withResourceProperties(resourceProperties)
+                    .build();
+
+            // When
+            tableDefinerLambda.handleEvent(event, null);
+
+            // Then
+            TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
+            assertThat(foundProperties).isEqualTo(tableProperties);
+            assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
+            assertThat(stateStore(foundProperties).getAllPartitions())
+                    .containsExactlyElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("root")
+                            .buildList());
+
         }
-        return files.get(0);
+
+        @Test
+        public void shouldCreateTableWithMultipleSplitPoints() throws IOException {
+            // Given
+            HashMap<String, Object> resourceProperties = new HashMap<>();
+            resourceProperties.put("tableProperties", tableProperties.saveAsString());
+            resourceProperties.put("splitPoints", "0\n5\n10\n");
+
+            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                    .withRequestType("Create")
+                    .withResourceProperties(resourceProperties)
+                    .build();
+
+            // When
+            tableDefinerLambda.handleEvent(event, null);
+
+            // Then
+            TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
+            assertThat(foundProperties).isEqualTo(tableProperties);
+            assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
+            assertThat(stateStore(foundProperties).getAllPartitions())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "l", "r", Long.valueOf(5))
+                            .splitToNewChildren("l", "ll", "lr", Long.valueOf(0))
+                            .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
+                            .buildList());
+        }
+
     }
 
-    private List<String> listDataBucketObjectKeys() {
-        return s3Client.listObjects(ListObjectsRequest.builder()
-                .bucket(instanceProperties.get(DATA_BUCKET))
-                .build())
-                .contents().stream()
-                .map(S3Object::key)
-                .toList();
+    @Nested
+    class TableDefinerLambdaDeleteIT {
+        private String inputFolderName;
+
+        @TempDir
+        private Path tempDir;
+
+        @BeforeEach
+        void setUp() throws IOException {
+            createBucket(instanceProperties.get(DATA_BUCKET));
+            inputFolderName = createTempDirectory(tempDir, null).toString();
+        }
+
+        @Test
+        public void shouldFailToDeleteTableThatDoesNotExist() {
+            // Given
+            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
+            HashMap<String, Object> resourceProperties = new HashMap<>();
+            resourceProperties.put("tableProperties", tableProperties.saveAsString());
+
+            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                    .withRequestType("Delete")
+                    .withResourceProperties(resourceProperties)
+                    .build();
+
+            // When / Then
+            assertThatThrownBy(() -> tableDefinerLambda.handleEvent(event, null))
+                    .isInstanceOf(TableNotFoundException.class);
+
+        }
+
+        @Test
+        void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetFalse() throws Exception {
+            // Given
+            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "true");
+            S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
+            String tableName = tableProperties.get(TABLE_NAME);
+            TableProperties tableProps = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+            StateStore stateStore = createStateStore(tableProps);
+            update(stateStore).initialise(schema);
+            AllReferencesToAFile file = ingestRows(tableProps, List.of(new Row(Map.of("key1", 25L))));
+
+            // When
+            HashMap<String, Object> resourceProperties = new HashMap<>();
+            resourceProperties.put("tableProperties", tableProperties.saveAsString());
+            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                    .withRequestType("Delete")
+                    .withResourceProperties(resourceProperties)
+                    .build();
+            tableDefinerLambda.handleEvent(event, null);
+
+            // Then
+            tableProps.set(TABLE_ONLINE, "false");
+            assertThat(propertiesStore.loadByName(tableName)).isEqualTo(tableProps);
+            assertThat(streamTableFileTransactions(tableProps)).isNotEmpty();
+            assertThat(streamTablePartitionTransactions(tableProps)).isNotEmpty();
+            assertThat(listDataBucketObjectKeys())
+                    .extracting(FilenameUtils::getName)
+                    .containsExactly(
+                            FilenameUtils.getName(file.getFilename()),
+                            FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"));
+        }
+
+        @Test
+        void shouldFullyDeleteSpecifiedTableButNoOthers() throws Exception {
+            // Given
+            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
+            String tableName = tableProperties.get(TABLE_NAME);
+            TableProperties table1 = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+            StateStore stateStore1 = createStateStore(table1);
+            update(stateStore1).initialise(schema);
+            AllReferencesToAFile file1 = ingestRows(table1, List.of(
+                    new Row(Map.of("key1", 25L))));
+            assertThat(listDataBucketObjectKeys())
+                    .extracting(FilenameUtils::getName)
+                    .containsExactly(
+                            FilenameUtils.getName(file1.getFilename()),
+                            FilenameUtils.getName(file1.getFilename()).replace("parquet", "sketches"));
+            TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
+            StateStore stateStore2 = createStateStore(table2);
+            update(stateStore2).initialise(schema);
+            AllReferencesToAFile file2 = ingestRows(table2, List.of(new Row(Map.of("key1", 25L))));
+
+            // When
+            HashMap<String, Object> resourceProperties = new HashMap<>();
+            resourceProperties.put("tableProperties", tableProperties.saveAsString());
+            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                    .withRequestType("Delete")
+                    .withResourceProperties(resourceProperties)
+                    .build();
+            tableDefinerLambda.handleEvent(event, null);
+
+            // Then
+            assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(streamTableFileTransactions(table1)).isEmpty();
+            assertThat(streamTablePartitionTransactions(table1)).isEmpty();
+            assertThat(propertiesStore.loadByName("table-2"))
+                    .isEqualTo(table2);
+            assertThat(streamTableFileTransactions(table2)).isNotEmpty();
+            assertThat(streamTablePartitionTransactions(table2)).isNotEmpty();
+            assertThat(listDataBucketObjectKeys())
+                    .extracting(FilenameUtils::getName)
+                    .containsExactly(
+                            FilenameUtils.getName(file2.getFilename()),
+                            FilenameUtils.getName(file2.getFilename()).replace("parquet", "sketches"));
+        }
+
+        @Test
+        void shouldFullyDeleteTableWhenSnapshotIsPresent() throws Exception {
+            // Given
+            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
+            String tableName = tableProperties.get(TABLE_NAME);
+            TableProperties table = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+            StateStore stateStore = createStateStore(table);
+            update(stateStore).initialise(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50L)
+                    .buildList());
+            AllReferencesToAFile file = ingestRows(table, List.of(
+                    new Row(Map.of("key1", 25L)),
+                    new Row(Map.of("key1", 100L))));
+
+            DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
+                    .createSnapshot();
+
+            assertThat(listDataBucketObjectKeys())
+                    .extracting(FilenameUtils::getName)
+                    .containsExactly(
+                            // Data files
+                            FilenameUtils.getName(file.getFilename()),
+                            FilenameUtils.getName(file.getFilename()).replace("parquet", "sketches"),
+                            // Snapshot files
+                            "1-files.arrow",
+                            "1-partitions.arrow");
+
+            // When
+            HashMap<String, Object> resourceProperties = new HashMap<>();
+            resourceProperties.put("tableProperties", tableProperties.saveAsString());
+            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                    .withRequestType("Delete")
+                    .withResourceProperties(resourceProperties)
+                    .build();
+            tableDefinerLambda.handleEvent(event, null);
+
+            // Then
+            assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(listDataBucketObjectKeys()).isEmpty();
+            // And
+            var snapshotMetadataStore = snapshotMetadataStore(table);
+            assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
+            assertThat(snapshotMetadataStore.getFilesSnapshots()).isEmpty();
+            assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();
+        }
+
+        private TableProperties createTable(TableStatus tableStatus) {
+            TableProperties table = createTestTableProperties(instanceProperties, schema);
+            table.set(TABLE_ID, tableStatus.getTableUniqueId());
+            table.set(TABLE_NAME, tableStatus.getTableName());
+            propertiesStore.save(table);
+            return table;
+        }
+
+        private StateStore createStateStore(TableProperties tableProperties) {
+            return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
+        }
+
+        private AllReferencesToAFile ingestRows(TableProperties tableProperties, List<Row> rows) throws Exception {
+            IngestFactory factory = IngestFactory.builder()
+                    .objectFactory(ObjectFactory.noUserJars())
+                    .localDir(inputFolderName)
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient))
+                    .s3AsyncClient(s3AsyncClient)
+                    .instanceProperties(instanceProperties)
+                    .hadoopConfiguration(hadoopConf)
+                    .build();
+
+            IngestRows ingestRows = factory.createIngestRows(tableProperties);
+            ingestRows.init();
+            for (Row row : rows) {
+                ingestRows.write(row);
+            }
+            IngestResult result = ingestRows.close();
+            List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(result.getFileReferenceList());
+            if (files.size() != 1) {
+                throw new IllegalStateException("Expected one file ingested, found " + files.size());
+            }
+            return files.get(0);
+        }
+
+        private List<String> listDataBucketObjectKeys() {
+            return s3Client.listObjects(ListObjectsRequest.builder()
+                    .bucket(instanceProperties.get(DATA_BUCKET))
+                    .build())
+                    .contents().stream()
+                    .map(S3Object::key)
+                    .toList();
+        }
+
+        private Stream<TransactionLogEntry> streamTableFileTransactions(TableProperties tableProperties) {
+            return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client)
+                    .readTransactions(TransactionLogRange.fromMinimum(1));
+        }
+
+        private Stream<TransactionLogEntry> streamTablePartitionTransactions(TableProperties tableProperties) {
+            return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client)
+                    .readTransactions(TransactionLogRange.fromMinimum(1));
+        }
+
+        private DynamoDBTransactionLogSnapshotMetadataStore snapshotMetadataStore(TableProperties tableProperties) {
+            return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient);
+        }
     }
 
-    private Stream<TransactionLogEntry> streamTableFileTransactions(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client)
-                .readTransactions(TransactionLogRange.fromMinimum(1));
-    }
-
-    private Stream<TransactionLogEntry> streamTablePartitionTransactions(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client)
-                .readTransactions(TransactionLogRange.fromMinimum(1));
-    }
-
-    private DynamoDBTransactionLogSnapshotMetadataStore snapshotMetadataStore(TableProperties tableProperties) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient);
-    }
 }
