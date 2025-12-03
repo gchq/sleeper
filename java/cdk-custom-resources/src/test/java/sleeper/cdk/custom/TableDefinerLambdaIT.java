@@ -150,6 +150,33 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     }
 
     @Test
+    public void shouldUpdateTableSuccessfully() throws IOException {
+        // Given
+        String tableName = tableProperties.get(TABLE_NAME);
+        TableProperties tableProps = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+        StateStore stateStore = createStateStore(tableProps);
+        update(stateStore).initialise(schema);
+
+        //Flip table online state
+        tableProps.set(TABLE_ONLINE, String.valueOf(!tableProps.getBoolean(TABLE_ONLINE)));
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProps.saveAsString());
+
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType("Update")
+                .withResourceProperties(resourceProperties)
+                .build();
+
+        // When
+        tableDefinerLambda.handleEvent(event, null);
+
+        // Then
+        TableProperties foundProperties = propertiesStore.loadByName(tableName);
+        assertThat(foundProperties).isEqualTo(tableProps);
+        assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
+    }
+
+    @Test
     public void shouldFailToDeleteTableThatDoesNotExist() {
         // When / Then
         HashMap<String, Object> resourceProperties = new HashMap<>();

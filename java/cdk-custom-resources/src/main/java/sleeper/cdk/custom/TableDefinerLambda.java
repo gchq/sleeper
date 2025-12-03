@@ -79,7 +79,8 @@ public class TableDefinerLambda {
                 addTable(resourceProperties);
                 break;
             case "Update":
-                updateTable(resourceProperties);
+                LOGGER.info("Updating table {}.", tableName);
+                tablePropertiesStore.save(tableProperties);
                 break;
             case "Delete":
                 deleteTable();
@@ -110,12 +111,8 @@ public class TableDefinerLambda {
         List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"),
                 tableProperties.getSchema(),
                 tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
-        LOGGER.info("Initalising state store from split points for table {}", tableName);
+        LOGGER.info("Initalising state store from split points for table {}.", tableName);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
-    }
-
-    private void updateTable(Map<String, Object> resourceProperties) {
-        //TODO
     }
 
     private void deleteTable() {
