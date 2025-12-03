@@ -116,7 +116,7 @@ public class ByteArray implements Comparable<ByteArray> {
     /**
      * Comparator for ByteArray type.
      */
-    private class ByteArrayComparator implements Comparator<ByteArray> {
+    private static class ByteArrayComparator implements Comparator<ByteArray> {
         @Override
         public int compare(ByteArray o1, ByteArray o2) {
             if (o1 == null) {
