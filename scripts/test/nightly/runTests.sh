@@ -18,8 +18,9 @@ unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
-REPO_PARENT_DIR=$(cd "$SCRIPTS_DIR" && cd ../.. && pwd)
+REPO_DIR=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
+MAVEN_DIR=$(cd "$REPO_DIR" && cd java && pwd)
+REPO_PARENT_DIR=$(cd "$REPO_DIR" && cd .. && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
@@ -54,13 +55,15 @@ echo "SUITE_PARAMS=(${SUITE_PARAMS[*]})"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
+source "$SCRIPTS_DIR/functions/sedInPlace.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
 OUTPUT_DIR="$REPO_PARENT_DIR/logs/$START_TIME-$MAIN_SUITE_NAME"
 
 mkdir -p "$OUTPUT_DIR"
-../build/buildForTest.sh
+"$SCRIPTS_DIR/build/buildForTest.sh"
+"$SCRIPTS_DIR/build/buildPython.sh"
 VERSION=$(cat "$SCRIPTS_DIR/templates/version.txt")
 SYSTEM_TEST_JAR="$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar"
 
@@ -74,11 +77,16 @@ docker buildx create --name sleeper --use
 set +e
 
 copyFolderForParallelRun() {
-    echo "Making folder $1 for parallel build"
+    COPY_DIR=$1
+    echo "Making folder $COPY_DIR for parallel build"
     pushd $REPO_PARENT_DIR
-    sudo rm -rf $1
-    mkdir $1
-    sudo rsync -a --exclude=".*" sleeper/ $1
+    sudo rm -rf $COPY_DIR
+    mkdir $COPY_DIR
+    sudo rsync -a --exclude=".*" sleeper/ $COPY_DIR
+    # A Python virtual environment includes an absolute path reference to itself, so update it
+    sed_in_place \
+      -e "s|sleeper/python|$COPY_DIR/python|" \
+      "$COPY_DIR/python/env/bin/activate"
     popd
 }
 
@@ -165,7 +173,7 @@ elif [ "$MAIN_SUITE_NAME" == "functional" ]; then
     runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}s1" "slow1" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite1" "$@" &> "$OUTPUT_DIR/slow1.suite.log" &
     runTestSuite 60 "${DEPLOY_ID}${START_TIME_SHORT}s2" "slow2" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite2" "$@" &> "$OUTPUT_DIR/slow2.suite.log" &
     runTestSuite 120 "${DEPLOY_ID}${START_TIME_SHORT}s3" "slow3" "${SUITE_PARAMS[@]}" "-DrunIT=SlowSystemTestSuite3" "$@" &> "$OUTPUT_DIR/slow3.suite.log" &
-    runTestSuite 0 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &> "$OUTPUT_DIR/quick.suite.log" &
+    runTestSuite 180 "${DEPLOY_ID}${START_TIME_SHORT}q1" "quick" "${SUITE_PARAMS[@]}" "-DrunIT=QuickSystemTestSuite" "$@" &> "$OUTPUT_DIR/quick.suite.log" &
     wait
 else
     runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${SUITE_PARAMS[@]}"
