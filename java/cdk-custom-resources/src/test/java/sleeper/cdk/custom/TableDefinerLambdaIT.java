@@ -178,7 +178,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
     @Test
     public void shouldFailToDeleteTableThatDoesNotExist() {
-        // When / Then
+        // Given
         HashMap<String, Object> resourceProperties = new HashMap<>();
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
 
@@ -187,7 +187,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                 .withResourceProperties(resourceProperties)
                 .build();
 
-        // When
+        // When / Then
         assertThatThrownBy(() -> tableDefinerLambda.handleEvent(event, null))
                 .isInstanceOf(TableNotFoundException.class);
 
