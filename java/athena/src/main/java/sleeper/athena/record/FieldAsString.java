@@ -15,5 +15,11 @@
  */
 package sleeper.athena.record;
 
+/**
+ * Storage of key pairing for field and value.
+ *
+ * @param fieldName field name
+ * @param value     value stored
+ */
 public record FieldAsString(String fieldName, String value) {
 }
