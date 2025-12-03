@@ -169,16 +169,6 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
-     * Checks if a property value is null or a boolean. If a boolean it must be true or false in lower case.
-     *
-     * @param  string the value
-     * @return        true if the value meets the requirement
-     */
-    public static boolean isNullOrTrueOrFalse(String string) {
-        return string == null || "true".equalsIgnoreCase(string) || "false".equalsIgnoreCase(string);
-    }
-
-    /**
      * Checks if a property value is a whole positive number of seconds within the maximum timeout for an invocation of
      * AWS Lambda.
      *
