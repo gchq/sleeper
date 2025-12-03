@@ -15,5 +15,11 @@
  */
 package sleeper.athena.record;
 
-public record FieldAsDimension(int dimension, Object value) {
+/**
+ * Storage of key pairing of dimension and value.
+ *
+ * @param dimension dimension key
+ * @param value     value stored
+ */
+public record FieldAtDimension(int dimension, Object value) {
 }

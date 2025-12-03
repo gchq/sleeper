@@ -151,19 +151,19 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         return rowKey;
     }
 
-    private FieldAsDimension getFieldAtDimension(List<Field> rowKeyFields, FieldAsString entry) {
+    private FieldAtDimension getFieldAtDimension(List<Field> rowKeyFields, FieldAsString entry) {
         String key = entry.fieldName();
         Integer index = Integer.valueOf(key.substring(key.lastIndexOf("RowKey") + 6));
         String stringValue = entry.value();
         Type type = rowKeyFields.get(index).getType();
         if (type instanceof StringType) {
-            return new FieldAsDimension(index, stringValue);
+            return new FieldAtDimension(index, stringValue);
         } else if (type instanceof ByteArrayType) {
-            return new FieldAsDimension(index, BinaryUtils.fromBase64(stringValue));
+            return new FieldAtDimension(index, BinaryUtils.fromBase64(stringValue));
         } else if (type instanceof IntType) {
-            return new FieldAsDimension(index, Integer.parseInt(stringValue));
+            return new FieldAtDimension(index, Integer.parseInt(stringValue));
         } else if (type instanceof LongType) {
-            return new FieldAsDimension(index, Long.parseLong(stringValue));
+            return new FieldAtDimension(index, Long.parseLong(stringValue));
         } else {
             throw new RuntimeException("Unexpected Primitive type: " + type);
         }
