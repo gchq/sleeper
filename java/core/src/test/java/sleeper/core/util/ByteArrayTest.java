@@ -41,11 +41,11 @@ public class ByteArrayTest {
         ByteArray second = ByteArray.wrap(new byte[]{7, 8, 9});
 
         // When / Then
-        assertThat(first.getArray()).isEqualTo(second.getArray());
+        assertThat(first).isEqualTo(second);
     }
 
     @Test
-    void shouldValidateEqualityWhenContentsOfArraysComeFromSameSource() {
+    void shouldFindByteArraysAreEqualWithSameSourceArray() {
         // Given
         byte[] data = {1, 'b', 'c', 4, 5};
 
@@ -54,19 +54,7 @@ public class ByteArrayTest {
         ByteArray second = ByteArray.wrap(data);
 
         // Then
-        assertThat(first.getArray()).isEqualTo(second.getArray());
-    }
-
-    @Test
-    void shouldGetArrayFromObject() {
-        // Given
-        byte[] data = {'a', 'b', 'c', 'd', 'e'};
-
-        // When
-        ByteArray result = ByteArray.wrap(data);
-
-        // Then
-        assertThat(result.getArray()).isEqualTo(data);
+        assertThat(first).isEqualTo(second);
     }
 
     @Test
@@ -85,7 +73,7 @@ public class ByteArrayTest {
     }
 
     @Test
-    void shouldValidateEqualsMethodsWithDeclaredEmptyArrays() {
+    void shouldValidateEqualsMethodsWithDeclaredNullArrays() {
         // Given
         ByteArray first = ByteArray.wrap(null);
         ByteArray second = ByteArray.wrap(null);
@@ -95,7 +83,27 @@ public class ByteArrayTest {
     }
 
     @Test
-    void shouldAllowUsageWithinAHashSet() {
+    void shouldValidateWhenByteArraysArentEqual() {
+        // Given
+        ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
+        ByteArray second = ByteArray.wrap(new byte[]{'a', 'b', 'c'});
+
+        // When / Then
+        assertThat(ByteArray.equals(first, second)).isFalse();
+    }
+
+    @Test
+    void shouldCorrectlySortByteArrays() {
+        // Given
+        ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
+        ByteArray second = ByteArray.wrap(new byte[]{4, 5, 6, 7, 8});
+
+        // When / Then
+        assertThat(first).isLessThan(second);
+    }
+
+    @Test
+    void shouldAllowUsageWithinATreeSet() {
         //Give
         TreeSet<ByteArray> treeSet = new TreeSet<>();
         ByteArray first = ByteArray.wrap(new byte[]{1, 'b', 3});
