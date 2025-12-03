@@ -133,6 +133,10 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
     }
 
+    public InstanceProperties getInstanceProperties() {
+        return instanceProperties;
+    }
+
     @Override
     public SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
         return TableProperty.Index.INSTANCE;

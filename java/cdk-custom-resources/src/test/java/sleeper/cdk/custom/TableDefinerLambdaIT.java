@@ -152,6 +152,9 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     @Test
     public void shouldFailToDeleteTableThatDoesNotExist() {
         // Given
+        instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+
         HashMap<String, Object> resourceProperties = new HashMap<>();
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
 
