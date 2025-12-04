@@ -81,7 +81,8 @@ public class TableDefinerLambda {
                 addTable(tableProperties, tablePropertiesStore, resourceProperties);
                 break;
             case "Update":
-                updateTable(resourceProperties);
+                LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
+                tablePropertiesStore.save(tableProperties);
                 break;
             case "Delete":
                 deleteTable(tableProperties, tablePropertiesStore);
@@ -107,10 +108,6 @@ public class TableDefinerLambda {
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(
                 tableProperties.getInstanceProperties(), s3Client, dynamoClient);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
-    }
-
-    private void updateTable(Map<String, Object> resourceProperties) {
-        //TODO
     }
 
     private void deleteTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore) {

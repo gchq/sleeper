@@ -74,7 +74,7 @@ import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class TableDefinerLambdaIT extends LocalStackTestBase {
 
-    private static final String CREATE = "Create", DELETE = "Delete";
+    private static final String CREATE = "Create", UPDATE = "Update", DELETE = "Delete";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
@@ -150,6 +150,26 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                             .buildList());
         }
 
+    }
+
+    @Nested
+    class TableDefinerLambdaUpdateIT {
+
+        @Test
+        public void shouldUpdateTablePropertiesSuccessfully() throws IOException {
+            //Given
+            callLambda(CREATE, tableProperties);
+            tableProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
+            tableProperties.set(TABLE_ONLINE, String.valueOf(!tableProperties.getBoolean(TABLE_ONLINE)));
+
+            //When
+            callLambda(UPDATE, tableProperties);
+
+            //Then
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
+                    .isEqualTo(tableProperties);
+
+        }
     }
 
     @Nested
