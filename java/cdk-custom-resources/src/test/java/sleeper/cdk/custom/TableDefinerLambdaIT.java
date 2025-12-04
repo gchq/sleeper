@@ -79,7 +79,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final Schema schema = createSchemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     @BeforeEach
     void setUp() throws IOException {
@@ -187,16 +187,16 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetFalse() throws Exception {
+        void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetTrue() throws Exception {
             // Given
             instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "true");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             String tableName = tableProperties.get(TABLE_NAME);
-            TableProperties tableProps = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
-            StateStore stateStore = createStateStore(tableProps);
+            tableProperties = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+            StateStore stateStore = createStateStore(tableProperties);
             update(stateStore).initialise(schema);
-            AllReferencesToAFile file = ingestRows(tableProps, List.of(new Row(Map.of("key1", 25L))));
+            AllReferencesToAFile file = ingestRows(tableProperties, List.of(new Row(Map.of("key1", 25L))));
 
             // When
             HashMap<String, Object> resourceProperties = new HashMap<>();
@@ -208,10 +208,10 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             tableDefinerLambda.handleEvent(event, null);
 
             // Then
-            tableProps.set(TABLE_ONLINE, "false");
-            assertThat(propertiesStore.loadByName(tableName)).isEqualTo(tableProps);
-            assertThat(streamTableFileTransactions(tableProps)).isNotEmpty();
-            assertThat(streamTablePartitionTransactions(tableProps)).isNotEmpty();
+            tableProperties.set(TABLE_ONLINE, "false");
+            assertThat(propertiesStore.loadByName(tableName)).isEqualTo(tableProperties);
+            assertThat(streamTableFileTransactions(tableProperties)).isNotEmpty();
+            assertThat(streamTablePartitionTransactions(tableProperties)).isNotEmpty();
             assertThat(listDataBucketObjectKeys())
                     .extracting(FilenameUtils::getName)
                     .containsExactly(
@@ -225,8 +225,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            String tableName = tableProperties.get(TABLE_NAME);
-            TableProperties table1 = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+            TableProperties table1 = createTable(uniqueIdAndName("test-table-1", "table-1"));
             StateStore stateStore1 = createStateStore(table1);
             update(stateStore1).initialise(schema);
             AllReferencesToAFile file1 = ingestRows(table1, List.of(
@@ -243,7 +242,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
             // When
             HashMap<String, Object> resourceProperties = new HashMap<>();
-            resourceProperties.put("tableProperties", tableProperties.saveAsString());
+            resourceProperties.put("tableProperties", table1.saveAsString());
             CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                     .withRequestType("Delete")
                     .withResourceProperties(resourceProperties)
@@ -251,7 +250,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             tableDefinerLambda.handleEvent(event, null);
 
             // Then
-            assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
+            assertThatThrownBy(() -> propertiesStore.loadByName(table1.get(TABLE_NAME)))
                     .isInstanceOf(TableNotFoundException.class);
             assertThat(streamTableFileTransactions(table1)).isEmpty();
             assertThat(streamTablePartitionTransactions(table1)).isEmpty();
@@ -273,17 +272,17 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             String tableName = tableProperties.get(TABLE_NAME);
-            TableProperties table = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
-            StateStore stateStore = createStateStore(table);
+            tableProperties = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+            StateStore stateStore = createStateStore(tableProperties);
             update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 50L)
                     .buildList());
-            AllReferencesToAFile file = ingestRows(table, List.of(
+            AllReferencesToAFile file = ingestRows(tableProperties, List.of(
                     new Row(Map.of("key1", 25L)),
                     new Row(Map.of("key1", 100L))));
 
-            DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, s3TransferManager, dynamoClient)
+            DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, tableProperties, s3Client, s3TransferManager, dynamoClient)
                     .createSnapshot();
 
             assertThat(listDataBucketObjectKeys())
@@ -310,7 +309,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                     .isInstanceOf(TableNotFoundException.class);
             assertThat(listDataBucketObjectKeys()).isEmpty();
             // And
-            var snapshotMetadataStore = snapshotMetadataStore(table);
+            var snapshotMetadataStore = snapshotMetadataStore(tableProperties);
             assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
             assertThat(snapshotMetadataStore.getFilesSnapshots()).isEmpty();
             assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();

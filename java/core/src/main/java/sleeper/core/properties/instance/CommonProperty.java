@@ -97,8 +97,12 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty RETAIN_DATA_AFTER_TABLE_REMOVAL = Index.propertyBuilder("sleeper.retain.data.after.table.removal")
-            .description("Whether to take a sleeper table offline when removed from the table properties or to " +
-                    "delete all the data associated with the table.")
+            .description("This property is used when an instance configuration is used and a table is removed from that configuartion.\n" +
+                    "If this is true, removing the table from the properties file will just take the table offline.\n" +
+                    "If this is false, it will delete all data associated with the table when the table is removed from the configuration.\n" +
+                    "Be aware that even if a table is renamed in the configuration, the CDK will see it as a delete of the old" +
+                    "table name and a create of the new table name.\n" +
+                    "If this is set to false when that happens it will remove the table's data.")
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
