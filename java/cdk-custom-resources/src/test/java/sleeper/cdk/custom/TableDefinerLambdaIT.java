@@ -79,7 +79,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private final Schema schema = createSchemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-    private TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     @BeforeEach
     void setUp() throws IOException {
@@ -96,9 +96,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
     private void callLambda(String type, TableProperties tableProperties, String splitPoints) throws IOException {
         HashMap<String, Object> resourceProperties = new HashMap<>();
         resourceProperties.put("tableProperties", tableProperties.saveAsString());
-        if (CREATE.equals(type)) {
-            resourceProperties.put("splitPoints", splitPoints);
-        }
+        resourceProperties.put("splitPoints", splitPoints);
 
         CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
                 .withRequestType(type)
@@ -149,7 +147,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                             .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
                             .buildList());
         }
-
     }
 
     @Nested
@@ -174,7 +171,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             // When / Then
             assertThatThrownBy(() -> callLambda(DELETE, tableProperties))
                     .isInstanceOf(TableNotFoundException.class);
-
         }
 
         @Test
@@ -183,10 +179,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "true");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            String tableName = tableProperties.get(TABLE_NAME);
-            tableProperties = createTableProperties(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
             callLambda(CREATE, tableProperties);
-
             AllReferencesToAFile file = ingestRows(tableProperties, List.of(new Row(Map.of("key1", 25L))));
 
             // When
@@ -194,7 +187,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
             // Then
             tableProperties.set(TABLE_ONLINE, "false");
-            assertThat(propertiesStore.loadByName(tableName)).isEqualTo(tableProperties);
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME))).isEqualTo(tableProperties);
             assertThat(streamTableFileTransactions(tableProperties)).isNotEmpty();
             assertThat(streamTablePartitionTransactions(tableProperties)).isNotEmpty();
             assertThat(listDataBucketObjectKeys())
@@ -250,8 +243,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            String tableName = tableProperties.get(TABLE_NAME);
-            tableProperties = createTableProperties(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
             callLambda(CREATE, tableProperties, "50");
 
             AllReferencesToAFile file = ingestRows(tableProperties, List.of(
@@ -275,7 +266,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             callLambda(DELETE, tableProperties);
 
             // Then
-            assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
+            assertThatThrownBy(() -> propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
                     .isInstanceOf(TableNotFoundException.class);
             assertThat(listDataBucketObjectKeys()).isEmpty();
             // And

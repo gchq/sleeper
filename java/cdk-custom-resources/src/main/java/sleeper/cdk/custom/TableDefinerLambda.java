@@ -120,6 +120,7 @@ public class TableDefinerLambda {
             tableProperties.set(TABLE_ONLINE, "false");
             tablePropertiesStore.save(tableProperties);
         } else {
+            //Need to look up full properties to get the ID for delecting objects in bucket with prefix
             tableProperties = tablePropertiesStore.loadByName(tableName);
             InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
             LOGGER.info("Deleting table {} and associated data.", tableName);
