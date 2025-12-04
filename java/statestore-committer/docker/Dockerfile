@@ -13,7 +13,7 @@
 # limitations under the License.
 FROM amazoncorretto:17-al2023-headless
 
-COPY state-store-committer.jar /state-store-committer.jar
+COPY statestore-committer.jar /statestore-committer.jar
 COPY run.sh /run.sh
 RUN ["chmod", "+x", "/run.sh"]
 

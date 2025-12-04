@@ -113,7 +113,7 @@ public class DockerImageConfiguration {
 
     private Stream<StackDockerImage> dockerDeploymentImages(Collection<OptionalStack> stacks) {
         return dockerDeployments.stream()
-                .filter(deployment -> stacks.contains(deployment.getOptionalStack()))
+                .filter(deployment -> deployment.getOptionalStack() == null || stacks.contains(deployment.getOptionalStack()))
                 .map(StackDockerImage::fromDockerDeployment);
     }
 

@@ -17,6 +17,6 @@ java \
     -Xlog:gc::time \
     -XX:InitialRAMPercentage=90.0 \
     -XX:MaxRAMPercentage=90.0 \
-    -cp /state-store-committer.jar \
+    -cp /statestore-committer.jar \
     sleeper.statestore.committer.MultiThreadedStateStoreCommitter \
     $*
