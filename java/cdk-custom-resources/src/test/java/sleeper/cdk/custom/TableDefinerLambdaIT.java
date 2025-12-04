@@ -168,7 +168,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             //Then
             assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
                     .isEqualTo(tableProperties);
-
         }
     }
 
