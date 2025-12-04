@@ -74,7 +74,7 @@ import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class TableDefinerLambdaIT extends LocalStackTestBase {
 
-    private final String CREATE = "Create", DELETE = "Delete";
+    private static final String CREATE = "Create", DELETE = "Delete";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
