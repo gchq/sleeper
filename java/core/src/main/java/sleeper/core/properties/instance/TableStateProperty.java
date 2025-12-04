@@ -270,4 +270,16 @@ public interface TableStateProperty {
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_AMOUNT = Index.propertyBuilder("sleeper.statestore.committer.ec2.min.heap.target.amount")
+            .description("The minimum amount of heap space that the committer will try to keep available. This affects how many state stores can be cached in memory.")
+            .defaultValue("100M")
+            .validationPredicate(SleeperPropertyValueUtils::isValidNumberOfBytes)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_PERCENTAGE = Index.propertyBuilder("sleeper.statestore.committer.ec2.min.heap.target.percentage")
+            .description("The percentage of the total heap space that the committer should try to keep available, as a minimum. This affects how many state stores can be cached in memory.")
+            .defaultValue("1")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveLong)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
 }

@@ -66,6 +66,28 @@ public class StateStoreProvider {
     }
 
     /**
+     * Remove a specific table's state store from the cache.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return true if the state store for the requested Sleeper table was in the cache and has been removed
+     */
+    public boolean removeStateStoreFromCache(TableProperties tableProperties) {
+        String tableId = tableProperties.get(TABLE_ID);
+        return this.removeStateStoreFromCache(tableId);
+    }
+
+    /**
+     * Remove a specific table's state store from the cache.
+     *
+     * @param  tableId Sleeper table ID
+     * @return true if the state store for the requested Sleeper table was in the cache and has been removed
+     */
+    public boolean removeStateStoreFromCache(String tableId) {
+        return this.tableIdToStateStoreCache.remove(tableId) != null &&
+            this.tableIds.remove(tableId);
+    }
+
+    /**
      * Creates an instance of the state store client for a Sleeper table. Implemented by {@link StateStoreFactory}.
      */
     public interface Factory {

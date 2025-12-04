@@ -26,4 +26,8 @@
             <Bug pattern="CT_CONSTRUCTOR_THROW"/>
         </Or>
     </Match>
+    <Match>
+        <Class name="sleeper.statestore.committer.MultiThreadedStateStoreCommitter" />
+        <Bug pattern="DM_GC" />
+    </Match>
 </FindBugsFilter>
