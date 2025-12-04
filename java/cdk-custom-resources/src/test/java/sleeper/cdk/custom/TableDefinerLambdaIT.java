@@ -70,11 +70,11 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class TableDefinerLambdaIT extends LocalStackTestBase {
 
+    private final String CREATE = "Create", DELETE = "Delete";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
@@ -89,6 +89,25 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
     }
 
+    private void callLambda(String type, TableProperties tableProperties) throws IOException {
+        callLambda(type, tableProperties, "");
+    }
+
+    private void callLambda(String type, TableProperties tableProperties, String splitPoints) throws IOException {
+        HashMap<String, Object> resourceProperties = new HashMap<>();
+        resourceProperties.put("tableProperties", tableProperties.saveAsString());
+        if (CREATE.equals(type)) {
+            resourceProperties.put("splitPoints", splitPoints);
+        }
+
+        CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
+                .withRequestType(type)
+                .withResourceProperties(resourceProperties)
+                .build();
+
+        tableDefinerLambda.handleEvent(event, null);
+    }
+
     @Nested
     class TableDefinerLambdaCreateIT {
 
@@ -98,18 +117,8 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
         @Test
         public void shouldCreateTableWithNoSplitPoints() throws IOException {
-            // Given
-            HashMap<String, Object> resourceProperties = new HashMap<>();
-            resourceProperties.put("tableProperties", tableProperties.saveAsString());
-            resourceProperties.put("splitPoints", "");
-
-            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Create")
-                    .withResourceProperties(resourceProperties)
-                    .build();
-
-            // When
-            tableDefinerLambda.handleEvent(event, null);
+            // Given/ When
+            callLambda(CREATE, tableProperties, "");
 
             // Then
             TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
@@ -124,18 +133,8 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
         @Test
         public void shouldCreateTableWithMultipleSplitPoints() throws IOException {
-            // Given
-            HashMap<String, Object> resourceProperties = new HashMap<>();
-            resourceProperties.put("tableProperties", tableProperties.saveAsString());
-            resourceProperties.put("splitPoints", "0\n5\n10\n");
-
-            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Create")
-                    .withResourceProperties(resourceProperties)
-                    .build();
-
-            // When
-            tableDefinerLambda.handleEvent(event, null);
+            // Given/When
+            callLambda(CREATE, tableProperties, "0\n5\n10\n");
 
             // Then
             TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
@@ -172,16 +171,8 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            HashMap<String, Object> resourceProperties = new HashMap<>();
-            resourceProperties.put("tableProperties", tableProperties.saveAsString());
-
-            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Delete")
-                    .withResourceProperties(resourceProperties)
-                    .build();
-
             // When / Then
-            assertThatThrownBy(() -> tableDefinerLambda.handleEvent(event, null))
+            assertThatThrownBy(() -> callLambda(DELETE, tableProperties))
                     .isInstanceOf(TableNotFoundException.class);
 
         }
@@ -193,19 +184,13 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             String tableName = tableProperties.get(TABLE_NAME);
-            tableProperties = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
-            StateStore stateStore = createStateStore(tableProperties);
-            update(stateStore).initialise(schema);
+            tableProperties = createTableProperties(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+            callLambda(CREATE, tableProperties);
+
             AllReferencesToAFile file = ingestRows(tableProperties, List.of(new Row(Map.of("key1", 25L))));
 
             // When
-            HashMap<String, Object> resourceProperties = new HashMap<>();
-            resourceProperties.put("tableProperties", tableProperties.saveAsString());
-            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Delete")
-                    .withResourceProperties(resourceProperties)
-                    .build();
-            tableDefinerLambda.handleEvent(event, null);
+            callLambda(DELETE, tableProperties);
 
             // Then
             tableProperties.set(TABLE_ONLINE, "false");
@@ -225,9 +210,9 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
-            TableProperties table1 = createTable(uniqueIdAndName("test-table-1", "table-1"));
-            StateStore stateStore1 = createStateStore(table1);
-            update(stateStore1).initialise(schema);
+            TableProperties table1 = createTableProperties(uniqueIdAndName("test-table-1", "table-1"));
+            callLambda(CREATE, table1);
+
             AllReferencesToAFile file1 = ingestRows(table1, List.of(
                     new Row(Map.of("key1", 25L))));
             assertThat(listDataBucketObjectKeys())
@@ -235,19 +220,13 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                     .containsExactly(
                             FilenameUtils.getName(file1.getFilename()),
                             FilenameUtils.getName(file1.getFilename()).replace("parquet", "sketches"));
-            TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
-            StateStore stateStore2 = createStateStore(table2);
-            update(stateStore2).initialise(schema);
+
+            TableProperties table2 = createTableProperties(uniqueIdAndName("test-table-2", "table-2"));
+            callLambda(CREATE, table2);
             AllReferencesToAFile file2 = ingestRows(table2, List.of(new Row(Map.of("key1", 25L))));
 
             // When
-            HashMap<String, Object> resourceProperties = new HashMap<>();
-            resourceProperties.put("tableProperties", table1.saveAsString());
-            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Delete")
-                    .withResourceProperties(resourceProperties)
-                    .build();
-            tableDefinerLambda.handleEvent(event, null);
+            callLambda(DELETE, table1);
 
             // Then
             assertThatThrownBy(() -> propertiesStore.loadByName(table1.get(TABLE_NAME)))
@@ -272,12 +251,9 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             String tableName = tableProperties.get(TABLE_NAME);
-            tableProperties = createTable(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
-            StateStore stateStore = createStateStore(tableProperties);
-            update(stateStore).initialise(new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 50L)
-                    .buildList());
+            tableProperties = createTableProperties(uniqueIdAndName(tableProperties.get(TABLE_ID), tableName));
+            callLambda(CREATE, tableProperties, "50");
+
             AllReferencesToAFile file = ingestRows(tableProperties, List.of(
                     new Row(Map.of("key1", 25L)),
                     new Row(Map.of("key1", 100L))));
@@ -296,13 +272,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                             "1-partitions.arrow");
 
             // When
-            HashMap<String, Object> resourceProperties = new HashMap<>();
-            resourceProperties.put("tableProperties", tableProperties.saveAsString());
-            CloudFormationCustomResourceEvent event = CloudFormationCustomResourceEvent.builder()
-                    .withRequestType("Delete")
-                    .withResourceProperties(resourceProperties)
-                    .build();
-            tableDefinerLambda.handleEvent(event, null);
+            callLambda(DELETE, tableProperties);
 
             // Then
             assertThatThrownBy(() -> propertiesStore.loadByName(tableName))
@@ -315,16 +285,11 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();
         }
 
-        private TableProperties createTable(TableStatus tableStatus) {
+        private TableProperties createTableProperties(TableStatus tableStatus) {
             TableProperties table = createTestTableProperties(instanceProperties, schema);
             table.set(TABLE_ID, tableStatus.getTableUniqueId());
             table.set(TABLE_NAME, tableStatus.getTableName());
-            propertiesStore.save(table);
             return table;
-        }
-
-        private StateStore createStateStore(TableProperties tableProperties) {
-            return new StateStoreFactory(instanceProperties, s3Client, dynamoClient).getStateStore(tableProperties);
         }
 
         private AllReferencesToAFile ingestRows(TableProperties tableProperties, List<Row> rows) throws Exception {
