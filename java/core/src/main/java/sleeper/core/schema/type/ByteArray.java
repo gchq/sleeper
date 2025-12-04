@@ -11,9 +11,9 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * ------------------
+ * limitations under the License
+ */
+/*
  * Copyright (C) 2012 Facebook, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.schema.type;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -41,11 +41,11 @@ import java.util.Comparator;
  */
 public class ByteArray implements Comparable<ByteArray> {
 
-    final ByteArrayComparator byteArrayComparator = new ByteArrayComparator();
+    private static final ByteArrayComparator byteArrayComparator = new ByteArrayComparator();
 
     private final byte[] array;
 
-    ByteArray(byte[] array) {
+    private ByteArray(byte[] array) {
         this.array = array;
     }
 
@@ -61,7 +61,7 @@ public class ByteArray implements Comparable<ByteArray> {
     /**
      * Returns the length of the wrapped array.
      *
-     * @return the length of array
+     * @return the length of the array
      */
     public int getLength() {
         return array.length;
@@ -70,7 +70,7 @@ public class ByteArray implements Comparable<ByteArray> {
     /**
      * Wraps a primitive byte array.
      *
-     * @param  array primitive byte array
+     * @param  array the primitive byte array
      * @return       the wrapped object
      */
     public static ByteArray wrap(byte[] array) {

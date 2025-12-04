@@ -17,7 +17,7 @@ package sleeper.core.properties.local;
 
 import org.apache.commons.codec.binary.Base64;
 
-import sleeper.core.util.ByteArray;
+import sleeper.core.schema.type.ByteArray;
 
 import java.io.IOException;
 import java.io.StringWriter;

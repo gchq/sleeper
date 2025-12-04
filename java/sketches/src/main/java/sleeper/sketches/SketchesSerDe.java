@@ -25,12 +25,12 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.core.util.ByteArray;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

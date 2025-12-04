@@ -15,7 +15,7 @@
  */
 package sleeper.core.key;
 
-import sleeper.core.util.ByteArray;
+import sleeper.core.schema.type.ByteArray;
 
 import java.util.ArrayList;
 import java.util.Collections;

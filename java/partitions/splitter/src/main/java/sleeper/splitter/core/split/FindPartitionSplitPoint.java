@@ -22,8 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.util.ByteArray;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
 

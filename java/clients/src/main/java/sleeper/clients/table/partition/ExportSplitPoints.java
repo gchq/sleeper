@@ -26,13 +26,13 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.util.ByteArray;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.BufferedWriter;

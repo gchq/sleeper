@@ -18,7 +18,7 @@ package sleeper.sketches.testutils;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
 import sleeper.core.schema.Field;
-import sleeper.core.util.ByteArray;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;

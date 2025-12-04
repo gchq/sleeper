@@ -15,8 +15,6 @@
  */
 package sleeper.core.schema.type;
 
-import sleeper.core.util.ByteArray;
-
 /**
  * A primitive type that represents a byte array.
  */

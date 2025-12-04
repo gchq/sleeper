@@ -17,10 +17,10 @@ package sleeper.core.range;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
-import sleeper.core.util.ByteArray;
 
 import java.util.HashMap;
 import java.util.HashSet;

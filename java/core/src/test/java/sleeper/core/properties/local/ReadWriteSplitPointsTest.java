@@ -19,11 +19,11 @@ package sleeper.core.properties.local;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.util.ByteArray;
 
 import java.util.List;
 

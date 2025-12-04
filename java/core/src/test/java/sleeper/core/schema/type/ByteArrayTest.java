@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.util;
+package sleeper.core.schema.type;
 
 import org.junit.jupiter.api.Test;
 
@@ -133,6 +133,5 @@ public class ByteArrayTest {
 
         // Then 2
         assertThat(treeSet).containsExactly(first);
-        assertThat(treeSet).doesNotContain(second);
     }
 }
