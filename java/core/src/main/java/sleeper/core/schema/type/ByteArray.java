@@ -50,6 +50,16 @@ public class ByteArray implements Comparable<ByteArray> {
     }
 
     /**
+     * Wraps a primitive byte array.
+     *
+     * @param  array the primitive byte array
+     * @return       the wrapped object
+     */
+    public static ByteArray wrap(byte[] array) {
+        return new ByteArray(array);
+    }
+
+    /**
      * Returns the contents of this object as a primitive byte array.
      *
      * @return the byte array
@@ -65,16 +75,6 @@ public class ByteArray implements Comparable<ByteArray> {
      */
     public int getLength() {
         return array.length;
-    }
-
-    /**
-     * Wraps a primitive byte array.
-     *
-     * @param  array the primitive byte array
-     * @return       the wrapped object
-     */
-    public static ByteArray wrap(byte[] array) {
-        return new ByteArray(array);
     }
 
     @Override
