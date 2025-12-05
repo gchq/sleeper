@@ -283,6 +283,7 @@ public interface TableStateProperty {
     UserDefinedInstanceProperty STATESTORE_COMMITTER_EC2_INSTANCE_TYPE = Index.propertyBuilder("sleeper.statestore.committer.ec2.type")
             .description("The EC2 instance type that the multi-threaded state store committer should be deployed onto.")
             .defaultValue("m8g.xlarge")
+            .runCdkDeployWhenChanged(true)
             .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
