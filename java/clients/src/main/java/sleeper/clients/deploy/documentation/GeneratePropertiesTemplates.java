@@ -192,18 +192,18 @@ public class GeneratePropertiesTemplates {
         writer.println("#                           SLEEPER INSTANCE PROPERTIES                         #");
         writer.println("#################################################################################");
         writer.println();
-        writer.println("###################");
-        writer.println("# Template Values #");
-        writer.println("###################");
+        writer.println("############################");
+        writer.println("# Properties set by script #");
+        writer.println("############################");
         SleeperPropertiesPrettyPrinter.builderForPropertiesTemplate(
                 templateProperties, InstancePropertyGroup.getAll(), writer)
                 .printGroupDetails(false)
                 .build().print(properties);
         writer.println();
         writer.println();
-        writer.println("##################");
-        writer.println("# Default Values #");
-        writer.println("##################");
+        writer.println("####################");
+        writer.println("# Other properties #");
+        writer.println("####################");
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
                 defaultProperties, InstancePropertyGroup.getAll(), writer)
                 .print(properties);
@@ -227,9 +227,6 @@ public class GeneratePropertiesTemplates {
         writer.println("#                           SLEEPER TABLE PROPERTIES                            #");
         writer.println("#################################################################################");
         writer.println();
-        writer.println("###################");
-        writer.println("# Template Values #");
-        writer.println("###################");
         SleeperPropertiesPrettyPrinter.forPropertiesTemplate(
                 templateProperties, TablePropertyGroup.getAll(), writer)
                 .print(properties);

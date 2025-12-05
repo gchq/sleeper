@@ -2,9 +2,9 @@
 #                           SLEEPER INSTANCE PROPERTIES                         #
 #################################################################################
 
-###################
-# Template Values #
-###################
+############################
+# Properties set by script #
+############################
 
 ## The following instance properties are commonly used throughout Sleeper.
 
@@ -25,9 +25,9 @@ sleeper.vpc=set-automatically
 sleeper.subnets=set-automatically
 
 
-##################
-# Default Values #
-##################
+####################
+# Other properties #
+####################
 
 ## The following instance properties are commonly used throughout Sleeper.
 

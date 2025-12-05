@@ -197,9 +197,9 @@ class GeneratePropertiesTemplatesTest {
         @Test
         void shouldGenerateHeadersForTemplatedPropertiesAndDefaultedProperties() {
             assertThat(propertiesString).containsSubsequence(
-                    "# Template Values #",
+                    "# Properties set by script #",
                     "set-automatically",
-                    "# Default Values #");
+                    "# Other properties #");
         }
 
         @Test
