@@ -46,7 +46,7 @@ import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
+import static sleeper.core.properties.table.TableProperty.FILTERING_CONFIG;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -174,8 +174,8 @@ class GeneratePropertiesTemplatesTest {
         @Test
         void shouldIncludeSpecificallySetProperty() {
             assertThat(tablePropertiesFromString(propertiesString)
-                    .get(ITERATOR_CLASS_NAME))
-                    .isEqualTo("sleeper.core.iterator.impl.AgeOffIterator");
+                    .get(FILTERING_CONFIG))
+                    .isEqualTo("ageOff(timestamp,3600000)");
         }
     }
 
