@@ -89,11 +89,14 @@ Choose the same options as above, and results should be returned.
 12. Create a pull request for release preparation, with the performance figures and version number update. Set the
     version number using `scripts/dev/updateVersionNumber.sh <version>`.
 
-13. Once the above tests are complete and everything passes, merge the pull requests for the changelog, roadmap update
+13. If anything fails on any of the pull requests, fix the failures as a separate PR, then **re-run the manual testing
+    steps in AWS before continuing with the release**.
+
+14. Once the above tests are complete and everything passes, merge the pull requests for the changelog, roadmap update
     and release preparation.
 
-14. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
+15. Raise a pull request from the develop branch to the main branch. Once the build passes, merge the pull request into
     main. Then checkout the main branch, set the tag to `v${VERSION}` and push the tag using `git push --tags`.
 
-15. Create a pull request to update the version number for the next release as a snapshot version. Set the version
+16. Create a pull request to update the version number for the next release as a snapshot version. Set the version
     number using `scripts/dev/updateVersionNumber.sh <version>`. Merge it when everything passes.
