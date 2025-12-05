@@ -60,18 +60,13 @@ public class ByteArrayTest {
     }
 
     @Test
-    void shouldReturnCorrectComparisionWithNullArguments() {
-        // When / Then
-        assertThat(ByteArray.equals(null, null)).isTrue();
-    }
-
-    @Test
     void shouldProvideCorrectComparisionWhenOneComparatorIsNull() {
         // Given
         ByteArray valid = ByteArray.wrap(new byte[]{'a', 2, 3});
 
         // When / Then
-        assertThat(ByteArray.equals(valid, null)).isFalse();
+        //assertThat(ByteArray.equals(valid, null)).isFalse();
+        assertThat(valid.equals(null)).isFalse();
     }
 
     @Test
@@ -91,7 +86,7 @@ public class ByteArrayTest {
         ByteArray second = ByteArray.wrap(null);
 
         // When / Then
-        assertThat(ByteArray.equals(first, second)).isTrue();
+        assertThat(first.equals(second)).isTrue();
     }
 
     @Test
@@ -101,7 +96,7 @@ public class ByteArrayTest {
         ByteArray second = ByteArray.wrap(new byte[]{'a', 'b', 'c'});
 
         // When / Then
-        assertThat(ByteArray.equals(first, second)).isFalse();
+        assertThat(first.equals(second)).isFalse();
     }
 
     @Test

@@ -77,26 +77,6 @@ public class ByteArray implements Comparable<ByteArray> {
         return new ByteArray(array);
     }
 
-    /**
-     * Checks equality of two byte arrays.
-     *
-     * @param  array1 the first ByteArray object
-     * @param  array2 the second ByteArray object
-     * @return        true if equal
-     */
-    public static boolean equals(ByteArray array1, ByteArray array2) {
-        //If both null, then they are equal
-        if (array1 == null && array2 == null) {
-            return true;
-        }
-        //If one is null, then equality is false
-        if (array1 == null || array2 == null) {
-            return false;
-        }
-        // If set, proceed to check via arrays methodology
-        return Arrays.equals(array1.getArray(), array2.getArray());
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -108,7 +88,7 @@ public class ByteArray implements Comparable<ByteArray> {
 
         final ByteArray that = (ByteArray) o;
 
-        return ByteArray.equals(this, that);
+        return Arrays.equals(this.getArray(), that.getArray());
     }
 
     @Override
