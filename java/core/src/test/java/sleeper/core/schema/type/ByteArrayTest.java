@@ -15,6 +15,8 @@
  */
 package sleeper.core.schema.type;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.TreeSet;
@@ -23,110 +25,107 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ByteArrayTest {
 
-    @Test
-    void shouldProvideByteArrayAsPrimitiveType() {
-        // Given
-        byte[] data = {1, 2, 3};
+    @Nested
+    @DisplayName("Equality of object")
+    class EqualityTest {
+        @Test
+        void shouldProvideByteArrayAsPrimitiveType() {
+            // Given
+            byte[] data = {1, 2, 3};
 
-        // When
-        ByteArray result = ByteArray.wrap(data);
+            // When
+            ByteArray result = ByteArray.wrap(data);
 
-        // Then
-        assertThat(result.getArray()).isEqualTo(data);
-        assertThat(result.getLength()).isEqualTo(data.length);
+            // Then
+            assertThat(result.getArray()).isEqualTo(data);
+            assertThat(result.getLength()).isEqualTo(data.length);
+        }
+
+        @Test
+        void shouldMatchByteArraysWhenWrappedUsingSameData() {
+            // Given
+            ByteArray first = ByteArray.wrap(new byte[]{7, 8, 9});
+            ByteArray second = ByteArray.wrap(new byte[]{7, 8, 9});
+
+            // When / Then
+            assertThat(first).isEqualTo(second);
+        }
+
+        @Test
+        void shouldFindByteArraysAreEqualWithSameSourceArray() {
+            // Given
+            byte[] data = {1, 'b', 'c', 4, 5};
+
+            // When
+            ByteArray first = ByteArray.wrap(data);
+            ByteArray second = ByteArray.wrap(data);
+
+            // Then
+            assertThat(first).isEqualTo(second);
+        }
+
+        @Test
+        void shouldProvideCorrectComparisionWhenOneComparatorIsNull() {
+            // Given
+            ByteArray valid = ByteArray.wrap(new byte[]{'a', 2, 3});
+
+            // When / Then
+            assertThat(valid.equals(null)).isFalse();
+        }
+
+        @Test
+        void shouldValidateEqualsMethodsWithDeclaredNullArrays() {
+            // Given
+            ByteArray first = ByteArray.wrap(null);
+            ByteArray second = ByteArray.wrap(null);
+
+            // When / Then
+            assertThat(first.equals(second)).isTrue();
+        }
+
+        @Test
+        void shouldValidateWhenByteArraysArentEqual() {
+            // Given
+            ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
+            ByteArray second = ByteArray.wrap(new byte[]{'a', 'b', 'c'});
+
+            // When / Then
+            assertThat(first.equals(second)).isFalse();
+        }
     }
 
-    @Test
-    void shouldMatchByteArraysWhenWrappedUsingSameData() {
-        // Given
-        ByteArray first = ByteArray.wrap(new byte[]{7, 8, 9});
-        ByteArray second = ByteArray.wrap(new byte[]{7, 8, 9});
+    @Nested
+    @DisplayName("Sorting contents")
+    class NestedTest {
+        @Test
+        void shouldCorrectlySortByteArrays() {
+            // Given
+            ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
+            ByteArray second = ByteArray.wrap(new byte[]{4, 5, 6, 7, 8});
 
-        // When / Then
-        assertThat(first).isEqualTo(second);
-    }
+            // When / Then
+            assertThat(first).isLessThan(second);
+        }
 
-    @Test
-    void shouldFindByteArraysAreEqualWithSameSourceArray() {
-        // Given
-        byte[] data = {1, 'b', 'c', 4, 5};
+        @Test
+        void shouldAllowUsageWithinATreeSet() {
+            //Give
+            TreeSet<ByteArray> treeSet = new TreeSet<>();
+            ByteArray first = ByteArray.wrap(new byte[]{1, 'b', 3});
+            ByteArray second = ByteArray.wrap(new byte[]{'a', 2, 'c', 4});
 
-        // When
-        ByteArray first = ByteArray.wrap(data);
-        ByteArray second = ByteArray.wrap(data);
+            // When 1
+            treeSet.add(first);
+            treeSet.add(second);
 
-        // Then
-        assertThat(first).isEqualTo(second);
-    }
+            // Then 1
+            assertThat(treeSet).containsExactlyInAnyOrder(first, second);
 
-    @Test
-    void shouldProvideCorrectComparisionWhenOneComparatorIsNull() {
-        // Given
-        ByteArray valid = ByteArray.wrap(new byte[]{'a', 2, 3});
+            // When 2
+            treeSet.remove(second);
 
-        // When / Then
-        //assertThat(ByteArray.equals(valid, null)).isFalse();
-        assertThat(valid.equals(null)).isFalse();
-    }
-
-    @Test
-    void shouldMatchByteArrayWhenComparingVersusObject() {
-        // Given
-        ByteArray valid = ByteArray.wrap(new byte[]{3, 'd', 5});
-
-        // When / Then
-        assertThat(valid.equals(ByteArray.wrap(new byte[]{3, 'd', 5}))).isTrue();
-
-    }
-
-    @Test
-    void shouldValidateEqualsMethodsWithDeclaredNullArrays() {
-        // Given
-        ByteArray first = ByteArray.wrap(null);
-        ByteArray second = ByteArray.wrap(null);
-
-        // When / Then
-        assertThat(first.equals(second)).isTrue();
-    }
-
-    @Test
-    void shouldValidateWhenByteArraysArentEqual() {
-        // Given
-        ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
-        ByteArray second = ByteArray.wrap(new byte[]{'a', 'b', 'c'});
-
-        // When / Then
-        assertThat(first.equals(second)).isFalse();
-    }
-
-    @Test
-    void shouldCorrectlySortByteArrays() {
-        // Given
-        ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
-        ByteArray second = ByteArray.wrap(new byte[]{4, 5, 6, 7, 8});
-
-        // When / Then
-        assertThat(first).isLessThan(second);
-    }
-
-    @Test
-    void shouldAllowUsageWithinATreeSet() {
-        //Give
-        TreeSet<ByteArray> treeSet = new TreeSet<>();
-        ByteArray first = ByteArray.wrap(new byte[]{1, 'b', 3});
-        ByteArray second = ByteArray.wrap(new byte[]{'a', 2, 'c', 4});
-
-        // When 1
-        treeSet.add(first);
-        treeSet.add(second);
-
-        // Then 1
-        assertThat(treeSet).containsExactlyInAnyOrder(first, second);
-
-        // When 2
-        treeSet.remove(second);
-
-        // Then 2
-        assertThat(treeSet).containsExactly(first);
+            // Then 2
+            assertThat(treeSet).containsExactly(first);
+        }
     }
 }
