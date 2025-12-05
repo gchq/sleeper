@@ -90,10 +90,10 @@ public class SleeperJarsInBucket {
         String getVersionId(LambdaJar jar);
 
         static GetVersionId fromJarsBucket(S3Client s3Client, InstanceProperties instanceProperties) {
-            String version = instanceProperties.get(VERSION);
-            String bucketName = instanceProperties.get(JARS_BUCKET);
             return jar -> {
-                String filename = jar.getFilename(version);
+                String filename = jar.getFilename(instanceProperties.get(VERSION));
+                String bucketName = instanceProperties.get(JARS_BUCKET);
+                LOGGER.info("Checking version ID for jar: {}", filename);
                 String versionId = s3Client.headObject(builder -> builder.bucket(bucketName).key(filename)).versionId();
                 LOGGER.info("Found latest version ID for jar {}: {}", filename, versionId);
                 return versionId;

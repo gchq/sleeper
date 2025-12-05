@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.jars;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
@@ -25,6 +26,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
@@ -34,20 +36,46 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
 
-    @Test
-    void shouldGetLatestVersionOfAJar() {
+    @BeforeEach
+    void setUp() {
         createBucket(bucketName);
         s3Client.putBucketVersioning(put -> put.bucket(bucketName)
                 .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
-        String versionId = putObject(bucketName, "test.jar", "data").versionId();
+    }
 
-        assertThat(jars.getLatestVersionId(
-                LambdaJar.builder()
-                        .filenameFormat("test.jar")
-                        .imageName("test-lambda")
-                        .artifactId("test-lambda").build()))
-                .isEqualTo(versionId);
-        assertThat(versionId).isNotNull();
+    @Test
+    void shouldGetLatestVersionOfAJar() {
+        // Given
+        String versionId = putObject(bucketName, "test.jar", "data").versionId();
+        LambdaJar jar = LambdaJar.builder()
+                .filenameFormat("test.jar")
+                .imageName("test-lambda")
+                .artifactId("test-lambda")
+                .build();
+
+        // When
+        String foundVersionId = jars.getLatestVersionId(jar);
+
+        assertThat(foundVersionId).isEqualTo(versionId);
+        assertThat(foundVersionId).isNotNull();
+    }
+
+    @Test
+    void shouldIncludeVersionNumberInFilenameWhenSetAfterJarsConstruction() {
+        // Given
+        String versionId = putObject(bucketName, "test-0.1.2.jar", "data").versionId();
+        LambdaJar jar = LambdaJar.builder()
+                .filenameFormat("test-%s.jar")
+                .imageName("test-lambda")
+                .artifactId("test-lambda")
+                .build();
+        instanceProperties.set(VERSION, "0.1.2");
+
+        // When
+        String foundVersionId = jars.getLatestVersionId(jar);
+
+        assertThat(foundVersionId).isEqualTo(versionId);
+        assertThat(foundVersionId).isNotNull();
     }
 
     private InstanceProperties createInstanceProperties() {
