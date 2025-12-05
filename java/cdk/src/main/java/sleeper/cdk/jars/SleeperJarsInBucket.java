@@ -24,7 +24,6 @@ import software.constructs.Construct;
 
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +31,6 @@ import java.util.Map;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
 
 /**
  * Finds jars to deploy lambda functions. This will finds the latest version of each jar in a versioned S3 bucket. The
@@ -44,18 +42,12 @@ public class SleeperJarsInBucket {
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperJarsInBucket.class);
 
     private final GetVersionId getVersionId;
-    private final String version;
-    private final String bucketName;
-    private final LambdaDeployType deployType;
-    private final String ecrRepositoryPrefix;
+    private final InstanceProperties instanceProperties;
     private final Map<LambdaJar, String> latestVersionIdByJar = new HashMap<>();
 
     private SleeperJarsInBucket(GetVersionId getVersionId, InstanceProperties instanceProperties) {
         this.getVersionId = getVersionId;
-        this.version = instanceProperties.get(VERSION);
-        this.bucketName = instanceProperties.get(JARS_BUCKET);
-        this.deployType = instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
-        this.ecrRepositoryPrefix = instanceProperties.get(ECR_REPOSITORY_PREFIX);
+        this.instanceProperties = instanceProperties;
     }
 
     public static SleeperJarsInBucket from(S3Client s3, InstanceProperties instanceProperties) {
@@ -67,11 +59,11 @@ public class SleeperJarsInBucket {
     }
 
     public IBucket createJarsBucketReference(Construct scope, String id) {
-        return Bucket.fromBucketName(scope, id, bucketName);
+        return Bucket.fromBucketName(scope, id, instanceProperties.get(JARS_BUCKET));
     }
 
     public SleeperLambdaCode lambdaCode(IBucket bucketConstruct) {
-        return new SleeperLambdaCode(this, version, deployType, bucketConstruct);
+        return new SleeperLambdaCode(this, instanceProperties, bucketConstruct);
     }
 
     public String getLatestVersionId(LambdaJar jar) {
@@ -79,7 +71,7 @@ public class SleeperJarsInBucket {
     }
 
     public String getRepositoryName(LambdaJar jar) {
-        return ecrRepositoryPrefix + "/" + jar.getImageName();
+        return instanceProperties.get(ECR_REPOSITORY_PREFIX) + "/" + jar.getImageName();
     }
 
     /**

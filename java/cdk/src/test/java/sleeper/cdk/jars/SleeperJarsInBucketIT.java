@@ -15,14 +15,20 @@
  */
 package sleeper.cdk.jars;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.assertions.Template;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
 
+import java.util.Map.Entry;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +40,6 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final SleeperJarsInBucket jars = SleeperJarsInBucket.from(s3Client, instanceProperties);
 
     @BeforeEach
     void setUp() {
@@ -54,15 +59,16 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
                 .build();
 
         // When
-        String foundVersionId = jars.getLatestVersionId(jar);
+        String foundVersionId = jars().getLatestVersionId(jar);
 
         assertThat(foundVersionId).isEqualTo(versionId);
         assertThat(foundVersionId).isNotNull();
     }
 
     @Test
-    void shouldIncludeVersionNumberInFilenameWhenSetAfterJarsConstruction() {
+    void shouldIncludeVersionNumberInFilenameWhenPropertyIsSetAfterJarsConstruction() {
         // Given
+        SleeperJarsInBucket jars = jars();
         String versionId = putObject(bucketName, "test-0.1.2.jar", "data").versionId();
         LambdaJar jar = LambdaJar.builder()
                 .filenameFormat("test-%s.jar")
@@ -78,9 +84,47 @@ public class SleeperJarsInBucketIT extends LocalStackTestBase {
         assertThat(foundVersionId).isNotNull();
     }
 
+    @Test
+    void shouldIncludeVersionNumberInLambdaCodeWhenSetAfterJarsConstruction() {
+        // Given
+        SleeperJarsInBucket jars = jars();
+        String versionId = putObject(bucketName, "test-0.1.2.jar", "data").versionId();
+        LambdaJar jar = LambdaJar.builder()
+                .filenameFormat("test-%s.jar")
+                .imageName("test-lambda")
+                .artifactId("test-lambda")
+                .build();
+        LambdaHandler handler = LambdaHandler.builder()
+                .jar(jar)
+                .handler("my.Handler")
+                .core().build();
+
+        Stack stack = new Stack();
+        IBucket bucket = jars.createJarsBucketReference(stack, versionId);
+        SleeperLambdaCode code = jars.lambdaCode(bucket);
+
+        instanceProperties.set(VERSION, "0.1.2");
+
+        // When
+        code.buildFunction(stack, handler, "Function",
+                builder -> builder.functionName("test-function"));
+
+        // Then
+        assertThat(Template.fromStack(stack).findResources("AWS::Lambda::Function"))
+                .extractingFromEntries(Entry::getValue).singleElement().asInstanceOf(InstanceOfAssertFactories.MAP)
+                .extractingByKey("Properties", InstanceOfAssertFactories.MAP)
+                .extractingByKey("Code", InstanceOfAssertFactories.MAP)
+                .extractingByKey("S3Key", InstanceOfAssertFactories.STRING)
+                .isEqualTo("test-0.1.2.jar");
+    }
+
     private InstanceProperties createInstanceProperties() {
         InstanceProperties properties = createTestInstanceProperties();
         properties.set(JARS_BUCKET, bucketName);
         return properties;
+    }
+
+    private SleeperJarsInBucket jars() {
+        return SleeperJarsInBucket.from(s3Client, instanceProperties);
     }
 }
