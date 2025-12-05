@@ -28,8 +28,9 @@ public class ByteArrayTest {
     @Nested
     @DisplayName("Equality of object")
     class EqualityTest {
+
         @Test
-        void shouldProvideByteArrayAsPrimitiveType() {
+        void shouldAllowByteArrayToBeReturnedAsPrimitiveType() {
             // Given
             byte[] data = {1, 2, 3};
 
@@ -42,7 +43,7 @@ public class ByteArrayTest {
         }
 
         @Test
-        void shouldMatchByteArraysWhenWrappedUsingSameData() {
+        void shouldMatchWrappedByteArraysUsingSimilarData() {
             // Given
             ByteArray first = ByteArray.wrap(new byte[]{7, 8, 9});
             ByteArray second = ByteArray.wrap(new byte[]{7, 8, 9});
@@ -52,7 +53,7 @@ public class ByteArrayTest {
         }
 
         @Test
-        void shouldFindByteArraysAreEqualWithSameSourceArray() {
+        void shouldMatchWrappedByteArraysUsingSameDataSource() {
             // Given
             byte[] data = {1, 'b', 'c', 4, 5};
 
@@ -65,7 +66,7 @@ public class ByteArrayTest {
         }
 
         @Test
-        void shouldProvideCorrectComparisionWhenOneComparatorIsNull() {
+        void shouldReturnUnequalWhenOneComparatorIsNull() {
             // Given
             ByteArray valid = ByteArray.wrap(new byte[]{'a', 2, 3});
 
@@ -74,7 +75,7 @@ public class ByteArrayTest {
         }
 
         @Test
-        void shouldValidateEqualsMethodsWithDeclaredNullArrays() {
+        void shouldReturnEqualsWhenWrappedWithNullData() {
             // Given
             ByteArray first = ByteArray.wrap(null);
             ByteArray second = ByteArray.wrap(null);
@@ -84,7 +85,7 @@ public class ByteArrayTest {
         }
 
         @Test
-        void shouldValidateWhenByteArraysArentEqual() {
+        void shouldReturnUnequalWhenDataDiffernt() {
             // Given
             ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
             ByteArray second = ByteArray.wrap(new byte[]{'a', 'b', 'c'});
@@ -98,12 +99,30 @@ public class ByteArrayTest {
     @DisplayName("Sorting contents")
     class NestedTest {
         @Test
-        void shouldCorrectlySortByteArrays() {
+        void shouldSortByteArraysWhenContentsNumeric() {
             // Given
             ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
             ByteArray second = ByteArray.wrap(new byte[]{4, 5, 6, 7, 8});
 
             // When / Then
+            assertThat(first).isLessThan(second);
+        }
+
+        @Test
+        void shouldSortByteArraysWhenContentsAreCharacters() {
+            // Given
+            ByteArray first = ByteArray.wrap(new byte[]{'d', 'e', 'f'});
+            ByteArray second = ByteArray.wrap(new byte[]{'a', 'b', 'c'});
+
+            // When / Then
+            assertThat(first).isGreaterThan(second);
+        }
+
+        @Test
+        void shouldSortByteArraysWhenContentsAreMixedPrimitives() {
+            ByteArray first = ByteArray.wrap(new byte[]{1, 'b', 3});
+            ByteArray second = ByteArray.wrap(new byte[]{'a', 2, 'c', 4});
+
             assertThat(first).isLessThan(second);
         }
 
