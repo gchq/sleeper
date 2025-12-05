@@ -19,7 +19,7 @@ package sleeper.athena.record;
  * The value for a row key field, held along with the dimension of the row key.
  * The dimension is its index in the list of row keys within the schema.
  *
- * @param dimension
+ * @param dimension the index of the row key in the schema
  * @param value     the value
  */
 public record FieldAtDimension(int dimension, Object value) {

@@ -11,7 +11,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License
+ * limitations under the License.
  */
 /*
  * Copyright (C) 2012 Facebook, Inc.
@@ -41,7 +41,7 @@ import java.util.Comparator;
  */
 public class ByteArray implements Comparable<ByteArray> {
 
-    private static final ByteArrayComparator byteArrayComparator = new ByteArrayComparator();
+    private static final ByteArrayComparator BYTE_ARRAY_COMPARATOR = new ByteArrayComparator();
 
     private final byte[] array;
 
@@ -113,7 +113,7 @@ public class ByteArray implements Comparable<ByteArray> {
 
     @Override
     public int compareTo(ByteArray o) {
-        return byteArrayComparator.compare(this, o);
+        return BYTE_ARRAY_COMPARATOR.compare(this, o);
     }
 
     @Override
