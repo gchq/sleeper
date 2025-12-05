@@ -31,6 +31,7 @@ chunks:
       - common/localstack-test
       - statestore
       - statestore-committer-core
+      - statestore-committer
       - statestore-lambda
       - metrics
       - example-iterators
