@@ -50,8 +50,6 @@ import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOG
 import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_FILE;
@@ -70,8 +68,6 @@ public class GeneratePropertiesTemplates {
 
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(
             TABLE_NAME, "example-table",
-            ITERATOR_CLASS_NAME, "sleeper.core.iterator.impl.AgeOffIterator",
-            ITERATOR_CONFIG, "b,3600000",
             SPLIT_POINTS_FILE, "example/full/splits.txt");
 
     private GeneratePropertiesTemplates() {
