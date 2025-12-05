@@ -1,0 +1,141 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sleeper.systemtest.drivers.ingest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.ecs.EcsClient;
+import software.amazon.awssdk.services.s3.S3Client;
+
+import sleeper.clients.table.AddTable;
+import sleeper.clients.table.TakeAllTablesOffline;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.PropertiesUtils;
+import sleeper.core.properties.instance.CommonProperty;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.properties.table.TableProperty;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.statestore.StateStoreFactory;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+
+public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunWriteRandomDataTaskOnECSForMultipleNewTables.class);
+
+    private S3Client s3Client;
+    private DynamoDbClient dynamoClient;
+    private EcsClient ecsClient;
+
+    public RunWriteRandomDataTaskOnECSForMultipleNewTables(S3Client s3Client, DynamoDbClient dynamoClient, EcsClient ecsClient) {
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+        this.ecsClient = ecsClient;
+    }
+
+    public void takeAllTablesOffline(String instanceId) {
+        TakeAllTablesOffline offliner = new TakeAllTablesOffline(this.s3Client, this.dynamoClient);
+        offliner.takeAllOffline(instanceId);
+    }
+
+    public List<String> createTables(String instanceId, int tableCount, Path tablePropertiesFile, Path schemaFile, String splitPointsFile) throws IOException {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(this.s3Client, instanceId);
+        String tablePrefix = "table-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd-HHmm")) + '-';
+
+        List<String> tableNames = IntStream.rangeClosed(1, tableCount).mapToObj(i -> {
+            String tableName = tablePrefix + i;
+
+            try {
+                TableProperties tableProperties = new TableProperties(instanceProperties, PropertiesUtils.loadProperties(tablePropertiesFile));
+                tableProperties.set(TableProperty.TABLE_NAME, tableName);
+                tableProperties.setSchema(Schema.load(schemaFile));
+                tableProperties.set(TableProperty.SPLIT_POINTS_FILE, splitPointsFile);
+
+                TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, this.s3Client, this.dynamoClient);
+                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, this.s3Client, this.dynamoClient);
+                new AddTable(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
+                LOGGER.info("Added table " + instanceProperties.get(CommonProperty.ID) + ":" + tableName);
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to create table " + instanceProperties.get(CommonProperty.ID) + ":" + tableName, e);
+            }
+
+            return tableName;
+        }).collect(Collectors.toList());
+
+        return tableNames;
+    }
+
+    public void run(
+        String instanceId, int tableCount,
+        Path tablePropertiesFile, Path schemaFile, String splitPointsFile,
+        int numWritersPerTable, int numIngestsPerWriter, long recordsPerIngest
+    ) throws IOException {
+
+        LOGGER.info("Taking tables offline");
+        this.takeAllTablesOffline(instanceId);
+
+        LOGGER.info("Creating " + tableCount + " tables");
+        this.createTables(instanceId, tableCount, tablePropertiesFile, schemaFile, splitPointsFile);
+
+        LOGGER.info("Submitting ingest tasks");
+        new RunWriteRandomDataTaskOnECSForAllOnlineTables(this.s3Client, this.dynamoClient, this.ecsClient)
+            .run(instanceId, numWritersPerTable, numIngestsPerWriter, recordsPerIngest);
+    }
+
+    public static void main(String[] args) throws IOException {
+        if (args.length < 5) {
+            System.out.println("Usage: <instanceId> <tableCount> <tablePropertiesFile> <schemaFile> <splitPointsFile> [<num-writers-per-table>] [<num-ingests-per-writer>] [<records-per-ingest>]");
+            System.exit(1);
+        }
+
+        String instanceId = args[0];
+        int tableCount = Integer.parseInt(args[1]);
+        Path tablePropertiesFile = Path.of(args[2]);
+        Path schemaFile = Path.of(args[3]);
+        String splitPointsFile = args[4];
+
+        int numWritersPerTable = args.length > 5 ? Integer.parseInt(args[5]) : 1;
+        int numIngestsPerWriter = args.length > 6 ? Integer.parseInt(args[6]) : 1;
+        long recordsPerIngest = args.length > 7 ? Long.parseLong(args[7]) : 10_000_000;
+
+        try (
+            S3Client s3Client = buildAwsV2Client(S3Client.builder());
+            DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
+            EcsClient ecsClient = buildAwsV2Client(EcsClient.builder());
+        ) {
+            new RunWriteRandomDataTaskOnECSForMultipleNewTables(s3Client, dynamoClient, ecsClient)
+                .run(
+                    instanceId, tableCount,
+                    tablePropertiesFile, schemaFile, splitPointsFile,
+                    numWritersPerTable, numIngestsPerWriter, recordsPerIngest
+                );
+        }
+    }
+
+}
