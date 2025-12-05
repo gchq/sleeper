@@ -30,6 +30,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
@@ -117,14 +118,16 @@ public class TableDefinerLambda {
             tableProperties.set(TABLE_ONLINE, "false");
             tablePropertiesStore.save(tableProperties);
         } else {
+            //Need to look up full properties to get the ID for deleting objects in bucket with prefix
             tableProperties = tablePropertiesStore.loadByName(tableName);
+            String tableId = tableProperties.get(TABLE_ID);
             InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
             LOGGER.info("Deleting table {} and associated data.", tableName);
             StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient)
                     .getStateStore(tableProperties).clearSleeperTable();
-            deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
+            deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId);
             new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
-            tablePropertiesStore.deleteByName(tableName);
+            tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
         }
     }
 }
