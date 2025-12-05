@@ -22,7 +22,6 @@ import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.InstancePropertyGroup;
-import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.properties.table.TablePropertyGroup;
@@ -114,7 +113,12 @@ public class GeneratePropertiesTemplates {
         GeneratePropertiesDocumentation.generateDocumentation(path);
     }
 
-    private static InstanceProperties generateExampleFullInstanceProperties() {
+    /**
+     * Writes the full instance properties example file to the given writer.
+     *
+     * @param writer the writer
+     */
+    public static void writeExampleFullInstanceProperties(Writer writer) {
         InstanceProperties properties = new InstanceProperties();
         BASIC_INSTANCE_EXAMPLE_VALUES.forEach(properties::set);
         properties.set(ID, "full-example");
@@ -128,44 +132,6 @@ public class GeneratePropertiesTemplates {
         properties.set(PARQUET_LOGGING_LEVEL, "WARN");
         properties.set(AWS_LOGGING_LEVEL, "INFO");
 
-        return properties;
-    }
-
-    private static InstanceProperties generateTemplateInstanceProperties() {
-        InstanceProperties properties = new InstanceProperties();
-        BASIC_INSTANCE_EXAMPLE_VALUES.keySet()
-                .forEach(property -> properties.set(property, "changeme"));
-        // The template has separate sections for template values and default values. This structure suggests that the
-        // default values should be left unchanged. If you did that when it's defaulting to another property, you'd set
-        // them to the templated value instead of the real value set when the user fills in the template.
-        // To avoid that, we set these to "changeme" which makes them appear under template values instead. We rely on
-        // the description of the property to explain this.
-        UserDefinedInstanceProperty.getAll().stream()
-                .filter(property -> property.getDefaultProperty() != null)
-                .filter(property -> properties.isSet(property.getDefaultProperty()))
-                .forEach(property -> properties.set(property, "changeme"));
-        return properties;
-    }
-
-    private static TableProperties generateExampleTableProperties() {
-        TableProperties properties = new TableProperties(new InstanceProperties());
-        BASIC_TABLE_EXAMPLE_VALUES.forEach(properties::set);
-        return properties;
-    }
-
-    private static TableProperties generateTemplateTableProperties() {
-        TableProperties properties = new TableProperties(new InstanceProperties());
-        properties.set(TABLE_NAME, "changeme");
-        return properties;
-    }
-
-    /**
-     * Writes the full instance properties example file to the given writer.
-     *
-     * @param writer the writer
-     */
-    public static void writeExampleFullInstanceProperties(Writer writer) {
-        InstanceProperties properties = generateExampleFullInstanceProperties();
         writeFullPropertiesTemplate(writer, properties, InstancePropertyGroup.getAll());
     }
 
@@ -175,7 +141,8 @@ public class GeneratePropertiesTemplates {
      * @param writer the writer
      */
     public static void writeExampleFullTableProperties(Writer writer) {
-        TableProperties properties = generateExampleTableProperties();
+        TableProperties properties = new TableProperties(new InstanceProperties());
+        BASIC_TABLE_EXAMPLE_VALUES.forEach(properties::set);
         writeFullPropertiesTemplate(writer, properties, TablePropertyGroup.getAll());
     }
 
@@ -209,7 +176,10 @@ public class GeneratePropertiesTemplates {
      * @param out the writer
      */
     public static void writeInstancePropertiesTemplate(Writer out) {
-        InstanceProperties properties = generateTemplateInstanceProperties();
+        InstanceProperties properties = new InstanceProperties();
+        properties.set(ID, "set-automatically");
+        properties.set(VPC_ID, "set-automatically");
+        properties.set(SUBNETS, "set-automatically");
 
         Map<Boolean, List<InstanceProperty>> propertiesByIsSet = properties.getPropertiesIndex()
                 .getUserDefined().stream().filter(SleeperProperty::isIncludedInTemplate)
@@ -245,7 +215,8 @@ public class GeneratePropertiesTemplates {
      * @param out the writer
      */
     public static void writeTablePropertiesTemplate(Writer out) {
-        TableProperties properties = generateTemplateTableProperties();
+        TableProperties properties = new TableProperties(new InstanceProperties());
+        properties.set(TABLE_NAME, "changeme");
 
         List<TableProperty> templateProperties = List.of(
                 TABLE_NAME, ROW_GROUP_SIZE, PAGE_SIZE, COMPRESSION_CODEC,

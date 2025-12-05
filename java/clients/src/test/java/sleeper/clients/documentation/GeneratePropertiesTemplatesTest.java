@@ -29,18 +29,19 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import sleeper.clients.deploy.documentation.GeneratePropertiesTemplates;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static java.util.regex.Pattern.DOTALL;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
@@ -106,10 +107,10 @@ class GeneratePropertiesTemplatesTest {
         }
 
         @Test
-        void shouldWriteDefaultValueForUnsetParameter() {
+        void shouldWriteCommentedOutDefaultValueForPropertyWithDefault() {
             assertThat(propertiesString)
                     .contains(System.lineSeparator() +
-                            "sleeper.stack.tag.name=DeploymentStack" +
+                            "# sleeper.stack.tag.name=DeploymentStack" +
                             System.lineSeparator());
         }
 
@@ -185,23 +186,30 @@ class GeneratePropertiesTemplatesTest {
 
         @Test
         void shouldGenerateValidInstanceProperties() {
-            assertThat(instancePropertiesFromString(propertiesString)
-                    .get(ID))
-                    .isEqualTo("changeme");
+            // When
+            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+
+            // Then
+            assertThatCode(instanceProperties::validate)
+                    .doesNotThrowAnyException();
         }
 
         @Test
         void shouldGenerateHeadersForTemplatedPropertiesAndDefaultedProperties() {
             assertThat(propertiesString).containsSubsequence(
                     "# Template Values #",
-                    "changeme",
+                    "set-automatically",
                     "# Default Values #");
         }
 
         @Test
-        void shouldNotIncludeAnyTemplatedPropertiesUnderDefaultValues() {
-            assertThat(propertiesString).doesNotMatch(
-                    Pattern.compile(".*# Default Values #.+changeme.*", DOTALL));
+        void shouldNotSetValuesForAnyPropertyWithDefault() {
+            // When
+            InstanceProperties instanceProperties = instancePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(instancePropertiesWithDefaultValues())
+                    .allSatisfy(property -> assertThat(instanceProperties.isSet(property)).isFalse());
         }
     }
 
@@ -215,6 +223,16 @@ class GeneratePropertiesTemplatesTest {
             assertThat(tablePropertiesFromString(propertiesString)
                     .get(TABLE_NAME))
                     .isEqualTo("changeme");
+        }
+
+        @Test
+        void shouldNotSetValuesForAnyPropertyWithDefault() {
+            // When
+            TableProperties tableProperties = tablePropertiesFromString(propertiesString);
+
+            // Then
+            assertThat(tablePropertiesWithDefaultValues())
+                    .allSatisfy(property -> assertThat(tableProperties.isSet(property)).isFalse());
         }
     }
 
@@ -232,5 +250,15 @@ class GeneratePropertiesTemplatesTest {
 
     private TableProperties tablePropertiesFromString(String propertiesString) {
         return new TableProperties(new InstanceProperties(), loadProperties(propertiesString));
+    }
+
+    private Stream<InstanceProperty> instancePropertiesWithDefaultValues() {
+        return InstanceProperty.getAll().stream()
+                .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
+    }
+
+    private Stream<TableProperty> tablePropertiesWithDefaultValues() {
+        return TableProperty.getAll().stream()
+                .filter(property -> property.getDefaultValue() != null || property.getDefaultProperty() != null);
     }
 }
