@@ -64,6 +64,11 @@ public class ExtendPartitionTreeTransaction implements PartitionTransaction {
                 throw new StateStoreException("Attempted to update a partition which has already been split: " + partition.getId());
             }
         }
+        for (Partition partition : newPartitions) {
+            if (state.byId(partition.getId()).isPresent()) {
+                throw new StateStoreException("Attempted to add a partition which already exists: " + partition.getId());
+            }
+        }
     }
 
     @Override

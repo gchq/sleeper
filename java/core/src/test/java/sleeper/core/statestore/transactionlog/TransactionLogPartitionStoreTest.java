@@ -570,6 +570,27 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     .isInstanceOf(StateStoreException.class)
                     .hasMessage("Attempted to update a partition which has already been split: root");
         }
+
+        @Test
+        void shouldFailToAddPartitionWhichAlreadyExists() {
+            // Given
+            initialiseWithPartitions(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "A", "B", 50));
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "A", "D", 50)
+                    .splitToNewChildren("A", "B", "C", 25)
+                    .buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(tree.getPartition("A")),
+                    List.of(tree.getPartition("B"), tree.getPartition("C")));
+
+            // When
+            assertThatThrownBy(() -> transaction.synchronousCommit(store))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Attempted to add a partition which already exists: B");
+        }
     }
 
     @Nested
