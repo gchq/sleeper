@@ -120,6 +120,37 @@ public class PartitionTreeValidationTest {
     }
 
     @Test
+    void shouldRefuseRootSetAsLeafWithChildPartitions() {
+        // Given
+        PartitionTree tree = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50)
+                .buildTree();
+        List<Partition> partitions = List.of(
+                tree.getPartition("root").toBuilder().leafPartition(true).build(),
+                tree.getPartition("L"),
+                tree.getPartition("R"));
+
+        // When / Then
+        assertThatThrownBy(() -> validate(partitions))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Partition has 2 child partitions but is marked as a leaf partition: root");
+    }
+
+    @Test
+    void shouldRefuseRootSetAsNonLeafWithNoChildPartitions() {
+        // Given
+        PartitionTree tree = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+        List<Partition> partitions = List.of(
+                tree.getPartition("root").toBuilder().leafPartition(false).build());
+
+        // When / Then
+        assertThatThrownBy(() -> validate(partitions))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Expected 2 child partitions under root, left and right of split point, found 0");
+    }
+
+    @Test
     void shouldRefuseChildPartitionsNotJoinedFromRoot() {
         // Given
         PartitionTree tree1 = new PartitionsBuilder(tableProperties).rootFirst("root").buildTree();

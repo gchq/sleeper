@@ -381,14 +381,17 @@ public class PartitionTree {
         }
     }
 
-    private void findInvalidSplits(Schema schema, Partition parent) {
-        if (parent.isLeafPartition()) {
+    private void findInvalidSplits(Schema schema, Partition partition) {
+        if (partition.isLeafPartition()) {
+            if (!partition.getChildPartitionIds().isEmpty()) {
+                throw new IllegalArgumentException("Partition has " + partition.getChildPartitionIds().size() + " child partitions but is marked as a leaf partition: " + partition.getId());
+            }
             return;
         }
-        List<Partition> childPartitions = parent.getChildPartitionIds().stream()
+        List<Partition> childPartitions = partition.getChildPartitionIds().stream()
                 .map(this::getPartition)
                 .toList();
-        validateSplit(parent, childPartitions, schema);
+        validateSplit(partition, childPartitions, schema);
         for (Partition child : childPartitions) {
             findInvalidSplits(schema, child);
         }
