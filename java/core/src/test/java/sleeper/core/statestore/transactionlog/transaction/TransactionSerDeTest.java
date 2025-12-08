@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.transaction;
 
 import org.apache.commons.lang3.StringUtils;
 import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -82,7 +83,7 @@ public class TransactionSerDeTest {
         // Then
         assertThat(serDe.toTransaction(type, json))
                 .isEqualTo(transaction);
-        Approvals.verify(json);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
