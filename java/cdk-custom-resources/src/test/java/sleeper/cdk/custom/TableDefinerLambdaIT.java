@@ -156,8 +156,8 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         public void shouldUpdateTablePropertiesSuccessfully() throws IOException {
             //Given
             callLambda(CREATE, tableProperties);
-            tableProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
-            tableProperties.set(TABLE_ONLINE, String.valueOf(!tableProperties.getBoolean(TABLE_ONLINE)));
+            tableProperties.set(TABLE_ONLINE, String.valueOf(
+                    !propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)));
 
             //When
             callLambda(UPDATE, tableProperties);
