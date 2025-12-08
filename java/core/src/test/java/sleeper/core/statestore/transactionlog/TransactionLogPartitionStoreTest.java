@@ -33,6 +33,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.InitialiseWithFilesPresentException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBase;
+import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTreeTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 
 import java.util.List;
@@ -475,6 +476,31 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     tree.getPartition("L"),
                     tree.getPartition("R")))
                     .isInstanceOf(StateStoreException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Extend partition tree")
+    class ExtendTree {
+
+        @Test
+        void shouldExtendTreeWithOneSplit() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new LongType());
+            initialiseWithSchema(schema);
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0L)
+                    .buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(tree.getRootPartition()),
+                    List.of(tree.getPartition("L"), tree.getPartition("R")));
+
+            // When
+            transaction.synchronousCommit(store);
+
+            // Then
+            assertThat(new PartitionTree(store.getAllPartitions())).isEqualTo(tree);
         }
     }
 
