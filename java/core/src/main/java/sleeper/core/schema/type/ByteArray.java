@@ -39,8 +39,7 @@ import java.util.Comparator;
  * <p>
  * This implements Comparable, meaning that the data wrapped in a ByteArray can be sorted.
  * This is used when working with partitions, as well as part of MergingIterator, itself used in Java-based compaction
- * and standard ingest.
- * e.g. EstimateSplitPoints, FindPartitionSplitPoint
+ * and standard ingest. e.g. EstimateSplitPoints, FindPartitionSplitPoint
  */
 public class ByteArray implements Comparable<ByteArray> {
 
