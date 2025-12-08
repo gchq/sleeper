@@ -26,6 +26,7 @@ import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Extends the partition tree by adding any number of splits as an atomic transaction. The updates can be provided as a
@@ -55,8 +56,12 @@ public class ExtendPartitionTreeTransaction implements PartitionTransaction {
     @Override
     public void validate(StateStorePartitions state, TableProperties tableProperties) throws StateStoreException {
         for (Partition partition : updatePartitions) {
-            if (state.byId(partition.getId()).isEmpty()) {
+            Optional<Partition> existing = state.byId(partition.getId());
+            if (existing.isEmpty()) {
                 throw new StateStoreException("Attempted to update a partition which does not exist: " + partition.getId());
+            }
+            if (!existing.get().isLeafPartition()) {
+                throw new StateStoreException("Attempted to update a partition which has already been split: " + partition.getId());
             }
         }
     }

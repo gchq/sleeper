@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -483,14 +484,17 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
     @DisplayName("Extend partition tree")
     class ExtendTree {
 
+        @BeforeEach
+        void setUp() {
+            initialiseWithSchema(createSchemaWithKey("key", new IntType()));
+        }
+
         @Test
         void shouldAddOneSplitToRoot() {
             // Given
-            Schema schema = createSchemaWithKey("key", new LongType());
-            initialiseWithSchema(schema);
-            PartitionTree tree = new PartitionsBuilder(schema)
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 0L)
+                    .splitToNewChildren("root", "L", "R", 50)
                     .buildTree();
             ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
                     List.of(tree.getRootPartition()),
@@ -506,16 +510,15 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         void shouldAddMultipleLevelsToNonRoots() {
             // Given
-            Schema schema = createSchemaWithKey("key", new StringType());
-            initialiseWithPartitions(new PartitionsBuilder(schema)
+            initialiseWithPartitions(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "p"));
-            PartitionTree tree = new PartitionsBuilder(schema)
+                    .splitToNewChildren("root", "L", "R", 50));
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "p")
-                    .splitToNewChildren("L", "LL", "LR", "g")
-                    .splitToNewChildren("LR", "LRL", "LRR", "k")
-                    .splitToNewChildren("R", "RL", "RR", "s")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .splitToNewChildren("L", "LL", "LR", 25)
+                    .splitToNewChildren("LR", "LRL", "LRR", 30)
+                    .splitToNewChildren("R", "RL", "RR", 75)
                     .buildTree();
             ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
                     List.of(tree.getPartition("L"), tree.getPartition("R")),
@@ -533,14 +536,39 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         @Test
         void shouldFailToUpdatePartitionWhichDoesNotExist() {
             // Given
-            tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
             initialiseWithPartitions(new PartitionsBuilder(tableProperties).singlePartition("root"));
-            PartitionTree tree = new PartitionsBuilder(tableProperties).rootFirst("new").buildTree();
-            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(List.of(tree.getRootPartition()), List.of());
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("new")
+                    .splitToNewChildren("new", "L", "R", 75)
+                    .buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(tree.getRootPartition()),
+                    List.of(tree.getPartition("L"), tree.getPartition("R")));
 
             // When
             assertThatThrownBy(() -> transaction.synchronousCommit(store))
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Attempted to update a partition which does not exist: new");
+        }
+
+        @Test
+        void shouldFailToUpdatePartitionWhichHasAlreadyBeenSplit() {
+            // Given
+            initialiseWithPartitions(new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L1", "R1", 50));
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L2", "R2", 75)
+                    .buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(tree.getRootPartition()),
+                    List.of(tree.getPartition("L2"), tree.getPartition("R2")));
+
+            // When
+            assertThatThrownBy(() -> transaction.synchronousCommit(store))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Attempted to update a partition which has already been split: root");
         }
     }
 
