@@ -95,16 +95,29 @@ public class PartitionTree {
         Range range1 = child1.getRegion().getRange(splitField.getName());
         Range range2 = child2.getRegion().getRange(splitField.getName());
         PrimitiveType type = (PrimitiveType) splitField.getType();
-        List<String> childIds;
+        Partition leftChild;
+        Partition rightChild;
         if (type.compare(range1.getMax(), range2.getMin()) == 0) {
-            childIds = List.of(child1.getId(), child2.getId());
+            leftChild = child1;
+            rightChild = child2;
         } else if (type.compare(range1.getMin(), range2.getMax()) == 0) {
-            childIds = List.of(child2.getId(), child1.getId());
+            leftChild = child2;
+            rightChild = child1;
         } else {
             throw new IllegalArgumentException("Child partitions do not meet at a split point on dimension " + parent.getDimension() + " set in parent partition " + parent.getId());
         }
-        if (!childIds.equals(parent.getChildPartitionIds())) {
-            throw new IllegalArgumentException("Child partition IDs do not match expected order in parent partition " + parent.getId() + ", expected: " + childIds);
+        List<String> expectedChildIds = List.of(leftChild.getId(), rightChild.getId());
+        if (!expectedChildIds.equals(parent.getChildPartitionIds())) {
+            throw new IllegalArgumentException("Child partition IDs do not match expected order in parent partition " + parent.getId() + ", expected: " + expectedChildIds);
+        }
+        Range parentRange = parent.getRegion().getRange(splitField.getName());
+        Range leftRange = leftChild.getRegion().getRange(splitField.getName());
+        Range rightRange = rightChild.getRegion().getRange(splitField.getName());
+        if (type.compare(parentRange.getMin(), leftRange.getMin()) != 0) {
+            throw new IllegalArgumentException("Left child partition " + leftChild.getId() + " does not match boundary of parent " + parent.getId());
+        }
+        if (type.compare(parentRange.getMax(), rightRange.getMax()) != 0) {
+            throw new IllegalArgumentException("Right child partition " + rightChild.getId() + " does not match boundary of parent " + parent.getId());
         }
     }
 

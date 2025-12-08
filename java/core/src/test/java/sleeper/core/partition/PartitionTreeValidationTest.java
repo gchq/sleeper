@@ -310,6 +310,50 @@ public class PartitionTreeValidationTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Child partitions do not meet at a split point on dimension 1 set in parent partition root");
         }
+
+        @Test
+        void shouldRefuseWhenLeftChildPartitionDoesNotHaveSameBoundaryAsParent() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0)
+                    .splitToNewChildren("R", "RL", "RR", 50)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getPartition("root"),
+                    tree.getPartition("L"),
+                    tree.getPartition("R"),
+                    tree.getPartition("RL")
+                            .toBuilder().region(new Region(rangeFactory().createRange("key", 25, 50))).build(),
+                    tree.getPartition("RR"));
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Left child partition RL does not match boundary of parent R");
+        }
+
+        @Test
+        void shouldRefuseWhenRightChildPartitionDoesNotHaveSameBoundaryAsParent() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 100)
+                    .splitToNewChildren("L", "LL", "LR", 50)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getPartition("root"),
+                    tree.getPartition("L"),
+                    tree.getPartition("R"),
+                    tree.getPartition("LL"),
+                    tree.getPartition("LR")
+                            .toBuilder().region(new Region(rangeFactory().createRange("key", 50, 75))).build());
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Right child partition LR does not match boundary of parent L");
+        }
     }
 
     private void validate(Collection<Partition> partitions) {
