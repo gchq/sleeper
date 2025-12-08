@@ -291,12 +291,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty RETAIN_DATA_AFTER_DELETE = Index.propertyBuilder("sleeper.table.retain.data.after.delete")
             .defaultProperty(RETAIN_DATA_AFTER_TABLE_REMOVAL)
-            .description("This property is used when an instance configuration is used and a table is removed from that configuartion.\n" +
-                    "If this is true, removing the table from the properties file will just take the table offline.\n" +
-                    "If this is false, it will delete all data associated with the table when the table is removed from the configuration.\n" +
-                    "Be aware that even if a table is renamed in the configuration, the CDK will see it as a delete of the old" +
-                    "table name and a create of the new table name.\n" +
-                    "If this is set to false when that happens it will remove the table's data.")
+            .description("This property is used when applying an instance configuration and a table has been removed.\n" +
+                    "If this is true (default), removing the table from the configuration will just take the table offline.\n" +
+                    "If this is false, it will delete all data associated with the table when the table is removed.\n" +
+                    "Be aware that if a table is renamed in the configuration, the CDK will see it as a delete of the old " +
+                    "table name and a create of the new table name. If this is set to false when that happens it will remove the table's data.\n" +
+                    "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
