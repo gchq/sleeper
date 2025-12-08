@@ -74,12 +74,12 @@ import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class TableDefinerLambdaIT extends LocalStackTestBase {
 
-    private static final String CREATE = "Create", DELETE = "Delete";
+    private static final String CREATE = "Create", UPDATE = "Update", DELETE = "Delete";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = createSchemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TableDefinerLambda tableDefinerLambda = new TableDefinerLambda(s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final TableProperties tableProperties = createTableProperties();
 
     @BeforeEach
     void setUp() throws IOException {
@@ -87,6 +87,12 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+    }
+
+    private TableProperties createTableProperties() {
+        TableProperties properties = createTestTableProperties(instanceProperties, schema);
+        properties.set(TABLE_ONLINE, "true");
+        return properties;
     }
 
     private void callLambda(String type, TableProperties tableProperties) throws IOException {
@@ -146,6 +152,24 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                             .splitToNewChildren("l", "ll", "lr", Long.valueOf(0))
                             .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
                             .buildList());
+        }
+    }
+
+    @Nested
+    class TableDefinerLambdaUpdateIT {
+
+        @Test
+        public void shouldUpdateTablePropertiesSuccessfully() throws IOException {
+            //Given
+            callLambda(CREATE, tableProperties);
+            tableProperties.set(TABLE_ONLINE, "false");
+
+            //When
+            callLambda(UPDATE, tableProperties);
+
+            //Then
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
+                    .isEqualTo(tableProperties);
         }
     }
 
