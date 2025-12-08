@@ -41,7 +41,7 @@ cxx-build = { version = "1.0.181" }
 datafusion = { version = "51.0.0" }
 env_logger = { version = "0.11.8" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
-git2 = { version = "0.20.2" }                       # Interact with version control
+git2 = { version = "0.20.3" }                       # Interact with version control
 human-panic = { version = "2.0.4" }                 # Readable panic messages
 libc = { version = "0.2.178" }                      # FFI type support
 log = { version = "0.4.29" }                        # Standard logging framework
