@@ -6,6 +6,22 @@ are available [here](docs/development/system-tests.md#performance-benchmarks). A
 available [here](docs/development/roadmap.md).
 
 
+## Version 0.34.1
+
+### 8th December, 2025
+
+This is a bug fix release that corrects deployment of Sleeper with the CDK.
+
+Deployment:
+- The examples and templates for instance and table properties no longer set all properties to their default values.
+
+Bugfixes:
+- The CDK deployment of a Sleeper instance now correctly references artefacts by the current Sleeper version number.
+  - In the previous release we could not deploy an instance as it looked for artefacts with a null version.
+  - This was caused by a fix for a test that failed when the version number changed.
+  - We've updated our process for when tests fail during release, to re-run tests in AWS after any fix.
+
+
 ## Version 0.34.0
 
 ### 2nd December, 2025
