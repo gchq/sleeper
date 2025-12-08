@@ -22,6 +22,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
 
 import java.util.Collection;
 import java.util.List;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
+import static sleeper.core.schema.SchemaTestHelper.createSchemaWithMultipleKeys;
 
 public class PartitionTreeValidationTest {
 
@@ -59,6 +61,21 @@ public class PartitionTreeValidationTest {
                 .splitToNewChildren("L", "LL", "LR", 25)
                 .splitToNewChildren("LR", "LRL", "LRR", 30)
                 .splitToNewChildren("R", "RL", "RR", 75)
+                .buildList();
+
+        // When / Then
+        assertThatCode(() -> validate(partitions))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldAcceptSplitsOnMultipleDimensions() {
+        // Given
+        tableProperties.setSchema(createSchemaWithMultipleKeys("key1", new IntType(), "key2", new LongType()));
+        List<Partition> partitions = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "L", "R", 0, 50)
+                .splitToNewChildrenOnDimension("R", "RL", "RR", 1, 500L)
                 .buildList();
 
         // When / Then
@@ -168,6 +185,24 @@ public class PartitionTreeValidationTest {
         assertThatThrownBy(() -> validate(partitions))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Child partitions do not meet at a split point on dimension 0 set in parent partition root");
+    }
+
+    @Test
+    void shouldRefuseWhenWrongDimensionIsSetOnParent() {
+        // Given
+        tableProperties.setSchema(createSchemaWithMultipleKeys("key1", new IntType(), "key2", new LongType()));
+        PartitionTree tree = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "L", "R", 0, 50)
+                .buildTree();
+        List<Partition> partitions = List.of(
+                tree.getPartition("root").toBuilder().dimension(1).build(),
+                tree.getPartition("L"), tree.getPartition("R"));
+
+        // When / Then
+        assertThatThrownBy(() -> validate(partitions))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Child partitions do not meet at a split point on dimension 1 set in parent partition root");
     }
 
     private void validate(Collection<Partition> partitions) {
