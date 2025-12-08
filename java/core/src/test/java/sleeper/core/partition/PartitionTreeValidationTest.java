@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
 import sleeper.core.schema.type.IntType;
 
 import java.util.Collection;
@@ -101,7 +103,7 @@ public class PartitionTreeValidationTest {
     }
 
     @Test
-    void shouldFindMissingChildPartitions() {
+    void shouldRefuseWhenMissingChildPartitions() {
         // Given
         PartitionTree tree = new PartitionsBuilder(tableProperties)
                 .rootFirst("root")
@@ -119,8 +121,31 @@ public class PartitionTreeValidationTest {
                 .hasMessage("Found missing child partitions: [L, RR]");
     }
 
+    @Test
+    void shouldRefuseWhenChildPartitionsDoNotMeetAtSplitPoint() {
+        // Given
+        PartitionTree tree = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 0)
+                .buildTree();
+        List<Partition> partitions = List.of(
+                tree.getPartition("root"),
+                tree.getPartition("L"),
+                tree.getPartition("R")
+                        .toBuilder().region(new Region(rangeFactory().createRange("key", 1, null))).build());
+
+        // When / Then
+        assertThatThrownBy(() -> validate(partitions))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Child partitions do not meet at a split point on dimension 0 set in parent partition root");
+    }
+
     private void validate(Collection<Partition> partitions) {
         new PartitionTree(partitions).validate(tableProperties.getSchema());
+    }
+
+    private RangeFactory rangeFactory() {
+        return new RangeFactory(tableProperties.getSchema());
     }
 
 }
