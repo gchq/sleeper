@@ -15,6 +15,8 @@
  */
 package sleeper.core.partition;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -39,211 +41,236 @@ public class PartitionTreeValidationTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
 
-    @Test
-    void shouldAcceptSinglePartition() {
-        // Given
-        List<Partition> partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildList();
+    @Nested
+    @DisplayName("Accept valid trees")
+    class AcceptValidTrees {
 
-        // When / Then
-        assertThatCode(() -> validate(partitions))
-                .doesNotThrowAnyException();
+        @Test
+        void shouldAcceptSinglePartition() {
+            // Given
+            List<Partition> partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildList();
+
+            // When / Then
+            assertThatCode(() -> validate(partitions))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldAcceptOneSplitAtRoot() {
+            // Given
+            List<Partition> partitions = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildList();
+
+            // When / Then
+            assertThatCode(() -> validate(partitions))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldAcceptMultipleLevelsOfSplits() {
+            // Given
+            List<Partition> partitions = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .splitToNewChildren("L", "LL", "LR", 25)
+                    .splitToNewChildren("LR", "LRL", "LRR", 30)
+                    .splitToNewChildren("R", "RL", "RR", 75)
+                    .buildList();
+
+            // When / Then
+            assertThatCode(() -> validate(partitions))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void shouldAcceptSplitsOnMultipleDimensions() {
+            // Given
+            tableProperties.setSchema(createSchemaWithMultipleKeys("key1", new IntType(), "key2", new LongType()));
+            List<Partition> partitions = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildrenOnDimension("root", "L", "R", 0, 50)
+                    .splitToNewChildrenOnDimension("R", "RL", "RR", 1, 500L)
+                    .buildList();
+
+            // When / Then
+            assertThatCode(() -> validate(partitions))
+                    .doesNotThrowAnyException();
+        }
     }
 
-    @Test
-    void shouldAcceptOneSplitAtRoot() {
-        // Given
-        List<Partition> partitions = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50)
-                .buildList();
+    @Nested
+    @DisplayName("Validate number of roots")
+    class NumberOfRoots {
 
-        // When / Then
-        assertThatCode(() -> validate(partitions))
-                .doesNotThrowAnyException();
+        @Test
+        void shouldRefuseNoPartitions() {
+            // When
+            List<Partition> partitions = List.of();
+
+            // Then
+            assertThatThrownBy(() -> new PartitionTree(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("There should be exactly one root partition, found 0");
+        }
+
+        @Test
+        void shouldRefuseExtraRootPartition() {
+            // Given
+            PartitionTree tree1 = new PartitionsBuilder(tableProperties).rootFirst("root1").buildTree();
+            PartitionTree tree2 = new PartitionsBuilder(tableProperties).rootFirst("root2").buildTree();
+            List<Partition> partitions = List.of(
+                    tree1.getPartition("root1"),
+                    tree2.getPartition("root2"));
+
+            // When / Then
+            assertThatThrownBy(() -> new PartitionTree(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("There should be exactly one root partition, found 2");
+        }
     }
 
-    @Test
-    void shouldAcceptMultipleLevelsOfSplits() {
-        // Given
-        List<Partition> partitions = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50)
-                .splitToNewChildren("L", "LL", "LR", 25)
-                .splitToNewChildren("LR", "LRL", "LRR", 30)
-                .splitToNewChildren("R", "RL", "RR", 75)
-                .buildList();
+    @Nested
+    @DisplayName("Validate leaf partition flag")
+    class LeafPartitionFlag {
 
-        // When / Then
-        assertThatCode(() -> validate(partitions))
-                .doesNotThrowAnyException();
+        @Test
+        void shouldRefuseRootSetAsLeafWithChildPartitions() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getPartition("root").toBuilder().leafPartition(true).build(),
+                    tree.getPartition("L"),
+                    tree.getPartition("R"));
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Partition has 2 child partitions but is marked as a leaf partition: root");
+        }
+
+        @Test
+        void shouldRefuseRootSetAsNonLeafWithNoChildPartitions() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getPartition("root").toBuilder().leafPartition(false).build());
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Expected 2 child partitions under root, left and right of split point, found 0");
+        }
     }
 
-    @Test
-    void shouldAcceptSplitsOnMultipleDimensions() {
-        // Given
-        tableProperties.setSchema(createSchemaWithMultipleKeys("key1", new IntType(), "key2", new LongType()));
-        List<Partition> partitions = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildrenOnDimension("root", "L", "R", 0, 50)
-                .splitToNewChildrenOnDimension("R", "RL", "RR", 1, 500L)
-                .buildList();
+    @Nested
+    @DisplayName("Validate unjoined child partitions")
+    class UnjoinedChildPartitions {
 
-        // When / Then
-        assertThatCode(() -> validate(partitions))
-                .doesNotThrowAnyException();
+        @Test
+        void shouldRefuseChildPartitionsNotJoinedFromRoot() {
+            // Given
+            PartitionTree tree1 = new PartitionsBuilder(tableProperties).rootFirst("root").buildTree();
+            PartitionTree tree2 = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree1.getPartition("root"),
+                    tree2.getPartition("L"),
+                    tree2.getPartition("R"));
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Found partitions unlinked to the rest of the tree: [L, R]");
+        }
+
+        @Test
+        void shouldRefuseChildPartitionsWithIncorrectParentIdSet() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .splitToNewChildren("R", "RL", "RR", 75)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getRootPartition(),
+                    tree.getPartition("L").toBuilder().parentPartitionId("wrong1").build(),
+                    tree.getPartition("R"),
+                    tree.getPartition("RL"),
+                    tree.getPartition("RR").toBuilder().parentPartitionId("wrong2").build());
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Found partitions unlinked to the rest of the tree: [L, RR]");
+        }
+
+        @Test
+        void shouldRefuseWhenMissingChildPartitions() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .splitToNewChildren("R", "RL", "RR", 75)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getRootPartition(),
+                    tree.getPartition("R"),
+                    tree.getPartition("RL"));
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Found missing child partitions: [L, RR]");
+        }
     }
 
-    @Test
-    void shouldRefuseNoPartitions() {
-        // When
-        List<Partition> partitions = List.of();
+    @Nested
+    @DisplayName("Validate split points")
+    class SplitPoints {
 
-        // Then
-        assertThatThrownBy(() -> new PartitionTree(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("There should be exactly one root partition, found 0");
-    }
+        @Test
+        void shouldRefuseWhenChildPartitionsDoNotMeetAtSplitPoint() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getPartition("root"),
+                    tree.getPartition("L"),
+                    tree.getPartition("R")
+                            .toBuilder().region(new Region(rangeFactory().createRange("key", 1, null))).build());
 
-    @Test
-    void shouldRefuseExtraRootPartition() {
-        // Given
-        PartitionTree tree1 = new PartitionsBuilder(tableProperties).rootFirst("root1").buildTree();
-        PartitionTree tree2 = new PartitionsBuilder(tableProperties).rootFirst("root2").buildTree();
-        List<Partition> partitions = List.of(
-                tree1.getPartition("root1"),
-                tree2.getPartition("root2"));
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Child partitions do not meet at a split point on dimension 0 set in parent partition root");
+        }
 
-        // When / Then
-        assertThatThrownBy(() -> new PartitionTree(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("There should be exactly one root partition, found 2");
-    }
+        @Test
+        void shouldRefuseWhenWrongDimensionIsSetOnParent() {
+            // Given
+            tableProperties.setSchema(createSchemaWithMultipleKeys("key1", new IntType(), "key2", new LongType()));
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildrenOnDimension("root", "L", "R", 0, 50)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getPartition("root").toBuilder().dimension(1).build(),
+                    tree.getPartition("L"), tree.getPartition("R"));
 
-    @Test
-    void shouldRefuseRootSetAsLeafWithChildPartitions() {
-        // Given
-        PartitionTree tree = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50)
-                .buildTree();
-        List<Partition> partitions = List.of(
-                tree.getPartition("root").toBuilder().leafPartition(true).build(),
-                tree.getPartition("L"),
-                tree.getPartition("R"));
-
-        // When / Then
-        assertThatThrownBy(() -> validate(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Partition has 2 child partitions but is marked as a leaf partition: root");
-    }
-
-    @Test
-    void shouldRefuseRootSetAsNonLeafWithNoChildPartitions() {
-        // Given
-        PartitionTree tree = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
-        List<Partition> partitions = List.of(
-                tree.getPartition("root").toBuilder().leafPartition(false).build());
-
-        // When / Then
-        assertThatThrownBy(() -> validate(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Expected 2 child partitions under root, left and right of split point, found 0");
-    }
-
-    @Test
-    void shouldRefuseChildPartitionsNotJoinedFromRoot() {
-        // Given
-        PartitionTree tree1 = new PartitionsBuilder(tableProperties).rootFirst("root").buildTree();
-        PartitionTree tree2 = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50)
-                .buildTree();
-        List<Partition> partitions = List.of(
-                tree1.getPartition("root"),
-                tree2.getPartition("L"),
-                tree2.getPartition("R"));
-
-        // When / Then
-        assertThatThrownBy(() -> validate(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Found partitions unlinked to the rest of the tree: [L, R]");
-    }
-
-    @Test
-    void shouldRefuseChildPartitionsWithIncorrectParentIdSet() {
-        // Given
-        PartitionTree tree = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50)
-                .splitToNewChildren("R", "RL", "RR", 75)
-                .buildTree();
-        List<Partition> partitions = List.of(
-                tree.getRootPartition(),
-                tree.getPartition("L").toBuilder().parentPartitionId("wrong1").build(),
-                tree.getPartition("R"),
-                tree.getPartition("RL"),
-                tree.getPartition("RR").toBuilder().parentPartitionId("wrong2").build());
-
-        // When / Then
-        assertThatThrownBy(() -> validate(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Found partitions unlinked to the rest of the tree: [L, RR]");
-    }
-
-    @Test
-    void shouldRefuseWhenMissingChildPartitions() {
-        // Given
-        PartitionTree tree = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50)
-                .splitToNewChildren("R", "RL", "RR", 75)
-                .buildTree();
-        List<Partition> partitions = List.of(
-                tree.getRootPartition(),
-                tree.getPartition("R"),
-                tree.getPartition("RL"));
-
-        // When / Then
-        assertThatThrownBy(() -> validate(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Found missing child partitions: [L, RR]");
-    }
-
-    @Test
-    void shouldRefuseWhenChildPartitionsDoNotMeetAtSplitPoint() {
-        // Given
-        PartitionTree tree = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 0)
-                .buildTree();
-        List<Partition> partitions = List.of(
-                tree.getPartition("root"),
-                tree.getPartition("L"),
-                tree.getPartition("R")
-                        .toBuilder().region(new Region(rangeFactory().createRange("key", 1, null))).build());
-
-        // When / Then
-        assertThatThrownBy(() -> validate(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Child partitions do not meet at a split point on dimension 0 set in parent partition root");
-    }
-
-    @Test
-    void shouldRefuseWhenWrongDimensionIsSetOnParent() {
-        // Given
-        tableProperties.setSchema(createSchemaWithMultipleKeys("key1", new IntType(), "key2", new LongType()));
-        PartitionTree tree = new PartitionsBuilder(tableProperties)
-                .rootFirst("root")
-                .splitToNewChildrenOnDimension("root", "L", "R", 0, 50)
-                .buildTree();
-        List<Partition> partitions = List.of(
-                tree.getPartition("root").toBuilder().dimension(1).build(),
-                tree.getPartition("L"), tree.getPartition("R"));
-
-        // When / Then
-        assertThatThrownBy(() -> validate(partitions))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Child partitions do not meet at a split point on dimension 1 set in parent partition root");
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Child partitions do not meet at a split point on dimension 1 set in parent partition root");
+        }
     }
 
     private void validate(Collection<Partition> partitions) {
