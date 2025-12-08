@@ -55,7 +55,6 @@ echo "SUITE_PARAMS=(${SUITE_PARAMS[*]})"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
-source "$SCRIPTS_DIR/functions/sedInPlace.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
@@ -84,7 +83,7 @@ copyFolderForParallelRun() {
     mkdir $COPY_DIR
     sudo rsync -a --exclude=".*" sleeper/ $COPY_DIR
     # A Python virtual environment includes an absolute path reference to itself, so update it
-    sed_in_place \
+    sudo "$SCRIPTS_DIR/functions/run/sedInPlace.sh" \
       -e "s|sleeper/python|$COPY_DIR/python|" \
       "$COPY_DIR/python/env/bin/activate"
     popd
