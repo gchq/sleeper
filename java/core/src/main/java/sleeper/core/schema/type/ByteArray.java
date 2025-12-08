@@ -38,8 +38,8 @@ import java.util.Comparator;
  * This is a simplified version of the ByteArray class from Facebook JCommon Collections library.
  * <p>
  * This implements Comparable, meaning that the data wrapped in a ByteArray can be sorted.
- * This is used when working with partitions, as well as part of MergingIterator, itself used in Java-based compaction
- * and standard ingest. e.g. EstimateSplitPoints, FindPartitionSplitPoint
+ * This is used when working with partitions, e.g. EstimateSplitPoints, FindPartitionSplitPoint as well as part of
+ * MergingIterator, itself used in Java-based compaction and standard ingest.
  */
 public class ByteArray implements Comparable<ByteArray> {
 
