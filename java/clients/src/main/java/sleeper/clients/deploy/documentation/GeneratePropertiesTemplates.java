@@ -261,8 +261,9 @@ public class GeneratePropertiesTemplates {
         writer.println("##################");
         writer.println("# Example values #");
         writer.println("##################");
-        SleeperPropertiesPrettyPrinter.forPropertiesTemplate(definitionsForExampleProperties, propertyGroups, writer)
-                .print(properties);
+        SleeperPropertiesPrettyPrinter.builderForPropertiesTemplate(definitionsForExampleProperties, propertyGroups, writer)
+                .printGroupDetails(false)
+                .build().print(properties);
         writer.println();
         writer.println();
         writer.println("####################");
