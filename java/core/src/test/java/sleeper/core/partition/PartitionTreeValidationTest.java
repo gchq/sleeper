@@ -165,6 +165,45 @@ public class PartitionTreeValidationTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Expected 2 child partitions under root, left and right of split point, found 0");
         }
+
+        @Test
+        void shouldRefuseMiddleSetAsLeafWithChildPartitions() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .splitToNewChildren("R", "RL", "RR", 75)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getPartition("root"),
+                    tree.getPartition("L"),
+                    tree.getPartition("R").toBuilder().leafPartition(true).build(),
+                    tree.getPartition("RL"),
+                    tree.getPartition("RR"));
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Partition has 2 child partitions but is marked as a leaf partition: R");
+        }
+
+        @Test
+        void shouldRefuseNonRootSetAsNonLeafWithNoChildPartitions() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 50)
+                    .buildTree();
+            List<Partition> partitions = List.of(
+                    tree.getPartition("root"),
+                    tree.getPartition("L"),
+                    tree.getPartition("R").toBuilder().leafPartition(false).build());
+
+            // When / Then
+            assertThatThrownBy(() -> validate(partitions))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Expected 2 child partitions under R, left and right of split point, found 0");
+        }
     }
 
     @Nested
