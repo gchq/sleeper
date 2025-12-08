@@ -593,6 +593,20 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
         }
 
         @Test
+        void shouldFailToUpdatePartitionWithoutSplitting() {
+            // Given
+            initialiseWithPartitions(new PartitionsBuilder(tableProperties).singlePartition("root"));
+            PartitionTree tree = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(tree.getPartition("root")), List.of());
+
+            // When / Then
+            assertThatThrownBy(() -> transaction.synchronousCommit(store))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Attempted to update a partition without splitting it: root");
+        }
+
+        @Test
         void shouldFailToAddSecondRoot() {
             // Given
             PartitionTree tree = new PartitionsBuilder(tableProperties)

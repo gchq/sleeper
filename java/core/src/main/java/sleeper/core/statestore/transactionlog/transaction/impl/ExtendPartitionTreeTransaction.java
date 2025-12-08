@@ -68,6 +68,9 @@ public class ExtendPartitionTreeTransaction implements PartitionTransaction {
             if (!existing.get().isLeafPartition()) {
                 throw new StateStoreException("Attempted to update a partition which has already been split: " + partition.getId());
             }
+            if (partition.isLeafPartition()) {
+                throw new StateStoreException("Attempted to update a partition without splitting it: " + partition.getId());
+            }
         }
         for (Partition partition : newPartitions) {
             if (state.byId(partition.getId()).isPresent()) {
