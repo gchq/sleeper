@@ -98,11 +98,11 @@ public interface CommonProperty {
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty RETAIN_DATA_AFTER_TABLE_REMOVAL = Index.propertyBuilder("sleeper.retain.data.after.table.removal")
             .description("This property is used when applying an instance configuration and a table has been removed.\n" +
-                    "If this is true (default), removing the table from the properties file will just take the table offline.\n" +
+                    "If this is true (default), removing the table from the configuration will just take the table offline.\n" +
                     "If this is false, it will delete all data associated with the table when the table is removed.\n" +
                     "Be aware that if a table is renamed in the configuration, the CDK will see it as a delete of the old " +
                     "table name and a create of the new table name. If this is set to false when that happens it will remove the table's data.\n" +
-                    "This property isn't currently in used but will be in https://github.com/gchq/sleeper/issues/5870.")
+                    "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
