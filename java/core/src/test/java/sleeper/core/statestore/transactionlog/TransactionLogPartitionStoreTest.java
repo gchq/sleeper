@@ -545,7 +545,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     List.of(tree.getRootPartition()),
                     List.of(tree.getPartition("L"), tree.getPartition("R")));
 
-            // When
+            // When / Then
             assertThatThrownBy(() -> transaction.synchronousCommit(store))
                     .isInstanceOf(StateStoreException.class)
                     .hasMessage("Attempted to update a partition which does not exist: new");
@@ -565,7 +565,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     List.of(tree.getRootPartition()),
                     List.of(tree.getPartition("L2"), tree.getPartition("R2")));
 
-            // When
+            // When / Then
             assertThatThrownBy(() -> transaction.synchronousCommit(store))
                     .isInstanceOf(StateStoreException.class)
                     .hasMessage("Attempted to update a partition which has already been split: root");
@@ -586,10 +586,28 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     List.of(tree.getPartition("A")),
                     List.of(tree.getPartition("B"), tree.getPartition("C")));
 
-            // When
+            // When / Then
             assertThatThrownBy(() -> transaction.synchronousCommit(store))
                     .isInstanceOf(StateStoreException.class)
                     .hasMessage("Attempted to add a partition which already exists: B");
+        }
+
+        @Test
+        void shouldFailToAddSecondRoot() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .singlePartition("new")
+                    .buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(),
+                    List.of(tree.getRootPartition()));
+
+            // When / Then
+            assertThatThrownBy(() -> transaction.synchronousCommit(store))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Update results in invalid partition tree")
+                    .cause().isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("There should be exactly one root partition, found 2");
         }
     }
 
