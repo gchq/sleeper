@@ -26,6 +26,7 @@ import sleeper.core.schema.type.IntType;
 import java.util.Collection;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -35,6 +36,35 @@ public class PartitionTreeValidationTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
+
+    @Test
+    void shouldAcceptOneSplitAtRoot() {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50)
+                .buildList();
+
+        // When / Then
+        assertThatCode(() -> validate(partitions))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldAcceptMultipleLevelsOfSplits() {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(tableProperties)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50)
+                .splitToNewChildren("L", "LL", "LR", 25)
+                .splitToNewChildren("LR", "LRL", "LRR", 30)
+                .splitToNewChildren("R", "RL", "RR", 75)
+                .buildList();
+
+        // When / Then
+        assertThatCode(() -> validate(partitions))
+                .doesNotThrowAnyException();
+    }
 
     @Test
     void shouldRefuseNoPartitions() {
