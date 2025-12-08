@@ -34,14 +34,12 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 /**
- *
  * A wrapper object for primitive byte array type.
+ * Code utilised below is a simplified veriosn of the ByteArray class from facebook.collections library.
  * Required as hashCode and equals methods are required for usage of byte arrays within class that use implementations
  * of HashSet.
  *
  * @see ExportSplitPoints#estimate()
- *
- *      Code utilised below is a simplified veriosn of the ByteArray class from facebook.collections library.
  */
 public class ByteArray implements Comparable<ByteArray> {
 
