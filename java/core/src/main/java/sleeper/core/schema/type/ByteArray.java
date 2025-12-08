@@ -35,11 +35,14 @@ import java.util.Comparator;
 
 /**
  * A wrapper object for primitive byte array type.
- * Code utilised below is a simplified veriosn of the ByteArray class from facebook.collections library.
- * Required as hashCode and equals methods are required for usage of byte arrays within class that use implementations
- * of HashSet.
+ * This is a simplified version of the ByteArray class from Facebook JCommon Collections library.
  *
- * @see ExportSplitPoints#estimate()
+ * This implements Comparable meaning that the data wrapped in a ByteArray can be sorted.
+ * This is made use of in MergingIterator which is used in Java-based compaction and standard ingest, as well as when
+ * working with partitions,
+ *
+ * @see EstimateSplitPoints#estimate()
+ * @see FindPartitionSplitPoint#splitPointForField()
  */
 public class ByteArray implements Comparable<ByteArray> {
 
