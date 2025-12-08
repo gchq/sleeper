@@ -85,7 +85,7 @@ public class ByteArrayTest {
         }
 
         @Test
-        void shouldReturnUnequalWhenDataDiffernt() {
+        void shouldReturnUnequalWhenDataDifferent() {
             // Given
             ByteArray first = ByteArray.wrap(new byte[]{1, 2, 3});
             ByteArray second = ByteArray.wrap(new byte[]{'a', 'b', 'c'});
