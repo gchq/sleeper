@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
@@ -49,6 +50,15 @@ public class ExtendPartitionTreeTransaction implements PartitionTransaction {
      */
     public void synchronousCommit(StateStore stateStore) {
         stateStore.addPartitionsTransaction(AddTransactionRequest.withTransaction(this).build());
+    }
+
+    @Override
+    public void validate(StateStorePartitions state, TableProperties tableProperties) throws StateStoreException {
+        for (Partition partition : updatePartitions) {
+            if (state.byId(partition.getId()).isEmpty()) {
+                throw new StateStoreException("Attempted to update a partition which does not exist: " + partition.getId());
+            }
+        }
     }
 
     @Override

@@ -529,6 +529,19 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
             // Then
             assertThat(new PartitionTree(store.getAllPartitions())).isEqualTo(tree);
         }
+
+        @Test
+        void shouldFailToUpdatePartitionWhichDoesNotExist() {
+            // Given
+            tableProperties.setSchema(createSchemaWithKey("key", new StringType()));
+            initialiseWithPartitions(new PartitionsBuilder(tableProperties).singlePartition("root"));
+            PartitionTree tree = new PartitionsBuilder(tableProperties).rootFirst("new").buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(List.of(tree.getRootPartition()), List.of());
+
+            // When
+            assertThatThrownBy(() -> transaction.synchronousCommit(store))
+                    .isInstanceOf(StateStoreException.class);
+        }
     }
 
     @Nested
