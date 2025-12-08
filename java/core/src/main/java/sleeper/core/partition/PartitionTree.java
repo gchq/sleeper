@@ -385,7 +385,7 @@ public class PartitionTree {
         List<Partition> childPartitions = parent.getChildPartitionIds().stream()
                 .map(this::getPartition)
                 .toList();
-        validateSplit(rootPartition, childPartitions, schema);
+        validateSplit(parent, childPartitions, schema);
         for (Partition child : childPartitions) {
             if (!child.isLeafPartition()) {
                 findInvalidSplits(schema, child);
