@@ -30,8 +30,10 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.TableStatus;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -39,7 +41,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 /**
  * Lambda Function which defines Sleeper tables.
@@ -61,40 +69,44 @@ public class TableDefinerLambda {
     }
 
     public void handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
+        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
         Map<String, Object> resourceProperties = event.getResourceProperties();
+
+        Properties properties = new Properties();
+        properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
+        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+
         switch (event.getRequestType()) {
             case "Create":
-                addTable(resourceProperties);
+                addTable(tableProperties, tablePropertiesStore, resourceProperties);
                 break;
             case "Update":
                 updateTable(resourceProperties);
                 break;
             case "Delete":
-                deleteTable(resourceProperties);
+                deleteTable(tableProperties, tablePropertiesStore);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
         }
     }
 
-    private void addTable(Map<String, Object> resourceProperties) throws IOException {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
-        Properties properties = new Properties();
-        properties.load(new StringReader((String) resourceProperties.get("tableProperties")));
-        TableProperties tableProperties = new TableProperties(instanceProperties, properties);
-
-        String tableName = tableProperties.get(TableProperty.TABLE_NAME);
+    private void addTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore,
+            Map<String, Object> resourceProperties) throws IOException {
+        String tableName = tableProperties.get(TABLE_NAME);
         LOGGER.info("Validating table properties for table {}", tableName);
         tableProperties.validate();
-        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+
         LOGGER.info("Creating table {}", tableName);
         tablePropertiesStore.createTable(tableProperties);
 
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
         List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"),
                 tableProperties.getSchema(),
                 tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
         LOGGER.info("Initalising state store from split points for table {}", tableName);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(
+                tableProperties.getInstanceProperties(), s3Client, dynamoClient);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
     }
 
@@ -102,7 +114,23 @@ public class TableDefinerLambda {
         //TODO
     }
 
-    private void deleteTable(Map<String, Object> resourceProperties) {
-        //TODO
+    private void deleteTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore) {
+        String tableName = tableProperties.get(TABLE_NAME);
+        if (tableProperties.getBoolean(RETAIN_DATA_AFTER_DELETE)) {
+            LOGGER.info("Taking table {} offline.", tableName);
+            tableProperties.set(TABLE_ONLINE, "false");
+            tablePropertiesStore.save(tableProperties);
+        } else {
+            //Need to look up full properties to get the ID for deleting objects in bucket with prefix.
+            tableProperties = tablePropertiesStore.loadByName(tableName);
+            String tableId = tableProperties.get(TABLE_ID);
+            InstanceProperties instanceProperties = tableProperties.getInstanceProperties();
+            LOGGER.info("Deleting table {} and associated data.", tableName);
+            StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient)
+                    .getStateStore(tableProperties).clearSleeperTable();
+            deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableId);
+            new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient).deleteAllSnapshots();
+            tablePropertiesStore.delete(TableStatus.uniqueIdAndName(tableId, tableName, tableProperties.getBoolean(TABLE_ONLINE)));
+        }
     }
 }
