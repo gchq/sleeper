@@ -382,14 +382,15 @@ public class PartitionTree {
     }
 
     private void findInvalidSplits(Schema schema, Partition parent) {
+        if (parent.isLeafPartition()) {
+            return;
+        }
         List<Partition> childPartitions = parent.getChildPartitionIds().stream()
                 .map(this::getPartition)
                 .toList();
         validateSplit(parent, childPartitions, schema);
         for (Partition child : childPartitions) {
-            if (!child.isLeafPartition()) {
-                findInvalidSplits(schema, child);
-            }
+            findInvalidSplits(schema, child);
         }
     }
 

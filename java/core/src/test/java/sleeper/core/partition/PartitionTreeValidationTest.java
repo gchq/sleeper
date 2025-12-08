@@ -40,6 +40,16 @@ public class PartitionTreeValidationTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
 
     @Test
+    void shouldAcceptSinglePartition() {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildList();
+
+        // When / Then
+        assertThatCode(() -> validate(partitions))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void shouldAcceptOneSplitAtRoot() {
         // Given
         List<Partition> partitions = new PartitionsBuilder(tableProperties)
