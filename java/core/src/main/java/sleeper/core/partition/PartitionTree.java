@@ -52,6 +52,24 @@ public class PartitionTree {
     }
 
     /**
+     * Validates that the partition tree is correctly linked together.
+     */
+    public void validate() {
+        List<String> unlinkedPartitionIds = idToPartition.values().stream()
+                .filter(partition -> !isPartitionLinkedToRoot(partition))
+                .map(Partition::getId)
+                .toList();
+        if (!unlinkedPartitionIds.isEmpty()) {
+            throw new IllegalArgumentException("Found partitions unlinked to the rest of the tree: " + unlinkedPartitionIds);
+        }
+        List<String> missingChildPartitionIds = new ArrayList<>();
+        findMissingChildPartitions(rootPartition, missingChildPartitionIds);
+        if (!missingChildPartitionIds.isEmpty()) {
+            throw new IllegalArgumentException("Found missing child partitions: " + missingChildPartitionIds);
+        }
+    }
+
+    /**
      * Retrieves IDs of partitions that were split from a given parent partition.
      *
      * @param  partitionId              the ID of the parent partition
@@ -297,6 +315,31 @@ public class PartitionTree {
         return partitions.stream()
                 .map(Partition::getParentPartitionId).filter(Objects::nonNull)
                 .distinct().map(this::getPartition);
+    }
+
+    private boolean isPartitionLinkedToRoot(Partition partition) {
+        if (partition.getParentPartitionId() == null) {
+            return true;
+        }
+        Partition parent = getPartition(partition.getParentPartitionId());
+        if (parent == null) {
+            return false;
+        }
+        if (!parent.getChildPartitionIds().contains(partition.getId())) {
+            return false;
+        }
+        return isPartitionLinkedToRoot(parent);
+    }
+
+    private void findMissingChildPartitions(Partition partition, List<String> missingPartitionIds) {
+        for (String childId : partition.getChildPartitionIds()) {
+            Partition child = getPartition(childId);
+            if (child == null) {
+                missingPartitionIds.add(childId);
+            } else {
+                findMissingChildPartitions(child, missingPartitionIds);
+            }
+        }
     }
 
     @Override
