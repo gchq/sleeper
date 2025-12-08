@@ -15,7 +15,7 @@
  */
 package sleeper.core.key;
 
-import com.facebook.collections.ByteArray;
+import sleeper.core.schema.type.ByteArray;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -15,7 +15,6 @@
  */
 package sleeper.sketches;
 
-import com.facebook.collections.ByteArray;
 import org.apache.datasketches.ArrayOfItemsSerDe;
 import org.apache.datasketches.ArrayOfLongsSerDe;
 import org.apache.datasketches.ArrayOfStringsSerDe;
@@ -26,6 +25,7 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
