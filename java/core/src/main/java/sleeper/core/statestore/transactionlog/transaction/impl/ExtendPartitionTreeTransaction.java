@@ -81,7 +81,7 @@ public class ExtendPartitionTreeTransaction implements PartitionTransaction {
         updatePartitions.forEach(partition -> partitionById.put(partition.getId(), partition));
         newPartitions.forEach(partition -> partitionById.put(partition.getId(), partition));
         try {
-            new PartitionTree(partitionById.values()).validate();
+            new PartitionTree(partitionById.values()).validate(tableProperties.getSchema());
         } catch (RuntimeException e) {
             throw new StateStoreException("Update results in invalid partition tree", e);
         }

@@ -24,6 +24,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -622,6 +623,31 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     .hasMessage("Update results in invalid partition tree")
                     .cause().isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("There should be exactly one root partition, found 2");
+        }
+
+        @Test
+        void shouldFailSplittingAPartitionWhenChildPartitionsDoNotMeetAtSplitPoint() {
+            // Given
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 0)
+                    .buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(tree.getPartition("root")),
+                    List.of(tree.getPartition("L"),
+                            tree.getPartition("R")
+                                    .toBuilder().region(new Region(rangeFactory().createRange("key", 1, null))).build()));
+
+            // When / Then
+            assertThatThrownBy(() -> transaction.synchronousCommit(store))
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Update results in invalid partition tree")
+                    .cause().isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Child partitions do not meet at a split point on dimension 0 set in parent partition root");
+        }
+
+        private RangeFactory rangeFactory() {
+            return new RangeFactory(tableProperties.getSchema());
         }
     }
 

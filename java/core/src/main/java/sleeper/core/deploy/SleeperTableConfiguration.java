@@ -50,7 +50,7 @@ public record SleeperTableConfiguration(TableProperties properties, List<Partiti
     public void validate(SleeperTableValidationReporter validationReporter) {
         properties.validate(validationReporter.getPropertiesReporter());
         try {
-            new PartitionTree(initialPartitions).validate();
+            new PartitionTree(initialPartitions).validate(properties.getSchema());
         } catch (RuntimeException e) {
             validationReporter.initialPartitionsInvalid(e);
         }
