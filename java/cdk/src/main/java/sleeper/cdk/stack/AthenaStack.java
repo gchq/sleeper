@@ -60,7 +60,7 @@ public class AthenaStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties, SleeperJarsInBucket jars, SleeperCoreStacks coreStacks) {
         super(scope, id);
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         String bucketName = String.join("-", "sleeper",

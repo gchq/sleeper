@@ -16,7 +16,7 @@ members = [ "aggregator_udfs", "filter_udfs", "apps", "objectstore_ext", "rust_s
 resolver = "2"
 
 [workspace.package]
-version = "0.34.0-SNAPSHOT"
+version = "0.35.0-SNAPSHOT"
 edition = "2024"
 rust-version = "1.88"
 publish = false
@@ -36,15 +36,15 @@ cargo_metadata = { version = "0.23.1" }             # Access cargo metadata prog
 chrono = { version = "0.4.42" }                     # Log helper
 clap = { version = "4.5.53" }                       # Cmd line args processing
 color-eyre = { version = "0.6.5" }                  # Colourised version of `anyhow`
-cxx = { version = "1.0.189" }                       # Exception handling for Rust
+cxx = { version = "1.0.190" }                       # Exception handling for Rust
 cxx-build = { version = "1.0.181" }
 datafusion = { version = "51.0.0" }
 env_logger = { version = "0.11.8" }                 # Standard logging to stderr
 futures = { version = "0.3.31" }                    # Async processing
-git2 = { version = "0.20.2" }                       # Interact with version control
+git2 = { version = "0.20.3" }                       # Interact with version control
 human-panic = { version = "2.0.4" }                 # Readable panic messages
-libc = { version = "0.2.177" }                      # FFI type support
-log = { version = "0.4.28" }                        # Standard logging framework
+libc = { version = "0.2.178" }                      # FFI type support
+log = { version = "0.4.29" }                        # Standard logging framework
 nohash = { version = "0.2.0" }                      # No-op hashing for integral types
 num-format = { version = "0.4.4" }                  # Nicely formatted numbers
 num-traits = { version = "0.2.19" }                 # Unified traits for integral types

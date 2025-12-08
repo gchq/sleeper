@@ -15,14 +15,17 @@
  */
 package sleeper.core.properties.local;
 
-import com.facebook.collections.ByteArray;
 import org.apache.commons.codec.binary.Base64;
+
+import sleeper.core.schema.type.ByteArray;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -48,6 +51,21 @@ public class WriteSplitPoints {
             throw new UncheckedIOException(e);
         }
         return writer.toString();
+    }
+
+    /**
+     * Writes the split points to a file.
+     *
+     * @param splitPoints          the split points
+     * @param stringsBase64Encoded true if string values should be Base64 encoded
+     * @param file                 the file to write to
+     */
+    public static void toFile(List<Object> splitPoints, boolean stringsBase64Encoded, Path file) {
+        try (Writer writer = Files.newBufferedWriter(file)) {
+            writeSplitPoints(splitPoints, writer, stringsBase64Encoded);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**

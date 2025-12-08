@@ -15,12 +15,12 @@
  */
 package sleeper.compaction.job.execution.testutils;
 
-import com.facebook.collections.ByteArray;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.core.row.Row;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;

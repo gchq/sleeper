@@ -19,8 +19,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.Stack;
 
 import sleeper.cdk.SleeperInstanceProps;
+import sleeper.cdk.networking.SleeperNetworking;
 import sleeper.cdk.util.CdkContext;
 import sleeper.cdk.util.MismatchedVersionException;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -28,6 +31,7 @@ import sleeper.core.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -37,7 +41,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.SleeperVersion.getVersion;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REGION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
@@ -45,6 +51,11 @@ import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 class SleeperInstanceStacksPropsIT {
+
+    private final String account = "test-account";
+    private final String region = "test-region";
+    private final String vpcId = "vpc-12345";
+    private final List<String> subnetIds = List.of("subnet-12345");
 
     @TempDir
     private Path tempDir;
@@ -67,6 +78,10 @@ class SleeperInstanceStacksPropsIT {
             tagsProperties.setProperty("InstanceID", properties.get(ID));
             properties.loadTags(tagsProperties);
             properties.set(VERSION, getVersion());
+            properties.set(ACCOUNT, account);
+            properties.set(REGION, region);
+            properties.set(VPC_ID, vpcId);
+            properties.setList(SUBNETS, subnetIds);
 
             assertThat(loaded).isEqualTo(properties);
         }
@@ -194,7 +209,14 @@ class SleeperInstanceStacksPropsIT {
 
     private SleeperInstanceProps readProps(CdkContext context) {
         SleeperInstanceProps props = SleeperInstanceProps.fromContext(context, null, null);
-        props.validate();
+        Stack stack = Stack.Builder.create()
+                .env(Environment.builder()
+                        .account(account)
+                        .region(region)
+                        .build())
+                .build();
+        SleeperNetworking networking = SleeperNetworking.createByIds(stack, vpcId, subnetIds);
+        props.prepareProperties(stack, networking);
         return props;
     }
 
@@ -218,8 +240,6 @@ class SleeperInstanceStacksPropsIT {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(JARS_BUCKET, "test-bucket");
-        instanceProperties.set(VPC_ID, "test-vpc");
-        instanceProperties.set(SUBNETS, "test-subnet");
 
         return instanceProperties;
     }

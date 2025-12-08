@@ -15,10 +15,10 @@
  */
 package sleeper.core.range;
 
-import com.facebook.collections.ByteArray;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Field;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;

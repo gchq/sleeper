@@ -67,6 +67,7 @@ public class SleeperInstanceIT {
                 .build();
         SleeperInstanceProps sleeperProps = SleeperInstanceProps.builder()
                 .instanceProperties(instanceProperties)
+                .version("1.2.3")
                 .jars(jarsInBucket())
                 .skipCheckingVersionMatchesProperties(true)
                 .build();

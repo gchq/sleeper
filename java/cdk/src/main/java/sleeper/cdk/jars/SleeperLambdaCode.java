@@ -26,28 +26,32 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.LambdaJar;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.model.LambdaDeployType;
 
 import java.util.List;
 import java.util.function.Consumer;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
+
 public class SleeperLambdaCode {
 
     private final SleeperJarsInBucket jars;
-    private final LambdaDeployType deployType;
+    private final InstanceProperties instanceProperties;
     private final IBucket bucket;
 
-    SleeperLambdaCode(SleeperJarsInBucket jars, LambdaDeployType deployType, IBucket bucket) {
+    SleeperLambdaCode(SleeperJarsInBucket jars, InstanceProperties instanceProperties, IBucket bucket) {
         this.jars = jars;
-        this.deployType = deployType;
+        this.instanceProperties = instanceProperties;
         this.bucket = bucket;
     }
 
     public IVersion buildFunction(Construct scope, LambdaHandler handler, String id, Consumer<LambdaBuilder> config) {
 
+        LambdaDeployType deployType = instanceProperties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
         LambdaBuilder builder;
         if (deployType == LambdaDeployType.CONTAINER || handler.isAlwaysDockerDeploy()) {
             builder = new DockerFunctionBuilder(DockerImageFunction.Builder.create(scope, id)
@@ -73,7 +77,7 @@ public class SleeperLambdaCode {
     }
 
     private Code jarCode(LambdaJar jar) {
-        return Code.fromBucket(bucket, jar.getFilename(), jars.getLatestVersionId(jar));
+        return Code.fromBucket(bucket, jar.getFilename(instanceProperties.get(VERSION)), jars.getLatestVersionId(jar));
     }
 
     private DockerImageCode containerCode(Construct scope, LambdaHandler handler, String id) {
@@ -81,7 +85,7 @@ public class SleeperLambdaCode {
                 Repository.fromRepositoryName(scope, id + "Repository", jars.getRepositoryName(handler.getJar())),
                 EcrImageCodeProps.builder()
                         .cmd(List.of(handler.getHandler()))
-                        .tagOrDigest(SleeperVersion.getVersion())
+                        .tagOrDigest(instanceProperties.get(VERSION))
                         .build());
     }
 }

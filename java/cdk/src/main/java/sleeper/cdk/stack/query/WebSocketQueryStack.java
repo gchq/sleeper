@@ -34,7 +34,6 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
@@ -61,7 +60,7 @@ public final class WebSocketQueryStack extends NestedStack {
             SleeperJarsInBucket jars, SleeperCoreStacks coreStacks, QueryQueueStack queryQueueStack, QueryStack queryStack) {
         super(scope, id);
 
-        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        IBucket jarsBucket = jars.createJarsBucketReference(this, "JarsBucket");
         SleeperLambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         setupWebSocketApi(instanceProperties, lambdaCode, coreStacks, queryQueueStack, queryStack);
         Utils.addStackTagIfSet(this, instanceProperties);
