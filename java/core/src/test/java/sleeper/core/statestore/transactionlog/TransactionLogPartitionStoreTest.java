@@ -484,7 +484,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
     class ExtendTree {
 
         @Test
-        void shouldExtendTreeWithOneSplit() {
+        void shouldAddOneSplitToRoot() {
             // Given
             Schema schema = createSchemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
@@ -495,6 +495,33 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
             ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
                     List.of(tree.getRootPartition()),
                     List.of(tree.getPartition("L"), tree.getPartition("R")));
+
+            // When
+            transaction.synchronousCommit(store);
+
+            // Then
+            assertThat(new PartitionTree(store.getAllPartitions())).isEqualTo(tree);
+        }
+
+        @Test
+        void shouldAddMultipleLevelsToNonRoots() {
+            // Given
+            Schema schema = createSchemaWithKey("key", new StringType());
+            initialiseWithPartitions(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "p"));
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", "p")
+                    .splitToNewChildren("L", "LL", "LR", "g")
+                    .splitToNewChildren("LR", "LRL", "LRR", "k")
+                    .splitToNewChildren("R", "RL", "RR", "s")
+                    .buildTree();
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(tree.getPartition("L"), tree.getPartition("R")),
+                    List.of(tree.getPartition("LL"), tree.getPartition("LR"),
+                            tree.getPartition("LRL"), tree.getPartition("LRR"),
+                            tree.getPartition("RL"), tree.getPartition("RR")));
 
             // When
             transaction.synchronousCommit(store);
