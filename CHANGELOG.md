@@ -8,7 +8,7 @@ available [here](docs/development/roadmap.md).
 
 ## Version 0.34.1
 
-### 8th December, 2025
+### 9th December, 2025
 
 This is a bug fix release that corrects deployment of Sleeper with the CDK.
 
