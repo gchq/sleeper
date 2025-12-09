@@ -21,6 +21,7 @@ use crate::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
+        sql_sort_fix::replace_sort_stage,
         util::explain_plan,
     },
 };
@@ -132,6 +133,8 @@ impl<'a> LeafPartitionQuery<'a> {
                         .with_allow_statements(false),
                 )
                 .await?;
+
+            frame = replace_sort_stage(frame)?;
         }
 
         if self.config.explain_plans {
