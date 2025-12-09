@@ -107,6 +107,7 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           trivyignores: code-style/.trivyignore.cli.yaml
+          version: latest
       - name: Retag image for GitHub
         if: ${{ inputs.pushImages }}
         run: docker tag ${{ env.TEMP_IMAGE }} ${{ inputs.pushTag }}

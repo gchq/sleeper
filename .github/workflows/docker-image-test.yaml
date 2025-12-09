@@ -74,3 +74,4 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           trivyignores: code-style/.trivyignore.yaml
+          version: latest
