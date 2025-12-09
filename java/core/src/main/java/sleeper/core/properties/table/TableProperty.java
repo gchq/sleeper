@@ -30,7 +30,7 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.core.properties.instance.CommonProperty.DEFAULT_IMPORT_DATA_FROM_EXISTING_TABLE;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_REUSE_EXISTING_TABLE;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
@@ -300,13 +300,13 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty IMPORT_DATA_FROM_EXISTING_TABLE = Index.propertyBuilder("sleeper.table.import.data.from.existing")
-            .defaultProperty(DEFAULT_IMPORT_DATA_FROM_EXISTING_TABLE)
+    TableProperty REUSE_EXISTING_TABLE = Index.propertyBuilder("sleeper.reuse.existing.table")
+            .defaultProperty(DEFAULT_REUSE_EXISTING_TABLE)
             .description("This property is used when applying an instance configuration and a table has been added.\n" +
-                    "If this is true, then when adding the table, you expect there to be an existing table with the same table " +
-                    "name that you wish to import data from.\n" +
-                    "If the table does not exist already it will throw a Table Not Found exception.\n" +
-                    "If this is false (default), it will attempt to create a new table")
+                    "By default, or if this property is false, when a table is added to an instance configuration it's created " +
+                    "in the instance. If it already exists the update will fail.\n" +
+                    "If this property is true, the existing table will be reused and imported as part of the instance configuration. " +
+                    "If it doesn't exist the update will fail.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
