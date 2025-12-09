@@ -37,6 +37,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
@@ -164,6 +165,19 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             //Then
             assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
                     .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        public void shouldFailToImportTableIfImportFlagNotSet() throws IOException {
+            //Given
+            callLambda(CREATE, tableProperties);
+            //Should just take the table offline
+            tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
+            callLambda(DELETE, tableProperties);
+
+            //Then
+            assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
+                    .isInstanceOf(TableAlreadyExistsException.class);
         }
 
         @Test

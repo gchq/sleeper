@@ -103,7 +103,7 @@ public class TableDefinerLambda {
 
         //Table may just be offline from a previous delete call
         if (tableProperties.getBoolean(TableProperty.IMPORT_DATA_FROM_EXISTING_TABLE)) {
-            LOGGER.info("Table {} expected to already exist. Attempting to update it's properties", tableName);
+            LOGGER.info("Table {} expected to already exist. Attempting to update its properties", tableName);
             tablePropertiesStore.update(tableProperties);
             return;
         }
