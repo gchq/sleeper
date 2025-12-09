@@ -653,3 +653,6 @@ docker/build-push-action (https://github.com/marketplace/actions/build-and-push-
 
 - Apache License, Version 2.0
 
+aquasecurity/trivy-action (https://github.com/marketplace/actions/aqua-security-trivy)
+
+- Apache License, Version 2.0
