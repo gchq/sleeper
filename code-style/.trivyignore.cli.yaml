@@ -1,0 +1,8 @@
+
+secrets:
+  - id: private-key
+    paths:
+      - "/etc/ssl/private/ssl-cert-snakeoil.key"
+    statement: |
+      A private key incorrectly included in the CLI dependencies Docker image.
+      See issue https://github.com/gchq/sleeper/issues/6213.
