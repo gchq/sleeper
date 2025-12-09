@@ -21,7 +21,6 @@ import com.amazonaws.athena.connector.lambda.domain.predicate.Range;
 import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
 import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
-import com.facebook.collections.Pair;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType;
@@ -55,7 +54,6 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.rowretrieval.RowRetrievalException;
 import sleeper.query.runner.rowretrieval.LeafPartitionRowRetrieverImpl;
 
-import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -128,9 +126,9 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         Set<String> relevantFiles = new HashSet<>(new Gson().fromJson(split.getProperty(RELEVANT_FILES_FIELD), List.class));
         List<Field> rowKeyFields = schema.getRowKeyFields();
 
-        List<Pair<String, String>> rowKeys = split.getProperties().entrySet().stream()
+        List<FieldAsString> rowKeys = split.getProperties().entrySet().stream()
                 .filter(entry -> ROW_KEY_PREFIX_TEST.test(entry.getKey()))
-                .map(entry -> Pair.of(entry.getKey(), entry.getValue()))
+                .map(entry -> new FieldAsString(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
 
         List<Object> minRowKeys = getRowKey(rowKeys, rowKeyFields, "Min");
@@ -139,33 +137,33 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         return createIterator(relevantFiles, minRowKeys, maxRowKeys, schema, tableProperties, recordsRequest.getConstraints().getSummary());
     }
 
-    private List<Object> getRowKey(List<Pair<String, String>> rowKeyStream, List<Field> rowKeyFields, String indicator) {
+    private List<Object> getRowKey(List<FieldAsString> rowKeyStream, List<Field> rowKeyFields, String indicator) {
         List<Object> rowKey = new ArrayList<>();
         for (int i = 0; i < rowKeyFields.size(); i++) {
             rowKey.add(null);
         }
 
         rowKeyStream.stream()
-                .filter(entry -> entry.getFirst().contains(indicator))
-                .map(entry -> getIndexToObjectPair(rowKeyFields, entry))
-                .forEach(pair -> rowKey.set(pair.getFirst(), pair.getSecond()));
+                .filter(entry -> entry.fieldName().contains(indicator))
+                .map(entry -> getFieldAtDimension(rowKeyFields, entry))
+                .forEach(valueWithIndex -> rowKey.set(valueWithIndex.dimension(), valueWithIndex.value()));
 
         return rowKey;
     }
 
-    private Pair<Integer, ? extends Serializable> getIndexToObjectPair(List<Field> rowKeyFields, Pair<String, String> entry) {
-        String key = entry.getFirst();
+    private FieldAtDimension getFieldAtDimension(List<Field> rowKeyFields, FieldAsString entry) {
+        String key = entry.fieldName();
         Integer index = Integer.valueOf(key.substring(key.lastIndexOf("RowKey") + 6));
-        String stringValue = entry.getSecond();
+        String stringValue = entry.value();
         Type type = rowKeyFields.get(index).getType();
         if (type instanceof StringType) {
-            return Pair.of(index, stringValue);
+            return new FieldAtDimension(index, stringValue);
         } else if (type instanceof ByteArrayType) {
-            return Pair.of(index, BinaryUtils.fromBase64(stringValue));
+            return new FieldAtDimension(index, BinaryUtils.fromBase64(stringValue));
         } else if (type instanceof IntType) {
-            return Pair.of(index, Integer.parseInt(stringValue));
+            return new FieldAtDimension(index, Integer.parseInt(stringValue));
         } else if (type instanceof LongType) {
-            return Pair.of(index, Long.parseLong(stringValue));
+            return new FieldAtDimension(index, Long.parseLong(stringValue));
         } else {
             throw new RuntimeException("Unexpected Primitive type: " + type);
         }
@@ -258,4 +256,5 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
                 .getIterator(IteratorConfig.from(tableProperties), schema)
                 .applyTransform(mergingIterator);
     }
+
 }

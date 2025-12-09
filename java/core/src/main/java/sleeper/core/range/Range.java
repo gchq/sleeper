@@ -15,10 +15,9 @@
  */
 package sleeper.core.range;
 
-import com.facebook.collections.ByteArray;
-
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
