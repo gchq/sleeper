@@ -64,6 +64,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
+import static sleeper.core.properties.table.TableProperty.IMPORT_DATA_FROM_EXISTING_TABLE;
+import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -155,12 +157,27 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        public void shouldUpdateTableIfTableAlreadyExists() throws IOException {
+        public void shouldFailToImportDataIfTableDoesNotExist() throws IOException {
+            //Given
+            tableProperties.set(IMPORT_DATA_FROM_EXISTING_TABLE, "true");
+
+            //Then
+            assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        public void shouldUpdateTableIfImportDataPropertySet() throws IOException {
             //Given
             callLambda(CREATE, tableProperties);
-            tableProperties.set(TABLE_ONLINE, "false");
+            //Should just take the table offline
+            tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
+            callLambda(DELETE, tableProperties);
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
 
             //When
+            tableProperties.set(TABLE_ONLINE, "true");
+            tableProperties.set(IMPORT_DATA_FROM_EXISTING_TABLE, "true");
             callLambda(CREATE, tableProperties);
 
             //Then

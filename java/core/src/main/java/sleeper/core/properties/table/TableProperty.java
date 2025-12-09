@@ -30,6 +30,7 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_IMPORT_DATA_FROM_EXISTING_TABLE;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
@@ -297,6 +298,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "Be aware that if a table is renamed in the configuration, the CDK will see it as a delete of the old " +
                     "table name and a create of the new table name. If this is set to false when that happens it will remove the table's data.\n" +
                     "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty IMPORT_DATA_FROM_EXISTING_TABLE = Index.propertyBuilder("sleeper.table.import.data.from.existing")
+            .defaultProperty(DEFAULT_IMPORT_DATA_FROM_EXISTING_TABLE)
+            .description("This property is used when applying an instance configuration and a table has been added.\n" +
+                    "If this is true, then when adding the table, you expect there to be an existing table with the same table " +
+                    "name that you wish to import data from.\n" +
+                    "If the table does not exist already it will throw a Table Not Found exception.\n" +
+                    "If this is false (default), it will attempt to create a new table")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
