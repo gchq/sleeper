@@ -20,7 +20,6 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.table.TableProperties;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,50 +50,9 @@ public record SleeperTableConfiguration(TableProperties properties, List<Partiti
     public void validate(SleeperTableValidationReporter validationReporter) {
         properties.validate(validationReporter.getPropertiesReporter());
         try {
-            validateInitialPartitions();
+            new PartitionTree(initialPartitions).validate(properties.getSchema());
         } catch (RuntimeException e) {
             validationReporter.initialPartitionsInvalid(e);
-        }
-    }
-
-    private void validateInitialPartitions() {
-        PartitionTree tree = new PartitionTree(initialPartitions);
-        List<String> unlinkedPartitionIds = initialPartitions.stream()
-                .filter(partition -> !isPartitionLinkedToRoot(tree, partition))
-                .map(Partition::getId)
-                .toList();
-        if (!unlinkedPartitionIds.isEmpty()) {
-            throw new IllegalArgumentException("Found partitions unlinked to the rest of the tree: " + unlinkedPartitionIds);
-        }
-        List<String> missingChildPartitionIds = new ArrayList<>();
-        findMissingChildPartitions(tree, tree.getRootPartition(), missingChildPartitionIds);
-        if (!missingChildPartitionIds.isEmpty()) {
-            throw new IllegalArgumentException("Found missing child partitions: " + missingChildPartitionIds);
-        }
-    }
-
-    private boolean isPartitionLinkedToRoot(PartitionTree tree, Partition partition) {
-        if (partition.getParentPartitionId() == null) {
-            return true;
-        }
-        Partition parent = tree.getPartition(partition.getParentPartitionId());
-        if (parent == null) {
-            return false;
-        }
-        if (!parent.getChildPartitionIds().contains(partition.getId())) {
-            return false;
-        }
-        return isPartitionLinkedToRoot(tree, parent);
-    }
-
-    private void findMissingChildPartitions(PartitionTree tree, Partition partition, List<String> missingPartitionIds) {
-        for (String childId : partition.getChildPartitionIds()) {
-            Partition child = tree.getPartition(childId);
-            if (child == null) {
-                missingPartitionIds.add(childId);
-            } else {
-                findMissingChildPartitions(tree, child, missingPartitionIds);
-            }
         }
     }
 
