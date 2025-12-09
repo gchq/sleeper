@@ -170,10 +170,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         public void shouldFailToImportTableIfImportFlagNotSet() throws IOException {
             //Given
-            callLambda(CREATE, tableProperties);
-            //Should just take the table offline
-            tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
-            callLambda(DELETE, tableProperties);
+            createTableThenTakeOffline();
 
             //Then
             assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
@@ -183,11 +180,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         public void shouldUpdateTableIfImportDataPropertySet() throws IOException {
             //Given
-            callLambda(CREATE, tableProperties);
-            //Should just take the table offline
-            tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
-            callLambda(DELETE, tableProperties);
-            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
+            createTableThenTakeOffline();
 
             //When
             tableProperties.set(TABLE_ONLINE, "true");
@@ -197,6 +190,29 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             //Then
             assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
                     .isEqualTo(tableProperties);
+        }
+
+        @Test
+        public void shouldHandleTableBeingRenamed() throws IOException {
+            //Given
+            createTableThenTakeOffline();
+
+            //When
+            tableProperties.set(TABLE_ONLINE, "true");
+            tableProperties.set(TABLE_NAME, "newName");
+            callLambda(CREATE, tableProperties);
+
+            //Then
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
+                    .isEqualTo(tableProperties);
+        }
+
+        private void createTableThenTakeOffline() throws IOException {
+            callLambda(CREATE, tableProperties);
+            //Should just take the table offline
+            tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
+            callLambda(DELETE, tableProperties);
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
         }
     }
 

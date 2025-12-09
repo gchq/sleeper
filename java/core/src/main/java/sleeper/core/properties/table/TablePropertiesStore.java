@@ -131,10 +131,17 @@ public class TablePropertiesStore {
      */
     public void createTable(TableProperties tableProperties) {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
-        tableIndex.getTableByName(tableName).ifPresent(tableId -> {
-            throw new TableAlreadyExistsException(tableId);
+        String tableId = tableProperties.get(TableProperty.TABLE_ID);
+        tableIndex.getTableByName(tableName).ifPresent(tableStatus -> {
+            throw new TableAlreadyExistsException(tableStatus);
         });
-        createWhenNotInIndex(tableProperties);
+
+        if (tableId == null || tableIndex.getTableByUniqueId(tableId).isEmpty()) {
+            createWhenNotInIndex(tableProperties);
+        } else {
+            //Table has been renamed, update its properties in the tableIndex.
+            update(tableProperties);
+        }
     }
 
     /**

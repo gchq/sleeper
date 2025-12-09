@@ -75,6 +75,20 @@ public class InMemoryTablePropertiesStoreTest {
         }
 
         @Test
+        void shouldUpdateTableWhenTableRenamed() {
+            // Given
+            store.createTable(tableProperties);
+
+            // When
+            tableProperties.set(TABLE_NAME, "newName");
+            store.createTable(tableProperties);
+
+            //Then
+            assertThat(store.loadByName("newName"))
+                    .isEqualTo(tableProperties);
+        }
+
+        @Test
         void shouldCreateNewTableWithSave() {
             // When
             store.save(tableProperties);
