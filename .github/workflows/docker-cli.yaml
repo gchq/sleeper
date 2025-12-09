@@ -56,7 +56,7 @@ jobs:
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          trivyignore: code-style/.trivyignore.cli.yaml
+          trivyignores: code-style/.trivyignore.cli.yaml
       - name: Save dependencies image to tarball
         run: docker save ${{ env.DEPENDENCIES_IMAGE }} --output /tmp/dependencies-image.tar
       - name: Upload dependencies image as artifact
