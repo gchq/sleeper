@@ -131,6 +131,26 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
     }
 
     @Nested
+    @DisplayName("Check table exists")
+    class CheckTableExists {
+
+        @Test
+        void shouldReturnFalseWhenTableDoesNotExists() {
+            //When/Then
+            assertThat(store.doesTableExistByName(tableName)).isFalse();
+        }
+
+        @Test
+        void shouldReturnTrueWhenTableDoesExists() {
+            //Given
+            store.save(tableProperties);
+
+            //When/Then
+            assertThat(store.doesTableExistByName(tableName)).isTrue();
+        }
+    }
+
+    @Nested
     @DisplayName("Load table properties")
     class LoadProperties {
 

@@ -153,6 +153,20 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                             .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
                             .buildList());
         }
+
+        @Test
+        public void shouldUpdateTableIfTableAlreadyExists() throws IOException {
+            //Given
+            callLambda(CREATE, tableProperties);
+            tableProperties.set(TABLE_ONLINE, "false");
+
+            //When
+            callLambda(CREATE, tableProperties);
+
+            //Then
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
+                    .isEqualTo(tableProperties);
+        }
     }
 
     @Nested

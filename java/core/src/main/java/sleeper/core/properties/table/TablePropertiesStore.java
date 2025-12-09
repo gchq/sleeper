@@ -72,6 +72,16 @@ public class TablePropertiesStore {
     }
 
     /**
+     * Checks if a table exists already.
+     *
+     * @param  tableName the table name
+     * @return           true if the table exists, false otherwise
+     */
+    public boolean doesTableExistByName(String tableName) {
+        return tableIndex.getTableByName(tableName).isPresent();
+    }
+
+    /**
      * Loads and validates properties for the Sleeper table with the given unique ID.
      *
      * @param  tableId                the unique table ID

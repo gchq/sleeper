@@ -83,6 +83,7 @@ public class TableDefinerLambda {
                 break;
             case "Update":
                 LOGGER.info("Updating table properties for table {}", tableProperties.get(TABLE_NAME));
+                tableProperties.validate();
                 tablePropertiesStore.save(tableProperties);
                 break;
             case "Delete":
@@ -96,8 +97,16 @@ public class TableDefinerLambda {
     private void addTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore,
             Map<String, Object> resourceProperties) throws IOException {
         String tableName = tableProperties.get(TABLE_NAME);
+
         LOGGER.info("Validating table properties for table {}", tableName);
         tableProperties.validate();
+
+        //Table may just be offline from a previous delete call
+        if (tablePropertiesStore.doesTableExistByName(tableName)) {
+            LOGGER.info("Table {} already exists. Updating it's properties", tableName);
+            tablePropertiesStore.save(tableProperties);
+            return;
+        }
 
         LOGGER.info("Creating table {}", tableName);
         tablePropertiesStore.createTable(tableProperties);
