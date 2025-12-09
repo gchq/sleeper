@@ -15,12 +15,12 @@
  */
 package sleeper.clients.table.partition;
 
-import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketches.Sketches;
 

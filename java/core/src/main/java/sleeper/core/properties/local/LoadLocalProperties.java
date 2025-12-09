@@ -15,6 +15,9 @@
  */
 package sleeper.core.properties.local;
 
+import sleeper.core.deploy.SleeperTableConfiguration;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
@@ -32,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
+import static sleeper.core.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 
 /**
  * Loads Sleeper configuration files from the local file system.
@@ -133,7 +137,8 @@ public class LoadLocalProperties {
      */
     public static Stream<TableProperties> loadTablesFromInstancePropertiesFileNoValidation(
             InstanceProperties instanceProperties, Path instancePropertiesFile) {
-        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile));
+        return loadTablesFromDirectoryNoValidation(instanceProperties, directoryOf(instancePropertiesFile))
+                .map(SleeperTableConfiguration::properties);
     }
 
     /**
@@ -146,43 +151,69 @@ public class LoadLocalProperties {
     public static Stream<TableProperties> loadTablesFromDirectory(
             InstanceProperties instanceProperties, Path directory) {
         return loadTablesFromDirectoryNoValidation(instanceProperties, directory)
-                .map(tableProperties -> {
-                    tableProperties.validate();
-                    return tableProperties;
+                .map(table -> {
+                    table.validate();
+                    return table.properties();
                 });
     }
 
     /**
-     * Loads table properties by scanning under the given directory, with no validation.
+     * Loads table configurations by scanning under the given directory, with no validation.
      *
      * @param  instanceProperties the instance properties
      * @param  directory          the directory
-     * @return                    the table properties found
+     * @return                    the table configurations found
      */
-    public static Stream<TableProperties> loadTablesFromDirectoryNoValidation(
+    public static Stream<SleeperTableConfiguration> loadTablesFromDirectoryNoValidation(
             InstanceProperties instanceProperties, Path directory) {
         return streamBaseAndTableFolders(directory)
                 .map(folder -> readTablePropertiesFolderOrNull(instanceProperties, folder))
                 .filter(Objects::nonNull);
     }
 
-    private static TableProperties readTablePropertiesFolderOrNull(
-            InstanceProperties instanceProperties, Path folder) {
-        Path propertiesPath = folder.resolve("table.properties");
-        Path schemaPath = folder.resolve("schema.json");
-        if (!Files.exists(propertiesPath)) {
-            return null;
+    /**
+     * Loads table configuration from a properties file, with no validation. Looks for associated files in the same
+     * folder.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  propertiesFile     the path to the table properties file
+     * @return                    the table configuration
+     */
+    public static SleeperTableConfiguration loadTableFromPropertiesFileNoValidation(InstanceProperties instanceProperties, Path propertiesFile) {
+        Path folder = propertiesFile.getParent();
+        if (folder == null) {
+            throw new IllegalArgumentException("Properties file parameter has no parent directory, please pass in a file instead of a directory.");
         }
+        Path schemaPath = folder.resolve("schema.json");
+        Path splitPointsPath = folder.resolve("splits.txt");
         try {
-            Properties properties = loadProperties(propertiesPath);
+            Properties properties = loadProperties(propertiesFile);
             if (Files.exists(schemaPath)) {
                 String schemaString = Files.readString(schemaPath);
                 properties.setProperty(TableProperty.SCHEMA.getPropertyName(), schemaString);
             }
-            return new TableProperties(instanceProperties, properties);
+            TableProperties tableProperties = new TableProperties(instanceProperties, properties);
+            if (tableProperties.getSchema() == null) {
+                return new SleeperTableConfiguration(tableProperties, List.of());
+            }
+            List<Object> splitPoints = List.of();
+            if (Files.exists(splitPointsPath)) {
+                splitPoints = ReadSplitPoints.fromFile(splitPointsPath, tableProperties.getSchema(), tableProperties.getBoolean(SPLIT_POINTS_BASE64_ENCODED));
+            }
+            List<Partition> initialPartitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
+            return new SleeperTableConfiguration(tableProperties, initialPartitions);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static SleeperTableConfiguration readTablePropertiesFolderOrNull(
+            InstanceProperties instanceProperties, Path folder) {
+        Path propertiesPath = folder.resolve("table.properties");
+        if (!Files.exists(propertiesPath)) {
+            return null;
+        }
+        return loadTableFromPropertiesFileNoValidation(instanceProperties, propertiesPath);
     }
 
     private static Path directoryOf(Path filePath) {

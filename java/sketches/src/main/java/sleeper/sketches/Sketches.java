@@ -15,13 +15,13 @@
  */
 package sleeper.sketches;
 
-import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
 
 import sleeper.core.row.Row;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.PrimitiveType;
