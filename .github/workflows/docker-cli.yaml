@@ -10,6 +10,7 @@ env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  TRIVY_IGNOREFILE: code-style/.trivyignore.cli.yaml
 
 jobs:
   setup:
@@ -56,7 +57,6 @@ jobs:
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          trivyignores: code-style/.trivyignore.cli.yaml
           version: latest
       - name: Save dependencies image to tarball
         run: docker save ${{ env.DEPENDENCIES_IMAGE }} --output /tmp/dependencies-image.tar

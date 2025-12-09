@@ -17,6 +17,7 @@ env:
   RUST_BUILD_IMAGE_AARCH64: "ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest"
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
+  TRIVY_IGNOREFILE: code-style/.trivyignore.yaml
 
 jobs:
   build:
@@ -73,5 +74,4 @@ jobs:
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          trivyignores: code-style/.trivyignore.yaml
           version: latest

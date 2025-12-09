@@ -28,6 +28,7 @@ on:
 env:
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   TEMP_IMAGE: localhost:5000/sleeper-temp:current
+  TRIVY_IGNOREFILE: code-style/.trivyignore.cli.yaml
 
 jobs:
   build:
@@ -106,7 +107,6 @@ jobs:
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
-          trivyignores: code-style/.trivyignore.cli.yaml
           version: latest
       - name: Retag image for GitHub
         if: ${{ inputs.pushImages }}
