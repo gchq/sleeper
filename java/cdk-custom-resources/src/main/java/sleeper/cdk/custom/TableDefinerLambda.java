@@ -102,7 +102,8 @@ public class TableDefinerLambda {
         tableProperties.validate();
 
         //Table may just be offline from a previous delete call
-        if (tablePropertiesStore.doesTableExistByName(tableName)) {
+        //TODO fix
+        if (false) {
             LOGGER.info("Table {} already exists. Updating it's properties", tableName);
             tablePropertiesStore.save(tableProperties);
             return;
