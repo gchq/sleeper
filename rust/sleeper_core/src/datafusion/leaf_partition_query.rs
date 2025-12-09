@@ -29,6 +29,7 @@ use arrow::record_batch::RecordBatch;
 use datafusion::{
     common::plan_err,
     dataframe::DataFrame,
+    datasource::ViewTable,
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
     logical_expr::{Expr, ident},
@@ -107,7 +108,9 @@ impl<'a> LeafPartitionQuery<'a> {
         // Create query frame and sketches if it has been enabled
         let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
 
-        // Convert to physical plan
+        // Ensure sort ordering is created before adding more stages to plan, as completer might add stages
+        // to plan which change schema, e.g. adding a data sink stage
+        let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
         let completer = ops.create_output_completer();
 
         let mut frame = completer.complete_frame(frame)?;
@@ -135,7 +138,6 @@ impl<'a> LeafPartitionQuery<'a> {
             explain_plan(&frame).await?;
         }
 
-        let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
         let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
 
         if self.config.explain_plans {
