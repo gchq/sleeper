@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -39,6 +40,8 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTr
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -526,6 +529,26 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     List.of(tree.getPartition("LL"), tree.getPartition("LR"),
                             tree.getPartition("LRL"), tree.getPartition("LRR"),
                             tree.getPartition("RL"), tree.getPartition("RR")));
+
+            // When
+            transaction.synchronousCommit(store);
+
+            // Then
+            assertThat(new PartitionTree(store.getAllPartitions())).isEqualTo(tree);
+        }
+
+        @Test
+        void shouldExtendFromRootTo100_000Leaves() {
+            // Given
+            List<Partition> partitions = new PartitionsFromSplitPoints(tableProperties.getSchema(),
+                    IntStream.range(0, 100_000)
+                            .boxed().collect(Collectors.<Object>toList()))
+                    .construct();
+            PartitionTree tree = new PartitionTree(partitions);
+            initialiseWithPartitions(new PartitionsBuilder(tableProperties).singlePartition(tree.getRootPartition().getId()));
+            ExtendPartitionTreeTransaction transaction = new ExtendPartitionTreeTransaction(
+                    List.of(tree.getRootPartition()),
+                    tree.descendentsOf(tree.getRootPartition()).toList());
 
             // When
             transaction.synchronousCommit(store);
