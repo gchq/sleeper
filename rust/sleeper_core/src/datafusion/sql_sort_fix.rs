@@ -1,4 +1,4 @@
-//! Contains code to replace the sort stage that DataFrame as SQL table functionality drops.
+//! Contains code to replace the sort stage that [`DataFrame`] as SQL table functionality drops.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
