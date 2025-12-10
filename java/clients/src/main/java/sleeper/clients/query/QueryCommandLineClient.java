@@ -143,6 +143,7 @@ public abstract class QueryCommandLineClient {
             ranges.add(range);
             i++;
         }
+
         Region region = new Region(ranges);
 
         return Query.builder()
@@ -218,7 +219,6 @@ public abstract class QueryCommandLineClient {
             }
             i++;
         }
-
         Region region = new Region(ranges);
         return Query.builder()
                 .tableName(tableName)
