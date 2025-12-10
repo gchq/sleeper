@@ -182,7 +182,6 @@ public class DataFusionLeafPartitionRowRetriever implements LeafPartitionRowRetr
         FFISleeperRegion[] ffiRegions = query.getRegions().stream().map(region -> FFISleeperRegion.from(region, dataReadSchema, runtime)).toArray(FFISleeperRegion[]::new);
         queryConfig.setQueryRegions(ffiRegions);
         queryConfig.explain_plans.set(true);
-        queryConfig.sql_string.set(query.getSQLString());
 
         queryConfig.validate();
         return queryConfig;

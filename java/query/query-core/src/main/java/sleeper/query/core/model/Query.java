@@ -32,14 +32,12 @@ public class Query {
     private final String queryId;
     private final List<Region> regions;
     private final QueryProcessingConfig processingConfig;
-    private final String sql;
 
     private Query(Builder builder) {
         processingConfig = Objects.requireNonNull(builder.processingConfig, "processingConfig must not be null");
         queryId = Optional.ofNullable(builder.queryId).orElseGet(() -> UUID.randomUUID().toString());
         tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
         regions = requireNonNull(builder.regions, builder, "regions field must be provided");
-        sql = builder.sql;
     }
 
     private static <T> T requireNonNull(T obj, Builder builder, String message) {
@@ -63,10 +61,6 @@ public class Query {
 
     public List<Region> getRegions() {
         return regions;
-    }
-
-    public String getSQL() {
-        return sql;
     }
 
     public QueryProcessingConfig getProcessingConfig() {
@@ -129,18 +123,11 @@ public class Query {
                 .build();
     }
 
-    public Query withSQL(String sql) {
-        return toBuilder()
-                .sql(sql)
-                .build();
-    }
-
     private Builder toBuilder() {
         return builder()
                 .tableName(tableName)
                 .queryId(queryId)
                 .regions(regions)
-                .sql(sql)
                 .processingConfig(processingConfig);
     }
 
@@ -154,12 +141,12 @@ public class Query {
         }
         Query query = (Query) object;
         return Objects.equals(tableName, query.tableName) && Objects.equals(queryId, query.queryId) && Objects.equals(regions, query.regions)
-                && Objects.equals(processingConfig, query.processingConfig) && Objects.equals(sql, query.sql);
+                && Objects.equals(processingConfig, query.processingConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableName, queryId, regions, processingConfig, sql);
+        return Objects.hash(tableName, queryId, regions, processingConfig);
     }
 
     @Override
@@ -169,7 +156,6 @@ public class Query {
                 ", queryId='" + queryId + '\'' +
                 ", regions=" + regions +
                 ", processingConfig=" + processingConfig +
-                ", sql=" + sql +
                 '}';
     }
 
@@ -181,7 +167,6 @@ public class Query {
         private String queryId;
         private List<Region> regions;
         private QueryProcessingConfig processingConfig = QueryProcessingConfig.none();
-        private String sql;
 
         private Builder() {
         }
@@ -217,11 +202,6 @@ public class Query {
          */
         public Builder regions(List<Region> regions) {
             this.regions = regions;
-            return this;
-        }
-
-        public Builder sql(String sql) {
-            this.sql = sql;
             return this;
         }
 
