@@ -22,7 +22,7 @@ use crate::{
         metrics::RowCounts,
         output::{CompletedOutput, Completer},
         sketch::{Sketcher, output_sketch},
-        util::explain_plan,
+        util::{check_for_sort_exec, explain_plan},
     },
 };
 use datafusion::{
@@ -146,6 +146,12 @@ async fn execute_compaction_plan<'a>(
 ) -> Result<RowCounts, DataFusionError> {
     let task_ctx = Arc::new(frame.task_ctx());
     let physical_plan = ops.to_physical_plan(frame, sort_ordering).await?;
+
+    // Check physical plan is free of `SortExec` stages.
+    // Issue <https://github.com/gchq/sleeper/issues/5248>
+    if ops.config.input_files_sorted() {
+        check_for_sort_exec(&physical_plan)?;
+    }
     info!(
         "Physical plan\n{}",
         displayable(physical_plan.as_ref()).indent(true)

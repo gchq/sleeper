@@ -22,7 +22,7 @@ use crate::{
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
         sql_sort_fix::inject_sort_stage,
-        util::explain_plan,
+        util::{check_for_sort_exec, explain_plan},
     },
 };
 #[cfg(doc)]
@@ -142,6 +142,14 @@ impl<'a> LeafPartitionQuery<'a> {
         }
 
         let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
+
+        // Check physical plan is free of `SortExec` stages.
+        // Issue <https://github.com/gchq/sleeper/issues/5248>
+        if ops.config.input_files_sorted()
+            && let None = self.config.sql_query
+        {
+            check_for_sort_exec(&physical_plan)?;
+        }
 
         if self.config.explain_plans {
             info!(

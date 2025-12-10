@@ -40,7 +40,7 @@ fn unalias(qualified_name: &str, original_schema: &SchemaRef) -> String {
     (*col_names
         .iter()
         .find(|&&s| qualified_name.ends_with(s))
-        .expect("Can't find unaliased column name"))
+        .unwrap_or(&&qualified_name.to_owned()))
     .clone()
 }
 
@@ -149,8 +149,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Can't find unaliased column name")]
-    fn should_panic_when_no_match() {
+    fn should_return_original_when_no_match() {
         // Given
         let schema = Arc::new(Schema::new(vec![
             Field::new("a", DataType::Int32, false),
@@ -160,8 +159,10 @@ mod tests {
         let qualified_name = "unknown";
 
         // When
-        // Then should panic
-        let _ = unalias(qualified_name, &schema);
+        let result = unalias(qualified_name, &schema);
+
+        // Then
+        assert_eq!(result, "unknown");
     }
 
     #[test]
