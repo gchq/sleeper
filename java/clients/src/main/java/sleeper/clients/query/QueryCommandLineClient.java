@@ -143,7 +143,6 @@ public abstract class QueryCommandLineClient {
             ranges.add(range);
             i++;
         }
-
         Region region = new Region(ranges);
 
         return Query.builder()
