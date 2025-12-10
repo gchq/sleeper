@@ -15,49 +15,62 @@
 * limitations under the License.
 */
 
+use std::sync::Arc;
+
 use datafusion::{
-    common::tree_node::{Transformed, TreeNodeRewriter},
-    error::{DataFusionError, Result},
-    logical_expr::LogicalPlan,
+    common::tree_node::{Transformed, TreeNode, TreeNodeRecursion},
+    error::Result,
+    logical_expr::{LogicalPlan, Sort, SortExpr},
     prelude::DataFrame,
 };
 
-struct FilterFinder {
-    parent_node_last_filter: bool,
-}
-
-impl Default for FilterFinder {
-    fn default() -> Self {
-        Self {
-            parent_node_last_filter: false,
-        }
-    }
-}
-
-impl TreeNodeRewriter for FilterFinder {
-    type Node = LogicalPlan;
-    fn f_down(&mut self, node: Self::Node) -> Result<Transformed<Self::Node>> {
-        // Just record if this node type is a Filter
-        self.parent_node_last_filter = matches!(node, LogicalPlan::Filter(_));
-        Ok(Transformed::no(node))
-    }
-
-    fn f_up(&mut self, node: Self::Node) -> Result<Transformed<Self::Node>> {
-        // If is a filter, but parent is not
-        Ok(
-            if !self.parent_node_last_filter && matches!(node, LogicalPlan::Filter(_)) {
-            } else {
-                Transformed::no(node)
-            },
-        )
-    }
-}
-
-pub fn replace_sort_stage(frame: DataFrame) -> Result<DataFrame> {
+/// Insert sort stage back into logical plan for a query.
+///
+/// We search the query plan bottom up, looking for the first non-Filter stage (1) that has a Filter stage (2)
+/// as input (i.e. direct child). On the second pass, we insert a Sort stage betweem (1) and (2).
+pub fn inject_sort_stage(frame: DataFrame, mut sorting_exprs: Vec<SortExpr>) -> Result<DataFrame> {
     let (state, plan) = frame.into_parts();
-    // Look for last "Filter" stage working up from bottom of plan
-    let new_plan = plan
-        .rewrite_with_subqueries(&mut FilterFinder::default())
-        .map(|v| v.data)?;
+    // Look for last "Filter" stage working up from bottom of plan.
+    // Since we can't find out who the "parent" plan stage is in advance and it
+    // seems we can't easily duplicate the stage under examination, we scan upwards
+    // and count stages
+    let mut stage_found = false;
+    let mut stage_no = 0usize;
+    let mut new_plan = plan
+        .transform_up(|node| {
+            Ok(
+                // if we are a non filter node with a filter node child, then stop
+                if !matches!(node, LogicalPlan::Filter(_))
+                    && node.inputs().len() == 1
+                    && matches!(node.inputs()[0], LogicalPlan::Filter(_))
+                {
+                    stage_found = true;
+                    stage_no -= 1;
+                    Transformed::new(node, false, TreeNodeRecursion::Stop)
+                } else {
+                    stage_no += 1;
+                    Transformed::no(node)
+                },
+            )
+        })?
+        .data;
+    if stage_found {
+        // Now we can scan again, stop in the right plan stage and inject the new sort stage
+        new_plan = new_plan
+            .transform_up(|node| {
+                Ok(if stage_no == 0 {
+                    let new_node = LogicalPlan::Sort(Sort {
+                        expr: std::mem::take(&mut sorting_exprs),
+                        input: Arc::new(node),
+                        fetch: None,
+                    });
+                    Transformed::complete(new_node)
+                } else {
+                    stage_no -= 1;
+                    Transformed::no(node)
+                })
+            })?
+            .data;
+    }
     Ok(DataFrame::new(state, new_plan))
 }

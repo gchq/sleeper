@@ -21,7 +21,7 @@ use crate::{
         OutputType, SleeperOperations,
         output::CompletedOutput,
         sketch::{Sketcher, output_sketch},
-        sql_sort_fix::replace_sort_stage,
+        sql_sort_fix::inject_sort_stage,
         util::explain_plan,
     },
 };
@@ -30,7 +30,6 @@ use arrow::record_batch::RecordBatch;
 use datafusion::{
     common::plan_err,
     dataframe::DataFrame,
-    datasource::ViewTable,
     error::DataFusionError,
     execution::{config::SessionConfig, context::SessionContext, runtime_env::RuntimeEnv},
     logical_expr::{Expr, ident},
@@ -111,7 +110,7 @@ impl<'a> LeafPartitionQuery<'a> {
 
         // Ensure sort ordering is created before adding more stages to plan, as completer might add stages
         // to plan which change schema, e.g. adding a data sink stage
-        let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
+        let sort_ordering = ops.create_physical_sort_expr_ordering(&frame)?;
         let completer = ops.create_output_completer();
 
         let mut frame = completer.complete_frame(frame)?;
@@ -134,7 +133,8 @@ impl<'a> LeafPartitionQuery<'a> {
                 )
                 .await?;
 
-            frame = replace_sort_stage(frame)?;
+            // SQL on a frame incorrectly removes the sort stage, so manually inject it
+            frame = inject_sort_stage(frame, ops.create_sort_order())?;
         }
 
         if self.config.explain_plans {

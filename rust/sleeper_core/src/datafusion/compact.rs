@@ -127,7 +127,7 @@ fn add_completion_stage<'a>(
     frame: DataFrame,
 ) -> Result<(Option<LexOrdering>, DataFrame), DataFusionError> {
     // Create sort ordering from schema and row key and sort key columns
-    let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
+    let sort_ordering = ops.create_physical_sort_expr_ordering(&frame)?;
     let frame = completer.complete_frame(frame)?;
     Ok((sort_ordering, frame))
 }

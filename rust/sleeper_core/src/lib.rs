@@ -126,7 +126,7 @@ pub async fn run_compaction(
 ///     upper_inclusive: true,
 /// });
 /// let ranges = vec![SleeperRegion::new(query_region)];
-/// let leaf_config = LeafPartitionQueryConfig { common, ranges, requested_value_fields: None, explain_plans: true };
+/// let leaf_config = LeafPartitionQueryConfig { common, ranges, requested_value_fields: None, explain_plans: true, sql_query: None };
 ///
 /// # tokio_test::block_on(async {
 /// let result = run_query(&leaf_config, &SleeperContext::default()).await;

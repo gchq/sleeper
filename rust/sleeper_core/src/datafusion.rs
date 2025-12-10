@@ -371,7 +371,7 @@ impl<'a> SleeperOperations<'a> {
     ///
     /// # Errors
     /// The columns in the schema must match the row and sort key field names.
-    pub fn create_sort_expr_ordering(
+    pub fn create_physical_sort_expr_ordering(
         &self,
         frame: &DataFrame,
     ) -> Result<Option<LexOrdering>, DataFusionError> {
