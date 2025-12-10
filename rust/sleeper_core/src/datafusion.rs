@@ -304,12 +304,7 @@ impl<'a> SleeperOperations<'a> {
         // We manually go through the stages of getting the plan, optimising it and then converting to a physical
         // plan so that we have a place to fix the optimised logical plan due to <https://github.com/apache/datafusion/issues/18214>.
         let (state, logical_plan) = frame.into_parts();
-
-        println!("Logical:\n{}", logical_plan.display_indent());
-
         let optimised_plan = state.optimize(&logical_plan)?;
-
-        println!("Logical optimised:\n{}", optimised_plan.display_indent());
         // Consume frame and generate initial physical plan
         let mut physical_plan = state
             .query_planner()
