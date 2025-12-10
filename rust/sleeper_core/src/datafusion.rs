@@ -30,6 +30,7 @@ use crate::{
             remove_coalesce_physical_stage, retrieve_input_size,
         },
     },
+    filter_aggregation_config::aggregate::Aggregate,
 };
 use aggregator_udfs::nonnull::register_non_nullable_aggregate_udfs;
 use arrow::compute::SortOptions;
@@ -226,14 +227,15 @@ impl<'a> SleeperOperations<'a> {
     /// If any configuration errors are present in the aggregations, e.g. duplicates or row key fields specified,
     /// then an error will result.
     fn apply_aggregations(&self, frame: DataFrame) -> Result<DataFrame, DataFusionError> {
-        let aggregates = self.config.aggregates();
+        let unsorted_aggregates = self.config.aggregates();
+        let aggregates = sort_aggregates_by_schema(unsorted_aggregates, frame.schema());
         if aggregates.is_empty() {
             return Ok(frame);
         }
         info!("Applying Sleeper aggregation: {aggregates:?}");
         let orig_schema = frame.schema().clone();
         let group_by_cols = self.config.sorting_columns();
-        validate_aggregations(&group_by_cols, frame.schema(), aggregates)?;
+        validate_aggregations(&group_by_cols, frame.schema(), &aggregates)?;
 
         let aggregation_expressions = aggregates
             .iter()
@@ -396,4 +398,12 @@ impl std::fmt::Display for SleeperOperations<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.config)
     }
+}
+
+/// Sort aggregate expressions according to position in schema.
+#[must_use]
+fn sort_aggregates_by_schema(aggregates: &[Aggregate], schema: &DFSchema) -> Vec<Aggregate> {
+    let mut sorted_aggregates = aggregates.to_vec();
+    sorted_aggregates.sort_by_key(|e| schema.index_of_column_by_name(None, &e.column));
+    sorted_aggregates
 }
