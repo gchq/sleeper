@@ -407,3 +407,87 @@ fn sort_aggregates_by_schema(aggregates: &[Aggregate], schema: &DFSchema) -> Vec
     sorted_aggregates.sort_by_key(|e| schema.index_of_column_by_name(None, &e.column));
     sorted_aggregates
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        datafusion::sort_aggregates_by_schema, filter_aggregation_config::aggregate::Aggregate,
+    };
+    use color_eyre::eyre::Result;
+    use datafusion::dataframe;
+
+    #[test]
+    fn should_not_change_sorted_order() -> Result<()> {
+        // Given
+        let d = dataframe![
+            "col1" => [1, 2, 3],
+            "col2" => ["a", "b", "c"],
+            "col3" => [true, false, true],
+        ]?;
+        let aggregates = Aggregate::parse_config("sum(col1),min(col2)")?;
+
+        // When
+        let result = sort_aggregates_by_schema(&aggregates, d.schema());
+
+        // Then
+        assert_eq!(result, Aggregate::parse_config("sum(col1),min(col2)")?);
+        Ok(())
+    }
+
+    #[test]
+    fn should_not_change_sorted_order_all_columns() -> Result<()> {
+        // Given
+        let d = dataframe![
+            "col1" => [1, 2, 3],
+            "col2" => ["a", "b", "c"],
+            "col3" => [true, false, true],
+        ]?;
+        let aggregates = Aggregate::parse_config("sum(col1),min(col2),max(col3)")?;
+
+        // When
+        let result = sort_aggregates_by_schema(&aggregates, d.schema());
+
+        // Then
+        assert_eq!(
+            result,
+            Aggregate::parse_config("sum(col1),min(col2),max(col3)")?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn should_reorder_incorrect_order() -> Result<()> {
+        // Given
+        let d = dataframe![
+            "col1" => [1, 2, 3],
+            "col2" => ["a", "b", "c"],
+            "col3" => [true, false, true],
+        ]?;
+        let aggregates = Aggregate::parse_config("min(col2),sum(col1)")?;
+
+        // When
+        let result = sort_aggregates_by_schema(&aggregates, d.schema());
+
+        // Then
+        assert_eq!(result, Aggregate::parse_config("sum(col1),min(col2)")?);
+        Ok(())
+    }
+
+    #[test]
+    fn should_handle_single_col() -> Result<()> {
+        // Given
+        let d = dataframe![
+            "col1" => [1, 2, 3],
+            "col2" => ["a", "b", "c"],
+            "col3" => [true, false, true],
+        ]?;
+        let aggregates = Aggregate::parse_config("min(col2)")?;
+
+        // When
+        let result = sort_aggregates_by_schema(&aggregates, d.schema());
+
+        // Then
+        assert_eq!(result, Aggregate::parse_config("min(col2)")?);
+        Ok(())
+    }
+}
