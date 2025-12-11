@@ -11,6 +11,9 @@ on:
       testClassNames:
         required: false
         type: string
+      dockerOptions:
+        required: false
+        type: string
 
 env:
   RUST_BUILD_IMAGE_X86_64: "ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest"
@@ -62,7 +65,7 @@ jobs:
         working-directory: ./scripts/build
         run: ./copyBuildOutput.sh
       - name: Build Docker image ${{ inputs.imageName }}
-        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} --cache-to type=gha,mode=max --cache-from type=gha --builder sleeper --load
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --builder sleeper --load
       - name: Docker image tests
         working-directory: ./java
         if: ${{ inputs.testClassNames != '' }}
