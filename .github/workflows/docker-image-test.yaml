@@ -38,6 +38,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
+          name: sleeper
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
@@ -60,7 +61,7 @@ jobs:
         working-directory: ./scripts/build
         run: ./copyBuildOutput.sh
       - name: Build Docker image ${{ inputs.imageName }}
-        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} --cache-to type=gha,mode=max --cache-from type=gha
+        run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} --cache-to type=gha,mode=max --cache-from type=gha --builder sleeper
       - name: Docker image tests
         working-directory: ./java
         run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
