@@ -3,11 +3,3 @@ vulnerabilities:
   - id: CVE-2024-6763
     statement: |
       A test dependency incorrectly included in the jar by Maven. See issue https://github.com/gchq/sleeper/issues/6108.
-  - id: CVE-2025-61729
-    statement: |
-      The AWS Lambda Runtime Interface Emulator is built on an older version of Go with vulnerabilities.
-      See issue https://github.com/gchq/sleeper/issues/6214.
-  - id: CVE-2025-61727
-    statement: |
-      The AWS Lambda Runtime Interface Emulator is built on an older version of Go with vulnerabilities.
-      See issue https://github.com/gchq/sleeper/issues/6214.
