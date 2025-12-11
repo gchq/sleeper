@@ -31,6 +31,7 @@ public class CommandArgumentsTest {
     List<String> systemArguments;
     List<CommandOption> options;
     String helpSummary;
+    boolean passThroughUnrecognised;
 
     @Nested
     @DisplayName("Positional arguments")
@@ -607,6 +608,41 @@ public class CommandArgumentsTest {
         }
     }
 
+    @Nested
+    @DisplayName("Allow pass-through arguments")
+    class PassThroughArguments {
+
+        @BeforeEach
+        void setUp() {
+            setPassThroughUnrecognised(true);
+        }
+
+        @Test
+        void shouldPassThroughUnrecognisedArguments() {
+            // Given
+            setPositionalArguments("first", "second");
+
+            // When
+            CommandArguments arguments = parse("A", "B", "--some-option", "some-value");
+
+            // Then
+            assertThat(arguments.getString("first")).isEqualTo("A");
+            assertThat(arguments.getString("second")).isEqualTo("B");
+            assertThat(arguments.getPassthroughArguments()).containsExactly("--some-option", "some-value");
+        }
+
+        @Test
+        void shouldRefusePassThroughArgBeforeRecognisedOption() {
+            // Given
+            setOptions(CommandOption.longOption("some-option"));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "--some-option", "b"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1");
+        }
+    }
+
     private void setPositionalArguments(String... names) {
         positionalArguments = List.of(names);
     }
@@ -621,6 +657,10 @@ public class CommandArgumentsTest {
 
     private void setHelpSummary(String helpSummary) {
         this.helpSummary = helpSummary;
+    }
+
+    private void setPassThroughUnrecognised(boolean passThroughUnrecognised) {
+        this.passThroughUnrecognised = passThroughUnrecognised;
     }
 
     private CommandArguments parse(String... args) {
@@ -641,6 +681,7 @@ public class CommandArgumentsTest {
                 .systemArguments(systemArguments)
                 .options(options)
                 .helpSummary(helpSummary)
+                .passThroughUnrecognised(passThroughUnrecognised)
                 .build();
     }
 }

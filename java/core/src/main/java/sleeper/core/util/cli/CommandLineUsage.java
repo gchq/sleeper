@@ -36,6 +36,7 @@ public class CommandLineUsage {
     private final List<CommandOption> options = new ArrayList<>(List.of(CommandOption.longFlag("help")));
     private final Map<String, CommandOption> optionByLongName;
     private final Map<Character, CommandOption> optionByShortName;
+    private final boolean passThroughUnrecognised;
 
     private CommandLineUsage(Builder builder) {
         positionalArguments = builder.positionalArguments();
@@ -43,6 +44,7 @@ public class CommandLineUsage {
         Optional.ofNullable(builder.options).ifPresent(options::addAll);
         optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
         optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
+        passThroughUnrecognised = builder.passThroughUnrecognised;
     }
 
     public static Builder builder() {
@@ -97,6 +99,10 @@ public class CommandLineUsage {
         return new IllegalArgumentException(createUsageMessage());
     }
 
+    public boolean isPassThroughUnrecognised() {
+        return passThroughUnrecognised;
+    }
+
     /**
      * Creates a usage message to explain how to call from the command line.
      *
@@ -143,6 +149,7 @@ public class CommandLineUsage {
         private List<String> systemArguments;
         private String helpSummary;
         private List<CommandOption> options;
+        private boolean passThroughUnrecognised;
 
         private Builder() {
         }
@@ -194,6 +201,18 @@ public class CommandLineUsage {
          */
         public Builder options(List<CommandOption> options) {
             this.options = options;
+            return this;
+        }
+
+        /**
+         * Sets whether to allow unrecognised arguments to be given after all other arguments, to be passed through to
+         * some other command.
+         *
+         * @param  passThroughUnrecognised true if pass through arguments are allowed, false otherwise
+         * @return                         this builder
+         */
+        public Builder passThroughUnrecognised(boolean passThroughUnrecognised) {
+            this.passThroughUnrecognised = passThroughUnrecognised;
             return this;
         }
 
