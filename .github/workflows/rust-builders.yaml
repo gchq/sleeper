@@ -49,8 +49,6 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Pull base image
         run: docker pull ${{ env.BASE_IMAGE }}
       - name: Build base sccache Docker image
@@ -66,8 +64,6 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Pull base sccache image
         run: docker pull ${{ env.SCCACHE_IMAGE }}
       - name: Build x86_64 Docker image
@@ -83,8 +79,6 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Build aarch64 Docker image
         uses: docker/build-push-action@v6
         with:
@@ -98,8 +92,6 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Build x86_64 sccache Docker image
         uses: docker/build-push-action@v6
         with:
@@ -113,8 +105,6 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Build aarch64 sccache Docker image
         uses: docker/build-push-action@v6
         with:
@@ -128,8 +118,6 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
