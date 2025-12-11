@@ -96,6 +96,8 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ inputs.buildUrl }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
