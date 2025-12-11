@@ -115,9 +115,6 @@ public class DeployNewInstance {
     }
 
     public void deploy() throws IOException, InterruptedException {
-        LOGGER.info("-------------------------------------------------------");
-        LOGGER.info("Running Deployment");
-        LOGGER.info("-------------------------------------------------------");
         deployInstanceConfiguration.validate();
         DeployInstance deployInstance = new DeployInstance(
                 SyncJars.fromScriptsDirectory(s3Client, scriptsDirectory),
