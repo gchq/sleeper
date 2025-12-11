@@ -88,6 +88,9 @@ public class ArgumentTracker {
             return;
         }
         if (usage.isPassThroughUnrecognised()) {
+            if (positionalArguments.size() < usage.getNumPositionalArgs()) {
+                throw new WrongNumberOfArgumentsException(positionalArguments.size(), usage.getNumPositionalArgs());
+            }
             if (firstPositionalArgumentWithNoOptionsAfter > usage.getNumPositionalArgs()) {
                 throw new WrongNumberOfArgumentsException(firstPositionalArgumentWithNoOptionsAfter, usage.getNumPositionalArgs());
             }

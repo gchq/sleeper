@@ -663,6 +663,20 @@ public class CommandArgumentsTest {
         }
 
         @Test
+        void shouldAllowPositionalArgumentsWithNoPassThroughWhenPassThroughEnabled() {
+            // Given
+            setPositionalArguments("first", "second");
+
+            // When
+            CommandArguments arguments = parse("A", "B");
+
+            // When / Then
+            assertThat(arguments.getString("first")).isEqualTo("A");
+            assertThat(arguments.getString("second")).isEqualTo("B");
+            assertThat(arguments.getPassthroughArguments()).isEmpty();
+        }
+
+        @Test
         void shouldRefusePassThroughBeforeRecognisedOption() {
             // Given
             setOptions(CommandOption.longOption("some-option"));
@@ -705,6 +719,17 @@ public class CommandArgumentsTest {
             assertThatThrownBy(() -> parse("a", "--pass", "--yes"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 1 positional argument, found 2");
+        }
+
+        @Test
+        void shouldRefuseTooFewPositionalArgumentsWithPassThroughEnabled() {
+            // Given
+            setPositionalArguments("first", "second", "third");
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "b"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 3 positional arguments, found 2");
         }
     }
 
