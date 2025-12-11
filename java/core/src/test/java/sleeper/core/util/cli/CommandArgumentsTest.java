@@ -677,6 +677,19 @@ public class CommandArgumentsTest {
         }
 
         @Test
+        void shouldRequestHelpWithPassThroughEnabledAndPositionalArgumentsRequired() {
+            // Given
+            setPositionalArguments("first", "second");
+
+            // When
+            CommandArguments arguments = parse("--help");
+
+            // Then
+            assertThat(arguments.isFlagSet("help")).isTrue();
+            assertThat(arguments.getPassthroughArguments()).isEmpty();
+        }
+
+        @Test
         void shouldRefusePassThroughBeforeRecognisedOption() {
             // Given
             setOptions(CommandOption.longOption("some-option"));

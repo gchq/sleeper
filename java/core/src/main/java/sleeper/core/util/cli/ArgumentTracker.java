@@ -75,7 +75,7 @@ public class ArgumentTracker {
         return CommandArguments.builder()
                 .argByName(argByName)
                 .flagByName(flagByName)
-                .passThroughArguments(positionalArguments.subList(usage.getNumPositionalArgs(), positionalArguments.size()))
+                .passThroughArguments(getPassThroughArguments(usage))
                 .build();
     }
 
@@ -98,6 +98,14 @@ public class ArgumentTracker {
         }
         if (positionalArguments.size() != usage.getNumPositionalArgs()) {
             throw new WrongNumberOfArgumentsException(positionalArguments.size(), usage.getNumPositionalArgs());
+        }
+    }
+
+    private List<String> getPassThroughArguments(CommandLineUsage usage) {
+        if (positionalArguments.size() > usage.getNumPositionalArgs()) {
+            return positionalArguments.subList(usage.getNumPositionalArgs(), positionalArguments.size());
+        } else {
+            return List.of();
         }
     }
 
