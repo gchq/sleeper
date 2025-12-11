@@ -618,7 +618,7 @@ public class CommandArgumentsTest {
         }
 
         @Test
-        void shouldPassThroughUnrecognisedArguments() {
+        void shouldPassThroughAfterPositionalArguments() {
             // Given
             setPositionalArguments("first", "second");
 
@@ -632,7 +632,38 @@ public class CommandArgumentsTest {
         }
 
         @Test
-        void shouldRefusePassThroughArgBeforeRecognisedOption() {
+        void shouldPassThroughAfterPositionalArgumentAndFlag() {
+            // Given
+            setPositionalArguments("arg");
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When
+            CommandArguments arguments = parse("A", "--yes", "--some-option", "some value");
+
+            // When / Then
+            assertThat(arguments.getString("arg")).isEqualTo("A");
+            assertThat(arguments.isFlagSet("yes")).isTrue();
+            assertThat(arguments.getPassthroughArguments()).containsExactly("--some-option", "some value");
+        }
+
+        @Test
+        void shouldPassThroughAfterFlagBetweenPositionalArguments() {
+            // Given
+            setPositionalArguments("first", "second");
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When
+            CommandArguments arguments = parse("A", "--yes", "B", "--some-option", "some value");
+
+            // When / Then
+            assertThat(arguments.getString("first")).isEqualTo("A");
+            assertThat(arguments.getString("second")).isEqualTo("B");
+            assertThat(arguments.isFlagSet("yes")).isTrue();
+            assertThat(arguments.getPassthroughArguments()).containsExactly("--some-option", "some value");
+        }
+
+        @Test
+        void shouldRefusePassThroughBeforeRecognisedOption() {
             // Given
             setOptions(CommandOption.longOption("some-option"));
 
@@ -640,6 +671,40 @@ public class CommandArgumentsTest {
             assertThatThrownBy(() -> parse("a", "--some-option", "b"))
                     .isInstanceOf(CommandArgumentsException.class)
                     .hasMessage("Expected 0 positional arguments, found 1");
+        }
+
+        @Test
+        void shouldRefusePassThroughBeforeRecognisedFlag() {
+            // Given
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "--yes"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1");
+        }
+
+        @Test
+        void shouldRefusePassThroughBeforeAndAfterRecognisedFlag() {
+            // Given
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "--yes", "b"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1");
+        }
+
+        @Test
+        void shouldRefusePassThroughBetweenPositionalArgAndFlag() {
+            // Given
+            setPositionalArguments("arg");
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "--pass", "--yes"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 1 positional argument, found 2");
         }
     }
 
