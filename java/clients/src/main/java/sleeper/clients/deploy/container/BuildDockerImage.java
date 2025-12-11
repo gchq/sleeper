@@ -51,7 +51,7 @@ public class BuildDockerImage {
                         "Available lambda image names: " +
                         LambdaJar.all().stream().map(LambdaJar::getImageName).collect(joining(", ")) + "\n\n" +
                         "Other arguments will be passed through to Docker as options when specified at the end.")
-                .passThroughUnrecognised(true)
+                .passThroughExtraArguments(true)
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),

@@ -87,7 +87,7 @@ public class ArgumentTracker {
         if (flagByName.getOrDefault("help", false)) {
             return;
         }
-        if (usage.isPassThroughUnrecognised()) {
+        if (usage.isPassThroughExtraArguments()) {
             if (positionalArguments.size() < usage.getNumPositionalArgs()) {
                 throw new WrongNumberOfArgumentsException(positionalArguments.size(), usage.getNumPositionalArgs());
             }

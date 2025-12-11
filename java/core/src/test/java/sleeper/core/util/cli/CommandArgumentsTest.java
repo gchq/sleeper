@@ -771,7 +771,7 @@ public class CommandArgumentsTest {
                 .systemArguments(systemArguments)
                 .options(options)
                 .helpSummary(helpSummary)
-                .passThroughUnrecognised(passThroughUnrecognised)
+                .passThroughExtraArguments(passThroughUnrecognised)
                 .build();
     }
 }

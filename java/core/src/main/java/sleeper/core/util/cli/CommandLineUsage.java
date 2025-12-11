@@ -36,7 +36,7 @@ public class CommandLineUsage {
     private final List<CommandOption> options = new ArrayList<>(List.of(CommandOption.longFlag("help")));
     private final Map<String, CommandOption> optionByLongName;
     private final Map<Character, CommandOption> optionByShortName;
-    private final boolean passThroughUnrecognised;
+    private final boolean passThroughExtraArguments;
 
     private CommandLineUsage(Builder builder) {
         positionalArguments = builder.positionalArguments();
@@ -44,7 +44,7 @@ public class CommandLineUsage {
         Optional.ofNullable(builder.options).ifPresent(options::addAll);
         optionByLongName = options.stream().collect(toMap(CommandOption::longName, Function.identity()));
         optionByShortName = options.stream().filter(option -> option.shortName() != null).collect(toMap(CommandOption::shortName, Function.identity()));
-        passThroughUnrecognised = builder.passThroughUnrecognised;
+        passThroughExtraArguments = builder.passThroughExtraArguments;
     }
 
     public static Builder builder() {
@@ -99,8 +99,8 @@ public class CommandLineUsage {
         return new IllegalArgumentException(createUsageMessage());
     }
 
-    public boolean isPassThroughUnrecognised() {
-        return passThroughUnrecognised;
+    public boolean isPassThroughExtraArguments() {
+        return passThroughExtraArguments;
     }
 
     /**
@@ -149,7 +149,7 @@ public class CommandLineUsage {
         private List<String> systemArguments;
         private String helpSummary;
         private List<CommandOption> options;
-        private boolean passThroughUnrecognised;
+        private boolean passThroughExtraArguments;
 
         private Builder() {
         }
@@ -205,14 +205,14 @@ public class CommandLineUsage {
         }
 
         /**
-         * Sets whether to allow unrecognised arguments to be given after all other arguments, to be passed through to
+         * Sets whether to allow extra arguments to be given after all other arguments, to be passed through to
          * some other command.
          *
-         * @param  passThroughUnrecognised true if pass through arguments are allowed, false otherwise
-         * @return                         this builder
+         * @param  passThroughExtraArguments true if pass through arguments are allowed, false otherwise
+         * @return                           this builder
          */
-        public Builder passThroughUnrecognised(boolean passThroughUnrecognised) {
-            this.passThroughUnrecognised = passThroughUnrecognised;
+        public Builder passThroughExtraArguments(boolean passThroughExtraArguments) {
+            this.passThroughExtraArguments = passThroughExtraArguments;
             return this;
         }
 
