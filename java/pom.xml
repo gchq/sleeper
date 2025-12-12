@@ -26,7 +26,6 @@
     <modules>
         <module>core</module>
         <module>ingest</module>
-        <module>parquet</module>
         <module>clients</module>
         <module>statestore</module>
         <module>statestore-committer-core</module>

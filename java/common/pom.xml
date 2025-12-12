@@ -35,5 +35,6 @@
         <module>dynamodb-tools</module>
         <module>foreign-bridge</module>
         <module>localstack-test</module>
+        <module>parquet</module>
     </modules>
 </project>
