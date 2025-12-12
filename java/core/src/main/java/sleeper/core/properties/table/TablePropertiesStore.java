@@ -131,9 +131,10 @@ public class TablePropertiesStore {
      */
     public void createTable(TableProperties tableProperties) {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
-        tableIndex.getTableByName(tableName).ifPresent(tableId -> {
-            throw new TableAlreadyExistsException(tableId);
+        tableIndex.getTableByName(tableName).ifPresent(tableStatus -> {
+            throw new TableAlreadyExistsException(tableStatus);
         });
+
         createWhenNotInIndex(tableProperties);
     }
 
