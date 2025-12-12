@@ -15,6 +15,7 @@
  */
 package sleeper.core.range;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,30 +36,37 @@ public class RangeTest {
     @Nested
     @DisplayName("Exact object matches")
     class ExactMatchTest {
-        @Test
-        public void testEqualsAndHashcode() {
-            // Given
+
+        Range range1, range2, range3, range4;
+
+        @BeforeEach
+        void setUp() {
             Field field = new Field("key", new IntType());
             Schema schema = Schema.builder().rowKeyFields(field).build();
             RangeFactory rangeFactory = new RangeFactory(schema);
-            Range range1 = rangeFactory.createRange(field, 10, true, 20, true);
-            Range range2 = rangeFactory.createRange(field, 10, true, 20, true);
-            Range range3 = rangeFactory.createRange(field, 10, true, 20, false);
-            Range range4 = rangeFactory.createRange(field, 11, true, 20, false);
+            range1 = rangeFactory.createRange(field, 10, true, 20, true);
+            range2 = rangeFactory.createRange(field, 10, true, 20, true);
+            range3 = rangeFactory.createRange(field, 10, true, 20, false);
+            range4 = rangeFactory.createRange(field, 11, true, 20, false);
+        }
 
+        @Test
+        public void testEqualsAndHashcode() {
+            // When / Then
+            assertThat(range1.equalsExactMatch(range2)).isTrue();
+            assertThat(range1.equalsExactMatch(range3)).isFalse();
+            assertThat(range3.equalsExactMatch(range4)).isFalse();
+        }
+
+        @Test
+        void testHashCode() {
             // When
-            boolean equals1 = range1.equalsExactMatch(range2);
-            boolean equals2 = range1.equalsExactMatch(range3);
-            boolean equals3 = range3.equalsExactMatch(range4);
             int hashCode1 = range1.hashCode();
             int hashCode2 = range2.hashCode();
             int hashCode3 = range3.hashCode();
             int hashCode4 = range4.hashCode();
 
             // Then
-            assertThat(equals1).isTrue();
-            assertThat(equals2).isFalse();
-            assertThat(equals3).isFalse();
             assertThat(hashCode2).isEqualTo(hashCode1);
             assertThat(hashCode3).isNotEqualTo(hashCode1);
             assertThat(hashCode4).isNotEqualTo(hashCode3);
@@ -66,22 +74,26 @@ public class RangeTest {
     }
 
     @Nested
-    @DisplayName("Contents match")
-    class ContentsMatchTest {
+    @DisplayName("Conalised match")
+    class ConalisedMatchTest {
+        @Test
+        public void testCanonEqualsInt() {
+            // Given
+            Field field = new Field("key", new IntType());
+            Schema schema = Schema.builder().rowKeyFields(field).build();
+            RangeFactory rangeFactory = new RangeFactory(schema);
+            Range range1 = rangeFactory.createRange(field, 10, true, 20, true); // 10 20
+            Range range2 = rangeFactory.createRange(field, 10, false, 20, false); // 11 19
+            Range range3 = rangeFactory.createRange(field, 9, false, 21, false); // 10 20
+            Range range4 = rangeFactory.createRange(field, 9, false, 20, true); // 10 20
+            Range range5 = rangeFactory.createRange(field, 10, true, 21, false); // 10 20
 
-    }
-
-    @Test
-    public void shouldThrowExceptionIfGivenWrongType() {
-        // Given
-        Field field = new Field("key", new IntType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        RangeFactory rangeFactory = new RangeFactory(schema);
-        Range range = rangeFactory.createRange(field, 10, true, 20, true);
-
-        // When / Then
-        assertThatThrownBy(() -> range.doesRangeContainObject(10L))
-                .isInstanceOf(ClassCastException.class);
+            // When / Then
+            assertThat(range1.equals(range2)).isFalse();
+            assertThat(range1.equals(range3)).isTrue();
+            assertThat(range1.equals(range4)).isTrue();
+            assertThat(range1.equals(range5)).isTrue();
+        }
     }
 
     @Nested
@@ -698,5 +710,18 @@ public class RangeTest {
             assertThat(doesEmptyTo888OverlapPartition).isTrue();
             assertThat(does888ToNullOverlapPartition).isTrue();
         }
+    }
+
+    @Test
+    public void shouldThrowExceptionIfGivenWrongType() {
+        // Given
+        Field field = new Field("key", new IntType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Range range = rangeFactory.createRange(field, 10, true, 20, true);
+
+        // When / Then
+        assertThatThrownBy(() -> range.doesRangeContainObject(10L))
+                .isInstanceOf(ClassCastException.class);
     }
 }

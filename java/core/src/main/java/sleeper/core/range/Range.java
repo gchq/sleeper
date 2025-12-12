@@ -195,58 +195,6 @@ public class Range {
     }
 
     /**
-     * Determines if object is exact match to Range, given all parameters.
-     * For checking if the contents match, please use method equals.
-     *
-     * @param  obj comparison object
-     * @return     if objects exactly equal
-     */
-    public boolean equalsExactMatch(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Range other = (Range) obj;
-
-        Object minTransformed;
-        Object otherMinTransformed;
-        Object maxTransformed;
-        Object otherMaxTransformed;
-        if (field.getType() instanceof ByteArrayType) {
-            minTransformed = ByteArray.wrap((byte[]) this.min);
-            otherMinTransformed = ByteArray.wrap((byte[]) other.min);
-            maxTransformed = ByteArray.wrap((byte[]) this.max);
-            otherMaxTransformed = ByteArray.wrap((byte[]) other.max);
-        } else {
-            minTransformed = this.min;
-            otherMinTransformed = other.min;
-            maxTransformed = this.max;
-            otherMaxTransformed = other.max;
-        }
-        if (this.minInclusive != other.minInclusive) {
-            return false;
-        }
-        if (this.maxInclusive != other.maxInclusive) {
-            return false;
-        }
-        if (!Objects.equals(this.field, other.field)) {
-            return false;
-        }
-        if (!Objects.equals(minTransformed, otherMinTransformed)) {
-            return false;
-        }
-        if (!Objects.equals(maxTransformed, otherMaxTransformed)) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * Determines if the contents of the Range are matches.
      * For checking if objects are exact matches please use equalsExactMatch.
      *
@@ -255,6 +203,22 @@ public class Range {
      */
     @Override
     public boolean equals(Object obj) {
+        if (equalsExactMatch(obj)) {
+            return true;
+        } else {
+            Range canonThis = RangeCanonicaliser.canonicaliseRange(this);
+            return canonThis.equalsExactMatch(RangeCanonicaliser.canonicaliseRange((Range) obj));
+        }
+    }
+
+    /**
+     * Determines if object is exact match to Range, given all parameters.
+     * For checking if the contents match, please use method equals.
+     *
+     * @param  obj comparison object
+     * @return     if objects exactly equal
+     */
+    public boolean equalsExactMatch(Object obj) {
         if (this == obj) {
             return true;
         }
