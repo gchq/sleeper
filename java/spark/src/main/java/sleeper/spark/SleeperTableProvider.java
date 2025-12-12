@@ -21,13 +21,18 @@ import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.clients.api.SleeperClient;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.query.core.rowretrieval.QueryPlanner;
+import sleeper.statestore.StateStoreFactory;
 
 import java.util.Map;
 
@@ -38,7 +43,10 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
     private String instanceId;
     private String tableName;
     private StateStore stateStore;
-    private SleeperClient sleeperClient;
+    private S3Client s3Client;
+    private DynamoDbClient dynamoDbClient;
+    private InstanceProperties instanceProperties;
+    private TableProperties tableProperties;
 
     /**
      * A public, zero argument constuctor is required as this class implements TableProvider.
@@ -52,16 +60,17 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
         Map<String, String> optionsMap = options.asCaseSensitiveMap();
         instanceId = (String) optionsMap.get("instanceid");
         tableName = (String) optionsMap.get("tablename");
-        loadSleeperClient();
-        Schema schema = sleeperClient.getTableProperties(tableName).getSchema();
-        stateStore = sleeperClient.getStateStore(tableName);
+        loadClients();
+        instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDbClient);
+        tableProperties = provider.getByName(tableName);
+        Schema schema = tableProperties.getSchema();
+        stateStore = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDbClient).getStateStore(tableProperties);
         return new StructTypeFactoryCopy().getStructType(schema);
     }
 
     @Override
     public Table getTable(StructType structType, Transform[] partitioning, Map<String, String> properties) {
-        InstanceProperties instanceProperties = sleeperClient.getInstanceProperties();
-        TableProperties tableProperties = sleeperClient.getTableProperties(tableName);
         QueryPlanner planner = new QueryPlanner(tableProperties, stateStore);
         return new SleeperTable(instanceProperties, tableProperties, structType, planner);
     }
@@ -76,9 +85,12 @@ public class SleeperTableProvider implements TableProvider, DataSourceRegister {
         return "sleeper";
     }
 
-    private void loadSleeperClient() {
-        if (null == sleeperClient) {
-            sleeperClient = SleeperClient.createForInstanceId(instanceId);
+    private void loadClients() {
+        if (null == s3Client) {
+            s3Client = S3Client.create();
+        }
+        if (null == dynamoDbClient) {
+            dynamoDbClient = DynamoDbClient.create();
         }
     }
 }
