@@ -194,8 +194,31 @@ public class Range {
         return hash;
     }
 
+    /**
+     * Determines if the contents of the Range are matches.
+     * For checking if objects are exact matches please use equalsExactMatch.
+     *
+     * @param  obj comparison object
+     * @return     if contents are equal
+     */
     @Override
     public boolean equals(Object obj) {
+        if (equalsExactMatch(obj)) {
+            return true;
+        } else {
+            Range canonThis = RangeCanonicaliser.canonicaliseRange(this);
+            return canonThis.equalsExactMatch(RangeCanonicaliser.canonicaliseRange((Range) obj));
+        }
+    }
+
+    /**
+     * Determines if object is exact match to Range, given all parameters.
+     * For checking if the contents match, please use method equals.
+     *
+     * @param  obj comparison object
+     * @return     if objects exactly equal
+     */
+    public boolean equalsExactMatch(Object obj) {
         if (this == obj) {
             return true;
         }
