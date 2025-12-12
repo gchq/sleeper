@@ -36,5 +36,6 @@
         <module>foreign-bridge</module>
         <module>localstack-test</module>
         <module>parquet</module>
+        <module>sketches</module>
     </modules>
 </project>
