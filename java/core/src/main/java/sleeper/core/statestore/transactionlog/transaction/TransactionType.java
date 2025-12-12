@@ -19,6 +19,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransacti
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTreeTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
@@ -37,7 +38,8 @@ public enum TransactionType {
     INITIALISE_PARTITIONS(InitialisePartitionsTransaction.class),
     REPLACE_FILE_REFERENCES(ReplaceFileReferencesTransaction.class),
     SPLIT_FILE_REFERENCES(SplitFileReferencesTransaction.class),
-    SPLIT_PARTITION(SplitPartitionTransaction.class);
+    SPLIT_PARTITION(SplitPartitionTransaction.class),
+    EXTEND_PARTITION_TREE(ExtendPartitionTreeTransaction.class);
 
     private final Class<? extends StateStoreTransaction<?>> type;
     private final boolean fileTransaction;

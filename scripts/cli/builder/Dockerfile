@@ -33,6 +33,14 @@ RUN apt-get update && apt-get install -y \
     lsb-release wget software-properties-common gnupg \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Trivy for vulnerability scanning
+RUN curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor --yes -o /etc/apt/keyrings/trivy.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main"  \
+    | tee /etc/apt/sources.list.d/trivy.list > /dev/null
+RUN apt-get update && apt-get install -y \
+    trivy \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install Clang 20
 RUN wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20 \
     && rm -rf /var/lib/apt/lists/*

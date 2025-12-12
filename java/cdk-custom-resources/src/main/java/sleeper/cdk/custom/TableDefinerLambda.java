@@ -30,6 +30,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.table.NoTableToReuseException;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreFactory;
@@ -104,11 +106,15 @@ public class TableDefinerLambda {
         //Table may just be offline from a previous delete call
         if (tableProperties.getBoolean(TableProperty.REUSE_EXISTING_TABLE)) {
             LOGGER.info("Table {} expected to already exist. Attempting to update its properties", tableName);
-            tablePropertiesStore.update(tableProperties);
+            try {
+                tablePropertiesStore.update(tableProperties);
+            } catch (TableNotFoundException e) {
+                throw new NoTableToReuseException(tableName, e);
+            }
             return;
         }
 
-        LOGGER.info("Creating table {}", tableName);
+        LOGGER.info("Creating new table {}", tableName);
         tablePropertiesStore.createTable(tableProperties);
 
         List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"),
