@@ -49,7 +49,9 @@ class ArgumentTracker {
      */
     void option(CommandOption option, String argument) {
         argByName.put(option.longName(), argument);
-        argByName.put(Character.toString(option.shortName()), argument);
+        if (option.shortName() != null) {
+            argByName.put(Character.toString(option.shortName()), argument);
+        }
         firstPositionalArgumentWithNoOptionsAfter = positionalArguments.size();
     }
 
