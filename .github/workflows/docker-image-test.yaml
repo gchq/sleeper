@@ -66,6 +66,10 @@ jobs:
         run: ./copyBuildOutput.sh
       - name: Build Docker image ${{ inputs.imageName }}
         run: ./scripts/dev/buildDockerImage.sh ${{ inputs.imageName }} ${{ inputs.imageName }}:test --lambda=${{ inputs.isLambda }} ${{ inputs.dockerOptions }} --builder sleeper --load
+      - name: Delete build output to free disk space
+        run: |
+          rm -rf ./scripts/docker
+          rm -rf ./scripts/jars
       - name: Docker image tests
         working-directory: ./java
         if: ${{ inputs.testClassNames != '' }}
