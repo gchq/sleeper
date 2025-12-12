@@ -27,6 +27,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>arrow</module>
         <module>common-job</module>
         <module>common-task</module>
         <module>common-invoke-tables</module>
