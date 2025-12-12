@@ -24,31 +24,28 @@
     <version>0.35.0-SNAPSHOT</version>
 
     <modules>
-        <module>core</module>
-        <module>ingest</module>
+        <module>athena</module>
+        <module>build</module>
+        <module>bulk-import</module>
+        <module>bulk-export</module>
+        <module>common</module>
         <module>clients</module>
+        <module>compaction</module>
+        <module>configuration</module>
+        <module>core</module>
+        <module>deployment</module>
+        <module>distribution</module>
+        <module>example-iterators</module>
+        <module>garbage-collector</module>
+        <module>ingest</module>
+        <module>metrics</module>
+        <module>partitions</module>
+        <module>query</module>
         <module>statestore</module>
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
-        <module>configuration</module>
-        <module>compaction</module>
-        <module>query</module>
         <module>system-test</module>
-        <module>garbage-collector</module>
-        <module>partitions</module>
-        <module>cdk</module>
-        <module>athena</module>
-        <module>common</module>
-        <module>bulk-import</module>
-        <module>bulk-export</module>
-        <module>cdk-custom-resources</module>
-        <module>cdk-environment</module>
-        <module>metrics</module>
-        <module>distribution</module>
         <module>trino</module>
-        <module>build</module>
-        <module>build-uptime-lambda</module>
-        <module>example-iterators</module>
     </modules>
 
     <properties>
