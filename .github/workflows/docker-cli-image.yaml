@@ -104,6 +104,11 @@ jobs:
             build-url=${{ inputs.buildUrl }}
       - name: Pull image from registry
         run: docker pull ${{ env.TEMP_IMAGE }}
+      - name: Check disk usage
+        run: |
+          df -h
+          docker system df
+          docker image ls
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
         with:
