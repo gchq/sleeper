@@ -75,23 +75,6 @@ public class InMemoryTablePropertiesStoreTest {
         }
 
         @Test
-        void shouldUpdateTableWhenTableRenamed() {
-            // Given
-            String oldName = tableProperties.get(TABLE_NAME);
-            store.createTable(tableProperties);
-
-            // When
-            tableProperties.set(TABLE_NAME, "newName");
-            store.createTable(tableProperties);
-
-            //Then
-            assertThat(store.loadByName("newName"))
-                    .isEqualTo(tableProperties);
-            assertThatThrownBy(() -> store.loadByName(oldName))
-                    .isInstanceOf(TableNotFoundException.class);
-        }
-
-        @Test
         void shouldCreateNewTableWithSave() {
             // When
             store.save(tableProperties);

@@ -65,6 +65,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
+import static sleeper.core.properties.table.TableProperty.PREVIOUS_TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
 import static sleeper.core.properties.table.TableProperty.REUSE_EXISTING_TABLE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -197,15 +198,19 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         public void shouldHandleTableBeingRenamed() throws IOException {
             //Given
             createTableThenTakeOffline();
+            String previousTableName = tableProperties.get(TABLE_NAME);
+            String newTableName = "newName";
+            tableProperties.set(REUSE_EXISTING_TABLE, "true");
+            tableProperties.set(PREVIOUS_TABLE_NAME, previousTableName);
+            tableProperties.set(TABLE_NAME, newTableName);
 
             //When
-            tableProperties.set(TABLE_ONLINE, "true");
-            tableProperties.set(TABLE_NAME, "newName");
             callLambda(CREATE, tableProperties);
 
             //Then
-            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
-                    .isEqualTo(tableProperties);
+            assertThat(propertiesStore.loadByName(newTableName)).isEqualTo(tableProperties);
+            assertThatThrownBy(() -> propertiesStore.loadByName(previousTableName))
+                    .isInstanceOf(TableNotFoundException.class);
         }
 
         private void createTableThenTakeOffline() throws IOException {
