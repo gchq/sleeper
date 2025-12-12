@@ -15,7 +15,6 @@
  */
 package sleeper.core.util.cli;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,27 +38,18 @@ public class CommandArgumentReader {
      * @return       the parsed arguments
      */
     public static CommandArguments parse(CommandLineUsage usage, String... args) {
-        CommandArguments.Builder builder = CommandArguments.builder();
         CommandArgumentReader reader = new CommandArgumentReader(List.of(args));
-        List<String> positionalValues = new ArrayList<>();
+        ArgumentTracker argumentTracker = new ArgumentTracker();
         while (reader.isArg()) {
-            if (!reader.readLongOption(usage, builder)
-                    && !reader.readShortOption(usage, builder)) {
-                positionalValues.add(reader.readPositionalArg());
+            if (!reader.readLongOption(usage, argumentTracker)
+                    && !reader.readShortOption(usage, argumentTracker)) {
+                argumentTracker.positionalArgument(reader.readPositionalArg());
             }
         }
-        int lastPositionalArg = Math.min(positionalValues.size(), usage.getNumPositionalArgs());
-        for (int i = 0; i < lastPositionalArg; i++) {
-            builder.argument(usage.getPositionalArgName(i), positionalValues.get(i));
-        }
-        CommandArguments arguments = builder.build();
-        if (!arguments.isFlagSet("help") && positionalValues.size() != usage.getNumPositionalArgs()) {
-            throw new WrongNumberOfArgumentsException(positionalValues.size(), usage.getNumPositionalArgs());
-        }
-        return arguments;
+        return argumentTracker.buildArguments(usage);
     }
 
-    private boolean readLongOption(CommandLineUsage usage, CommandArguments.Builder builder) {
+    private boolean readLongOption(CommandLineUsage usage, ArgumentTracker tracker) {
         if (!arg().startsWith("--")) {
             return false;
         }
@@ -71,7 +61,7 @@ public class CommandArgumentReader {
         if (equalsPos > 0) {
             String name = afterDashes.substring(0, equalsPos);
             String value = afterDashes.substring(equalsPos + 1, afterDashes.length());
-            return readOptionWithValue(usage.getLongOption(name), value, usage, builder);
+            return readOptionWithValue(usage.getLongOption(name), value, usage, tracker);
         }
         Optional<CommandOption> optionOpt = usage.getLongOption(afterDashes);
         if (!optionOpt.isPresent()) {
@@ -79,30 +69,30 @@ public class CommandArgumentReader {
         }
         CommandOption option = optionOpt.get();
         if (option.isFlag()) {
-            builder.flag(option, true);
+            tracker.flag(option, true);
         } else {
-            builder.option(option, readOptionArg(option));
+            tracker.option(option, readOptionArg(option));
         }
         advance();
         return true;
     }
 
-    private boolean readOptionWithValue(Optional<CommandOption> optionOpt, String value, CommandLineUsage usage, CommandArguments.Builder builder) {
+    private boolean readOptionWithValue(Optional<CommandOption> optionOpt, String value, CommandLineUsage usage, ArgumentTracker tracker) {
         if (!optionOpt.isPresent()) {
             return false;
         }
         CommandOption option = optionOpt.get();
 
         if (option.isFlag()) {
-            builder.flag(option, parseBoolean(value));
+            tracker.flag(option, parseBoolean(value));
         } else {
-            builder.option(option, value);
+            tracker.option(option, value);
         }
         advance();
         return true;
     }
 
-    private boolean readShortOption(CommandLineUsage usage, CommandArguments.Builder builder) {
+    private boolean readShortOption(CommandLineUsage usage, ArgumentTracker tracker) {
         if (!arg().startsWith("-")) {
             return false;
         }
@@ -115,16 +105,16 @@ public class CommandArgumentReader {
         }
         CommandOption option = optionOpt.get();
         if (option.isFlag()) {
-            builder.flag(option, true);
+            tracker.flag(option, true);
             char[] otherFlags = arg().substring(2).toCharArray();
             for (char flagChar : otherFlags) {
                 CommandOption otherOption = usage.getShortOption(flagChar)
                         .filter(CommandOption::isFlag)
                         .orElseThrow(() -> new CommandArgumentsException("Unrecognised flag option: " + flagChar));
-                builder.flag(otherOption, true);
+                tracker.flag(otherOption, true);
             }
         } else {
-            builder.option(option, readShortOptionArg(option));
+            tracker.option(option, readShortOptionArg(option));
         }
         advance();
         return true;
