@@ -33,6 +33,7 @@
         <module>common-invoke-tables</module>
         <module>docker-lambda</module>
         <module>dynamodb-tools</module>
+        <module>foreign-bridge</module>
         <module>localstack-test</module>
     </modules>
 </project>
