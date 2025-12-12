@@ -21,20 +21,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Tracks arguments, and the order they were declared. Used to build a {@link CommandArguments} object.
+ * Tracks arguments, and the order they were declared. Used in {@link CommandArgumentReader#parse()} to build
+ * a {@link CommandArguments} object. As the reader parses the different types of argument, they are provided to this
+ * tracker in order, and then they are validated and combined into a {@link CommandArguments} object.
  */
-public class ArgumentTracker {
+class ArgumentTracker {
     private final List<String> positionalArguments = new ArrayList<>();
     private final Map<String, String> argByName = new LinkedHashMap<>();
     private final Map<String, Boolean> flagByName = new LinkedHashMap<>();
     private int firstPositionalArgumentWithNoOptionsAfter = 0;
 
     /**
-     * Adds a positional argument.
+     * Adds a positional argument. If we allow passing through arguments that aren't in the usage for this command,
+     * they will be included here as well.
      *
      * @param argument the value
      */
-    public void positionalArgument(String argument) {
+    void positionalArgument(String argument) {
         positionalArguments.add(argument);
     }
 
@@ -44,9 +47,11 @@ public class ArgumentTracker {
      * @param option   the option that was set
      * @param argument the value of the argument
      */
-    public void option(CommandOption option, String argument) {
+    void option(CommandOption option, String argument) {
         argByName.put(option.longName(), argument);
-        argByName.put("" + option.shortName(), argument);
+        if (option.shortName() != null) {
+            argByName.put(Character.toString(option.shortName()), argument);
+        }
         firstPositionalArgumentWithNoOptionsAfter = positionalArguments.size();
     }
 
@@ -56,10 +61,10 @@ public class ArgumentTracker {
      * @param option the option that was set as a flag
      * @param isSet  true if the flag should be set
      */
-    public void flag(CommandOption option, boolean isSet) {
+    void flag(CommandOption option, boolean isSet) {
         flagByName.put(option.longName(), isSet);
         if (option.shortName() != null) {
-            flagByName.put("" + option.shortName(), isSet);
+            flagByName.put(Character.toString(option.shortName()), isSet);
         }
         firstPositionalArgumentWithNoOptionsAfter = positionalArguments.size();
     }
@@ -70,8 +75,9 @@ public class ArgumentTracker {
      * @param  usage the command line usage
      * @return       the arguments object
      */
-    public CommandArguments buildArguments(CommandLineUsage usage) {
-        processPositionalArguments(usage);
+    CommandArguments buildArguments(CommandLineUsage usage) {
+        addPositionalArgumentsToArgByName(usage);
+        validateNumberOfPositionalArguments(usage);
         return CommandArguments.builder()
                 .argByName(argByName)
                 .flagByName(flagByName)
@@ -79,14 +85,20 @@ public class ArgumentTracker {
                 .build();
     }
 
-    private void processPositionalArguments(CommandLineUsage usage) {
+    private void addPositionalArgumentsToArgByName(CommandLineUsage usage) {
         int foundPositionalArgs = Math.min(positionalArguments.size(), usage.getNumPositionalArgs());
         for (int i = 0; i < foundPositionalArgs; i++) {
             argByName.put(usage.getPositionalArgName(i), positionalArguments.get(i));
         }
+    }
+
+    private void validateNumberOfPositionalArguments(CommandLineUsage usage) {
+        // When displaying the help text, any positional arguments are ignored.
         if (flagByName.getOrDefault("help", false)) {
             return;
         }
+        // If we allow passing through arguments that aren't in the usage for this command, those will be included in
+        // the positional arguments list. We need to exclude them from validation.
         if (usage.isPassThroughExtraArguments()) {
             if (positionalArguments.size() < usage.getNumPositionalArgs()) {
                 throw new WrongNumberOfArgumentsException(positionalArguments.size(), usage.getNumPositionalArgs());
@@ -94,9 +106,7 @@ public class ArgumentTracker {
             if (firstPositionalArgumentWithNoOptionsAfter > usage.getNumPositionalArgs()) {
                 throw new WrongNumberOfArgumentsException(firstPositionalArgumentWithNoOptionsAfter, usage.getNumPositionalArgs());
             }
-            return;
-        }
-        if (positionalArguments.size() != usage.getNumPositionalArgs()) {
+        } else if (positionalArguments.size() != usage.getNumPositionalArgs()) {
             throw new WrongNumberOfArgumentsException(positionalArguments.size(), usage.getNumPositionalArgs());
         }
     }
