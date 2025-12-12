@@ -8,6 +8,7 @@ on:
       - 'code-style/checkstyle*.xml'
       - 'code-style/spotbugs*.xml'
       - 'java/pom.xml'
+      - 'java/deployment/pom.xml'
       - 'java/system-test/pom.xml'
       - 'java/clients/**'
       - 'java/deployment/cdk/**'

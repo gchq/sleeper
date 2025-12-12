@@ -11,6 +11,7 @@ on:
       - 'java/pom.xml'
       - 'java/query/pom.xml'
       - 'java/compaction/pom.xml'
+      - 'java/common/pom.xml'
       - 'java/query/query-datafusion/**'
       - 'java/compaction/compaction-datafusion/**'
       - 'java/common/foreign-bridge/**'
