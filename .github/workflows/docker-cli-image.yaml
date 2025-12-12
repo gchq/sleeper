@@ -74,9 +74,11 @@ jobs:
         with:
           driver-opts: network=host
       - name: Download artifacts from previous workflows
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
+        with:
+          name: dependencies-image
       - name: Load dependencies image
-        run: docker load --input dependencies-image/dependencies-image.tar
+        run: docker load --input dependencies-image.tar
       - name: Expose dependencies image to Docker Buildx via local registry
         run: docker push ${{ env.DEPENDENCIES_IMAGE }}
       - name: Login to GitHub Container Registry
