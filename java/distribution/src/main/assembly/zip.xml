@@ -86,6 +86,13 @@
                 <exclude>*.jar</exclude>
             </excludes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../statestore-committer/docker</directory>
+            <outputDirectory>scripts/docker/statestore-committer</outputDirectory>
+            <excludes>
+                <exclude>*.jar</exclude>
+            </excludes>
+        </fileSet>
     </fileSets>
 
     <files>
@@ -123,6 +130,13 @@
             </source>
             <outputDirectory>scripts/docker/bulk-export-task-execution</outputDirectory>
             <destName>bulk-export-task-execution.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../statestore-committer/target/statestore-committer-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/docker/statestore-committer</outputDirectory>
+            <destName>statestore-committer.jar</destName>
         </file>
         <file>
             <source>
