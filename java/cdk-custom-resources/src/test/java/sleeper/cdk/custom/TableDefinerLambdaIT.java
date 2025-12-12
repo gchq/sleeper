@@ -37,6 +37,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
@@ -64,6 +65,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
+import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
+import static sleeper.core.properties.table.TableProperty.REUSE_EXISTING_TABLE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -152,6 +155,49 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
                             .splitToNewChildren("l", "ll", "lr", Long.valueOf(0))
                             .splitToNewChildren("r", "rl", "rr", Long.valueOf(10))
                             .buildList());
+        }
+
+        @Test
+        public void shouldFailToReuseTableIfTableDoesNotExist() throws IOException {
+            //Given
+            tableProperties.set(REUSE_EXISTING_TABLE, "true");
+
+            //Then
+            assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
+                    .isInstanceOf(NoTableToReuseException.class);
+        }
+
+        @Test
+        public void shouldFailToReuseTableIfImportFlagNotSet() throws IOException {
+            //Given
+            callLambda(CREATE, tableProperties);
+            //Should just take the table offline
+            tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
+            callLambda(DELETE, tableProperties);
+
+            //Then
+            assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
+                    .isInstanceOf(TableAlreadyExistsException.class)
+                    .hasMessageContaining("If attempting to reuse an existing table ensure the sleeper.reuse.existing.table property is set to true.");
+        }
+
+        @Test
+        public void shouldUpdateTableIfImportDataPropertySet() throws IOException {
+            //Given
+            callLambda(CREATE, tableProperties);
+            //Should just take the table offline
+            tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
+            callLambda(DELETE, tableProperties);
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
+
+            //When
+            tableProperties.set(TABLE_ONLINE, "true");
+            tableProperties.set(REUSE_EXISTING_TABLE, "true");
+            callLambda(CREATE, tableProperties);
+
+            //Then
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)))
+                    .isEqualTo(tableProperties);
         }
     }
 
