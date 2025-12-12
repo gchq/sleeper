@@ -16,11 +16,8 @@
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Range;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
@@ -70,8 +67,10 @@ public class SplitPartitionTransaction implements PartitionTransaction {
             throw new StateStoreException("Parent should not be a leaf partition after split");
         }
 
-        if (!Objects.equals(parent.getChildPartitionIds(), checkChildPartitionIdsInSplitOrder(tableProperties.getSchema()))) {
-            throw new StateStoreException("Child partition IDs on parent do not match new children");
+        try {
+            PartitionTree.validateSplit(parent, newChildren, tableProperties.getSchema());
+        } catch (RuntimeException e) {
+            throw new StateStoreException("Failed to validate partition split", e);
         }
 
         for (Partition child : newChildren) {
@@ -84,28 +83,6 @@ public class SplitPartitionTransaction implements PartitionTransaction {
             if (!child.isLeafPartition()) {
                 throw new StateStoreException("Child should be a leaf partition: " + child.getId());
             }
-        }
-    }
-
-    private List<String> checkChildPartitionIdsInSplitOrder(Schema schema) throws StateStoreException {
-        if (newChildren.size() != 2) {
-            throw new StateStoreException("Expected 2 child partitions, left and right of split point, found " + newChildren.size());
-        }
-        if (schema.getRowKeyFields().size() <= parent.getDimension()) {
-            throw new StateStoreException("No row key at parent partition dimension " + parent.getDimension());
-        }
-        Field splitField = schema.getRowKeyFields().get(parent.getDimension());
-        Partition child1 = newChildren.get(0);
-        Partition child2 = newChildren.get(1);
-        Range range1 = child1.getRegion().getRange(splitField.getName());
-        Range range2 = child2.getRegion().getRange(splitField.getName());
-        PrimitiveType type = (PrimitiveType) splitField.getType();
-        if (type.compare(range1.getMax(), range2.getMin()) == 0) {
-            return List.of(child1.getId(), child2.getId());
-        } else if (type.compare(range1.getMin(), range2.getMax()) == 0) {
-            return List.of(child2.getId(), child1.getId());
-        } else {
-            throw new StateStoreException("Child partitions do not meet at a split point on dimension " + parent.getDimension() + " set in the parent");
         }
     }
 

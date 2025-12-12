@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.core.SleeperVersion;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperPropertiesPrettyPrinter;
 import sleeper.core.properties.SleeperPropertyIndex;
@@ -40,6 +41,7 @@ import java.util.Properties;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -141,6 +143,7 @@ public class SystemTestStandaloneProperties
         instanceProperties.set(APACHE_LOGGING_LEVEL, "INFO");
         instanceProperties.set(PARQUET_LOGGING_LEVEL, "WARN");
         instanceProperties.set(AWS_LOGGING_LEVEL, "INFO");
+        instanceProperties.set(VERSION, SleeperVersion.getVersion());
         return instanceProperties;
     }
 

@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.transaction;
 
 import org.apache.commons.lang3.StringUtils;
 import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,6 +38,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransacti
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTreeTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
@@ -81,7 +83,7 @@ public class TransactionSerDeTest {
         // Then
         assertThat(serDe.toTransaction(type, json))
                 .isEqualTo(transaction);
-        Approvals.verify(json);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
     @Test
@@ -288,6 +290,27 @@ public class TransactionSerDeTest {
         PartitionTransaction transaction = new SplitPartitionTransaction(
                 partitions.getPartition("L"),
                 List.of(partitions.getPartition("LL"), partitions.getPartition("LR")));
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
+    }
+
+    @Test
+    void shouldSerDeExtendPartitionTree() {
+        // Given
+        Schema schema = createSchemaWithKey("key", new StringType());
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "p")
+                .splitToNewChildren("L", "LL", "LR", "g")
+                .splitToNewChildren("LR", "LRL", "LRR", "k")
+                .splitToNewChildren("R", "RL", "RR", "s")
+                .buildTree();
+        PartitionTransaction transaction = new ExtendPartitionTreeTransaction(
+                List.of(partitions.getPartition("L"), partitions.getPartition("R")),
+                List.of(partitions.getPartition("LL"), partitions.getPartition("LR"),
+                        partitions.getPartition("LRL"), partitions.getPartition("LRR"),
+                        partitions.getPartition("RL"), partitions.getPartition("RR")));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
