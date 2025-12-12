@@ -27,11 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CommandArgumentsTest {
 
-    List<String> positionalArguments;
-    List<String> systemArguments;
-    List<CommandOption> options;
-    String helpSummary;
-    boolean passThroughUnrecognised;
+    CommandLineUsage.Builder builder = CommandLineUsage.builder();
 
     @Nested
     @DisplayName("Positional arguments")
@@ -614,7 +610,7 @@ public class CommandArgumentsTest {
 
         @BeforeEach
         void setUp() {
-            setPassThroughUnrecognised(true);
+            setPassThroughExtraArguments(true);
         }
 
         @Test
@@ -747,23 +743,23 @@ public class CommandArgumentsTest {
     }
 
     private void setPositionalArguments(String... names) {
-        positionalArguments = List.of(names);
+        builder.positionalArguments(List.of(names));
     }
 
     private void setSystemArguments(String... names) {
-        systemArguments = List.of(names);
+        builder.systemArguments(List.of(names));
     }
 
     private void setOptions(CommandOption... options) {
-        this.options = List.of(options);
+        builder.options(List.of(options));
     }
 
     private void setHelpSummary(String helpSummary) {
-        this.helpSummary = helpSummary;
+        builder.helpSummary(helpSummary);
     }
 
-    private void setPassThroughUnrecognised(boolean passThroughUnrecognised) {
-        this.passThroughUnrecognised = passThroughUnrecognised;
+    private void setPassThroughExtraArguments(boolean setPassThroughExtraArguments) {
+        builder.passThroughExtraArguments(setPassThroughExtraArguments);
     }
 
     private CommandArguments parse(String... args) {
@@ -779,12 +775,6 @@ public class CommandArgumentsTest {
     }
 
     private CommandLineUsage usage() {
-        return CommandLineUsage.builder()
-                .positionalArguments(positionalArguments)
-                .systemArguments(systemArguments)
-                .options(options)
-                .helpSummary(helpSummary)
-                .passThroughExtraArguments(passThroughUnrecognised)
-                .build();
+        return builder.build();
     }
 }
