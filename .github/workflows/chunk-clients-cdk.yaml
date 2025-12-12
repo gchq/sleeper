@@ -14,6 +14,7 @@ on:
       - 'java/cdk-custom-resources/**'
       - 'java/cdk-environment/**'
       - 'java/build-uptime-lambda/**'
+      - 'java/spark/**'
       - 'java/system-test/system-test-cdk/**'
       - 'java/system-test/system-test-configuration/**'
       - 'java/system-test/system-test-data-generation/**'
