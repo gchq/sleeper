@@ -37,6 +37,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+import sleeper.core.table.NoTableToReuseException;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
@@ -164,7 +165,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
             //Then
             assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
-                    .isInstanceOf(TableNotFoundException.class);
+                    .isInstanceOf(NoTableToReuseException.class);
         }
 
         @Test

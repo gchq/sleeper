@@ -27,6 +27,6 @@ public class NoTableToReuseException extends RuntimeException {
 
     public NoTableToReuseException(String tableName, Exception cause) {
         super("Table not found with name \"" + tableName + "\". If attempting to create a completly new table, " +
-                "ensure the sleeper.reuse.existing.table is set to false.", cause);
+                "ensure the sleeper.reuse.existing.table property is set to false.", cause);
     }
 }
