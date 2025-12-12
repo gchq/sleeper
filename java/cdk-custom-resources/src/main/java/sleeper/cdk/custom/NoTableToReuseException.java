@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.core.table;
+package sleeper.cdk.custom;
 
 /**
  * Thrown to indicate that no table exists with the provided name when attempting to reuse a table during a create

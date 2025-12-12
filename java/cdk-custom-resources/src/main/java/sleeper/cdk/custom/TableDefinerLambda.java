@@ -30,7 +30,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.table.NoTableToReuseException;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
@@ -105,17 +105,30 @@ public class TableDefinerLambda {
 
         //Table may just be offline from a previous delete call
         if (tableProperties.getBoolean(TableProperty.REUSE_EXISTING_TABLE)) {
-            LOGGER.info("Table {} expected to already exist. Attempting to update its properties", tableName);
-            try {
-                tablePropertiesStore.update(tableProperties);
-            } catch (TableNotFoundException e) {
-                throw new NoTableToReuseException(tableName, e);
-            }
-            return;
+            reuseExistingTable(tableName, tablePropertiesStore, tableProperties);
+        } else {
+            createNewTable(tableName, tablePropertiesStore, tableProperties, resourceProperties);
         }
+    }
 
+    private void reuseExistingTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties) {
+        LOGGER.info("Table {} expected to already exist. Attempting to update its properties", tableName);
+        try {
+            tablePropertiesStore.update(tableProperties);
+        } catch (TableNotFoundException e) {
+            throw new NoTableToReuseException(tableName, e);
+        }
+    }
+
+    private void createNewTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties,
+            Map<String, Object> resourceProperties) {
         LOGGER.info("Creating new table {}", tableName);
-        tablePropertiesStore.createTable(tableProperties);
+        try {
+            tablePropertiesStore.createTable(tableProperties);
+        } catch (TableAlreadyExistsException e) {
+            throw new TableAlreadyExistsException(e.getMessage() + " If attempting to reuse an existing table " +
+                    "ensure the sleeper.reuse.existing.table property is set to true.", e);
+        }
 
         List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"),
                 tableProperties.getSchema(),
