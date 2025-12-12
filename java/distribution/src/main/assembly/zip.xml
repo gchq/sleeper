@@ -206,13 +206,13 @@
             <outputDirectory>scripts/jars</outputDirectory>
         </file>
         <file>
-            <source>${project.basedir}/../cdk/target/cdk-${project.version}-utility.jar</source>
+            <source>${project.basedir}/../deployment/cdk/target/cdk-${project.version}-utility.jar</source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>cdk-${project.version}.jar</destName>
         </file>
         <file>
             <source>
-                ${project.basedir}/../cdk-custom-resources/target/cdk-custom-resources-${project.version}-utility.jar
+                ${project.basedir}/../deployment/cdk-custom-resources/target/cdk-custom-resources-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>cdk-custom-resources-${project.version}.jar</destName>

@@ -26,12 +26,12 @@ on:
       - 'java/common/common-job/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
-      - 'java/parquet/**'
+      - 'java/common/parquet/**'
       - 'java/common/localstack-test/**'
-      - 'java/sketches/**'
+      - 'java/common/sketches/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
-      - 'java/arrow/**'
+      - 'java/common/arrow/**'
 
 jobs:
   chunk-workflow:

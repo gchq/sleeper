@@ -4,10 +4,10 @@ chunks:
     workflow: chunk-clients-cdk.yaml
     modules:
       - clients
-      - cdk
-      - cdk-custom-resources
-      - cdk-environment
-      - build-uptime-lambda
+      - deployment/cdk
+      - deployment/cdk-custom-resources
+      - deployment/cdk-environment
+      - deployment/build-uptime-lambda
       - system-test/system-test-cdk
       - system-test/system-test-configuration
       - system-test/system-test-data-generation
@@ -20,9 +20,9 @@ chunks:
     modules:
       - core
       - configuration
-      - sketches
-      - parquet
-      - arrow
+      - common/sketches
+      - common/parquet
+      - common/arrow
       - common/common-job
       - common/common-task
       - common/common-invoke-tables
@@ -57,7 +57,7 @@ chunks:
     modules:
       - query/query-datafusion
       - compaction/compaction-datafusion
-      - foreign-bridge
+      - common/foreign-bridge
   ingest:
     name: Ingest
     workflow: chunk-ingest.yaml
