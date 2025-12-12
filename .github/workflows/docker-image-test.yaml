@@ -14,13 +14,16 @@ on:
       dockerOptions:
         required: false
         type: string
+      trivyIgnore:
+        default: code-style/.trivyignore.yaml
+        required: false
+        type: string
 
 env:
   RUST_BUILD_IMAGE_X86_64: "ghcr.io/gchq/sleeper-rust-builder-x86_64-sccache:latest"
   RUST_BUILD_IMAGE_AARCH64: "ghcr.io/gchq/sleeper-rust-builder-aarch64-sccache:latest"
   SCCACHE_GHA_ENABLED: "true"
   SSCACHE_CACHE_SIZE: "2G"
-  TRIVY_IGNOREFILE: code-style/.trivyignore.yaml
 
 jobs:
   build:
@@ -75,6 +78,8 @@ jobs:
         if: ${{ inputs.testClassNames != '' }}
         run: mvn verify -PsystemTest -DskipRust=true -pl clients "-DrunIT=${{ inputs.testClassNames }}" -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
       - name: Run Trivy vulnerability scanner
+        env:
+          TRIVY_IGNOREFILE: ${{ inputs.trivyIgnore }}
         uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: '${{ inputs.imageName }}:test'
