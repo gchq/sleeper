@@ -20,9 +20,9 @@ chunks:
     modules:
       - core
       - configuration
-      - sketches
-      - parquet
-      - arrow
+      - common/sketches
+      - common/parquet
+      - common/arrow
       - common/common-job
       - common/common-task
       - common/common-invoke-tables
@@ -57,7 +57,7 @@ chunks:
     modules:
       - query/query-datafusion
       - compaction/compaction-datafusion
-      - foreign-bridge
+      - common/foreign-bridge
   ingest:
     name: Ingest
     workflow: chunk-ingest.yaml

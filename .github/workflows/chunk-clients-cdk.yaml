@@ -43,15 +43,15 @@ on:
       - 'java/common/common-invoke-tables/**'
       - 'java/compaction/compaction-core/**'
       - 'java/common/common-job/**'
-      - 'java/sketches/**'
+      - 'java/common/sketches/**'
       - 'java/example-iterators/**'
-      - 'java/parquet/**'
+      - 'java/common/parquet/**'
       - 'java/ingest/ingest-core/**'
       - 'java/core/**'
       - 'java/common/localstack-test/**'
       - 'java/bulk-export/bulk-export-core/**'
-      - 'java/foreign-bridge/**'
-      - 'java/arrow/**'
+      - 'java/common/foreign-bridge/**'
+      - 'java/common/arrow/**'
 
 jobs:
   chunk-workflow:
