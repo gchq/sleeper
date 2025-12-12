@@ -171,6 +171,6 @@ class TablePropertiesTest {
     void shouldNameTablePropertiesConsistently() {
         assertThat(TableProperty.getAll())
                 .extracting(TableProperty::getPropertyName)
-                .allSatisfy(name -> assertThat(name).startsWith("sleeper.table"));
+                .allSatisfy(name -> assertThat(name).startsWith("sleeper.table."));
     }
 }

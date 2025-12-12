@@ -250,6 +250,13 @@ class InstancePropertiesTest {
                 .hasMessageContaining("-62");
     }
 
+    @Test
+    void shouldNotNameInstancePropertiesAsTableProperties() {
+        assertThat(InstanceProperty.getAll())
+                .extracting(InstanceProperty::getPropertyName)
+                .allSatisfy(name -> assertThat(name).doesNotStartWith("sleeper.table."));
+    }
+
     private static InstanceProperties getSleeperProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ACCOUNT, "1234567890");
