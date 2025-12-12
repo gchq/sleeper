@@ -37,7 +37,6 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
-import sleeper.core.table.NoTableToReuseException;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
@@ -159,7 +158,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        public void shouldFailToImportDataIfTableDoesNotExist() throws IOException {
+        public void shouldFailToReuseTableIfTableDoesNotExist() throws IOException {
             //Given
             tableProperties.set(REUSE_EXISTING_TABLE, "true");
 
@@ -169,7 +168,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         }
 
         @Test
-        public void shouldFailToImportTableIfImportFlagNotSet() throws IOException {
+        public void shouldFailToReuseTableIfImportFlagNotSet() throws IOException {
             //Given
             callLambda(CREATE, tableProperties);
             //Should just take the table offline
@@ -178,7 +177,8 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
             //Then
             assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
-                    .isInstanceOf(TableAlreadyExistsException.class);
+                    .isInstanceOf(TableAlreadyExistsException.class)
+                    .hasMessageContaining("If attempting to reuse an existing table ensure the sleeper.reuse.existing.table property is set to true.");
         }
 
         @Test
