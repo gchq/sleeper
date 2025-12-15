@@ -227,28 +227,28 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
 
     // Table metrics
     CdkDefinedInstanceProperty TABLE_METRICS_LAMBDA_FUNCTION = Index
-            .propertyBuilder("sleeper.metrics.lambda.function")
+            .propertyBuilder("sleeper.lambda.table.metrics.function")
             .description("The name of the Lambda function that triggers generation of metrics for tables.")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .build();
-    CdkDefinedInstanceProperty TABLE_METRICS_QUEUE_URL = Index.propertyBuilder("sleeper.metrics.queue.url")
+    CdkDefinedInstanceProperty TABLE_METRICS_QUEUE_URL = Index.propertyBuilder("sleeper.sqs.table.metrics.queue.url")
             .description("The URL of the queue for table metrics calculation requests.")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .build();
-    CdkDefinedInstanceProperty TABLE_METRICS_QUEUE_ARN = Index.propertyBuilder("sleeper.metrics.queue.arn")
+    CdkDefinedInstanceProperty TABLE_METRICS_QUEUE_ARN = Index.propertyBuilder("sleeper.sqs.table.metrics.queue.arn")
             .description("The ARN of the queue for table metrics calculation requests.")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .build();
-    CdkDefinedInstanceProperty TABLE_METRICS_DLQ_URL = Index.propertyBuilder("sleeper.metrics.dlq.url")
+    CdkDefinedInstanceProperty TABLE_METRICS_DLQ_URL = Index.propertyBuilder("sleeper.sqs.table.metrics.dlq.url")
             .description("The URL of the dead letter queue for table metrics calculation requests.")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .build();
-    CdkDefinedInstanceProperty TABLE_METRICS_DLQ_ARN = Index.propertyBuilder("sleeper.metrics.dlq.arn")
+    CdkDefinedInstanceProperty TABLE_METRICS_DLQ_ARN = Index.propertyBuilder("sleeper.sqs.table.metrics.dlq.arn")
             .description("The ARN of the dead letter queue for table metrics calculation requests.")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .build();
-    CdkDefinedInstanceProperty TABLE_METRICS_RULE = Index.propertyBuilder("sleeper.metrics.rule")
-            .description("The name of the CloudWatch rule that triggers generation of metrics for tables.")
+    CdkDefinedInstanceProperty TABLE_METRICS_RULE = Index.propertyBuilder("sleeper.schedule.table.metrics.rule")
+            .description("The name of the schedule rule that triggers generation of metrics for tables.")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .build();
 

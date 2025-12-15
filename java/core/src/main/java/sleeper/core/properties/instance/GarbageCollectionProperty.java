@@ -64,7 +64,7 @@ public interface GarbageCollectionProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty GARBAGE_COLLECT_OFFLINE_TABLES = Index.propertyBuilder("sleeper.gc.offline.enabled")
+    UserDefinedInstanceProperty GARBAGE_COLLECT_OFFLINE_TABLES = Index.propertyBuilder("sleeper.run.gc.offline")
             .description("Whether to perform garbage collection for offline tables.")
             .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
