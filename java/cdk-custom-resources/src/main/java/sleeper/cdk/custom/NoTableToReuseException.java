@@ -21,12 +21,8 @@ package sleeper.cdk.custom;
  * action.
  */
 public class NoTableToReuseException extends RuntimeException {
-    public NoTableToReuseException(String tableName) {
-        this(tableName, null);
-    }
-
     public NoTableToReuseException(String tableName, Exception cause) {
         super("Table not found with name \"" + tableName + "\". If attempting to create a completly new table, " +
-                "ensure the sleeper.reuse.existing.table property is set to false.", cause);
+                "ensure the sleeper.table.reuse.existing property is set to false.", cause);
     }
 }

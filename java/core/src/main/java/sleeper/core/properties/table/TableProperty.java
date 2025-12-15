@@ -300,7 +300,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty REUSE_EXISTING_TABLE = Index.propertyBuilder("sleeper.reuse.existing.table")
+    TableProperty REUSE_EXISTING_TABLE = Index.propertyBuilder("sleeper.table.reuse.existing")
             .defaultProperty(DEFAULT_REUSE_EXISTING_TABLE)
             .description("This property is used when applying an instance configuration and a table has been added.\n" +
                     "By default, or if this property is false, when a table is added to an instance configuration it's created " +

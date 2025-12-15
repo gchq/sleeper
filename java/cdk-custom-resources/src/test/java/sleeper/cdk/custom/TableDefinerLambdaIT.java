@@ -170,6 +170,8 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         public void shouldFailToReuseTableIfImportFlagNotSet() throws IOException {
             //Given
+            tableProperties.set(TABLE_NAME, "tableName");
+            tableProperties.set(TABLE_ID, "tableID");
             callLambda(CREATE, tableProperties);
             //Should just take the table offline
             tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
@@ -178,7 +180,8 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             //Then
             assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
                     .isInstanceOf(TableAlreadyExistsException.class)
-                    .hasMessageContaining("If attempting to reuse an existing table ensure the sleeper.reuse.existing.table property is set to true.");
+                    .hasMessage("Table already exists: tableName (tableID) [offline]. If attempting to reuse an " +
+                            "existing table ensure the sleeper.table.reuse.existing property is set to true.");
         }
 
         @Test

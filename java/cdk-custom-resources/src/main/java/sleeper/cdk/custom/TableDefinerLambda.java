@@ -126,8 +126,8 @@ public class TableDefinerLambda {
         try {
             tablePropertiesStore.createTable(tableProperties);
         } catch (TableAlreadyExistsException e) {
-            throw new TableAlreadyExistsException(e.getMessage() + " If attempting to reuse an existing table " +
-                    "ensure the sleeper.reuse.existing.table property is set to true.", e);
+            throw new TableAlreadyExistsException(e.getMessage() + ". If attempting to reuse an existing table " +
+                    "ensure the sleeper.table.reuse.existing property is set to true.", e);
         }
 
         List<Object> splitPoints = ReadSplitPoints.fromString((String) resourceProperties.get("splitPoints"),
