@@ -66,12 +66,12 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithMultipleLines() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.default.gc.delay.minutes=123"))
+            assertThat(printInstanceProperties("sleeper.default.table.gc.delay.minutes=123"))
                     .contains("# A file will not be deleted until this number of minutes have passed after it has been marked as\n" +
                             "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
                             "# marked as ready for garbage collection is that they may still be in use by queries. This property\n" +
                             "# can be overridden on a per-table basis.\n" +
-                            "sleeper.default.gc.delay.minutes");
+                            "sleeper.default.table.gc.delay.minutes");
         }
 
         @Test
