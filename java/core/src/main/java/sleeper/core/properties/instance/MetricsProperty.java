@@ -28,32 +28,32 @@ import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CON
  * Definitions of instance properties relating to metrics.
  */
 public interface MetricsProperty {
-    UserDefinedInstanceProperty METRICS_NAMESPACE = Index.propertyBuilder("sleeper.metrics.namespace")
-            .description("The namespaces for the metrics used in the metrics stack.")
+    UserDefinedInstanceProperty METRICS_NAMESPACE = Index.propertyBuilder("sleeper.cloudwatch.table.metrics.namespace")
+            .description("The CloudWatch namespace to publish table metrics to.")
             .defaultValue("Sleeper")
             .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.METRICS)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.metrics.concurrency.reserved")
+    UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.lambda.table.metrics.concurrency.reserved")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the table metrics lambda.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.metrics.concurrency.max")
+    UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.lambda.table.metrics.concurrency.max")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum concurrency allowed for the table metrics lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.METRICS)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty METRICS_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.metrics.batch.size")
+    UserDefinedInstanceProperty METRICS_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.run.table.metrics.batch.size")
             .description("The number of tables to calculate metrics for in a single invocation. " +
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.METRICS)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty METRICS_FOR_OFFLINE_TABLES = Index.propertyBuilder("sleeper.metrics.offline.enabled")
+    UserDefinedInstanceProperty METRICS_FOR_OFFLINE_TABLES = Index.propertyBuilder("sleeper.run.table.metrics.offline")
             .description("Whether to calculate table metrics for offline tables.")
             .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
