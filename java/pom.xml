@@ -185,7 +185,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
         <google.errorprone.version>2.45.0</google.errorprone.version>
-        <cdk.version>2.232.1</cdk.version>
+        <cdk.version>2.232.2</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.4</constructs.version>
         <jsii.version>1.121.0</jsii.version>
