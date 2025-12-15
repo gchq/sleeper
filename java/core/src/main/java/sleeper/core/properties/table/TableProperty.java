@@ -30,6 +30,7 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_TABLE_REUSE_EXISTING;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
@@ -297,6 +298,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "Be aware that if a table is renamed in the configuration, the CDK will see it as a delete of the old " +
                     "table name and a create of the new table name. If this is set to false when that happens it will remove the table's data.\n" +
                     "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty TABLE_REUSE_EXISTING = Index.propertyBuilder("sleeper.table.reuse.existing")
+            .defaultProperty(DEFAULT_TABLE_REUSE_EXISTING)
+            .description("This property is used when applying an instance configuration and a table has been added.\n" +
+                    "By default, or if this property is false, when a table is added to an instance configuration it's created " +
+                    "in the instance. If it already exists the update will fail.\n" +
+                    "If this property is true, the existing table will be reused and imported as part of the instance configuration. " +
+                    "If it doesn't exist the update will fail.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
