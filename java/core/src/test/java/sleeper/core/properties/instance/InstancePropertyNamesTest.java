@@ -18,10 +18,12 @@ package sleeper.core.properties.instance;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.table.TableProperty;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,26 +46,22 @@ public class InstancePropertyNamesTest {
     @Test
     @Disabled("TODO")
     void shouldNameDefaultPropertiesForTablePropertiesConsistently() {
-        assertThat(defaultPropertiesOfTableProperties())
-                .extracting(InstanceProperty::getPropertyName)
+        assertThat(defaultPropertiesOf(TableProperty.getAll()))
+                .extracting(SleeperProperty::getPropertyName)
                 .allSatisfy(name -> assertThat(name).startsWith("sleeper.default.table."));
     }
 
     @Test
+    @Disabled("TODO")
     void shouldNameDefaultPropertiesForInstancePropertiesConsistently() {
-        // TODO
+        assertThat(defaultPropertiesOf(InstanceProperty.getAll()))
+                .extracting(SleeperProperty::getPropertyName)
+                .allSatisfy(name -> assertThat(name)
+                        .doesNotStartWith("sleeper.default.table."));
     }
 
-    @Test
-    void shouldNotNameNonDefaultPropertiesAsDefaultProperties() {
-        // TODO
-    }
-
-    private static List<InstanceProperty> defaultPropertiesOfTableProperties() {
-        return TableProperty.getAll().stream()
-                .flatMap(property -> Optional.ofNullable(property.getDefaultProperty()).stream())
-                .filter(InstanceProperty.class::isInstance)
-                .map(property -> (InstanceProperty) property)
-                .toList();
+    private static Stream<SleeperProperty> defaultPropertiesOf(List<? extends SleeperProperty> properties) {
+        return properties.stream()
+                .flatMap(property -> Optional.ofNullable(property.getDefaultProperty()).stream());
     }
 }
