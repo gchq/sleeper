@@ -15,7 +15,6 @@
  */
 package sleeper.core.properties.instance;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.SleeperProperty;
@@ -52,7 +51,6 @@ public class InstancePropertyNamesTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldNameDefaultPropertiesForInstancePropertiesConsistently() {
         assertThat(defaultsOf(InstanceProperty.getAll()))
                 .extracting(PropertyDefault::defaultPropertyName)
