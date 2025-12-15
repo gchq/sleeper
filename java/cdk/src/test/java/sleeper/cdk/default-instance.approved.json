@@ -23291,7 +23291,7 @@
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitPeriodicTrigger6354C494Ref"
                   },
-                  "\nsleeper.default.statestore.transactionlog.snapshot.load.min.transactions.ahead\u003d1\nsleeper.partition.splitting.finder.dlq.arn\u003d",
+                  "\nsleeper.default.table.statestore.transactionlog.snapshot.load.min.transactions.ahead\u003d1\nsleeper.partition.splitting.finder.dlq.arn\u003d",
                   {
                     "Ref": "referencetoTestInstancePartitionSplittingNestedStackPartitionSplittingNestedStackResourceB4D3E8DBOutputsTestInstancePartitionSplittingFindPartitionsToSplitDeadLetterQueue2C83A157Arn"
                   },
@@ -23307,7 +23307,7 @@
                   {
                     "Ref": "referencetoTestInstanceIngestBatcherNestedStackIngestBatcherNestedStackResource891B7171OutputsTestInstanceIngestBatcherIngestBatcherJobCreationPeriodicTrigger9FD74049Ref"
                   },
-                  "\nsleeper.default.statestore.commit.async.behaviour\u003ddisabled\nsleeper.ingest.max.local.rows\u003d1000\nsleeper.statestore.transactionlog.transaction.deletion.rule\u003d",
+                  "\nsleeper.default.table.statestore.commit.async.behaviour\u003ddisabled\nsleeper.ingest.max.local.rows\u003d1000\nsleeper.statestore.transactionlog.transaction.deletion.rule\u003d",
                   {
                     "Ref": "referencetoTestInstanceTransactionLogTransactionNestedStackTransactionLogTransactionNestedStackResource49461D99OutputsTestInstanceTransactionLogTransactionTransactionLogTransactionDeletionScheduleBC70F1ECRef"
                   },

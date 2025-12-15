@@ -46,22 +46,35 @@ public class InstancePropertyNamesTest {
     @Test
     @Disabled("TODO")
     void shouldNameDefaultPropertiesForTablePropertiesConsistently() {
-        assertThat(defaultPropertiesOf(TableProperty.getAll()))
-                .extracting(SleeperProperty::getPropertyName)
-                .allSatisfy(name -> assertThat(name).startsWith("sleeper.default.table."));
+        assertThat(defaultsOf(TableProperty.getAll()))
+                .filteredOn(propertyDefault -> propertyDefault.defaultProperty() instanceof InstanceProperty)
+                .allSatisfy(propertyDefault -> assertThat(propertyDefault.defaultPropertyName())
+                        .isEqualTo("sleeper.default." + propertyDefault.propertyNameWithoutSleeper()));
     }
 
     @Test
     @Disabled("TODO")
     void shouldNameDefaultPropertiesForInstancePropertiesConsistently() {
-        assertThat(defaultPropertiesOf(InstanceProperty.getAll()))
-                .extracting(SleeperProperty::getPropertyName)
+        assertThat(defaultsOf(InstanceProperty.getAll()))
+                .extracting(PropertyDefault::defaultPropertyName)
                 .allSatisfy(name -> assertThat(name)
                         .doesNotStartWith("sleeper.default.table."));
     }
 
-    private static Stream<SleeperProperty> defaultPropertiesOf(List<? extends SleeperProperty> properties) {
+    private static Stream<PropertyDefault> defaultsOf(List<? extends SleeperProperty> properties) {
         return properties.stream()
-                .flatMap(property -> Optional.ofNullable(property.getDefaultProperty()).stream());
+                .flatMap(property -> Optional.ofNullable(property.getDefaultProperty()).stream()
+                        .map(defaultProperty -> new PropertyDefault(property, defaultProperty)));
+    }
+
+    public record PropertyDefault(SleeperProperty property, SleeperProperty defaultProperty) {
+
+        public String defaultPropertyName() {
+            return defaultProperty.getPropertyName();
+        }
+
+        public String propertyNameWithoutSleeper() {
+            return property.getPropertyName().substring("sleeper.".length());
+        }
     }
 }
