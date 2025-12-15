@@ -29,18 +29,18 @@ on:
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-job/**'
       - 'java/ingest/ingest-tracker/**'
-      - 'java/sketches/**'
+      - 'java/common/sketches/**'
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'
       - 'java/common/common-invoke-tables/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
-      - 'java/parquet/**'
+      - 'java/common/parquet/**'
       - 'java/common/localstack-test/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
-      - 'java/foreign-bridge/**'
-      - 'java/arrow/**'
+      - 'java/common/foreign-bridge/**'
+      - 'java/common/arrow/**'
 
 jobs:
   chunk-workflow:
