@@ -116,7 +116,7 @@ public class TableDefinerLambda {
         LOGGER.info("Table {} expected to already exist. Attempting to update its properties", tableName);
         String previousTableName = tableProperties.get(PREVIOUS_TABLE_NAME);
         if (previousTableName != null) {
-            LOGGER.info("Table {} is being renamed to {} because the property sleeper.previous.table.name is set.",
+            LOGGER.info("Table {} is being renamed to {} because the property sleeper.table.previous.name is set.",
                     previousTableName, tableName);
             tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName(previousTableName).get(TABLE_ID));
         }
