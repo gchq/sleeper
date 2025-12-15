@@ -66,7 +66,6 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_FILES_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
@@ -511,12 +510,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "The snapshot that will be considered the latest snapshot is configured by a property to set the " +
                     "minimum age for it to count for this:\n" +
                     "sleeper.table.statestore.transactionlog.delete.behind.snapshot.min.age\n")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .build();
-    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.statestore.dynamo.consistent.reads")
-            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
-                    "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")

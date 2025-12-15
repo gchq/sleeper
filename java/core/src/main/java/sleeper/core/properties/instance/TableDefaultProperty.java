@@ -197,12 +197,6 @@ public interface TableDefaultProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT)
             .build();
-    UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.default.table.dynamo.strongly.consistent.reads")
-            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
-                    "are strongly consistent. This default can be overridden by a table property.")
-            .defaultValue("false")
-            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.default.table.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +
                     "If this minimum has not been reached, bulk import jobs will refuse to start.")
