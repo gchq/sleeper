@@ -173,6 +173,14 @@ sleeper.table.name=changeme
 # (default value shown below, uncomment to set a value)
 # sleeper.table.retain.data.after.delete=true
 
+# This property is used when applying an instance configuration and a table has been added.
+# By default, or if this property is false, when a table is added to an instance configuration it's
+# created in the instance. If it already exists the update will fail.
+# If this property is true, the existing table will be reused and imported as part of the instance
+# configuration. If it doesn't exist the update will fail.
+# (default value shown below, uncomment to set a value)
+# sleeper.table.reuse.existing=false
+
 
 ## The following table properties relate to compactions.
 
