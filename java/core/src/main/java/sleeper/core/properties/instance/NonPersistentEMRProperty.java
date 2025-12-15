@@ -77,7 +77,7 @@ public interface NonPersistentEMRProperty {
                     "bulk import job specification.")
             .defaultValue("SPOT").validationPredicate(s -> "SPOT".equals(s) || "ON_DEMAND".equals(s))
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.default.table.bulk.import.emr.executor.initial.instances")
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.default.table.bulk.import.emr.executor.initial.capacity")
             .description("(Non-persistent EMR mode only) The default initial number of capacity units to provision as EC2 " +
                     "instances for executors in the EMR cluster.\n" +
                     "This is measured in instance fleet capacity units. These are declared alongside the requested " +
@@ -88,7 +88,7 @@ public interface NonPersistentEMRProperty {
             .defaultValue("2")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.default.table.bulk.import.emr.executor.max.instances")
+    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.default.table.bulk.import.emr.executor.max.capacity")
             .description("(Non-persistent EMR mode only) The default maximum number of capacity units to provision as EC2 " +
                     "instances for executors in the EMR cluster.\n" +
                     "This is measured in instance fleet capacity units. These are declared alongside the requested " +

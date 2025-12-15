@@ -59,7 +59,7 @@ public interface QueryProperty {
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
-    UserDefinedInstanceProperty DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.query.processor.cache.timeout.seconds")
+    UserDefinedInstanceProperty DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT = Index.propertyBuilder("sleeper.default.table.query.processor.cache.timeout.seconds")
             .description("The default amount of time in seconds the query executor's cache of partition and " +
                     "file reference information is valid for. After this it will time out and need refreshing.")
             .defaultValue("60")
