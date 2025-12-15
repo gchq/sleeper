@@ -33,7 +33,7 @@ use url::Url;
 /// Contains all the common input data for setting up a Sleeper `DataFusion` operation.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/datafusion/FFICommonConfig.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/datafusion/FFICommonConfig.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 pub struct FFICommonConfig {
