@@ -14,21 +14,15 @@
  * limitations under the License.
  */
 
-package sleeper.core.table;
+package sleeper.cdk.custom;
 
 /**
- * Thrown to indicate that a table already exists with the given name. This can occur when creating or renaming a table.
+ * Thrown to indicate that no table exists with the provided name when attempting to reuse a table during a create
+ * action.
  */
-public class TableAlreadyExistsException extends RuntimeException {
-    public TableAlreadyExistsException(TableStatus table) {
-        this(table, null);
-    }
-
-    public TableAlreadyExistsException(TableStatus table, Exception cause) {
-        super("Table already exists: " + table, cause);
-    }
-
-    public TableAlreadyExistsException(String message, Exception cause) {
-        super(message, cause);
+public class NoTableToReuseException extends RuntimeException {
+    public NoTableToReuseException(String tableName, Exception cause) {
+        super("Table not found with name \"" + tableName + "\". If attempting to create a completly new table, " +
+                "ensure the sleeper.table.reuse.existing property is set to false.", cause);
     }
 }

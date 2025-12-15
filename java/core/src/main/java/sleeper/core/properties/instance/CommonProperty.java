@@ -107,6 +107,16 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .includedInBasicTemplate(true).build();
+    UserDefinedInstanceProperty DEFAULT_TABLE_REUSE_EXISTING = Index.propertyBuilder("sleeper.default.table.reuse.existing")
+            .description("This property is used when applying an instance configuration and a table has been added.\n" +
+                    "By default, or if this property is false, when a table is added to an instance configuration it's created " +
+                    "in the instance. If it already exists the update will fail.\n" +
+                    "If this property is true, the existing table will be reused and imported as part of the instance configuration. " +
+                    "If it doesn't exist the update will fail.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy. Not case sensitive.\n" +
                     "Valid values: " + SleeperPropertyValueUtils.describeEnumValues(OptionalStack.class))
