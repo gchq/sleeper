@@ -30,7 +30,7 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.core.properties.instance.CommonProperty.DEFAULT_REUSE_EXISTING_TABLE;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_TABLE_REUSE_EXISTING;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
@@ -305,8 +305,8 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty REUSE_EXISTING_TABLE = Index.propertyBuilder("sleeper.reuse.existing.table")
-            .defaultProperty(DEFAULT_REUSE_EXISTING_TABLE)
+    TableProperty TABLE_REUSE_EXISTING = Index.propertyBuilder("sleeper.table.reuse.existing")
+            .defaultProperty(DEFAULT_TABLE_REUSE_EXISTING)
             .description("This property is used when applying an instance configuration and a table has been added.\n" +
                     "By default, or if this property is false, when a table is added to an instance configuration it's created " +
                     "in the instance. If it already exists the update will fail.\n" +
