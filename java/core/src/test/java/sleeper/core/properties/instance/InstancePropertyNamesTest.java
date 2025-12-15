@@ -44,7 +44,6 @@ public class InstancePropertyNamesTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldNameDefaultPropertiesForTablePropertiesConsistently() {
         assertThat(defaultsOf(TableProperty.getAll()))
                 .filteredOn(propertyDefault -> propertyDefault.defaultProperty() instanceof InstanceProperty)

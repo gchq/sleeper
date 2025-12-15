@@ -63,7 +63,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -189,7 +189,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         public void shouldFailToDeleteTableThatDoesNotExist() {
             // Given
-            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             // When / Then
@@ -200,7 +200,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetTrue() throws Exception {
             // Given
-            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "true");
+            instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "true");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             callLambda(CREATE, tableProperties);
@@ -224,7 +224,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         void shouldFullyDeleteSpecifiedTableButNoOthers() throws Exception {
             // Given
-            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             TableProperties table1 = createTableProperties(uniqueIdAndName("test-table-1", "table-1"));
@@ -264,7 +264,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         void shouldFullyDeleteTableWhenSnapshotIsPresent() throws Exception {
             // Given
-            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             callLambda(CREATE, tableProperties, "50");

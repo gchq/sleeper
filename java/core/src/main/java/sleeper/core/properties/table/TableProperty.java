@@ -30,7 +30,7 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -289,8 +289,8 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "instance property.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty RETAIN_DATA_AFTER_DELETE = Index.propertyBuilder("sleeper.table.retain.data.after.delete")
-            .defaultProperty(RETAIN_DATA_AFTER_TABLE_REMOVAL)
+    TableProperty RETAIN_TABLE_AFTER_REMOVAL = Index.propertyBuilder("sleeper.table.retain.after.removal")
+            .defaultProperty(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL)
             .description("This property is used when applying an instance configuration and a table has been removed.\n" +
                     "If this is true (default), removing the table from the configuration will just take the table offline.\n" +
                     "If this is false, it will delete all data associated with the table when the table is removed.\n" +
