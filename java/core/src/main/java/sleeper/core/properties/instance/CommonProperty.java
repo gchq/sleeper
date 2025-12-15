@@ -107,7 +107,7 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .includedInBasicTemplate(true).build();
-    UserDefinedInstanceProperty DEFAULT_REUSE_EXISTING_TABLE = Index.propertyBuilder("sleeper.default.table.reuse.existing.table")
+    UserDefinedInstanceProperty DEFAULT_TABLE_REUSE_EXISTING = Index.propertyBuilder("sleeper.default.table.reuse.existing")
             .description("This property is used when applying an instance configuration and a table has been added.\n" +
                     "By default, or if this property is false, when a table is added to an instance configuration it's created " +
                     "in the instance. If it already exists the update will fail.\n" +

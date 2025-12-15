@@ -66,10 +66,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
 import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
-import static sleeper.core.properties.table.TableProperty.REUSE_EXISTING_TABLE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+import static sleeper.core.properties.table.TableProperty.TABLE_REUSE_EXISTING;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
@@ -160,7 +160,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         public void shouldFailToReuseTableIfTableDoesNotExist() throws IOException {
             //Given
-            tableProperties.set(REUSE_EXISTING_TABLE, "true");
+            tableProperties.set(TABLE_REUSE_EXISTING, "true");
 
             //Then
             assertThatThrownBy(() -> callLambda(CREATE, tableProperties))
@@ -195,7 +195,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
 
             //When
             tableProperties.set(TABLE_ONLINE, "true");
-            tableProperties.set(REUSE_EXISTING_TABLE, "true");
+            tableProperties.set(TABLE_REUSE_EXISTING, "true");
             callLambda(CREATE, tableProperties);
 
             //Then
