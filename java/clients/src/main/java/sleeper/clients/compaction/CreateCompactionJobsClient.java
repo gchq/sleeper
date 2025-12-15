@@ -52,8 +52,20 @@ public class CreateCompactionJobsClient {
             "default", CreateCompactionJobs::createJobsWithStrategy,
             "all", CreateCompactionJobs::createJobWithForceAllFiles);
 
+    /**
+     * Interface for classes that implement logic for creating compaction jobs.
+     */
     @FunctionalInterface
     public interface CreateJobsMode {
+
+        /**
+         * Creates compaction jobs for a Sleeper table using the compaction job properties in creator.
+         *
+         * @param  creator                the compaction jobs creator
+         * @param  table                  the Sleeper table properties
+         * @throws ObjectFactoryException If there is an error creating objects dynamically.
+         *
+         */
         void createJobs(CreateCompactionJobs creator, TableProperties table) throws ObjectFactoryException;
     }
 

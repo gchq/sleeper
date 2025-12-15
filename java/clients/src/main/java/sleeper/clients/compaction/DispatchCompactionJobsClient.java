@@ -37,6 +37,9 @@ import java.time.Instant;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 
+/**
+ * Class to start compaction jobs that have been placed on the pending compaction jobs queue.
+ */
 public class DispatchCompactionJobsClient {
     public static final Logger LOGGER = LoggerFactory.getLogger(DispatchCompactionJobsClient.class);
 
