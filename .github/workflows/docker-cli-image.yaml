@@ -109,7 +109,15 @@ jobs:
           df -h
           docker system df
           docker image ls
+          echo "Under project directory:"
+          pwd
           du -hs ./*
+          echo "Under root directory:"
+          du -hs /*
+          echo "Under /opt:"
+          du -hs /opt/*
+          echo "Under /usr:"
+          du -hs /usr/*
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
         with:
