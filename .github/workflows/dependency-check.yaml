@@ -20,7 +20,7 @@ jobs:
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Restore cache of Maven dependencies & CVEs database
-        uses: actions/cache/restore@v3
+        uses: actions/cache/restore@v5
         id: restore-cache
         with:
           path: ${{ runner.temp }}/.m2/repository
@@ -38,7 +38,7 @@ jobs:
         run: mvn --batch-mode verify dependency-check:aggregate -Pquick,skipShade -DskipRust -Dmaven.repo.local=${{ runner.temp }}/.m2/repository
         working-directory: ./java
       - name: Cache Maven dependencies & CVEs database
-        uses: actions/cache/save@v3
+        uses: actions/cache/save@v5
         if: ${{ always() }}
         with:
           path: ${{ runner.temp }}/.m2/repository

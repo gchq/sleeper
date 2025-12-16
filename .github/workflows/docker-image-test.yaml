@@ -45,7 +45,7 @@ jobs:
           distribution: 'corretto'
       - uses: mozilla-actions/sccache-action@v0.0.9
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}

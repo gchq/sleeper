@@ -20,7 +20,7 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
       - name: Restore cache of Maven dependencies
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: restore-cache
         with:
           path: ${{ runner.temp }}/.m2/repository
@@ -68,7 +68,7 @@ jobs:
             exit 1
           fi
       - name: Cache Maven dependencies
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: ${{ always() && github.ref_name == "develop" }}
         with:
           path: ${{ runner.temp }}/.m2/repository
