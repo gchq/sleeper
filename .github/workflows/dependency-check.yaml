@@ -5,6 +5,10 @@ on:
       failOnCacheMiss:
         required: true
         type: boolean
+      writeCache:
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   maven:
@@ -39,7 +43,7 @@ jobs:
         working-directory: ./java
       - name: Cache Maven dependencies & CVEs database
         uses: actions/cache/save@v5
-        if: ${{ always() }}
+        if: ${{ always() && inputs.writeCache }}
         with:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
