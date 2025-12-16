@@ -5,6 +5,9 @@ on:
       - '.github/workflows/java-status.yaml'
       - '.github/config/chunks.yaml'
       - 'java/**'
+  push:
+    branches:
+      - develop
 
 jobs:
   build:
