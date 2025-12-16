@@ -206,8 +206,7 @@ public class Range {
         if (equalsExactMatch(obj)) {
             return true;
         } else {
-            Range canonThis = RangeCanonicaliser.canonicaliseRange(this);
-            return canonThis.equalsExactMatch(RangeCanonicaliser.canonicaliseRange((Range) obj));
+            return  RangeCanonicaliser.canonicaliseRange(this).equalsExactMatch(RangeCanonicaliser.canonicaliseRange((Range) obj));
         }
     }
 
@@ -265,7 +264,7 @@ public class Range {
 
     @Override
     public String toString() {
-        return "Range{" + "field=" + field + ", min=" + min + ", minInclusive=" + minInclusive + ", max=" + max + ", maxInclusive=" + maxInclusive + '}';
+        return "Range{" + "field=" + field + ", min='" + min + "', minInclusive=" + minInclusive + ", max='" + max + "', maxInclusive=" + maxInclusive + '}';
     }
 
     /**
