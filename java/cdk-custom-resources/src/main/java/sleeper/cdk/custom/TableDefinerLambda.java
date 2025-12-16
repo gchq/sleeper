@@ -46,7 +46,6 @@ import java.util.Properties;
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.table.TableProperty.PREVIOUS_TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -114,13 +113,6 @@ public class TableDefinerLambda {
 
     private void reuseExistingTable(String tableName, TablePropertiesStore tablePropertiesStore, TableProperties tableProperties) {
         LOGGER.info("Table {} expected to already exist. Attempting to update its properties", tableName);
-        String previousTableName = tableProperties.get(PREVIOUS_TABLE_NAME);
-        if (previousTableName != null) {
-            LOGGER.info("Table {} is being renamed to {} because the property sleeper.table.previous.name is set.",
-                    previousTableName, tableName);
-            tableProperties.set(TABLE_ID, tablePropertiesStore.loadByName(previousTableName).get(TABLE_ID));
-        }
-
         try {
             tablePropertiesStore.update(tableProperties);
         } catch (TableNotFoundException e) {

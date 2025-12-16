@@ -65,7 +65,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
-import static sleeper.core.properties.table.TableProperty.PREVIOUS_TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.PREVIOUS_TABLE_NAMES;
 import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -204,7 +204,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             String previousTableName = tableProperties.get(TABLE_NAME);
             String newTableName = "newName";
             tableProperties.set(TABLE_REUSE_EXISTING, "true");
-            tableProperties.set(PREVIOUS_TABLE_NAME, previousTableName);
+            tableProperties.set(PREVIOUS_TABLE_NAMES, previousTableName + ",bingo,bongo");
             tableProperties.set(TABLE_NAME, newTableName);
 
             //When

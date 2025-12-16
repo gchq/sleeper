@@ -22,10 +22,12 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static sleeper.core.properties.table.TableProperty.PREVIOUS_TABLE_NAMES;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -170,9 +172,18 @@ public class TablePropertiesStore {
     private Optional<TableStatus> getExistingStatus(TableProperties tableProperties) {
         if (tableProperties.isSet(TABLE_ID)) {
             return tableIndex.getTableByUniqueId(tableProperties.get(TABLE_ID));
-        } else {
-            return tableIndex.getTableByName(tableProperties.get(TABLE_NAME));
         }
+
+        Optional<TableStatus> existingStatus = tableIndex.getTableByName(tableProperties.get(TABLE_NAME));
+        if (existingStatus.isEmpty()) {
+            List<String> previousNames = tableProperties.getList(PREVIOUS_TABLE_NAMES);
+            int i = 0;
+            while (existingStatus.isEmpty() && i < previousNames.size()) {
+                existingStatus = tableIndex.getTableByName(previousNames.get(i));
+                i++;
+            }
+        }
+        return existingStatus;
     }
 
     private void updateTable(TableStatus existing, TableProperties tableProperties) {

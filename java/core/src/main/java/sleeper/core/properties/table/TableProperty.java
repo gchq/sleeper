@@ -126,9 +126,8 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("A unique name identifying this table.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .editable(false).build();
-    TableProperty PREVIOUS_TABLE_NAME = Index.propertyBuilder("sleeper.table.previous.name")
-            .description("The most recent previous name for a table.\n" +
-                    "To be used when renaming a table in the instance configuration")
+    TableProperty PREVIOUS_TABLE_NAMES = Index.propertyBuilder("sleeper.table.previous.names")
+            .description("A csv list of previous names for the table.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
             .build();
     TableProperty TABLE_ID = Index.propertyBuilder("sleeper.table.id")
