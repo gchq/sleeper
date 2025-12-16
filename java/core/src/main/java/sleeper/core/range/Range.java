@@ -206,13 +206,13 @@ public class Range {
         if (equalsExactMatch(obj)) {
             return true;
         } else {
-            return equalsCanonicalised(this, (Range) obj);
+            return equalsCanonicalised(this, obj);
         }
     }
 
-    private boolean equalsCanonicalised(Range source, Range compare) {
+    private boolean equalsCanonicalised(Range source, Object compare) {
         Range canonSource = RangeCanonicaliser.canonicaliseRange(source);
-        Range canonCompare = RangeCanonicaliser.canonicaliseRange(compare);
+        Range canonCompare = RangeCanonicaliser.canonicaliseRange((Range) compare);
         return canonSource.equalsExactMatch(canonCompare);
     }
 
