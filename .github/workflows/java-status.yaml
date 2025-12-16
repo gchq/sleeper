@@ -72,7 +72,7 @@ jobs:
           fi
       - name: Cache Maven dependencies
         uses: actions/cache/save@v5
-        if: ${{ always() && (github.ref_name == "develop" || (github.base_ref != "" && github.base_ref != "develop")) }}
+        if: ${{ always() && github.ref_name == 'develop' }}
         with:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
