@@ -206,7 +206,12 @@ public class Range {
         if (equalsExactMatch(obj)) {
             return true;
         } else {
-            return  RangeCanonicaliser.canonicaliseRange(this).equalsExactMatch(RangeCanonicaliser.canonicaliseRange((Range) obj));
+            Range canonThis = RangeCanonicaliser.canonicaliseRange(this);
+            if (canonThis.equalsExactMatch(RangeCanonicaliser.canonicaliseRange((Range) obj))) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
