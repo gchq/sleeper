@@ -206,13 +206,14 @@ public class Range {
         if (equalsExactMatch(obj)) {
             return true;
         } else {
-            Range canonThis = RangeCanonicaliser.canonicaliseRange(this);
-            if (canonThis.equalsExactMatch(RangeCanonicaliser.canonicaliseRange((Range) obj))) {
-                return true;
-            } else {
-                return false;
-            }
+            return equalsCanonicalised(this, (Range) obj);
         }
+    }
+
+    private boolean equalsCanonicalised(Range source, Range compare) {
+        Range canonSource = RangeCanonicaliser.canonicaliseRange(source);
+        Range canonCompare = RangeCanonicaliser.canonicaliseRange(compare);
+        return canonSource.equalsExactMatch(canonCompare);
     }
 
     /**
