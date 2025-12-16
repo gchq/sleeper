@@ -56,6 +56,7 @@ public class SleeperRowPartitionReader implements PartitionReader<InternalRow> {
     private int numFields;
     private LeafPartitionQueryExecutor leafPartitionQueryExecutor;
     private CloseableIterator<Row> rows;
+    private FFIContext<DataFusionQueryFunctions> ffiContext;
 
     public SleeperRowPartitionReader(InstanceProperties instanceProperties, TableProperties tableProperties, InputPartition partition) {
         this.tableProperties = tableProperties;
@@ -65,7 +66,7 @@ public class SleeperRowPartitionReader implements PartitionReader<InternalRow> {
 
         SleeperInputPartition sleeperInputPartition = (SleeperInputPartition) partition;
         BufferAllocator allocator = new RootAllocator();
-        FFIContext<DataFusionQueryFunctions> ffiContext = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
+        this.ffiContext = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
         LeafPartitionRowRetriever rowRetriever = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, ffiContext).getRowRetriever(tableProperties);
 
         this.leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(ObjectFactory.noUserJars(), this.tableProperties, rowRetriever);
@@ -91,6 +92,7 @@ public class SleeperRowPartitionReader implements PartitionReader<InternalRow> {
     public void close() throws IOException {
         LOGGER.info("Closing LeafPartitionQueryExecutor");
         rows.close();
+        ffiContext.close();
     }
 
     @Override

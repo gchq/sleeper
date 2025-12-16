@@ -55,6 +55,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
     private Schema schema;
     private ArrowReader arrowReader;
     private long numBatches;
+    private FFIContext<DataFusionQueryFunctions> ffiContext;
 
     public SleeperColumnarBatchPartitionReader(InstanceProperties instanceProperties, TableProperties tableProperties, InputPartition partition) {
         this.tableProperties = tableProperties;
@@ -62,7 +63,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
 
         SleeperInputPartition sleeperInputPartition = (SleeperInputPartition) partition;
         BufferAllocator allocator = new RootAllocator();
-        FFIContext<DataFusionQueryFunctions> ffiContext = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
+        this.ffiContext = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
 
         LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
                 .files(sleeperInputPartition.getFiles())
@@ -88,6 +89,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
     public void close() throws IOException {
         LOGGER.info("Closing arrowReader (processed {}" + numBatches + " columnar batches)");
         arrowReader.close();
+        ffiContext.close();
     }
 
     @Override
