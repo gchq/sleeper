@@ -111,13 +111,19 @@ jobs:
           docker image ls
           echo "Under project directory:"
           pwd
-          du -ch --max-depth=1 .
-          echo "Under /opt:"
-          du -ch --max-depth=1 /opt
-          echo "Under /usr:"
-          du -ch --max-depth=1 /usr
+          sudo du -ch --max-depth=1 .
           echo "Under root:"
-          sudo du -ch --max-depth=1 /
+          sudo du -ch --max-depth=1 --exclude=/proc /
+          echo "Under /opt:"
+          sudo du -ch --max-depth=1 /opt
+          echo "Under /usr:"
+          sudo du -ch --max-depth=1 /usr
+          echo "Under /var:"
+          sudo du -ch --max-depth=1 /var
+          echo "Under /usr/local:"
+          sudo du -ch --max-depth=1 /usr/local
+          echo "Under /usr/share:"
+          sudo du -ch --max-depth=1 /usr/share
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
         with:
