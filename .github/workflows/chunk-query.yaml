@@ -13,7 +13,7 @@ on:
       - 'java/query/query-runner/**'
       - 'java/query/query-lambda/**'
       - 'java/query/query-datafusion/**'
-      - 'java/foreign-bridge/**'
+      - 'java/common/foreign-bridge/**'
       - 'java/athena/**'
       - 'java/trino/**'
       - 'java/partitions/splitter/**'
@@ -21,15 +21,15 @@ on:
       - 'java/statestore/**'
       - 'java/common/common-job/**'
       - 'java/ingest/ingest-tracker/**'
-      - 'java/sketches/**'
-      - 'java/parquet/**'
+      - 'java/common/sketches/**'
+      - 'java/common/parquet/**'
       - 'java/configuration/**'
       - 'java/ingest/ingest-core/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
       - 'java/common/localstack-test/**'
-      - 'java/arrow/**'
+      - 'java/common/arrow/**'
 
 jobs:
   chunk-workflow:

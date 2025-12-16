@@ -15,7 +15,7 @@
  */
 package sleeper.core.util.cli;
 
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -27,10 +27,12 @@ public class CommandArguments {
 
     private final Map<String, String> argByName;
     private final Map<String, Boolean> flags;
+    private final List<String> passThroughArguments;
 
     public CommandArguments(Builder builder) {
         argByName = builder.argByName;
         flags = builder.flagByName;
+        passThroughArguments = builder.passThroughArguments;
     }
 
     /**
@@ -141,6 +143,15 @@ public class CommandArguments {
         return flags.getOrDefault(name, defaultValue);
     }
 
+    /**
+     * Retrieves unrecognised arguments, if set to pass through unrecognised arguments.
+     *
+     * @return the pass-through arguments
+     */
+    public List<String> getPassthroughArguments() {
+        return passThroughArguments;
+    }
+
     private static int readInteger(String name, String string) {
         try {
             return Integer.parseInt(string);
@@ -171,46 +182,41 @@ public class CommandArguments {
      * A builder for this class.
      */
     public static class Builder {
-        private Map<String, String> argByName = new LinkedHashMap<>();
-        private Map<String, Boolean> flagByName = new LinkedHashMap<>();
+        private Map<String, String> argByName;
+        private Map<String, Boolean> flagByName;
+        private List<String> passThroughArguments;
 
         /**
-         * Sets an argument.
+         * Sets a map from argument name to value.
          *
-         * @param  name  the name of the argument
-         * @param  value the value set on the command line
-         * @return       this builder
+         * @param  argByName the arguments with values
+         * @return           this builder
          */
-        public Builder argument(String name, String value) {
-            argByName.put(name, value);
+        public Builder argByName(Map<String, String> argByName) {
+            this.argByName = argByName;
             return this;
         }
 
         /**
-         * Sets a flag option.
+         * Sets a map from flag name to value.
          *
-         * @param  option the option that was set as a flag
-         * @param  isSet  true if the flag should be set
-         * @return        this builder
+         * @param  flagByName the flags with values
+         * @return            this builder
          */
-        public Builder flag(CommandOption option, boolean isSet) {
-            flagByName.put(option.longName(), isSet);
-            if (option.shortName() != null) {
-                flagByName.put("" + option.shortName(), isSet);
-            }
+        public Builder flagByName(Map<String, Boolean> flagByName) {
+            this.flagByName = flagByName;
             return this;
         }
 
         /**
-         * Sets an option with an argument.
+         * Sets the pass-through arguments, which are unrecognised arguments given after all other arguments.
          *
-         * @param  option   the option that was set
-         * @param  argument the value of the argument
-         * @return          this builder
+         * @param  passThroughArguments the pass-through arguments
+         * @return                      this builder
          */
-        public Builder option(CommandOption option, String argument) {
-            return argument(option.longName(), argument)
-                    .argument("" + option.shortName(), argument);
+        public Builder passThroughArguments(List<String> passThroughArguments) {
+            this.passThroughArguments = passThroughArguments;
+            return this;
         }
 
         public CommandArguments build() {

@@ -424,7 +424,7 @@ Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
 The file java/core/src/main/java/sleeper/core/schema/type/ByteArray.java contains code that is heavily based on
 ByteArray from the Facebook JCommon Collections library, licensed under the Apache License, Version 2.0.
 
-The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
+The file java/common/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
 on ArrayOfStringsSerDe from the Apache DataSketches library, licensed under the Apache License, Version 2.0.
 
 

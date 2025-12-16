@@ -45,7 +45,7 @@ jobs:
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
       - name: Upload dependency check report
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Dependency check report
           path: java/target/dependency-check-report.html

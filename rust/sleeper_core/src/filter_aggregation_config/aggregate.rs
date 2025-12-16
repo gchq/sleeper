@@ -20,7 +20,7 @@ use super::{
 use thiserror::Error;
 
 /// Aggregation support. Consists of a column name and operation.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Aggregate {
     pub column: String,
     pub operation: AggOp,
@@ -68,7 +68,7 @@ fn column(call: &FunctionCall) -> Result<String, FunctionCallError> {
 }
 
 /// Supported aggregating operations.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum AggOp {
     Sum,
     Min,

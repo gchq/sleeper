@@ -1,0 +1,141 @@
+{
+  "updatePartitions": [
+    {
+      "partitionId": "L",
+      "isLeafPartition": false,
+      "parentPartitionId": "root",
+      "childPartitionIds": [
+        "LL",
+        "LR"
+      ],
+      "region": {
+        "key": {
+          "min": "",
+          "minInclusive": true,
+          "max": "cA\u003d\u003d",
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": 0
+    },
+    {
+      "partitionId": "R",
+      "isLeafPartition": false,
+      "parentPartitionId": "root",
+      "childPartitionIds": [
+        "RL",
+        "RR"
+      ],
+      "region": {
+        "key": {
+          "min": "cA\u003d\u003d",
+          "minInclusive": true,
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": 0
+    }
+  ],
+  "newPartitions": [
+    {
+      "partitionId": "LL",
+      "isLeafPartition": true,
+      "parentPartitionId": "L",
+      "childPartitionIds": [],
+      "region": {
+        "key": {
+          "min": "",
+          "minInclusive": true,
+          "max": "Zw\u003d\u003d",
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": -1
+    },
+    {
+      "partitionId": "LR",
+      "isLeafPartition": false,
+      "parentPartitionId": "L",
+      "childPartitionIds": [
+        "LRL",
+        "LRR"
+      ],
+      "region": {
+        "key": {
+          "min": "Zw\u003d\u003d",
+          "minInclusive": true,
+          "max": "cA\u003d\u003d",
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": 0
+    },
+    {
+      "partitionId": "LRL",
+      "isLeafPartition": true,
+      "parentPartitionId": "LR",
+      "childPartitionIds": [],
+      "region": {
+        "key": {
+          "min": "Zw\u003d\u003d",
+          "minInclusive": true,
+          "max": "aw\u003d\u003d",
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": -1
+    },
+    {
+      "partitionId": "LRR",
+      "isLeafPartition": true,
+      "parentPartitionId": "LR",
+      "childPartitionIds": [],
+      "region": {
+        "key": {
+          "min": "aw\u003d\u003d",
+          "minInclusive": true,
+          "max": "cA\u003d\u003d",
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": -1
+    },
+    {
+      "partitionId": "RL",
+      "isLeafPartition": true,
+      "parentPartitionId": "R",
+      "childPartitionIds": [],
+      "region": {
+        "key": {
+          "min": "cA\u003d\u003d",
+          "minInclusive": true,
+          "max": "cw\u003d\u003d",
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": -1
+    },
+    {
+      "partitionId": "RR",
+      "isLeafPartition": true,
+      "parentPartitionId": "R",
+      "childPartitionIds": [],
+      "region": {
+        "key": {
+          "min": "cw\u003d\u003d",
+          "minInclusive": true,
+          "maxInclusive": false
+        },
+        "stringsBase64Encoded": true
+      },
+      "dimension": -1
+    }
+  ]
+}

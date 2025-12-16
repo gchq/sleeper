@@ -27,11 +27,15 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>arrow</module>
         <module>common-job</module>
         <module>common-task</module>
         <module>common-invoke-tables</module>
         <module>docker-lambda</module>
         <module>dynamodb-tools</module>
+        <module>foreign-bridge</module>
         <module>localstack-test</module>
+        <module>parquet</module>
+        <module>sketches</module>
     </modules>
 </project>

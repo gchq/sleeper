@@ -104,16 +104,16 @@ impl<'a> LeafPartitionQuery<'a> {
         // Create query frame and sketches if it has been enabled
         let (sketcher, frame) = self.build_query_dataframe(&ops).await?;
 
-        if self.config.explain_plans {
-            explain_plan(&frame).await?;
-        }
-
         // Convert to physical plan
         let sort_ordering = ops.create_sort_expr_ordering(&frame)?;
         let completer = ops.create_output_completer();
 
         let frame = completer.complete_frame(frame)?;
         let task_ctx = Arc::new(frame.task_ctx());
+
+        if self.config.explain_plans {
+            explain_plan(&frame).await?;
+        }
 
         let physical_plan = ops.to_physical_plan(frame, sort_ordering.as_ref()).await?;
 

@@ -27,10 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CommandArgumentsTest {
 
-    List<String> positionalArguments;
-    List<String> systemArguments;
-    List<CommandOption> options;
-    String helpSummary;
+    CommandLineUsage.Builder builder = CommandLineUsage.builder();
 
     @Nested
     @DisplayName("Positional arguments")
@@ -607,20 +604,162 @@ public class CommandArgumentsTest {
         }
     }
 
+    @Nested
+    @DisplayName("Allow pass-through arguments")
+    class PassThroughArguments {
+
+        @BeforeEach
+        void setUp() {
+            setPassThroughExtraArguments(true);
+        }
+
+        @Test
+        void shouldPassThroughAfterPositionalArguments() {
+            // Given
+            setPositionalArguments("first", "second");
+
+            // When
+            CommandArguments arguments = parse("A", "B", "--some-option", "some-value");
+
+            // Then
+            assertThat(arguments.getString("first")).isEqualTo("A");
+            assertThat(arguments.getString("second")).isEqualTo("B");
+            assertThat(arguments.getPassthroughArguments()).containsExactly("--some-option", "some-value");
+        }
+
+        @Test
+        void shouldPassThroughAfterPositionalArgumentAndFlag() {
+            // Given
+            setPositionalArguments("arg");
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When
+            CommandArguments arguments = parse("A", "--yes", "--some-option", "some value");
+
+            // When / Then
+            assertThat(arguments.getString("arg")).isEqualTo("A");
+            assertThat(arguments.isFlagSet("yes")).isTrue();
+            assertThat(arguments.getPassthroughArguments()).containsExactly("--some-option", "some value");
+        }
+
+        @Test
+        void shouldPassThroughAfterFlagBetweenPositionalArguments() {
+            // Given
+            setPositionalArguments("first", "second");
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When
+            CommandArguments arguments = parse("A", "--yes", "B", "--some-option", "some value");
+
+            // When / Then
+            assertThat(arguments.getString("first")).isEqualTo("A");
+            assertThat(arguments.getString("second")).isEqualTo("B");
+            assertThat(arguments.isFlagSet("yes")).isTrue();
+            assertThat(arguments.getPassthroughArguments()).containsExactly("--some-option", "some value");
+        }
+
+        @Test
+        void shouldAllowPositionalArgumentsWithNoPassThroughWhenPassThroughEnabled() {
+            // Given
+            setPositionalArguments("first", "second");
+
+            // When
+            CommandArguments arguments = parse("A", "B");
+
+            // When / Then
+            assertThat(arguments.getString("first")).isEqualTo("A");
+            assertThat(arguments.getString("second")).isEqualTo("B");
+            assertThat(arguments.getPassthroughArguments()).isEmpty();
+        }
+
+        @Test
+        void shouldRequestHelpWithPassThroughEnabledAndPositionalArgumentsRequired() {
+            // Given
+            setPositionalArguments("first", "second");
+
+            // When
+            CommandArguments arguments = parse("--help");
+
+            // Then
+            assertThat(arguments.isFlagSet("help")).isTrue();
+            assertThat(arguments.getPassthroughArguments()).isEmpty();
+        }
+
+        @Test
+        void shouldRefusePassThroughBeforeRecognisedOption() {
+            // Given
+            setOptions(CommandOption.longOption("some-option"));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "--some-option", "b"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1");
+        }
+
+        @Test
+        void shouldRefusePassThroughBeforeRecognisedFlag() {
+            // Given
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "--yes"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1");
+        }
+
+        @Test
+        void shouldRefusePassThroughBeforeAndAfterRecognisedFlag() {
+            // Given
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "--yes", "b"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 0 positional arguments, found 1");
+        }
+
+        @Test
+        void shouldRefusePassThroughBetweenPositionalArgAndFlag() {
+            // Given
+            setPositionalArguments("arg");
+            setOptions(CommandOption.longFlag("yes"));
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "--pass", "--yes"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 1 positional argument, found 2");
+        }
+
+        @Test
+        void shouldRefuseTooFewPositionalArgumentsWithPassThroughEnabled() {
+            // Given
+            setPositionalArguments("first", "second", "third");
+
+            // When / Then
+            assertThatThrownBy(() -> parse("a", "b"))
+                    .isInstanceOf(CommandArgumentsException.class)
+                    .hasMessage("Expected 3 positional arguments, found 2");
+        }
+    }
+
     private void setPositionalArguments(String... names) {
-        positionalArguments = List.of(names);
+        builder.positionalArguments(List.of(names));
     }
 
     private void setSystemArguments(String... names) {
-        systemArguments = List.of(names);
+        builder.systemArguments(List.of(names));
     }
 
     private void setOptions(CommandOption... options) {
-        this.options = List.of(options);
+        builder.options(List.of(options));
     }
 
     private void setHelpSummary(String helpSummary) {
-        this.helpSummary = helpSummary;
+        builder.helpSummary(helpSummary);
+    }
+
+    private void setPassThroughExtraArguments(boolean setPassThroughExtraArguments) {
+        builder.passThroughExtraArguments(setPassThroughExtraArguments);
     }
 
     private CommandArguments parse(String... args) {
@@ -636,11 +775,6 @@ public class CommandArgumentsTest {
     }
 
     private CommandLineUsage usage() {
-        return CommandLineUsage.builder()
-                .positionalArguments(positionalArguments)
-                .systemArguments(systemArguments)
-                .options(options)
-                .helpSummary(helpSummary)
-                .build();
+        return builder.build();
     }
 }
