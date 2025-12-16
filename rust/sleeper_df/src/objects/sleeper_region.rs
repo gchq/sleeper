@@ -28,7 +28,7 @@ use crate::{
 /// Java arrays are transferred with a length. They should all be the same length in this struct.
 ///
 /// *THIS IS A C COMPATIBLE FFI STRUCT!* If you updated this struct (field ordering, types, etc.),
-/// you MUST update the corresponding Java definition in java/foreign-bridge/src/main/java/sleeper/foreign/FFISleeperRegion.java.
+/// you MUST update the corresponding Java definition in java/common/foreign-bridge/src/main/java/sleeper/foreign/FFISleeperRegion.java.
 /// The order and types of the fields must match exactly.
 #[repr(C)]
 #[derive(Copy, Clone)]
