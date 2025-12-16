@@ -73,20 +73,79 @@ public class RangeTest {
         }
     }
 
+    //RangeCanonicaliserStringTypeTest
     @Nested
-    @DisplayName("Conalised match")
-    class ConalisedMatchTest {
+    @DisplayName("Conanicalised match")
+    class ConanicalisedMatchTest {
         @Test
-        public void testCanonEqualsInt() {
+        public void testEqualsForCanonicallyIntType() {
             // Given
             Field field = new Field("key", new IntType());
             Schema schema = Schema.builder().rowKeyFields(field).build();
             RangeFactory rangeFactory = new RangeFactory(schema);
-            Range range1 = rangeFactory.createRange(field, 10, true, 20, true); // 10 20
-            Range range2 = rangeFactory.createRange(field, 10, false, 20, false); // 11 19
-            Range range3 = rangeFactory.createRange(field, 9, false, 21, false); // 10 20
-            Range range4 = rangeFactory.createRange(field, 9, false, 20, true); // 10 20
-            Range range5 = rangeFactory.createRange(field, 10, true, 21, false); // 10 20
+            Range range1 = rangeFactory.createRange(field, 10, true, 20, true);
+            Range range2 = rangeFactory.createRange(field, 10, false, 20, false);
+            Range range3 = rangeFactory.createRange(field, 9, false, 21, false);
+            Range range4 = rangeFactory.createRange(field, 9, false, 20, true);
+            Range range5 = rangeFactory.createRange(field, 10, true, 21, false);
+
+            // When / Then
+            assertThat(range1.equals(range2)).isFalse();
+            assertThat(range1.equals(range3)).isTrue();
+            assertThat(range1.equals(range4)).isTrue();
+            assertThat(range1.equals(range5)).isTrue();
+        }
+
+        @Test
+        void shouldEqualsForCanonicallyLongType() {
+            // Given
+            Field field = new Field("key", new LongType());
+            Schema schema = Schema.builder().rowKeyFields(field).build();
+            RangeFactory rangeFactory = new RangeFactory(schema);
+            Range range1 = rangeFactory.createRange(field, 5L, true, 9L, true);
+            Range range2 = rangeFactory.createRange(field, 5L, false, 9L, false);
+            Range range3 = rangeFactory.createRange(field, 4L, false, 10L, false);
+            Range range4 = rangeFactory.createRange(field, 4L, false, 9L, true);
+            Range range5 = rangeFactory.createRange(field, 5L, true, 10L, false);
+
+            // When / Then
+            assertThat(range1.equals(range2)).isFalse();
+            assertThat(range1.equals(range3)).isTrue();
+            assertThat(range1.equals(range4)).isTrue();
+            assertThat(range1.equals(range5)).isTrue();
+        }
+
+        @Test
+        void shouldEqualsForCanonicallyByteArrayType() {
+            // Given
+            Field field = new Field("key", new ByteArrayType());
+            Schema schema = Schema.builder().rowKeyFields(field).build();
+            RangeFactory rangeFactory = new RangeFactory(schema);
+
+            Range range1 = rangeFactory.createRange(field, RangeCanonicaliser.nextByteArrayValue(new byte[]{10, 10}), true, new byte[]{20, 20}, true);
+            Range range2 = rangeFactory.createRange(field, new byte[]{10, 10}, false, new byte[]{20, 20}, false);
+            Range range3 = rangeFactory.createRange(field, new byte[]{10, 10}, false, RangeCanonicaliser.nextByteArrayValue(new byte[]{20, 20}), false);
+            Range range4 = rangeFactory.createRange(field, new byte[]{10, 10}, false, new byte[]{20, 20}, true);
+            Range range5 = rangeFactory.createRange(field, RangeCanonicaliser.nextByteArrayValue(new byte[]{10, 10}), true, RangeCanonicaliser.nextByteArrayValue(new byte[]{20, 20}), false);
+
+            // When / Then
+            assertThat(range1.equals(range2)).isFalse();
+            assertThat(range1.equals(range3)).isTrue();
+            assertThat(range1.equals(range4)).isTrue();
+            assertThat(range1.equals(range5)).isTrue();
+        }
+
+        @Test
+        void shouldEqualsForCanonicallyStringType() {
+            // Given
+            Field field = new Field("key", new StringType());
+            Schema schema = Schema.builder().rowKeyFields(field).build();
+            RangeFactory rangeFactory = new RangeFactory(schema);
+            Range range1 = rangeFactory.createRange(field, "A\u0000", true, "AAA", true);
+            Range range2 = rangeFactory.createRange(field, "A", false, "AAA", false);
+            Range range3 = rangeFactory.createRange(field, "A", false, "AAA\u0000", false);
+            Range range4 = rangeFactory.createRange(field, "A", false, "AAA", true);
+            Range range5 = rangeFactory.createRange(field, "A\u0000", true, "AAA\u0000", false);
 
             // When / Then
             assertThat(range1.equals(range2)).isFalse();
@@ -97,7 +156,7 @@ public class RangeTest {
     }
 
     @Nested
-    @DisplayName("Int Type Range testing")
+    @DisplayName("Range functionality using IntType")
     class IntTypeRangeTest {
         @Test
         public void shouldAnswerDoesRangeContainObjectCorreclyIntRangeBothInclusive() {
@@ -238,7 +297,7 @@ public class RangeTest {
     }
 
     @Nested
-    @DisplayName("Long Type Range Testing")
+    @DisplayName("Range functionality using LongType")
     class LongTypeRangeTest {
         @Test
         public void shouldAnswerDoesRangeContainObjectCorreclyLongRangeBothInclusive() {
@@ -379,7 +438,7 @@ public class RangeTest {
     }
 
     @Nested
-    @DisplayName("String type Range test")
+    @DisplayName("Range functionality using StringType")
     class StringTypeRangeTest {
 
         @Test
@@ -551,7 +610,7 @@ public class RangeTest {
     }
 
     @Nested
-    @DisplayName("ByteArray Type testing")
+    @DisplayName("Range functionality using ByteArrayType")
     class ByteArrayTypeTest {
 
         @Test
@@ -710,6 +769,7 @@ public class RangeTest {
             assertThat(doesEmptyTo888OverlapPartition).isTrue();
             assertThat(does888ToNullOverlapPartition).isTrue();
         }
+
     }
 
     @Test
@@ -723,5 +783,26 @@ public class RangeTest {
         // When / Then
         assertThatThrownBy(() -> range.doesRangeContainObject(10L))
                 .isInstanceOf(ClassCastException.class);
+    }
+
+    @Test
+    void shouldProvideVisibleIndicationWhenNullCharacterPresentAtEndOfString() {
+        Field field = new Field("key", new StringType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+
+        // When 1
+        Range rangeWithNullCharacters = rangeFactory.createRange(field, "B", false, "G", true);
+
+        // Then 1
+        assertThat(RangeCanonicaliser.canonicaliseRange(rangeWithNullCharacters).toString()).isEqualTo(
+                "Range{field=Field{name=key, type=StringType{}}, min='B\u0000', minInclusive=true, max='G\u0000', maxInclusive=false}");
+
+        // When 2
+        Range rangeWithoutNullCharacters = rangeFactory.createRange(field, "T", true, "X", false);
+
+        // Then 2
+        assertThat(RangeCanonicaliser.canonicaliseRange(rangeWithoutNullCharacters).toString()).isEqualTo(
+                "Range{field=Field{name=key, type=StringType{}}, min='T', minInclusive=true, max='X', maxInclusive=false}");
     }
 }

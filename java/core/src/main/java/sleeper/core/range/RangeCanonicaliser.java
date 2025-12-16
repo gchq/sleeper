@@ -84,7 +84,7 @@ public class RangeCanonicaliser {
         return value + '\u0000';
     }
 
-    private static byte[] nextByteArrayValue(byte[] value) {
+    public static byte[] nextByteArrayValue(byte[] value) {
         byte[] next = new byte[value.length + 1];
         System.arraycopy(value, 0, next, 0, value.length);
         next[value.length] = Byte.MIN_VALUE;
