@@ -138,6 +138,21 @@ public class TablePropertiesStore {
     }
 
     /**
+     * Updates a Sleeper table in the table index, and saves its table properties.
+     *
+     * @param  tableProperties        the table properties
+     * @throws TableNotFoundException if the table with the given name is not found
+     */
+    public void update(TableProperties tableProperties) {
+        Optional<TableStatus> existingOpt = getExistingStatus(tableProperties);
+        if (existingOpt.isPresent()) {
+            updateTable(existingOpt.get(), tableProperties);
+        } else {
+            throw TableNotFoundException.withTableName(tableProperties.get(TABLE_NAME));
+        }
+    }
+
+    /**
      * Creates or updates a Sleeper table in the table index, and saves its table properties.
      *
      * @param tableProperties the table properties
@@ -145,15 +160,7 @@ public class TablePropertiesStore {
     public void save(TableProperties tableProperties) {
         Optional<TableStatus> existingOpt = getExistingStatus(tableProperties);
         if (existingOpt.isPresent()) {
-            TableStatus existing = existingOpt.get();
-            String tableName = tableProperties.get(TABLE_NAME);
-            boolean isOnline = tableProperties.getBoolean(TABLE_ONLINE);
-            if (!Objects.equals(existing.getTableName(), tableName) || !(existing.isOnline() == isOnline)) {
-                tableIndex.update(TableStatus.uniqueIdAndName(existing.getTableUniqueId(),
-                        tableName, isOnline));
-            }
-            tableProperties.set(TABLE_ID, existing.getTableUniqueId());
-            client.saveProperties(tableProperties);
+            updateTable(existingOpt.get(), tableProperties);
         } else {
             createWhenNotInIndex(tableProperties);
         }
@@ -165,6 +172,17 @@ public class TablePropertiesStore {
         } else {
             return tableIndex.getTableByName(tableProperties.get(TABLE_NAME));
         }
+    }
+
+    private void updateTable(TableStatus existing, TableProperties tableProperties) {
+        String tableName = tableProperties.get(TABLE_NAME);
+        boolean isOnline = tableProperties.getBoolean(TABLE_ONLINE);
+        if (!Objects.equals(existing.getTableName(), tableName) || !(existing.isOnline() == isOnline)) {
+            tableIndex.update(TableStatus.uniqueIdAndName(existing.getTableUniqueId(),
+                    tableName, isOnline));
+        }
+        tableProperties.set(TABLE_ID, existing.getTableUniqueId());
+        client.saveProperties(tableProperties);
     }
 
     private void createWhenNotInIndex(TableProperties tableProperties) {

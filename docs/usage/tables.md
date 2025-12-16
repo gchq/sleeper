@@ -164,5 +164,5 @@ will not run for offline tables:
 - Partition splitting
 - State store snapshot creation/deletion
 - State store transaction deletion
-- Garbage collection, unless the instance property `sleeper.gc.offline.enabled` is set to `true`
-- Table metrics computation, unless the instance property `sleeper.metrics.offline.enabled` is set to `true`
+- Garbage collection, unless the instance property `sleeper.run.gc.offline` is set to `true`
+- Table metrics computation, unless the instance property `sleeper.run.table.metrics.offline` is set to `true`

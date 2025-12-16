@@ -82,6 +82,14 @@ sleeper.subnets=set-automatically
 # (default value shown below, uncomment to set a value)
 # sleeper.retain.data.after.table.removal=true
 
+# This property is used when applying an instance configuration and a table has been added.
+# By default, or if this property is false, when a table is added to an instance configuration it's
+# created in the instance. If it already exists the update will fail.
+# If this property is true, the existing table will be reused and imported as part of the instance
+# configuration. If it doesn't exist the update will fail.
+# (default value shown below, uncomment to set a value)
+# sleeper.default.table.reuse.existing=false
+
 # The optional stacks to deploy. Not case sensitive.
 # Valid values: [IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrBulkImportStack,
 # PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, BulkExportStack, QueryStack,
@@ -1225,7 +1233,7 @@ sleeper.subnets=set-automatically
 
 # Whether to perform garbage collection for offline tables.
 # (default value shown below, uncomment to set a value)
-# sleeper.gc.offline.enabled=false
+# sleeper.run.gc.offline=false
 
 # The number of deleted files recorded to the state store in a single commit.
 # The garbage collector keeps deleting files as long as there are files to delete in the state store,
@@ -1642,30 +1650,30 @@ sleeper.subnets=set-automatically
 
 ## The following instance properties relate to metrics.
 
-# The namespaces for the metrics used in the metrics stack.
+# The CloudWatch namespace to publish table metrics to.
 # (default value shown below, uncomment to set a value)
-# sleeper.metrics.namespace=Sleeper
+# sleeper.cloudwatch.table.metrics.namespace=Sleeper
 
 # The reserved concurrency for the table metrics lambda.
 # See reserved concurrency overview at:
 # https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
 # (uncomment to set a value)
-# sleeper.metrics.concurrency.reserved=
+# sleeper.lambda.table.metrics.concurrency.reserved=
 
 # The maximum concurrency allowed for the table metrics lambda.
 # See maximum concurrency overview at:
 # https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
 # (default value shown below, uncomment to set a value)
-# sleeper.metrics.concurrency.max=10
+# sleeper.lambda.table.metrics.concurrency.max=10
 
 # The number of tables to calculate metrics for in a single invocation. This will be the batch size
 # for a lambda as an SQS FIFO event source. This can be a maximum of 10.
 # (default value shown below, uncomment to set a value)
-# sleeper.metrics.batch.size=1
+# sleeper.run.table.metrics.batch.size=1
 
 # Whether to calculate table metrics for offline tables.
 # (default value shown below, uncomment to set a value)
-# sleeper.metrics.offline.enabled=false
+# sleeper.run.table.metrics.offline=false
 
 # The period in minutes used in the dashboard.
 # (default value shown below, uncomment to set a value)
