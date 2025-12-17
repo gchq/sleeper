@@ -122,17 +122,24 @@ public class RangeTest {
             Schema schema = Schema.builder().rowKeyFields(field).build();
             RangeFactory rangeFactory = new RangeFactory(schema);
 
-            Range range1 = rangeFactory.createRange(field, RangeCanonicaliser.nextByteArrayValue(new byte[]{10, 10}), true, new byte[]{20, 20}, true);
+            Range range1 = rangeFactory.createRange(field, nextByteArrayValue(new byte[]{10, 10}), true, new byte[]{20, 20}, true);
             Range range2 = rangeFactory.createRange(field, new byte[]{10, 10}, false, new byte[]{20, 20}, false);
-            Range range3 = rangeFactory.createRange(field, new byte[]{10, 10}, false, RangeCanonicaliser.nextByteArrayValue(new byte[]{20, 20}), false);
+            Range range3 = rangeFactory.createRange(field, new byte[]{10, 10}, false, nextByteArrayValue(new byte[]{20, 20}), false);
             Range range4 = rangeFactory.createRange(field, new byte[]{10, 10}, false, new byte[]{20, 20}, true);
-            Range range5 = rangeFactory.createRange(field, RangeCanonicaliser.nextByteArrayValue(new byte[]{10, 10}), true, RangeCanonicaliser.nextByteArrayValue(new byte[]{20, 20}), false);
+            Range range5 = rangeFactory.createRange(field, nextByteArrayValue(new byte[]{10, 10}), true, nextByteArrayValue(new byte[]{20, 20}), false);
 
             // When / Then
             assertThat(range1.equals(range2)).isFalse();
             assertThat(range1.equals(range3)).isTrue();
             assertThat(range1.equals(range4)).isTrue();
             assertThat(range1.equals(range5)).isTrue();
+        }
+
+        private byte[] nextByteArrayValue(byte[] value) {
+            byte[] next = new byte[value.length + 1];
+            System.arraycopy(value, 0, next, 0, value.length);
+            next[value.length] = Byte.MIN_VALUE;
+            return next;
         }
 
         @Test
