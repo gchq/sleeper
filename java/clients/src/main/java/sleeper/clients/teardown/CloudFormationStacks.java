@@ -23,6 +23,9 @@ import software.amazon.awssdk.services.cloudformation.model.StackSummary;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Sleeper cloud formation stacks.
+ */
 public class CloudFormationStacks {
     private final List<String> stackNames;
 
@@ -42,6 +45,12 @@ public class CloudFormationStacks {
         return stackNames;
     }
 
+    /**
+     * Check if stack is a Sleeper cloud formation stack.
+     *
+     * @param  string the stack name
+     * @return        a boolean
+     */
     public boolean anyIn(String string) {
         return stackNames.stream().anyMatch(string::contains);
     }

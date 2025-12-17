@@ -22,6 +22,9 @@ import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
 
+/**
+ * Waits until the S3 bucket has emptied.
+ */
 public class WaitForS3BucketToEmpty {
     private static final PollWithRetries DEFAULT_POLL = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1));
@@ -36,10 +39,22 @@ public class WaitForS3BucketToEmpty {
         this.poll = poll;
     }
 
+    /**
+     * Wait for an S3 bucket to empty.
+     *
+     * @param  s3         the S3 client
+     * @param  bucketName the S3 bucket
+     * @return            an instance of this class
+     */
     public static WaitForS3BucketToEmpty from(S3Client s3, String bucketName) {
         return new WaitForS3BucketToEmpty(s3, bucketName, DEFAULT_POLL);
     }
 
+    /**
+     * Poll the empty pocess until completed.
+     *
+     * @throws InterruptedException if the thread has been interrupted
+     */
     public void pollUntilFinished() throws InterruptedException {
         poll.pollUntil("bucket is empty", this::hasBucketEmptied);
     }

@@ -28,6 +28,9 @@ import java.util.List;
 
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
+/**
+ * Clean up log groups.
+ */
 public class CleanUpLogGroups {
     private static final Logger LOGGER = LoggerFactory.getLogger(CleanUpLogGroups.class);
 
@@ -42,12 +45,26 @@ public class CleanUpLogGroups {
         }
     }
 
+    /**
+     * Clean up log groups.
+     *
+     * @param logs           the log groups client
+     * @param cloudFormation the cloud formation client
+     */
     public static void run(CloudWatchLogsClient logs, CloudFormationClient cloudFormation) {
         run(logs, cloudFormation, Instant.now(),
                 // See https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch_limits_cwl.html
                 () -> sleepForSustainedRatePerSecond(4));
     }
 
+    /**
+     * Clean up log groups at a sustaninable rate.
+     *
+     * @param logsClient        the log groups client
+     * @param cloudFormation    the cloud formation client
+     * @param queryTime         the number of days to retain logs
+     * @param sleepForRateLimit the rate limit
+     */
     public static void run(CloudWatchLogsClient logsClient, CloudFormationClient cloudFormation, Instant queryTime, Runnable sleepForRateLimit) {
         planDeletions(logsClient, cloudFormation, queryTime)
                 .delete(logsClient, sleepForRateLimit);
@@ -62,6 +79,9 @@ public class CleanUpLogGroups {
         return plan;
     }
 
+    /**
+     * Plan which log groups to delete.
+     */
     public static class DeletionPlan {
         private final List<String> delete = new ArrayList<>();
         private int numEmpty;
@@ -75,6 +95,11 @@ public class CleanUpLogGroups {
             this.maxCreationTime = maxCreationTime;
         }
 
+        /**
+         * Add log group to list of log groups to delete.
+         *
+         * @param logGroup the log group
+         */
         public void add(LogGroup logGroup) {
             if (isDelete(logGroup)) {
                 delete.add(logGroup.logGroupName());
@@ -102,6 +127,12 @@ public class CleanUpLogGroups {
                     Instant.ofEpochMilli(logGroup.creationTime()).isBefore(maxCreationTime);
         }
 
+        /**
+         * Delete log groups.
+         *
+         * @param logsClient        the log group client
+         * @param sleepForRateLimit the delete rate limit
+         */
         public void delete(CloudWatchLogsClient logsClient, Runnable sleepForRateLimit) {
             logTotals();
 

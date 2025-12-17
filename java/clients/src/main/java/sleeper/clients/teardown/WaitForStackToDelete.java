@@ -27,6 +27,9 @@ import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
 
+/**
+ * Waits until the Sleeper stack has deleted.
+ */
 public class WaitForStackToDelete {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForStackToDelete.class);
     private static final PollWithRetries DEFAULT_POLL = PollWithRetries
@@ -42,14 +45,34 @@ public class WaitForStackToDelete {
         this.stackName = stackName;
     }
 
+    /**
+     * Wait for a Sleeper stack to delete for the default number of retries.
+     *
+     * @param  cloudFormationClient the cloud formation client
+     * @param  stackName            the Sleeper stack
+     * @return                      an instance of this class
+     */
     public static WaitForStackToDelete from(CloudFormationClient cloudFormationClient, String stackName) {
         return from(DEFAULT_POLL, cloudFormationClient, stackName);
     }
 
+    /**
+     * Wait for a Sleeper stack to delete for a specified number of retries.
+     *
+     * @param  poll                 the number of retries
+     * @param  cloudFormationClient the cloud formation client
+     * @param  stackName            the Sleeper stack
+     * @return                      an instance of this class
+     */
     public static WaitForStackToDelete from(PollWithRetries poll, CloudFormationClient cloudFormationClient, String stackName) {
         return new WaitForStackToDelete(poll, cloudFormationClient, stackName);
     }
 
+    /**
+     * Poll the deletion process until completed.
+     *
+     * @throws InterruptedException if the thread has been interrupted
+     */
     public void pollUntilFinished() throws InterruptedException {
         LOGGER.info("Waiting for CloudFormation stack to delete: {}", stackName);
         poll.pollUntil("stack has deleted", this::hasStackDeleted);
@@ -70,6 +93,9 @@ public class WaitForStackToDelete {
         }
     }
 
+    /**
+     * Custom exception class for failed stack deletions.
+     */
     public static class DeleteFailedException extends RuntimeException {
         DeleteFailedException(String stackName) {
             super("Failed to delete stack \"" + stackName + "\"");

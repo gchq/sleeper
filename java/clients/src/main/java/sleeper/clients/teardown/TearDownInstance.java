@@ -31,6 +31,9 @@ import java.util.Optional;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
+/**
+ * Tears down a Sleeper instance.
+ */
 public class TearDownInstance {
     private static final Logger LOGGER = LoggerFactory.getLogger(TearDownInstance.class);
 
@@ -58,6 +61,12 @@ public class TearDownInstance {
         return new Builder();
     }
 
+    /**
+     * Tear down the sleeper instance.
+     *
+     * @throws IOException          if an IO error occurs
+     * @throws InterruptedException if the thread was interrupted while waiting
+     */
     public void tearDown() throws IOException, InterruptedException {
         LOGGER.info("--------------------------------------------------------");
         LOGGER.info("Tear Down");
@@ -74,10 +83,18 @@ public class TearDownInstance {
         LOGGER.info("Finished tear down");
     }
 
+    /**
+     * Delete a Sleeper stack.
+     */
     public void deleteStack() {
         deleteStack(instanceId);
     }
 
+    /**
+     * Delete an artefacts stack.
+     *
+     * @throws InterruptedException if the thread was interrupted while waiting
+     */
     public void deleteArtefactsStack() throws InterruptedException {
         deleteStack(artefactsStackName());
     }
@@ -91,10 +108,20 @@ public class TearDownInstance {
         }
     }
 
+    /**
+     * Wait for a Sleeper stack to delete.
+     *
+     * @throws InterruptedExceptionif the thread was interrupted while waiting
+     */
     public void waitForStackToDelete() throws InterruptedException {
         WaitForStackToDelete.from(clients.getCloudFormation(), instanceId).pollUntilFinished();
     }
 
+    /**
+     * Wait for an artefacts stack to delete.
+     *
+     * @throws InterruptedExceptionif the thread was interrupted while waiting
+     */
     public void waitForArtefactsStackToDelete() throws InterruptedException {
         WaitForStackToDelete.from(clients.getCloudFormation(), artefactsStackName()).pollUntilFinished();
     }
@@ -119,6 +146,9 @@ public class TearDownInstance {
         return instanceProperties.get(ID);
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     public static final class Builder {
         private TearDownClients clients;
         private Path scriptsDir;
@@ -127,16 +157,34 @@ public class TearDownInstance {
         private Builder() {
         }
 
+        /**
+         * Set the clients.
+         *
+         * @param  clients the clients
+         * @return         the builder
+         */
         public Builder clients(TearDownClients clients) {
             this.clients = clients;
             return this;
         }
 
+        /**
+         * Set the scripts directory.
+         *
+         * @param  scriptsDir the scripts directory
+         * @return            this builder
+         */
         public Builder scriptsDir(Path scriptsDir) {
             this.scriptsDir = scriptsDir;
             return this;
         }
 
+        /**
+         * Set the instance id.
+         *
+         * @param  instanceId the instance id
+         * @return            this builder
+         */
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
             return this;
@@ -146,6 +194,12 @@ public class TearDownInstance {
             return new TearDownInstance(this);
         }
 
+        /**
+         * Tear down Sleeper with default clients.
+         *
+         * @throws IOException            if an IO error occurs
+         * @throws InterruptedExceptionif the thread was interrupted while waiting
+         */
         public void tearDownWithDefaultClients() throws IOException, InterruptedException {
             TearDownClients.withDefaults(clients -> clients(clients).build().tearDown());
         }

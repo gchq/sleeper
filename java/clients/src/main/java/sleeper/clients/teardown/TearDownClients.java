@@ -22,6 +22,9 @@ import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import java.io.IOException;
 import java.util.Objects;
 
+/**
+ * Create clients used in teardown.
+ */
 public class TearDownClients {
 
     private final CloudWatchEventsClient cloudWatch;
@@ -32,6 +35,13 @@ public class TearDownClients {
         cloudFormation = Objects.requireNonNull(builder.cloudFormation, "cloudFormation must not be null");
     }
 
+    /**
+     * Create default clients to use in teardown.
+     *
+     * @param  operation            the tar down operation
+     * @throws IOException          if an IO error occurs
+     * @throws InterruptedException the thread was interuppted while waiting
+     */
     public static void withDefaults(TearDownOperation operation) throws IOException, InterruptedException {
         try (CloudWatchEventsClient cloudWatchClient = CloudWatchEventsClient.create();
                 CloudFormationClient cloudFormationClient = CloudFormationClient.create()) {
@@ -55,6 +65,9 @@ public class TearDownClients {
         return cloudFormation;
     }
 
+    /**
+     * A builder for instances of this class.
+     */
     public static final class Builder {
         private CloudWatchEventsClient cloudWatch;
         private CloudFormationClient cloudFormation;
@@ -62,11 +75,23 @@ public class TearDownClients {
         private Builder() {
         }
 
+        /**
+         * Set the cloud watch client.
+         *
+         * @param  cloudWatch the cloud watch client
+         * @return            this builder
+         */
         public Builder cloudWatch(CloudWatchEventsClient cloudWatch) {
             this.cloudWatch = cloudWatch;
             return this;
         }
 
+        /**
+         * Set the cloud formation client.
+         *
+         * @param  cloudFormation the cloud formation client
+         * @return                this builder
+         */
         public Builder cloudFormation(CloudFormationClient cloudFormation) {
             this.cloudFormation = cloudFormation;
             return this;
@@ -77,6 +102,9 @@ public class TearDownClients {
         }
     }
 
+    /**
+     * An interface.
+     */
     public interface TearDownOperation {
         void tearDown(TearDownClients clients) throws IOException, InterruptedException;
     }
