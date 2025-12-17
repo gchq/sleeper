@@ -32,5 +32,5 @@ import java.io.IOException;
  */
 @FunctionalInterface
 public interface BulkImportJobRunner {
-    Dataset<Row> createFileReferences(BulkImportJobInput input) throws IOException;
+    Dataset<Row> createFileReferences(BulkImportContext input) throws IOException;
 }

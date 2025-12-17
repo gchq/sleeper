@@ -16,39 +16,20 @@
 
 package sleeper.bulkimport.runner;
 
-import com.joom.spark.ExplicitRepartitionStrategy$;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.spark.SparkConf;
-import org.apache.spark.SparkContext;
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.serializer.KryoSerializer;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.execution.SparkStrategy;
-import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.JavaConverters;
-import scala.collection.Seq;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class BulkImportSparkSessionRunner implements BulkImportJobDriver.SessionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkSessionRunner.class);
@@ -69,61 +50,18 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
 
     @Override
     public BulkImportJobOutput run(BulkImportJob job) throws IOException {
-        // Initialise Spark
-        LOGGER.info("Initialising Spark");
-        SparkSession session = new SparkSession.Builder().config(createSparkConf()).getOrCreate();
-        Seq<SparkStrategy> strategies = JavaConverters.iterableAsScalaIterable(List.<SparkStrategy>of(ExplicitRepartitionStrategy$.MODULE$)).toSeq();
-        session.experimental().extraStrategies_$eq(strategies);
-        SparkContext sparkContext = session.sparkContext();
-        JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);
-        LOGGER.info("Spark initialised");
-
-        // Load table information
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
-        Schema schema = tableProperties.getSchema();
-        StructType convertedSchema = new StructTypeFactory().getStructType(schema);
-
-        // Load statestore and partitions
-        LOGGER.info("Loading statestore and partitions");
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        List<Partition> allPartitions = stateStore.getAllPartitions();
-
-        Configuration conf = sparkContext.hadoopConfiguration();
-        Broadcast<List<Partition>> broadcastedPartitions = javaSparkContext.broadcast(allPartitions);
-        LOGGER.info("Starting data processing");
-
-        // Create paths to be read
-        List<String> pathsWithFs = new ArrayList<>();
-        String fs = instanceProperties.get(FILE_SYSTEM);
-        LOGGER.info("Using file system {}", fs);
-        job.getFiles().forEach(file -> pathsWithFs.add(fs + file));
-        LOGGER.info("Paths to be read are {}", pathsWithFs);
-
-        // Run bulk import
-        Dataset<Row> dataWithPartition = session.read()
-                .schema(convertedSchema)
-                .option("pathGlobFilter", "*.parquet")
-                .option("recursiveFileLookup", "true")
-                .parquet(pathsWithFs.toArray(new String[0]));
+        LOGGER.info("Loading partitions");
+        List<Partition> allPartitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
 
         LOGGER.info("Running bulk import job with id {}", job.getId());
-        List<FileReference> fileReferences = jobRunner.createFileReferences(
-                BulkImportJobInput.builder().rows(dataWithPartition)
-                        .instanceProperties(instanceProperties).tableProperties(tableProperties)
-                        .broadcastedPartitions(broadcastedPartitions).conf(conf).build())
+        BulkImportContext context = BulkImportContext.create(instanceProperties, tableProperties, allPartitions, job.getFiles());
+        List<FileReference> fileReferences = jobRunner.createFileReferences(context)
                 .collectAsList().stream()
                 .map(SparkFileReferenceRow::createFileReference)
                 .collect(Collectors.toList());
 
-        return new BulkImportJobOutput(fileReferences, sparkContext::stop);
-    }
-
-    public static SparkConf createSparkConf() {
-        SparkConf sparkConf = new SparkConf();
-        sparkConf.set("spark.serializer", KryoSerializer.class.getName());
-        sparkConf.set("spark.kryo.registrator", JdkImmutableListRegistrator.class.getName());
-        sparkConf.registerKryoClasses(new Class[]{Partition.class});
-        return sparkConf;
+        return new BulkImportJobOutput(fileReferences, context::stopSparkContext);
     }
 }

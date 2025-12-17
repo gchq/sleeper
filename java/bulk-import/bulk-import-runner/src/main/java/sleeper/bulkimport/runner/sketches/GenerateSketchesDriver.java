@@ -15,7 +15,7 @@
  */
 package sleeper.bulkimport.runner.sketches;
 
-import sleeper.bulkimport.runner.BulkImportJobInput;
+import sleeper.bulkimport.runner.BulkImportContext;
 import sleeper.sketches.Sketches;
 
 import java.util.Map;
@@ -28,7 +28,7 @@ public class GenerateSketchesDriver {
     private GenerateSketchesDriver() {
     }
 
-    public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportJobInput input) {
+    public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportContext input) {
         return null;
     }
 

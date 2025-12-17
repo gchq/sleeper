@@ -26,8 +26,8 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.runner.BulkImportContext;
 import sleeper.bulkimport.runner.BulkImportJobDriver;
-import sleeper.bulkimport.runner.BulkImportJobInput;
 import sleeper.bulkimport.runner.SparkFileReferenceRow;
 import sleeper.bulkimport.runner.StructTypeFactory;
 import sleeper.bulkimport.runner.rdd.WriteParquetFile;
@@ -54,7 +54,7 @@ public class BulkImportDataframeLocalSortDriver {
         BulkImportJobDriver.start(args, BulkImportDataframeLocalSortDriver::createFileReferences);
     }
 
-    public static Dataset<Row> createFileReferences(BulkImportJobInput input) {
+    public static Dataset<Row> createFileReferences(BulkImportContext input) {
         Schema schema = input.schema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);

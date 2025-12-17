@@ -103,12 +103,12 @@ public class KryoSerializerTest {
     }
 
     private static Kryo kryo() {
-        SparkConf sparkConf = BulkImportSparkSessionRunner.createSparkConf();
+        SparkConf sparkConf = BulkImportContext.createSparkConf();
         return new KryoSerializer(sparkConf).newKryo();
     }
 
     private static Kryo kryoWithoutImmutableListSupport() {
-        SparkConf sparkConf = BulkImportSparkSessionRunner.createSparkConf();
+        SparkConf sparkConf = BulkImportContext.createSparkConf();
         sparkConf.remove("spark.kryo.registrator");
         return new KryoSerializer(sparkConf).newKryo();
     }
