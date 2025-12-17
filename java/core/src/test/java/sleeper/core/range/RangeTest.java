@@ -35,7 +35,7 @@ public class RangeTest {
 
     @Nested
     @DisplayName("Exact object matches")
-    class ExactMatchTest {
+    class ExactMatch {
 
         Range range1, range2, range3, range4;
 
@@ -73,10 +73,9 @@ public class RangeTest {
         }
     }
 
-    //RangeCanonicaliserStringTypeTest
     @Nested
     @DisplayName("Conanicalised match")
-    class ConanicalisedMatchTest {
+    class ConanicalisedMatch {
         @Test
         public void testEqualsForCanonicallyIntType() {
             // Given
@@ -164,7 +163,7 @@ public class RangeTest {
 
     @Nested
     @DisplayName("Range functionality using IntType")
-    class IntTypeRangeTest {
+    class IntTypeRange {
         @Test
         public void shouldAnswerDoesRangeContainObjectCorreclyIntRangeBothInclusive() {
             // Given
@@ -305,7 +304,7 @@ public class RangeTest {
 
     @Nested
     @DisplayName("Range functionality using LongType")
-    class LongTypeRangeTest {
+    class LongTypeRange {
         @Test
         public void shouldAnswerDoesRangeContainObjectCorreclyLongRangeBothInclusive() {
             // Given
@@ -446,7 +445,7 @@ public class RangeTest {
 
     @Nested
     @DisplayName("Range functionality using StringType")
-    class StringTypeRangeTest {
+    class StringTypeRange {
 
         @Test
         public void shouldAnswerDoesRangeContainObjectCorreclyStringRangeBothInclusive() {
@@ -618,7 +617,7 @@ public class RangeTest {
 
     @Nested
     @DisplayName("Range functionality using ByteArrayType")
-    class ByteArrayTypeTest {
+    class ByteArrayTypeRange {
 
         @Test
         public void shouldAnswerDoesRangeContainObjectCorreclyByteArrayRangeBothInclusive() {
