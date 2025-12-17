@@ -46,7 +46,7 @@ import java.util.Properties;
 import static sleeper.configuration.utils.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
+import static sleeper.core.properties.table.TableProperty.RETAIN_TABLE_AFTER_REMOVAL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -141,7 +141,7 @@ public class TableDefinerLambda {
 
     private void deleteTable(TableProperties tableProperties, TablePropertiesStore tablePropertiesStore) {
         String tableName = tableProperties.get(TABLE_NAME);
-        if (tableProperties.getBoolean(RETAIN_DATA_AFTER_DELETE)) {
+        if (tableProperties.getBoolean(RETAIN_TABLE_AFTER_REMOVAL)) {
             LOGGER.info("Taking table {} offline.", tableName);
             tableProperties.set(TABLE_ONLINE, "false");
             tablePropertiesStore.save(tableProperties);
