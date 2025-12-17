@@ -20,20 +20,13 @@ import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportContext;
 import sleeper.bulkimport.runner.BulkImportJobDriver;
 import sleeper.bulkimport.runner.SparkFileReferenceRow;
-import sleeper.bulkimport.runner.StructTypeFactory;
 import sleeper.bulkimport.runner.rdd.WriteParquetFile;
-import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.SchemaSerDe;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -55,25 +48,10 @@ public class BulkImportDataframeLocalSortDriver {
     }
 
     public static Dataset<Row> createFileReferences(BulkImportContext input) {
-        Schema schema = input.schema();
-        String schemaAsString = new SchemaSerDe().toJson(schema);
-        StructType convertedSchema = new StructTypeFactory().getStructType(schema);
-        StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
-
-        int numLeafPartitions = (int) input.broadcastedPartitions().value()
-                .stream().filter(Partition::isLeafPartition).count();
-        LOGGER.info("There are {} leaf partitions", numLeafPartitions);
-
-        Dataset<Row> dataWithPartition = input.rows().mapPartitions(
-                new AddPartitionAsIntFunction(schemaAsString, input.broadcastedPartitions()),
-                ExpressionEncoder.apply(schemaWithPartitionField));
-        LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
-
-        Dataset<Row> repartitionedData = new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
-                .explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
+        Dataset<Row> repartitionedData = RepartitionRowsBySleeperPartition.repartition(input);
         LOGGER.info("After repartitioning data, there are {} partitions", repartitionedData.rdd().getNumPartitions());
 
-        Column[] sortColumns = Lists.newArrayList(schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
+        Column[] sortColumns = Lists.newArrayList(input.schema().getRowKeyFieldNames(), input.schema().getSortKeyFieldNames())
                 .stream()
                 .flatMap(Collection::stream)
                 .map(Column::new)
@@ -91,11 +69,5 @@ public class BulkImportDataframeLocalSortDriver {
                         input.tableProperties().saveAsString(),
                         input.conf(), input.broadcastedPartitions()),
                 ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
-    }
-
-    private static StructType createEnhancedSchema(StructType convertedSchema) {
-        StructType structTypeWithPartition = new StructType(convertedSchema.fields());
-        return structTypeWithPartition
-                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.IntegerType, false, null));
     }
 }
