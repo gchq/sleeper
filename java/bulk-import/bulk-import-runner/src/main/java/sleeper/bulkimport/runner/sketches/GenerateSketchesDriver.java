@@ -29,7 +29,8 @@ public class GenerateSketchesDriver {
     }
 
     public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportContext input) {
-        return null;
+
+        return Map.of();
     }
 
 }

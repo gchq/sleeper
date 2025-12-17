@@ -41,7 +41,7 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
-public class BulkImportContext {
+public class BulkImportContext implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportContext.class);
 
     private final InstanceProperties instanceProperties;
@@ -134,6 +134,11 @@ public class BulkImportContext {
 
     public void stopSparkContext() {
         sparkContext.stop();
+    }
+
+    @Override
+    public void close() {
+        stopSparkContext();
     }
 
     public static final class Builder {
