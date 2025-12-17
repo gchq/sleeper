@@ -58,7 +58,7 @@
         The Spark and Hadoop versions must match the EMR release we use for bulk import.
         See the versions listed in the documentation:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
-        For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
+        For the EMR release used in Sleeper, check the property sleeper.default.table.bulk.import.emr.release.label.
         -->
         <spark.version>3.5.6</spark.version>
         <hadoop.version>3.4.1</hadoop.version>
