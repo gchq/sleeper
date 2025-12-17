@@ -203,16 +203,14 @@ public class Range {
      */
     @Override
     public boolean equals(Object obj) {
-        if (equalsExactMatch(obj)) {
-            return true;
-        } else {
-            return equalsCanonicalised(this, obj);
+        if (obj == null) {
+            return false;
         }
-    }
-
-    private boolean equalsCanonicalised(Range source, Object compare) {
-        Range canonSource = RangeCanonicaliser.canonicaliseRange(source);
-        Range canonCompare = RangeCanonicaliser.canonicaliseRange((Range) compare);
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        Range canonSource = RangeCanonicaliser.canonicaliseRange(this);
+        Range canonCompare = RangeCanonicaliser.canonicaliseRange((Range) obj);
         return canonSource.equalsExactMatch(canonCompare);
     }
 
