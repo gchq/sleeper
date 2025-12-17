@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
  */
 public class BulkImportDataframeLocalSortDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortDriver.class);
-    private static final String PARTITION_FIELD_NAME = "__partition";
 
     private BulkImportDataframeLocalSortDriver() {
     }
