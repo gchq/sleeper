@@ -53,7 +53,7 @@ public class WaitForS3BucketToEmpty {
     /**
      * Poll the empty pocess until completed.
      *
-     * @throws InterruptedException if the thread has been interrupted
+     * @throws InterruptedException the thread was interrupted while waiting
      */
     public void pollUntilFinished() throws InterruptedException {
         poll.pollUntil("bucket is empty", this::hasBucketEmptied);

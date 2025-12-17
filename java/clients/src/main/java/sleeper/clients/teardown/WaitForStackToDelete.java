@@ -71,7 +71,7 @@ public class WaitForStackToDelete {
     /**
      * Poll the deletion process until completed.
      *
-     * @throws InterruptedException if the thread has been interrupted
+     * @throws InterruptedException the thread was interrupted while waiting
      */
     public void pollUntilFinished() throws InterruptedException {
         LOGGER.info("Waiting for CloudFormation stack to delete: {}", stackName);

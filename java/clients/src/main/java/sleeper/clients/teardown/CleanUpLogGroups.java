@@ -58,7 +58,7 @@ public class CleanUpLogGroups {
     }
 
     /**
-     * Clean up log groups at a sustaninable rate.
+     * Clean up log groups at a sustainable rate.
      *
      * @param logsClient        the log groups client
      * @param cloudFormation    the cloud formation client

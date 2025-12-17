@@ -38,9 +38,9 @@ public class TearDownClients {
     /**
      * Create default clients to use in teardown.
      *
-     * @param  operation            the tar down operation
+     * @param  operation            the tear down operation
      * @throws IOException          if an IO error occurs
-     * @throws InterruptedException the thread was interuppted while waiting
+     * @throws InterruptedException the thread was interrupted while waiting
      */
     public static void withDefaults(TearDownOperation operation) throws IOException, InterruptedException {
         try (CloudWatchEventsClient cloudWatchClient = CloudWatchEventsClient.create();
@@ -103,9 +103,17 @@ public class TearDownClients {
     }
 
     /**
-     * An interface.
+     * An interface to the teardown operation.
      */
     public interface TearDownOperation {
+
+        /**
+         * Teardown a Sleeper stack.
+         *
+         * @param  clients              the clients
+         * @throws IOException          if an IO error occurs
+         * @throws InterruptedException the thread was interrupted while waiting
+         */
         void tearDown(TearDownClients clients) throws IOException, InterruptedException;
     }
 }
