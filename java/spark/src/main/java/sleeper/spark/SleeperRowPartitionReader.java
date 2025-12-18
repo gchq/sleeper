@@ -51,12 +51,13 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class SleeperRowPartitionReader implements PartitionReader<InternalRow> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperRowPartitionReader.class);
 
-    private TableProperties tableProperties;
-    private Schema schema;
-    private int numFields;
-    private LeafPartitionQueryExecutor leafPartitionQueryExecutor;
-    private CloseableIterator<Row> rows;
-    private FFIContext<DataFusionQueryFunctions> ffiContext;
+    private final TableProperties tableProperties;
+    private final Schema schema;
+    private final int numFields;
+    private final LeafPartitionQueryExecutor leafPartitionQueryExecutor;
+    private final CloseableIterator<Row> rows;
+    private final BufferAllocator allocator;
+    private final FFIContext<DataFusionQueryFunctions> ffiContext;
 
     public SleeperRowPartitionReader(InstanceProperties instanceProperties, TableProperties tableProperties, InputPartition partition) {
         this.tableProperties = tableProperties;
@@ -65,7 +66,7 @@ public class SleeperRowPartitionReader implements PartitionReader<InternalRow> {
         LOGGER.info("Initialising SleeperRowPartitionReader");
 
         SleeperInputPartition sleeperInputPartition = (SleeperInputPartition) partition;
-        BufferAllocator allocator = new RootAllocator();
+        this.allocator = new RootAllocator();
         this.ffiContext = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
         LeafPartitionRowRetriever rowRetriever = new DataFusionLeafPartitionRowRetriever.Provider(DataFusionAwsConfig.getDefault(), allocator, ffiContext).getRowRetriever(tableProperties);
 
@@ -93,6 +94,7 @@ public class SleeperRowPartitionReader implements PartitionReader<InternalRow> {
         LOGGER.info("Closing LeafPartitionQueryExecutor");
         rows.close();
         ffiContext.close();
+        allocator.close();
     }
 
     @Override

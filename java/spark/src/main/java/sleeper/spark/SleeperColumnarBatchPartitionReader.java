@@ -51,18 +51,19 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class SleeperColumnarBatchPartitionReader implements PartitionReader<ColumnarBatch> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperColumnarBatchPartitionReader.class);
 
-    private TableProperties tableProperties;
-    private Schema schema;
-    private ArrowReader arrowReader;
+    private final TableProperties tableProperties;
+    private final Schema schema;
+    private final ArrowReader arrowReader;
+    private final BufferAllocator allocator;
+    private final FFIContext<DataFusionQueryFunctions> ffiContext;
     private long numBatches;
-    private FFIContext<DataFusionQueryFunctions> ffiContext;
 
     public SleeperColumnarBatchPartitionReader(InstanceProperties instanceProperties, TableProperties tableProperties, InputPartition partition) {
         this.tableProperties = tableProperties;
         this.schema = this.tableProperties.getSchema();
 
         SleeperInputPartition sleeperInputPartition = (SleeperInputPartition) partition;
-        BufferAllocator allocator = new RootAllocator();
+        this.allocator = new RootAllocator();
         this.ffiContext = FFIContext.getFFIContext(DataFusionQueryFunctions.class);
 
         LeafPartitionQuery leafPartitionQuery = LeafPartitionQuery.builder()
@@ -90,6 +91,7 @@ public class SleeperColumnarBatchPartitionReader implements PartitionReader<Colu
         LOGGER.info("Closing arrowReader (processed {}" + numBatches + " columnar batches)");
         arrowReader.close();
         ffiContext.close();
+        allocator.close();
     }
 
     @Override
