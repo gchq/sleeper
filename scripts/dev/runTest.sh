@@ -25,5 +25,5 @@ TEST=$2
 shift 2
 
 pushd "${PROJECT_ROOT}/java"
-mvn test -am -pl "$MODULE" "-Dtest=$TEST" -Dsurefire.failIfNoSpecifiedTests=false -Pquick -DskipTests=false "$@"
+mvn test -am -pl "$MODULE" "-Dtest=$TEST" -Dsurefire.failIfNoSpecifiedTests=false -Pquick -DskipTests=false -DskipRust "$@"
 popd
