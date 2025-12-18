@@ -74,8 +74,8 @@ public class RangeTest {
     }
 
     @Nested
-    @DisplayName("Conanicalised match")
-    class ConanicalisedMatch {
+    @DisplayName("Canonicalised match")
+    class CanonicalisedMatch {
         @Test
         public void testEqualsForCanonicallyIntType() {
             // Given
@@ -802,7 +802,7 @@ public class RangeTest {
 
         // Then 1
         assertThat(RangeCanonicaliser.canonicaliseRange(rangeWithNullCharacters).toString()).isEqualTo(
-                "Range{field=Field{name=key, type=StringType{}}, min='B\u0000', minInclusive=true, max='G\u0000', maxInclusive=false}");
+                "Range{field=Field{name=key, type=StringType{}}, min='B\\u0000', minInclusive=true, max='G\\u0000', maxInclusive=false}");
 
         // When 2
         Range rangeWithoutNullCharacters = rangeFactory.createRange(field, "T", true, "X", false);

@@ -268,7 +268,16 @@ public class Range {
 
     @Override
     public String toString() {
-        return "Range{" + "field=" + field + ", min='" + min + "', minInclusive=" + minInclusive + ", max='" + max + "', maxInclusive=" + maxInclusive + '}';
+        return "Range{" + "field=" + field + ", min='" + adjustIfNullCharacterPresent(min) + "', minInclusive=" + minInclusive + ", max='" + adjustIfNullCharacterPresent(max) + "', maxInclusive="
+                + maxInclusive + '}';
+    }
+
+    private String adjustIfNullCharacterPresent(Object obj) {
+        if (obj instanceof String) {
+            return obj.toString().replaceAll("\u0000", "\\\\u0000");
+        } else {
+            return Objects.toString(obj);
+        }
     }
 
     /**
