@@ -38,8 +38,10 @@ import sleeper.parquet.row.ParquetRowWriterFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -57,8 +59,19 @@ public class SparkTestBase {
 
     @BeforeEach
     void setUpBase() {
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
+        instanceProperties.set(DATA_BUCKET, createDir("data"));
         instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(BULK_IMPORT_BUCKET, createDir("bulk-import"));
+    }
+
+    private String createDir(String name) {
+        java.nio.file.Path path = tempDir.resolve(name);
+        try {
+            Files.createDirectories(path);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return path.toString();
     }
 
     @BeforeAll
@@ -120,7 +133,7 @@ public class SparkTestBase {
     }
 
     private String generateFilename() {
-        String filename = tempDir + "/file-" + nextFileNumber;
+        String filename = tempDir + "/input/file-" + nextFileNumber;
         nextFileNumber++;
         return filename;
     }

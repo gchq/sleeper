@@ -15,22 +15,45 @@
  */
 package sleeper.bulkimport.runner.sketches;
 
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.bulkimport.runner.BulkImportContext;
+import sleeper.bulkimport.runner.common.HadoopSketchesStore;
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
+import sleeper.bulkimport.runner.common.SparkSketchRow;
+import sleeper.bulkimport.runner.dataframelocalsort.RepartitionRowsBySleeperPartition;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.store.SketchesStore;
 
 import java.util.Map;
+
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Generates sketches by reading through data in Spark.
  */
 public class GenerateSketchesDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GenerateSketchesDriver.class);
 
     private GenerateSketchesDriver() {
     }
 
     public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportContext input) {
-
-        return Map.of();
+        LOGGER.info("Generating sketches...");
+        Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
+        Dataset<Row> sketchFiles = partitioned.mapPartitions(
+                new WriteSketchesFile(input.instanceProperties(), input.tableProperties(), input.conf(), input.broadcastedPartitions()),
+                ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
+        SketchesStore sketchesStore = new HadoopSketchesStore(input.conf());
+        return sketchFiles.collectAsList().stream()
+                .map(SparkSketchRow::from)
+                .collect(toMap(
+                        SparkSketchRow::partitionId,
+                        row -> sketchesStore.loadFileSketches(row.filename(), input.schema())));
     }
 
 }
