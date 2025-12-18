@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportContext;
-import sleeper.bulkimport.runner.StructTypeFactory;
+import sleeper.bulkimport.runner.common.StructTypeFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;

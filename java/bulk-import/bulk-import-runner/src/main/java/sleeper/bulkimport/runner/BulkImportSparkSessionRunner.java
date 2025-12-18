@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

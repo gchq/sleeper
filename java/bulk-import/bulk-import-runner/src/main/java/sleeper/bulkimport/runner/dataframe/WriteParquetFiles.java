@@ -20,7 +20,7 @@ import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
 
-import sleeper.bulkimport.runner.HadoopSketchesStore;
+import sleeper.bulkimport.runner.common.HadoopSketchesStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 

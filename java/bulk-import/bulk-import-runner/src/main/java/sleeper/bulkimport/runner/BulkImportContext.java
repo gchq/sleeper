@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 
+import sleeper.bulkimport.runner.common.JdkImmutableListRegistrator;
+import sleeper.bulkimport.runner.common.StructTypeFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

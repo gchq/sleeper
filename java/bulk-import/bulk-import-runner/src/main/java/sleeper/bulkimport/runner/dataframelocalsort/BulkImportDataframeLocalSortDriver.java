@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportContext;
 import sleeper.bulkimport.runner.BulkImportJobDriver;
-import sleeper.bulkimport.runner.SparkFileReferenceRow;
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.bulkimport.runner.rdd.WriteParquetFile;
 
 import java.util.Arrays;

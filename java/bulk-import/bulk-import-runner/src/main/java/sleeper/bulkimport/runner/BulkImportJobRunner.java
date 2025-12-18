@@ -19,6 +19,7 @@ package sleeper.bulkimport.runner;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
