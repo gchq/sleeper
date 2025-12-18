@@ -72,6 +72,10 @@ Publishes Docker images to a remote repository, see [publishing artefacts](publi
 
 Publishes Maven artifacts to a remote repository, see [publishing artefacts](publishing.md).
 
+#### `runTest.sh`
+
+Runs a single integration or unit test. Cannot be used with system tests.
+
 #### `showInternalDependencies.sh`
 
 This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
