@@ -24,6 +24,10 @@ on:
       buildUrl:
         required: true
         type: string
+      runTrivy:
+        default: true
+        required: false
+        type: boolean
 
 env:
   DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
@@ -104,28 +108,9 @@ jobs:
             build-url=${{ inputs.buildUrl }}
       - name: Pull image from registry
         run: docker pull ${{ env.TEMP_IMAGE }}
-      - name: Check disk usage
-        run: |
-          df -h
-          docker system df
-          docker image ls
-          echo "Under project directory:"
-          pwd
-          sudo du -ch --max-depth=1 .
-          echo "Under root:"
-          sudo du -ch --max-depth=1 --exclude=/proc /
-          echo "Under /opt:"
-          sudo du -ch --max-depth=1 /opt
-          echo "Under /usr:"
-          sudo du -ch --max-depth=1 /usr
-          echo "Under /var:"
-          sudo du -ch --max-depth=1 /var
-          echo "Under /usr/local:"
-          sudo du -ch --max-depth=1 /usr/local
-          echo "Under /usr/share:"
-          sudo du -ch --max-depth=1 /usr/share
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.33.1
+        if: ${{ inputs.runTrivy }}
         with:
           image-ref: ${{ env.TEMP_IMAGE }}
           format: 'table'

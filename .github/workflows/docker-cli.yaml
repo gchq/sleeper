@@ -84,6 +84,7 @@ jobs:
       packageName: ${{ needs.setup.outputs.builderPackage }}
       platforms: ${{ needs.setup.outputs.platforms }}
       buildUrl: ${{ needs.setup.outputs.buildUrl }}
+      runTrivy: false # The builder image is too big, Trivy runs out of disk space in the GitHub Actions runner
   environment:
     needs: setup
     uses: ./.github/workflows/docker-cli-image.yaml
