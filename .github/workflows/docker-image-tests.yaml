@@ -4,113 +4,13 @@ on:
       dockerOptions:
         required: false
         type: string
-      runUntested:
-        required: false
-        default: false
-        type: boolean
 
 jobs:
-  ingest:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: ingest
-      dockerOptions: ${{ inputs.dockerOptions }}
-  bulk-import-runner:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: bulk-import-runner
-      trivyIgnore: code-style/.trivyignore.spark.yaml
-      dockerOptions: ${{ inputs.dockerOptions }}
   compaction-job-execution:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: compaction-job-execution
       testClassNames: CompactionTaskDockerImageST
-      dockerOptions: ${{ inputs.dockerOptions }}
-  bulk-export-task-execution:
-    if: ${{ inputs.runUntested }}
-    uses: ./.github/workflows/docker-image-test.yaml
-    with:
-      imageName: bulk-export-task-execution
-      dockerOptions: ${{ inputs.dockerOptions }}
-  athena-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: athena-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  bulk-import-starter-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: bulk-import-starter-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  bulk-export-planner:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: bulk-export-planner
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  bulk-export-task-creator:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: bulk-export-task-creator
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  ingest-task-creator-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: ingest-task-creator-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  ingest-batcher-submitter-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: ingest-batcher-submitter-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  ingest-batcher-job-creator-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: ingest-batcher-job-creator-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  garbage-collector-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: garbage-collector-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  compaction-job-creator-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: compaction-job-creator-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  compaction-task-creator-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: compaction-task-creator-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  partition-splitter-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: partition-splitter-lambda
-      isLambda: true
       dockerOptions: ${{ inputs.dockerOptions }}
   query-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
@@ -118,25 +18,4 @@ jobs:
       imageName: query-lambda
       isLambda: true
       testClassNames: QueryLambdaDockerImageST
-      dockerOptions: ${{ inputs.dockerOptions }}
-  custom-resources-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: custom-resources-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  metrics-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: metrics-lambda
-      isLambda: true
-      dockerOptions: ${{ inputs.dockerOptions }}
-  statestore-lambda:
-    uses: ./.github/workflows/docker-image-test.yaml
-    if: ${{ inputs.runUntested }}
-    with:
-      imageName: statestore-lambda
-      isLambda: true
       dockerOptions: ${{ inputs.dockerOptions }}
