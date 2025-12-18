@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Represents a tree of partitions. It can be used to traverse or query the tree, e.g. to find all ancestors of a
@@ -216,8 +215,26 @@ public class PartitionTree {
         return List.copyOf(idToPartition.values());
     }
 
+    /**
+     * Streams through all partitions.
+     *
+     * @return the stream
+     */
+    public Stream<Partition> streamPartitions() {
+        return idToPartition.values().stream();
+    }
+
+    /**
+     * Streams through all leaf partitions.
+     *
+     * @return the stream
+     */
+    public Stream<Partition> streamLeafPartitions() {
+        return streamPartitions().filter(Partition::isLeafPartition);
+    }
+
     public List<Partition> getLeafPartitions() {
-        return idToPartition.values().stream().filter(Partition::isLeafPartition).collect(toUnmodifiableList());
+        return streamLeafPartitions().toList();
     }
 
     /**
