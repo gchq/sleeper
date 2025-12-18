@@ -53,9 +53,9 @@ public class RangeTest {
         @Test
         public void testEqualsAndHashcode() {
             // When / Then
-            assertThat(range1.equalsExactMatch(range2)).isTrue();
-            assertThat(range1.equalsExactMatch(range3)).isFalse();
-            assertThat(range3.equalsExactMatch(range4)).isFalse();
+            assertThat(range1.equals(range2)).isTrue();
+            assertThat(range1.equals(range3)).isFalse();
+            assertThat(range3.equals(range4)).isFalse();
         }
 
         @Test
@@ -89,10 +89,10 @@ public class RangeTest {
             Range range5 = rangeFactory.createRange(field, 10, true, 21, false);
 
             // When / Then
-            assertThat(range1.equals(range2)).isFalse();
-            assertThat(range1.equals(range3)).isTrue();
-            assertThat(range1.equals(range4)).isTrue();
-            assertThat(range1.equals(range5)).isTrue();
+            assertThat(range1.equalsCanonicalised(range2)).isFalse();
+            assertThat(range1.equalsCanonicalised(range3)).isTrue();
+            assertThat(range1.equalsCanonicalised(range4)).isTrue();
+            assertThat(range1.equalsCanonicalised(range5)).isTrue();
         }
 
         @Test
@@ -108,10 +108,10 @@ public class RangeTest {
             Range range5 = rangeFactory.createRange(field, 5L, true, 10L, false);
 
             // When / Then
-            assertThat(range1.equals(range2)).isFalse();
-            assertThat(range1.equals(range3)).isTrue();
-            assertThat(range1.equals(range4)).isTrue();
-            assertThat(range1.equals(range5)).isTrue();
+            assertThat(range1.equalsCanonicalised(range2)).isFalse();
+            assertThat(range1.equalsCanonicalised(range3)).isTrue();
+            assertThat(range1.equalsCanonicalised(range4)).isTrue();
+            assertThat(range1.equalsCanonicalised(range5)).isTrue();
         }
 
         @Test
@@ -128,10 +128,10 @@ public class RangeTest {
             Range range5 = rangeFactory.createRange(field, nextByteArrayValue(new byte[]{10, 10}), true, nextByteArrayValue(new byte[]{20, 20}), false);
 
             // When / Then
-            assertThat(range1.equals(range2)).isFalse();
-            assertThat(range1.equals(range3)).isTrue();
-            assertThat(range1.equals(range4)).isTrue();
-            assertThat(range1.equals(range5)).isTrue();
+            assertThat(range1.equalsCanonicalised(range2)).isFalse();
+            assertThat(range1.equalsCanonicalised(range3)).isTrue();
+            assertThat(range1.equalsCanonicalised(range4)).isTrue();
+            assertThat(range1.equalsCanonicalised(range5)).isTrue();
         }
 
         private byte[] nextByteArrayValue(byte[] value) {
@@ -154,10 +154,10 @@ public class RangeTest {
             Range range5 = rangeFactory.createRange(field, "A\u0000", true, "AAA\u0000", false);
 
             // When / Then
-            assertThat(range1.equals(range2)).isFalse();
-            assertThat(range1.equals(range3)).isTrue();
-            assertThat(range1.equals(range4)).isTrue();
-            assertThat(range1.equals(range5)).isTrue();
+            assertThat(range1.equalsCanonicalised(range2)).isFalse();
+            assertThat(range1.equalsCanonicalised(range3)).isTrue();
+            assertThat(range1.equalsCanonicalised(range4)).isTrue();
+            assertThat(range1.equalsCanonicalised(range5)).isTrue();
         }
     }
 

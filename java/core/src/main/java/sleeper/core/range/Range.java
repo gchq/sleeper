@@ -195,14 +195,13 @@ public class Range {
     }
 
     /**
-     * Determines if the contents of the Range are matches.
-     * For checking if objects are exact matches please use equalsExactMatch.
+     * Determines if the contents of the Range are matches canonically.
+     * For checking if objects are exact matches please use equalsExact.
      *
      * @param  obj comparison object
      * @return     if contents are equal
      */
-    @Override
-    public boolean equals(Object obj) {
+    public boolean equalsCanonicalised(Object obj) {
         if (obj == null) {
             return false;
         }
@@ -211,17 +210,11 @@ public class Range {
         }
         Range canonSource = RangeCanonicaliser.canonicaliseRange(this);
         Range canonCompare = RangeCanonicaliser.canonicaliseRange((Range) obj);
-        return canonSource.equalsExactMatch(canonCompare);
+        return canonSource.equals(canonCompare);
     }
 
-    /**
-     * Determines if object is exact match to Range, given all parameters.
-     * For checking if the contents match, please use method equals.
-     *
-     * @param  obj comparison object
-     * @return     if objects exactly equal
-     */
-    public boolean equalsExactMatch(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
