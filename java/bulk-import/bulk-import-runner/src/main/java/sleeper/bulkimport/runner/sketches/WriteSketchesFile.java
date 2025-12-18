@@ -32,6 +32,8 @@ import java.util.List;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class WriteSketchesFile implements MapPartitionsFunction<Row, Row> {
+    private static final long serialVersionUID = 1211201891202603297L;
+
     private final String instancePropertiesStr;
     private final String tablePropertiesStr;
     private final SerializableConfiguration serializableConf;
