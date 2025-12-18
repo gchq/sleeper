@@ -23,7 +23,7 @@ import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.runner.common.RowMapper;
+import sleeper.bulkimport.runner.common.SparkRowMapper;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -49,7 +49,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final Schema schema;
-    private final RowMapper rowMapper;
+    private final SparkRowMapper rowMapper;
     private final Configuration conf;
     private final PartitionTree partitionTree;
     private final SketchesStore sketchesStore;
@@ -73,7 +73,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
-        this.rowMapper = new RowMapper(schema);
+        this.rowMapper = new SparkRowMapper(schema);
         this.conf = conf;
         this.partitionTree = partitionTree;
         this.sketchesStore = sketchesStore;

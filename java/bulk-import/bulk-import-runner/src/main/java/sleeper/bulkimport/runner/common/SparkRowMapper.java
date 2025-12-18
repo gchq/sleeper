@@ -24,11 +24,11 @@ import sleeper.core.schema.type.MapType;
 
 import java.util.List;
 
-public class RowMapper {
+public class SparkRowMapper {
 
     private final List<Field> allSchemaFields;
 
-    public RowMapper(Schema schema) {
+    public SparkRowMapper(Schema schema) {
         this.allSchemaFields = schema.getAllFields();
     }
 
