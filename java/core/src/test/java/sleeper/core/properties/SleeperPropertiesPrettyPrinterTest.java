@@ -66,24 +66,24 @@ class SleeperPropertiesPrettyPrinterTest {
         @Test
         void shouldPrintPropertyDescriptionWithMultipleLines() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.default.gc.delay.minutes=123"))
+            assertThat(printInstanceProperties("sleeper.default.table.gc.delay.minutes=123"))
                     .contains("# A file will not be deleted until this number of minutes have passed after it has been marked as\n" +
                             "# ready for garbage collection. The reason for not deleting files immediately after they have been\n" +
                             "# marked as ready for garbage collection is that they may still be in use by queries. This property\n" +
                             "# can be overridden on a per-table basis.\n" +
-                            "sleeper.default.gc.delay.minutes");
+                            "sleeper.default.table.gc.delay.minutes");
         }
 
         @Test
         void shouldPrintPropertyDescriptionWithCustomLineBreaks() {
             // When / Then
-            assertThat(printInstanceProperties("sleeper.default.ingest.partition.file.writer.type=direct"))
+            assertThat(printInstanceProperties("sleeper.default.table.ingest.partition.file.writer.type=direct"))
                     .contains("# The way in which partition files are written to the main Sleeper store.\n" +
                             "# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes\n" +
                             "# locally and then copies the completed Parquet file asynchronously into S3).\n" +
                             "# The direct method is simpler but the async method should provide better performance when the number\n" +
                             "# of partitions is large.\n" +
-                            "sleeper.default.ingest.partition.file.writer.type");
+                            "sleeper.default.table.ingest.partition.file.writer.type");
         }
 
         @Test

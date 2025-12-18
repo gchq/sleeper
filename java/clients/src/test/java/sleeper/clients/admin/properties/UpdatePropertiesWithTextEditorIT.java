@@ -39,8 +39,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
-import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
@@ -217,13 +217,13 @@ class UpdatePropertiesWithTextEditorIT {
         void shouldCreateUpdateRequestWithTableProperties() throws Exception {
             // Given
             TableProperties before = generateCompareTestTableProperties();
-            before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
+            before.set(STATESTORE_ASYNC_COMMITS_ENABLED, "false");
             TableProperties after = generateCompareTestTableProperties();
-            after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
+            after.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
 
             // When
             UpdatePropertiesRequest<TableProperties> updatePropertiesRequest = helper.updatePropertiesWithGroup(
-                    before, "sleeper.table.statestore.dynamo.consistent.reads=true", TablePropertyGroup.METADATA);
+                    before, "sleeper.table.statestore.commit.async.enabled=true", TablePropertyGroup.METADATA);
 
             // Then
             assertThat(updatePropertiesRequest.getUpdatedProperties())
