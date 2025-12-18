@@ -28,11 +28,15 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.table.TableStatus;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.core.properties.table.TableProperty.PREVIOUS_TABLE_NAMES;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -49,6 +53,97 @@ public class InMemoryTablePropertiesStoreTest {
     private final TablePropertiesStore store = InMemoryTableProperties.getStore();
     private final String tableName = tableProperties.get(TABLE_NAME);
     private final String tableId = tableProperties.get(TABLE_ID);
+
+    @Nested
+    @DisplayName("Get existing table status")
+    class GetExistingTableStatus {
+        @Test
+        void shouldPrioritiseTableIdOverNameOnGet() {
+            // Given
+            TableProperties tableWithMatchingId = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+            tableWithMatchingId.set(TABLE_ID, tableProperties.get(TABLE_ID));
+            tableWithMatchingId.set(TABLE_NAME, "differentName");
+
+            TableProperties tableWithMatchingName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+            tableWithMatchingName.set(TABLE_ID, "differentID");
+            tableWithMatchingName.set(TABLE_NAME, tableProperties.get(TABLE_NAME));
+
+            store.createTable(tableWithMatchingId);
+            store.createTable(tableWithMatchingName);
+
+            // When
+            Optional<TableStatus> tableStatus = store.getExistingStatus(tableProperties);
+
+            // Then
+            assertThat(tableStatus.isPresent()).isTrue();
+            assertThat(tableStatus.get().getTableUniqueId()).isEqualTo(tableWithMatchingId.get(TABLE_ID));
+            assertThat(tableStatus.get().getTableName()).isEqualTo(tableWithMatchingId.get(TABLE_NAME));
+        }
+
+        @Test
+        void shouldPrioritiseTableNameOverPreviousNamesOnGet() {
+            // Given
+            String previousName = "previousName";
+            tableProperties.unset(TABLE_ID);
+            tableProperties.set(PREVIOUS_TABLE_NAMES, previousName);
+
+            TableProperties tableWithMatchingName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+            tableWithMatchingName.set(TABLE_ID, "differentID1");
+            tableWithMatchingName.set(TABLE_NAME, tableProperties.get(TABLE_NAME));
+
+            TableProperties tableWithMatchingPreviousName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+            tableWithMatchingPreviousName.set(TABLE_ID, "differentID2");
+            tableWithMatchingPreviousName.set(TABLE_NAME, previousName);
+
+            store.createTable(tableWithMatchingName);
+            store.createTable(tableWithMatchingPreviousName);
+
+            // When
+            Optional<TableStatus> tableStatus = store.getExistingStatus(tableProperties);
+
+            // Then
+            assertThat(tableStatus.isPresent()).isTrue();
+            assertThat(tableStatus.get().getTableUniqueId()).isEqualTo("differentID1");
+        }
+
+        @Test
+        void shouldPrioritiseMoreRecentPreviousTableNamesOverLessRecentOnGet() {
+            // Given
+            String previousName = "name1,name2";
+            tableProperties.unset(TABLE_ID);
+            tableProperties.set(PREVIOUS_TABLE_NAMES, previousName);
+
+            TableProperties tableWithMatchingName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+            tableWithMatchingName.set(TABLE_ID, "differentID1");
+            tableWithMatchingName.set(TABLE_NAME, "name1");
+
+            TableProperties tableWithMatchingPreviousName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+            tableWithMatchingPreviousName.set(TABLE_ID, "differentID2");
+            tableWithMatchingPreviousName.set(TABLE_NAME, "name2");
+
+            store.createTable(tableWithMatchingName);
+            store.createTable(tableWithMatchingPreviousName);
+
+            // When
+            Optional<TableStatus> tableStatus = store.getExistingStatus(tableProperties);
+
+            // Then
+            assertThat(tableStatus.isPresent()).isTrue();
+            assertThat(tableStatus.get().getTableUniqueId()).isEqualTo("differentID1");
+        }
+
+        @Test
+        void shouldReturnOptionalEmptyIfNotFound() {
+            // Given
+            tableProperties.set(PREVIOUS_TABLE_NAMES, "anyNames");
+
+            // When
+            Optional<TableStatus> tableStatus = store.getExistingStatus(tableProperties);
+
+            //Then
+            assertThat(tableStatus.isEmpty()).isTrue();
+        }
+    }
 
     @Nested
     @DisplayName("Save table properties")
