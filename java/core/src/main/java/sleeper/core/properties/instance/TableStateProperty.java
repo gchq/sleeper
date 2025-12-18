@@ -47,7 +47,7 @@ public interface TableStateProperty {
         }
     }
 
-    UserDefinedInstanceProperty DEFAULT_TABLE_STATE_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.default.table.state.lambda.memory.mb")
+    UserDefinedInstanceProperty DEFAULT_TABLE_STATE_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.default.lambda.table.state.memory.mb")
             .description("Default value for amount of memory in MB for each lambda that holds the state of Sleeper " +
                     "tables in memory. These use a state store provider which caches a number of tables at " +
                     "once, set in `sleeper.statestore.provider.cache.size`. Not all lambdas are covered " +
