@@ -48,8 +48,4 @@ public class SparkRowMapper {
         return outRow;
     }
 
-    public int getPartitionInt(Row row) {
-        return row.getInt(allSchemaFields.size());
-    }
-
 }

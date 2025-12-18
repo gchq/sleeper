@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.common.HadoopSketchesStore;
-import sleeper.bulkimport.runner.common.PartitionNumbers;
 import sleeper.bulkimport.runner.common.SparkRowMapper;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -33,7 +32,6 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.UUID;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -46,7 +44,7 @@ public class SketchWritingIterator implements Iterator<Row> {
     private final InstanceProperties instanceProperties;
     private final Schema schema;
     private final SparkRowMapper rowMapper;
-    private final List<Partition> intToPartition;
+    private final PartitionTree partitionTree;
     private final SketchesStore sketchesStore;
 
     public SketchWritingIterator(Iterator<Row> input, InstanceProperties instanceProperties, TableProperties tableProperties, Configuration conf, PartitionTree partitionTree) {
@@ -54,7 +52,7 @@ public class SketchWritingIterator implements Iterator<Row> {
         this.instanceProperties = instanceProperties;
         this.schema = tableProperties.getSchema();
         this.rowMapper = new SparkRowMapper(tableProperties.getSchema());
-        this.intToPartition = PartitionNumbers.getIntToPartition(partitionTree);
+        this.partitionTree = partitionTree;
         this.sketchesStore = new HadoopSketchesStore(conf);
         LOGGER.info("Initialised SketchWritingIterator");
     }
@@ -67,24 +65,21 @@ public class SketchWritingIterator implements Iterator<Row> {
     @Override
     public Row next() {
         Sketches sketches = Sketches.from(schema);
-        int partitionInt = -1;
+        Partition partition = null;
         int numRows = 0;
         while (input.hasNext()) {
             Row row = input.next();
-            int thisPartitionInt = rowMapper.getPartitionInt(row);
-            if (partitionInt == -1) {
-                partitionInt = thisPartitionInt;
-                LOGGER.info("Found data for partition {}", intToPartition.get(partitionInt));
-            } else if (partitionInt != thisPartitionInt) {
-                throw new RuntimeException("Row found on different partition, expected " + partitionInt + ", found " + thisPartitionInt);
+            sleeper.core.row.Row sleeperRow = rowMapper.toSleeperRow(row);
+            if (partition == null) {
+                partition = partitionTree.getLeafPartition(schema, sleeperRow.getRowKeys(schema));
+                LOGGER.info("Found data for partition {}", partition.getId());
             }
-            sketches.update(rowMapper.toSleeperRow(row));
+            sketches.update(sleeperRow);
             numRows++;
             if (numRows % 1_000_000L == 0) {
                 LOGGER.info("Read {} rows", numRows);
             }
         }
-        Partition partition = intToPartition.get(partitionInt);
         String filename = instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(BULK_IMPORT_BUCKET) + "/sketches/" + UUID.randomUUID().toString() + ".sketches";
         LOGGER.info("Writing sketches file for partition {}", partition.getId());
         sketchesStore.saveFileSketches(filename, schema, sketches);

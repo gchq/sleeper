@@ -23,10 +23,13 @@ import sleeper.bulkimport.runner.SparkTestBase;
 import sleeper.core.row.Row;
 import sleeper.core.schema.type.IntType;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -53,7 +56,18 @@ public class GenerateSketchesDriverIT extends SparkTestBase {
         Map<String, Sketches> partitionIdToSketches = generateSketches(List.of(filename));
 
         // Then
-        assertThat(partitionIdToSketches).isEmpty();
+        assertThat(toDeciles(partitionIdToSketches))
+                .isEqualTo(Map.of(
+                        "L", expectedSketchDeciles(List.of(
+                                new Row(Map.of("key", 20)))),
+                        "R", expectedSketchDeciles(List.of(
+                                new Row(Map.of("key", 70))))));
+    }
+
+    private Map<String, SketchesDeciles> toDeciles(Map<String, Sketches> partitionIdToSketches) {
+        return partitionIdToSketches.entrySet().stream()
+                .map(entry -> Map.entry(entry.getKey(), SketchesDeciles.from(entry.getValue())))
+                .collect(toMap(Entry::getKey, Entry::getValue));
     }
 
     private Map<String, Sketches> generateSketches(List<String> filenames) {

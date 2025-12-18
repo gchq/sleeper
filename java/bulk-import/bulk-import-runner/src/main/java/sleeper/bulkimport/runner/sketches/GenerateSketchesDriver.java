@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportContext;
 import sleeper.bulkimport.runner.common.HadoopSketchesStore;
-import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.bulkimport.runner.dataframelocalsort.RepartitionRowsBySleeperPartition;
 import sleeper.sketches.Sketches;
@@ -47,7 +46,7 @@ public class GenerateSketchesDriver {
         Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
         Dataset<Row> sketchFiles = partitioned.mapPartitions(
                 new WriteSketchesFile(input.instanceProperties(), input.tableProperties(), input.conf(), input.broadcastedPartitions()),
-                ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
+                ExpressionEncoder.apply(SparkSketchRow.createSchema()));
         SketchesStore sketchesStore = new HadoopSketchesStore(input.conf());
         return sketchFiles.collectAsList().stream()
                 .map(SparkSketchRow::from)

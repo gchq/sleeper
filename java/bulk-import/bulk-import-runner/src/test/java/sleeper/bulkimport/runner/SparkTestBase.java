@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.runner;
 
-import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,10 +34,12 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.parquet.row.ParquetRowWriterFactory;
+import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -54,7 +55,7 @@ public class SparkTestBase {
     private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
     private TableProperties lastTable;
     @TempDir
-    public java.nio.file.Path tempDir;
+    public Path tempDir;
     private int nextFileNumber = 1;
 
     @BeforeEach
@@ -65,7 +66,7 @@ public class SparkTestBase {
     }
 
     private String createDir(String name) {
-        java.nio.file.Path path = tempDir.resolve(name);
+        Path path = tempDir.resolve(name);
         try {
             Files.createDirectories(path);
         } catch (IOException e) {
@@ -114,6 +115,10 @@ public class SparkTestBase {
         return createBulkImportContext(lastTable, filenames);
     }
 
+    protected SketchesDeciles expectedSketchDeciles(List<Row> rows) {
+        return SketchesDeciles.from(lastTable, rows);
+    }
+
     protected BulkImportContext createBulkImportContext(TableProperties tableProperties, List<String> filenames) {
         List<Partition> partitions = stateStoreProvider.getStateStore(tableProperties).getAllPartitions();
         return BulkImportContext.create(
@@ -122,7 +127,8 @@ public class SparkTestBase {
 
     protected String writeRowsToFile(List<Row> rows) {
         String filename = generateFilename();
-        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(new Path(filename), lastTable.getSchema())) {
+        try (ParquetWriter<Row> writer = ParquetRowWriterFactory.createParquetRowWriter(
+                new org.apache.hadoop.fs.Path(filename), lastTable.getSchema())) {
             for (Row row : rows) {
                 writer.write(row);
             }
@@ -133,7 +139,7 @@ public class SparkTestBase {
     }
 
     private String generateFilename() {
-        String filename = tempDir + "/input/file-" + nextFileNumber;
+        String filename = tempDir + "/input/file-" + nextFileNumber + ".parquet";
         nextFileNumber++;
         return filename;
     }
