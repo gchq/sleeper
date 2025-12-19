@@ -20,8 +20,8 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
 /**
- * A reference to a sketch file written during a Spark job. Used when pre-splitting partitions to calculate split
- * points.
+ * A reference to a sketch file written during a Spark job. Used to calculate split points when pre-splitting
+ * partitions.
  *
  * @param partitionId the ID of the Sleeper partition that the sketch file covers
  * @param filename    the full Hadoop path to the sketch file in S3

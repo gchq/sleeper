@@ -33,7 +33,7 @@ import java.util.Map;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * Generates sketches by reading through data in Spark.
+ * Generates sketches by reading through data in Spark. Used to calculate split points when pre-splitting partitions.
  */
 public class GenerateSketchesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(GenerateSketchesDriver.class);
@@ -41,6 +41,12 @@ public class GenerateSketchesDriver {
     private GenerateSketchesDriver() {
     }
 
+    /**
+     * Reads through all the input data in a bulk import job, and builds a sketch of the data in each Sleeper partition.
+     *
+     * @param  input the context of the bulk import
+     * @return       a map from Sleeper partition ID to a sketch of the data in that partition
+     */
     public static Map<String, Sketches> generatePartitionIdToSketches(BulkImportContext input) {
         LOGGER.info("Generating sketches...");
         Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
