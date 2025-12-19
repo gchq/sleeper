@@ -43,6 +43,14 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
+/**
+ * A combination of a Spark context, and the input data for a bulk import job. References the input files as a Spark
+ * data set, and the Sleeper partition tree as a broadcast across the Spark cluster. This will be operated on by further
+ * code to perform the import.
+ * <p>
+ * Note that the Spark context should be stopped at the end of the bulk import job. This class implements AutoCloseable
+ * to make that easier.
+ */
 public class BulkImportContext implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportContext.class);
 
@@ -52,14 +60,25 @@ public class BulkImportContext implements AutoCloseable {
     private final Dataset<Row> rows;
     private final Broadcast<List<Partition>> broadcastedPartitions;
 
-    private BulkImportContext(Builder builder) {
-        instanceProperties = builder.instanceProperties;
-        tableProperties = builder.tableProperties;
-        sparkContext = builder.sparkContext;
-        rows = builder.rows;
-        broadcastedPartitions = builder.broadcastedPartitions;
+    private BulkImportContext(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            SparkContext sparkContext, Dataset<Row> rows, Broadcast<List<Partition>> broadcastedPartitions) {
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
+        this.sparkContext = sparkContext;
+        this.rows = rows;
+        this.broadcastedPartitions = broadcastedPartitions;
     }
 
+    /**
+     * Creates a context for a bulk import job. Creates a Spark context and feeds the input data to Spark.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableProperties    the table properties
+     * @param  partitions         all partitions in the Sleeper table partition tree
+     * @param  filenames          the paths to the input Parquet files, excluding the file system
+     * @return                    the context for the bulk import
+     */
     public static BulkImportContext create(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             List<Partition> partitions, List<String> filenames) {
@@ -80,25 +99,20 @@ public class BulkImportContext implements AutoCloseable {
                 .parquet(addFileSystem(instanceProperties, filenames).toArray(new String[0]));
         LOGGER.info("Prepared partitions broadcast and rows dataset");
 
-        return builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties)
-                .sparkContext(sparkContext)
-                .broadcastedPartitions(broadcastedPartitions)
-                .rows(rows)
-                .build();
+        return new BulkImportContext(instanceProperties, tableProperties, sparkContext, rows, broadcastedPartitions);
     }
 
+    /**
+     * Creates a Spark configuration suitable for a bulk import job. Configures serialisation for Sleeper partitions.
+     *
+     * @return the Spark configuration
+     */
     public static SparkConf createSparkConf() {
         SparkConf sparkConf = new SparkConf();
         sparkConf.set("spark.serializer", KryoSerializer.class.getName());
         sparkConf.set("spark.kryo.registrator", JdkImmutableListRegistrator.class.getName());
         sparkConf.registerKryoClasses(new Class[]{Partition.class});
         return sparkConf;
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     private static List<String> addFileSystem(InstanceProperties instanceProperties, List<String> filenames) {
@@ -141,45 +155,5 @@ public class BulkImportContext implements AutoCloseable {
     @Override
     public void close() {
         stopSparkContext();
-    }
-
-    public static final class Builder {
-        private InstanceProperties instanceProperties;
-        private TableProperties tableProperties;
-        private SparkContext sparkContext;
-        private Dataset<Row> rows;
-        private Broadcast<List<Partition>> broadcastedPartitions;
-
-        private Builder() {
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public Builder tableProperties(TableProperties tableProperties) {
-            this.tableProperties = tableProperties;
-            return this;
-        }
-
-        public Builder sparkContext(SparkContext sparkContext) {
-            this.sparkContext = sparkContext;
-            return this;
-        }
-
-        public Builder rows(Dataset<Row> rows) {
-            this.rows = rows;
-            return this;
-        }
-
-        public Builder broadcastedPartitions(Broadcast<List<Partition>> broadcastedPartitions) {
-            this.broadcastedPartitions = broadcastedPartitions;
-            return this;
-        }
-
-        public BulkImportContext build() {
-            return new BulkImportContext(this);
-        }
     }
 }
