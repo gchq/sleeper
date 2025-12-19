@@ -58,8 +58,24 @@
     <suppress files="[\\/]sleeper[\\/]dynamodb[\\/]toolsv2[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]localstack[\\/]test[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]sleeper[\\/]clients[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]admin[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]admin[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]api[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]api[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]compaction[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]compaction[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]deploy[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]deploy[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]query[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]query[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]report[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]report[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]table[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]table[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]testutil[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]testutil[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]util[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]util[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]compaction[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]compaction[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]compaction[\\/]tracker[\\/].*" id="missingJavadocMethod"/>
