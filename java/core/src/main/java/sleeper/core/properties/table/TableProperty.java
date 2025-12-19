@@ -30,8 +30,8 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
 import static sleeper.core.properties.instance.CommonProperty.DEFAULT_TABLE_REUSE_EXISTING;
-import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -67,7 +67,6 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_FILES_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
@@ -294,8 +293,8 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "instance property.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty RETAIN_DATA_AFTER_DELETE = Index.propertyBuilder("sleeper.table.retain.data.after.delete")
-            .defaultProperty(RETAIN_DATA_AFTER_TABLE_REMOVAL)
+    TableProperty RETAIN_TABLE_AFTER_REMOVAL = Index.propertyBuilder("sleeper.table.retain.after.removal")
+            .defaultProperty(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL)
             .description("This property is used when applying an instance configuration and a table has been removed.\n" +
                     "If this is true (default), removing the table from the configuration will just take the table offline.\n" +
                     "If this is false, it will delete all data associated with the table when the table is removed.\n" +
@@ -525,12 +524,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "The snapshot that will be considered the latest snapshot is configured by a property to set the " +
                     "minimum age for it to count for this:\n" +
                     "sleeper.table.statestore.transactionlog.delete.behind.snapshot.min.age\n")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .build();
-    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.statestore.dynamo.consistent.reads")
-            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
-                    "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")

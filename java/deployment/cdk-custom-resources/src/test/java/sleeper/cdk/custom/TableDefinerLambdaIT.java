@@ -186,6 +186,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         public void shouldUpdateTableIfImportDataPropertySet() throws IOException {
             //Given
             createTableThenTakeOffline();
+            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
 
             //When
             tableProperties.set(TABLE_ONLINE, "true");
@@ -259,7 +260,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         public void shouldFailToDeleteTableThatDoesNotExist() {
             // Given
-            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             // When / Then
@@ -270,7 +271,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         void shouldTakeTableOfflineWhenDeleteCalledAndInstancePropertySetTrue() throws Exception {
             // Given
-            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "true");
+            instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "true");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             callLambda(CREATE, tableProperties);
@@ -294,7 +295,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         void shouldFullyDeleteSpecifiedTableButNoOthers() throws Exception {
             // Given
-            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             TableProperties table1 = createTableProperties(uniqueIdAndName("test-table-1", "table-1"));
@@ -334,7 +335,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         @Test
         void shouldFullyDeleteTableWhenSnapshotIsPresent() throws Exception {
             // Given
-            instanceProperties.set(RETAIN_DATA_AFTER_TABLE_REMOVAL, "false");
+            instanceProperties.set(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL, "false");
             S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
             callLambda(CREATE, tableProperties, "50");
