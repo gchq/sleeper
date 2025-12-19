@@ -225,7 +225,9 @@ public class PartitionTree {
     }
 
     /**
-     * Streams through all leaf partitions.
+     * Streams through all leaf partitions. This is all partitions that have no child partitions, and no split point.
+     * Other partitions make up the root and branches of the partition tree, where the space of the values of key
+     * fields is split into a number of child partitions.
      *
      * @return the stream
      */
