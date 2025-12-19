@@ -16,23 +16,36 @@
 package sleeper.bulkimport.runner.common;
 
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
+/**
+ * A reference to a sketch file written during a Spark job. Used when pre-splitting partitions to calculate split
+ * points.
+ *
+ * @param partitionId the ID of the Sleeper partition that the sketch file covers
+ * @param filename    the full Hadoop path to the sketch file in S3
+ */
 public record SparkSketchRow(String partitionId, String filename) {
 
     public static final String PARTITION_FIELD_NAME = "__partition";
     public static final String FILENAME_FIELD_NAME = "__fileName";
 
+    /**
+     * Reads a Spark row containing a pointer to a sketch file.
+     *
+     * @param  sparkRow the Spark row
+     * @return          the reference to the sketch file held in the row
+     */
     public static SparkSketchRow from(Row sparkRow) {
         return new SparkSketchRow(sparkRow.getString(0), sparkRow.getString(1));
     }
 
-    public static Row partitionIdAndFilenameSparkRow(String partitionId, String filename) {
-        return RowFactory.create(partitionId, filename);
-    }
-
+    /**
+     * Creates a Spark schema for rows containing references of this type.
+     *
+     * @return the schema
+     */
     public static StructType createSchema() {
         return new StructType()
                 .add(PARTITION_FIELD_NAME, DataTypes.StringType)
