@@ -68,6 +68,8 @@
     <suppress files="[\\/]sleeper[\\/]clients[\\/]compaction[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]deploy[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]deploy[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]images[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]clients[\\/]images[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]query[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]query[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]clients[\\/]report[\\/].*" id="missingJavadocMethod"/>
