@@ -64,9 +64,9 @@ public class BulkImportDataframeLocalSortDriver {
 
         return sortedRows.mapPartitions(
                 new WriteParquetFile(
-                        input.instanceProperties().saveAsString(),
-                        input.tableProperties().saveAsString(),
-                        input.conf(), input.broadcastedPartitions()),
+                        input.getInstanceProperties().saveAsString(),
+                        input.getTableProperties().saveAsString(),
+                        input.getHadoopConf(), input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 }

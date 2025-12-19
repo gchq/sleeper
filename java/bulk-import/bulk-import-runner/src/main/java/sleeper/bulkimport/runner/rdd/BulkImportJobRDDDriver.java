@@ -39,19 +39,19 @@ public class BulkImportJobRDDDriver {
     }
 
     public static Dataset<Row> createFileReferences(BulkImportContext input) {
-        Schema schema = input.tableProperties().getSchema();
+        Schema schema = input.getTableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         JavaRDD<Row> rdd = input.rows().javaRDD()
                 .mapToPair(new ExtractKeyFunction(
                         schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
                 .repartitionAndSortWithinPartitions(
-                        new SleeperPartitioner(schemaAsString, input.broadcastedPartitions()),
+                        new SleeperPartitioner(schemaAsString, input.getPartitionsBroadcast()),
                         new WrappedKeyComparator(schemaAsString))
                 .map(tuple -> tuple._2)
                 .mapPartitions(new WriteParquetFile(
-                        input.instanceProperties().saveAsString(),
-                        input.tableProperties().saveAsString(),
-                        input.conf(), input.broadcastedPartitions()));
+                        input.getInstanceProperties().saveAsString(),
+                        input.getTableProperties().saveAsString(),
+                        input.getHadoopConf(), input.getPartitionsBroadcast()));
 
         SparkSession session = SparkSession.builder().getOrCreate();
         return session.createDataset(rdd.rdd(), ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));

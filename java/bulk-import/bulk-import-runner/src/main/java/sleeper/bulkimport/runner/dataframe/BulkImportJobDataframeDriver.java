@@ -58,12 +58,12 @@ public class BulkImportJobDataframeDriver {
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
 
-        int numLeafPartitions = (int) input.broadcastedPartitions().value()
+        int numLeafPartitions = (int) input.getPartitionsBroadcast().value()
                 .stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
         Dataset<Row> dataWithPartition = input.rows().mapPartitions(
-                new AddPartitionFunction(schemaAsString, input.broadcastedPartitions()),
+                new AddPartitionFunction(schemaAsString, input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(schemaWithPartitionField));
 
         Column[] sortColumns = Lists.newArrayList(
@@ -80,9 +80,9 @@ public class BulkImportJobDataframeDriver {
 
         return sortedRows.mapPartitions(
                 new WriteParquetFiles(
-                        input.instanceProperties().saveAsString(),
-                        input.tableProperties().saveAsString(),
-                        input.conf()),
+                        input.getInstanceProperties().saveAsString(),
+                        input.getTableProperties().saveAsString(),
+                        input.getHadoopConf()),
                 ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
     }
 

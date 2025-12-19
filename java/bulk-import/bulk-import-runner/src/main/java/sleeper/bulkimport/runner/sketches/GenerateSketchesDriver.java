@@ -45,9 +45,11 @@ public class GenerateSketchesDriver {
         LOGGER.info("Generating sketches...");
         Dataset<Row> partitioned = RepartitionRowsBySleeperPartition.repartition(input);
         Dataset<Row> sketchFiles = partitioned.mapPartitions(
-                new WriteSketchesFile(input.instanceProperties(), input.tableProperties(), input.conf(), input.broadcastedPartitions()),
+                new WriteSketchesFile(
+                        input.getInstanceProperties(), input.getTableProperties(),
+                        input.getHadoopConf(), input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(SparkSketchRow.createSchema()));
-        SketchesStore sketchesStore = new HadoopSketchesStore(input.conf());
+        SketchesStore sketchesStore = new HadoopSketchesStore(input.getHadoopConf());
         return sketchFiles.collectAsList().stream()
                 .map(SparkSketchRow::from)
                 .collect(toMap(

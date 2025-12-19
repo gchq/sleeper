@@ -45,12 +45,12 @@ public class RepartitionRowsBySleeperPartition {
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
 
-        int numLeafPartitions = (int) input.broadcastedPartitions().value()
+        int numLeafPartitions = (int) input.getPartitionsBroadcast().value()
                 .stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
         Dataset<Row> dataWithPartition = input.rows().mapPartitions(
-                new AddPartitionAsIntFunction(schemaAsString, input.broadcastedPartitions()),
+                new AddPartitionAsIntFunction(schemaAsString, input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(schemaWithPartitionField));
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 

@@ -58,16 +58,16 @@ public class BulkImportContext implements AutoCloseable {
     private final TableProperties tableProperties;
     private final SparkContext sparkContext;
     private final Dataset<Row> rows;
-    private final Broadcast<List<Partition>> broadcastedPartitions;
+    private final Broadcast<List<Partition>> partitionsBroadcast;
 
     private BulkImportContext(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            SparkContext sparkContext, Dataset<Row> rows, Broadcast<List<Partition>> broadcastedPartitions) {
+            SparkContext sparkContext, Dataset<Row> rows, Broadcast<List<Partition>> partitionsBroadcast) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.sparkContext = sparkContext;
         this.rows = rows;
-        this.broadcastedPartitions = broadcastedPartitions;
+        this.partitionsBroadcast = partitionsBroadcast;
     }
 
     /**
@@ -91,7 +91,7 @@ public class BulkImportContext implements AutoCloseable {
         JavaSparkContext javaSparkContext = JavaSparkContext.fromSparkContext(sparkContext);
         LOGGER.info("Retrieved Spark context");
 
-        Broadcast<List<Partition>> broadcastedPartitions = javaSparkContext.broadcast(partitions);
+        Broadcast<List<Partition>> partitionsBroadcast = javaSparkContext.broadcast(partitions);
         Dataset<Row> rows = session.read()
                 .schema(new StructTypeFactory().getStructType(tableProperties.getSchema()))
                 .option("pathGlobFilter", "*.parquet")
@@ -99,7 +99,7 @@ public class BulkImportContext implements AutoCloseable {
                 .parquet(addFileSystem(instanceProperties, filenames).toArray(new String[0]));
         LOGGER.info("Prepared partitions broadcast and rows dataset");
 
-        return new BulkImportContext(instanceProperties, tableProperties, sparkContext, rows, broadcastedPartitions);
+        return new BulkImportContext(instanceProperties, tableProperties, sparkContext, rows, partitionsBroadcast);
     }
 
     /**
@@ -124,11 +124,11 @@ public class BulkImportContext implements AutoCloseable {
         return pathsWithFs;
     }
 
-    public InstanceProperties instanceProperties() {
+    public InstanceProperties getInstanceProperties() {
         return instanceProperties;
     }
 
-    public TableProperties tableProperties() {
+    public TableProperties getTableProperties() {
         return tableProperties;
     }
 
@@ -140,14 +140,17 @@ public class BulkImportContext implements AutoCloseable {
         return rows;
     }
 
-    public Broadcast<List<Partition>> broadcastedPartitions() {
-        return broadcastedPartitions;
+    public Broadcast<List<Partition>> getPartitionsBroadcast() {
+        return partitionsBroadcast;
     }
 
-    public Configuration conf() {
+    public Configuration getHadoopConf() {
         return sparkContext.hadoopConfiguration();
     }
 
+    /**
+     * Stops the Spark context. This is the same as calling {@link #close()}.
+     */
     public void stopSparkContext() {
         sparkContext.stop();
     }
