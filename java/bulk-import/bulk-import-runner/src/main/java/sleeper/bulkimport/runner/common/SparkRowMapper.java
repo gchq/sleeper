@@ -24,6 +24,9 @@ import sleeper.core.schema.type.MapType;
 
 import java.util.List;
 
+/**
+ * Converts between Spark rows and Sleeper rows.
+ */
 public class SparkRowMapper {
 
     private final List<Field> allSchemaFields;
@@ -32,6 +35,12 @@ public class SparkRowMapper {
         this.allSchemaFields = schema.getAllFields();
     }
 
+    /**
+     * Converts from a Spark row to a Sleeper row.
+     *
+     * @param  row the Spark row
+     * @return     the same row, as the Sleeper row type
+     */
     public sleeper.core.row.Row toSleeperRow(Row row) {
         sleeper.core.row.Row outRow = new sleeper.core.row.Row();
         int i = 0;
