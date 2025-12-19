@@ -49,7 +49,10 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class SparkTestBase {
+/**
+ * A base for tests running against Spark, holding files in the local file system.
+ */
+public abstract class SparkTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance();
     private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
