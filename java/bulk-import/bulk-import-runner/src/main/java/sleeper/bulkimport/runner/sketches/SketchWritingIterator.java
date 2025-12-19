@@ -17,12 +17,12 @@ package sleeper.bulkimport.runner.sketches;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.common.HadoopSketchesStore;
 import sleeper.bulkimport.runner.common.SparkRowMapper;
+import sleeper.bulkimport.runner.common.SparkSketchRow;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -37,6 +37,11 @@ import java.util.UUID;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 
+/**
+ * An iterator that writes a single data sketch for all the input data. This takes any number of rows, adds them to a
+ * sketch, writes that sketch to a file, then returns a single Spark row that references that file. The resulting row
+ * can be read with {@link SparkSketchRow}.
+ */
 public class SketchWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SketchWritingIterator.class);
 
@@ -83,7 +88,7 @@ public class SketchWritingIterator implements Iterator<Row> {
         String filename = instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(BULK_IMPORT_BUCKET) + "/sketches/" + UUID.randomUUID().toString() + ".sketches";
         LOGGER.info("Writing sketches file for partition {}", partition.getId());
         sketchesStore.saveFileSketches(filename, schema, sketches);
-        return RowFactory.create(partition.getId(), filename);
+        return new SparkSketchRow(partition.getId(), filename).toSparkRow();
     }
 
 }

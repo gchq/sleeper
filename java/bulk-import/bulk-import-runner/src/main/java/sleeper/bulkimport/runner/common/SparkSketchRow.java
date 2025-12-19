@@ -16,6 +16,7 @@
 package sleeper.bulkimport.runner.common;
 
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
@@ -32,13 +33,22 @@ public record SparkSketchRow(String partitionId, String filename) {
     public static final String FILENAME_FIELD_NAME = "__fileName";
 
     /**
-     * Reads a Spark row containing a pointer to a sketch file.
+     * Reads a Spark row containing a reference to a sketch file.
      *
      * @param  sparkRow the Spark row
      * @return          the reference to the sketch file held in the row
      */
     public static SparkSketchRow from(Row sparkRow) {
         return new SparkSketchRow(sparkRow.getString(0), sparkRow.getString(1));
+    }
+
+    /**
+     * Builds a Spark row containing this reference.
+     *
+     * @return the Spark row
+     */
+    public Row toSparkRow() {
+        return RowFactory.create(partitionId, filename);
     }
 
     /**
