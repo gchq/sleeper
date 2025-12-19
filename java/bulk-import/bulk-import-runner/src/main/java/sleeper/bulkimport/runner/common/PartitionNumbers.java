@@ -18,18 +18,28 @@ package sleeper.bulkimport.runner.common;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static java.util.stream.Collectors.toCollection;
 
+/**
+ * Assigns integers to the leaf nodes of a given partition tree. This is used when partitioning data according to the
+ * Sleeper partition tree, since Spark expects an integer partition identifier. When a partition tree is broadcast
+ * across a Spark cluster, we want each leaf partition to have a reproducible integer that will be the same everywhere.
+ */
 public class PartitionNumbers {
 
     private PartitionNumbers() {
     }
 
+    /**
+     * Creates a mapping from Sleeper partition ID to an integer.
+     *
+     * @param  tree the partition tree
+     * @return      the mapping
+     */
     public static Map<String, Integer> getPartitionIdToInt(PartitionTree tree) {
         // Sort the leaf partitions by id so that we can create a mapping from partition id to
         // int in a way that is consistent across multiple calls to this function across different
@@ -41,12 +51,6 @@ public class PartitionNumbers {
             i++;
         }
         return partitionIdToInt;
-    }
-
-    public static List<Partition> getIntToPartition(PartitionTree tree) {
-        return getSortedLeafPartitionIds(tree).stream()
-                .map(tree::getPartition)
-                .toList();
     }
 
     private static TreeSet<String> getSortedLeafPartitionIds(PartitionTree tree) {
