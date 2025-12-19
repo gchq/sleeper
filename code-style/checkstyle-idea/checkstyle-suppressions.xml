@@ -28,9 +28,11 @@
     <suppress files="[\\/]src[\\/]test[\\/].*TestBase.java$" id="missingJavadocMethod"/>
     <suppress files="[\\/]src[\\/]test[\\/].*Test.java$" id="missingJavadocMethod"/>
     <suppress files="[\\/]src[\\/]test[\\/].*IT.java$" id="missingJavadocMethod"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*ST.java$" id="missingJavadocMethod"/>
     <suppress files="[\\/]src[\\/]test[\\/].*TestBase.java$" id="missingJavadocType"/>
     <suppress files="[\\/]src[\\/]test[\\/].*Test.java$" id="missingJavadocType"/>
     <suppress files="[\\/]src[\\/]test[\\/].*IT.java$" id="missingJavadocType"/>
+    <suppress files="[\\/]src[\\/]test[\\/].*ST.java$" id="missingJavadocType"/>
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
     <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]athena[\\/].*" id="missingJavadocType"/>
