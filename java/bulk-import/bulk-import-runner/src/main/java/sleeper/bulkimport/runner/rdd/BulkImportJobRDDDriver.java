@@ -41,7 +41,7 @@ public class BulkImportJobRDDDriver {
     public static Dataset<Row> createFileReferences(BulkImportContext input) {
         Schema schema = input.getTableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
-        JavaRDD<Row> rdd = input.rows().javaRDD()
+        JavaRDD<Row> rdd = input.getRows().javaRDD()
                 .mapToPair(new ExtractKeyFunction(
                         schema.getRowKeyTypes().size() + schema.getSortKeyTypes().size())) // Sort by both row keys and sort keys
                 .repartitionAndSortWithinPartitions(

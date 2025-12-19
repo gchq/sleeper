@@ -132,11 +132,11 @@ public class BulkImportContext implements AutoCloseable {
         return tableProperties;
     }
 
-    public Schema schema() {
+    public Schema getSchema() {
         return tableProperties.getSchema();
     }
 
-    public Dataset<Row> rows() {
+    public Dataset<Row> getRows() {
         return rows;
     }
 

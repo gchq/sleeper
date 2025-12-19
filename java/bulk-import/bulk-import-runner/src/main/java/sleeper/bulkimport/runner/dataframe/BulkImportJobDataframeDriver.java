@@ -53,7 +53,7 @@ public class BulkImportJobDataframeDriver {
     }
 
     public static Dataset<Row> createFileReferences(BulkImportContext input) {
-        Schema schema = input.schema();
+        Schema schema = input.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
@@ -62,7 +62,7 @@ public class BulkImportJobDataframeDriver {
                 .stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
-        Dataset<Row> dataWithPartition = input.rows().mapPartitions(
+        Dataset<Row> dataWithPartition = input.getRows().mapPartitions(
                 new AddPartitionFunction(schemaAsString, input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(schemaWithPartitionField));
 

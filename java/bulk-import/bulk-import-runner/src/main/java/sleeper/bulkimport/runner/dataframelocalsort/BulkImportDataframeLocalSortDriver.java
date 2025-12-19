@@ -50,7 +50,7 @@ public class BulkImportDataframeLocalSortDriver {
         Dataset<Row> repartitionedData = RepartitionRowsBySleeperPartition.repartition(input);
         LOGGER.info("After repartitioning data, there are {} partitions", repartitionedData.rdd().getNumPartitions());
 
-        Column[] sortColumns = Lists.newArrayList(input.schema().getRowKeyFieldNames(), input.schema().getSortKeyFieldNames())
+        Column[] sortColumns = Lists.newArrayList(input.getSchema().getRowKeyFieldNames(), input.getSchema().getSortKeyFieldNames())
                 .stream()
                 .flatMap(Collection::stream)
                 .map(Column::new)

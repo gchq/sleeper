@@ -54,7 +54,7 @@ public class GenerateSketchesDriver {
                 .map(SparkSketchRow::from)
                 .collect(toMap(
                         SparkSketchRow::partitionId,
-                        row -> sketchesStore.loadFileSketches(row.filename(), input.schema())));
+                        row -> sketchesStore.loadFileSketches(row.filename(), input.getSchema())));
     }
 
 }

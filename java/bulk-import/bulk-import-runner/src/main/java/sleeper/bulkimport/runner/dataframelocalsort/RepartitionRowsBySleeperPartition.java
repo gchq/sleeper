@@ -40,7 +40,7 @@ public class RepartitionRowsBySleeperPartition {
     }
 
     public static Dataset<Row> repartition(BulkImportContext input) {
-        Schema schema = input.schema();
+        Schema schema = input.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
         StructType schemaWithPartitionField = createEnhancedSchema(convertedSchema);
@@ -49,7 +49,7 @@ public class RepartitionRowsBySleeperPartition {
                 .stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
-        Dataset<Row> dataWithPartition = input.rows().mapPartitions(
+        Dataset<Row> dataWithPartition = input.getRows().mapPartitions(
                 new AddPartitionAsIntFunction(schemaAsString, input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(schemaWithPartitionField));
         LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
