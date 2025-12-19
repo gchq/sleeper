@@ -31,6 +31,11 @@ import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
+/**
+ * Repartitions data to establish a one to one equivalence between Spark partition and Sleeper partition. This can
+ * ensure that all the data for each Sleeper partition will be gathered together on a single node of the Spark cluster.
+ * Note that this requires enough partitions in the Sleeper table for the data to be spread across the Spark cluster.
+ */
 public class RepartitionRowsBySleeperPartition {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RepartitionRowsBySleeperPartition.class);
@@ -39,6 +44,13 @@ public class RepartitionRowsBySleeperPartition {
     private RepartitionRowsBySleeperPartition() {
     }
 
+    /**
+     * Repartitions the input data for a bulk import job for a one to one equivalence between Spark partition and
+     * Sleeper partition.
+     *
+     * @param  input the context of the bulk import job
+     * @return       the repartitioned data set
+     */
     public static Dataset<Row> repartition(BulkImportContext input) {
         Schema schema = input.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
