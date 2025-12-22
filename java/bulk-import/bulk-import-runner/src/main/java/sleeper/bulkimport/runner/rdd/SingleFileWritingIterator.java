@@ -23,15 +23,13 @@ import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.runner.common.SparkRowMapper;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ListType;
-import sleeper.core.schema.type.MapType;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.row.ParquetRowWriterFactory;
@@ -51,7 +49,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final Schema schema;
-    private final List<Field> allSchemaFields;
+    private final SparkRowMapper rowMapper;
     private final Configuration conf;
     private final PartitionTree partitionTree;
     private final SketchesStore sketchesStore;
@@ -75,7 +73,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = tableProperties.getSchema();
-        this.allSchemaFields = schema.getAllFields();
+        this.rowMapper = new SparkRowMapper(schema);
         this.conf = conf;
         this.partitionTree = partitionTree;
         this.sketchesStore = sketchesStore;
@@ -114,7 +112,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     }
 
     private void write(Row row) throws IOException {
-        sleeper.core.row.Row writeRow = getRow(row);
+        sleeper.core.row.Row writeRow = rowMapper.toSleeperRow(row);
         parquetWriter.write(writeRow);
         numRows++;
         if (numRows % 1_000_000L == 0) {
@@ -143,22 +141,6 @@ public class SingleFileWritingIterator implements Iterator<Row> {
                 numRows, path, duration, rate);
     }
 
-    private sleeper.core.row.Row getRow(Row row) {
-        sleeper.core.row.Row outRow = new sleeper.core.row.Row();
-        int i = 0;
-        for (Field field : allSchemaFields) {
-            if (field.getType() instanceof ListType) {
-                outRow.put(field.getName(), row.getList(i));
-            } else if (field.getType() instanceof MapType) {
-                outRow.put(field.getName(), row.getJavaMap(i));
-            } else {
-                outRow.put(field.getName(), row.get(i));
-            }
-            i++;
-        }
-        return outRow;
-    }
-
     private ParquetWriter<sleeper.core.row.Row> createWriter(String partitionId) throws IOException {
         numRows = 0L;
         path = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
@@ -169,7 +151,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
     }
 
     private String getPartitionId(Row row) {
-        sleeper.core.row.Row keyRow = getRow(row);
+        sleeper.core.row.Row keyRow = rowMapper.toSleeperRow(row);
         List<String> rowKeyFieldNames = schema.getRowKeyFieldNames();
         Key key = Key.create(keyRow.getValues(rowKeyFieldNames));
         Partition partition = partitionTree.getLeafPartition(schema, key);
