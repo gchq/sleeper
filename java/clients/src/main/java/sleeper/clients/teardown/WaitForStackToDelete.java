@@ -27,6 +27,9 @@ import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
 
+/**
+ * Waits for a CloudFormation stack to be deleted, after a deletion has been started.
+ */
 public class WaitForStackToDelete {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForStackToDelete.class);
     private static final PollWithRetries DEFAULT_POLL = PollWithRetries
@@ -42,15 +45,36 @@ public class WaitForStackToDelete {
         this.stackName = stackName;
     }
 
+    /**
+     * Creates an instance of this class. Uses default settings to check whether the stack has been deleted yet.
+     *
+     * @param  cloudFormationClient a CloudFormation client
+     * @param  stackName            the name of the stack being deleted
+     * @return                      the monitor to wait for deletion
+     */
     public static WaitForStackToDelete from(CloudFormationClient cloudFormationClient, String stackName) {
         return from(DEFAULT_POLL, cloudFormationClient, stackName);
     }
 
+    /**
+     * Creates an instance of this class.
+     *
+     * @param  poll                 the settings to poll for whether the stack has been deleted yet
+     * @param  cloudFormationClient a CloudFormation client
+     * @param  stackName            the name of the stack being deleted
+     * @return                      the monitor to wait for deletion
+     */
     public static WaitForStackToDelete from(PollWithRetries poll, CloudFormationClient cloudFormationClient, String stackName) {
         return new WaitForStackToDelete(poll, cloudFormationClient, stackName);
     }
 
-    public void pollUntilFinished() throws InterruptedException {
+    /**
+     * Waits for the stack to be deleted. Regularly polls to check whether the deletion has finished.
+     *
+     * @throws InterruptedException  if the process is interrupted while waiting
+     * @throws DeleteFailedException if the stack failed to delete
+     */
+    public void pollUntilFinished() throws InterruptedException, DeleteFailedException {
         LOGGER.info("Waiting for CloudFormation stack to delete: {}", stackName);
         poll.pollUntil("stack has deleted", this::hasStackDeleted);
     }
@@ -70,6 +94,9 @@ public class WaitForStackToDelete {
         }
     }
 
+    /**
+     * Thrown if the stack failed to delete.
+     */
     public static class DeleteFailedException extends RuntimeException {
         DeleteFailedException(String stackName) {
             super("Failed to delete stack \"" + stackName + "\"");
