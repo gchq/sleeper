@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.runner;
+package sleeper.bulkimport.runner.common;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.DataTypes;

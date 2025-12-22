@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.bulkimport.runner;
+package sleeper.bulkimport.runner.common;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
@@ -24,6 +24,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.serializer.KryoSerializer;
 import org.junit.jupiter.api.Test;
 
+import sleeper.bulkimport.runner.BulkImportContext;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionFactory;
 import sleeper.core.schema.Field;
@@ -103,12 +104,12 @@ public class KryoSerializerTest {
     }
 
     private static Kryo kryo() {
-        SparkConf sparkConf = BulkImportSparkSessionRunner.createSparkConf();
+        SparkConf sparkConf = BulkImportContext.createSparkConf();
         return new KryoSerializer(sparkConf).newKryo();
     }
 
     private static Kryo kryoWithoutImmutableListSupport() {
-        SparkConf sparkConf = BulkImportSparkSessionRunner.createSparkConf();
+        SparkConf sparkConf = BulkImportContext.createSparkConf();
         sparkConf.remove("spark.kryo.registrator");
         return new KryoSerializer(sparkConf).newKryo();
     }
