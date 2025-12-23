@@ -64,9 +64,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.RETAIN_DATA_AFTER_TABLE_REMOVAL;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
 import static sleeper.core.properties.table.TableProperty.PREVIOUS_TABLE_NAMES;
-import static sleeper.core.properties.table.TableProperty.RETAIN_DATA_AFTER_DELETE;
+import static sleeper.core.properties.table.TableProperty.RETAIN_TABLE_AFTER_REMOVAL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -220,7 +220,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         private void createTableThenTakeOffline() throws IOException {
             callLambda(CREATE, tableProperties);
             //Should just take the table offline
-            tableProperties.set(RETAIN_DATA_AFTER_DELETE, "true");
+            tableProperties.set(RETAIN_TABLE_AFTER_REMOVAL, "true");
             callLambda(DELETE, tableProperties);
             assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
         }
