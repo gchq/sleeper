@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.runner.dataframe;
+package sleeper.bulkimport.runner.dataframelocalsort;
 
-import com.google.common.collect.Lists;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -27,32 +26,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.runner.BulkImportContext;
-import sleeper.bulkimport.runner.BulkImportJobDriver;
-import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.bulkimport.runner.common.StructTypeFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 /**
- * Runs a bulk import job using Spark's Dataframe API. Sorts and writes out the data split by Sleeper partition.
+ * Repartitions data to establish a one to one equivalence between Spark partition and Sleeper partition. This can
+ * ensure that all the data for each Sleeper partition will be gathered together on a single node of the Spark cluster.
+ * Note that this requires enough partitions in the Sleeper table for the data to be spread across the Spark cluster.
  */
-public class BulkImportJobDataframeDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDataframeDriver.class);
+public class RepartitionRowsBySleeperPartition {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RepartitionRowsBySleeperPartition.class);
     private static final String PARTITION_FIELD_NAME = "__partition";
 
-    private BulkImportJobDataframeDriver() {
+    private RepartitionRowsBySleeperPartition() {
     }
 
-    public static void main(String[] args) throws Exception {
-        BulkImportJobDriver.start(args, BulkImportJobDataframeDriver::createFileReferences);
-    }
-
-    public static Dataset<Row> createFileReferences(BulkImportContext input) {
+    /**
+     * Repartitions the input data for a bulk import job for a one to one equivalence between Spark partition and
+     * Sleeper partition.
+     *
+     * @param  input the context of the bulk import job
+     * @return       the repartitioned data set
+     */
+    public static Dataset<Row> repartition(BulkImportContext input) {
         Schema schema = input.getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
@@ -63,32 +62,18 @@ public class BulkImportJobDataframeDriver {
         LOGGER.info("There are {} leaf partitions", numLeafPartitions);
 
         Dataset<Row> dataWithPartition = input.getRows().mapPartitions(
-                new AddPartitionFunction(schemaAsString, input.getPartitionsBroadcast()),
+                new AddPartitionAsIntFunction(schemaAsString, input.getPartitionsBroadcast()),
                 ExpressionEncoder.apply(schemaWithPartitionField));
+        LOGGER.info("After adding partition id as int, there are {} partitions", dataWithPartition.rdd().getNumPartitions());
 
-        Column[] sortColumns = Lists.newArrayList(
-                Lists.newArrayList(PARTITION_FIELD_NAME),
-                schema.getRowKeyFieldNames(), schema.getSortKeyFieldNames())
-                .stream()
-                .flatMap(List::stream)
-                .map(Column::new)
-                .toArray(Column[]::new);
-        LOGGER.info("Sorting by columns {}", Arrays.stream(sortColumns)
-                .map(Column::toString).collect(Collectors.joining(",")));
-
-        Dataset<Row> sortedRows = dataWithPartition.sort(sortColumns);
-
-        return sortedRows.mapPartitions(
-                new WriteParquetFiles(
-                        input.getInstanceProperties().saveAsString(),
-                        input.getTableProperties().saveAsString(),
-                        input.getHadoopConf()),
-                ExpressionEncoder.apply(SparkFileReferenceRow.createFileReferenceSchema()));
+        return new com.joom.spark.package$implicits$ExplicitRepartitionWrapper(dataWithPartition)
+                .explicitRepartition(numLeafPartitions, new Column(PARTITION_FIELD_NAME));
     }
 
     private static StructType createEnhancedSchema(StructType convertedSchema) {
         StructType structTypeWithPartition = new StructType(convertedSchema.fields());
         return structTypeWithPartition
-                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.StringType, false, null));
+                .add(new StructField(PARTITION_FIELD_NAME, DataTypes.IntegerType, false, null));
     }
+
 }
