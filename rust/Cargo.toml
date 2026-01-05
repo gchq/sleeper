@@ -59,7 +59,7 @@ test-log = { version = "0.2.19" }
 testing_logger = { version = "0.1.1" }              # Assert on logger output in tests
 thiserror = { version = "2.0.17" }                  # Derivable error enums
 tokio = { version = "1.48.0", features = ["full"] } # Async runtime
-tokio-test = { version = "0.4.4" }                  # Doc tests
+tokio-test = { version = "0.4.5" }                  # Doc tests
 url = { version = "2.5.7" }                         # URL processing for S3
 mockall = { version = "0.14.0" }                    # Mock trait library
 
