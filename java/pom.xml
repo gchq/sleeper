@@ -1904,7 +1904,7 @@
                     <version>${failsafe.plugin.version}</version>
                     <configuration>
                         <argLine>@{argLine} ${module.access.args}</argLine>
-                        <systemProperties>
+                        <systemPropertyVariables>
                             <property>
                                 <name>sleeper.system.test.short.id</name>
                                 <value>${sleeper.system.test.short.id}</value>
@@ -1949,7 +1949,7 @@
                                 <name>sleeper.system.test.instance.properties.overrides</name>
                                 <value>${sleeper.system.test.instance.properties.overrides}</value>
                             </property>
-                        </systemProperties>
+                        </systemPropertyVariables>
                     </configuration>
                     <executions>
                         <execution>
