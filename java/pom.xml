@@ -224,7 +224,7 @@
         <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
         <jsonunit.version>5.1.0</jsonunit.version>
-        <checkstyle.version>12.3.1</checkstyle.version>
+        <checkstyle.version>13.0.0</checkstyle.version>
         <sleeper.system.test.short.id />
         <sleeper.system.test.vpc.id />
         <sleeper.system.test.subnet.ids />
