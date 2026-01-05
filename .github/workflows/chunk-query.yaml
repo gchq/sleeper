@@ -30,6 +30,7 @@ on:
       - 'java/core/**'
       - 'java/common/localstack-test/**'
       - 'java/common/arrow/**'
+      - 'java/analytics-integration/**'
 
 jobs:
   chunk-workflow:

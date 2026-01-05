@@ -104,6 +104,8 @@
     <suppress files="[\\/]sleeper[\\/]query[\\/]lambda[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]trino[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]trino[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]sleeper[\\/]analytics-integration[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]sleeper[\\/]analytics-integration[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]metrics[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]sleeper[\\/]metrics[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]sleeper[\\/]build[\\/].*" id="missingJavadocMethod"/>
