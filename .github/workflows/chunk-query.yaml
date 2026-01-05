@@ -14,6 +14,7 @@ on:
       - 'java/query/query-lambda/**'
       - 'java/query/query-datafusion/**'
       - 'java/common/foreign-bridge/**'
+      - 'java/analytics-integration/**'
       - 'java/athena/**'
       - 'java/trino/**'
       - 'java/partitions/splitter/**'
@@ -30,7 +31,6 @@ on:
       - 'java/core/**'
       - 'java/common/localstack-test/**'
       - 'java/common/arrow/**'
-      - 'java/analytics-integration/**'
 
 jobs:
   chunk-workflow:
