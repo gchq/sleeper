@@ -1380,7 +1380,7 @@ dependencies = [
  "futures",
  "itertools",
  "log",
- "object_store",
+ "object_store 0.12.4",
  "parking_lot",
  "parquet",
  "rand",
@@ -1415,7 +1415,7 @@ dependencies = [
  "futures",
  "itertools",
  "log",
- "object_store",
+ "object_store 0.12.4",
  "parking_lot",
  "tokio",
 ]
@@ -1440,7 +1440,7 @@ dependencies = [
  "futures",
  "itertools",
  "log",
- "object_store",
+ "object_store 0.12.4",
  "tokio",
 ]
 
@@ -1459,7 +1459,7 @@ dependencies = [
  "indexmap",
  "libc",
  "log",
- "object_store",
+ "object_store 0.12.4",
  "parquet",
  "paste",
  "recursive",
@@ -1505,7 +1505,7 @@ dependencies = [
  "glob",
  "itertools",
  "log",
- "object_store",
+ "object_store 0.12.4",
  "rand",
  "tokio",
  "tokio-util",
@@ -1534,7 +1534,7 @@ dependencies = [
  "datafusion-session",
  "futures",
  "itertools",
- "object_store",
+ "object_store 0.12.4",
  "tokio",
 ]
 
@@ -1556,7 +1556,7 @@ dependencies = [
  "datafusion-physical-plan",
  "datafusion-session",
  "futures",
- "object_store",
+ "object_store 0.12.4",
  "regex",
  "tokio",
 ]
@@ -1579,7 +1579,7 @@ dependencies = [
  "datafusion-physical-plan",
  "datafusion-session",
  "futures",
- "object_store",
+ "object_store 0.12.4",
  "tokio",
 ]
 
@@ -1607,7 +1607,7 @@ dependencies = [
  "futures",
  "itertools",
  "log",
- "object_store",
+ "object_store 0.12.4",
  "parking_lot",
  "parquet",
  "tokio",
@@ -1632,7 +1632,7 @@ dependencies = [
  "datafusion-expr",
  "futures",
  "log",
- "object_store",
+ "object_store 0.12.4",
  "parking_lot",
  "rand",
  "tempfile",
@@ -3189,6 +3189,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c1be0c6c22ec0817cdc77d3842f721a17fd30ab6965001415b5402a74e6b740"
 dependencies = [
  "async-trait",
+ "bytes",
+ "chrono",
+ "futures",
+ "http 1.4.0",
+ "humantime",
+ "itertools",
+ "parking_lot",
+ "percent-encoding",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "url",
+ "walkdir",
+ "wasm-bindgen-futures",
+ "web-time",
+]
+
+[[package]]
+name = "object_store"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d180d5469872facb82dec7e233ff850d615330ea3044a7813550b22ffa4f05ce"
+dependencies = [
+ "async-trait",
  "base64",
  "bytes",
  "chrono",
@@ -3231,7 +3255,7 @@ dependencies = [
  "futures",
  "log",
  "num-format",
- "object_store",
+ "object_store 0.13.0",
  "tempfile",
  "test-log",
  "testing_logger",
@@ -3341,7 +3365,7 @@ dependencies = [
  "num-bigint",
  "num-integer",
  "num-traits",
- "object_store",
+ "object_store 0.12.4",
  "paste",
  "seq-macro",
  "simdutf8",
@@ -4091,7 +4115,7 @@ dependencies = [
  "futures",
  "log",
  "num-format",
- "object_store",
+ "object_store 0.13.0",
  "objectstore_ext",
  "regex",
  "rust_sketch",
@@ -4299,7 +4323,7 @@ dependencies = [
  "color-eyre",
  "datafusion",
  "futures",
- "object_store",
+ "object_store 0.13.0",
  "objectstore_ext",
  "rust_sketch",
  "sleeper_core",
