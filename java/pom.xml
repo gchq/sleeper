@@ -1905,50 +1905,17 @@
                     <configuration>
                         <argLine>@{argLine} ${module.access.args}</argLine>
                         <systemPropertyVariables>
-                            <property>
-                                <name>sleeper.system.test.short.id</name>
-                                <value>${sleeper.system.test.short.id}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.vpc.id</name>
-                                <value>${sleeper.system.test.vpc.id}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.subnet.ids</name>
-                                <value>${sleeper.system.test.subnet.ids}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.output.dir</name>
-                                <value>${sleeper.system.test.output.dir}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.cluster.enabled</name>
-                                <value>${sleeper.system.test.cluster.enabled}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.force.redeploy</name>
-                                <value>${sleeper.system.test.force.redeploy}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.instances.force.redeploy</name>
-                                <value>${sleeper.system.test.instances.force.redeploy}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.force.statestore.classname</name>
-                                <value>${sleeper.system.test.force.statestore.classname}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.create.multi.platform.builder</name>
-                                <value>${sleeper.system.test.create.multi.platform.builder}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.standalone.properties.template</name>
-                                <value>${sleeper.system.test.standalone.properties.template}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.instance.properties.overrides</name>
-                                <value>${sleeper.system.test.instance.properties.overrides}</value>
-                            </property>
+                            <propertyName>sleeper.system.test.short.id</propertyName>
+                            <propertyName>sleeper.system.test.vpc.id</propertyName>
+                            <propertyName>sleeper.system.test.subnet.ids</propertyName>
+                            <propertyName>sleeper.system.test.output.dir</propertyName>
+                            <propertyName>sleeper.system.test.cluster.enabled</propertyName>
+                            <propertyName>sleeper.system.test.force.redeploy</propertyName>
+                            <propertyName>sleeper.system.test.instances.force.redeploy</propertyName>
+                            <propertyName>sleeper.system.test.force.statestore.classname</propertyName>
+                            <propertyName>sleeper.system.test.create.multi.platform.builder</propertyName>
+                            <propertyName>sleeper.system.test.standalone.properties.template</propertyName>
+                            <propertyName>sleeper.system.test.instance.properties.overrides</propertyName>
                         </systemPropertyVariables>
                     </configuration>
                     <executions>
