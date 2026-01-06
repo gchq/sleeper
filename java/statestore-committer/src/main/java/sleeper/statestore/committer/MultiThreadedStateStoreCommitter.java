@@ -16,6 +16,7 @@
 package sleeper.statestore.committer;
 
 import com.google.common.collect.Streams;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -228,6 +229,7 @@ public class MultiThreadedStateStoreCommitter {
         }
     }
 
+    @SuppressFBWarnings("DM_GC")
     private void ensureEnoughHeapSpaceAvailable(Set<String> requiredTableIds) {
         LOGGER.debug("UsedMem: {} FreeMem: {} HeapSize: {} MaxMem: {}",
             FileUtils.byteCountToDisplaySize(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()),
