@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.table.AddTable;
 import sleeper.clients.table.TakeAllTablesOffline;
-import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesUtils;
 import sleeper.core.properties.instance.CommonProperty;
@@ -35,6 +34,9 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
+import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperty;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -59,13 +61,12 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
         this.ecsClient = ecsClient;
     }
 
-    public void takeAllTablesOffline(String instanceId) {
+    public void takeAllTablesOffline(InstanceProperties instanceProperties) {
         TakeAllTablesOffline offliner = new TakeAllTablesOffline(this.s3Client, this.dynamoClient);
-        offliner.takeAllOffline(instanceId);
+        offliner.takeAllOffline(instanceProperties);
     }
 
-    public List<String> createTables(String instanceId, int tableCount, Path tablePropertiesFile, Path schemaFile, String splitPointsFile) throws IOException {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(this.s3Client, instanceId);
+    public List<String> createTables(InstanceProperties instanceProperties, int tableCount, Path tablePropertiesFile, Path schemaFile, String splitPointsFile) throws IOException {
         String tablePrefix = "table-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd-HHmm")) + '-';
 
         List<String> tableNames = IntStream.rangeClosed(1, tableCount).mapToObj(i -> {
@@ -92,20 +93,20 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
     }
 
     public void run(
-        String instanceId, int tableCount,
+        SystemTestProperties systemTestProperties, int tableCount,
         Path tablePropertiesFile, Path schemaFile, String splitPointsFile,
-        int numWritersPerTable, int numIngestsPerWriter, long recordsPerIngest
+        int numWritersPerTable, SystemTestDataGenerationJob.Builder jobSpec
     ) throws IOException {
 
         LOGGER.info("Taking tables offline");
-        this.takeAllTablesOffline(instanceId);
+        this.takeAllTablesOffline(systemTestProperties);
 
         LOGGER.info("Creating " + tableCount + " tables");
-        this.createTables(instanceId, tableCount, tablePropertiesFile, schemaFile, splitPointsFile);
+        this.createTables(systemTestProperties, tableCount, tablePropertiesFile, schemaFile, splitPointsFile);
 
         LOGGER.info("Submitting ingest tasks");
         new RunWriteRandomDataTaskOnECSForAllOnlineTables(this.s3Client, this.dynamoClient, this.ecsClient)
-            .run(instanceId, numWritersPerTable, numIngestsPerWriter, recordsPerIngest);
+            .run(systemTestProperties, jobSpec, numWritersPerTable);
     }
 
     public static void main(String[] args) throws IOException {
@@ -120,20 +121,32 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
         Path schemaFile = Path.of(args[3]);
         String splitPointsFile = args[4];
 
-        int numWritersPerTable = args.length > 5 ? Integer.parseInt(args[5]) : 1;
-        int numIngestsPerWriter = args.length > 6 ? Integer.parseInt(args[6]) : 1;
-        long recordsPerIngest = args.length > 7 ? Long.parseLong(args[7]) : 10_000_000;
-
         try (
             S3Client s3Client = buildAwsV2Client(S3Client.builder());
             DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder());
             EcsClient ecsClient = buildAwsV2Client(EcsClient.builder());
         ) {
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+
+            int numWritersPerTable = args.length > 5 ? Integer.parseInt(args[5]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);
+
+            SystemTestDataGenerationJob.Builder jobSpec = SystemTestDataGenerationJob.builder()
+                .instanceProperties(systemTestProperties)
+                .testProperties(systemTestProperties.testPropertiesOnly());
+
+            if (args.length > 6) {
+                jobSpec.numberOfIngests(Integer.parseInt(args[6]));
+            }
+
+            if (args.length > 7) {
+                jobSpec.rowsPerIngest(Long.parseLong(args[7]));
+            }
+
             new RunWriteRandomDataTaskOnECSForMultipleNewTables(s3Client, dynamoClient, ecsClient)
                 .run(
-                    instanceId, tableCount,
+                    systemTestProperties, tableCount,
                     tablePropertiesFile, schemaFile, splitPointsFile,
-                    numWritersPerTable, numIngestsPerWriter, recordsPerIngest
+                    numWritersPerTable, jobSpec
                 );
         }
     }

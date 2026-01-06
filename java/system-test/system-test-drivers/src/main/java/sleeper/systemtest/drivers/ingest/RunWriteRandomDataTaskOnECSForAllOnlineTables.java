@@ -27,6 +27,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.systemtest.configuration.SystemTestDataGenerationJob;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperty;
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
 
 import java.io.IOException;
@@ -46,20 +47,16 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
         this.ecsClient = ecsClient;
     }
 
-    public List<RunTaskResponse> run(String instanceId, int numWritersPerTable, int numIngestsPerWriter, long recordsPerIngest) {
-        SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(this.s3Client, instanceId);
+    public List<RunTaskResponse> run(SystemTestProperties systemTestProperties, SystemTestDataGenerationJob.Builder jobSpec, int numWritersPerTable) {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(systemTestProperties, this.s3Client, this.dynamoClient);
         RunWriteRandomDataTaskOnECS runner = new RunWriteRandomDataTaskOnECS(systemTestProperties, this.ecsClient, this.s3Client);
 
         List<RunTaskResponse> responses = tablePropertiesProvider.streamOnlineTables()
             .flatMap(tableProperties -> {
                 String tableName = tableProperties.get(TableProperty.TABLE_NAME);
-                LOGGER.info("Submitting an ingest job with {} writers for table {}:{}", numWritersPerTable, instanceId, tableName);
-                SystemTestDataGenerationJob job = SystemTestDataGenerationJob.builder()
-                    .instanceProperties(systemTestProperties)
+                LOGGER.info("Submitting an ingest job with {} writers for table {}", numWritersPerTable, tableName);
+                SystemTestDataGenerationJob job = jobSpec
                     .tableName(tableName)
-                    .numberOfIngests(numIngestsPerWriter)
-                    .rowsPerIngest(recordsPerIngest)
                     .build();
                 List<RunTaskResponse> response = runner.runTasks(numWritersPerTable, job);
                 return response.stream();
@@ -76,17 +73,31 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
         }
 
         String instanceId = args[0];
-        int numWritersPerTable = args.length > 1 ? Integer.parseInt(args[1]) : 1;
-        int numIngestsPerWriter = args.length > 2 ? Integer.parseInt(args[2]) : 1;
-        long recordsPerIngest = args.length > 3 ? Long.parseLong(args[3]) : 10_000_000;
 
         try (
             S3Client s3Client = S3Client.create();
             DynamoDbClient dynamoClient = DynamoDbClient.create();
             EcsClient ecsClient = EcsClient.create();
         ) {
+            SystemTestProperties systemTestProperties = SystemTestProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
+
+            int numWritersPerTable = args.length > 1 ? Integer.parseInt(args[1]) : systemTestProperties.getInt(SystemTestProperty.NUMBER_OF_WRITERS);
+
+            SystemTestDataGenerationJob.Builder jobSpec = SystemTestDataGenerationJob.builder()
+                .instanceProperties(systemTestProperties)
+                .testProperties(systemTestProperties.testPropertiesOnly());
+
+            if (args.length > 2) {
+                jobSpec.numberOfIngests(Integer.parseInt(args[2]));
+            }
+
+            if (args.length > 3) {
+                jobSpec.rowsPerIngest(Long.parseLong(args[3]));
+            }
+
             RunWriteRandomDataTaskOnECSForAllOnlineTables runner = new RunWriteRandomDataTaskOnECSForAllOnlineTables(s3Client, dynamoClient, ecsClient);
-            List<RunTaskResponse> responses = runner.run(instanceId, numWritersPerTable, numIngestsPerWriter, recordsPerIngest);
+            List<RunTaskResponse> responses = runner.run(systemTestProperties, jobSpec, numWritersPerTable);
+
             if (args.length > 4) {
                 TasksJson.writeToFile(responses, Paths.get(args[4]));
             }

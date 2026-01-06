@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.CommonProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
@@ -42,14 +43,18 @@ public class TakeAllTablesOffline {
     }
 
     public void takeAllOffline(String instanceId) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(this.s3Client, instanceId);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        takeAllOffline(instanceProperties);
+    }
+
+    public void takeAllOffline(InstanceProperties instanceProperties) {
         TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, this.s3Client, this.dynamoClient);
 
         tablePropertiesStore.streamOnlineTableIds().forEach(table -> {
             TableProperties tableProperties = tablePropertiesStore.loadByName(table.getTableName());
             tableProperties.set(TABLE_ONLINE, "false");
             tablePropertiesStore.save(tableProperties);
-            LOGGER.info("Successfully took table offline {}:{}", instanceId, table.getTableName());
+            LOGGER.info("Successfully took table offline {}:{}", instanceProperties.get(CommonProperty.ID), table.getTableName());
         });
     }
 
