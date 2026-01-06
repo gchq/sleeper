@@ -60,7 +60,7 @@ testing_logger = { version = "0.1.1" }              # Assert on logger output in
 thiserror = { version = "2.0.17" }                  # Derivable error enums                # Doc tests
 tokio = { version = "1.49.0", features = ["full"] } # Async runtime
 tokio-test = { version = "0.4.5" }                  # Doc tests
-url = { version = "2.5.7" }                         # URL processing for S3
+url = { version = "2.5.8" }                         # URL processing for S3
 mockall = { version = "0.14.0" }                    # Mock trait library
 
 [workspace.metadata.datasketches]
