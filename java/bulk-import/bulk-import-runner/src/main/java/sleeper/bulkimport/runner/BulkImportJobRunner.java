@@ -19,6 +19,7 @@ package sleeper.bulkimport.runner;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
+import sleeper.bulkimport.runner.common.SparkFileReferenceRow;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
@@ -32,5 +33,5 @@ import java.io.IOException;
  */
 @FunctionalInterface
 public interface BulkImportJobRunner {
-    Dataset<Row> createFileReferences(BulkImportJobInput input) throws IOException;
+    Dataset<Row> createFileReferences(BulkImportContext input) throws IOException;
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.bulkimport.runner;
+package sleeper.bulkimport.runner.common;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
