@@ -16,7 +16,6 @@ on:
       - 'java/common/foreign-bridge/**'
       - 'java/analytics-integration/**'
       - 'java/athena/**'
-      - 'java/trino/**'
       - 'java/partitions/splitter/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/statestore/**'

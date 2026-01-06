@@ -80,6 +80,5 @@ chunks:
       - query/query-core
       - query/query-runner
       - query/query-lambda
-      - analytics-integration
+      - analytics-integration/trino
       - athena
-      - trino
