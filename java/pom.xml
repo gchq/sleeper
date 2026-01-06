@@ -1905,17 +1905,17 @@
                     <configuration>
                         <argLine>@{argLine} ${module.access.args}</argLine>
                         <systemPropertyVariables>
-                            <propertyName>sleeper.system.test.short.id</propertyName>
-                            <propertyName>sleeper.system.test.vpc.id</propertyName>
-                            <propertyName>sleeper.system.test.subnet.ids</propertyName>
-                            <propertyName>sleeper.system.test.output.dir</propertyName>
-                            <propertyName>sleeper.system.test.cluster.enabled</propertyName>
-                            <propertyName>sleeper.system.test.force.redeploy</propertyName>
-                            <propertyName>sleeper.system.test.instances.force.redeploy</propertyName>
-                            <propertyName>sleeper.system.test.force.statestore.classname</propertyName>
-                            <propertyName>sleeper.system.test.create.multi.platform.builder</propertyName>
-                            <propertyName>sleeper.system.test.standalone.properties.template</propertyName>
-                            <propertyName>sleeper.system.test.instance.properties.overrides</propertyName>
+                            <sleeper.system.test.short.id>${sleeper.system.test.short.id}</sleeper.system.test.short.id>
+                            <sleeper.system.test.vpc.id>${sleeper.system.test.vpc.id}</sleeper.system.test.vpc.id>
+                            <sleeper.system.test.subnet.ids>${sleeper.system.test.subnet.ids}</sleeper.system.test.subnet.ids>
+                            <sleeper.system.test.output.dir>${sleeper.system.test.output.dir}</sleeper.system.test.output.dir>
+                            <sleeper.system.test.cluster.enabled>${sleeper.system.test.cluster.enabled}</sleeper.system.test.cluster.enabled>
+                            <sleeper.system.test.force.redeploy>${sleeper.system.test.force.redeploy}</sleeper.system.test.force.redeploy>
+                            <sleeper.system.test.instances.force.redeploy>${sleeper.system.test.instances.force.redeploy}</sleeper.system.test.instances.force.redeploy>
+                            <sleeper.system.test.force.statestore.classname>${sleeper.system.test.force.statestore.classname}</sleeper.system.test.force.statestore.classname>
+                            <sleeper.system.test.create.multi.platform.builder>${sleeper.system.test.create.multi.platform.builder}</sleeper.system.test.create.multi.platform.builder>
+                            <sleeper.system.test.standalone.properties.template>${sleeper.system.test.standalone.properties.template}</sleeper.system.test.standalone.properties.template>
+                            <sleeper.system.test.instance.properties.overrides>${sleeper.system.test.instance.properties.overrides}</sleeper.system.test.instance.properties.overrides>
                         </systemPropertyVariables>
                     </configuration>
                     <executions>
