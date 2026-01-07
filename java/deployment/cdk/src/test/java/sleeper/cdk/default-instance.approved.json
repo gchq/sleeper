@@ -23103,16 +23103,97 @@
         }
       },
       "Resources": {
-        "InstancePropertiesWriterLambda6DA85248": {
+        "InstancePropertiesWriterLambdaServiceRole1C112B67": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "ManagedPolicyArns": [
+              {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                  ]
+                ]
+              }
+            ],
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": "sts:AssumeRole",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  }
+                }
+              ]
+            },
+            "Tags": [
+              {
+                "Key": "DeploymentStack",
+                "Value": "Properties"
+              }
+            ]
+          }
+        },
+        "InstancePropertiesWriterLambdaServiceRoleDefaultPolicy2C240AB0": {
+          "Type": "AWS::IAM::Policy",
+          "Properties": {
+            "PolicyName": "InstancePropertiesWriterLambdaServiceRoleDefaultPolicy2C240AB0",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:DeleteObject*",
+                    "s3:PutObject",
+                    "s3:PutObjectLegalHold",
+                    "s3:PutObjectRetention",
+                    "s3:PutObjectTagging",
+                    "s3:PutObjectVersionTagging",
+                    "s3:Abort*"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": [
+                    {
+                      "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn"
+                    },
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          {
+                            "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn"
+                          },
+                          "/*"
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "Roles": [
+              {
+                "Ref": "InstancePropertiesWriterLambdaServiceRole1C112B67"
+              }
+            ]
+          }
+        },
+        "InstancePropertiesWriterLambda106E1AB8": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
-            "InstancePropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC",
-            "InstancePropertiesWriterLambdaServiceRoleFC5ECECC"
+            "InstancePropertiesWriterLambdaServiceRoleDefaultPolicy2C240AB0",
+            "InstancePropertiesWriterLambdaServiceRole1C112B67"
           ],
           "Properties": {
             "Role": {
               "Fn::GetAtt": [
-                "InstancePropertiesWriterLambdaServiceRoleFC5ECECC",
+                "InstancePropertiesWriterLambdaServiceRole1C112B67",
                 "Arn"
               ]
             },
@@ -23681,87 +23762,6 @@
             }
           }
         },
-        "InstancePropertiesWriterLambdaServiceRoleFC5ECECC": {
-          "Type": "AWS::IAM::Role",
-          "Properties": {
-            "ManagedPolicyArns": [
-              {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition"
-                    },
-                    ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-                  ]
-                ]
-              }
-            ],
-            "AssumeRolePolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": "sts:AssumeRole",
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  }
-                }
-              ]
-            },
-            "Tags": [
-              {
-                "Key": "DeploymentStack",
-                "Value": "Properties"
-              }
-            ]
-          }
-        },
-        "InstancePropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC": {
-          "Type": "AWS::IAM::Policy",
-          "Properties": {
-            "PolicyName": "InstancePropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC",
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": [
-                    "s3:DeleteObject*",
-                    "s3:PutObject",
-                    "s3:PutObjectLegalHold",
-                    "s3:PutObjectRetention",
-                    "s3:PutObjectTagging",
-                    "s3:PutObjectVersionTagging",
-                    "s3:Abort*"
-                  ],
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn"
-                    },
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          {
-                            "Ref": "referencetoTestInstanceConfigurationNestedStackConfigurationNestedStackResourceB866C9A7OutputsTestInstanceConfigurationConfigBucket257D90F2Arn"
-                          },
-                          "/*"
-                        ]
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            "Roles": [
-              {
-                "Ref": "InstancePropertiesWriterLambdaServiceRoleFC5ECECC"
-              }
-            ]
-          }
-        },
         "PropertiesWriterProviderframeworkonEventServiceRoleDefaultPolicy9FD0B20D": {
           "Type": "AWS::IAM::Policy",
           "Properties": {
@@ -23773,14 +23773,14 @@
                   "Action": "lambda:InvokeFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "InstancePropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
+                    "Ref": "InstancePropertiesWriterLambdaCurrentVersionBD5B9E89017378c8f9b60636730f204c03c0fc35"
                   }
                 },
                 {
                   "Action": "lambda:GetFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "InstancePropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
+                    "Ref": "InstancePropertiesWriterLambdaCurrentVersionBD5B9E89017378c8f9b60636730f204c03c0fc35"
                   }
                 }
               ]
@@ -23792,14 +23792,14 @@
             ]
           }
         },
-        "InstancePropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c": {
+        "InstancePropertiesWriterLambdaCurrentVersionBD5B9E89017378c8f9b60636730f204c03c0fc35": {
           "Type": "AWS::Lambda::Version",
           "Metadata": {
             "aws:cdk:do-not-refactor": true
           },
           "Properties": {
             "FunctionName": {
-              "Ref": "InstancePropertiesWriterLambda6DA85248"
+              "Ref": "InstancePropertiesWriterLambda106E1AB8"
             }
           }
         },
@@ -23829,7 +23829,7 @@
             "Environment": {
               "Variables": {
                 "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Ref": "InstancePropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
+                  "Ref": "InstancePropertiesWriterLambdaCurrentVersionBD5B9E89017378c8f9b60636730f204c03c0fc35"
                 }
               }
             },
