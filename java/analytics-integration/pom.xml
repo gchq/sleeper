@@ -26,6 +26,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>athena</module>
         <module>trino</module>
     </modules>
 </project>

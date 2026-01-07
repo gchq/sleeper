@@ -25,7 +25,6 @@
 
     <modules>
         <module>analytics-integration</module>
-        <module>athena</module>
         <module>build</module>
         <module>bulk-import</module>
         <module>bulk-export</module>
