@@ -23103,16 +23103,16 @@
         }
       },
       "Resources": {
-        "PropertiesWriterLambda6DA85248": {
+        "InstancePropertiesWriterLambda6DA85248": {
           "Type": "AWS::Lambda::Function",
           "DependsOn": [
-            "PropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC",
-            "PropertiesWriterLambdaServiceRoleFC5ECECC"
+            "InstancePropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC",
+            "InstancePropertiesWriterLambdaServiceRoleFC5ECECC"
           ],
           "Properties": {
             "Role": {
               "Fn::GetAtt": [
-                "PropertiesWriterLambdaServiceRoleFC5ECECC",
+                "InstancePropertiesWriterLambdaServiceRoleFC5ECECC",
                 "Arn"
               ]
             },
@@ -23133,7 +23133,7 @@
                 }
               }
             },
-            "Handler": "sleeper.cdk.custom.PropertiesWriterLambda::handleEvent",
+            "Handler": "sleeper.cdk.custom.InstancePropertiesWriterLambda::handleEvent",
             "Code": {
               "S3ObjectVersion": "cdk-custom-resources-test-version",
               "S3Bucket": "sleeper-test-instance-jars",
@@ -23681,7 +23681,7 @@
             }
           }
         },
-        "PropertiesWriterLambdaServiceRoleFC5ECECC": {
+        "InstancePropertiesWriterLambdaServiceRoleFC5ECECC": {
           "Type": "AWS::IAM::Role",
           "Properties": {
             "ManagedPolicyArns": [
@@ -23718,10 +23718,10 @@
             ]
           }
         },
-        "PropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC": {
+        "InstancePropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC": {
           "Type": "AWS::IAM::Policy",
           "Properties": {
-            "PolicyName": "PropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC",
+            "PolicyName": "InstancePropertiesWriterLambdaServiceRoleDefaultPolicyF282AEBC",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
@@ -23757,7 +23757,7 @@
             },
             "Roles": [
               {
-                "Ref": "PropertiesWriterLambdaServiceRoleFC5ECECC"
+                "Ref": "InstancePropertiesWriterLambdaServiceRoleFC5ECECC"
               }
             ]
           }
@@ -23773,14 +23773,14 @@
                   "Action": "lambda:InvokeFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
+                    "Ref": "InstancePropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
                   }
                 },
                 {
                   "Action": "lambda:GetFunction",
                   "Effect": "Allow",
                   "Resource": {
-                    "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
+                    "Ref": "InstancePropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
                   }
                 }
               ]
@@ -23792,14 +23792,14 @@
             ]
           }
         },
-        "PropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c": {
+        "InstancePropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c": {
           "Type": "AWS::Lambda::Version",
           "Metadata": {
             "aws:cdk:do-not-refactor": true
           },
           "Properties": {
             "FunctionName": {
-              "Ref": "PropertiesWriterLambda6DA85248"
+              "Ref": "InstancePropertiesWriterLambda6DA85248"
             }
           }
         },
@@ -23829,7 +23829,7 @@
             "Environment": {
               "Variables": {
                 "USER_ON_EVENT_FUNCTION_ARN": {
-                  "Ref": "PropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
+                  "Ref": "InstancePropertiesWriterLambdaCurrentVersion1AFF462Dd6398df62dbdaf4a38988bb59ce2ce2c"
                 }
               }
             },

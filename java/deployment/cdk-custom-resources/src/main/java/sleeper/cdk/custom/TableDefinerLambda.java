@@ -55,7 +55,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
  * Lambda Function which defines Sleeper tables.
  */
 public class TableDefinerLambda {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PropertiesWriterLambda.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstancePropertiesWriterLambda.class);
     private final S3Client s3Client;
     private final DynamoDbClient dynamoClient;
     private final String bucketName;
