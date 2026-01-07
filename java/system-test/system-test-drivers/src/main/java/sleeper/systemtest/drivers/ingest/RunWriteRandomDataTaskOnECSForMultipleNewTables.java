@@ -63,7 +63,7 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
     }
 
     public void takeAllTablesOffline(InstanceProperties instanceProperties) {
-        TakeAllTablesOffline offliner = new TakeAllTablesOffline(this.s3Client, this.dynamoClient);
+        TakeAllTablesOffline offliner = new TakeAllTablesOffline(s3Client, dynamoClient);
         offliner.takeAllOffline(instanceProperties);
     }
 
@@ -80,8 +80,8 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
                 tableProperties.setSchema(Schema.load(schemaFile));
                 tableProperties.set(TableProperty.SPLIT_POINTS_FILE, splitPointsFile);
 
-                TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, this.s3Client, this.dynamoClient);
-                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, this.s3Client, this.dynamoClient);
+                TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+                StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient);
                 new AddTable(instanceProperties, tableProperties, tablePropertiesStore, stateStoreProvider).run();
                 LOGGER.info("Added table " + instanceProperties.get(CommonProperty.ID) + ":" + tableName);
             } catch (Exception e) {
@@ -101,13 +101,13 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
     ) throws IOException {
 
         LOGGER.info("Taking tables offline");
-        this.takeAllTablesOffline(systemTestProperties);
+        takeAllTablesOffline(systemTestProperties);
 
         LOGGER.info("Creating " + tableCount + " tables");
-        this.createTables(systemTestProperties, tableCount, tablePropertiesFile, schemaFile, splitPointsFile);
+        createTables(systemTestProperties, tableCount, tablePropertiesFile, schemaFile, splitPointsFile);
 
         LOGGER.info("Submitting ingest tasks");
-        new RunWriteRandomDataTaskOnECSForAllOnlineTables(this.s3Client, this.dynamoClient, this.ecsClient)
+        new RunWriteRandomDataTaskOnECSForAllOnlineTables(s3Client, dynamoClient, ecsClient)
             .run(systemTestProperties, jobSpec, numWritersPerTable);
     }
 
