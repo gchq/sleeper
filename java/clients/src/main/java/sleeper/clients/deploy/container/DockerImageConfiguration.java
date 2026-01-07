@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.core.properties.instance.CommonProperty.LAMBDA_DEPLOY_TYPE;
@@ -70,14 +70,21 @@ public class DockerImageConfiguration {
      * @return            the list of Docker images that need to be uploaded
      */
     public List<StackDockerImage> getImagesToUploadOnUpdate(InstanceProperties properties, PropertiesDiff diff) {
+        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
+
         Set<OptionalStack> stacksBefore = diff.getValuesBefore(properties)
                 .streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
-        Set<OptionalStack> stacksAdded = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
-                .filter(not(stacksBefore::contains))
+        List<StackDockerImage> imagesBefore = getImagesToUpload(stacksBefore, lambdaDeployType, lambda -> lambda.isDeployedOptional(stacksBefore));
+
+        Set<OptionalStack> stacksAfter = properties.streamEnumList(OPTIONAL_STACKS, OptionalStack.class)
                 .collect(toUnmodifiableSet());
-        LambdaDeployType lambdaDeployType = properties.getEnumValue(LAMBDA_DEPLOY_TYPE, LambdaDeployType.class);
-        return getImagesToUpload(stacksAdded, lambdaDeployType, lambda -> lambda.isDeployedOptional(stacksAdded));
+        List<StackDockerImage> imagesAfter = getImagesToUpload(stacksAfter, lambdaDeployType, lambda -> lambda.isDeployedOptional(stacksAfter));
+
+        List<StackDockerImage> imagesToUpload = imagesAfter.stream()
+            .filter(image -> !imagesBefore.contains(image))
+            .collect(toList());
+        return imagesToUpload;
     }
 
     /**
