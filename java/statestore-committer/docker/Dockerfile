@@ -11,7 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM amazoncorretto:17-al2023-headless
+FROM ubuntu:24.04
+
+# Install Amazon Corretto JDK
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg
+RUN curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor --yes -o /etc/apt/keyrings/corretto-keyring.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main"  \
+    | tee /etc/apt/sources.list.d/corretto.list > /dev/null
+RUN apt-get update && apt-get install -y \
+    java-17-amazon-corretto-jdk \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY statestore-committer.jar /statestore-committer.jar
 COPY run.sh /run.sh
