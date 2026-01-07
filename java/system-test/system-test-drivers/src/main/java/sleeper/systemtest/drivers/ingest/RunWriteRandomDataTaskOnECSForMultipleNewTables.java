@@ -113,7 +113,7 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 5) {
-            System.out.println("Usage: <instanceId> <tableCount> <tablePropertiesFile> <schemaFile> <splitPointsFile> [<num-writers-per-table>] [<num-ingests-per-writer>] [<records-per-ingest>]");
+            System.out.println("Usage: <instanceId> <tableCount> <tablePropertiesFile> <schemaFile> <splitPointsFile> [num-writers-per-table] [num-ingests-per-writer] [records-per-ingest]");
             System.exit(1);
         }
 

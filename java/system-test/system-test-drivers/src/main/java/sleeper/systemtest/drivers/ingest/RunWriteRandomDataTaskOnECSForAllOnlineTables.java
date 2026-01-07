@@ -68,7 +68,7 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 1 || args.length > 5) {
-            System.out.println("Usage: <instance-id> <num-writers-per-table> <num-ingests-per-writer> <records-per-ingest> <optional-output-file>");
+            System.out.println("Usage: <instance-id> [num-writers-per-table] [num-ingests-per-writer] [records-per-ingest] [output-file]");
             return;
         }
 
