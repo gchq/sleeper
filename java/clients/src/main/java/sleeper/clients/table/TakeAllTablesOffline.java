@@ -48,7 +48,7 @@ public class TakeAllTablesOffline {
     }
 
     public void takeAllOffline(InstanceProperties instanceProperties) {
-        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, this.s3Client, this.dynamoClient);
+        TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
 
         tablePropertiesStore.streamOnlineTableIds().forEach(table -> {
             TableProperties tableProperties = tablePropertiesStore.loadByName(table.getTableName());
