@@ -123,8 +123,8 @@
         <roaringbitmap.version>1.3.0</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.23</logback.version>
-        <aws-java-sdk-v2.version>2.41.2</aws-java-sdk-v2.version>
+        <logback.version>1.5.24</logback.version>
+        <aws-java-sdk-v2.version>2.41.3</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -213,7 +213,7 @@
         <jnr.ffi.version>2.2.18</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>6.0.1</junit.version>
+        <junit.version>6.0.2</junit.version>
         <mockito.version>5.21.0</mockito.version>
         <testcontainers.version>2.0.2</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
@@ -1904,52 +1904,19 @@
                     <version>${failsafe.plugin.version}</version>
                     <configuration>
                         <argLine>@{argLine} ${module.access.args}</argLine>
-                        <systemProperties>
-                            <property>
-                                <name>sleeper.system.test.short.id</name>
-                                <value>${sleeper.system.test.short.id}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.vpc.id</name>
-                                <value>${sleeper.system.test.vpc.id}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.subnet.ids</name>
-                                <value>${sleeper.system.test.subnet.ids}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.output.dir</name>
-                                <value>${sleeper.system.test.output.dir}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.cluster.enabled</name>
-                                <value>${sleeper.system.test.cluster.enabled}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.force.redeploy</name>
-                                <value>${sleeper.system.test.force.redeploy}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.instances.force.redeploy</name>
-                                <value>${sleeper.system.test.instances.force.redeploy}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.force.statestore.classname</name>
-                                <value>${sleeper.system.test.force.statestore.classname}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.create.multi.platform.builder</name>
-                                <value>${sleeper.system.test.create.multi.platform.builder}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.standalone.properties.template</name>
-                                <value>${sleeper.system.test.standalone.properties.template}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.instance.properties.overrides</name>
-                                <value>${sleeper.system.test.instance.properties.overrides}</value>
-                            </property>
-                        </systemProperties>
+                        <systemPropertyVariables>
+                            <sleeper.system.test.short.id>${sleeper.system.test.short.id}</sleeper.system.test.short.id>
+                            <sleeper.system.test.vpc.id>${sleeper.system.test.vpc.id}</sleeper.system.test.vpc.id>
+                            <sleeper.system.test.subnet.ids>${sleeper.system.test.subnet.ids}</sleeper.system.test.subnet.ids>
+                            <sleeper.system.test.output.dir>${sleeper.system.test.output.dir}</sleeper.system.test.output.dir>
+                            <sleeper.system.test.cluster.enabled>${sleeper.system.test.cluster.enabled}</sleeper.system.test.cluster.enabled>
+                            <sleeper.system.test.force.redeploy>${sleeper.system.test.force.redeploy}</sleeper.system.test.force.redeploy>
+                            <sleeper.system.test.instances.force.redeploy>${sleeper.system.test.instances.force.redeploy}</sleeper.system.test.instances.force.redeploy>
+                            <sleeper.system.test.force.statestore.classname>${sleeper.system.test.force.statestore.classname}</sleeper.system.test.force.statestore.classname>
+                            <sleeper.system.test.create.multi.platform.builder>${sleeper.system.test.create.multi.platform.builder}</sleeper.system.test.create.multi.platform.builder>
+                            <sleeper.system.test.standalone.properties.template>${sleeper.system.test.standalone.properties.template}</sleeper.system.test.standalone.properties.template>
+                            <sleeper.system.test.instance.properties.overrides>${sleeper.system.test.instance.properties.overrides}</sleeper.system.test.instance.properties.overrides>
+                        </systemPropertyVariables>
                     </configuration>
                     <executions>
                         <execution>
