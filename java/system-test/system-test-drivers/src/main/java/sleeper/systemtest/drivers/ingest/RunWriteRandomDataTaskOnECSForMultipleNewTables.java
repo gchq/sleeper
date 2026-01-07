@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.drivers.ingest;
 
+import org.joda.time.Instant;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -40,8 +43,6 @@ import sleeper.systemtest.configuration.SystemTestProperty;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -67,7 +68,8 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
     }
 
     public List<String> createTables(InstanceProperties instanceProperties, int tableCount, Path tablePropertiesFile, Path schemaFile, String splitPointsFile) throws IOException {
-        String tablePrefix = "table-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMdd-HHmm")) + '-';
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("yyMMdd-HHmm");
+        String tablePrefix = "table-" + Instant.now().toString(formatter) + "-";
 
         List<String> tableNames = IntStream.rangeClosed(1, tableCount).mapToObj(i -> {
             String tableName = tablePrefix + i;
