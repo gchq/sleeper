@@ -109,7 +109,7 @@ public class StateStoreCommitterStack extends NestedStack {
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
-        if (this.instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
+        if (instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
             ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
@@ -151,19 +151,19 @@ public class StateStoreCommitterStack extends NestedStack {
     }
 
     private void ecsTaskToCommitStateStoreUpdates(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks, Queue commitQueue) {
-        String instanceId = this.instanceProperties.get(ID);
+        String instanceId = instanceProperties.get(ID);
 
         IVpc vpc = Vpc.fromLookup(this, "vpc", VpcLookupOptions.builder()
-            .vpcId(this.instanceProperties.get(VPC_ID))
+            .vpcId(instanceProperties.get(VPC_ID))
             .build());
         String clusterName = String.join("-", "sleeper",
-            Utils.cleanInstanceId(this.instanceProperties), "statestore-commit-cluster");
+            Utils.cleanInstanceId(instanceProperties), "statestore-commit-cluster");
         Cluster cluster = Cluster.Builder.create(this, "cluster")
             .clusterName(clusterName)
             .vpc(vpc)
             .build();
 
-        String ec2InstanceType = this.instanceProperties.get(STATESTORE_COMMITTER_EC2_INSTANCE_TYPE);
+        String ec2InstanceType = instanceProperties.get(STATESTORE_COMMITTER_EC2_INSTANCE_TYPE);
 
         cluster.addAsgCapacityProvider(AsgCapacityProvider.Builder.create(this, "capacity-provider")
             .autoScalingGroup(AutoScalingGroup.Builder.create(this, "asg")
@@ -191,16 +191,16 @@ public class StateStoreCommitterStack extends NestedStack {
             .build());
 
         IRepository repository = Repository.fromRepositoryName(this, "ecr", DockerDeployment.STATESTORE_COMMITTER.getEcrRepositoryName(this.instanceProperties));
-        ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, this.instanceProperties.get(VERSION));
+        ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
         ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
 
-        Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(this.instanceProperties);
-        environmentVariables.put(Utils.AWS_REGION, this.instanceProperties.get(REGION));
+        Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
+        environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
         if (this.instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
             Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder.create(this, "task-definition")
-                .family(String.join("-", Utils.cleanInstanceId(this.instanceProperties), "StateStoreCommitterOnEC2"))
+                .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "StateStoreCommitterOnEC2"))
                 .build();
 
             taskDefinition.addContainer("committer", ContainerDefinitionOptions.builder()
@@ -227,7 +227,7 @@ public class StateStoreCommitterStack extends NestedStack {
             throw new IllegalArgumentException(
                 "Unknown value for " +
                 STATESTORE_COMMITTER_PLATFORM.getPropertyName() + ": " +
-                this.instanceProperties.getEnumValue(
+                instanceProperties.getEnumValue(
                     STATESTORE_COMMITTER_PLATFORM,
                     StateStoreCommitterPlatform.class
                 )
