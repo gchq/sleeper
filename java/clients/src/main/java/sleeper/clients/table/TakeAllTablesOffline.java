@@ -23,12 +23,12 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
-import sleeper.core.properties.instance.CommonProperty;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class TakeAllTablesOffline {
@@ -49,12 +49,13 @@ public class TakeAllTablesOffline {
 
     public void takeAllOffline(InstanceProperties instanceProperties) {
         TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+        String instanceId = instanceProperties.get(ID);
 
-        tablePropertiesStore.streamOnlineTableIds().forEach(table -> {
-            TableProperties tableProperties = tablePropertiesStore.loadByName(table.getTableName());
+        tablePropertiesStore.streamOnlineTables().forEach(tableProperties -> {
+            String tableName = tableProperties.get(TABLE_NAME);
             tableProperties.set(TABLE_ONLINE, "false");
             tablePropertiesStore.save(tableProperties);
-            LOGGER.info("Successfully took table offline {}:{}", instanceProperties.get(CommonProperty.ID), table.getTableName());
+            LOGGER.info("Successfully took table offline {}:{}", instanceId, tableName);
         });
     }
 
