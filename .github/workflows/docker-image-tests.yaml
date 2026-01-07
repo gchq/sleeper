@@ -6,13 +6,13 @@ on:
         type: string
 
 jobs:
-  compaction:
+  compaction-job-execution:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: compaction-job-execution
       testClassNames: CompactionTaskDockerImageST
       dockerOptions: ${{ inputs.dockerOptions }}
-  query:
+  query-lambda:
     uses: ./.github/workflows/docker-image-test.yaml
     with:
       imageName: query-lambda
