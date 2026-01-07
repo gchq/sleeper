@@ -198,41 +198,29 @@ public class StateStoreCommitterStack extends NestedStack {
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        if (this.instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
-            Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder.create(this, "task-definition")
-                .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "StateStoreCommitterOnEC2"))
-                .build();
+        Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder.create(this, "task-definition")
+            .family(String.join("-", Utils.cleanInstanceId(instanceProperties), "StateStoreCommitterOnEC2"))
+            .build();
 
-            taskDefinition.addContainer("committer", ContainerDefinitionOptions.builder()
-                .containerName("committer")
-                .image(containerImage)
-                .command(List.of(instanceId, commitQueue.getQueueUrl()))
-                .environment(environmentVariables)
-                .memoryReservationMiB(1024)
-                .logging(Utils.createECSContainerLogDriver(logGroup))
-                .build());
+        taskDefinition.addContainer("committer", ContainerDefinitionOptions.builder()
+            .containerName("committer")
+            .image(containerImage)
+            .command(List.of(instanceId, commitQueue.getQueueUrl()))
+            .environment(environmentVariables)
+            .memoryReservationMiB(1024)
+            .logging(Utils.createECSContainerLogDriver(logGroup))
+            .build());
 
-            commitQueue.grantConsumeMessages(taskDefinition.getTaskRole());
-            configBucketStack.grantRead(taskDefinition.getTaskRole());
-            tableIndexStack.grantRead(taskDefinition.getTaskRole());
-            stateStoreStacks.grantReadWriteAllFilesAndPartitions(taskDefinition.getTaskRole());
+        commitQueue.grantConsumeMessages(taskDefinition.getTaskRole());
+        configBucketStack.grantRead(taskDefinition.getTaskRole());
+        tableIndexStack.grantRead(taskDefinition.getTaskRole());
+        stateStoreStacks.grantReadWriteAllFilesAndPartitions(taskDefinition.getTaskRole());
 
-            Ec2Service.Builder.create(this, "service")
-                .cluster(cluster)
-                .taskDefinition(taskDefinition)
-                .desiredCount(1)
-                .build();
-
-        } else {
-            throw new IllegalArgumentException(
-                "Unknown value for " +
-                STATESTORE_COMMITTER_PLATFORM.getPropertyName() + ": " +
-                instanceProperties.getEnumValue(
-                    STATESTORE_COMMITTER_PLATFORM,
-                    StateStoreCommitterPlatform.class
-                )
-            );
-        }
+        Ec2Service.Builder.create(this, "service")
+            .cluster(cluster)
+            .taskDefinition(taskDefinition)
+            .desiredCount(1)
+            .build();
     }
 
     private void lambdaToCommitStateStoreUpdates(
