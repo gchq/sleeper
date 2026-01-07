@@ -240,7 +240,7 @@ public interface TableStateProperty {
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_PLATFORM = Index.propertyBuilder("sleeper.statestore.committer.platform")
-            .description("The platform that the State Store Committer will be deployed to for execution.\n" +
+            .description("The platform that the state store committer will be deployed to for execution.\n" +
                     "Valid values are: " + describeEnumValuesInLowerCase(StateStoreCommitterPlatform.class) + "\n")
             .defaultValue(StateStoreCommitterPlatform.LAMBDA.toString())
             .validationPredicate(StateStoreCommitterPlatform::isValid)
