@@ -48,8 +48,8 @@ public class RunWriteRandomDataTaskOnECSForAllOnlineTables {
     }
 
     public List<RunTaskResponse> run(SystemTestProperties systemTestProperties, SystemTestDataGenerationJob.Builder jobSpec, int numWritersPerTable) {
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(systemTestProperties, this.s3Client, this.dynamoClient);
-        RunWriteRandomDataTaskOnECS runner = new RunWriteRandomDataTaskOnECS(systemTestProperties, this.ecsClient, this.s3Client);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(systemTestProperties, s3Client, dynamoClient);
+        RunWriteRandomDataTaskOnECS runner = new RunWriteRandomDataTaskOnECS(systemTestProperties, ecsClient, s3Client);
 
         List<RunTaskResponse> responses = tablePropertiesProvider.streamOnlineTables()
             .flatMap(tableProperties -> {
