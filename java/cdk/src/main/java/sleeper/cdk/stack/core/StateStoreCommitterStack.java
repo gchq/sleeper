@@ -60,7 +60,6 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.DockerDeployment;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.TableStateProperty;
 import sleeper.core.properties.model.StateStoreCommitterPlatform;
 import sleeper.core.util.EnvironmentUtils;
 
@@ -78,10 +77,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_EC2_INSTANCE_TYPE;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_PLATFORM;
 
 public class StateStoreCommitterStack extends NestedStack {
     private final InstanceProperties instanceProperties;
@@ -108,7 +109,7 @@ public class StateStoreCommitterStack extends NestedStack {
 
         commitQueue = sqsQueueForStateStoreCommitter(policiesStack, deadLetters);
 
-        if (this.instanceProperties.getEnumValue(TableStateProperty.STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
+        if (this.instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
             ecsTaskToCommitStateStoreUpdates(loggingStack, configBucketStack, tableIndexStack, stateStoreStacks, commitQueue);
         } else {
             lambdaToCommitStateStoreUpdates(
@@ -162,7 +163,7 @@ public class StateStoreCommitterStack extends NestedStack {
             .vpc(vpc)
             .build();
 
-        String ec2InstanceType = this.instanceProperties.get(TableStateProperty.STATESTORE_COMMITTER_EC2_INSTANCE_TYPE);
+        String ec2InstanceType = this.instanceProperties.get(STATESTORE_COMMITTER_EC2_INSTANCE_TYPE);
 
         cluster.addAsgCapacityProvider(AsgCapacityProvider.Builder.create(this, "capacity-provider")
             .autoScalingGroup(AutoScalingGroup.Builder.create(this, "asg")
@@ -197,7 +198,7 @@ public class StateStoreCommitterStack extends NestedStack {
         Map<String, String> environmentVariables = EnvironmentUtils.createDefaultEnvironment(this.instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, this.instanceProperties.get(REGION));
 
-        if (this.instanceProperties.getEnumValue(TableStateProperty.STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
+        if (this.instanceProperties.getEnumValue(STATESTORE_COMMITTER_PLATFORM, StateStoreCommitterPlatform.class).equals(StateStoreCommitterPlatform.EC2)) {
             Ec2TaskDefinition taskDefinition = Ec2TaskDefinition.Builder.create(this, "task-definition")
                 .family(String.join("-", Utils.cleanInstanceId(this.instanceProperties), "StateStoreCommitterOnEC2"))
                 .build();
@@ -225,9 +226,9 @@ public class StateStoreCommitterStack extends NestedStack {
         } else {
             throw new IllegalArgumentException(
                 "Unknown value for " +
-                TableStateProperty.STATESTORE_COMMITTER_PLATFORM.getPropertyName() + ": " +
+                STATESTORE_COMMITTER_PLATFORM.getPropertyName() + ": " +
                 this.instanceProperties.getEnumValue(
-                    TableStateProperty.STATESTORE_COMMITTER_PLATFORM,
+                    STATESTORE_COMMITTER_PLATFORM,
                     StateStoreCommitterPlatform.class
                 )
             );
