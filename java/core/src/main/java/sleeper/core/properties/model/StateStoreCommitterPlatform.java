@@ -18,13 +18,13 @@ package sleeper.core.properties.model;
 import org.apache.commons.lang3.EnumUtils;
 
 /**
- * Indicates which execution environment the multi-threaded state store committer should be deployed onto.
+ * Indicates which execution environment the state store committer should be deployed onto.
  */
 public enum StateStoreCommitterPlatform {
     LAMBDA, EC2;
 
     /**
-     * Checks if the value is a valid execution environment for the multi-threaded state store committer.
+     * Checks if the value is a valid execution environment for the state store committer.
      *
      * @param  value the value
      * @return       true if it is valid
