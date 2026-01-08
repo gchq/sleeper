@@ -107,6 +107,10 @@ public class UpdatePropertiesWithTextEditorTestHelper {
         return expectedPropertiesFile;
     }
 
+    public void setEnvironmentVariable(String name, String value) {
+        environmentVariables.put(name, value);
+    }
+
     private UpdatePropertiesWithTextEditor updaterSavingProperties(SleeperProperties<?> after) {
         return updaterWithCommandHandler(command -> {
             after.save(expectedPropertiesFile);

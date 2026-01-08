@@ -39,7 +39,7 @@ public class UpdatePropertiesWithTextEditor {
 
     private final Path tempDirectory;
     private final CommandRunner runCommand;
-    private final UpdatePropertiesTextEditorCommand editorCommand = new UpdatePropertiesTextEditorCommand();
+    private final UpdatePropertiesTextEditorCommand editorCommand;
 
     public UpdatePropertiesWithTextEditor(Path tempDirectory) {
         this(tempDirectory, CommandUtils::runCommandInheritIO, System::getenv);
@@ -48,6 +48,7 @@ public class UpdatePropertiesWithTextEditor {
     public UpdatePropertiesWithTextEditor(Path tempDirectory, CommandRunner runCommand, Function<String, String> readEnvironmentVariable) {
         this.tempDirectory = tempDirectory;
         this.runCommand = runCommand;
+        this.editorCommand = new UpdatePropertiesTextEditorCommand(readEnvironmentVariable);
     }
 
     public UpdatePropertiesRequest<InstanceProperties> openPropertiesFile(InstanceProperties properties) throws IOException, InterruptedException {
