@@ -213,7 +213,8 @@
         <jnr.ffi.version>2.2.18</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>6.0.2</junit.version>
+        <junit.version>5.14.2</junit.version>
+        <junit.platform.version>1.14.2</junit.platform.version>
         <mockito.version>5.21.0</mockito.version>
         <testcontainers.version>2.0.2</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
@@ -1470,7 +1471,7 @@
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
