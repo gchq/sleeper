@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A query to find jobs to include in a report. Different types of query can include jobs based on their status or other
- * parameters.
+ * A query to generate a report based on jobs in a job tracker. Different types of query can include jobs based on their
+ * status or other parameters.
  */
 public interface JobQuery {
 
