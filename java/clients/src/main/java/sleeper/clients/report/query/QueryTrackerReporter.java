@@ -20,6 +20,17 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 
+/**
+ * A reporter to present the status of queries as held in the query tracker. The format and output destination can vary
+ * based on the implementation.
+ */
 public interface QueryTrackerReporter {
+
+    /**
+     * Writes a report on the status of queries.
+     *
+     * @param query   the query that was made against the tracker to retrieve the statuses
+     * @param queries the status of queries retrieved from the tracker
+     */
     void report(TrackerQuery query, List<TrackedQuery> queries);
 }
