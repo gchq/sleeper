@@ -29,6 +29,11 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+/**
+ * Pages through log entries returned from Amazon CloudWatch.
+ *
+ * @param <T> the type of log entries to return
+ */
 public class PageThroughLogs<T extends LogEntry> {
     public static final Logger LOGGER = LoggerFactory.getLogger(PageThroughLogs.class);
 
@@ -50,11 +55,26 @@ public class PageThroughLogs<T extends LogEntry> {
         this.waiter = waiter;
     }
 
+    /**
+     * Creates an instance of this class to page through log entries.
+     *
+     * @param  <T>     the type of log entries to return
+     * @param  getLogs the method to retrieve a page of log entries
+     * @return         the instance of this class
+     */
     public static <T extends LogEntry> PageThroughLogs<T> from(GetLogs<T> getLogs) {
         return new PageThroughLogs<>(PAGE_LIMIT, PAGE_MIN_AGE, getLogs,
                 Instant::now, duration -> Thread.sleep(duration.toMillis()));
     }
 
+    /**
+     * Retrieves all log entries in a given period.
+     *
+     * @param  startTime            the start time
+     * @param  endTime              the end time
+     * @return                      the log entries in that period
+     * @throws InterruptedException if the thread is interrupted while waiting for the logs to settle
+     */
     public List<T> getLogsInPeriod(Instant startTime, Instant endTime) throws InterruptedException {
         List<T> logs = getLogsInPeriodWithLimit(startTime, endTime);
         if (logs.size() == limit) {
@@ -124,11 +144,35 @@ public class PageThroughLogs<T extends LogEntry> {
         return log.getTimestamp().truncatedTo(ChronoUnit.SECONDS);
     }
 
+    /**
+     * Retrieves a page of log entries in a given time period, with a limit to the size of the page.
+     *
+     * @param <T> the type of log entry to return
+     */
     public interface GetLogs<T extends LogEntry> {
+
+        /**
+         * Retrieves a page of log entries.
+         *
+         * @param  startTime the start of the period to query
+         * @param  endTime   the end of the period to query
+         * @param  limit     the maximum number of log entries to retrieve
+         * @return           the log entries in the page
+         */
         List<T> getLogsInPeriodWithLimit(Instant startTime, Instant endTime, int limit);
     }
 
+    /**
+     * Waits for a given period. Usually implemented with Thread.sleep.
+     */
     public interface Waiter {
+
+        /**
+         * Waits for the given duration.
+         *
+         * @param  duration             the amount of time to wait
+         * @throws InterruptedException if the thread is interrupted while waiting
+         */
         void waitFor(Duration duration) throws InterruptedException;
     }
 
