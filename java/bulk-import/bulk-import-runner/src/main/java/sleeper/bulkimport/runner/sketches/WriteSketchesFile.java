@@ -13,44 +13,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.runner.dataframe;
+package sleeper.bulkimport.runner.sketches;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.sql.Row;
 import org.apache.spark.util.SerializableConfiguration;
 
-import sleeper.bulkimport.runner.common.HadoopSketchesStore;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.Iterator;
+import java.util.List;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 /**
- * Writes sorted rows to a Parquet file. When it comes across a {@link sleeper.core.row.Row} belonging to a
- * different leaf partition (denoted by the "partitionId" column), the Parquet file is flushed to the file system along
- * with its accompanying sketches file.
+ * Generates a sketch of all input data, and outputs a single row per partition referencing a file that contains that
+ * sketch.
+ *
+ * @see SketchWritingIterator
  */
-public class WriteParquetFiles implements MapPartitionsFunction<Row, Row> {
-    private static final long serialVersionUID = 1873341639622053831L;
+public class WriteSketchesFile implements MapPartitionsFunction<Row, Row> {
+    private static final long serialVersionUID = 1211201891202603297L;
 
     private final String instancePropertiesStr;
     private final String tablePropertiesStr;
     private final SerializableConfiguration serializableConf;
+    private final Broadcast<List<Partition>> broadcastPartitions;
 
-    public WriteParquetFiles(String instancePropertiesStr, String tablePropertiesStr, Configuration conf) {
-        this.instancePropertiesStr = instancePropertiesStr;
-        this.tablePropertiesStr = tablePropertiesStr;
+    public WriteSketchesFile(InstanceProperties instanceProperties, TableProperties tableProperties, Configuration conf, Broadcast<List<Partition>> broadcastPartitions) {
+        this.instancePropertiesStr = instanceProperties.saveAsString();
+        this.tablePropertiesStr = tableProperties.saveAsString();
         this.serializableConf = new SerializableConfiguration(conf);
+        this.broadcastPartitions = broadcastPartitions;
     }
 
     @Override
-    public Iterator<Row> call(Iterator<Row> rowIter) {
+    public SketchWritingIterator call(Iterator<Row> input) throws Exception {
         InstanceProperties instanceProperties = InstanceProperties.createWithoutValidation(loadProperties(instancePropertiesStr));
         TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesStr));
-
-        return new FileWritingIterator(rowIter, instanceProperties, tableProperties, serializableConf.value(), new HadoopSketchesStore(serializableConf.value()));
+        PartitionTree partitionTree = new PartitionTree(broadcastPartitions.getValue());
+        return new SketchWritingIterator(input, instanceProperties, tableProperties, serializableConf.value(), partitionTree);
     }
+
 }
