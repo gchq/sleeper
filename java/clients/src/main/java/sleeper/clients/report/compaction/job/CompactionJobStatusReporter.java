@@ -30,7 +30,7 @@ public interface CompactionJobStatusReporter {
     /**
      * Writes a report on the status of compaction jobs.
      *
-     * @param jobStatusList the job status updates retrieve from the job tracker
+     * @param jobStatusList the status updates retrieved from the job tracker
      * @param queryType     the type of query made for the report
      */
     void report(List<CompactionJobStatus> jobStatusList, JobQuery.Type queryType);
