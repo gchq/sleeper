@@ -36,6 +36,13 @@ public class FileStatusCollector {
         this.stateStore = stateStore;
     }
 
+    /**
+     * Retrieves data from the state store and produces a report on the status of files.
+     *
+     * @param  maxNumberOFilesWithNoReferencesToCount the maximum number of files that have no references to include in
+     *                                                the report
+     * @return                                        the report
+     */
     public TableFilesStatus run(int maxNumberOFilesWithNoReferencesToCount) {
         AllReferencesToAllFiles files = stateStore.getAllFilesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         List<Partition> partitions = stateStore.getAllPartitions();

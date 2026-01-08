@@ -20,6 +20,9 @@ import sleeper.core.statestore.FileReference;
 
 import java.util.Collection;
 
+/**
+ * Statistics on the number of rows in a set of file references.
+ */
 public class FileRowsStats {
 
     private final long totalRows;
@@ -32,6 +35,12 @@ public class FileRowsStats {
         this.totalRowsKnown = totalRowsKnown;
     }
 
+    /**
+     * Computes statistics on the number of rows.
+     *
+     * @param  references the file references
+     * @return            the statistics
+     */
     public static FileRowsStats from(Collection<FileReference> references) {
         long totalRowsApprox = 0;
         long totalRowsExact = 0;
