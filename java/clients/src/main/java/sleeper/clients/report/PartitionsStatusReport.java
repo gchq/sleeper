@@ -41,6 +41,9 @@ public class PartitionsStatusReport {
         this.reporter = reporter;
     }
 
+    /**
+     * Creates and writes a report.
+     */
     public void run() {
         reporter.report(PartitionsStatus.from(tableProperties, store));
     }
