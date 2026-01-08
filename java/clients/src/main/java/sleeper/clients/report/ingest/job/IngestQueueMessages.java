@@ -29,6 +29,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
+/**
+ * Counts of messages on the ingest and bulk import job queues.
+ */
 public class IngestQueueMessages {
     private final Integer ingestMessages;
     private final Integer emrMessages;
@@ -42,6 +45,13 @@ public class IngestQueueMessages {
         eksMessages = builder.eksMessages;
     }
 
+    /**
+     * Creates estimates of the number of messages on each ingest and bulk import job queue.
+     *
+     * @param  properties the instance properties
+     * @param  client     a client to find the approximate number of messages in a queue
+     * @return            the message counts
+     */
     public static IngestQueueMessages from(InstanceProperties properties, QueueMessageCount.Client client) {
         return builder()
                 .ingestMessages(getMessages(properties, client, INGEST_JOB_QUEUE_URL))
@@ -65,6 +75,11 @@ public class IngestQueueMessages {
         return new Builder();
     }
 
+    /**
+     * Prints the number of messages in each ingest and bulk import queue in a report.
+     *
+     * @param out the output to print to
+     */
     public void print(PrintStream out) {
         if (ingestMessages != null) {
             out.printf("Jobs waiting in ingest queue (excluded from report): %s%n", ingestMessages);
@@ -118,6 +133,9 @@ public class IngestQueueMessages {
                 '}';
     }
 
+    /**
+     * A builder for the counts of messages on ingest and bulk import queues.
+     */
     public static final class Builder {
         private Integer ingestMessages;
         private Integer emrMessages;
@@ -127,21 +145,45 @@ public class IngestQueueMessages {
         private Builder() {
         }
 
+        /**
+         * Sets the number of messages on the ingest job queue.
+         *
+         * @param  ingestMessages the number of messages, or null if the queue is not present
+         * @return                this builder
+         */
         public Builder ingestMessages(Integer ingestMessages) {
             this.ingestMessages = ingestMessages;
             return this;
         }
 
+        /**
+         * Sets the number of messages on the EMR bulk import job queue.
+         *
+         * @param  emrMessages the number of messages, or null if the queue is not present
+         * @return             this builder
+         */
         public Builder emrMessages(Integer emrMessages) {
             this.emrMessages = emrMessages;
             return this;
         }
 
+        /**
+         * Sets the number of messages on the persistent EMR bulk import job queue.
+         *
+         * @param  persistentEmrMessages the number of messages, or null if the queue is not present
+         * @return                       this builder
+         */
         public Builder persistentEmrMessages(Integer persistentEmrMessages) {
             this.persistentEmrMessages = persistentEmrMessages;
             return this;
         }
 
+        /**
+         * Sets the number of messages on the EKS bulk import job queue.
+         *
+         * @param  eksMessages the number of messages, or null if the queue is not present
+         * @return             this builder
+         */
         public Builder eksMessages(Integer eksMessages) {
             this.eksMessages = eksMessages;
             return this;

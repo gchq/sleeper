@@ -43,6 +43,10 @@ import static sleeper.clients.report.job.StandardJobRunReporter.updatePrinters;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.IN_PROGRESS;
 
+/**
+ * Creates reports in human-readable string format on the status of ingest and bulk import jobs. Depending on the report
+ * query type, this produces either a table, or a detailed report for each job run.
+ */
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
     private final TableField stateField;

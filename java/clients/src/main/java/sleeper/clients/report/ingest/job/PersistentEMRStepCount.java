@@ -34,15 +34,38 @@ import java.util.Optional;
 import static sleeper.clients.util.EmrUtils.listActiveClusters;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
+/**
+ * Finds the number of steps in each status in the persistent EMR cluster. Queries the AWS EMR API and counts the number
+ * of steps with each status.
+ */
 public class PersistentEMRStepCount {
     private PersistentEMRStepCount() {
     }
 
+    /**
+     * Finds the number of steps in each status in the persistent EMR cluster. Queries the AWS EMR API and counts the
+     * number of steps with each status.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  emrClient          the AWS EMR client
+     * @return                    a map from status of EMR execution step, to the number of steps in that state in the
+     *                            persistent cluster
+     */
     public static Map<String, Integer> byStatus(
             InstanceProperties instanceProperties, EmrClient emrClient) {
         return byStatus(instanceProperties, emrClient, EmrUtils.LIST_ACTIVE_CLUSTERS_LIMIT);
     }
 
+    /**
+     * Finds the number of steps in each status in the persistent EMR cluster. Queries the AWS EMR API and counts the
+     * number of steps with each status.
+     *
+     * @param  instanceProperties      the instance properties
+     * @param  emrClient               the AWS EMR client
+     * @param  listActiveClustersLimit the rate limit to stay within when making requests to the AWS EMR API
+     * @return                         a map from status of EMR execution step, to the number of steps in that state in
+     *                                 the persistent cluster
+     */
     public static Map<String, Integer> byStatus(
             InstanceProperties instanceProperties, EmrClient emrClient, StaticRateLimit<ListClustersResponse> listActiveClustersLimit) {
         return getPersistentClusterId(instanceProperties, emrClient, listActiveClustersLimit)
