@@ -134,9 +134,9 @@ public class LambdaHandler {
             .jar(LambdaJar.CUSTOM_RESOURCES)
             .handler("sleeper.cdk.custom.AutoStopEmrServerlessApplicationLambda::handleEvent")
             .core().add();
-    public static final LambdaHandler PROPERTIES_WRITER = builder()
+    public static final LambdaHandler INSTANCE_PROPERTIES_WRITER = builder()
             .jar(LambdaJar.CUSTOM_RESOURCES)
-            .handler("sleeper.cdk.custom.PropertiesWriterLambda::handleEvent")
+            .handler("sleeper.cdk.custom.InstancePropertiesWriterLambda::handleEvent")
             .core().add();
     public static final LambdaHandler TABLE_DEFINER = builder()
             .jar(LambdaJar.CUSTOM_RESOURCES)
