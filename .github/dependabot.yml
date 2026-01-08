@@ -6,6 +6,10 @@ updates:
       interval: "daily"
       time: "03:00"
     open-pull-requests-limit: 10
+    ignore:
+      # Not updating to JUnit 6 yet as it is not yet supported by VS Code
+      - dependency-name: "junit-*"
+        versions: [ "6.x" ]
   - package-ecosystem: "pip"
     directory: "/python"
     schedule:
