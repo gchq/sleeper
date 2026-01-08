@@ -15,7 +15,6 @@
  */
 package sleeper.clients.report.job.query;
 
-import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -62,11 +61,6 @@ public class DetailedJobsQuery implements JobQuery {
             return null;
         }
         return new DetailedJobsQuery(Arrays.asList(queryParameters.split(",")));
-    }
-
-    public static JobQuery prompt(ConsoleInput console) {
-        String jobIds = console.promptLine("Enter job IDs to get detailed information about, separated by commas: ");
-        return fromParameters(jobIds);
     }
 
 }
