@@ -30,10 +30,10 @@ public interface CompactionTaskQuery {
     CompactionTaskQuery ALL = CompactionTaskTracker::getAllTasks;
 
     /**
-     * Retrieve all status updates for the report.
+     * Retrieves the data for the report.
      *
      * @param  tracker the task tracker
-     * @return         the status updates
+     * @return         the status of tasks covered by the query
      */
     List<CompactionTaskStatus> run(CompactionTaskTracker tracker);
 

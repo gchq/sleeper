@@ -39,7 +39,7 @@ public class CompactionTaskStatusReportArguments {
      * Reads command line arguments to create a report on compaction tasks.
      *
      * @param  args                     the arguments
-     * @return                          the parsed arguments.
+     * @return                          the parsed arguments
      * @throws IllegalArgumentException if the arguments could not be read
      */
     public static CompactionTaskStatusReportArguments fromArgs(String... args) {

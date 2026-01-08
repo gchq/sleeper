@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Creates reports on the status of compaction tasks. The format and output destination can vary based on the
+ * Writes reports on the status of compaction tasks. The format and output destination can vary based on the
  * implementation.
  */
 @FunctionalInterface
