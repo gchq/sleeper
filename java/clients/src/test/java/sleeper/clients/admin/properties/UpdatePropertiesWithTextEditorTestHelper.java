@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,6 +40,7 @@ import static sleeper.core.properties.PropertiesUtils.loadProperties;
 public class UpdatePropertiesWithTextEditorTestHelper {
     private final Path tempDir;
     private final Path expectedPropertiesFile;
+    private final Map<String, String> environmentVariables = new HashMap<>();
 
     public UpdatePropertiesWithTextEditorTestHelper(Path tempDir) {
         this.tempDir = tempDir;
@@ -112,6 +115,6 @@ public class UpdatePropertiesWithTextEditorTestHelper {
     }
 
     private UpdatePropertiesWithTextEditor updaterWithCommandHandler(CommandRunner runCommand) {
-        return new UpdatePropertiesWithTextEditor(tempDir, runCommand);
+        return new UpdatePropertiesWithTextEditor(tempDir, runCommand, environmentVariables::get);
     }
 }

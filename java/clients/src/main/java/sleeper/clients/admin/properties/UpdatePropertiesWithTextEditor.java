@@ -42,10 +42,10 @@ public class UpdatePropertiesWithTextEditor {
     private final UpdatePropertiesTextEditorCommand editorCommand = new UpdatePropertiesTextEditorCommand();
 
     public UpdatePropertiesWithTextEditor(Path tempDirectory) {
-        this(tempDirectory, CommandUtils::runCommandInheritIO);
+        this(tempDirectory, CommandUtils::runCommandInheritIO, System::getenv);
     }
 
-    public UpdatePropertiesWithTextEditor(Path tempDirectory, CommandRunner runCommand) {
+    public UpdatePropertiesWithTextEditor(Path tempDirectory, CommandRunner runCommand, Function<String, String> readEnvironmentVariable) {
         this.tempDirectory = tempDirectory;
         this.runCommand = runCommand;
     }
