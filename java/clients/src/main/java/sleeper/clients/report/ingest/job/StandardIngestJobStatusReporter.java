@@ -65,7 +65,10 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         addedFilesCount = tableFactoryBuilder.addNumericField("ADDED_FILES");
-        runReporter = new StandardJobRunReporter(out, tableFactoryBuilder);
+        runReporter = StandardJobRunReporter.withTable(tableFactoryBuilder)
+                .addProgressFields()
+                .addResultsFields()
+                .build(out);
         tableFactory = tableFactoryBuilder.build();
     }
 
