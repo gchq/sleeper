@@ -26,12 +26,11 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.store.SketchesStore;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 /**
@@ -49,18 +48,11 @@ public class FindPartitionSplitPoint {
         this.sketches = sketches;
     }
 
-    public static FindPartitionSplitPoint loadSketches(Schema schema, List<String> fileNames, SketchesStore sketchesStore) {
-        List<Sketches> sketches = new ArrayList<>();
-        for (String fileName : fileNames) {
-            LOGGER.info("Loading sketches for file {}", fileName);
-            sketches.add(sketchesStore.loadFileSketches(fileName, schema));
-        }
-        return new FindPartitionSplitPoint(schema, sketches);
-    }
-
-    public Optional<SplitPartitionResult> getResultIfSplittable(Partition partition, SplitPartitionResultFactory resultFactory) {
+    public static Optional<SplitPartitionResult> getResultIfSplittable(Schema schema, Partition partition, List<Sketches> sketches, Supplier<String> idSupplier) {
+        FindPartitionSplitPoint finder = new FindPartitionSplitPoint(schema, sketches);
+        SplitPartitionResultFactory resultFactory = new SplitPartitionResultFactory(schema, idSupplier);
         return IntStream.range(0, schema.getRowKeyFields().size())
-                .mapToObj(dimension -> splitPointForDimension(dimension)
+                .mapToObj(dimension -> finder.splitPointForDimension(dimension)
                         .map(splitPoint -> resultFactory.splitPartition(partition, splitPoint, dimension)))
                 .flatMap(Optional::stream)
                 .findFirst();
