@@ -18,10 +18,10 @@ package sleeper.splitter.core.extend;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.sketches.Sketches;
-import sleeper.splitter.core.split.SketchesForSplitting;
+import sleeper.splitter.core.sketches.SketchesForSplitting;
+import sleeper.splitter.core.sketches.WrappedSketchForSplitting;
+import sleeper.splitter.core.sketches.WrappedSketchesForSplitting;
 import sleeper.splitter.core.split.SplitPartitionResult;
-import sleeper.splitter.core.split.WrappedSketchForSplitting;
-import sleeper.splitter.core.split.WrappedSketchesForSplitting;
 
 import java.util.Map;
 import java.util.Map.Entry;

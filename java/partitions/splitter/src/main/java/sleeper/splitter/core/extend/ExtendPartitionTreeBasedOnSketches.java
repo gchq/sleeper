@@ -21,8 +21,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTreeTransaction;
 import sleeper.sketches.Sketches;
+import sleeper.splitter.core.sketches.SketchesForSplitting;
 import sleeper.splitter.core.split.FindPartitionSplitPoint;
-import sleeper.splitter.core.split.SketchesForSplitting;
 import sleeper.splitter.core.split.SplitPartitionResult;
 
 import java.util.List;

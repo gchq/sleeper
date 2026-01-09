@@ -24,6 +24,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArray;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.sketches.Sketches;
+import sleeper.splitter.core.sketches.SketchForSplitting;
+import sleeper.splitter.core.sketches.SketchesForSplitting;
 
 import java.util.Comparator;
 import java.util.Optional;
