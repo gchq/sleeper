@@ -39,7 +39,7 @@ import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPre
 
 public class ExtendPartitionTreeBasedOnSketchesTest {
     // Test list:
-    // - Some leaf partitions are never split, but should still count towards minimum leaf partition count
+    // - Some leaf partitions are never split, but should still count towards minimum leaf partition count (see TODO in SplitsTracker)
     // - Split from a larger existing partition tree
     // - More splits at once
 

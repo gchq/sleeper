@@ -45,6 +45,8 @@ class SplitsTracker {
     }
 
     int getNumLeafPartitions() {
+        // TODO handle case where existing leaf partitions were not split, they still need to be included in this count
+        // (see test list in ExtendPartitionTreeBasedOnSketchesTest)
         return newLeafPartitionIds.size();
     }
 
