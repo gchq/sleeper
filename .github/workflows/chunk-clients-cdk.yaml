@@ -11,6 +11,7 @@ on:
       - 'java/deployment/pom.xml'
       - 'java/system-test/pom.xml'
       - 'java/clients/**'
+      - 'java/analytics-integration/pom.xml'
       - 'java/analytics-integration/spark/**'
       - 'java/deployment/cdk/**'
       - 'java/deployment/cdk-custom-resources/**'
