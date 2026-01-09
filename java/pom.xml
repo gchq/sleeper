@@ -46,6 +46,7 @@
         <module>statestore-lambda</module>
         <module>system-test</module>
         <module>trino</module>
+        <module>spark</module>
     </modules>
 
     <properties>
@@ -95,7 +96,7 @@
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
         <protobuf.version>4.33.2</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.6</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.7</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.1</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -123,8 +124,8 @@
         <roaringbitmap.version>1.3.0</roaringbitmap.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.23</logback.version>
-        <aws-java-sdk-v2.version>2.41.1</aws-java-sdk-v2.version>
+        <logback.version>1.5.24</logback.version>
+        <aws-java-sdk-v2.version>2.41.4</aws-java-sdk-v2.version>
         <!--
         EMR Serverless has a version of the AWS SDK built into it that we can't easily change.
         At the time of writing it's not compatible with the latest version.
@@ -138,10 +139,10 @@
         driver, then copied that file out of the Docker image, unzipped the jar, and decompiled the VersionInfo class.
         -->
         <aws-java-sdk-v2.bulk-import.version>2.31.16</aws-java-sdk-v2.bulk-import.version>
-        <aws-crt.version>0.41.0</aws-crt.version>
+        <aws-crt.version>0.42.1</aws-crt.version>
         <aws-lambda-java-events.version>3.16.1</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.4.0</aws-lambda-java-core.version>
-        <aws-lambda-java-runtime-interface-client.version>2.8.7</aws-lambda-java-runtime-interface-client.version>
+        <aws-lambda-java-runtime-interface-client.version>2.9.0</aws-lambda-java-runtime-interface-client.version>
         <aws-lambda-powertools.version>2.9.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.20.0</commons-lang3.version>
         <commons-codec.version>1.20.0</commons-codec.version>
@@ -177,11 +178,11 @@
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
-        <google.errorprone.version>2.45.0</google.errorprone.version>
+        <google.errorprone.version>2.46.0</google.errorprone.version>
         <cdk.version>2.232.2</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.4</constructs.version>
-        <jsii.version>1.124.0</jsii.version>
+        <jsii.version>1.125.0</jsii.version>
         <gson.version>2.13.2</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
@@ -213,14 +214,15 @@
         <jnr.ffi.version>2.2.18</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>6.0.1</junit.version>
+        <junit.version>5.14.2</junit.version>
+        <junit.platform.version>1.14.2</junit.platform.version>
         <mockito.version>5.21.0</mockito.version>
         <testcontainers.version>2.0.2</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
         <handlebars.version>4.5.0</handlebars.version>
         <assertj.version>3.27.6</assertj.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <approvaltests.version>26.1.0</approvaltests.version>
+        <approvaltests.version>26.2.0</approvaltests.version>
         <json-path.version>2.10.0</json-path.version>
         <xmlunit.version>2.11.0</xmlunit.version>
         <jsonunit.version>5.1.0</jsonunit.version>
@@ -1470,7 +1472,7 @@
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite</artifactId>
-                <version>${junit.version}</version>
+                <version>${junit.platform.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -1904,52 +1906,19 @@
                     <version>${failsafe.plugin.version}</version>
                     <configuration>
                         <argLine>@{argLine} ${module.access.args}</argLine>
-                        <systemProperties>
-                            <property>
-                                <name>sleeper.system.test.short.id</name>
-                                <value>${sleeper.system.test.short.id}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.vpc.id</name>
-                                <value>${sleeper.system.test.vpc.id}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.subnet.ids</name>
-                                <value>${sleeper.system.test.subnet.ids}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.output.dir</name>
-                                <value>${sleeper.system.test.output.dir}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.cluster.enabled</name>
-                                <value>${sleeper.system.test.cluster.enabled}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.force.redeploy</name>
-                                <value>${sleeper.system.test.force.redeploy}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.instances.force.redeploy</name>
-                                <value>${sleeper.system.test.instances.force.redeploy}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.force.statestore.classname</name>
-                                <value>${sleeper.system.test.force.statestore.classname}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.create.multi.platform.builder</name>
-                                <value>${sleeper.system.test.create.multi.platform.builder}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.standalone.properties.template</name>
-                                <value>${sleeper.system.test.standalone.properties.template}</value>
-                            </property>
-                            <property>
-                                <name>sleeper.system.test.instance.properties.overrides</name>
-                                <value>${sleeper.system.test.instance.properties.overrides}</value>
-                            </property>
-                        </systemProperties>
+                        <systemPropertyVariables>
+                            <sleeper.system.test.short.id>${sleeper.system.test.short.id}</sleeper.system.test.short.id>
+                            <sleeper.system.test.vpc.id>${sleeper.system.test.vpc.id}</sleeper.system.test.vpc.id>
+                            <sleeper.system.test.subnet.ids>${sleeper.system.test.subnet.ids}</sleeper.system.test.subnet.ids>
+                            <sleeper.system.test.output.dir>${sleeper.system.test.output.dir}</sleeper.system.test.output.dir>
+                            <sleeper.system.test.cluster.enabled>${sleeper.system.test.cluster.enabled}</sleeper.system.test.cluster.enabled>
+                            <sleeper.system.test.force.redeploy>${sleeper.system.test.force.redeploy}</sleeper.system.test.force.redeploy>
+                            <sleeper.system.test.instances.force.redeploy>${sleeper.system.test.instances.force.redeploy}</sleeper.system.test.instances.force.redeploy>
+                            <sleeper.system.test.force.statestore.classname>${sleeper.system.test.force.statestore.classname}</sleeper.system.test.force.statestore.classname>
+                            <sleeper.system.test.create.multi.platform.builder>${sleeper.system.test.create.multi.platform.builder}</sleeper.system.test.create.multi.platform.builder>
+                            <sleeper.system.test.standalone.properties.template>${sleeper.system.test.standalone.properties.template}</sleeper.system.test.standalone.properties.template>
+                            <sleeper.system.test.instance.properties.overrides>${sleeper.system.test.instance.properties.overrides}</sleeper.system.test.instance.properties.overrides>
+                        </systemPropertyVariables>
                     </configuration>
                     <executions>
                         <execution>

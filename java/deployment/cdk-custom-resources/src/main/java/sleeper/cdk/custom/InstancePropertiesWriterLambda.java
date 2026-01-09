@@ -31,18 +31,18 @@ import java.util.Properties;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * Lambda Function which writes properties to an S3 Bucket.
+ * Lambda Function which writes instance properties to an S3 Bucket.
  */
-public class PropertiesWriterLambda {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PropertiesWriterLambda.class);
+public class InstancePropertiesWriterLambda {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstancePropertiesWriterLambda.class);
     private final S3Client s3Client;
     private final String bucketName;
 
-    public PropertiesWriterLambda() {
+    public InstancePropertiesWriterLambda() {
         this(S3Client.create(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public PropertiesWriterLambda(S3Client s3Client, String bucketName) {
+    public InstancePropertiesWriterLambda(S3Client s3Client, String bucketName) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
     }
