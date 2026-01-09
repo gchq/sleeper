@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+/**
+ * Wraps a sketches object. Allows splitting a sketch into two when extending a partition tree over multiple levels.
+ */
 public class WrappedSketchesForSplitting implements SketchesForSplitting {
 
     private final Map<String, WrappedSketchForSplitting> fieldNameToSketch;

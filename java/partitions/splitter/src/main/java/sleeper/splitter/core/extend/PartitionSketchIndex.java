@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+/**
+ * Tracks sketches for each partition. Adds derived sketches to the index as partitions are split.
+ */
 class PartitionSketchIndex {
 
     private final Schema schema;

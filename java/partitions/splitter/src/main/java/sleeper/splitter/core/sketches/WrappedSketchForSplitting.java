@@ -20,6 +20,9 @@ import org.apache.datasketches.quantiles.ItemsSketch;
 import sleeper.core.schema.Field;
 import sleeper.sketches.Sketches;
 
+/**
+ * Wraps a sketch object. Allows splitting the sketch into two when extending a partition tree over multiple levels.
+ */
 public class WrappedSketchForSplitting implements SketchForSplitting {
 
     private final Field field;

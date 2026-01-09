@@ -22,6 +22,9 @@ import sleeper.sketches.Sketches;
 
 import java.util.List;
 
+/**
+ * Combines multiple sketches together to treat them as a single sketch.
+ */
 public class UnionSketchesForSplitting implements SketchesForSplitting {
 
     private final List<Sketches> sketches;

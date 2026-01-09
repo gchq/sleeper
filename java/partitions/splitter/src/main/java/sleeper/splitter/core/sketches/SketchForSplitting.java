@@ -15,12 +15,32 @@
  */
 package sleeper.splitter.core.sketches;
 
+/**
+ * Finds split points during partition splitting based on a sketch. We avoid referencing the sketch directly so that we
+ * can split a sketch into two without modifying the original sketch, when extending a partition tree over multiple
+ * levels.
+ */
 public interface SketchForSplitting {
 
+    /**
+     * Retrieves the minimum value in the range of values covered.
+     *
+     * @return the minimum value
+     */
     Object getMin();
 
+    /**
+     * Retrieves the median value in the range of values covered.
+     *
+     * @return the median value
+     */
     Object getMedian();
 
+    /**
+     * Retrieves the maximum value in the range of values covered.
+     *
+     * @return the maximum value
+     */
     Object getMax();
 
 }

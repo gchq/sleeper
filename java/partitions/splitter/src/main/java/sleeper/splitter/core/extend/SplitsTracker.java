@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Tracks which partitions are updated and created as splits occur.
+ */
 class SplitsTracker {
 
     private final List<Partition> updatedPartitions = new ArrayList<>();

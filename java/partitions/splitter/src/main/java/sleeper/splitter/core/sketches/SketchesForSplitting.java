@@ -17,9 +17,20 @@ package sleeper.splitter.core.sketches;
 
 import sleeper.core.schema.Field;
 
+/**
+ * Finds split points during partition splitting based on sketches. We avoid referencing the sketches directly so that
+ * we can split a sketch into two without modifying the original sketch, when extending a partition tree over multiple
+ * levels.
+ */
 @FunctionalInterface
 public interface SketchesForSplitting {
 
+    /**
+     * Retrieves the sketch for the given row key field.
+     *
+     * @param  rowKeyField the field we want to split the partition on
+     * @return             the sketch of data in that field
+     */
     SketchForSplitting getSketch(Field rowKeyField);
 
 }
