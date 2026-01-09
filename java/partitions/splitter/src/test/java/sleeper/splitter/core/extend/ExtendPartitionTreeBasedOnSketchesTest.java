@@ -15,7 +15,6 @@
  */
 package sleeper.splitter.core.extend;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -70,7 +69,6 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldSplitFromSingleExistingPartitionTwice() {
         // Given
         tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);

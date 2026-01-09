@@ -62,21 +62,23 @@ public class ExtendPartitionTreeBasedOnSketches {
     public ExtendPartitionTreeTransaction createTransaction(PartitionTree tree, Map<String, Sketches> partitionIdToSketches) {
         List<Partition> originalLeafPartitions = tree.getLeafPartitions();
         SplitsTracker tracker = new SplitsTracker();
+        PartitionSketchIndex sketchIndex = PartitionSketchIndex.from(schema, partitionIdToSketches);
         List<Partition> workingPartitions = originalLeafPartitions;
         while (tracker.getNumLeafPartitions() < minLeafPartitions) {
-            workingPartitions = splitLeaves(partitionIdToSketches, workingPartitions)
+            workingPartitions = splitLeaves(sketchIndex, workingPartitions)
                     .peek(tracker::recordSplit)
+                    .peek(sketchIndex::recordSplit)
                     .flatMap(SplitPartitionResult::streamChildPartitions)
                     .toList();
         }
         return tracker.buildTransaction();
     }
 
-    private Stream<SplitPartitionResult> splitLeaves(Map<String, Sketches> partitionIdToSketches, List<Partition> leafPartitions) {
+    private Stream<SplitPartitionResult> splitLeaves(PartitionSketchIndex sketchIndex, List<Partition> leafPartitions) {
         return leafPartitions.stream()
                 .flatMap(partition -> {
-                    Sketches sketches = partitionIdToSketches.get(partition.getId());
-                    return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, SketchesForSplitting.wrap(sketches), idSupplier).stream();
+                    SketchesForSplitting sketches = sketchIndex.get(partition.getId());
+                    return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, sketches, idSupplier).stream();
                 });
     }
 
