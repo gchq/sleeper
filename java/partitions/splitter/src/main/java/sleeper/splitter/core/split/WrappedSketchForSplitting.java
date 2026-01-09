@@ -24,25 +24,35 @@ public class WrappedSketchForSplitting implements SketchForSplitting {
 
     private final Field field;
     private final ItemsSketch<Object> sketch;
+    private final double minQuantile;
+    private final double medianQuantile;
+    private final double maxQuantile;
 
     public WrappedSketchForSplitting(Field field, ItemsSketch<Object> sketch) {
+        this(field, sketch, 0.0, 0.5, 1.0);
+    }
+
+    private WrappedSketchForSplitting(Field field, ItemsSketch<Object> sketch, double minQuantile, double medianQuantile, double maxQuantile) {
         this.field = field;
         this.sketch = sketch;
+        this.minQuantile = minQuantile;
+        this.medianQuantile = medianQuantile;
+        this.maxQuantile = maxQuantile;
     }
 
     @Override
     public Object getMin() {
-        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getMinValue(), field);
+        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(minQuantile), field);
     }
 
     @Override
     public Object getMedian() {
-        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(0.5D), field);
+        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(medianQuantile), field);
     }
 
     @Override
     public Object getMax() {
-        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getMaxValue(), field);
+        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(maxQuantile), field);
     }
 
 }
