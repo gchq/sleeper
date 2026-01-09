@@ -70,7 +70,6 @@ public class AddTable {
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = LoadLocalProperties.loadTableFromPropertiesFileNoValidation(instanceProperties, tablePropertiesFile).properties();
-            //TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesFile));
             tableProperties.setSchema(Schema.load(schemaFile));
 
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
