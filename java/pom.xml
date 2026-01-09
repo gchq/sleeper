@@ -95,7 +95,7 @@
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. -->
         <protobuf.version>4.33.2</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. -->
-        <nimbus-jose-jwt.version>10.6</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.7</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. -->
         <avro.version>1.12.1</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. -->
@@ -177,7 +177,7 @@
         <jjwt.build.version>0.13.0</jjwt.build.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.5.0-jre</guava.version>
-        <google.errorprone.version>2.45.0</google.errorprone.version>
+        <google.errorprone.version>2.46.0</google.errorprone.version>
         <cdk.version>2.234.0</cdk.version>
         <cdk.kubectl.32.version>2.1.0</cdk.kubectl.32.version>
         <constructs.version>10.4.4</constructs.version>
