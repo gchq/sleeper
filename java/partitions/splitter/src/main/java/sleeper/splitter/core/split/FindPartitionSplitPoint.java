@@ -20,6 +20,7 @@ import org.apache.datasketches.quantiles.ItemsUnion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArray;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * Finds a split point for a partition by examining the sketches for each file.
@@ -56,7 +58,15 @@ public class FindPartitionSplitPoint {
         return new FindPartitionSplitPoint(schema, sketches);
     }
 
-    public Optional<Object> splitPointForDimension(int dimension) {
+    public Optional<SplitPartitionResult> getResultIfSplittable(Partition partition, SplitPartitionResultFactory resultFactory) {
+        return IntStream.range(0, schema.getRowKeyFields().size())
+                .mapToObj(dimension -> splitPointForDimension(dimension)
+                        .map(splitPoint -> resultFactory.splitPartition(partition, splitPoint, dimension)))
+                .flatMap(Optional::stream)
+                .findFirst();
+    }
+
+    private Optional<Object> splitPointForDimension(int dimension) {
         Field field = schema.getRowKeyFields().get(dimension);
         LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
                 field.getName(), field.getType(), dimension);
@@ -88,6 +98,9 @@ public class FindPartitionSplitPoint {
     }
 
     private <T> ItemsSketch<T> unionSketches(Field field) {
+        if (sketches.size() == 1) {
+            return sketches.get(0).getQuantilesSketch(field.getName());
+        }
         ItemsUnion<T> union = Sketches.createUnion(field.getType(), 16384);
         for (Sketches sketch : sketches) {
             union.update(sketch.getQuantilesSketch(field.getName()));
