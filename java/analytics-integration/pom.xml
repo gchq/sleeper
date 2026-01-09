@@ -27,6 +27,7 @@
 
     <modules>
         <module>athena</module>
+        <module>spark</module>
         <module>trino</module>
     </modules>
 </project>
