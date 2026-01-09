@@ -37,4 +37,8 @@ public interface SketchesForSplitting {
         };
     }
 
+    static SketchesForSplitting wrap(Sketches sketches) {
+        return field -> new WrappedSketchForSplitting(field, sketches.getQuantilesSketch(field.getName()));
+    }
+
 }

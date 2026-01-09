@@ -76,7 +76,7 @@ public class ExtendPartitionTreeBasedOnSketches {
         return leafPartitions.stream()
                 .flatMap(partition -> {
                     Sketches sketches = partitionIdToSketches.get(partition.getId());
-                    return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, SketchesForSplitting.union(List.of(sketches)), idSupplier).stream();
+                    return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, SketchesForSplitting.wrap(sketches), idSupplier).stream();
                 });
     }
 
