@@ -15,6 +15,7 @@
  */
 package sleeper.splitter.core.extend;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -63,6 +64,36 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
                         .buildTree(),
                 List.of("root"),
                 List.of("P1", "P2")));
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldSplitFromSingleExistingPartitionTwice() {
+        // Given
+        tableProperties.setNumber(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, 3);
+        PartitionTree tree = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+        setPartitionSketchData("root", List.of(
+                new Row(Map.of("key", 10)),
+                new Row(Map.of("key", 20)),
+                new Row(Map.of("key", 30)),
+                new Row(Map.of("key", 40)),
+                new Row(Map.of("key", 50)),
+                new Row(Map.of("key", 60)),
+                new Row(Map.of("key", 70)),
+                new Row(Map.of("key", 80))));
+
+        // When
+        ExtendPartitionTreeTransaction transaction = createTransaction(tree);
+
+        // Then
+        assertThat(transaction).isEqualTo(transactionWithUpdatedAndNewPartitions(
+                new PartitionsBuilder(tableProperties).singlePartition("root")
+                        .splitToNewChildren("root", "P1", "P2", 50)
+                        .splitToNewChildren("P1", "P3", "P4", 30)
+                        .splitToNewChildren("P2", "P5", "P6", 70)
+                        .buildTree(),
+                List.of("root"),
+                List.of("P1", "P2", "P3", "P4", "P5", "P6")));
     }
 
     private ExtendPartitionTreeTransaction createTransaction(PartitionTree tree) {
