@@ -1,0 +1,48 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.splitter.core.split;
+
+import org.apache.datasketches.quantiles.ItemsSketch;
+
+import sleeper.core.schema.Field;
+import sleeper.sketches.Sketches;
+
+public class WrappedSketchForSplitting implements SketchForSplitting {
+
+    private final Field field;
+    private final ItemsSketch<Object> sketch;
+
+    public WrappedSketchForSplitting(Field field, ItemsSketch<Object> sketch) {
+        this.field = field;
+        this.sketch = sketch;
+    }
+
+    @Override
+    public Object getMin() {
+        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getMinValue(), field);
+    }
+
+    @Override
+    public Object getMedian() {
+        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(0.5D), field);
+    }
+
+    @Override
+    public Object getMax() {
+        return Sketches.readValueFromSketchWithWrappedBytes(sketch.getMaxValue(), field);
+    }
+
+}

@@ -22,6 +22,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTreeTransaction;
 import sleeper.sketches.Sketches;
 import sleeper.splitter.core.split.FindPartitionSplitPoint;
+import sleeper.splitter.core.split.SketchesForSplitting;
 import sleeper.splitter.core.split.SplitPartitionResult;
 
 import java.util.List;
@@ -75,7 +76,7 @@ public class ExtendPartitionTreeBasedOnSketches {
         return leafPartitions.stream()
                 .flatMap(partition -> {
                     Sketches sketches = partitionIdToSketches.get(partition.getId());
-                    return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, List.of(sketches), idSupplier).stream();
+                    return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, SketchesForSplitting.union(List.of(sketches)), idSupplier).stream();
                 });
     }
 

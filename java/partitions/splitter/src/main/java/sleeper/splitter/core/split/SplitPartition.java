@@ -80,7 +80,7 @@ public class SplitPartition {
         List<Sketches> sketches = fileNames.stream()
                 .map(filename -> sketchesStore.loadFileSketches(filename, schema))
                 .toList();
-        return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, sketches, idSupplier);
+        return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, SketchesForSplitting.union(sketches), idSupplier);
     }
 
     private void apply(SplitPartitionResult result) {
