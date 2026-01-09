@@ -15,12 +15,15 @@
  */
 package sleeper.cdk;
 
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.NestedStackProps;
 import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ecr.LifecycleRule;
 import software.amazon.awscdk.services.ecr.Repository;
+import software.amazon.awscdk.services.ecr.TagStatus;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
@@ -115,8 +118,21 @@ public class SleeperArtefacts {
         return Repository.Builder.create(scope, "Repository-" + imageName)
                 .repositoryName(SleeperArtefactsLocation.getDefaultEcrRepositoryPrefix(deploymentId) + "/" + imageName)
                 .removalPolicy(RemovalPolicy.DESTROY)
+                .lifecycleRules(List.of(
+                        LifecycleRule.builder()
+                                .description("Delete untagged images")
+                                .tagStatus(TagStatus.UNTAGGED)
+                                .maxImageAge(Duration.days(1))
+                                .rulePriority(1)
+                                .build(),
+
+                        LifecycleRule.builder()
+                                .description("Keep images for 365 days")
+                                .tagStatus(TagStatus.ANY)
+                                .maxImageAge(Duration.days(365))
+                                .rulePriority(2)
+                                .build()))
                 .emptyOnDelete(true)
                 .build();
     }
-
 }
