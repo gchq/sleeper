@@ -64,7 +64,7 @@ public interface GarbageCollectionProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty GARBAGE_COLLECT_OFFLINE_TABLES = Index.propertyBuilder("sleeper.gc.offline.enabled")
+    UserDefinedInstanceProperty GARBAGE_COLLECT_OFFLINE_TABLES = Index.propertyBuilder("sleeper.run.gc.offline")
             .description("Whether to perform garbage collection for offline tables.")
             .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
@@ -86,7 +86,7 @@ public interface GarbageCollectionProperty {
                     "updating the state store as expected.")
             .defaultValue("750000")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
-    UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.default.gc.delay.minutes")
+    UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.default.table.gc.delay.minutes")
             .description("A file will not be deleted until this number of minutes have passed after it has been marked as ready for " +
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. This property can be overridden on a per-table " +

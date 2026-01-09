@@ -32,7 +32,7 @@ jobs:
       - uses: mozilla-actions/sccache-action@v0.0.9
         if: ${{ ! inputs.skipRust }}
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v5
         with:
           path: ${{ runner.temp }}/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -65,7 +65,7 @@ jobs:
         working-directory: ./java
       - name: Upload site as artifact
         if: failure() && steps.site.conclusion == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: site
           path: /tmp/sleeper/site

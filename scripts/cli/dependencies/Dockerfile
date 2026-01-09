@@ -29,6 +29,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     unminimize \
     && yes | unminimize \
     && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /etc/ssl/private/ssl-cert-snakeoil.key \
     && userdel -r ubuntu \
     && groupdel systemd-journal
 # The deleted user and group are added either by one of the above packages, or by unminimize. They are deleted to avoid

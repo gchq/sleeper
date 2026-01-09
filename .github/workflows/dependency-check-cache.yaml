@@ -1,0 +1,12 @@
+name: Dependency Check Cache
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  check:
+    uses: ./.github/workflows/dependency-check.yaml
+    with:
+      failOnCacheMiss: false
+      writeCache: true

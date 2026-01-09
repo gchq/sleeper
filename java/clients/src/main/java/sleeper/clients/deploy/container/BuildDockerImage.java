@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.stream.Collectors.joining;
@@ -48,13 +49,16 @@ public class BuildDockerImage {
                 .helpSummary("Available Docker deployment image names: " +
                         DockerDeployment.all().stream().map(DockerDeployment::getDeploymentName).collect(joining(", ")) + "\n\n" +
                         "Available lambda image names: " +
-                        LambdaJar.all().stream().map(LambdaJar::getImageName).collect(joining(", ")))
+                        LambdaJar.all().stream().map(LambdaJar::getImageName).collect(joining(", ")) + "\n\n" +
+                        "Other arguments will be passed through to Docker as options when specified at the end.")
+                .passThroughExtraArguments(true)
                 .build();
         Arguments args = CommandArguments.parseAndValidateOrExit(usage, rawArgs, arguments -> new Arguments(
                 Path.of(arguments.getString("scripts directory")),
                 arguments.getString("image name"),
                 arguments.getString("tag"),
-                arguments.isFlagSet("lambda")));
+                arguments.isFlagSet("lambda"),
+                arguments.getPassthroughArguments()));
         DockerImageConfiguration configuration = DockerImageConfiguration.getDefault();
         CommandPipelineRunner commandRunner = CommandUtils::runCommandInheritIO;
 
@@ -70,10 +74,14 @@ public class BuildDockerImage {
             dockerfileDirectory = args.dockerDir().resolve(deployment.getDeploymentName());
         }
 
-        commandRunner.runOrThrow("docker", "build", "-t", args.tag(), dockerfileDirectory.toString());
+        List<String> dockerCommand = new ArrayList<>();
+        dockerCommand.addAll(List.of("docker", "build", "-t", args.tag()));
+        dockerCommand.addAll(args.dockerOptions());
+        dockerCommand.add(dockerfileDirectory.toString());
+        commandRunner.runOrThrow(dockerCommand.toArray(String[]::new));
     }
 
-    private record Arguments(Path scriptsDir, String imageName, String tag, boolean isLambda) {
+    private record Arguments(Path scriptsDir, String imageName, String tag, boolean isLambda, List<String> dockerOptions) {
 
         Path dockerDir() {
             return scriptsDir.resolve("docker");

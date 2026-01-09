@@ -16,7 +16,10 @@
 package sleeper.core.partition;
 
 import sleeper.core.key.Key;
+import sleeper.core.range.Range;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Represents a tree of partitions. It can be used to traverse or query the tree, e.g. to find all ancestors of a
@@ -49,6 +51,73 @@ public class PartitionTree {
             throw new IllegalArgumentException("There should be exactly one root partition, found " + rootPartitions.size());
         }
         this.rootPartition = rootPartitions.get(0);
+    }
+
+    /**
+     * Validates that the partition tree is correctly linked together.
+     *
+     * @param schema the Sleeper table schema
+     */
+    public void validate(Schema schema) {
+        List<String> unlinkedPartitionIds = idToPartition.values().stream()
+                .filter(partition -> !isPartitionLinkedToRoot(partition))
+                .map(Partition::getId)
+                .toList();
+        if (!unlinkedPartitionIds.isEmpty()) {
+            throw new IllegalArgumentException("Found partitions unlinked to the rest of the tree: " + unlinkedPartitionIds);
+        }
+        List<String> missingChildPartitionIds = new ArrayList<>();
+        findMissingChildPartitions(rootPartition, missingChildPartitionIds);
+        if (!missingChildPartitionIds.isEmpty()) {
+            throw new IllegalArgumentException("Found missing child partitions: " + missingChildPartitionIds);
+        }
+        findInvalidSplits(schema, rootPartition);
+    }
+
+    /**
+     * Validates that a partition split covers the range of the parent partition.
+     *
+     * @param parent   the parent partition
+     * @param children the child partitions split from the parent
+     * @param schema   the Sleeper table schema
+     */
+    public static void validateSplit(Partition parent, List<Partition> children, Schema schema) {
+        if (children.size() != 2) {
+            throw new IllegalArgumentException("Expected 2 child partitions under " + parent.getId() + ", left and right of split point, found " + children.size());
+        }
+        if (schema.getRowKeyFields().size() <= parent.getDimension()) {
+            throw new IllegalArgumentException("No row key at dimension " + parent.getDimension() + " for parent partition " + parent.getId());
+        }
+        Field splitField = schema.getRowKeyFields().get(parent.getDimension());
+        Partition child1 = children.get(0);
+        Partition child2 = children.get(1);
+        Range range1 = child1.getRegion().getRange(splitField.getName());
+        Range range2 = child2.getRegion().getRange(splitField.getName());
+        PrimitiveType type = (PrimitiveType) splitField.getType();
+        Partition leftChild;
+        Partition rightChild;
+        if (type.compare(range1.getMax(), range2.getMin()) == 0) {
+            leftChild = child1;
+            rightChild = child2;
+        } else if (type.compare(range1.getMin(), range2.getMax()) == 0) {
+            leftChild = child2;
+            rightChild = child1;
+        } else {
+            throw new IllegalArgumentException("Child partitions do not meet at a split point on dimension " + parent.getDimension() + " set in parent partition " + parent.getId());
+        }
+        List<String> expectedChildIds = List.of(leftChild.getId(), rightChild.getId());
+        if (!expectedChildIds.equals(parent.getChildPartitionIds())) {
+            throw new IllegalArgumentException("Child partition IDs do not match expected order in parent partition " + parent.getId() + ", expected: " + expectedChildIds);
+        }
+        Range parentRange = parent.getRegion().getRange(splitField.getName());
+        Range leftRange = leftChild.getRegion().getRange(splitField.getName());
+        Range rightRange = rightChild.getRegion().getRange(splitField.getName());
+        if (type.compare(parentRange.getMin(), leftRange.getMin()) != 0) {
+            throw new IllegalArgumentException("Left child partition " + leftChild.getId() + " does not match boundary of parent " + parent.getId());
+        }
+        if (type.compare(parentRange.getMax(), rightRange.getMax()) != 0) {
+            throw new IllegalArgumentException("Right child partition " + rightChild.getId() + " does not match boundary of parent " + parent.getId());
+        }
     }
 
     /**
@@ -146,8 +215,28 @@ public class PartitionTree {
         return List.copyOf(idToPartition.values());
     }
 
+    /**
+     * Streams through all partitions.
+     *
+     * @return the stream
+     */
+    public Stream<Partition> streamPartitions() {
+        return idToPartition.values().stream();
+    }
+
+    /**
+     * Streams through all leaf partitions. This is all partitions that have no child partitions, and no split point.
+     * Other partitions make up the root and branches of the partition tree, where the space of the values of key
+     * fields is split into a number of child partitions.
+     *
+     * @return the stream
+     */
+    public Stream<Partition> streamLeafPartitions() {
+        return streamPartitions().filter(Partition::isLeafPartition);
+    }
+
     public List<Partition> getLeafPartitions() {
-        return idToPartition.values().stream().filter(Partition::isLeafPartition).collect(toUnmodifiableList());
+        return streamLeafPartitions().toList();
     }
 
     /**
@@ -297,6 +386,47 @@ public class PartitionTree {
         return partitions.stream()
                 .map(Partition::getParentPartitionId).filter(Objects::nonNull)
                 .distinct().map(this::getPartition);
+    }
+
+    private boolean isPartitionLinkedToRoot(Partition partition) {
+        if (partition.getParentPartitionId() == null) {
+            return true;
+        }
+        Partition parent = getPartition(partition.getParentPartitionId());
+        if (parent == null) {
+            return false;
+        }
+        if (!parent.getChildPartitionIds().contains(partition.getId())) {
+            return false;
+        }
+        return isPartitionLinkedToRoot(parent);
+    }
+
+    private void findMissingChildPartitions(Partition partition, List<String> missingPartitionIds) {
+        for (String childId : partition.getChildPartitionIds()) {
+            Partition child = getPartition(childId);
+            if (child == null) {
+                missingPartitionIds.add(childId);
+            } else {
+                findMissingChildPartitions(child, missingPartitionIds);
+            }
+        }
+    }
+
+    private void findInvalidSplits(Schema schema, Partition partition) {
+        if (partition.isLeafPartition()) {
+            if (!partition.getChildPartitionIds().isEmpty()) {
+                throw new IllegalArgumentException("Partition has " + partition.getChildPartitionIds().size() + " child partitions but is marked as a leaf partition: " + partition.getId());
+            }
+            return;
+        }
+        List<Partition> childPartitions = partition.getChildPartitionIds().stream()
+                .map(this::getPartition)
+                .toList();
+        validateSplit(partition, childPartitions, schema);
+        for (Partition child : childPartitions) {
+            findInvalidSplits(schema, child);
+        }
     }
 
     @Override

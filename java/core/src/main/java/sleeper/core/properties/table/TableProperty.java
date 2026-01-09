@@ -30,6 +30,8 @@ import sleeper.core.properties.model.SleeperPropertyValueUtils;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_RETAIN_TABLE_AFTER_REMOVAL;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_TABLE_REUSE_EXISTING;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -65,7 +67,6 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DATA
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_FILES_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
@@ -288,6 +289,25 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "instance property.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
+    TableProperty RETAIN_TABLE_AFTER_REMOVAL = Index.propertyBuilder("sleeper.table.retain.after.removal")
+            .defaultProperty(DEFAULT_RETAIN_TABLE_AFTER_REMOVAL)
+            .description("This property is used when applying an instance configuration and a table has been removed.\n" +
+                    "If this is true (default), removing the table from the configuration will just take the table offline.\n" +
+                    "If this is false, it will delete all data associated with the table when the table is removed.\n" +
+                    "Be aware that if a table is renamed in the configuration, the CDK will see it as a delete of the old " +
+                    "table name and a create of the new table name. If this is set to false when that happens it will remove the table's data.\n" +
+                    "This property isn't currently in use but will be in https://github.com/gchq/sleeper/issues/5870.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
+    TableProperty TABLE_REUSE_EXISTING = Index.propertyBuilder("sleeper.table.reuse.existing")
+            .defaultProperty(DEFAULT_TABLE_REUSE_EXISTING)
+            .description("This property is used when applying an instance configuration and a table has been added.\n" +
+                    "By default, or if this property is false, when a table is added to an instance configuration it's created " +
+                    "in the instance. If it already exists the update will fail.\n" +
+                    "If this property is true, the existing table will be reused and imported as part of the instance configuration. " +
+                    "If it doesn't exist the update will fail.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
+            .build();
     TableProperty COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.table.compaction.strategy.class")
             .defaultProperty(DEFAULT_COMPACTION_STRATEGY_CLASS)
             .description("The name of the class that defines how compaction jobs should be created.\n" +
@@ -500,12 +520,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "The snapshot that will be considered the latest snapshot is configured by a property to set the " +
                     "minimum age for it to count for this:\n" +
                     "sleeper.table.statestore.transactionlog.delete.behind.snapshot.min.age\n")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .build();
-    TableProperty DYNAMODB_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.table.statestore.dynamo.consistent.reads")
-            .defaultProperty(DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS)
-            .description("This specifies whether queries and scans against DynamoDB tables used in the state stores " +
-                    "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")

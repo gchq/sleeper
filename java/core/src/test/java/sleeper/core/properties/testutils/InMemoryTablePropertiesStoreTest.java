@@ -131,6 +131,34 @@ public class InMemoryTablePropertiesStoreTest {
     }
 
     @Nested
+    @DisplayName("Update table properties")
+    class UpdateProperties {
+
+        @Test
+        void shouldThrowExceptionIfTableDoesNotExists() {
+            // When / Then
+            assertThatThrownBy(() -> store.update(tableProperties))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        void shouldUpdateTableProperties() {
+            // Given
+            tableProperties.setNumber(PAGE_SIZE, 123);
+            store.createTable(tableProperties);
+            tableProperties.setNumber(PAGE_SIZE, 456);
+
+            //When
+            store.update(tableProperties);
+
+            // When / Then
+            assertThat(store.loadByName(tableName))
+                    .extracting(properties -> properties.getInt(PAGE_SIZE))
+                    .isEqualTo(456);
+        }
+    }
+
+    @Nested
     @DisplayName("Delete properties")
     class DeleteProperties {
         @Test

@@ -18,7 +18,10 @@ FROM ${DEPENDENCIES_IMAGE}
 RUN apt-get update && apt-get install -y \
     ssh \
     jq \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm /etc/ssh/ssh_host_ecdsa_key \
+    && rm /etc/ssh/ssh_host_ed25519_key \
+    && rm /etc/ssh/ssh_host_rsa_key
 
 # Install Session Manager plugin
 RUN set -eux; \
