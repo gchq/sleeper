@@ -58,11 +58,21 @@ public class WrappedSketchForSplitting implements SketchForSplitting {
         return Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(maxQuantile), field);
     }
 
+    /**
+     * Derives a view of the sketch for the left side of a split on this field.
+     *
+     * @return the new sketch
+     */
     public WrappedSketchForSplitting splitLeft() {
         double newMedian = (medianQuantile - minQuantile) / 2.0 + minQuantile;
         return new WrappedSketchForSplitting(field, sketch, minQuantile, newMedian, medianQuantile);
     }
 
+    /**
+     * Derives a view of the sketch for the right side of a split on this field.
+     *
+     * @return the new sketch
+     */
     public WrappedSketchForSplitting splitRight() {
         double newMedian = (maxQuantile - medianQuantile) / 2.0 + medianQuantile;
         return new WrappedSketchForSplitting(field, sketch, medianQuantile, newMedian, maxQuantile);
