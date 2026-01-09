@@ -17,7 +17,7 @@ package sleeper.splitter.core.sketches;
 
 /**
  * Finds split points during partition splitting based on a sketch. We avoid referencing the sketch directly so that we
- * can split a sketch into two without modifying the original sketch, when extending a partition tree over multiple
+ * can split a sketch into two while still reading the original sketch, when extending a partition tree over multiple
  * levels.
  */
 public interface SketchForSplitting {

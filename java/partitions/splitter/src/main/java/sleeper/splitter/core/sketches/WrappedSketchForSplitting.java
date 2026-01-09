@@ -22,6 +22,7 @@ import sleeper.sketches.Sketches;
 
 /**
  * Wraps a sketch object. Allows splitting the sketch into two when extending a partition tree over multiple levels.
+ * Derives new views of the same sketch on either side of the split.
  */
 public class WrappedSketchForSplitting implements SketchForSplitting {
 

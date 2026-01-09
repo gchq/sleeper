@@ -19,7 +19,7 @@ import sleeper.core.schema.Field;
 
 /**
  * Finds split points during partition splitting based on sketches. We avoid referencing the sketches directly so that
- * we can split a sketch into two without modifying the original sketch, when extending a partition tree over multiple
+ * we can split a sketch into two while still reading the original sketch, when extending a partition tree over multiple
  * levels.
  */
 @FunctionalInterface
