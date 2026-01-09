@@ -144,12 +144,11 @@ public class RunWriteRandomDataTaskOnECSForMultipleNewTables {
                 jobSpec.rowsPerIngest(Long.parseLong(args[7]));
             }
 
-            new RunWriteRandomDataTaskOnECSForMultipleNewTables(s3Client, dynamoClient, ecsClient)
-                .run(
-                    systemTestProperties, tableCount,
-                    tablePropertiesFile, schemaFile, splitPointsFile,
-                    numWritersPerTable, jobSpec
-                );
+            new RunWriteRandomDataTaskOnECSForMultipleNewTables(s3Client, dynamoClient, ecsClient).run(
+                systemTestProperties, tableCount,
+                tablePropertiesFile, schemaFile, splitPointsFile,
+                numWritersPerTable, jobSpec
+            );
         }
     }
 
