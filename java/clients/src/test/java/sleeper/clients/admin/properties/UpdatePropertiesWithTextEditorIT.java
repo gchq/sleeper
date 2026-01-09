@@ -66,15 +66,11 @@ class UpdatePropertiesWithTextEditorIT {
         void shouldInvokeEditorOnInstancePropertiesFile() throws Exception {
             // Given
             InstanceProperties properties = createTestInstanceProperties();
-
-            String editor = System.getenv("EDITOR");
-            if (editor == null || editor.isBlank()) {
-                editor = "nano";
-            }
+            helper.setEnvironmentVariable("EDITOR", "myeditor");
 
             // When / Then
             assertThat(helper.openInstancePropertiesGetCommandRun(properties))
-                    .containsExactly(editor, tempDir.resolve("sleeper/admin/temp.properties").toString());
+                    .containsExactly("myeditor", tempDir.resolve("sleeper/admin/temp.properties").toString());
         }
 
         @Test
