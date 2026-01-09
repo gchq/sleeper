@@ -25,7 +25,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
-import sleeper.sketches.Sketches;
 import sleeper.sketches.store.SketchesStore;
 
 import java.util.List;
@@ -77,10 +76,10 @@ public class SplitPartition {
     }
 
     private Optional<SplitPartitionResult> getResultIfSplittable(Partition partition, List<String> fileNames) {
-        List<Sketches> sketches = fileNames.stream()
+        SketchesForSplitting sketches = new UnionSketchesForSplitting(fileNames.stream()
                 .map(filename -> sketchesStore.loadFileSketches(filename, schema))
-                .toList();
-        return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, SketchesForSplitting.union(sketches), idSupplier);
+                .toList());
+        return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, sketches, idSupplier);
     }
 
     private void apply(SplitPartitionResult result) {

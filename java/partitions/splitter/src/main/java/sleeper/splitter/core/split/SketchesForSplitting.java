@@ -15,30 +15,11 @@
  */
 package sleeper.splitter.core.split;
 
-import org.apache.datasketches.quantiles.ItemsUnion;
-
 import sleeper.core.schema.Field;
-import sleeper.sketches.Sketches;
-
-import java.util.List;
 
 @FunctionalInterface
 public interface SketchesForSplitting {
 
     SketchForSplitting getSketch(Field rowKeyField);
-
-    static SketchesForSplitting union(List<Sketches> sketches) {
-        return field -> {
-            ItemsUnion<Object> union = Sketches.createUnion(field.getType(), 16384);
-            for (Sketches sketch : sketches) {
-                union.update(sketch.getQuantilesSketch(field.getName()));
-            }
-            return new WrappedSketchForSplitting(field, union.getResult());
-        };
-    }
-
-    static SketchesForSplitting wrap(Sketches sketches) {
-        return field -> new WrappedSketchForSplitting(field, sketches.getQuantilesSketch(field.getName()));
-    }
 
 }
