@@ -48,10 +48,23 @@ public class ExtendPartitionTreeBasedOnSketches {
         this.idSupplier = idSupplier;
     }
 
+    /**
+     * Creates an instance of this class to extend to the minimum required leaf partitions for bulk import.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the object
+     */
     public static ExtendPartitionTreeBasedOnSketches forBulkImport(TableProperties tableProperties) {
         return forBulkImport(tableProperties, () -> UUID.randomUUID().toString());
     }
 
+    /**
+     * Creates an instance of this class to extend to the minimum required leaf partitions for bulk import.
+     *
+     * @param  tableProperties the table properties
+     * @param  idSupplier      a method to create IDs for any new partitions
+     * @return                 the object
+     */
     public static ExtendPartitionTreeBasedOnSketches forBulkImport(TableProperties tableProperties, Supplier<String> idSupplier) {
         return new ExtendPartitionTreeBasedOnSketches(
                 tableProperties.getSchema(),
@@ -59,6 +72,14 @@ public class ExtendPartitionTreeBasedOnSketches {
                 idSupplier);
     }
 
+    /**
+     * Creates a transaction to extend the partition tree to the required size. This assumes that we've already
+     * determined the partition tree needs to be extended.
+     *
+     * @param  tree                  the existing partition tree
+     * @param  partitionIdToSketches a map from partition ID to sketches of the data in that partition
+     * @return                       the new transaction
+     */
     public ExtendPartitionTreeTransaction createTransaction(PartitionTree tree, Map<String, Sketches> partitionIdToSketches) {
         List<Partition> originalLeafPartitions = tree.getLeafPartitions();
         SplitsTracker tracker = new SplitsTracker();
