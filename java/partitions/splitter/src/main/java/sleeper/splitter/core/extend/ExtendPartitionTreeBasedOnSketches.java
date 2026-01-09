@@ -22,12 +22,15 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTreeTransaction;
 import sleeper.sketches.Sketches;
 import sleeper.splitter.core.split.FindPartitionSplitPoint;
+import sleeper.splitter.core.split.SplitPartitionResult;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 
 /**
  * Creates a transaction to extend the partition tree based on sketches of data in the existing leaf partitions.
@@ -35,10 +38,12 @@ import java.util.function.Supplier;
 public class ExtendPartitionTreeBasedOnSketches {
 
     private final Schema schema;
+    private final int minLeafPartitions;
     private final Supplier<String> idSupplier;
 
-    private ExtendPartitionTreeBasedOnSketches(Schema schema, Supplier<String> idSupplier) {
+    private ExtendPartitionTreeBasedOnSketches(Schema schema, int minLeafPartitions, Supplier<String> idSupplier) {
         this.schema = schema;
+        this.minLeafPartitions = minLeafPartitions;
         this.idSupplier = idSupplier;
     }
 
@@ -49,23 +54,29 @@ public class ExtendPartitionTreeBasedOnSketches {
     public static ExtendPartitionTreeBasedOnSketches forBulkImport(TableProperties tableProperties, Supplier<String> idSupplier) {
         return new ExtendPartitionTreeBasedOnSketches(
                 tableProperties.getSchema(),
+                tableProperties.getInt(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT),
                 idSupplier);
     }
 
     public ExtendPartitionTreeTransaction createTransaction(PartitionTree tree, Map<String, Sketches> partitionIdToSketches) {
-        List<Partition> leafPartitions = tree.getLeafPartitions();
-        List<Partition> updatedPartitions = new ArrayList<>();
-        List<Partition> newPartitions = new ArrayList<>();
-        for (Partition partition : leafPartitions) {
-            Sketches sketches = partitionIdToSketches.get(partition.getId());
-            FindPartitionSplitPoint.getResultIfSplittable(schema, partition, List.of(sketches), idSupplier)
-                    .ifPresent(result -> {
-                        updatedPartitions.add(result.getParentPartition());
-                        newPartitions.add(result.getLeftChild());
-                        newPartitions.add(result.getRightChild());
-                    });
+        List<Partition> originalLeafPartitions = tree.getLeafPartitions();
+        SplitsTracker tracker = new SplitsTracker();
+        List<Partition> workingPartitions = originalLeafPartitions;
+        while (tracker.getNumLeafPartitions() < minLeafPartitions) {
+            workingPartitions = splitLeaves(partitionIdToSketches, workingPartitions)
+                    .peek(tracker::recordSplit)
+                    .flatMap(SplitPartitionResult::streamChildPartitions)
+                    .toList();
         }
-        return new ExtendPartitionTreeTransaction(updatedPartitions, newPartitions);
+        return tracker.buildTransaction();
+    }
+
+    private Stream<SplitPartitionResult> splitLeaves(Map<String, Sketches> partitionIdToSketches, List<Partition> leafPartitions) {
+        return leafPartitions.stream()
+                .flatMap(partition -> {
+                    Sketches sketches = partitionIdToSketches.get(partition.getId());
+                    return FindPartitionSplitPoint.getResultIfSplittable(schema, partition, List.of(sketches), idSupplier).stream();
+                });
     }
 
 }

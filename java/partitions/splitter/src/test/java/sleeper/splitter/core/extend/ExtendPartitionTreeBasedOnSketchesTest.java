@@ -39,6 +39,9 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 
 public class ExtendPartitionTreeBasedOnSketchesTest {
+    // Test list:
+    // - Some leaf partitions are never split, but should still count towards minimum leaf partition count
+    // - Split from a larger existing partition tree
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
