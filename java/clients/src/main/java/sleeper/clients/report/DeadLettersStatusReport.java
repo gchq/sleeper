@@ -39,8 +39,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTIT
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_DLQ_URL;
 
 /**
- * A utility class to report information about messages on the various dead-letter
- * queues and to print out the messages in a human-readable form.
+ * Reports information about messages on various dead-letter queues. Prints out the messages in a human-readable form.
  */
 public class DeadLettersStatusReport {
     private final InstanceProperties instanceProperties;
@@ -59,7 +58,7 @@ public class DeadLettersStatusReport {
     }
 
     /**
-     * Writes a report on messages on dead letter queues.
+     * Writes a report of messages on the dead letter queues.
      */
     public void run() {
         System.out.println("\nDead Letters Status Report:\n--------------------------");
