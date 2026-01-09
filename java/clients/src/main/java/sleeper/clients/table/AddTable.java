@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
@@ -34,7 +35,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.core.properties.PropertiesUtils.loadProperties;
 
 public class AddTable {
     private final TableProperties tableProperties;
@@ -69,7 +69,8 @@ public class AddTable {
                 DynamoDbClient dynamoClient = buildAwsV2Client(DynamoDbClient.builder())) {
 
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesFile));
+            TableProperties tableProperties = LoadLocalProperties.loadTableFromPropertiesFileNoValidation(instanceProperties, tablePropertiesFile).properties();
+            //TableProperties tableProperties = new TableProperties(instanceProperties, loadProperties(tablePropertiesFile));
             tableProperties.setSchema(Schema.load(schemaFile));
 
             TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
