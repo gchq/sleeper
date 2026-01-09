@@ -4,6 +4,7 @@ chunks:
     workflow: chunk-clients-cdk.yaml
     modules:
       - clients
+      - spark
       - deployment/cdk
       - deployment/cdk-custom-resources
       - deployment/cdk-environment

@@ -63,13 +63,14 @@ class UpdatePropertiesWithTextEditorIT {
     class OpenInstanceProperties {
 
         @Test
-        void shouldInvokeNanoOnInstancePropertiesFile() throws Exception {
+        void shouldInvokeEditorOnInstancePropertiesFile() throws Exception {
             // Given
             InstanceProperties properties = createTestInstanceProperties();
+            helper.setEnvironmentVariable("EDITOR", "myeditor");
 
             // When / Then
             assertThat(helper.openInstancePropertiesGetCommandRun(properties))
-                    .containsExactly("nano", tempDir.resolve("sleeper/admin/temp.properties").toString());
+                    .containsExactly("myeditor", tempDir.resolve("sleeper/admin/temp.properties").toString());
         }
 
         @Test

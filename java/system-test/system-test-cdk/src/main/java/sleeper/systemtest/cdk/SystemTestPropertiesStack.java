@@ -56,7 +56,7 @@ public class SystemTestPropertiesStack extends NestedStack {
 
         String functionName = String.join("-", "sleeper", Utils.cleanInstanceId(systemTestProperties.get(SYSTEM_TEST_ID)), "properties-writer");
 
-        IFunction propertiesWriterLambda = lambdaCode.buildFunction(this, LambdaHandler.PROPERTIES_WRITER, "PropertiesWriterLambda", builder -> builder
+        IFunction instancePropertiesWriterLambda = lambdaCode.buildFunction(this, LambdaHandler.INSTANCE_PROPERTIES_WRITER, "PropertiesWriterLambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(Map.of(CONFIG_BUCKET.toEnvironmentVariable(), bucketStack.getBucket().getBucketName()))
@@ -66,10 +66,10 @@ public class SystemTestPropertiesStack extends NestedStack {
                         .retention(Utils.getRetentionDays(systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
                         .build()));
 
-        bucketStack.getBucket().grantWrite(propertiesWriterLambda);
+        bucketStack.getBucket().grantWrite(instancePropertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
-                .onEventHandler(propertiesWriterLambda)
+                .onEventHandler(instancePropertiesWriterLambda)
                 .logGroup(LogGroup.Builder.create(this, "PropertiesWriterProviderLogGroup")
                         .logGroupName(functionName + "-provider")
                         .retention(Utils.getRetentionDays(systemTestProperties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))

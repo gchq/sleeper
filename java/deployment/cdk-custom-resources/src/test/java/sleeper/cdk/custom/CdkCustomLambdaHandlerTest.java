@@ -31,8 +31,8 @@ public class CdkCustomLambdaHandlerTest {
 
     @Test
     void shouldMatchPropertiesLambdaHandlerDeclaration() {
-        assertThat(LambdaHandler.PROPERTIES_WRITER.getHandler())
-                .isEqualTo(PropertiesWriterLambda.class.getName() + "::handleEvent");
+        assertThat(LambdaHandler.INSTANCE_PROPERTIES_WRITER.getHandler())
+                .isEqualTo(InstancePropertiesWriterLambda.class.getName() + "::handleEvent");
     }
 
     @Test
