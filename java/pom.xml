@@ -45,7 +45,6 @@
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
         <module>system-test</module>
-        <module>trino</module>
         <module>spark</module>
     </modules>
 
