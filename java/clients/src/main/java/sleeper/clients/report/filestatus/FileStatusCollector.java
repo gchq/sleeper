@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 import static java.util.function.Function.identity;
 
 /**
- * Collects information about files within Sleeper for reporting. Produces a {@link TableFilesStatus} data structure.
- * This is currently used by {@link FileStatusReporter} implementations that present this data to the user.
+ * Collects information about files in a Sleeper table for reporting. Produces a {@link TableFilesStatus} data
+ * structure.
  */
 public class FileStatusCollector {
     private final StateStore stateStore;

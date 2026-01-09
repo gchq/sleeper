@@ -58,6 +58,9 @@ public class DeadLettersStatusReport {
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
+    /**
+     * Writes a report on messages on dead letter queues.
+     */
     public void run() {
         System.out.println("\nDead Letters Status Report:\n--------------------------");
         printStats(instanceProperties.get(COMPACTION_JOB_DLQ_URL), "compaction jobs dead-letter", s -> {

@@ -22,7 +22,7 @@ import java.util.Collection;
 
 /**
  * A report on the status of files within a Sleeper table. This includes statistics on the number of partitions, how
- * many files have no references, etc.
+ * many files have no references, etc. This is presented to the user by {@link FileStatusReporter} implementations.
  */
 public class TableFilesStatus {
 

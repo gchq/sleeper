@@ -42,7 +42,7 @@ import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * Creates reports on the status of compaction jobs. Takes a {@link JobQuery} and outputs information about the jobs
- * matching that query. Writes the report to the console.
+ * matching that query.
  */
 public class CompactionJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
