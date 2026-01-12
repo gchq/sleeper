@@ -92,7 +92,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 LogGroupRef.BULK_IMPORT_EMR_PERSISTENT_START, commonEmrStack);
         configureJobStarterFunction(jobStarter);
         createCluster(this, instanceProperties, coreStacks, importBucketStack.getImportBucket(), commonEmrStack);
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
     }
 
     private static void createCluster(Construct scope,

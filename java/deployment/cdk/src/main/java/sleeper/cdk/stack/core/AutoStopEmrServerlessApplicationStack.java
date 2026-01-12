@@ -82,7 +82,7 @@ public class AutoStopEmrServerlessApplicationStack extends NestedStack {
                 .logGroup(loggingStack.getLogGroup(LogGroupRef.AUTO_STOP_EMR_SERVERLESS_APPLICATION_PROVIDER))
                 .build();
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
 
     }
 

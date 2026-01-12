@@ -88,7 +88,7 @@ public class AutoDeleteS3ObjectsStack extends NestedStack {
                 .logGroup(providerLogGroup)
                 .build();
 
-        Utils.addStackTagIfSet(this, instanceProperties);
+        Utils.addTags(this, instanceProperties);
 
     }
 

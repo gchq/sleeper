@@ -133,9 +133,11 @@ public class Utils {
         }
     }
 
-    public static void addStackTagIfSet(Stack stack, InstanceProperties properties) {
+    public static void addTags(Stack stack, InstanceProperties properties) {
+        Tags tags = Tags.of(stack);
+        properties.getTags().forEach(tags::add);
         Optional.ofNullable(properties.get(STACK_TAG_NAME))
-                .ifPresent(tagName -> Tags.of(stack).add(tagName, stack.getNode().getId()));
+                .ifPresent(tagName -> tags.add(tagName, stack.getNode().getId()));
     }
 
     public static RemovalPolicy removalPolicy(InstanceProperties properties) {
