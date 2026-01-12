@@ -79,7 +79,7 @@ public class StateStoreProvider {
     /**
      * Remove a specific table's state store from the cache.
      *
-     * @param  tableId Sleeper table ID
+     * @param  tableId the Sleeper table ID
      * @return true if the state store for the requested Sleeper table was in the cache and has been removed
      */
     public boolean removeStateStoreFromCache(String tableId) {
