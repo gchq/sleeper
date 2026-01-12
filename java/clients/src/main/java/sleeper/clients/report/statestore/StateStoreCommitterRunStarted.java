@@ -18,6 +18,9 @@ package sleeper.clients.report.statestore;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A log entry recording that a state store committer invocation started.
+ */
 public class StateStoreCommitterRunStarted implements StateStoreCommitterLogEntry {
     private final String logStream;
     private final Instant timestamp;

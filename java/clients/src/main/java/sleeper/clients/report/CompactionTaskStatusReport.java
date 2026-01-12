@@ -28,6 +28,11 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
+/**
+ * Creates reports on the status of compaction tasks. A compaction task is a process that starts up, runs some number of
+ * compaction jobs, then terminates. This takes a {@link CompactionTaskQuery} and outputs information about the tasks
+ * matching that query.
+ */
 public class CompactionTaskStatusReport {
 
     private final CompactionTaskTracker tracker;
@@ -43,6 +48,9 @@ public class CompactionTaskStatusReport {
         this.query = query;
     }
 
+    /**
+     * Creates a report.
+     */
     public void run() {
         reporter.report(query, query.run(tracker));
     }

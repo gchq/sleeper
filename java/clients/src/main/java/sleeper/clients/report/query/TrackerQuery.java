@@ -22,6 +22,9 @@ import sleeper.query.core.tracker.TrackedQuery;
 
 import java.util.List;
 
+/**
+ * A query to retrieve the status of queries held in the tracker, to generate a report.
+ */
 @FunctionalInterface
 public interface TrackerQuery {
     TrackerQuery ALL = QueryTrackerStore::getAllQueries;
@@ -30,5 +33,11 @@ public interface TrackerQuery {
     TrackerQuery COMPLETED = store -> store.getQueriesWithState(QueryState.COMPLETED);
     TrackerQuery FAILED = store -> store.getFailedQueries();
 
+    /**
+     * Retrieves the data for the report.
+     *
+     * @param  store the tracker store
+     * @return       the status of queries covered by this query
+     */
     List<TrackedQuery> run(QueryTrackerStore store);
 }

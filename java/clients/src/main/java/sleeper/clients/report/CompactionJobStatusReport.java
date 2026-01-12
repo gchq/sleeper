@@ -40,6 +40,10 @@ import java.util.Map;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
 
+/**
+ * Creates reports on the status of compaction jobs. Takes a {@link JobQuery} and outputs information about the jobs
+ * matching that query.
+ */
 public class CompactionJobStatusReport {
     private static final String DEFAULT_REPORTER = "STANDARD";
     private static final Map<String, CompactionJobStatusReporter> REPORTERS = new HashMap<>();
@@ -80,6 +84,9 @@ public class CompactionJobStatusReport {
         this.queryType = query.getType();
     }
 
+    /**
+     * Creates the report.
+     */
     public void run() {
         if (query == null) {
             return;

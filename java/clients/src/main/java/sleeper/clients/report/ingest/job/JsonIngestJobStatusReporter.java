@@ -39,6 +39,9 @@ import java.util.Map;
 
 import static sleeper.clients.report.job.JsonJobRunReporter.jobRunsJsonSerializer;
 
+/**
+ * Creates reports in JSON format on the status of ingest and bulk import jobs.
+ */
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(JobRunSummary.class, JsonJobRunSummary.serializer())

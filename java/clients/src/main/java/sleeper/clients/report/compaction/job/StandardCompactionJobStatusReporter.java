@@ -41,6 +41,10 @@ import java.util.stream.Stream;
 import static sleeper.clients.report.job.StandardJobRunReporter.formatDurationString;
 import static sleeper.clients.report.job.StandardJobRunReporter.printUpdateType;
 
+/**
+ * Creates reports in human-readable string format on the status of compaction jobs. Depending on the report query type,
+ * this produces either a table, or a detailed report for each job run.
+ */
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
     private final TableField stateField;
@@ -78,6 +82,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         tableFactory = tableFactoryBuilder.build();
     }
 
+    @Override
     public void report(List<CompactionJobStatus> jobStatusList, JobQuery.Type queryType) {
         out.println();
         out.println("Compaction Job Status Report");

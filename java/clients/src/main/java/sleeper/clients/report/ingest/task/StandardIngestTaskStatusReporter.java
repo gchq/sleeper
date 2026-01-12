@@ -26,6 +26,9 @@ import sleeper.core.tracker.job.run.AverageRowRate;
 import java.io.PrintStream;
 import java.util.List;
 
+/**
+ * Creates reports in human-readable string format on the status of ingest tasks. This produces a table.
+ */
 public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporter {
 
     private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder();

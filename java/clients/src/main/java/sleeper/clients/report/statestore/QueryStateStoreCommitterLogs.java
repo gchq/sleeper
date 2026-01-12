@@ -39,6 +39,9 @@ import java.util.Set;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 
+/**
+ * Scans and parses the state store committer logs. Used to create statistics on the rate of transactions committed.
+ */
 public class QueryStateStoreCommitterLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(QueryStateStoreCommitterLogs.class);
 
@@ -50,6 +53,16 @@ public class QueryStateStoreCommitterLogs {
         this.cloudWatch = cloudWatch;
     }
 
+    /**
+     * Retrieves all logs in a given time period. Pages through results from CloudWatch if necessary. If this is a
+     * recent period, this may involve waiting for the logs to settle until they are reliably available for query in
+     * CloudWatch.
+     *
+     * @param  startTime            the start time
+     * @param  endTime              the end time
+     * @return                      the log entries in the period
+     * @throws InterruptedException if the thread is interrupted while waiting for the logs to settle
+     */
     public List<StateStoreCommitterLogEntry> getLogsInPeriod(Instant startTime, Instant endTime) throws InterruptedException {
         String logGroupName = instanceProperties.get(STATESTORE_COMMITTER_LOG_GROUP);
         LOGGER.info("Submitting logs query for log group {} starting at time {}", logGroupName, startTime);
@@ -119,6 +132,13 @@ public class QueryStateStoreCommitterLogs {
         }
     }
 
+    /**
+     * The format for an input file passed on the command line, to specify the period to query in the logs.
+     *
+     * @param instanceId the Sleeper instance ID
+     * @param startTime  the start of the period to query
+     * @param endTime    the end of the period to query
+     */
     public record Input(String instanceId, Instant startTime, Instant endTime) {
     }
 }

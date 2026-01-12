@@ -23,6 +23,9 @@ import java.util.Objects;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
 
+/**
+ * A log entry recording that a state store transaction was committed to a Sleeper table.
+ */
 public class StateStoreCommitSummary implements StateStoreCommitterLogEntry {
     private final String logStream;
     private final Instant timestamp;
@@ -38,6 +41,14 @@ public class StateStoreCommitSummary implements StateStoreCommitterLogEntry {
         this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
     }
 
+    /**
+     * Scans through a list of log entries for entries of this type, and counts the number of transactions committed to
+     * each Sleeper table.
+     *
+     * @param  entries the log entries
+     * @return         a map from the Sleeper table ID to the number of transactions committed to that table in the
+     *                 given logs
+     */
     public static Map<String, Integer> countNumCommitsByTableId(List<StateStoreCommitterLogEntry> entries) {
         return entries.stream()
                 .filter(entry -> entry instanceof StateStoreCommitSummary)

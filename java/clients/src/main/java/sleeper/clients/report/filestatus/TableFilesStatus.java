@@ -21,8 +21,8 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import java.util.Collection;
 
 /**
- * A data structure to hold information about the status of files within Sleeper
- * i.e. details on the file partitions there are (leaf and non leaf), how many files have no references etc
+ * A report on the status of files within a Sleeper table. This includes statistics on the number of partitions, how
+ * many files have no references, etc. This is presented to the user by {@link FileStatusReporter} implementations.
  */
 public class TableFilesStatus {
 
@@ -114,6 +114,9 @@ public class TableFilesStatus {
         return statistics.getTotalRowsInNonLeafPartitionsApprox();
     }
 
+    /**
+     * A builder for the status of files in a Sleeper table.
+     */
     public static final class Builder {
         private int leafPartitionCount;
         private int nonLeafPartitionCount;
@@ -127,21 +130,47 @@ public class TableFilesStatus {
             return new Builder();
         }
 
+        /**
+         * Sets the count of leaf partitions in the Sleeper table. A partition is a leaf partition if it has no child
+         * partitions, and so the space of row keys in the Sleeper table has not been split up beyond this level.
+         *
+         * @param  leafPartitionCount the number of leaf partitions in the table
+         * @return                    this builder
+         */
         public Builder leafPartitionCount(int leafPartitionCount) {
             this.leafPartitionCount = leafPartitionCount;
             return this;
         }
 
+        /**
+         * Sets the count of non-leaf partitions in the Sleeper table. A partition is a non-leaf partition if the region
+         * of row keys that it covers has been split up into smaller partitions, i.e. its child partitions.
+         *
+         * @param  nonLeafPartitionCount the number of leaf partitions in the table
+         * @return                       this builder
+         */
         public Builder nonLeafPartitionCount(int nonLeafPartitionCount) {
             this.nonLeafPartitionCount = nonLeafPartitionCount;
             return this;
         }
 
+        /**
+         * Sets the statistics on files in the Sleeper table.
+         *
+         * @param  statistics the statistics
+         * @return            this builder
+         */
         public Builder statistics(TableFilesStatistics statistics) {
             this.statistics = statistics;
             return this;
         }
 
+        /**
+         * Sets the files in the Sleeper table.
+         *
+         * @param  files the files
+         * @return       this builder
+         */
         public Builder files(AllReferencesToAllFiles files) {
             this.files = files;
             return this;
