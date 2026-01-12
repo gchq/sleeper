@@ -241,7 +241,8 @@ public interface TableStateProperty {
             .build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_PLATFORM = Index.propertyBuilder("sleeper.statestore.committer.platform")
             .description("The platform that the state store committer will be deployed to for execution.\n" +
-                    "Valid values are: " + describeEnumValuesInLowerCase(StateStoreCommitterPlatform.class) + "\n")
+                    "Valid values are: " + describeEnumValuesInLowerCase(StateStoreCommitterPlatform.class) + "\n" +
+                    "NB: The EC2 platform is currently considered experimental.")
             .defaultValue(StateStoreCommitterPlatform.LAMBDA.toString())
             .validationPredicate(StateStoreCommitterPlatform::isValid)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)

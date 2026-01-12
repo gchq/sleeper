@@ -343,6 +343,7 @@ sleeper.subnets=set-automatically
 
 # The platform that the state store committer will be deployed to for execution.
 # Valid values are: [lambda, ec2]
+# NB: The EC2 platform is currently considered experimental.
 # (default value shown below, uncomment to set a value)
 # sleeper.statestore.committer.platform=LAMBDA
 
