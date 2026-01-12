@@ -109,17 +109,17 @@ public class InMemoryTablePropertiesStoreTest {
         @Test
         void shouldPrioritiseMoreRecentPreviousTableNamesOverLessRecentOnGet() {
             // Given
-            String previousName = "name1,name2";
+            String previousName = "olderName,newerName";
             tableProperties.unset(TABLE_ID);
             tableProperties.set(PREVIOUS_TABLE_NAMES, previousName);
 
             TableProperties tableWithMatchingName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-            tableWithMatchingName.set(TABLE_ID, "differentID1");
-            tableWithMatchingName.set(TABLE_NAME, "name1");
+            tableWithMatchingName.set(TABLE_ID, "olderId");
+            tableWithMatchingName.set(TABLE_NAME, "olderName");
 
             TableProperties tableWithMatchingPreviousName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-            tableWithMatchingPreviousName.set(TABLE_ID, "differentID2");
-            tableWithMatchingPreviousName.set(TABLE_NAME, "name2");
+            tableWithMatchingPreviousName.set(TABLE_ID, "newerId");
+            tableWithMatchingPreviousName.set(TABLE_NAME, "newerName");
 
             store.createTable(tableWithMatchingName);
             store.createTable(tableWithMatchingPreviousName);
@@ -129,7 +129,7 @@ public class InMemoryTablePropertiesStoreTest {
 
             // Then
             assertThat(tableStatus.isPresent()).isTrue();
-            assertThat(tableStatus.get().getTableUniqueId()).isEqualTo("differentID1");
+            assertThat(tableStatus.get().getTableUniqueId()).isEqualTo("newerId");
         }
 
         @Test
