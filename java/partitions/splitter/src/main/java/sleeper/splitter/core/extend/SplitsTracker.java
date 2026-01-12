@@ -20,8 +20,8 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ExtendPartitionTr
 import sleeper.splitter.core.split.SplitPartitionResult;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +32,7 @@ import java.util.Set;
 class SplitsTracker {
 
     private final List<Partition> updatedPartitions = new ArrayList<>();
-    private final Map<String, Partition> newPartitionsById = new HashMap<>();
+    private final Map<String, Partition> newPartitionsById = new LinkedHashMap<>();
     private final Set<String> newLeafPartitionIds = new HashSet<>();
 
     SplitsTracker() {
