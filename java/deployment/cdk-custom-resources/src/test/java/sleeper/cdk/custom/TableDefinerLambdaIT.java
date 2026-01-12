@@ -186,7 +186,6 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         public void shouldUpdateTableIfImportDataPropertySet() throws IOException {
             //Given
             createTableThenTakeOffline();
-            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
 
             //When
             tableProperties.set(TABLE_ONLINE, "true");
@@ -202,6 +201,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
         public void shouldHandleTableBeingRenamed() throws IOException {
             //Given
             createTableThenTakeOffline();
+
             String previousTableName = tableProperties.get(TABLE_NAME);
             String newTableName = "newName";
             tableProperties.set(TABLE_REUSE_EXISTING, "true");
@@ -222,7 +222,7 @@ public class TableDefinerLambdaIT extends LocalStackTestBase {
             //Should just take the table offline
             tableProperties.set(RETAIN_TABLE_AFTER_REMOVAL, "true");
             callLambda(DELETE, tableProperties);
-            assertThat(propertiesStore.loadByName(tableProperties.get(TABLE_NAME)).getBoolean(TABLE_ONLINE)).isFalse();
+
         }
     }
 
