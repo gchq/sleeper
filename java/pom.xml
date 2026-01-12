@@ -24,7 +24,7 @@
     <version>0.35.0-SNAPSHOT</version>
 
     <modules>
-        <module>athena</module>
+        <module>analytics-integration</module>
         <module>build</module>
         <module>bulk-import</module>
         <module>bulk-export</module>
@@ -45,8 +45,6 @@
         <module>statestore-committer-core</module>
         <module>statestore-lambda</module>
         <module>system-test</module>
-        <module>trino</module>
-        <module>spark</module>
     </modules>
 
     <properties>

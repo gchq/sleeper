@@ -4,7 +4,7 @@ chunks:
     workflow: chunk-clients-cdk.yaml
     modules:
       - clients
-      - spark
+      - analytics-integration/spark
       - deployment/cdk
       - deployment/cdk-custom-resources
       - deployment/cdk-environment
@@ -81,5 +81,5 @@ chunks:
       - query/query-core
       - query/query-runner
       - query/query-lambda
-      - athena
-      - trino
+      - analytics-integration/trino
+      - analytics-integration/athena
