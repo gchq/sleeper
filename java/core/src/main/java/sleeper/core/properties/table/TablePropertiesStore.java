@@ -186,10 +186,11 @@ public class TablePropertiesStore {
         Optional<TableStatus> existingStatus = tableIndex.getTableByName(tableProperties.get(TABLE_NAME));
         if (existingStatus.isEmpty()) {
             List<String> previousNames = tableProperties.getList(PREVIOUS_TABLE_NAMES);
-            int i = 0;
-            while (existingStatus.isEmpty() && i < previousNames.size()) {
+            for (int i = 0; i < previousNames.size(); i++) {
                 existingStatus = tableIndex.getTableByName(previousNames.get(i));
-                i++;
+                if (existingStatus.isPresent()) {
+                    break;
+                }
             }
         }
         return existingStatus;
