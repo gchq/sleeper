@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
@@ -37,12 +38,14 @@ public class IngestQueueMessages {
     private final Integer emrMessages;
     private final Integer persistentEmrMessages;
     private final Integer eksMessages;
+    private final Integer emrServerlessMessages;
 
     private IngestQueueMessages(Builder builder) {
         ingestMessages = builder.ingestMessages;
         emrMessages = builder.emrMessages;
         persistentEmrMessages = builder.persistentEmrMessages;
         eksMessages = builder.eksMessages;
+        emrServerlessMessages = builder.emrServerlessMessages;
     }
 
     /**
@@ -58,6 +61,7 @@ public class IngestQueueMessages {
                 .emrMessages(getMessages(properties, client, BULK_IMPORT_EMR_JOB_QUEUE_URL))
                 .persistentEmrMessages(getMessages(properties, client, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL))
                 .eksMessages(getMessages(properties, client, BULK_IMPORT_EKS_JOB_QUEUE_URL))
+                .emrServerlessMessages(getMessages(properties, client, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL))
                 .build();
     }
 
@@ -93,6 +97,9 @@ public class IngestQueueMessages {
         if (eksMessages != null) {
             out.printf("Jobs waiting in EKS queue (excluded from report): %s%n", eksMessages);
         }
+        if (eksMessages != null) {
+            out.printf("Jobs waiting in EMR serverless queue (excluded from report): %s%n", emrServerlessMessages);
+        }
         out.printf("Total jobs waiting across all queues: %s%n", getTotalMessages());
     }
 
@@ -100,7 +107,8 @@ public class IngestQueueMessages {
         return Optional.ofNullable(ingestMessages).orElse(0) +
                 Optional.ofNullable(emrMessages).orElse(0) +
                 Optional.ofNullable(persistentEmrMessages).orElse(0) +
-                Optional.ofNullable(eksMessages).orElse(0);
+                Optional.ofNullable(eksMessages).orElse(0) +
+                Optional.ofNullable(emrServerlessMessages).orElse(0);
     }
 
     @Override
@@ -115,12 +123,13 @@ public class IngestQueueMessages {
         return Objects.equals(ingestMessages, that.ingestMessages)
                 && Objects.equals(emrMessages, that.emrMessages)
                 && Objects.equals(persistentEmrMessages, that.persistentEmrMessages)
-                && Objects.equals(eksMessages, that.eksMessages);
+                && Objects.equals(eksMessages, that.eksMessages)
+                && Objects.equals(emrServerlessMessages, that.emrServerlessMessages);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ingestMessages, emrMessages, persistentEmrMessages, eksMessages);
+        return Objects.hash(ingestMessages, emrMessages, persistentEmrMessages, eksMessages, emrServerlessMessages);
     }
 
     @Override
@@ -130,6 +139,7 @@ public class IngestQueueMessages {
                 ", emrMessages=" + emrMessages +
                 ", persistentEmrMessages=" + persistentEmrMessages +
                 ", eksMessages=" + eksMessages +
+                ", emrServerlessMessages=" + emrServerlessMessages +
                 '}';
     }
 
@@ -141,6 +151,7 @@ public class IngestQueueMessages {
         private Integer emrMessages;
         private Integer persistentEmrMessages;
         private Integer eksMessages;
+        private Integer emrServerlessMessages;
 
         private Builder() {
         }
@@ -186,6 +197,17 @@ public class IngestQueueMessages {
          */
         public Builder eksMessages(Integer eksMessages) {
             this.eksMessages = eksMessages;
+            return this;
+        }
+
+        /**
+         * Sets the number of messages on the EMR serverless bulk import job queue.
+         *
+         * @param  emrServerlessMessages the number of messages, or null if the queue is not present
+         * @return                       this builder
+         */
+        public Builder emrServerlessMessages(Integer emrServerlessMessages) {
+            this.emrServerlessMessages = emrServerlessMessages;
             return this;
         }
 
