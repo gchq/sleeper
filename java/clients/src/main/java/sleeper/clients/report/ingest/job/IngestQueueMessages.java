@@ -97,7 +97,7 @@ public class IngestQueueMessages {
         if (eksMessages != null) {
             out.printf("Jobs waiting in EKS queue (excluded from report): %s%n", eksMessages);
         }
-        if (eksMessages != null) {
+        if (emrServerlessMessages != null) {
             out.printf("Jobs waiting in EMR serverless queue (excluded from report): %s%n", emrServerlessMessages);
         }
         out.printf("Total jobs waiting across all queues: %s%n", getTotalMessages());
