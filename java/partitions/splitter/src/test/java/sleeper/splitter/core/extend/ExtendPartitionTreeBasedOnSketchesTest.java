@@ -45,12 +45,6 @@ import static sleeper.core.schema.SchemaTestHelper.createSchemaWithKey;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 
 public class ExtendPartitionTreeBasedOnSketchesTest {
-    // Test list:
-    // - Partitions without enough data should not be split
-    // - Some leaf partitions are never split, but should still count towards minimum leaf partition count (see TODO in SplitsTracker)
-    // - Split from a larger existing partition tree
-    // - More splits at once
-    // - Partition tree cannot be extended enough due to insufficient data
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, createSchemaWithKey("key", new IntType()));
@@ -193,6 +187,22 @@ public class ExtendPartitionTreeBasedOnSketchesTest {
                                     .buildTree(),
                             List.of("L", "R"),
                             List.of("P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10", "P11", "P12")));
+        }
+    }
+
+    @Nested
+    @DisplayName("Exclude partitions with insufficient data")
+    class ExcludeInsufficientData {
+        // Test list:
+        // - Partition has fewer than minimum rows
+        // - Partition has fewer than 10% of the expected number of rows based on an even distribution
+        // - One partition has enough rows to split once but not again later, other partition has enough rows to meet minimum partition count
+        // - Leaf partitions that are not split should still count towards minimum leaf partition count (see TODO in SplitsTracker)
+        // - Partition tree cannot be extended enough due to insufficient data, so fail completely
+
+        @Test
+        void shouldNotSplitPartitionWithLessThanMinimumRowsInSketch() {
+            // TODO
         }
     }
 
