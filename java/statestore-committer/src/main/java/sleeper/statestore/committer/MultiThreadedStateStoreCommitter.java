@@ -98,44 +98,44 @@ public class MultiThreadedStateStoreCommitter {
     }
 
     private void init() {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(this.s3Client, this.configBucketName);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, configBucketName);
         // Disable fixed size state store caching with FIFO expiry by setting the cache size to a large number!
         // TODO: Should this property be updated to allow the cache to be disabled by setting to -1?
         instanceProperties.set(STATESTORE_PROVIDER_CACHE_SIZE, "1000000");
 
         // If the URL to the SQS queue hasn't already been provided, retrieve it from instance properties
-        if (this.qUrl == null || this.qUrl.isEmpty()) {
-            this.qUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
+        if (qUrl == null || qUrl.isEmpty()) {
+            qUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
         }
 
         long heapSpaceAmountToKeepFree = instanceProperties.getBytes(STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_AMOUNT);
         long heapSpacePercToKeepFree = (Runtime.getRuntime().maxMemory() / 100) * instanceProperties.getLong(STATESTORE_COMMITTER_EC2_MIN_FREE_HEAP_TARGET_PERCENTAGE);
-        this.heapSpaceToKeepFree = Math.max(heapSpaceAmountToKeepFree, heapSpacePercToKeepFree);
+        heapSpaceToKeepFree = Math.max(heapSpaceAmountToKeepFree, heapSpacePercToKeepFree);
 
-        if (this.heapSpaceToKeepFree > Runtime.getRuntime().maxMemory()) {
+        if (heapSpaceToKeepFree > Runtime.getRuntime().maxMemory()) {
             throw new IllegalArgumentException("This state store committer has been configured to keep at least " +
-                FileUtils.byteCountToDisplaySize(this.heapSpaceToKeepFree) +
+                FileUtils.byteCountToDisplaySize(heapSpaceToKeepFree) +
                 " of heap available, but the maximum allowed heap size is only " +
                 FileUtils.byteCountToDisplaySize(Runtime.getRuntime().maxMemory()) +
                 "!"
             );
         }
         LOGGER.info("Will aim to keep {} of heap space available for use",
-            FileUtils.byteCountToDisplaySize(this.heapSpaceToKeepFree)
+            FileUtils.byteCountToDisplaySize(heapSpaceToKeepFree)
         );
 
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, this.s3Client, this.dynamoClient);
-        this.serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
 
-        StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, this.s3Client, this.dynamoClient);
-        this.stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
-        this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, this.s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
-        this.committer = new StateStoreCommitter(
+        StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoClient);
+        stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
+        transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
+        committer = new StateStoreCommitter(
             tablePropertiesProvider,
-            this.stateStoreProvider,
-            this.transactionBodyStore
+            stateStoreProvider,
+            transactionBodyStore
         );
-        this.throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
+        throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
     }
 
     /**
@@ -149,14 +149,14 @@ public class MultiThreadedStateStoreCommitter {
         Instant startedAt = Instant.now();
         Instant lastReceivedCommitsAt = Instant.now();
 
-        if (this.qUrl == null || this.qUrl.isEmpty()) {
+        if (qUrl == null || qUrl.isEmpty()) {
             throw new IllegalArgumentException("Missing URL to State Store Committer Queue!");
         }
 
         try {
             while (true) {
-                ReceiveMessageResponse response = this.sqsClient.receiveMessage(ReceiveMessageRequest.builder()
-                    .queueUrl(this.qUrl)
+                ReceiveMessageResponse response = sqsClient.receiveMessage(ReceiveMessageRequest.builder()
+                    .queueUrl(qUrl)
                     .maxNumberOfMessages(10)
                     .waitTimeSeconds(20)
                     // TODO: Need to deal with commits potentially taking longer than this visibility threshold
@@ -165,8 +165,8 @@ public class MultiThreadedStateStoreCommitter {
 
                 if (response.hasMessages()) {
                     lastReceivedCommitsAt = Instant.now();
-                    if (this.committer == null) {
-                        this.init();
+                    if (committer == null) {
+                        init();
                     }
                 }
 
@@ -179,14 +179,14 @@ public class MultiThreadedStateStoreCommitter {
                 Map<String, List<StateStoreCommitRequestWithSqsReceipt>> messagesByTableId = response.messages().stream()
                     .map(message -> {
                         LOGGER.trace("Received message: {}", message);
-                        StateStoreCommitRequest request = this.serDe.fromJson(message.body());
+                        StateStoreCommitRequest request = serDe.fromJson(message.body());
                         LOGGER.trace("Received request: {}", request);
                         return new StateStoreCommitRequestWithSqsReceipt(request, message.receiptHandle());
                     })
                     .collect(Collectors.groupingBy(request -> request.getCommitRequest().getTableId()));
 
                 // Try to make sure there is going to be enough heap space available to process these commits
-                this.ensureEnoughHeapSpaceAvailable(messagesByTableId.keySet());
+                ensureEnoughHeapSpaceAvailable(messagesByTableId.keySet());
 
                 messagesByTableId.entrySet().forEach(tableMessages -> {
                     String tableId = tableMessages.getKey();
@@ -194,9 +194,9 @@ public class MultiThreadedStateStoreCommitter {
                     LOGGER.info("Received {} requests for table: {}", requestsWithHandle.size(), tableId);
 
                     // Wait until processing of previous commits for this table has finished
-                    if (this.tableFutures.containsKey(tableId)) {
+                    if (tableFutures.containsKey(tableId)) {
                         try {
-                            this.tableFutures.get(tableId).get();
+                            tableFutures.get(tableId).get();
                         } catch (Exception e) {
                             throw new IllegalStateException("Exception was thrown during the processing of the previous batch of commits for table " + tableId + ":", e);
                         }
@@ -204,13 +204,13 @@ public class MultiThreadedStateStoreCommitter {
 
                     // Apply the commits for each table on a separate thread
                     CompletableFuture<Instant> task = CompletableFuture.supplyAsync(() -> {
-                        this.processMessagesForTable(tableId, requestsWithHandle);
+                        processMessagesForTable(tableId, requestsWithHandle);
                         return Instant.now();
                     });
 
-                    this.tableFutures.put(tableId, task);
-                    this.processedTableOrder.remove(tableId);
-                    this.processedTableOrder.add(tableId);
+                    tableFutures.put(tableId, task);
+                    processedTableOrder.remove(tableId);
+                    processedTableOrder.add(tableId);
                 });
             }
         } catch (Exception e) {
@@ -244,22 +244,22 @@ public class MultiThreadedStateStoreCommitter {
             // How much extra space the heap is allowed to grow to use
             Runtime.getRuntime().maxMemory() - Runtime.getRuntime().totalMemory();
 
-        while (availableMemory < this.heapSpaceToKeepFree) {
+        while (availableMemory < heapSpaceToKeepFree) {
             LOGGER.info("Removing old state stores from cache as limited memory available: {}", FileUtils.byteCountToDisplaySize(availableMemory));
 
             // Find a state store that we can remove from the in-mem cache that we haven't used for a while
-            Optional<String> tableIdToUncache = this.processedTableOrder.stream().filter(tableId -> {
+            Optional<String> tableIdToUncache = processedTableOrder.stream().filter(tableId -> {
                 return
                     // Don't remove a state store from the cache that we are about to use!
                     !requiredTableIds.contains(tableId) &&
                     // Only remove a state store that we have finished using
-                    this.tableFutures.get(tableId).isDone();
+                    tableFutures.get(tableId).isDone();
             }).findFirst();
 
             if (tableIdToUncache.isPresent()) {
                 LOGGER.info("Removing state store for table {} from cache", tableIdToUncache.get());
-                this.stateStoreProvider.removeStateStoreFromCache(tableIdToUncache.get());
-                this.processedTableOrder.remove(tableIdToUncache.get());
+                stateStoreProvider.removeStateStoreFromCache(tableIdToUncache.get());
+                processedTableOrder.remove(tableIdToUncache.get());
             } else {
                 LOGGER.error("Couldn't find any candidate state stores to remove from memory. All must currently be in use, will wait and try again...");
                 try {
@@ -280,8 +280,8 @@ public class MultiThreadedStateStoreCommitter {
         Instant startedAt = Instant.now();
         LOGGER.info("Processing {} requests for table: {} ...", requestsWithHandle.size(), tableId);
 
-        this.committer.applyBatch(
-            operation -> DynamoDBUtils.retryOnThrottlingException(this.throttlingRetriesConfig, operation),
+        committer.applyBatch(
+            operation -> DynamoDBUtils.retryOnThrottlingException(throttlingRetriesConfig, operation),
             requestsWithHandle.stream().map(StateStoreCommitRequestWithSqsReceipt::getHandle).collect(Collectors.toList())
         );
 
@@ -291,8 +291,8 @@ public class MultiThreadedStateStoreCommitter {
 
         if (successfulRequests.size() > 0) {
             LOGGER.debug("Deleting {} requests for table {} as they have been successfully applied", successfulRequests.size(), tableId);
-            DeleteMessageBatchResponse deleteResponse = this.sqsClient.deleteMessageBatch(DeleteMessageBatchRequest.builder()
-                .queueUrl(this.qUrl)
+            DeleteMessageBatchResponse deleteResponse = sqsClient.deleteMessageBatch(DeleteMessageBatchRequest.builder()
+                .queueUrl(qUrl)
                 .entries(
                     Streams.mapWithIndex(successfulRequests.stream(), (request, index) ->
                         DeleteMessageBatchRequestEntry.builder()
@@ -326,8 +326,8 @@ public class MultiThreadedStateStoreCommitter {
             } catch (InterruptedException e) {
             }
 
-            ChangeMessageVisibilityBatchResponse changeVisibilityResponse = this.sqsClient.changeMessageVisibilityBatch(ChangeMessageVisibilityBatchRequest.builder()
-                .queueUrl(this.qUrl)
+            ChangeMessageVisibilityBatchResponse changeVisibilityResponse = sqsClient.changeMessageVisibilityBatch(ChangeMessageVisibilityBatchRequest.builder()
+                .queueUrl(qUrl)
                 .entries(
                     Streams.mapWithIndex(failedRequests.stream(), (request, index) ->
                         ChangeMessageVisibilityBatchRequestEntry.builder()
@@ -378,22 +378,22 @@ public class MultiThreadedStateStoreCommitter {
         }
 
         private StateStoreCommitRequest getCommitRequest() {
-            return this.commitRequest;
+            return commitRequest;
         }
 
         private RequestHandle getHandle() {
-            return RequestHandle.withCallbackOnFail(this.commitRequest, e -> {
-                LOGGER.error("Error whilst processing state store commit request for table: {}", this.commitRequest.getTableId(), e);
-                this.failed = true;
+            return RequestHandle.withCallbackOnFail(commitRequest, e -> {
+                LOGGER.error("Error whilst processing state store commit request for table: {}", commitRequest.getTableId(), e);
+                failed = true;
             });
         }
 
         private String getSqsReceipt() {
-            return this.sqsReceipt;
+            return sqsReceipt;
         }
 
         private boolean failed() {
-            return this.failed;
+            return failed;
         }
 
     }
