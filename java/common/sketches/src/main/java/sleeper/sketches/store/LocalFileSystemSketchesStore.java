@@ -51,6 +51,7 @@ public class LocalFileSystemSketchesStore implements SketchesStore {
 
     @Override
     public Sketches loadFileSketches(String filename, Schema schema) {
+        LOGGER.info("Loading sketches for file {}", filename);
         Path path = readPath(filename);
         try (DataInputStream in = new DataInputStream(Files.newInputStream(path))) {
             return new SketchesSerDe(schema).deserialise(in);

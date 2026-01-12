@@ -184,13 +184,11 @@ public class CompactionOnEc2Resources {
                 .enableManagedTerminationProtection(false)
                 .autoScalingGroup(ec2scalingGroup)
                 .spotInstanceDraining(true)
-                .canContainersAccessInstanceRole(false)
                 .machineImageType(MachineImageType.AMAZON_LINUX_2)
                 .build();
 
         cluster.addAsgCapacityProvider(ec2Provider,
                 AddAutoScalingGroupCapacityOptions.builder()
-                        .canContainersAccessInstanceRole(false)
                         .machineImageType(MachineImageType.AMAZON_LINUX_2)
                         .spotInstanceDraining(true)
                         .build());

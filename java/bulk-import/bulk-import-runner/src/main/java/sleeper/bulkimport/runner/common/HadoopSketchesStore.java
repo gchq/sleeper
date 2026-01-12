@@ -53,6 +53,7 @@ public class HadoopSketchesStore implements SketchesStore {
 
     @Override
     public Sketches loadFileSketches(String filename, Schema schema) {
+        LOGGER.info("Loading sketches for file {}", filename);
         try {
             Path path = configPath(filename);
             Sketches sketches;
@@ -60,7 +61,6 @@ public class HadoopSketchesStore implements SketchesStore {
             try (FSDataInputStream dataInputStream = path.getFileSystem(conf).open(path)) {
                 sketches = new SketchesSerDe(schema).deserialise(dataInputStream);
             }
-            LOGGER.info("Loaded sketches from {}", path);
             return sketches;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
