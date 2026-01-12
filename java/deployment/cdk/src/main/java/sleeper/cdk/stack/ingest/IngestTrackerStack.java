@@ -29,6 +29,7 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTracker;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat;
@@ -118,6 +119,7 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
         updatesTable.grantReadData(policiesStack.getReportingPolicyForGrants());
         jobsTable.grantReadData(policiesStack.getReportingPolicyForGrants());
         tasksTable.grantReadData(policiesStack.getReportingPolicyForGrants());
+        Utils.addTags(this, instanceProperties);
     }
 
     @Override

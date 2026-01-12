@@ -83,6 +83,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 loggingStack, policiesStack, lambdaCode,
                 configBucketStack, tableIndexStack, stateStoreStacks,
                 compactionTracker, ingestTracker);
+        Utils.addTags(this, instanceProperties);
     }
 
     private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, TrackDeadLetters deadLetters) {

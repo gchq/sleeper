@@ -76,10 +76,12 @@ public class ManagedPoliciesStack extends NestedStack {
     }
 
     public SleeperInstanceRoles createRoles() {
-        return new SleeperInstanceRoles(
+        SleeperInstanceRoles roles = new SleeperInstanceRoles(
                 createAdminRole(),
                 createIngestByQueueRole(),
                 createDirectIngestRole());
+        Utils.addTags(this, instanceProperties);
+        return roles;
     }
 
     public ManagedPolicy getDirectIngestPolicyForGrants() {
