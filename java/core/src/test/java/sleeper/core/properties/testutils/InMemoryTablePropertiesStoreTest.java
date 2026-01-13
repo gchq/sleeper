@@ -28,9 +28,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.core.table.TableStatus;
 
-import java.util.Optional;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,97 +52,6 @@ public class InMemoryTablePropertiesStoreTest {
     private final TablePropertiesStore store = InMemoryTableProperties.getStore();
     private final String tableName = tableProperties.get(TABLE_NAME);
     private final String tableId = tableProperties.get(TABLE_ID);
-
-    @Nested
-    @DisplayName("Get existing table status")
-    class GetExistingTableStatus {
-        @Test
-        void shouldPrioritiseTableIdOverNameOnGet() {
-            // Given
-            TableProperties tableWithMatchingId = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-            tableWithMatchingId.set(TABLE_ID, tableProperties.get(TABLE_ID));
-            tableWithMatchingId.set(TABLE_NAME, "differentName");
-
-            TableProperties tableWithMatchingName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-            tableWithMatchingName.set(TABLE_ID, "differentID");
-            tableWithMatchingName.set(TABLE_NAME, tableProperties.get(TABLE_NAME));
-
-            store.createTable(tableWithMatchingId);
-            store.createTable(tableWithMatchingName);
-
-            // When
-            Optional<TableStatus> tableStatus = store.getExistingStatus(tableProperties);
-
-            // Then
-            assertThat(tableStatus.isPresent()).isTrue();
-            assertThat(tableStatus.get().getTableUniqueId()).isEqualTo(tableWithMatchingId.get(TABLE_ID));
-            assertThat(tableStatus.get().getTableName()).isEqualTo(tableWithMatchingId.get(TABLE_NAME));
-        }
-
-        @Test
-        void shouldPrioritiseTableNameOverPreviousNamesOnGet() {
-            // Given
-            String previousName = "previousName";
-            tableProperties.unset(TABLE_ID);
-            tableProperties.set(PREVIOUS_TABLE_NAMES, previousName);
-
-            TableProperties tableWithMatchingName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-            tableWithMatchingName.set(TABLE_ID, "differentID1");
-            tableWithMatchingName.set(TABLE_NAME, tableProperties.get(TABLE_NAME));
-
-            TableProperties tableWithMatchingPreviousName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-            tableWithMatchingPreviousName.set(TABLE_ID, "differentID2");
-            tableWithMatchingPreviousName.set(TABLE_NAME, previousName);
-
-            store.createTable(tableWithMatchingName);
-            store.createTable(tableWithMatchingPreviousName);
-
-            // When
-            Optional<TableStatus> tableStatus = store.getExistingStatus(tableProperties);
-
-            // Then
-            assertThat(tableStatus.isPresent()).isTrue();
-            assertThat(tableStatus.get().getTableUniqueId()).isEqualTo("differentID1");
-        }
-
-        @Test
-        void shouldPrioritiseMoreRecentPreviousTableNamesOverLessRecentOnGet() {
-            // Given
-            String previousName = "olderName,newerName";
-            tableProperties.unset(TABLE_ID);
-            tableProperties.set(PREVIOUS_TABLE_NAMES, previousName);
-
-            TableProperties tableWithMatchingName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-            tableWithMatchingName.set(TABLE_ID, "olderId");
-            tableWithMatchingName.set(TABLE_NAME, "olderName");
-
-            TableProperties tableWithMatchingPreviousName = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-            tableWithMatchingPreviousName.set(TABLE_ID, "newerId");
-            tableWithMatchingPreviousName.set(TABLE_NAME, "newerName");
-
-            store.createTable(tableWithMatchingName);
-            store.createTable(tableWithMatchingPreviousName);
-
-            // When
-            Optional<TableStatus> tableStatus = store.getExistingStatus(tableProperties);
-
-            // Then
-            assertThat(tableStatus.isPresent()).isTrue();
-            assertThat(tableStatus.get().getTableUniqueId()).isEqualTo("newerId");
-        }
-
-        @Test
-        void shouldReturnOptionalEmptyIfNotFound() {
-            // Given
-            tableProperties.set(PREVIOUS_TABLE_NAMES, "anyNames");
-
-            // When
-            Optional<TableStatus> tableStatus = store.getExistingStatus(tableProperties);
-
-            //Then
-            assertThat(tableStatus.isEmpty()).isTrue();
-        }
-    }
 
     @Nested
     @DisplayName("Save table properties")
@@ -204,6 +112,23 @@ public class InMemoryTablePropertiesStoreTest {
             assertThat(store.loadByName("renamed-table"))
                     .extracting(properties -> properties.get(TABLE_NAME))
                     .isEqualTo("renamed-table");
+        }
+
+        @Test
+        void shouldUpdateTablePropertiesByPreviousName() {
+            // Given
+            tableProperties.setNumber(PAGE_SIZE, 123);
+            store.save(tableProperties);
+            tableProperties.set(TABLE_ID, "newId");
+            tableProperties.set(TABLE_NAME, "newName");
+            tableProperties.setList(PREVIOUS_TABLE_NAMES, List.of(tableName));
+            tableProperties.setNumber(PAGE_SIZE, 456);
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(store.loadByName("newName"))
+                    .extracting(properties -> properties.getInt(PAGE_SIZE))
+                    .isEqualTo(456);
         }
 
         @Test

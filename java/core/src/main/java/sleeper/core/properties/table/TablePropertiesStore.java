@@ -169,16 +169,7 @@ public class TablePropertiesStore {
         }
     }
 
-    /**
-     * Gets an existing table status using a supplied table properties.
-     * If no matching table is found it will return an empty optional.
-     * It will prioritise table id over table name and table name over previous table names.
-     * If using previous table names it will prioritise the ones at the start of the csv list over later ones.
-     *
-     * @param  tableProperties the table properties
-     * @return                 the optional table status
-     */
-    public Optional<TableStatus> getExistingStatus(TableProperties tableProperties) {
+    private Optional<TableStatus> getExistingStatus(TableProperties tableProperties) {
         if (tableProperties.isSet(TABLE_ID)) {
             return tableIndex.getTableByUniqueId(tableProperties.get(TABLE_ID));
         }
